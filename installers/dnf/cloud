@@ -1,0 +1,27 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+
+main() {
+    dotfiles_install
+    essential_install
+    pnpm_install
+
+    cpp_install
+    miniconda_install
+
+    zsh_config_install
+    tmux_config_install
+    astro_install
+
+    dnfi util-linux-user
+    set_zsh_as_default
+}
+
+is_rocky|| err_exit "This installer works only on Rocky Linux. Quitting."
+
+bootstrap "Rocky Linux development system"
+
+}

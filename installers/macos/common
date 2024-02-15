@@ -1,0 +1,62 @@
+#! /usr/bin/env bash
+
+{
+
+essential_install() {
+    slog "Installing Essential packages"
+
+    brew install tar unzip trash iterm2 warp coreutils golang github
+    brew install curl wget tree fzf ripgrep tmux pkg-config urlview
+    brew install zsh zsh-syntax-highlighting zsh-autosuggestions fd
+    brew install unar unzip p7zip zoxide ShellCheck git-extras zip gawk gh
+    brew install git-delta dust choose sd procs xh starship lsd cheat curlie
+
+    slog "Essential packages installation done!"
+}
+
+fonts_install() {
+    brew tap homebrew/cask-fonts
+    brew install --cask font-jetbrains-mono-nerd-font
+    brew install --cask font-monaspace-nerd-font
+}
+
+cpp_install() {
+    slog "Installing C++"
+
+    brew install cmake boost catch2 ccache cppcheck pre-commit
+
+    slog "C++ installation done!"
+
+}
+
+neovim_install() {
+    slog "Installing neovim"
+
+    brew install neovim lazygit neovide luarocks gdu bottom golang
+
+    slog "neovim installation done!"
+}
+
+virt_install() {
+    slog "Installing virtualization packages"
+
+    softwareupdate --install-rosetta --agree-to-license
+    brew install podman
+    brew install --cask podman-desktop
+    podman machine set --rootful
+    sudo /opt/homebrew/Cellar/podman/4.9.2/bin/podman-mac-helper install
+
+    dir_exists /Applications/Docker.app || brew install --cask docker
+
+    slog "Virtualization packages installation done!"
+}
+
+
+pyenv_mac_install() {
+    slog "Installing pyenv"
+    brew install pyenv
+    brew install pyenv-virtualenv
+}
+
+}
+

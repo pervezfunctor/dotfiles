@@ -1,0 +1,21 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+
+main() {
+    dotfiles_install
+    essential_install
+    zsh_config_install
+    tmux_config_install
+
+    has_cmd chsh || dnfi util-linux-user
+    set_zsh_as_default
+}
+
+is_rh || err_exit "This script works only on Fedora/RockyLinux. Quitting."
+
+bootstrap "Fedora/RockyLinux setup"
+
+}

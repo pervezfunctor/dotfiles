@@ -1,0 +1,30 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+
+
+main() {
+    dotfiles_install
+    essential_install
+
+    go_install
+    rust_install
+    pnpm_install
+
+    shell_install
+
+    neovim_install
+    emacs_install
+
+    cli_config
+
+    set_zsh_as_default
+}
+
+is_apt || err_exit "This installer works only on Debian/Ubuntu. Quitting."
+
+bootstrap "Debian development system"
+
+}

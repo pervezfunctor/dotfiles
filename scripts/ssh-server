@@ -1,0 +1,32 @@
+#!/bin/bash
+
+{
+
+source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+
+# Check if the script is run as root
+[[ "$(id -u)" != "0" ]] && err_exit "This script must be run as root" 1>&2
+
+# Determine the package manager
+if is_apt; then
+    pkg_manager="apt-get"
+    ssh_service="ssh"
+elif is_rh; then
+    pkg_manager="dnf"
+    ssh_service="sshd"
+else
+    err_exit "Unsupported system"
+fi
+
+# Check if SSH server is installed
+if ! command -v sshd &> /dev/null; then
+    slog "SSH server is not installed. Installing now..."
+    $pkg_manager install -y openssh-server
+fi
+
+# Start the SSH server
+systemctl enable --now $ssh_service
+
+slog "SSH server is now running."
+
+}

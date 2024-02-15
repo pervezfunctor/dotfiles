@@ -1,0 +1,66 @@
+
+#! /usr/bin/env bash
+
+{
+
+source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+
+flatpak_apps_install() {
+    flatpak install -y --user flathub org.telegram.desktop
+    flatpak install -y --user flathub com.jetbrains.CLion
+    flatpak install -y --user flathub com.google.Chrome
+    flatpak install -y --user flathub org.deluge_torrent.deluge
+    flatpak install -y --user flathub us.zoom.Zoom
+    flatpak install -y --user org.wezfurlong.wezterm
+    flatpak install -y --user flathub io.github.shiftey.Desktop
+}
+
+apps_install() {
+    apti chromium-browser emacs virt-manager
+    flatpak_apps_install
+}
+
+snap_install() {
+    has_cmd snap && return 0
+
+    slog "Installing snap..."
+    apti snapd
+    slog "snap installation done!"
+}
+
+main() {
+    dotfiles_install
+    essential_install
+
+    go_install
+    flathub_install
+    snap_install
+    brew_install
+    rust_install
+    pnpm_install
+
+    fonts_install
+
+    cpp_install
+    python_install
+
+    neovim_install
+    emacs_install
+    vscode_install
+    apps_install
+
+    virt_install
+
+    zsh_config_install
+    tmux_config_install
+    astro_install
+    doom_install
+
+    set_zsh_as_default
+}
+
+is_apt || err_exit "This script works only on Ubuntu. Quitting."
+
+bootstrap "Ubuntu desktop setup"
+
+}

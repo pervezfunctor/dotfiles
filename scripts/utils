@@ -1,0 +1,331 @@
+#! /usr/bin/env bash
+
+{
+
+DOT_DIR=~/.config/dotfiles
+
+slog() {
+    echo "
+${BOLD}${GREEN}INFO: ${RESET} $1
+"
+}
+
+warn() {
+    echo "
+${BOLD}${YELLOW}WARNING: ${RESET} $1
+"
+}
+
+err_exit() {
+    echo "
+${BOLD}${RED}FATAL: ${RESET} $1
+"
+    exit 1
+}
+
+dir_exists() {
+    [[ -d "$1" ]]
+}
+
+file_exists() {
+    [[ -f "$1" ]]
+}
+
+exists() {
+    [[ -e "$1" ]]
+}
+
+has_cmd() {
+    command -v "$1" > /dev/null
+}
+
+sclone() {
+    local dest=${*: -1}
+    local src=${*: -2:1}
+
+    [ -d "$dest" ] && return 1
+
+    slog "Cloning $src to $dest"
+    git clone "$@"
+}
+
+fclone() {
+    local dest=${*: -1}
+    local src=${*: -2:1}
+
+    srm "$dest"
+    slog "Cloning $src to $dest"
+    git clone "$@"
+}
+
+smv() {
+    if mv "$1" "$2" 2> /dev/null; then
+        slog "Moved $1 to $2"
+    fi
+}
+
+smd() {
+    [ -d "$1" ] && return 1
+
+    slog "Creating directory $1"
+    mkdir -p "$1" 2> /dev/null
+}
+
+fln() {
+    if [ -e "$1" ]; then
+        srm "$2"
+    else
+        slog "$1 does not exist, cannot create link $2"
+        return 1
+    fi
+    slog "Creating link $2 to $1"
+    ln -s "$1" "$2"
+}
+
+srm() {
+    for f in "$@"; do
+        if [ -L "$f" ]; then
+            rm -f "$f" && slog "Removing existing link $f"
+        elif has_cmd trash-put; then
+            trash-put "$f" 2> /dev/null && slog "Trashed $f"
+        elif has_cmd trash; then
+            trash "$f" 2> /dev/null && slog "Trashed $f"
+        else
+            warn "trash not installed, cannot rm $f"
+        fi
+    done
+}
+
+scp() {
+    if [ -e "$1" ]; then
+        cp -r "$1" "$2"
+    else
+        slog "$1 does not exist, cannot copy to $2"
+        return 1
+    fi
+}
+
+fcp() {
+    if [ -e "$1" ]; then
+        srm "$2"
+    else
+        slog "$1 does not exist, cannot copy to $2"
+        return 1
+    fi
+    cp -r "$1" "$2"
+}
+
+fmv() {
+    if [ -e "$1" ]; then
+        srm "$2"
+    else
+        slog "$1 does not exist, cannot move to $2"
+        return 1
+    fi
+    mv "$1" "$2"
+}
+
+sln() {
+    if ! [ -e "$1" ]; then
+        warn "$1 does not exist, cannot create the link $2"
+        return 1
+    elif [ -L "$2" ]; then
+        srm "$2"
+    elif [ -e "$2" ]; then
+        warn "$2 exists and not a symbolic link! not creating link"
+        return 1
+    fi
+    slog "Creating link $2 to $1"
+    ln -s "$1" "$2"
+}
+
+is_mac() {
+    [[ "$OSTYPE" == "darwin"* ]]
+}
+
+get_os() {
+    local ID
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+    elif [ -f /etc/lsb-release ]; then
+        . /etc/lsb-release
+    elif [ -f /etc/redhat-release ]; then
+        ID=$(cat /etc/redhat-release | awk '{print $1}')
+    else
+        ID=$(uname)
+    fi
+    echo "$ID" | tr '[:upper:]' '[:lower:]'
+}
+
+is_debian() {
+    local ID
+    ID=$(get_os)
+    [[ "$ID" == *"debian"* ]]
+}
+
+is_wsl() {
+    grep -qi microsoft /proc/version
+}
+
+is_ubuntu() {
+    has_cmd lsb_release || return 1
+
+    local OS
+    OS=$(lsb_release -i | cut -d ':' -f2)
+    [[ "$OS" == *"Ubuntu" ]] || [[ "$OS" == *"neon" ]] || [[ "$OS" == *"elementary" ]] || [[ "$OS" == *"LinuxMint" ]] || [[ "$OS" == *"Pop" ]]
+}
+
+is_apt() {
+    is_ubuntu || is_debian
+}
+
+is_fedora() {
+   [ -e /etc/redhat-release ] && grep 'Fedora' /etc/redhat-release > /dev/null
+}
+
+is_rocky() {
+    [ -e /etc/redhat-release ] && grep 'Rocky' /etc/redhat-release > /dev/null
+}
+
+is_centos() {
+   [ -e /etc/redhat-release ] && grep 'Centos' /etc/redhat-release > /dev/null
+}
+
+is_rh() {
+    is_fedora || is_rocky || is_centos
+}
+
+is_linux() {
+    [[ "$OSTYPE" == "linux-gnu" ]]
+}
+
+is_mac() {
+    [[ "$OSTYPE" == "darwin"* ]]
+}
+
+fn_exists() {
+    [[ $(type -t $1) == function ]]
+}
+
+pre_dir_check() {
+    for dir in "$@"; do
+        [ -d "$dir" ] || err_exit "$dir does not exist, quitting"
+    done
+}
+
+cmd_check() {
+    for cmd in "$@"; do
+        has_cmd "$cmd" || warn "$cmd not installed"
+    done
+}
+
+file_exists() {
+     [[ -f "$1" ]]
+}
+
+dir_check() {
+    for dir in "$@"; do
+        dir_exists "$dir" || warn "$dir does not exist"
+    done
+}
+
+ln_to_exists() {
+    local rl=readlink
+    is_mac && rl=greadlink
+    [[ "$1" == $($rl -f "$2") ]]
+}
+
+ln_check() {
+    ln_to_exists "$1" "$2" || warn "$2 not a link to $1"
+}
+
+file_check() {
+    for f in "$@"; do
+        [ -f "$f" ] || warn "$f does not exist"
+    done
+}
+
+keep_sudo_running() {
+    slog "Keeping sudo alive"
+    has_cmd sudo || err_exit "sudo must be installed"
+    sudo -v
+    while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+}
+
+download_to() {
+    if has_cmd curl; then
+        curl -s "$1" -o "$2"
+    elif has_cmd wget; then
+        wget "$1" -O "$2"
+    else
+        err_exit "curl or wget must be installed"
+    fi
+}
+
+set_zsh_as_default() {
+    slog "Setting zsh as default shell"
+    chsh -s $(which zsh)
+}
+
+dotfiles_install() {
+    sclone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
+}
+
+min_packages_for_installer() {
+    if is_apt; then
+        slog "Installing essential packages for the installer for ubuntu"
+        sudo apt-get install -y curl wget git-core tar unzip
+    elif is_rh; then
+        slog "Installing essential packages for the installer for fedora"
+        sudo dnf install -y curl wget git-core tar unzip
+    fi
+}
+
+source_curl() {
+    slog "sourcing: $1"
+    source <(curl -s "$1")
+}
+
+sh_curl() {
+    curl -s "$1" | bash
+}
+
+bootstrap() {
+    export PATH="$HOME/bin:$PATH"
+    export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+    export PATH="$PNPM_HOME:$PATH"
+
+    curdir=$(pwd)
+
+    slog "Installing $@ ..."
+
+    rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2> /dev/null
+    keep_sudo_running
+    min_packages_for_installer
+
+    source_curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/installs
+
+    if is_apt; then
+        source_curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/common
+    elif is_rh; then
+        source_curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/dnf/common
+    elif is_mac; then
+        source_curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/macos/common
+    fi
+
+    main "$@" > >(tee /tmp/dotfiles-output.log) 2> >(tee /tmp/dotfiles-error.log >&2)
+
+    slog "Installation done! Look at /tmp/dotfiles-error.log for any errors."
+
+    cd "$curdir"
+}
+
+cargoi() {
+  for p in "$@"; do
+    slog "Installing package $p"
+    cargo +stable install --locked "$p"
+  done
+}
+
+}

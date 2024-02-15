@@ -1,0 +1,20 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+
+main() {
+    while [[ "$#" -gt 0 ]]; do
+    if fn_exists "${1}_install"; then
+        "${1}_install"
+    else
+        err_exit "No such installer: $1"
+    fi
+    shift
+    done
+}
+
+bootstrap "$@"
+
+}

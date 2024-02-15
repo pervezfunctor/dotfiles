@@ -1,0 +1,25 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+
+main() {
+    dotfiles_install
+    essential_install
+    zsh_config_install
+    tmux_config_install
+
+    set_zsh_as_default
+
+    sudo apt-get autoremove -y
+    slog "Installation done!"
+}
+
+is_apt || err_exit "This installer works only on Ubuntu or Debian. Quitting."
+
+export DEBIAN_FRONTEND=noninteractive
+
+bootstrap "Ubuntu/Debian setup"
+
+}

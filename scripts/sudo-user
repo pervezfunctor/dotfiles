@@ -1,0 +1,46 @@
+#!/bin/bash
+
+{
+
+source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+
+# Check if the script is run as root
+[[ "$(id -u)" != "0" ]] && err_exit "This script must be run as root" 1>&2
+
+# Check if username is provided
+[[ "$#" -ne 1 ]] && err_exit "Usage: $0 username" 1>&2
+
+username=$1
+
+# Create the user
+useradd -m $username
+
+# Check if useradd command succeeded
+if [ $? -eq 0 ]; then
+    slog "User created successfully"
+else
+    err_exit "Failed to create user"
+fi
+
+# Set the user's password
+passwd $username
+
+# Determine the sudo group based on the system
+if is_apt; then
+    pkg_manager="apt-get"
+    sudo_group="sudo"
+elif is_rh; then
+    pkg_manager="dnf"
+    sudo_group="wheel"
+else
+    err_exit "Unsupported system"
+fi
+
+$pkg_manager install -y sudo
+
+# Add the user to the sudo group
+usermod -aG $sudo_group $username
+
+slog "$username now has sudo privileges"
+
+}

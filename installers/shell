@@ -1,0 +1,20 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+
+main() {
+    dotfiles_install
+    zsh_config_install
+    tmux_config_install
+    astro_install
+ }
+
+slog "This script doesn't install any packages. It only sets up dotfiles."
+
+bootstrap "CLI-only setup"
+
+slog "Also make sure to set nerd font in your terminal emulator."
+
+}

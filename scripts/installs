@@ -1,0 +1,402 @@
+#! /usr/bin/env bash
+
+{
+
+astro_install() {
+    slog "Installing AstroNvim"
+
+    fmv ~/.config/nvim ~/.config/nvim.bak
+    fmv ~/.local/share/nvim ~/.local/share/nvim.bak
+    fmv ~/.local/state/nvim ~/.local/state/nvim.bak
+    fmv ~/.cache/nvim ~/.cache/nvim.bak
+
+    sclone --depth=1 https://github.com/AstroNvim/AstroNvim ~/.config/nvim
+
+    sclone https://github.com/pervezfunctor/astro-config.git ~/.config/nvim/lua/user
+
+     [[ "$USER" == "pervez" ]] || srm ~/.config/nvim/lua/user/.git
+    slog "Please configure AstroNvim by editing files in ~/.config/nvim/lua/user"
+
+    slog "AstroNvim installation done!"
+}
+
+zsh_config_install() {
+    slog "Installing zsh"
+
+    smd ~/.zsh
+    sclone --depth=1 https://github.com/sindresorhus/pure.git ~/.zsh/pure
+    sclone --depth=1 https://github.com/djui/alias-tips.git ~/.zsh/alias-tips
+
+    fln "${DOT_DIR}/configs/zshrc" ~/.zshrc
+
+    slog "zsh installation done!"
+}
+
+tmux_config_install() {
+    slog "tmux config"
+
+    smd ~/.config/tmux
+    fln "${DOT_DIR}/configs/tmux.conf" ~/.config/tmux/tmux.conf
+}
+
+treesitter_install() {
+    if has_cmd cargo; then
+      cargo install tree-sitter-cli
+    elif has_cmd pnpm; then
+      pnpm install -g tree-sitter-cli
+    elif has_cmd npm; then
+      npm install -g tree-sitter-cli
+    else
+      slog "tree-sitter-cli not installed"
+    fi
+}
+
+neovim_install() {
+    has_cmd nvim && return 0
+
+    slog "Installing neovim..."
+
+    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+    chmod u+x nvim.appimage
+
+    ./nvim.appimage --appimage-extract
+
+    sudo mv squashfs-root /
+    sudo ln -s /squashfs-root/AppRun /usr/bin/nvim
+    srm nvim.appimage
+
+    treesitter_install
+
+    if is_apt; then
+      apti luarocks
+    elif is_rh; then
+      dnfi luarocks
+    fi
+
+    if has_cmd pnpm; then
+      pnpm install -g neovim
+    elif has_cmd npm; then
+      npm install -g neovim
+    fi
+
+    has_cmd pip && pip install --user neovim
+
+    slog "Neovim installation done!"
+}
+
+micro_install() {
+    has_cmd micro && return 1
+
+    slog "Installing micro"
+
+    curl https://getmic.ro | bash
+    sudo mv micro /usr/bin/
+
+    slog "micro installation done!"
+}
+
+rust_install() {
+    has_cmd rustup && return 1
+
+    slog "Installing rust"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    slog "rust installation done!"
+}
+
+alacritty_install() {
+    has_cmd alacritty && return 1
+
+    rust_install
+    cargo install alacritty
+}
+
+miniconda_install() {
+    has_cmd conda && return 0
+    dir_exists ~/miniconda3 && return 0
+
+    slog "Installing miniconda"
+
+    smd ~/miniconda3
+    download_to https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+    bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+    srm ~/miniconda3/miniconda.sh
+    has_cmd bash && ~/miniconda3/bin/conda init bash
+    has_cmd zsh && ~/miniconda3/bin/conda init zsh
+
+    slog "miniconda installation done!"
+}
+
+pnpm_install() {
+    has_cmd pnpm && return 0
+
+    slog "Installing pnpm"
+    curl -s https://get.pnpm.io/install.sh | sh -
+
+    slog "Installing node"
+    pnpm env use --global latest
+
+    pnpm install-completion bash
+    pnpm install-completion zsh
+}
+
+web_install() {
+  slog "Installing npm packages globally"
+    pnpm install -g npm-check-updates ndb @antfu/ni
+    pnpm install -g tsx vite-node zx turbo
+
+    if ! grep "fs.inotify.max_user_watches" /etc/sysctl.conf > /dev/null; then
+        echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf > /dev/null && sudo sysctl -p
+    fi
+
+    if is_apt; then
+        pnpm dlx playwright install-deps
+        pnpm dlx playwright install
+    fi
+}
+
+brew_install() {
+    has_cmd brew && return 0
+
+    slog "Installing homebrew"
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -s https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    slog "homebrew installation done!"
+}
+
+monaspace_install() {
+    wget https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip
+    unzip -d monaspace -o monaspace-v1.000.zip
+    smd ~/.local/share/fonts
+    # TODO: Don't copy if already exists
+    cp ./monaspace/monaspace-v1.000/fonts/otf/* ~/.local/share/fonts
+    cp ./monaspace/monaspace-v1.000/fonts/variable/* ~/.local/share/fonts
+    srm monaspace monaspace-v1.000.zip
+}
+
+nerd_font_install() {
+    wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip
+    unzip -d monaspace -o CascadiaMono.zip
+    cp ./monaspace/*.ttf .local/share/fonts
+    srm monaspace CascadiaMono.zip
+
+    wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip
+    unzip -d monaspace -o Monaspace.zip
+    cp ./monaspace/*.otf .local/share/fonts
+    srm monaspace Monaspace.zip
+}
+
+fonts_install() {
+    slog "Installing fonts"
+
+    monaspace_install
+    nerd_font_install
+
+    if is_apt; then
+        apti fonts-cascadia-code fonts-jetbrains-mono
+    elif is_rh; then
+        dnfi cascadia-fonts-all jetbrains-mono-fonts-all
+    fi
+
+    slog "Fonts installation done!"
+}
+
+doom_install() {
+    dir_exists ~/.config/emacs && return 1
+
+    sclone --depth=1 https://github.com/doomemacs/doomemacs ~/.config/emacs
+    fmv ~/.config/doom ~/.config/doom.backup
+    sclone https://github.com/pervezfunctor/doomemacs-config ~/.config/doom
+
+    has_cmd update-locale && sudo update-locale LANG=en_US.UTF8
+}
+
+emacs_install() {
+    slog "Installing emacs"
+
+    if is_apt; then
+      apti -y emacs
+    elif is_rh; then
+        dnfi emacs
+    elif is_mac; then
+        brew tap railwaycat/emacsmacport
+        brew install emacs-mac --with-modules
+        ln -s /usr/local/opt/emacs-mac/Emacs.app /Applications/Emacs.app
+    fi
+
+    slog "emacs installation done!"
+}
+
+git_config() {
+    is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
+
+    git config --global init.defaultBranch main
+    git config --global pull.ff only
+
+    if [[ "$USER" == "pervez" ]]; then
+        git config --global user.name "Pervez Iqbal"
+        git config --global user.email "pervefunctor@gmail.com"
+    fi
+}
+
+go_install() {
+    has_cmd go && return 1
+    slog "Installing go"
+
+    sudo rm -rf /usr/local/go
+    VERSION=$(curl -s "https://go.dev/VERSION?m=text" | head -n 1)
+    wget "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz"
+    slog "Untar ${VERSION}.linux-amd64.tar.gz"
+    sudo tar -C /usr/local -xzf "${VERSION}.linux-amd64.tar.gz"
+    rm ${VERSION}.linux-amd64.tar.gz
+    export PATH=$PATH:/usr/local/go/bin
+
+    slog "go installation done!"
+}
+
+docker_common_install() {
+    sudo groupadd docker
+    sudo usermod -aG docker ${USER}
+
+    sudo systemctl --now enable docker
+    sudo systemctl --now enable containerd
+}
+
+code_server_install() {
+    has_cmd code-server && return 1
+
+    slog "Installing code-server"
+    curl -s https://code-server.dev/install.sh | sh
+    slog "code-server installation done!"
+
+    # slog "Installing coder"
+    # curl -L https://coder.com/install.sh | sh
+    # slog "coder installation done!"
+}
+
+conan_install() {
+    has_cmd conan && return 1
+
+    python3 -m pip install conan
+}
+
+cmake_install() {
+    has_cmd /usr/local/bin/cmake && return 1
+
+    CMAKE_VERSION="3.28.3"
+    ARCH=$(uname -m)
+    CMAKE_BINARY_NAME="cmake-${CMAKE_VERSION}-linux-${ARCH}.sh"
+    CMAKE_CHECKSUM_NAME="cmake-${CMAKE_VERSION}-SHA-256.txt"
+
+    TMP_DIR=$(mktemp -d -t cmake-XXXXXXXXXX)
+    cd "${TMP_DIR}"
+    curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_BINARY_NAME}" -O
+    curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_CHECKSUM_NAME}" -O
+
+    sha256sum -c --ignore-missing "${CMAKE_CHECKSUM_NAME}"
+    sudo mkdir /opt/cmake
+    sudo sh "${TMP_DIR}/${CMAKE_BINARY_NAME}" --prefix=/opt/cmake --skip-license
+
+    sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+    sudo ln -s /opt/cmake/bin/ctest /usr/local/bin/ctest
+    srm "${TMP_DIR}"
+}
+
+shell_install() {
+    if has_cmd cargo; then
+        rustup update stable
+
+        cargoi starship
+        has_cmd delta || cargoi git-delta
+        has_cmd dust || cargoi du-dust
+        has_cmd choose || cargoi choose
+        has_cmd sd || cargoi sd
+        has_cmd procs || cargoi procs
+        has_cmd bottom || cargoi bottom
+        has_cmd xh || cargoi xh
+        has_cmd lsd || cargoi lsd
+    else
+        warn "cargo not installed, skipping some shell tools"
+    fi
+
+    if has_cmd go; then
+        has_cmd cheat || go install github.com/cheat/cheat/cmd/cheat@latest
+        has_cmd curlie || go install github.com/rs/curlie@latest
+        has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
+        has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
+        # go install github.com/muesli/duf.git@latest
+    else
+        warn "go not installed, skipping some shell tools"
+    fi
+
+    if has_cmd pnpm; then
+        pnpm install -g degit tldr gtop
+        pnpm install -g @githubnext/github-copilot-cli
+    fi
+
+    # if has_cmd pip; then
+    #   pip install --user glances # need to select optional deps?
+    # fi
+
+    if has_cmd pnpm; then
+        pnpm install -g tldr
+    elif has_cmd pip; then
+        pip install --user tldr
+    else
+        warn "pnpm or pip not installed, skipping tldr"
+    fi
+}
+
+cli_config() {
+    zsh_config_install
+    tmux_config_install
+    astro_install
+    doom_install
+    git_config
+}
+
+poetry_install() {
+    if has_cmd python3; then
+        curl -sSL https://install.python-poetry.org | python3 -
+        smd ~/.zfunc
+        poetry completions zsh > ~/.zfunc/_poetry
+    else
+        warn "python3 not installed, skipping poetry"
+    fi
+}
+
+pyenv_install() {
+    sclone  https://github.com/yyuu/pyenv.git ~/.pyenv
+    sclone https://github.com/yyuu/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv
+}
+
+anaconda_install() {
+    if has_cmd pyenv; then
+        if ! pyenv versions | grep anaconda > /dev/null; then
+            slog "Installing anaconda"
+            local anacondaversion=`pyenv install --list | grep anaconda | tail -1`
+            pyenv install $anacondaversion
+        fi
+    else
+        warn "pyenv not installed, skipping anaconda"
+    fi
+}
+
+python_install() {
+    pyenv_install
+
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+
+    anaconda_install
+    poetry_install
+}
+
+asdf_install() {
+    has_cmd asdf && return 1
+    dir_exists ~/.asdf && return 1
+
+    slog "Installing asdf"
+    git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
+    slog "asdf installation done!"
+}
+
+}

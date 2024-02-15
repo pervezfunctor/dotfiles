@@ -1,0 +1,66 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+
+cpp_fedora_install() {
+    slog "Installing C++ tools"
+
+    cpp_install
+    sudo dnf groupinstall -y --with-optional "C Development Tools and Libraries"
+
+    slog "C++ tools installation done!"
+}
+
+flatpak_apps_install() {
+    flatpak install -y --user flathub org.telegram.desktop
+    flatpak install -y --user flathub com.jetbrains.CLion
+    flatpak install -y --user flathub com.google.Chrome
+    flatpak install -y --user flathub org.deluge_torrent.deluge
+    flatpak install -y --user flathub us.zoom.Zoom
+    flatpak install -y --user org.wezfurlong.wezterm
+}
+
+apps_install() {
+    dnfi virt-manager chromium neovim emacs
+    flatpak_apps_install
+}
+
+main() {
+    dotfiles_install
+    essential_install
+
+    go_install
+    flathub_install
+    snap_install
+    brew_install
+    rust_install
+    pnpm_install
+
+    fonts_install
+
+    cpp_fedora_install
+    python_install
+
+    neovim_install
+    emacs_install
+    vscode_install
+    apps_install
+
+    virt_install
+
+    tmux_config_install
+    zsh_config_install
+    tmux_config_install
+    astro_install
+    doom_install
+
+    set_zsh_as_default
+}
+
+is_fedora || err_exit "This script works only on Fedora. Quitting."
+
+bootstrap "Fedora desktop setup"
+
+}

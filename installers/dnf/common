@@ -1,0 +1,178 @@
+#! /usr/bin/env bash
+
+{
+
+dnfi() {
+    for p in "$@"; do
+    slog "Installing package $p"
+        sudo dnf -y install "$p"
+    done
+}
+
+enable_epel() {
+    slog "Enabling EPEL"
+    sudo dnf config-manager --set-enabled crb
+    dnfi epel-release
+}
+
+update_packages() {
+    slog "Updating packages"
+    if ! { sudo dnf update -y && sudo dnf upgrade -y; }; then
+        err_exit "dnf update/upgrade failed, quitting"
+    fi
+}
+
+core_install() {
+    dnfi curl wget git trash-cli zsh tree tar unar zip unzip p7zip gawk
+    dnfi zsh-syntax-highlighting zsh-autosuggestions
+}
+
+sys_python_install() {
+    dnfi python3-pip python3-wheel python3-virtualenv
+    # python3 -m pip install --upgrade pip setuptools
+}
+
+essential_install() {
+    is_fedora || enable_epel
+
+    slog "Installing essential packages"
+
+    core_install
+
+    dnfi tmux pkg-config urlview neovim ShellCheck git-extras
+    dnfi xclip xsel sqlite-devel
+
+    dnfi git-delta procs lazygit gdu fzf ripgrep fd-find hyperfine bat zoxide
+
+    sys_python_install
+    micro_install
+    gh_install
+
+    slog "Essential packages installation done!"
+}
+
+snap_install() {
+    has_cmd snap && return 1
+
+    slog "Installing snapd"
+    dnfi snapd
+    sudo systemctl enable --now snapd.socket
+    [ -e /snap ] || sudo ln -s /var/lib/snapd/snap /snap
+    sleep 5
+
+    sudo snap install fasd --beta
+
+    slog "snapd setup done!"
+}
+
+flathub_install() {
+    has_cmd flatpak || return 1
+    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+}
+
+lazygit_install() {
+    has_cmd lazygit && return 1
+
+    slog "Installing lazygit"
+    sudo dnf copr enable atim/lazygit -y
+    dnfi lazygit
+
+    slog "lazygit installation done!"
+}
+
+gdu_install() {
+    has_cmd gdu && return 1
+
+    slog "Installing gdu"
+    sudo dnf copr enable copr.fedorainfracloud.org/faramirza/gdu -y
+    dnfi gdu
+    slog "gdu installation done!"
+}
+
+gh_install() {
+    has_cmd gh && return 1
+
+    slog "Installing up gh"
+
+    dnfi 'dnf-command(copr)'
+    dnfi 'dnf-command(config-manager)'
+    sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+    dnfi gh
+
+    slog "gh setup done!"
+}
+
+cpp_install() {
+    slog "Installing C++"
+
+    sudo dnf groupinstall "Development Tools" -y
+    dnfi gcc gcc-c++ gdb valgrind systemtap ltrace strace
+    dnfi clang clang-devel clang-tools-extra clang-libs
+    dnfi clang-analyzer lldb lld llvm llvm-devel
+    dnfi boost boost-devel boost-static catch-devel
+    dnfi doxygen graphviz ccache cppcheck pre-commit
+
+    conan_install
+    cmake_install
+
+    slog "C++ installation done!"
+}
+
+vscode_install() {
+    has_cmd code && return 1
+
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+    sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+    dnf check-update
+    dnfi code code-insiders
+}
+
+cockpit_install() {
+    has_cmd cockpit && return 1
+
+    slog "Installing cockpit"
+
+    dnfi cockpit cockpit-file-sharing cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged
+    sudo systemctl enable --now cockpit.socket
+    sudo firewall-cmd --add-service=cockpit
+    sudo firewall-cmd --add-service=cockpit --permanent
+
+    slog "cockpit installation done!"
+}
+
+docker_install() {
+    has_cmd docker && return 1
+
+    slog "Installing docker"
+
+    dnfi dnf-plugins-core
+    sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    dnfi docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+    docker_common_install
+
+    slog "docker installation done!"
+}
+
+podman_install() {
+    dnfi podman toolbox
+}
+
+libvirt_install() {
+    sudo dnf groupinstall -y --with-optional "virtualization"
+    sudo dnf groupinstall -y --with-optional "System Tools"
+
+    dnfi buildah distrobox
+
+    sudo systemctl enable --now libvirtd
+}
+
+virt_install() {
+    docker_install
+    podman_install
+    libvirt_install
+    cockpit_install
+    code_server_install
+}
+
+}
