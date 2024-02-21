@@ -3,6 +3,7 @@
 
 {
 
+sudo apt-get install -y curl
 source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
 
 flatpak_apps_install() {
@@ -50,10 +51,7 @@ main() {
 
     virt_install
 
-    zsh_config_install
-    tmux_config_install
-    astro_install
-    doom_install
+    cli_config
 
     set_zsh_as_default
 }

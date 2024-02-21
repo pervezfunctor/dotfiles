@@ -21,15 +21,14 @@ bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/ma
 ## Ubuntu
 
 ```bash
-sudo apt install -y curl
-bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/ubuntu)"
+bash -c "$(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/ubuntu)"
 ```
 
 ## Debian
 
 ```bash
-sudo apt install -y curl
-bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/debian)"
+
+bash -c "$(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/debian)"
 ```
 
 ## Minimal installation on Fedora/Rocky
@@ -41,8 +40,7 @@ bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/ma
 ## Minimal installation on Ubuntu/Debian
 
 ```bash
-sudo apt install -y curl
-bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/min)"
+bash -c "$(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/min)"
 ```
 
 ## Zsh environment

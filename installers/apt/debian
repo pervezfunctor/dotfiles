@@ -2,6 +2,7 @@
 
 {
 
+sudo apt-get install -y curl sudo
 source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
 
 main() {
@@ -11,17 +12,14 @@ main() {
     go_install
     rust_install
     pnpm_install
-
+    python_install
     cpp_install
-    miniconda_install
 
     neovim_install
 
     virt_install
 
-    zsh_config_install
-    tmux_config_install
-    astro_install
+    cli_config
 
     set_zsh_as_default
 }

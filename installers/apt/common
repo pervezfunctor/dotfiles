@@ -85,7 +85,7 @@ docker_install() {
   sudo sh /tmp/get-docker.sh
   srm /tmp/get-docker.sh
 
-  
+
   docker_common_install
 
   slog "Docker installation done!"

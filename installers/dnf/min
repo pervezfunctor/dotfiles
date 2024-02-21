@@ -7,8 +7,8 @@ source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master
 main() {
     dotfiles_install
     essential_install
-    zsh_config_install
-    tmux_config_install
+
+    cli_config
 
     has_cmd chsh || dnfi util-linux-user
     set_zsh_as_default

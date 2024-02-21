@@ -346,11 +346,11 @@ shell_install() {
 }
 
 cli_config() {
-    zsh_config_install
-    tmux_config_install
-    astro_install
-    doom_install
-    git_config
+    has_cmd zsh && zsh_config_install
+    has_cmd tmux && tmux_config_install
+    has_cmd nvim && astro_install
+    has_cmd emacs && doom_install
+    has_cmd git && git_config
 }
 
 poetry_install() {

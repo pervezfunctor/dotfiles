@@ -49,11 +49,7 @@ main() {
 
     virt_install
 
-    tmux_config_install
-    zsh_config_install
-    tmux_config_install
-    astro_install
-    doom_install
+    cli_config
 
     set_zsh_as_default
 }

@@ -10,11 +10,9 @@ main() {
     pnpm_install
 
     cpp_install
-    miniconda_install
+    python_install
 
-    zsh_config_install
-    tmux_config_install
-    astro_install
+    cli_config
 
     dnfi util-linux-user
     set_zsh_as_default
