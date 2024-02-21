@@ -179,11 +179,11 @@ export DOTNET_ROOT="$HOME/.dotnet"
 
 spath_export "/usr/bin"
 spath_export "/snap/bin"
+spath_export="/usr/local/go/bin"
 spath_export "/home/linuxbrew/.linuxbrew/bin"
 spath_export "$HOME/.config/emacs/bin"
 spath_export "$HOME/.local/bin"
 spath_export "$HOME/.config/Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin"
-
 # if is_mac; then
 #     export DOCKER_HOST='unix://$HOME/.local/share/containers/podman/machine/qemu/podman.sock'
 # else
