@@ -44,7 +44,6 @@ main() {
     python_install
 
     neovim_install
-    emacs_install
     vscode_install
     apps_install
 

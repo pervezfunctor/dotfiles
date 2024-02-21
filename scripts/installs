@@ -213,7 +213,7 @@ emacs_install() {
     slog "Installing emacs"
 
     if is_apt; then
-      apti -y emacs
+      apti -y --no-install-recommends emacs
     elif is_rh; then
         dnfi emacs
     elif is_mac; then

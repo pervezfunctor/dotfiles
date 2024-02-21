@@ -15,7 +15,6 @@ main() {
     shell_install
 
     neovim_install
-    emacs_install
 
     cli_config
 
