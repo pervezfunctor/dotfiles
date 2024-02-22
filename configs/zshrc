@@ -17,7 +17,7 @@ ssource() {
 }
 
 spath_export() {
-    export PATH="$1:$PATH"
+    dir_exists "$1" && export PATH="$1:$PATH"
 }
 
 ssource "$HOME/.asdf/asdf.sh"
