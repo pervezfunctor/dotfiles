@@ -141,6 +141,10 @@ sln() {
     ln -s "$1" "$2"
 }
 
+spath_export() {
+    dir_exists "$1" && export PATH="$1:$PATH"
+}
+
 is_mac() {
     [[ "$OSTYPE" == "darwin"* ]]
 }

@@ -1,2 +1,4 @@
+source "$XDG_CONFIG_HOME/dotfiles/scripts/utils"
+
 eval "$(starship init bash)"
-. "$HOME/.asdf/asdf.sh"
+ssource "$HOME/.asdf/asdf.sh"
