@@ -176,10 +176,12 @@ alias -g ......="../../../../../"
 ssource "$HOME/.cargo/env"
 
 export DOTNET_ROOT="$HOME/.dotnet"
+export GOPATH="$HOME/go"
 
 spath_export "/usr/bin"
 spath_export "/snap/bin"
 spath_export "/usr/local/go/bin"
+spath_export "$GOPATH/bin"
 spath_export "/home/linuxbrew/.linuxbrew/bin"
 spath_export "$HOME/.config/emacs/bin"
 spath_export "$HOME/.local/bin"
