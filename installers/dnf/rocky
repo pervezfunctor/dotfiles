@@ -25,7 +25,7 @@ main() {
     set_zsh_as_default
 }
 
-is_rocky|| err_exit "This installer works only on Rocky Linux. Quitting."
+is_rh || err_exit "This installer works only on Rocky Linux. Quitting."
 
 bootstrap "Rocky Linux development system"
 
