@@ -5,7 +5,7 @@
 essential_install() {
     slog "Installing Essential packages"
 
-    brew install unzip trash iterm2 warp coreutils golang github
+    brew install unzip trash iterm2 warp coreutils golang github rust
     brew install curl wget tree fzf ripgrep tmux pkg-config urlview
     brew install zsh zsh-syntax-highlighting zsh-autosuggestions fd
     brew install unar unzip p7zip zoxide ShellCheck git-extras zip gawk gh

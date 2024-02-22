@@ -20,16 +20,19 @@ main() {
 
     brew_install
 
+    dotfiles_install
     essential_install
-    cpp_install
-    neovim_install
+
     pnpm_install
+    shell_install
+
+    cpp_install
+    python_install
+    neovim_install
 
     apps_install
 
-    dotfiles_install
-    zsh_config_install
-    tmux_config_install
+    cli_config_install
 }
 
 is_mac || err_exit "This script works only on macos. Quitting."

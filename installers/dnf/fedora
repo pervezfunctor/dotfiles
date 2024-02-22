@@ -40,6 +40,8 @@ main() {
     rust_install
     pnpm_install
 
+    shell_install
+
     fonts_install
 
     cpp_fedora_install

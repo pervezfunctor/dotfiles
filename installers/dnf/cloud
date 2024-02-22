@@ -7,11 +7,9 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 main() {
     dotfiles_install
     essential_install
-    pnpm_install
 
     cpp_install
     python_install
-
     cli_config_install
 
     dnfi util-linux-user
