@@ -28,7 +28,7 @@ core_install() {
 }
 
 sys_python_install() {
-    dnfi python3-pip python3-wheel python3-virtualenv
+    dnfi python3-pip python3-virtualenv
     # python3 -m pip install --upgrade pip setuptools
 }
 
@@ -42,7 +42,7 @@ essential_install() {
     dnfi tmux pkg-config urlview neovim ShellCheck git-extras
     dnfi xclip xsel sqlite-devel
 
-    dnfi git-delta procs lazygit gdu fzf ripgrep fd-find hyperfine bat zoxide
+    dnfi git-delta procs fzf ripgrep fd-find hyperfine bat zoxide
 
     sys_python_install
     micro_install
@@ -109,8 +109,9 @@ cpp_install() {
     dnfi gcc gcc-c++ gdb valgrind systemtap ltrace strace
     dnfi clang clang-devel clang-tools-extra clang-libs
     dnfi clang-analyzer lldb lld llvm llvm-devel
-    dnfi boost boost-devel boost-static catch-devel
-    dnfi doxygen graphviz ccache cppcheck pre-commit
+    dnfi graphviz ccache cppcheck pre-commit
+
+    is_rocky && dnfi boost1.78 boost1.78-devel boost1.78-static catch-devel
 
     conan_install
     cmake_install
@@ -132,7 +133,7 @@ cockpit_install() {
 
     slog "Installing cockpit"
 
-    dnfi cockpit cockpit-file-sharing cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged
+    dnfi cockpit cockpit-file-sharing cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged firewalld
     sudo systemctl enable --now cockpit.socket
     sudo firewall-cmd --add-service=cockpit
     sudo firewall-cmd --add-service=cockpit --permanent
@@ -159,10 +160,9 @@ podman_install() {
 }
 
 libvirt_install() {
-    sudo dnf groupinstall -y --with-optional "virtualization"
     sudo dnf groupinstall -y --with-optional "System Tools"
 
-    dnfi buildah distrobox
+    dnfi libvirt buildah distrobox
 
     sudo systemctl enable --now libvirtd
 }

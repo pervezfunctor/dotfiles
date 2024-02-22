@@ -8,6 +8,8 @@ cpp_fedora_install() {
     slog "Installing C++ tools"
 
     cpp_install
+    dnfi boost boost-devel boost-static catch-devel
+
     sudo dnf groupinstall -y --with-optional "C Development Tools and Libraries"
 
     slog "C++ tools installation done!"
