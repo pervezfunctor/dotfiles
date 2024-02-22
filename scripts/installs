@@ -83,15 +83,15 @@ neovim_install() {
     treesitter_install
 
     if is_apt; then
-      apti luarocks
+        apti luarocks
     elif is_rh; then
-      dnfi luarocks
+        dnfi luarocks
     fi
 
-    if has_cmd pnpm; then
-      pnpm install -g neovim
+    if has_cmd npm; then
+        npm install -g neovim
     elif has_cmd npm; then
-      npm install -g neovim
+        npm install -g neovim
     fi
 
     has_cmd pip && pip install --user neovim
@@ -290,7 +290,7 @@ code_server_install() {
 conan_install() {
     has_cmd conan && return 1
 
-    python3 -m pip install conan
+    python3 -m pip install --user conan
 }
 
 cmake_install() {
@@ -321,7 +321,8 @@ go_shell_install() {
         has_cmd curlie || go install github.com/rs/curlie@latest
         has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
         has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
-        # go install github.com/muesli/duf.git@latest
+        has_cmd lemonade || go install github.com/lemonade-command/lemonade@latest
+        has_cmd duf || go install github.com/muesli/duf@latest
     else
         warn "go not installed, skipping some shell tools"
     fi
@@ -337,7 +338,7 @@ rust_shell_install() {
         has_cmd choose || cargoi choose
         has_cmd sd || cargoi sd
         has_cmd procs || cargoi procs
-        has_cmd bottom || cargoi bottom
+        has_cmd btm || cargoi bottom
         has_cmd xh || cargoi xh
         has_cmd lsd || cargoi lsd
     else

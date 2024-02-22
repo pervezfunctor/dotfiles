@@ -33,6 +33,7 @@ main() {
     asdf_install
 
     shell_install
+    alacritty_install
 
     fonts_install
 

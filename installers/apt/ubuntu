@@ -36,6 +36,9 @@ main() {
     cpp_install
     python_install
 
+    shell_install
+    alacritty_install
+
     neovim_install
     vscode_install
     apps_install

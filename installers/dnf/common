@@ -29,7 +29,7 @@ core_install() {
 
 sys_python_install() {
     dnfi python3-pip python3-virtualenv
-    # python3 -m pip install --upgrade pip setuptools
+    # python3 -m pip install --user --upgrade pip setuptools
 }
 
 essential_install() {

@@ -300,7 +300,7 @@ bootstrap() {
     export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
     export PNPM_HOME="$HOME/.local/share/pnpm"
     export PATH="$HOME/.local/bin:$PNPM_HOME:/home/linuxbrew/.linuxbrew/bin:$PATH"
-    export PATH="$HOME/.config/emacs/bin:$PATH"
+    export PATH="$HOME/.config/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
 
     curdir=$(pwd)
 
