@@ -147,7 +147,10 @@ docker_install() {
     slog "Installing docker"
 
     dnfi dnf-plugins-core
-    sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+    is_rocky && sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    is_fedora && sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+
     dnfi docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
     docker_common_install
