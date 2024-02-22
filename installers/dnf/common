@@ -135,6 +135,7 @@ cockpit_install() {
 
     dnfi cockpit cockpit-file-sharing cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged firewalld
     sudo systemctl enable --now cockpit.socket
+    sudo systemctl enable --now firewalld
     sudo firewall-cmd --add-service=cockpit
     sudo firewall-cmd --add-service=cockpit --permanent
 
