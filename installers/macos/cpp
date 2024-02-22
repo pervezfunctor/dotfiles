@@ -2,7 +2,7 @@
 
 {
 
-source <(curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/utils)
+source <(curl -s https://dub.sh/z3pTnAK)
 
 main() {
     slog "Install xcode"

@@ -3,56 +3,56 @@
 ## MacOS
 
 ```bash
-zsh -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/macos/desktop)"
+zsh -c "$(curl -sSL https://dub.sh/I2dJKhb)"
 ```
 
 ## Rocky Linux
 
 ```bash
-bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/dnf/rocky)"
+bash -c "$(curl -sSL https://dub.sh/WFQOW36)"
 ```
 
 ## Fedora
 
 ```bash
-bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/dnf/fedora)"
+bash -c "$(curl -sSL https://dub.sh/OKPDJA4)"
 ```
 
 ## Ubuntu
 
 ```bash
-bash -c "$(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/ubuntu)"
+bash -c "$(wget -qO- https://dub.sh/NAWwPIu)"
 ```
 
 ## Debian
 
 ```bash
 
-bash -c "$(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/debian)"
+bash -c "$(wget -qO- https://dub.sh/6a0zdj1)"
 ```
 
 ## Minimal installation on Fedora/Rocky
 
 ```bash
-bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/dnf/min)"
+bash -c "$(curl -sSL https://dub.sh/zEIpneC)"
 ```
 
 ## Minimal installation on Ubuntu/Debian
 
 ```bash
-bash -c "$(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/min)"
+bash -c "$(wget -qO- https://dub.sh/aPKPT8V)"
 ```
 
 ## Zsh environment
 
 ```bash
 mv ~/.zshrc ~/.zshrc.bak
-curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/configs/zshrc > ~/.zshrc
+curl -sSL https://dub.sh/YY3a8Um > ~/.zshrc
 ```
 
 ## Tmux environment
 
 ```bash
 mv ~/.config/tmux.conf ~/.config/tmux.conf.bak
-curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/configs/tmux.conf > ~/.config/tmux.conf
+curl -sSL https://dub.sh/me3OYAJ > ~/.config/tmux.conf
 ```

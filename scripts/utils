@@ -4,6 +4,8 @@
 
 DOT_DIR=~/.config/dotfiles
 
+BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
+
 slog() {
     echo "
 ${BOLD}${GREEN}INFO: ${RESET} $1
@@ -303,14 +305,14 @@ bootstrap() {
     keep_sudo_running
     min_packages_for_installer
 
-    source_curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/scripts/installs
+    source_curl "${BASE_URL}/scripts/installs"
 
     if is_apt; then
-        source_curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/apt/common
+        source_curl "${BASE_URL}/installers/apt/common"
     elif is_rh; then
-        source_curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/dnf/common
+        source_curl "${BASE_URL}/installers/dnf/common"
     elif is_mac; then
-        source_curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/master/installers/macos/common
+        source_curl "${BASE_URL}/installers/macos/common"
     fi
 
     main "$@" > >(tee /tmp/dotfiles-output.log) 2> >(tee /tmp/dotfiles-error.log >&2)
