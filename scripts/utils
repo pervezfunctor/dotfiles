@@ -256,7 +256,7 @@ keep_sudo_running() {
 
 download_to() {
     if has_cmd curl; then
-        curl -s "$1" -o "$2"
+        curl -sSL "$1" -o "$2"
     elif has_cmd wget; then
         wget "$1" -O "$2"
     else
@@ -285,11 +285,11 @@ min_packages_for_installer() {
 
 source_curl() {
     slog "sourcing: $1"
-    source <(curl -s "$1")
+    source <(curl -sSL "$1")
 }
 
 sh_curl() {
-    curl -s "$1" | bash
+    curl -sSL "$1" | bash
 }
 
 bootstrap() {

@@ -130,7 +130,7 @@ pnpm_install() {
     has_cmd pnpm && return 0
 
     slog "Installing pnpm"
-    curl -s https://get.pnpm.io/install.sh | sh -
+    curl -sSL https://get.pnpm.io/install.sh | sh -
 
     slog "Installing node"
     pnpm env use --global latest
@@ -158,7 +158,7 @@ brew_install() {
     has_cmd brew && return 0
 
     slog "Installing homebrew"
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -s https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     slog "homebrew installation done!"
 }
 
@@ -242,7 +242,7 @@ go_install() {
     slog "Installing go"
 
     sudo rm -rf /usr/local/go
-    VERSION=$(curl -s "https://go.dev/VERSION?m=text" | head -n 1)
+    VERSION=$(curl -sSL "https://go.dev/VERSION?m=text" | head -n 1)
     wget "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz"
     slog "Untar ${VERSION}.linux-amd64.tar.gz"
     sudo tar -C /usr/local -xzf "${VERSION}.linux-amd64.tar.gz"
@@ -264,7 +264,7 @@ code_server_install() {
     has_cmd code-server && return 1
 
     slog "Installing code-server"
-    curl -s https://code-server.dev/install.sh | sh
+    curl -sSL https://code-server.dev/install.sh | sh
     slog "code-server installation done!"
 
     # slog "Installing coder"

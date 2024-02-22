@@ -2,7 +2,7 @@
 
 {
 
-source <(curl -s https://dub.sh/z3pTnAK)
+source <(curl -sSL https://dub.sh/z3pTnAK)
 
 apps_install() {
     brew install --cask telegram

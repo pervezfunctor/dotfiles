@@ -4,7 +4,7 @@
 {
 
 sudo apt-get install -y curl
-source <(curl -s https://dub.sh/z3pTnAK)
+source <(curl -sSL https://dub.sh/z3pTnAK)
 
 flatpak_apps_install() {
     flatpak install -y --user flathub org.telegram.desktop
