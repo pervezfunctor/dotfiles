@@ -12,7 +12,7 @@ main() {
     cpp_install
     python_install
 
-    cli_config
+    cli_config_install
 
     dnfi util-linux-user
     set_zsh_as_default

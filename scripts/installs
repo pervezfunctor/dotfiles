@@ -345,7 +345,7 @@ shell_install() {
     fi
 }
 
-cli_config() {
+cli_config_install() {
     has_cmd zsh && zsh_config_install
     has_cmd tmux && tmux_config_install
     has_cmd nvim && astro_install

@@ -2,14 +2,17 @@
 
 {
 
+command -v curl > /dev/null || {
+    echo "curl not found. Please install curl and try again."
+    exit 1
+}
+
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
     dotfiles_install
-    zsh_config_install
-    tmux_config_install
-    astro_install
- }
+    cli_config_install
+}
 
 slog "This script doesn't install any packages. It only sets up dotfiles."
 

@@ -51,7 +51,7 @@ main() {
 
     virt_install
 
-    cli_config
+    cli_config_install
 
     set_zsh_as_default
 }
