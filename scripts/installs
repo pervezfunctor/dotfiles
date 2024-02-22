@@ -2,6 +2,21 @@
 
 {
 
+flatpak_apps_install() {
+    if ! has_cmd flatpak; then
+        slog "flatpak not installed, skipping flatpak apps"
+        return 1
+    fi
+
+    flatpak install -y --user flathub org.telegram.desktop
+    flatpak install -y --user flathub com.jetbrains.CLion
+    flatpak install -y --user flathub com.google.Chrome
+    flatpak install -y --user flathub org.deluge_torrent.deluge
+    flatpak install -y --user flathub us.zoom.Zoom
+    flatpak install -y --user org.wezfurlong.wezterm
+    flatpak install -y --user flathub io.github.shiftey.Desktop
+}
+
 astro_install() {
     slog "Installing AstroNvim"
 
@@ -225,7 +240,7 @@ emacs_install() {
     slog "emacs installation done!"
 }
 
-git_config() {
+git_config_install() {
     is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
 
     git config --global init.defaultBranch main
@@ -300,7 +315,19 @@ cmake_install() {
     srm "${TMP_DIR}"
 }
 
-shell_install() {
+go_shell_install() {
+    if has_cmd go; then
+        has_cmd cheat || go install github.com/cheat/cheat/cmd/cheat@latest
+        has_cmd curlie || go install github.com/rs/curlie@latest
+        has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
+        has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
+        # go install github.com/muesli/duf.git@latest
+    else
+        warn "go not installed, skipping some shell tools"
+    fi
+}
+
+rust_shell_install() {
     if has_cmd cargo; then
         rustup update stable
 
@@ -316,33 +343,19 @@ shell_install() {
     else
         warn "cargo not installed, skipping some shell tools"
     fi
+}
 
-    if has_cmd go; then
-        has_cmd cheat || go install github.com/cheat/cheat/cmd/cheat@latest
-        has_cmd curlie || go install github.com/rs/curlie@latest
-        has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
-        has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
-        # go install github.com/muesli/duf.git@latest
-    else
-        warn "go not installed, skipping some shell tools"
-    fi
-
+pnpm_shell_install() {
     if has_cmd pnpm; then
         pnpm install -g degit tldr gtop
         pnpm install -g @githubnext/github-copilot-cli
     fi
+}
 
-    # if has_cmd pip; then
-    #   pip install --user glances # need to select optional deps?
-    # fi
-
-    if has_cmd pnpm; then
-        pnpm install -g tldr
-    elif has_cmd pip; then
-        pip install --user tldr
-    else
-        warn "pnpm or pip not installed, skipping tldr"
-    fi
+shell_install() {
+    go_shell_install
+    rust_shell_install
+    pnpm_shell_install
 }
 
 cli_config_install() {
@@ -350,7 +363,7 @@ cli_config_install() {
     has_cmd tmux && tmux_config_install
     has_cmd nvim && astro_install
     has_cmd emacs && doom_install
-    has_cmd git && git_config
+    has_cmd git && git_config_install
 }
 
 poetry_install() {

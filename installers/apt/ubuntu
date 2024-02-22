@@ -6,16 +6,6 @@
 sudo apt-get install -y curl
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-flatpak_apps_install() {
-    flatpak install -y --user flathub org.telegram.desktop
-    flatpak install -y --user flathub com.jetbrains.CLion
-    flatpak install -y --user flathub com.google.Chrome
-    flatpak install -y --user flathub org.deluge_torrent.deluge
-    flatpak install -y --user flathub us.zoom.Zoom
-    flatpak install -y --user org.wezfurlong.wezterm
-    flatpak install -y --user flathub io.github.shiftey.Desktop
-}
-
 apps_install() {
     apti chromium-browser emacs virt-manager
     flatpak_apps_install
@@ -39,6 +29,7 @@ main() {
     brew_install
     rust_install
     pnpm_install
+    asdf_install
 
     fonts_install
 

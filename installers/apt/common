@@ -112,11 +112,15 @@ libvirt_install() {
     sudo systemctl enable --now libvirtd
 }
 
-virt_install() {
+ct_install() {
     docker_install
     podman_install
-    libvirt_install
     cockpit_install
+}
+
+virt_install() {
+    ct_install
+    libvirt_install
     code_server_install
 }
 

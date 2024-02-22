@@ -15,15 +15,6 @@ cpp_fedora_install() {
     slog "C++ tools installation done!"
 }
 
-flatpak_apps_install() {
-    flatpak install -y --user flathub org.telegram.desktop
-    flatpak install -y --user flathub com.jetbrains.CLion
-    flatpak install -y --user flathub com.google.Chrome
-    flatpak install -y --user flathub org.deluge_torrent.deluge
-    flatpak install -y --user flathub us.zoom.Zoom
-    flatpak install -y --user org.wezfurlong.wezterm
-}
-
 apps_install() {
     dnfi virt-manager chromium neovim emacs
     flatpak_apps_install
@@ -39,6 +30,7 @@ main() {
     brew_install
     rust_install
     pnpm_install
+    asdf_install
 
     shell_install
 

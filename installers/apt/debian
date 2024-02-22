@@ -17,7 +17,7 @@ main() {
 
     neovim_install
 
-    virt_install
+    ct_install
 
     cli_config_install
 
