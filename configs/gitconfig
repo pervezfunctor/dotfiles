@@ -1,0 +1,35 @@
+[core]
+    pager = delta
+	editor = code --wait
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true    # use n and N to move between diff sections
+    light = false      # set to true if you're in a terminal w/ a light background color (e.g. the default macOS terminal)
+		side-by-side = true
+
+[merge]
+	conflictstyle = diff3
+
+[diff]
+    colorMoved = default
+
+[user]
+	name = Pervez Iqbal
+	email = pervefunctor@gmail.com
+
+[credential "https://github.com"]
+	helper =
+	helper = !/usr/bin/gh auth git-credential
+
+[credential "https://gist.github.com"]
+	helper =
+	helper = !/usr/bin/gh auth git-credential
+
+[init]
+	defaultBranch = main
+
+[pull]
+	ff = on
