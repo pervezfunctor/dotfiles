@@ -221,6 +221,10 @@ doom_install() {
     fmv ~/.config/doom ~/.config/doom.backup
     sclone https://github.com/pervezfunctor/doomemacs-config ~/.config/doom
 
+    slog "Configure doom"
+    doom sync
+    doom env
+
     has_cmd update-locale && sudo update-locale LANG=en_US.UTF8
 }
 
