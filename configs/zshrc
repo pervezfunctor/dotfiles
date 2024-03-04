@@ -171,6 +171,16 @@ alias -g ....="../../../"
 alias -g .....="../../../../"
 alias -g ......="../../../../../"
 
+if has_cmd flatpak; then
+  alias wezterm='flatpak run org.wezfurlong.wezterm'
+  alias telegram='flatpak run org.telegram.desktop'
+  alias clion='flatpak run com.jetbrains.CLion'
+  alias chrome='flatpak run com.google.Chrome'
+  alias deluge='flatpak run org.deluge_torrent.deluge'
+  alias zoom='flatpak run us.zoom.Zoom'
+  alias shiftey='flatpak run io.github.shiftey.Desktop'
+fi
+
 # imwheel -b "4 5" > /dev/null 2>&1
 
 ssource "$HOME/.cargo/env"
