@@ -177,8 +177,9 @@ is_ubuntu() {
     has_cmd lsb_release || return 1
 
     local OS
-    OS=$(lsb_release -i | cut -d ':' -f2)
-    [[ "$OS" == *"Ubuntu" ]] || [[ "$OS" == *"neon" ]] || [[ "$OS" == *"elementary" ]] || [[ "$OS" == *"LinuxMint" ]] || [[ "$OS" == *"Pop" ]]
+    OS=$(lsb_release -i | cut -d ':' -f2 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+
+    [[ " ubuntu neon elementary linuxmint pop " =~ " $OS " ]]
 }
 
 is_apt() {
