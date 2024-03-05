@@ -32,7 +32,7 @@ main() {
 
     apps_install
 
-    cli_config_install
+    config_install
 }
 
 is_mac || err_exit "This script works only on macos. Quitting."

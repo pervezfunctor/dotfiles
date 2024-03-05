@@ -19,7 +19,7 @@ main() {
 
     ct_install
 
-    cli_config_install
+    config_install
 
     set_zsh_as_default
 }

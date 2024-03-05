@@ -389,7 +389,7 @@ shell_install() {
     pnpm_shell_install
 }
 
-cli_config_install() {
+config_install() {
     has_cmd zsh && zsh_config_install
     has_cmd tmux && tmux_config_install
     has_cmd nvim && astro_install
