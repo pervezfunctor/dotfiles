@@ -1,56 +1,69 @@
 # Ilm development environment
 
-## MacOS
+### MacOS
 
 ```bash
 zsh -c "$(curl -sSL https://dub.sh/I2dJKhb)"
 ```
 
-## Rocky Linux
+### Rocky Linux
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/WFQOW36)"
 ```
 
-## Fedora
+### Fedora
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/OKPDJA4)"
 ```
 
-## Ubuntu
+### Ubuntu
 
 ```bash
 bash -c "$(wget -qO- https://dub.sh/NAWwPIu)"
 ```
 
-## Debian
+### Debian
 
 ```bash
 
 bash -c "$(wget -qO- https://dub.sh/6a0zdj1)"
 ```
 
-## Minimal installation on Fedora/Rocky
+### Minimal installation on Fedora/Rocky
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/zEIpneC)"
 ```
 
-## Minimal installation on Ubuntu/Debian
+### Minimal installation on Ubuntu/Debian
 
 ```bash
 bash -c "$(wget -qO- https://dub.sh/aPKPT8V)"
 ```
 
-## Zsh environment
+
+### Installer
+
+``` bash
+bash -c "$(wget -qO- https://dub.sh/kceoClT)" -- python
+```
+
+### Config
+
+``` bash
+bash -c "$(wget -qO- https://dub.sh/kceoClT)" -- config
+```
+
+### Zsh environment
 
 ```bash
 mv ~/.zshrc ~/.zshrc.bak
 curl -sSL https://dub.sh/YY3a8Um > ~/.zshrc
 ```
 
-## Tmux environment
+### Tmux environment
 
 ```bash
 mv ~/.config/tmux.conf ~/.config/tmux.conf.bak
