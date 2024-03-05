@@ -1,0 +1,21 @@
+function git-up() {
+    local current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+    git diff --quiet origin/"$current_branch" && return 0
+
+    git stash --include-untracked
+
+    if git pull --rebase; then
+        if git stash apply; then
+            git stash drop
+            return 0
+        else
+            git reset --hard $current_branch
+        fi
+    else
+        git rebase --abort
+    fi
+
+    git stash pop
+    return 1
+}
