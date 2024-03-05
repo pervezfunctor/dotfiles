@@ -1,0 +1,16 @@
+rust-lang.rust-analyzer
+
+scalameta.metals
+betterthantomorrow.calva-spritz
+golang.go
+
+ms-dotnettools.csharp
+ms-dotnettools.dotnet-interactive-vscode
+ms-dotnettools.vscode-dotnet-runtime
+
+redhat.java
+vmware.vscode-spring-boot
+vscjava.vscode-java-debug
+vscjava.vscode-java-dependency
+vscjava.vscode-maven
+vscjava.vscode-spring-boot-dashboard
