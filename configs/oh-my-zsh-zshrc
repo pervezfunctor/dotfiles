@@ -1,0 +1,49 @@
+#! /bin/zsh
+
+if ! [ -d ~/.oh-my-zsh ]; then
+    git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/plugins/zsh-syntax-highlighting
+    git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/plugins/zsh-autosuggestions
+    git clone https://github.com/denysdovhan/spaceship-prompt.git ~/.oh-my-zsh/themes/spaceship-prompt
+
+    ln -s ~/.oh-my-zsh/themes/spaceship-prompt/spaceship.zsh-theme ~/.oh-my-zsh/themes/spaceship.zsh-theme
+fi
+
+export ZSH="${HOME}/.oh-my-zsh"
+
+ZSH_THEME="spaceship"
+
+CASE_SENSITIVE="true"
+DISABLE_AUTO_UPDATE="true"
+
+DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+plugins=(
+    dirhistory
+    history-substring-search
+    git
+    fasd
+    git
+    git-extras
+    tmux
+    fzf
+    command-not-found
+    alias-finder
+    macos
+    compleat
+    brew
+    common-aliases
+    node
+    npm
+    rand-quote
+    sudo
+    yarn
+    z
+    colored-man-pages
+    colorize
+    cp
+    zsh-syntax-highlighting
+    zsh-autosuggestions
+)
+
+source $ZSH/oh-my-zsh.sh

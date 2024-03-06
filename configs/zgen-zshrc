@@ -1,0 +1,82 @@
+#! /bin/zsh
+
+[ -d ~/.zgen ] || git clone https://github.com/tarjoilija/zgen.git ~/.zgen
+
+[ -s ~/.zgen/zgen.zsh ] || return 1
+
+ZGEN_PREZTO_LOAD_DEFAULT=false
+ZGEN_RESET_ON_CHANGE=(${HOME}/.zshrc)
+
+source ~/.zgen/zgen.zsh
+
+# check if there's no init script
+if ! zgen saved; then
+    echo "Creating a zgen save"
+
+    # prezto options
+    zgen prezto editor key-bindings 'emacs'
+    zgen prezto editor dot-expansion 'yes'
+
+    zgen prezto prompt theme 'pure'
+    zgen prezto terminal auto-title 'yes'
+    zgen prezto utility:ls color 'yes'
+    zgen prezto syntax-highlighting color 'yes'
+    zgen prezto syntax-highlighting highlighters 'main' 'brackets'
+
+    # select your prompt, if you have powerline patched fonts installed,
+    # and selected as terminal font, agnoster is a good option
+    zgen prezto prompt theme 'pure'
+
+    # prezto and modules
+    zgen prezto
+    zgen prezto environment
+    zgen prezto utility
+    zgen prezto terminal
+    zgen prezto editor
+    zgen prezto history
+    zgen prezto directory
+    zgen prezto spectrum
+    zgen prezto completion                     # must be loaded after utility
+    zgen prezto archive                        # lsarchive and unarchive commands
+    zgen prezto git                            # git aliases
+    zgen prezto command-not-found
+    zgen prezto fasd                           # j , f, d etc.
+    zgen prezto osx
+
+    zgen prezto syntax-highlighting
+    zgen prezto history-substring-search
+    zgen prezto autosuggestions
+
+    # plugins
+    zgen load djui/alias-tips
+    zgen load rimraf/k
+
+    zgen load andrewferrier/fzf-z
+    zgen load peterhurford/git-it-on.zsh
+    zgen load paulirish/git-open
+
+    # zgen load unixorn/tumult.plugin.zsh
+    # zgen load unixorn/git-extra-commands
+    # zgen load denysdovhan/spaceship-prompt spaceship
+
+    zgen prezto prompt          # prompt must be the last module to load
+    zgen save                   # save all to init script
+fi
+
+# copied from tmux prezto module
+start_tmux() {
+    tmux start-server
+
+    # Create a 'seartipy' session if no session has been defined in tmux.conf.
+    if ! tmux has-session 2> /dev/null; then
+        tmux_session='seartipy'
+        tmux \
+            new-session -d -s "$tmux_session" \; \
+            set-option -t "$tmux_session" destroy-unattached off &> /dev/null
+    fi
+
+    # Attach to the 'prezto' session or to the last session used.
+    exec tmux attach-session
+}
+
+# [[ -z "$TMUX" && -z "$EMACS" && -z "$INSIDE_EMACS" && -z "$VIM" ]] && start_tmux
