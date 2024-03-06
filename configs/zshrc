@@ -188,7 +188,6 @@ export GOPATH="$HOME/go"
 
 spath_export "/usr/bin"
 spath_export "/snap/bin"
-spath_export "/usr/local/go/bin"
 spath_export "$GOPATH/bin"
 spath_export "/home/linuxbrew/.linuxbrew/bin"
 spath_export "$HOME/.config/dotfiles/bin"
@@ -196,6 +195,7 @@ spath_export "$HOME/.config/emacs/bin"
 spath_export "$HOME/.local/bin"
 spath_export "$HOME/.local/share/pypoetry"
 spath_export "$HOME/.config/Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin"
+spath_export "$HOME/.console-ninja/.bin"
 
 # if is_mac; then
 #     export DOCKER_HOST='unix://$HOME/.local/share/containers/podman/machine/qemu/podman.sock'
@@ -341,12 +341,3 @@ function safe_push() {
 
 alias gpp=safe_push "$@"
 
-# pnpm
-export PNPM_HOME="/Users/perveziqbal/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-# pnpm end
-
-PATH=~/.console-ninja/.bin:$PATH
