@@ -1,20 +1,20 @@
 [core]
-    pager = delta
+  pager = delta
 	editor = code --wait
 
 [interactive]
-    diffFilter = delta --color-only
+  diffFilter = delta --color-only
 
 [delta]
-    navigate = true    # use n and N to move between diff sections
-    light = false      # set to true if you're in a terminal w/ a light background color (e.g. the default macOS terminal)
-		side-by-side = true
+  navigate = true    # use n and N to move between diff sections
+  light = false      # set to true if you're in a terminal w/ a light background color (e.g. the default macOS terminal)
+	side-by-side = true
 
 [merge]
 	conflictstyle = diff3
 
 [diff]
-    colorMoved = default
+  colorMoved = default
 
 [user]
 	name = Pervez Iqbal
@@ -31,5 +31,42 @@
 [init]
 	defaultBranch = main
 
+[fetch]
+  prune = true
+
 [pull]
 	ff = on
+
+[push]
+	default = simple
+
+[color]
+    branch = auto
+    diff = auto
+    status = auto
+    ui = true
+
+[alias]
+	st = status -sb
+	ci = commit
+	co = checkout
+	cb = checkout -b
+	df = diff
+	ready = rebase -i @{u}
+	aa = add --all
+	unstage = reset HEAD
+	z = log HEAD -1
+	sl = log --pretty=oneline --abbrev-commit --relative-date --graph -7
+	lg = log --pretty=format:'%Cred%h%Creset -%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'
+	ll = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short -7
+	standup = log --pretty=format:'%Cred%h%Creset -%Creset %s %Cgreen(%cD) %C(bold blue)<%an>%Creset' --since yesterday --all
+	purr = pull --rebase
+	ap = add --patch
+	ai = add -i
+	br = branch
+	when = for-each-ref --sort=committerdate --format='%(refname:short) * %(authorname) * %(committerdate:relative)' refs/remotes/
+	dc = diff --cached
+	dr = diff HEAD
+	merge-branch = !git checkout master && git merge @{-1}
+	rebase-origin = !git fetch origin && git rebase origin/main
+	up = !git fetch origin && git rebase origin/main
