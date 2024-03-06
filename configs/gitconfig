@@ -1,6 +1,11 @@
 [core]
   pager = delta
 	editor = code --wait
+	# editor = nvim
+	autocrlf = input
+	excludesfile = ~/.gitignore_global
+	whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+	hooksPath = ~/.git-templates/hooks
 
 [interactive]
   diffFilter = delta --color-only
@@ -15,10 +20,6 @@
 
 [diff]
   colorMoved = default
-
-[user]
-	name = Pervez Iqbal
-	email = pervefunctor@gmail.com
 
 [credential "https://github.com"]
 	helper =
@@ -35,7 +36,7 @@
   prune = true
 
 [pull]
-	ff = on
+	ff = only
 
 [push]
 	default = simple

@@ -2,19 +2,25 @@
 
 {
 
+fi() {
+    for pkg in "$@"; do
+        flatpak install -y --user flathub "$pkg"
+    done
+}
+
 flatpak_apps_install() {
     if ! has_cmd flatpak; then
         slog "flatpak not installed, skipping flatpak apps"
         return 1
     fi
 
-    flatpak install -y --user flathub org.telegram.desktop
-    flatpak install -y --user flathub com.jetbrains.CLion
-    flatpak install -y --user flathub com.google.Chrome
-    flatpak install -y --user flathub org.deluge_torrent.deluge
-    flatpak install -y --user flathub us.zoom.Zoom
-    flatpak install -y --user org.wezfurlong.wezterm
-    flatpak install -y --user flathub io.github.shiftey.Desktop
+    fi org.telegram.desktop
+    fi com.jetbrains.CLion
+    fi com.google.Chrome
+    fi org.deluge_torrent.deluge
+    fi us.zoom.Zoom
+    fi org.wezfurlong.wezterm
+    fi io.github.shiftey.Desktop
 }
 
 astro_install() {
@@ -244,15 +250,26 @@ emacs_install() {
     slog "emacs installation done!"
 }
 
+gcg() {
+    git config --global "$@"
+}
+
 git_config_install() {
     is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
 
-    git config --global init.defaultBranch main
-    git config --global pull.ff only
+    gcg init.defaultBranch main
+    gcg pull.ff only
+    gcg delta.navigate true
+    gcg delta.line-numbers true
+    gcg delta.syntax-theme "Monokai Extended"
+    gcg delta.side-by-side true
+    gcg merge.conflictStyle diff3
+    gcg interactive.diffFilter "delta --color-only"
+    gcg fetch.prune true
 
     if [[ "$USER" == "pervez" ]]; then
-        git config --global user.name "Pervez Iqbal"
-        git config --global user.email "pervefunctor@gmail.com"
+        gcg user.name "Pervez Iqbal"
+        gcg user.email "pervefunctor@gmail.com"
     fi
 }
 
