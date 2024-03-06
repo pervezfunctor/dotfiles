@@ -5,6 +5,7 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
+    dnfi which
     dotfiles_install
     essential_install
 

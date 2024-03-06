@@ -23,8 +23,11 @@ update_packages() {
 }
 
 core_install() {
+    dnfi 'dnf-command(copr)'
+    dnfi 'dnf-command(config-manager)'
+
     dnfi curl wget git trash-cli zsh tree tar unar zip unzip p7zip gawk
-    dnfi zsh-syntax-highlighting zsh-autosuggestions
+    dnfi zsh-syntax-highlighting zsh-autosuggestions which
 }
 
 sys_python_install() {
@@ -94,8 +97,6 @@ gh_install() {
 
     slog "Installing up gh"
 
-    dnfi 'dnf-command(copr)'
-    dnfi 'dnf-command(config-manager)'
     sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
     dnfi gh
 
