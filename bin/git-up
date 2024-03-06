@@ -1,48 +1,46 @@
 #! /usr/bin/env bash
+
 {
 
-function rev-stash() {
-    if git stash apply; then
-        git stash drop
-        cd "$cur_dir" || return 1
-    else
-        git reset --hard $current_branch
-        git stash apply && git stash drop
+function _git-up-internal() {
+    if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        echo "Not a git repository"
+        return 1
     fi
-}
 
-origin-same() {
-    local current_branch=$(git rev-parse --abbrev-ref HEAD)
-    git diff --quiet origin/"$current_branch"
-}
-
-function is_git_repo() {
-    git rev-parse --is-inside-work-tree > /dev/null 2>&1
-}
-
-function git-up() {
-    cd "$1" || return 1
-
-    is_git_repo || return 1
-
-    local cur_dir=$(pwd)
-
-    origin-same && return 0
+    if git diff --quiet origin/"$(git rev-parse --abbrev-ref HEAD)"; then
+        echo "Already up to date"
+        return 0
+    fi
 
     git stash --include-untracked
     STASHED=$?
 
-    git pull --rebase || git rebase --abort
+    if git pull --rebase; then
+        [[ $STASHED == 0 ]] && git stash pop
+    else
+        git rebase --abort
+        echo "Update failed"
+        return 1
+    fi
 
-    [[ $STASHED == 0 ]]  && rev-stash
-
-    cd "$cur_dir" || return 1
+    return 0
 }
 
+function git-up() {
+    local target_dir="${1:-$(pwd)}"
+    if [ ! -d "$target_dir" ]; then
+        echo "Directory does not exist"
+        return 1
+    fi
+
+    cd "$1" || return 1
+    _git-up-internal "$target_dir"
+    RET=$?
+    cd - > /dev/null
+    return $RET
 }
 
-if [[ -n $1 ]] && git-up "$1" || git-up $(pwd); then
-    echo "Updated successfully"
-else
-    echo "Update failed"
-fi
+git-up "$@"
+
+}
