@@ -1,3 +1,6 @@
+#! /usr/bin/env bash
+{
+
 function rev-stash() {
     if git stash apply; then
         git stash drop
@@ -13,8 +16,14 @@ origin-same() {
     git diff --quiet origin/"$current_branch"
 }
 
+function is_git_repo() {
+    git rev-parse --is-inside-work-tree > /dev/null 2>&1
+}
+
 function git-up() {
     cd "$1" || return 1
+
+    is_git_repo || return 1
 
     local cur_dir=$(pwd)
 
@@ -29,3 +38,11 @@ function git-up() {
 
     cd "$cur_dir" || return 1
 }
+
+}
+
+if [[ -n $1 ]] && git-up "$1" || git-up $(pwd); then
+    echo "Updated successfully"
+else
+    echo "Update failed"
+fi
