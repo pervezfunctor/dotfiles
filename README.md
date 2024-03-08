@@ -43,19 +43,6 @@ bash -c "$(curl -sSL https://dub.sh/zEIpneC)"
 bash -c "$(wget -qO- https://dub.sh/aPKPT8V)"
 ```
 
-
-### Installer
-
-``` bash
-bash -c "$(wget -qO- https://dub.sh/kceoClT)" -- python
-```
-
-### Config
-
-``` bash
-bash -c "$(wget -qO- https://dub.sh/kceoClT)" -- config
-```
-
 ### Zsh environment
 
 ```bash
@@ -68,4 +55,54 @@ curl -sSL https://dub.sh/YY3a8Um > ~/.zshrc
 ```bash
 mv ~/.config/tmux.conf ~/.config/tmux.conf.bak
 curl -sSL https://dub.sh/me3OYAJ > ~/.config/tmux.conf
+```
+
+### Installer
+
+You could select what you want to install from the following options.
+
+Following editors are supported
+
+- neovim
+- vscode
+- emacs
+
+Following languages are supported
+
+- python(pyen, poetry and miniconda)
+- pnpm(web development)
+- cpp(c++ development)
+- rust
+- go
+
+Following virtualization tools are supported
+
+- docker
+- podman
+- libvirt
+- cockpit
+- ct(docker, podman)
+- virt(ct and libvirt)
+
+If you want a good shell configuration, following options are supported
+
+- config (this will configure zsh, tmux, and git, but without installing any packages)
+- shell (installs all shell tools but without any config)
+
+On your desktop, following options are supported
+
+- alacritty
+- fonts
+- apps(telegram, zoom, chromium etc)
+
+For example if I need web and zsh environment, I would run
+
+```bash
+bash -c "$(wget -qO- https://dub.sh/kceoClT)" -- web config
+```
+
+If I only need configuration without any packages(for eg: On arch linux, install any of zsh, git, tmux, neovim, emacs)
+
+```bash
+bash -c "$(wget -qO- https://dub.sh/kceoClT)" -- config
 ```
