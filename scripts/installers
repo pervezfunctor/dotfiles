@@ -1,0 +1,75 @@
+min_installer() {
+    dotfiles_install
+    essential_install
+    config_install
+    set_zsh_as_default
+}
+
+shell_installer() {
+    dotfiles_install
+    essential_install
+
+    go_install
+    rust_install
+    pnpm_install
+
+    shell_install
+    neovim_install
+    config_install
+
+    set_zsh_as_default
+}
+
+vm_installer() {
+    dotfiles_install
+    essential_install
+
+    go_install
+    rust_install
+    pnpm_install
+    python_install
+    cpp_install
+
+    shell_install
+    neovim_install
+    config_install
+
+    ct_install
+
+    set_zsh_as_default
+}
+
+desktop_installer() {
+    dotfiles_install
+    essential_install
+
+    go_install
+    flathub_install
+    snap_install
+    brew_install
+    rust_install
+    pnpm_install
+    asdf_install
+
+    fonts_install
+
+    cpp_install
+    python_install
+
+    shell_install
+    alacritty_install
+
+    neovim_install
+    vscode_install
+    apps_install
+
+    virt_install
+
+    config_install
+
+    set_zsh_as_default
+}
+
+all_installer() {
+
+}
