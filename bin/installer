@@ -2,12 +2,14 @@
 
 {
 
-command -v curl > /dev/null || {
-    echo "curl not found. Please install curl and try again."
+if command -v curl > /dev/null; then
+    source <(curl -sSL https://dub.sh/z3pTnAK)
+elif command -v wget > /dev/null; then
+    source <(wget -qO- https://dub.sh/z3pTnAK)
+else
+    echo "curl or wget not found. Please install curl or wget and try again."
     exit 1
-}
-
-source <(curl -sSL https://dub.sh/z3pTnAK)
+fi
 
 main() {
     while [[ "$#" -gt 0 ]]; do

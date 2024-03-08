@@ -3,7 +3,13 @@
 
 {
 
-sudo apt-get install -y curl
+if command -v apt-get > /dev/null; then
+    sudo apt-get install -y curl
+else
+    echo "apt-get not found. Please install apt-get and try again."
+    exit 1
+fi
+
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 flatpak_apps_install() {
@@ -62,6 +68,6 @@ main() {
 
 is_apt || err_exit "This script works only on Ubuntu. Quitting."
 
-bootstrap "Ubuntu desktop setup"
+bootstrap "Ubuntu desktop setup(desktop)"
 
 }

@@ -2,7 +2,13 @@
 
 {
 
-sudo apt-get install -y curl sudo
+if command -v apt-get > /dev/null; then
+    sudo apt-get install -y curl sudo
+else
+    echo "apt-get not found. Please install apt-get and try again."
+    exit 1
+fi
+
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
@@ -18,6 +24,6 @@ is_apt || err_exit "This installer works only on Ubuntu or Debian. Quitting."
 
 export DEBIAN_FRONTEND=noninteractive
 
-bootstrap "Ubuntu/Debian setup"
+bootstrap "Ubuntu/Debian setup(min)"
 
 }

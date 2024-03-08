@@ -26,8 +26,8 @@ core_install() {
     dnfi 'dnf-command(copr)'
     dnfi 'dnf-command(config-manager)'
 
-    dnfi curl wget git trash-cli zsh tree tar unar zip unzip p7zip gawk
-    dnfi zsh-syntax-highlighting zsh-autosuggestions which
+    dnfi curl wget git trash-cli tree tar unar zip unzip p7zip gawk
+    dnfi zsh zsh-syntax-highlighting zsh-autosuggestions which
 }
 
 sys_python_install() {

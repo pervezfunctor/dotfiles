@@ -22,7 +22,7 @@ core_install() {
   apti software-properties-common apt-transport-https ca-certificates
   apti curl wget git trash-cli tree nala micro
   apti zsh zsh-syntax-highlighting zsh-autosuggestions
-  apti unar unzip unar unzip p7zip build-essential zip gawk gh
+  apti build-essential unzip unar p7zip zip gawk gh
 }
 
 sys_python_install() {

@@ -16,6 +16,6 @@ main() {
 
 is_rh || err_exit "This script works only on Fedora/RockyLinux. Quitting."
 
-bootstrap "Fedora/RockyLinux setup"
+bootstrap "Fedora/RockyLinux setup(min)"
 
 }

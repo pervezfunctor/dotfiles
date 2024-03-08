@@ -53,6 +53,6 @@ main() {
 
 is_fedora || err_exit "This script works only on Fedora. Quitting."
 
-bootstrap "Fedora desktop setup"
+bootstrap "Fedora desktop setup(desktop)"
 
 }

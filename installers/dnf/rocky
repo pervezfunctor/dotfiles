@@ -33,6 +33,6 @@ main() {
 
 is_rh || err_exit "This installer works only on Rocky Linux. Quitting."
 
-bootstrap "Rocky Linux development system"
+bootstrap "Rocky Linux development system(vm)"
 
 }

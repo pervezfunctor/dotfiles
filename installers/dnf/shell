@@ -24,6 +24,6 @@ main() {
 
 is_rocky|| err_exit "This installer works only on Rocky Linux. Quitting."
 
-bootstrap "Rocky Linux development system"
+bootstrap "Rocky Linux development system(shell)"
 
 }

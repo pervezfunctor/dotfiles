@@ -61,6 +61,8 @@ tmux_config_install() {
 }
 
 treesitter_install() {
+    has_cmd tree-sitter && return 0
+
     if has_cmd cargo; then
       cargo install tree-sitter-cli
     elif has_cmd pnpm; then
@@ -106,7 +108,7 @@ neovim_install() {
 }
 
 micro_install() {
-    has_cmd micro && return 1
+    has_cmd micro && return 0
 
     slog "Installing micro"
 
@@ -117,15 +119,19 @@ micro_install() {
 }
 
 rust_install() {
-    has_cmd rustup && return 1
+    file_exists "$HOME/.cargo/env" && source "$HOME/.cargo/env"
+
+    has_cmd rustup && return 0
 
     slog "Installing rust"
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
+
     slog "rust installation done!"
 }
 
 alacritty_install() {
-    has_cmd alacritty && return 1
+    has_cmd alacritty && return 0
 
     rust_install
     cargo install alacritty
@@ -161,8 +167,8 @@ pnpm_install() {
 }
 
 web_install() {
-  slog "Installing npm packages globally"
-    pnpm install -g npm-check-updates ndb @antfu/ni
+    slog "Installing npm packages globally"
+    pnpm install -g ndb @antfu/ni
     pnpm install -g tsx vite-node zx turbo
 
     if ! grep "fs.inotify.max_user_watches" /etc/sysctl.conf > /dev/null; then
@@ -184,6 +190,8 @@ brew_install() {
 }
 
 monaspace_install() {
+    file_exists ~/.local/share/fonts/MonaspaceRadon-Regular.otf && return 0
+
     wget https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip
     unzip -d monaspace -o monaspace-v1.000.zip
     smd ~/.local/share/fonts
@@ -194,18 +202,27 @@ monaspace_install() {
 }
 
 nerd_font_install() {
-    wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip
-    unzip -d monaspace -o CascadiaMono.zip
-    cp ./monaspace/*.ttf .local/share/fonts
-    srm monaspace CascadiaMono.zip
+    if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
+        wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip
+        unzip -d monaspace -o CascadiaMono.zip
+        cp ./monaspace/*.ttf .local/share/fonts
+        srm monaspace CascadiaMono.zip
+    fi
 
-    wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip
-    unzip -d monaspace -o Monaspace.zip
-    cp ./monaspace/*.otf .local/share/fonts
-    srm monaspace Monaspace.zip
+    if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
+        wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip
+        unzip -d monaspace -o Monaspace.zip
+        cp ./monaspace/*.otf .local/share/fonts
+        srm monaspace Monaspace.zip
+    fi
 }
 
 fonts_install() {
+    if ! { has_cmd wget && has_cmd unzip }; then
+        warn "wget and unzip not installed, skipping fonts"
+        return 1
+    fi
+
     slog "Installing fonts"
 
     monaspace_install
@@ -221,7 +238,7 @@ fonts_install() {
 }
 
 doom_install() {
-    dir_exists ~/.config/emacs && return 1
+    dir_exists ~/.config/doom && return 0
 
     sclone --depth=1 https://github.com/doomemacs/doomemacs ~/.config/emacs
     fmv ~/.config/doom ~/.config/doom.backup
@@ -250,40 +267,43 @@ emacs_install() {
     slog "emacs installation done!"
 }
 
-gcg() {
+git_conf() {
     git config --global "$@"
 }
 
 git_config_install() {
     is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
 
-    gcg init.defaultBranch main
-    gcg pull.ff only
-    gcg delta.navigate true
-    gcg delta.line-numbers true
-    gcg delta.syntax-theme "Monokai Extended"
-    gcg delta.side-by-side true
-    gcg merge.conflictStyle diff3
-    gcg interactive.diffFilter "delta --color-only"
-    gcg fetch.prune true
+    git_conf init.defaultBranch main
+    git_conf pull.ff only
+    git_conf delta.navigate true
+    git_conf delta.line-numbers true
+    git_conf delta.syntax-theme "Monokai Extended"
+    git_conf delta.side-by-side true
+    git_conf merge.conflictStyle diff3
+    git_conf interactive.diffFilter "delta --color-only"
+    git_conf fetch.prune true
 
     if [[ "$USER" == "pervez" ]]; then
-        gcg user.name "Pervez Iqbal"
-        gcg user.email "pervefunctor@gmail.com"
+        git_conf user.name "Pervez Iqbal"
+        git_conf user.email "pervefunctor@gmail.com"
     fi
 }
 
 go_install() {
-    has_cmd go && return 1
-    slog "Installing go"
+    if ! has_cmd go; then
+        slog "Installing go"
 
-    sudo rm -rf /usr/local/go
-    VERSION=$(curl -sSL "https://go.dev/VERSION?m=text" | head -n 1)
-    wget "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz"
-    slog "Untar ${VERSION}.linux-amd64.tar.gz"
-    sudo tar -C /usr/local -xzf "${VERSION}.linux-amd64.tar.gz"
-    rm ${VERSION}.linux-amd64.tar.gz
-    export PATH=$PATH:/usr/local/go/bin
+        sudo rm -rf /usr/local/go
+        VERSION=$(curl -sSL "https://go.dev/VERSION?m=text" | head -n 1)
+        wget "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz"
+        slog "Untar ${VERSION}.linux-amd64.tar.gz"
+        sudo tar -C /usr/local -xzf "${VERSION}.linux-amd64.tar.gz"
+        rm ${VERSION}.linux-amd64.tar.gz
+        export PATH=$PATH:/usr/local/go/bin
+
+        slog "go installation done!"
+    fi
 
     slog "Installing go dev tools..."
 
@@ -310,8 +330,7 @@ go_install() {
     go install mvdan.cc/gofumpt@latest
     go install github.com/fatih/gomodifytags@latest
 
-    slog "go installation done!"
-
+    slog "go dev tools installation done!"
 }
 
 docker_common_install() {
@@ -363,41 +382,44 @@ cmake_install() {
 }
 
 go_shell_install() {
-    if has_cmd go; then
-        has_cmd cheat || go install github.com/cheat/cheat/cmd/cheat@latest
-        has_cmd curlie || go install github.com/rs/curlie@latest
-        has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
-        has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
-        has_cmd lemonade || go install github.com/lemonade-command/lemonade@latest
-        has_cmd duf || go install github.com/muesli/duf@latest
-    else
+    if ! has_cmd go; then
         warn "go not installed, skipping some shell tools"
+        return 1
     fi
+    has_cmd cheat || go install github.com/cheat/cheat/cmd/cheat@latest
+    has_cmd curlie || go install github.com/rs/curlie@latest
+    has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
+    has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
+    has_cmd lemonade || go install github.com/lemonade-command/lemonade@latest
+    has_cmd duf || go install github.com/muesli/duf@latest
 }
 
 rust_shell_install() {
-    if has_cmd cargo; then
-        rustup update stable
-
-        cargoi starship
-        has_cmd delta || cargoi git-delta
-        has_cmd dust || cargoi du-dust
-        has_cmd choose || cargoi choose
-        has_cmd sd || cargoi sd
-        has_cmd procs || cargoi procs
-        has_cmd btm || cargoi bottom
-        has_cmd xh || cargoi xh
-        has_cmd lsd || cargoi lsd
-    else
+    if ! has_cmd cargo; then
         warn "cargo not installed, skipping some shell tools"
+        return 1
     fi
+
+    rustup update stable
+
+    cargoi starship
+    has_cmd delta || cargoi git-delta
+    has_cmd dust || cargoi du-dust
+    has_cmd choose || cargoi choose
+    has_cmd sd || cargoi sd
+    has_cmd procs || cargoi procs
+    has_cmd btm || cargoi bottom
+    has_cmd xh || cargoi xh
+    has_cmd lsd || cargoi lsd
 }
 
 pnpm_shell_install() {
-    if has_cmd pnpm; then
-        pnpm install -g degit tldr gtop
-        pnpm install -g @githubnext/github-copilot-cli
+    if ! has_cmd pnpm; then
+        warn "pnpm not installed, skipping some shell tools"
     fi
+
+    pnpm install -g degit tldr gtop
+    pnpm install -g @githubnext/github-copilot-cli
 }
 
 shell_install() {
@@ -415,6 +437,8 @@ config_install() {
 }
 
 poetry_install() {
+    has_cmd poetry && return 0
+
     if has_cmd python3; then
         curl -sSL https://install.python-poetry.org | python3 -
         smd ~/.zfunc
@@ -425,6 +449,8 @@ poetry_install() {
 }
 
 pyenv_install() {
+    has_cmd pyenv && return 0
+
     sclone  https://github.com/yyuu/pyenv.git ~/.pyenv
     sclone https://github.com/yyuu/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv
 }
