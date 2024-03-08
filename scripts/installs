@@ -2,7 +2,7 @@
 
 {
 
-fi() {
+fpi() {
     for pkg in "$@"; do
         flatpak install -y --user flathub "$pkg"
     done
@@ -14,13 +14,13 @@ flatpak_apps_install() {
         return 1
     fi
 
-    fi org.telegram.desktop
-    fi com.jetbrains.CLion
-    fi com.google.Chrome
-    fi org.deluge_torrent.deluge
-    fi us.zoom.Zoom
-    fi org.wezfurlong.wezterm
-    fi io.github.shiftey.Desktop
+    fpi org.telegram.desktop
+    fpi com.jetbrains.CLion
+    fpi com.google.Chrome
+    fpi org.deluge_torrent.deluge
+    fpi us.zoom.Zoom
+    fpi org.wezfurlong.wezterm
+    fpi io.github.shiftey.Desktop
 }
 
 astro_install() {

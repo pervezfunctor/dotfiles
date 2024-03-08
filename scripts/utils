@@ -321,6 +321,8 @@ bootstrap() {
         source_curl "${BASE_URL}/installers/dnf/common"
     elif is_mac; then
         source_curl "${BASE_URL}/installers/macos/common"
+    else
+        warn "unknown OS; cannot source common functions"
     fi
 
     main "$@" > >(tee /tmp/dotfiles-output.log) 2> >(tee /tmp/dotfiles-error.log >&2)
