@@ -288,7 +288,7 @@ min_packages_for_installer() {
         sudo apt-get install -y curl wget git-core tar unzip
     elif is_rh; then
         slog "Installing essential packages for the installer for fedora"
-        sudo dnf install -y curl wget git-core tar unzip
+        sudo dnf install -y curl wget git-core tar unzip which
     fi
 }
 

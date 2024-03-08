@@ -11,7 +11,6 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
     dotfiles_install
-    fonts_install
     config_install
 }
 
