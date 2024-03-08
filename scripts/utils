@@ -316,6 +316,7 @@ bootstrap() {
     min_packages_for_installer
 
     source_curl "${BASE_URL}/scripts/installs"
+    source_curl "${BASE_URL}/scripts/group-installs"
 
     if is_apt; then
         source_curl "${BASE_URL}/installers/apt/common"
