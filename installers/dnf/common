@@ -112,10 +112,15 @@ cpp_install() {
     dnfi clang-analyzer lldb lld llvm llvm-devel
     dnfi graphviz ccache cppcheck pre-commit
 
-    is_rocky && dnfi boost1.78 boost1.78-devel boost1.78-static catch-devel
-
     conan_install
     cmake_install
+
+    if is_rocky; then
+        dnfi boost1.78 boost1.78-devel boost1.78-static catch-devel
+    elif is_fedora; then
+        dnfi boost boost-devel boost-static catch-devel
+        sudo dnf groupinstall -y --with-optional "C Development Tools and Libraries"
+    fi
 
     slog "C++ installation done!"
 }
@@ -127,6 +132,11 @@ vscode_install() {
     sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
     dnf check-update
     dnfi code code-insiders
+}
+
+apps_install() {
+    dnfi virt-manager chromium neovim emacs
+    flatpak_apps_install
 }
 
 cockpit_install() {

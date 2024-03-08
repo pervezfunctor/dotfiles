@@ -75,6 +75,19 @@ vscode_install() {
     apti code
 }
 
+apps_install() {
+    apti chromium-browser virt-manager
+    flatpak_apps_install
+}
+
+snap_install() {
+    has_cmd snap && return 0
+
+    slog "Installing snap..."
+    apti snapd
+    slog "snap installation done!"
+}
+
 docker_install() {
   has_cmd docker && return 0
 

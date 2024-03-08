@@ -10,7 +10,6 @@ main() {
 
     config_install
 
-    has_cmd chsh || dnfi util-linux-user
     set_zsh_as_default
 }
 

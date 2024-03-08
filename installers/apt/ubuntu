@@ -12,37 +12,15 @@ fi
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-flatpak_apps_install() {
-    flatpak install -y --user flathub org.telegram.desktop
-    flatpak install -y --user flathub com.jetbrains.CLion
-    flatpak install -y --user flathub com.google.Chrome
-    flatpak install -y --user flathub org.deluge_torrent.deluge
-    flatpak install -y --user flathub us.zoom.Zoom
-    flatpak install -y --user flathub org.wezfurlong.wezterm
-    flatpak install -y --user flathub io.github.shiftey.Desktop
-}
-
-apps_install() {
-    apti chromium-browser emacs virt-manager
-    flatpak_apps_install
-}
-
-snap_install() {
-    has_cmd snap && return 0
-
-    slog "Installing snap..."
-    apti snapd
-    slog "snap installation done!"
-}
-
 main() {
     dotfiles_install
     essential_install
 
-    go_install
     flathub_install
     snap_install
     brew_install
+
+    go_install
     rust_install
     pnpm_install
     asdf_install

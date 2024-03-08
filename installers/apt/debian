@@ -18,8 +18,11 @@ main() {
     go_install
     rust_install
     pnpm_install
-    python_install
+
+    shell_install
+
     cpp_install
+    python_install
 
     neovim_install
 

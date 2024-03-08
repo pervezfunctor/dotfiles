@@ -1,6 +1,19 @@
+#! /usr/bin/env bash
+
+{
+
+nano-group_install() {
+    dotfiles_install
+    core_install
+
+    config_install
+    set_zsh_as_default
+}
+
 min-group_install() {
     dotfiles_install
     essential_install
+
     config_install
     set_zsh_as_default
 }
@@ -15,8 +28,8 @@ shell-group_install() {
 
     shell_install
     neovim_install
-    config_install
 
+    config_install
     set_zsh_as_default
 }
 
@@ -27,15 +40,16 @@ vm-group_install() {
     go_install
     rust_install
     pnpm_install
+
     python_install
     cpp_install
 
     shell_install
     neovim_install
-    config_install
 
     ct_install
 
+    config_install
     set_zsh_as_default
 }
 
@@ -66,7 +80,6 @@ desktop-group_install() {
     virt_install
 
     config_install
-
     set_zsh_as_default
 }
 
@@ -87,7 +100,6 @@ desktop-apps-group_install() {
     virt_install
 
     config_install
-
     set_zsh_as_default
 }
 
@@ -95,4 +107,17 @@ all-group_install() {
     desktop-group_install
     asdf_install
     emacs_install
+}
+
+clould-group_install() {
+    dotfiles_install
+    essential_install
+
+    cpp_install
+    python_install
+
+    config_install
+    set_zsh_as_default
+}
+
 }

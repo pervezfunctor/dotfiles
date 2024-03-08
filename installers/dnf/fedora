@@ -4,41 +4,26 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-cpp_fedora_install() {
-    slog "Installing C++ tools"
-
-    cpp_install
-    dnfi boost boost-devel boost-static catch-devel
-
-    sudo dnf groupinstall -y --with-optional "C Development Tools and Libraries"
-
-    slog "C++ tools installation done!"
-}
-
-apps_install() {
-    dnfi virt-manager chromium neovim emacs
-    flatpak_apps_install
-}
 
 main() {
     dotfiles_install
     essential_install
 
-    go_install
     flathub_install
     snap_install
     brew_install
+
+    go_install
     rust_install
     pnpm_install
-    asdf_install
-
-    shell_install
-    alacritty_install
 
     fonts_install
 
-    cpp_fedora_install
+    cpp_install
     python_install
+
+    shell_install
+    alacritty_install
 
     neovim_install
     vscode_install

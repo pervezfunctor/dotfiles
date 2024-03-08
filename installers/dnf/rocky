@@ -9,9 +9,6 @@ main() {
     essential_install
 
     go_install
-    snap_install
-    flathub_install
-    brew_install
     rust_install
     pnpm_install
 
@@ -22,11 +19,11 @@ main() {
 
     neovim_install
 
-    virt_install
+    ct_install
 
     config_install
 
-    dnfi util-linux-user
+
     set_zsh_as_default
 }
 
