@@ -31,8 +31,7 @@ core_install() {
 }
 
 sys_python_install() {
-    dnfi python3-pip python3-virtualenv python3-wheel
-    # python3 -m pip install --user --upgrade pip setuptools
+    dnfi python3-pip python3-virtualenv python3-wheel pipx
 }
 
 essential_install() {

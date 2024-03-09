@@ -55,7 +55,7 @@ if file_exists /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh; t
     source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 else
     if ! dir_exists ~/.zsh/zsh-syntax-highlighting; then
-        git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.zsh/zsh-syntax-highlighting
+        has_cmd git && git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.zsh/zsh-syntax-highlighting
     fi
     ssource ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
@@ -64,7 +64,7 @@ if file_exists /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh; then
     source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 else
     if ! dir_exists ~/.zsh/zsh-autosuggestions; then
-        git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
+        has_cmd git && git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
     fi
     ssource ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 fi

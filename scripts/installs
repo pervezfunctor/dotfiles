@@ -226,7 +226,7 @@ nerd_font_install() {
 }
 
 fonts_install() {
-    if ! { has_cmd wget && has_cmd unzip }; then
+    if ! { has_cmd wget && has_cmd unzip; }; then
         warn "wget and unzip not installed, skipping fonts"
         return 1
     fi

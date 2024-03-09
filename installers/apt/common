@@ -26,7 +26,7 @@ core_install() {
 }
 
 sys_python_install() {
-  apti python3 python3-pip python-is-python3 python3-venv
+  apti python3 python3-pip python-is-python3 python3-venv pipx
   # python3 -m pip install --user --upgrade pip setuptools
 }
 
