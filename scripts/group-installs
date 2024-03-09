@@ -3,24 +3,24 @@
 {
 
 nano-group_install() {
-    dotfiles_install
     core_install
+    dotfiles_install
 
     config_install
     set_zsh_as_default
 }
 
 min-group_install() {
-    dotfiles_install
     essential_install
+    dotfiles_install
 
     config_install
     set_zsh_as_default
 }
 
 shell-group_install() {
-    dotfiles_install
     essential_install
+    dotfiles_install
 
     go_install
     rust_install
@@ -34,8 +34,8 @@ shell-group_install() {
 }
 
 vm-group_install() {
-    dotfiles_install
     essential_install
+    dotfiles_install
 
     go_install
     rust_install
@@ -54,8 +54,8 @@ vm-group_install() {
 }
 
 desktop-group_install() {
-    dotfiles_install
     essential_install
+    dotfiles_install
 
     flathub_install
     snap_install
@@ -85,8 +85,8 @@ desktop-group_install() {
 
 
 desktop-apps-group_install() {
-    dotfiles_install
     core_install
+    dotfiles_install
 
     flathub_install
     snap_install
@@ -110,8 +110,8 @@ all-group_install() {
 }
 
 clould-group_install() {
-    dotfiles_install
     essential_install
+    dotfiles_install
 
     cpp_install
     python_install
