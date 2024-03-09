@@ -162,8 +162,8 @@ pnpm_install() {
     slog "Installing node"
     pnpm env use --global latest
 
-    pnpm install-completion bash
-    pnpm install-completion zsh
+    has_cmd bash && pnpm install-completion bash
+    has_cmd zsh && pnpm install-completion zsh
 }
 
 web_install() {
@@ -192,28 +192,36 @@ brew_install() {
 monaspace_install() {
     file_exists ~/.local/share/fonts/MonaspaceRadon-Regular.otf && return 0
 
-    wget https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip
-    unzip -d monaspace -o monaspace-v1.000.zip
     smd ~/.local/share/fonts
-    # TODO: Don't copy if already exists
-    cp ./monaspace/monaspace-v1.000/fonts/otf/* ~/.local/share/fonts
-    cp ./monaspace/monaspace-v1.000/fonts/variable/* ~/.local/share/fonts
-    srm monaspace monaspace-v1.000.zip
+
+    srm /tmp/monaspace /tmp/monaspace.zip
+    wget https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip -O /tmp/monaspace.zip
+    unzip -d /tmp/monaspace -o /tmp/monaspace.zip
+
+
+    cp /tmp/monaspace/monaspace-*/fonts/otf/* ~/.local/share/fonts
+    cp /tmp/monaspace/monaspace-*/fonts/variable/* ~/.local/share/fonts
+
+    srm /tmp/monaspace /tmp/monaspace.zip
 }
 
 nerd_font_install() {
+    smd ~/.local/share/fonts
+
     if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
-        wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip
-        unzip -d monaspace -o CascadiaMono.zip
-        cp ./monaspace/*.ttf .local/share/fonts
-        srm monaspace CascadiaMono.zip
+        srm /tmp/monaspace /tmp/CascadiaMono.zip
+        wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip -O /tmp/CascadiaMono.zip
+        unzip -d /tmp/monaspace -o /tmp/CascadiaMono.zip
+        cp /tmp/monaspace/*.ttf ~/.local/share/fonts
+        srm /tmp/monaspace /tmp/CascadiaMono.zip
     fi
 
     if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
-        wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip
-        unzip -d monaspace -o Monaspace.zip
-        cp ./monaspace/*.otf .local/share/fonts
-        srm monaspace Monaspace.zip
+        srm /tmp/monaspace /tmp/Monaspace.zip
+        wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip -O /tmp/Monaspace.zip
+        unzip -d /tmp/monaspace -o /tmp/Monaspace.zip
+        cp /tmp/monaspace/*.otf ~/.local/share/fonts
+        srm /tmp/monaspace /tmp/Monaspace.zip
     fi
 }
 
@@ -296,10 +304,11 @@ go_install() {
 
         sudo rm -rf /usr/local/go
         VERSION=$(curl -sSL "https://go.dev/VERSION?m=text" | head -n 1)
-        wget "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz"
+        srm /tmp/${VERSION}.linux-amd64.tar.gz
+        wget "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz" -O /tmp/"${VERSION}.linux-amd64.tar.gz"
         slog "Untar ${VERSION}.linux-amd64.tar.gz"
-        sudo tar -C /usr/local -xzf "${VERSION}.linux-amd64.tar.gz"
-        rm ${VERSION}.linux-amd64.tar.gz
+        sudo tar -C /usr/local -xzf /tmp/"${VERSION}.linux-amd64.tar.gz"
+        srm /tmp/${VERSION}.linux-amd64.tar.gz
         export PATH=$PATH:/usr/local/go/bin
 
         slog "go installation done!"
@@ -434,6 +443,11 @@ config_install() {
     has_cmd nvim && astro_install
     has_cmd emacs && doom_install
     has_cmd git && git_config_install
+
+    if has_cmd alacritty; then
+        smd ~/.config/alacritty
+        scp "${DOT_DIR}/configs/alacritty.yml" ~/.config/alacritty/alacritty.yml
+    fi
 }
 
 poetry_install() {
