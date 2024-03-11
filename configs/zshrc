@@ -42,7 +42,13 @@ compinit
 
 zstyle ':completion:::::default' menu select
 
-dir_exists ~/.zsh/pure || git clone --depth=1 https://github.com/sindresorhus/pure.git ~/.zsh/pure
+if ! dir_exists ~/.zsh/pure; then
+    if has_cmd git; then
+        git clone --depth=1 https://github.com/sindresorhus/pure.git ~/.zsh/pure
+    else
+        echo "git not installed"
+    fi
+fi
 
 fpath+=($HOME/.zsh/pure)
 
@@ -72,8 +78,13 @@ fi
 ssource /usr/share/doc/fzf/examples/completion.zsh
 ssource /usr/share/doc/fzf/examples/key-bindings.zsh
 
-dir_exists ~/.zsh/alias-tips || git clone --depth=1 https://github.com/djui/alias-tips.git ~/.zsh/alias-tips
-ssource ~/.zsh/alias-tips/alias-tips.plugin.zsh
+if ! dir_exists ~/.zsh/alias-tips; then
+    has_cmd git && git clone --depth=1 https://github.com/djui/alias-tips.git ~/.zsh/alias-tips
+fi
+
+if has_cmd python3; then
+    ssource ~/.zsh/alias-tips/alias-tips.plugin.zsh
+fi
 
 if has_cmd fasd; then
     eval "$(fasd --init auto)"
