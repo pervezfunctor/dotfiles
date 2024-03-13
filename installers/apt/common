@@ -37,7 +37,7 @@ essential_install() {
 
   core_install
 
-  apti tmux libzmq3-dev pkg-config urlview fasd
+  apti tmux pkg-config urlview fasd
   apti shellcheck git-extras gawk gcc xclip xsel
 
   sys_python_install
