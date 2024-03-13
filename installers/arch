@@ -1,0 +1,113 @@
+#! /usr/bin/env bash
+
+{
+
+core_install() {
+  sudo pacman -Syu
+  sudo pacman -Sy curl wget git trash-cli tree micro zsh zsh-syntax-highlighting zsh-autosuggestions unzip p7zip zip
+}
+
+
+sys_python_install() {
+    sudo pacman -Sy python python-pip python-virtualenv python-wheel python-pipx
+}
+
+essential_install() {
+  update_packages
+
+  slog "Installing essential packages"
+
+  core_install
+
+  apti tmux pkg-config fasd
+  apti shellcheck git-extras xclip xsel
+
+  sys_python_install
+
+  apti sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
+
+  slog "Essential packages installation done!"
+}
+
+flathub_install() {
+  apti flatpak
+  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+}
+
+cpp_install() {
+    slog "Installing C++"
+
+    apti gcc gdb boost boost-libs catch2 libc++ clang llvm
+    apti doxygen graphviz ccache cppcheck pre-commit
+    apti valgrind ltrace strace lldb lld
+
+    cmake_install
+    conan_install
+
+    slog "C++ installation done!"
+}
+
+vscode_install() {
+    has_cmd code && return 0
+
+    wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
+    sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
+    sudo apt-get update
+    apti code
+}
+
+apps_install() {
+    apti chromium virt-manager
+    flatpak_apps_install
+}
+
+docker_install() {
+  has_cmd docker && return 0
+
+  slog "Installing docker..."
+
+  srm /tmp/get-docker.sh
+  curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+  sudo sh /tmp/get-docker.sh
+  srm /tmp/get-docker.sh
+
+
+  docker_common_install
+
+  slog "Docker installation done!"
+}
+
+cockpit_install() {
+    has_cmd cockpit && return 1
+
+    slog "Installing cockpit"
+
+    apti cockpit cockpit-machines cockpit-packagekit cockpit-pcp cockpit-podman cockpit-storaged
+    sudo systemctl enable --now cockpit.socket
+
+    slog "cockpit installation done!"
+}
+
+podman_install() {
+  apti podman podman-compose podman-docker
+}
+
+libvirt_install() {
+    apti buildah libvirt virt-install distrobox
+
+    sudo systemctl enable --now libvirtd
+}
+
+ct_install() {
+    docker_install
+    podman_install
+    cockpit_install
+}
+
+virt_install() {
+    ct_install
+    libvirt_install
+    code_server_install
+}
+
+}
