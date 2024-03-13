@@ -1,0 +1,125 @@
+#! /usr/bin/env bash
+
+{
+
+core_install() {
+  sudo zypper install -y curl wget git tree zsh unzip p7zip zip gh
+}
+
+sys_python_install() {
+  apti python3 python3-pip pytnon3-pipx python3-virtualenv
+  # python3 -m pip install --user --upgrade pip setuptools
+}
+
+essential_install() {
+  update_packages
+
+  slog "Installing essential packages"
+
+  core_install
+
+  apti mux pkg-config urlview fasd ShellCheck shfmt xclip xsel
+  sys_python_install
+
+  apti sd lsd bat hyperfine fd fzf ripgrep zoxide
+
+  slog "Essential packages installation done!"
+}
+
+flathub_install() {
+  apti flatpak
+  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+}
+
+cpp_install() {
+    slog "Installing C++"
+
+    apti gcc gdb g++ boost-devel catch2-devel
+    apti clang llvm clang-tools clang-devel
+    apti doxygen graphviz ccache cppcheck python3-pre-commit
+    apti valgrind systemtap ltrace strace lldb lld
+
+    cmake_install
+    conan_install
+
+    slog "C++ installation done!"
+}
+
+vscode_install() {
+    has_cmd code && return 0
+
+
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+    sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/zypp/repos.d/vscode.repo'
+    sudo zypper refresh
+    apti code
+}
+
+apps_install() {
+    apti chromium-browser virt-manager
+    flatpak_apps_install
+}
+
+snap_install() {
+    has_cmd snap && return 0
+
+    slog "Installing snap..."
+
+    sudo zypper addrepo --refresh https://download.opensuse.org/repositories/system:/snappy/openSUSE_Tumbleweed snappy
+    sudo zypper --gpg-auto-import-keys refresh
+    sudo zypper dup --from snappy
+
+    slog "snap installation done!"
+}
+
+docker_install() {
+  has_cmd docker && return 0
+
+  slog "Installing docker..."
+
+  srm /tmp/get-docker.sh
+  curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+  sudo sh /tmp/get-docker.sh
+  srm /tmp/get-docker.sh
+
+
+  docker_common_install
+
+  slog "Docker installation done!"
+}
+
+cockpit_install() {
+    has_cmd cockpit && return 1
+
+    slog "Installing cockpit"
+
+    apti cockpit cockpit-machines cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged cockpit-kdump cockpit-networkmanager cockpit-packagekit cockpit-system cockpit-tukit
+    # microos_cockpit patterns-microos-cockpit
+    sudo systemctl enable --now cockpit.socket
+
+    slog "cockpit installation done!"
+}
+
+podman_install() {
+  apti podman podman-remote
+}
+
+libvirt_install() {
+    apti buildah libvirt-daemon distrobox
+
+    sudo systemctl enable --now libvirtd
+}
+
+ct_install() {
+    docker_install
+    podman_install
+    cockpit_install
+}
+
+virt_install() {
+    ct_install
+    libvirt_install
+    code_server_install
+}
+
+}
