@@ -12,7 +12,7 @@ si() {
 update_packages() {
     slog "Updating"
     
-    if ! { sudo zypper refresh && sudo zypper dup; }; then
+    if ! { sudo zypper refresh && sudo zypper dup -y; }; then
         err_exit "zypper refresh failed. quitting"
     fi
 }
