@@ -9,10 +9,18 @@ si() {
     done
 }
 
+update_packages() {
+    slog "Updating"
+
+    if ! { sudo apt-get update && sudo apt-get upgrade -y; }; then
+        err_exit "apt-get update/upgrade failed, quitting"
+    fi
+}
+
 core_install() {
-  sudo pacman -Syu
-  si curl wget git base-devel trash-cli tar tree micro go unzip p7zip zip
-  si zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions
+    sudo pacman -Syu
+    si curl wget git base-devel trash-cli tar tree micro go unzip p7zip zip
+    si zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions
 }
 
 sys_python_install() {
@@ -25,24 +33,24 @@ yay_install() {
 }
 
 essential_install() {
-  update_packages
+    update_packages
 
-  slog "Installing essential packages"
+    slog "Installing essential packages"
 
-  core_install
+    core_install
 
-  si tmux pkg-config fasd shfmt shellcheck xclip xsel micro github-cli
+    si tmux pkg-config fasd shfmt shellcheck xclip xsel micro github-cli
 
-  sys_python_install
+    sys_python_install
 
-  si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
+    si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
 
-  slog "Essential packages installation done!"
+    slog "Essential packages installation done!"
 }
 
 flathub_install() {
-  si flatpak
-  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+    si flatpak
+    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
 }
 
 cpp_install() {
@@ -73,19 +81,19 @@ apps_install() {
 }
 
 docker_install() {
-  has_cmd docker && return 0
+    has_cmd docker && return 0
 
-  slog "Installing docker..."
+    slog "Installing docker..."
 
-  srm /tmp/get-docker.sh
-  curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-  sudo sh /tmp/get-docker.sh
-  srm /tmp/get-docker.sh
+    srm /tmp/get-docker.sh
+    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+    sudo sh /tmp/get-docker.sh
+    srm /tmp/get-docker.sh
 
 
-  docker_common_install
+    docker_common_install
 
-  slog "Docker installation done!"
+    slog "Docker installation done!"
 }
 
 cockpit_install() {
@@ -100,7 +108,7 @@ cockpit_install() {
 }
 
 podman_install() {
-  si podman podman-compose podman-docker
+    si podman podman-compose podman-docker
 }
 
 libvirt_install() {
