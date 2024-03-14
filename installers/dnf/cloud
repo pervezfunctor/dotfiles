@@ -12,7 +12,7 @@ main() {
     python_install
     config_install
 
-    dnfi util-linux-user
+    si util-linux-user
     set_zsh_as_default
 }
 

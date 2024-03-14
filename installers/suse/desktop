@@ -1,0 +1,42 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -sSL https://dub.sh/z3pTnAK)
+
+
+main() {
+    dotfiles_install
+    essential_install
+
+    flathub_install
+    brew_install
+
+    go_install
+    rust_install
+    pnpm_install
+
+    fonts_install
+
+    cpp_install
+    python_install
+
+    shell_install
+    alacritty_install
+
+    neovim_install
+    vscode_install
+    apps_install
+
+    virt_install
+
+    config_install
+
+    set_zsh_as_default
+}
+
+is_suse || err_exit "This script works only on Fedora. Quitting."
+
+bootstrap "Suse desktop setup(desktop)"
+
+}

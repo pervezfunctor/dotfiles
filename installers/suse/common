@@ -2,42 +2,49 @@
 
 {
 
+si() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        sudo zypper install -y "$p"
+    done
+}
+
 core_install() {
-  sudo zypper install -y curl wget git tree zsh unzip p7zip zip gh
+    si curl wget git tree zsh unzip p7zip zip gh
 }
 
 sys_python_install() {
-  apti python3 python3-pip pytnon3-pipx python3-virtualenv
-  # python3 -m pip install --user --upgrade pip setuptools
+    si python3 python3-pip pytnon3-pipx python3-virtualenv
+    # python3 -m pip install --user --upgrade pip setuptools
 }
 
 essential_install() {
-  update_packages
+    update_packages
 
-  slog "Installing essential packages"
+    slog "Installing essential packages"
 
-  core_install
+    core_install
 
-  apti mux pkg-config urlview fasd ShellCheck shfmt xclip xsel
-  sys_python_install
+    si mux pkg-config urlview fasd ShellCheck shfmt xclip xsel
+    sys_python_install
 
-  apti sd lsd bat hyperfine fd fzf ripgrep zoxide
+    si sd lsd bat hyperfine fd fzf ripgrep zoxide
 
-  slog "Essential packages installation done!"
+    slog "Essential packages installation done!"
 }
 
 flathub_install() {
-  apti flatpak
-  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+    si flatpak
+    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
 }
 
 cpp_install() {
     slog "Installing C++"
 
-    apti gcc gdb g++ boost-devel catch2-devel
-    apti clang llvm clang-tools clang-devel
-    apti doxygen graphviz ccache cppcheck python3-pre-commit
-    apti valgrind systemtap ltrace strace lldb lld
+    si gcc gdb g++ boost-devel catch2-devel
+    si clang llvm clang-tools clang-devel
+    si doxygen graphviz ccache cppcheck python3-pre-commit
+    si valgrind systemtap ltrace strace lldb lld
 
     cmake_install
     conan_install
@@ -52,11 +59,11 @@ vscode_install() {
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/zypp/repos.d/vscode.repo'
     sudo zypper refresh
-    apti code
+    si code
 }
 
 apps_install() {
-    apti chromium-browser virt-manager
+    si chromium-browser virt-manager
     flatpak_apps_install
 }
 
@@ -73,19 +80,19 @@ snap_install() {
 }
 
 docker_install() {
-  has_cmd docker && return 0
+    has_cmd docker && return 0
 
-  slog "Installing docker..."
+    slog "Installing docker..."
 
-  srm /tmp/get-docker.sh
-  curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-  sudo sh /tmp/get-docker.sh
-  srm /tmp/get-docker.sh
+    srm /tmp/get-docker.sh
+    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+    sudo sh /tmp/get-docker.sh
+    srm /tmp/get-docker.sh
 
 
-  docker_common_install
+    docker_common_install
 
-  slog "Docker installation done!"
+    slog "Docker installation done!"
 }
 
 cockpit_install() {
@@ -93,7 +100,7 @@ cockpit_install() {
 
     slog "Installing cockpit"
 
-    apti cockpit cockpit-machines cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged cockpit-kdump cockpit-networkmanager cockpit-packagekit cockpit-system cockpit-tukit
+    si cockpit cockpit-machines cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged cockpit-kdump cockpit-networkmanager cockpit-packagekit cockpit-system cockpit-tukit
     # microos_cockpit patterns-microos-cockpit
     sudo systemctl enable --now cockpit.socket
 
@@ -101,11 +108,11 @@ cockpit_install() {
 }
 
 podman_install() {
-  apti podman podman-remote
+    si podman podman-remote
 }
 
 libvirt_install() {
-    apti buildah libvirt-daemon distrobox
+    si buildah libvirt-daemon distrobox
 
     sudo systemctl enable --now libvirtd
 }

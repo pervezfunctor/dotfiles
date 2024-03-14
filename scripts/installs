@@ -90,11 +90,7 @@ neovim_install() {
 
     treesitter_install
 
-    if is_apt; then
-        apti luarocks
-    elif is_rh; then
-        dnfi luarocks
-    fi
+    si luarocks
 
     if has_cmd npm; then
         npm install -g neovim
@@ -237,9 +233,9 @@ fonts_install() {
     nerd_font_install
 
     if is_apt; then
-        apti fonts-cascadia-code fonts-jetbrains-mono
+        si fonts-cascadia-code fonts-jetbrains-mono
     elif is_rh; then
-        dnfi cascadia-fonts-all jetbrains-mono-fonts-all
+        si cascadia-fonts-all jetbrains-mono-fonts-all
     fi
 
     slog "Fonts installation done!"
@@ -263,9 +259,9 @@ emacs_install() {
     slog "Installing emacs"
 
     if is_apt; then
-      apti -y --no-install-recommends emacs
+      si -y --no-install-recommends emacs
     elif is_rh; then
-        dnfi emacs
+        si emacs
     elif is_mac; then
         brew tap railwaycat/emacsmacport
         brew install emacs-mac --with-modules
