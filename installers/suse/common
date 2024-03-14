@@ -12,7 +12,7 @@ si() {
 update_packages() {
     slog "Updating"
     
-    if ! sudo zypper refresh; then
+    if ! { sudo zypper refresh && sudo zypper dup }; then
         err_exit "zypper refresh failed. quitting"
     fi
 }
@@ -33,7 +33,7 @@ essential_install() {
 
     core_install
 
-    si mux pkg-config urlview fasd ShellCheck shfmt xclip xsel micro-editor
+    si tmux urlview fasd ShellCheck shfmt xclip xsel micro-editor
     sys_python_install
 
     si sd lsd bat hyperfine fd fzf ripgrep zoxide
@@ -108,7 +108,7 @@ cockpit_install() {
 
     slog "Installing cockpit"
 
-    si cockpit cockpit-machines cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged cockpit-kdump cockpit-networkmanager cockpit-packagekit cockpit-system cockpit-tukit
+    si cockpit cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged cockpit-kdump cockpit-networkmanager cockpit-packagekit cockpit-system cockpit-tukit
     # microos_cockpit patterns-microos-cockpit
     sudo systemctl enable --now cockpit.socket
 
