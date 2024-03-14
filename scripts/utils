@@ -342,6 +342,10 @@ bootstrap() {
         source_curl "${BASE_URL}/installers/apt/common"
     elif is_rh; then
         source_curl "${BASE_URL}/installers/dnf/common"
+    elif is_suse; then
+        source_curl "${BASE_URL}/installers/suse/common"
+    elif is_arch; then
+        source_curl "${BASE_URL}/installers/arch/common"
     elif is_mac; then
         source_curl "${BASE_URL}/installers/macos/common"
     else
