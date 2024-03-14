@@ -9,6 +9,14 @@ si() {
     done
 }
 
+update_packages() {
+    slog "Updating"
+    
+    if ! sudo zypper refresh; then
+        err_exit "zypper refresh failed. quitting"
+    fi
+}
+
 core_install() {
     si curl wget git tar tree zsh unzip unar p7zip zip gh
 }
