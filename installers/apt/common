@@ -20,7 +20,7 @@ update_packages() {
 
 core_install() {
   si software-properties-common apt-transport-https ca-certificates
-  si curl wget git trash-cli tree nala micro
+  si curl wget git trash-cli tar tree nala micro
   si zsh zsh-syntax-highlighting zsh-autosuggestions
   si build-essential unzip unar p7zip zip gawk gh
 }
@@ -38,7 +38,7 @@ essential_install() {
   core_install
 
   si tmux pkg-config urlview fasd
-  si shellcheck git-extras gawk gcc xclip xsel
+  si shellcheck git-extras xclip xsel
 
   sys_python_install
 

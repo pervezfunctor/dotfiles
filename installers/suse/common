@@ -10,7 +10,7 @@ si() {
 }
 
 core_install() {
-    si curl wget git tree zsh unzip p7zip zip gh
+    si curl wget git tar tree zsh unzip unar p7zip zip gh
 }
 
 sys_python_install() {
@@ -25,7 +25,7 @@ essential_install() {
 
     core_install
 
-    si mux pkg-config urlview fasd ShellCheck shfmt xclip xsel
+    si mux pkg-config urlview fasd ShellCheck shfmt xclip xsel micro-editor
     sys_python_install
 
     si sd lsd bat hyperfine fd fzf ripgrep zoxide

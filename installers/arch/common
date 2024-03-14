@@ -11,8 +11,8 @@ si() {
 
 core_install() {
   sudo pacman -Syu
-  si curl wget git base-devel trash-cli tree micro zsh go
-  si zsh-syntax-highlighting zsh-autosuggestions unzip p7zip zip
+  si curl wget git base-devel trash-cli tar tree micro go unzip p7zip zip
+  si zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions
 }
 
 sys_python_install() {
@@ -21,7 +21,7 @@ sys_python_install() {
 
 yay_install() {
     srm /tmp/yay
-    si git base-devel && git clone https://aur.archlinux.org/yay.git /tmp/yay && cd /tmp/yay && makepkg -si && cd - && srm /tmp/yay
+    git clone https://aur.archlinux.org/yay.git /tmp/yay && cd /tmp/yay && makepkg -si && cd - && srm /tmp/yay
 }
 
 essential_install() {
@@ -31,7 +31,7 @@ essential_install() {
 
   core_install
 
-  si tmux pkg-config fasd shfmt shellcheck xclip xsel
+  si tmux pkg-config fasd shfmt shellcheck xclip xsel micro github-cli
 
   sys_python_install
 
