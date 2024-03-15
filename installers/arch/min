@@ -13,7 +13,7 @@ main() {
     set_zsh_as_default
 }
 
-is_rh || err_exit "This script works only on Fedora/RockyLinux. Quitting."
+is_arch || err_exit "This script works only on Arch. Quitting."
 
 bootstrap "Arch setup(min)"
 
