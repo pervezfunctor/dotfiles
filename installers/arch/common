@@ -12,13 +12,12 @@ si() {
 update_packages() {
     slog "Updating"
 
-    if ! { sudo apt-get update && sudo apt-get upgrade -y; }; then
-        err_exit "apt-get update/upgrade failed, quitting"
+    if ! sudo pacman -Syu; then
+        err_exit "pacman update/upgrade failed, quitting"
     fi
 }
 
 core_install() {
-    sudo pacman -Syu
     si curl wget git base-devel trash-cli tar tree micro go unzip p7zip zip
     si zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions
 }
