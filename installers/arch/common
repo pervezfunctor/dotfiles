@@ -65,6 +65,10 @@ cpp_install() {
     slog "C++ installation done!"
 }
 
+vscode_install() {
+    yay -Sy visual-studio-code-bin
+}
+
 # vscode_install() {
 #     has_cmd code && return 0
 #
