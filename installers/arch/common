@@ -65,15 +65,15 @@ cpp_install() {
     slog "C++ installation done!"
 }
 
-vscode_install() {
-    has_cmd code && return 0
-
-    wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
-    sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
-    sudo apt-get update
-    si code
-}
-
+# vscode_install() {
+#     has_cmd code && return 0
+#
+#     wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
+#     sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
+#     sudo apt-get update
+#     si code
+# }
+#
 apps_install() {
     si chromium virt-manager
     flatpak_apps_install
