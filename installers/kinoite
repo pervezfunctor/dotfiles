@@ -5,8 +5,10 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
-    kinoite-desktop-group_install
+    sudo rpm-ostree install zsh tmux trash-cli virt-manager libvirt
+    sudo systemctl enable libvirtd
 
+    kinoite-desktop-group_install
 }
 
 is_kinoite || err_exit "This script works only on Kinoite. Quitting."
