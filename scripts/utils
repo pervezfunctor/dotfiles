@@ -202,6 +202,10 @@ is_fedora() {
    [ -e /etc/redhat-release ] && grep 'Fedora' /etc/redhat-release > /dev/null
 }
 
+is_kinoite() {
+    [ -e /etc/os-release ] && grep 'Kinoite' /etc/os-release > /dev/null
+}
+
 is_rocky() {
     [ -e /etc/redhat-release ] && grep 'Rocky' /etc/redhat-release > /dev/null
 }
@@ -298,7 +302,9 @@ min_packages_for_installer() {
     if is_apt; then
         slog "Installing essential packages for the installer for ubuntu"
         sudo apt-get update
-        sudo apt-get install -y curl wget git-core tar unzip trash-cli
+        sudo apt-get install -y curl wget git-core tar unzip trash-cli    
+    elif is_kinoite; then
+        warn "only app installation supported. Use distrobox container for everything else"
     elif is_rh; then
         slog "Installing essential packages for the installer for fedora"
         sudo dnf install -y curl wget git-core tar trash-cli unzip which util-linux-user

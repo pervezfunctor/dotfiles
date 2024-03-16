@@ -83,7 +83,6 @@ desktop-group_install() {
     set_zsh_as_default
 }
 
-
 desktop-apps-group_install() {
     core_install
     dotfiles_install
@@ -118,6 +117,19 @@ clould-group_install() {
 
     config_install
     set_zsh_as_default
+}
+
+kinoite-desktop-group_install() {
+    flathub_install
+
+    fonts_install
+
+    flatpak_apps_install
+    fpi org.chromium.Chromium
+    fpi com.visualstudio.code
+    fpi io.neovim.nvim
+    fpi org.gnu.emacs
+    fpi org.virt_manager.virt-viewer
 }
 
 }
