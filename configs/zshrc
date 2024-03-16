@@ -348,3 +348,6 @@ function safe_push() {
 
 alias gpp=safe_push "$@"
 
+ssource "$HOME/.localzshrc"
+ssource "$HOME/.config/localzshrc"
+ssource "$HOME/.config/dotfiles/configs/localzshrc"
