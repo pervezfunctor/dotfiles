@@ -66,7 +66,7 @@ cpp_install() {
 }
 
 vscode_install() {
-    yay -Sy visual-studio-code-bin
+    yay -Sy --noconfirm visual-studio-code-bin
 }
 
 # vscode_install() {
