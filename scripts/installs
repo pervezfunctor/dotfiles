@@ -15,8 +15,8 @@ flatpak_apps_install() {
     fi
 
     fpi org.telegram.desktop
-    fpi com.jetbrains.CLion
-    fpi com.google.Chrome
+    # fpi com.jetbrains.CLion
+    # fpi com.google.Chrome
     fpi org.deluge_torrent.deluge
     fpi us.zoom.Zoom
     fpi org.wezfurlong.wezterm
@@ -235,7 +235,7 @@ fonts_install() {
     if is_apt; then
         si fonts-cascadia-code fonts-jetbrains-mono
     elif is_rh; then
-        si cascadia-fonts-all jetbrains-mono-fonts-all
+        is_kinoite || si cascadia-fonts-all jetbrains-mono-fonts-all
     fi
 
     slog "Fonts installation done!"
