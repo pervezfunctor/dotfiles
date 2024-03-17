@@ -6,7 +6,7 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
     sudo rpm-ostree install zsh tmux trash-cli virt-manager libvirt
-    sudo systemctl enable libvirtd
+    sudo systemctl enable --now libvirtd
 
     kinoite-desktop-group_install
 }
