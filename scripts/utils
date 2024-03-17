@@ -87,7 +87,7 @@ fln() {
 srm() {
     for f in "$@"; do
         if [ -L "$f" ]; then
-            rm -f "$f" && slog "Removing existing link $f"
+            rm -f "$f" && slog "Removing link $f"
         elif has_cmd trash-put; then
             trash-put "$f" 2> /dev/null && slog "Trashed $f"
         elif has_cmd trash; then
@@ -96,6 +96,22 @@ srm() {
             warn "trash not installed, cannot rm $f"
         fi
     done
+}
+
+frm() {
+    for f in "$@"; do
+        if [ -L "$f" ]; then
+            rm -f "$f" && slog "Removing link $f"
+        elif has_cmd trash-put; then
+            trash-put "$f" 2> /dev/null && slog "Trashed $f"
+        elif has_cmd trash; then
+            trash "$f" 2> /dev/null && slog "Trashed $f"
+        else
+            warn "removing file $f"
+            rm -f "$f"
+        fi
+    done
+    return 0
 }
 
 scp() {
@@ -302,7 +318,7 @@ min_packages_for_installer() {
     if is_apt; then
         slog "Installing essential packages for the installer for ubuntu"
         sudo apt-get update
-        sudo apt-get install -y curl wget git-core tar unzip trash-cli    
+        sudo apt-get install -y curl wget git-core tar unzip trash-cli
     elif is_kinoite; then
         warn "only app installation supported. Use distrobox container for everything else"
     elif is_rh; then
