@@ -12,6 +12,26 @@ zsh -c "$(curl -sSL https://dub.sh/I2dJKhb)"
 bash -c "$(curl -sSL https://dub.sh/WFQOW36)"
 ```
 
+### Kinoite/Silverblue
+
+First, install the necessary tools you want using `rpm-ostree` and reboot. For eg:
+
+```bash
+sudo rpm-ostree install -y zsh tmux tar trash-cli micro noevim
+```
+
+Then run the following script
+
+```bash
+bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/installers/kinoite)"
+```
+
+Reboot again. You might have to run the following command.
+
+```bash
+sudo systemctl enable --now libvirtd
+```
+
 ### Fedora
 
 ```bash
