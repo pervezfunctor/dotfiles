@@ -190,7 +190,7 @@ monaspace_install() {
 
     smd ~/.local/share/fonts
 
-    srm /tmp/monaspace /tmp/monaspace.zip
+    frm /tmp/monaspace /tmp/monaspace.zip
     wget https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip -O /tmp/monaspace.zip
     unzip -d /tmp/monaspace -o /tmp/monaspace.zip
 
@@ -198,26 +198,26 @@ monaspace_install() {
     cp /tmp/monaspace/monaspace-*/fonts/otf/* ~/.local/share/fonts
     cp /tmp/monaspace/monaspace-*/fonts/variable/* ~/.local/share/fonts
 
-    srm /tmp/monaspace /tmp/monaspace.zip
+    frm /tmp/monaspace /tmp/monaspace.zip
 }
 
 nerd_font_install() {
     smd ~/.local/share/fonts
 
     if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
-        srm /tmp/monaspace /tmp/CascadiaMono.zip
+        frm /tmp/monaspace /tmp/CascadiaMono.zip
         wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip -O /tmp/CascadiaMono.zip
         unzip -d /tmp/monaspace -o /tmp/CascadiaMono.zip
         cp /tmp/monaspace/*.ttf ~/.local/share/fonts
-        srm /tmp/monaspace /tmp/CascadiaMono.zip
+        frm /tmp/monaspace /tmp/CascadiaMono.zip
     fi
 
     if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
-        srm /tmp/monaspace /tmp/Monaspace.zip
+        frm /tmp/monaspace /tmp/Monaspace.zip
         wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip -O /tmp/Monaspace.zip
         unzip -d /tmp/monaspace -o /tmp/Monaspace.zip
         cp /tmp/monaspace/*.otf ~/.local/share/fonts
-        srm /tmp/monaspace /tmp/Monaspace.zip
+        frm /tmp/monaspace /tmp/Monaspace.zip
     fi
 }
 
@@ -300,11 +300,11 @@ go_install() {
 
         sudo rm -rf /usr/local/go
         VERSION=$(curl -sSL "https://go.dev/VERSION?m=text" | head -n 1)
-        srm /tmp/${VERSION}.linux-amd64.tar.gz
+        frm /tmp/${VERSION}.linux-amd64.tar.gz
         wget "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz" -O /tmp/"${VERSION}.linux-amd64.tar.gz"
         slog "Untar ${VERSION}.linux-amd64.tar.gz"
         sudo tar -C /usr/local -xzf /tmp/"${VERSION}.linux-amd64.tar.gz"
-        srm /tmp/${VERSION}.linux-amd64.tar.gz
+        frm /tmp/${VERSION}.linux-amd64.tar.gz
         export PATH=$PATH:/usr/local/go/bin
 
         slog "go installation done!"
