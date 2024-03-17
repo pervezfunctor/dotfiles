@@ -130,6 +130,8 @@ kinoite-desktop-group_install() {
     fpi io.neovim.nvim
     fpi org.gnu.emacs
     fpi org.virt_manager.virt-viewer
+
+    config_install
 }
 
 }
