@@ -11,7 +11,7 @@ main() {
     kinoite-desktop-group_install
 }
 
-is_kinoite || err_exit "This script works only on Kinoite. Quitting."
+is_atomic_fedora || err_exit "This script works only on Kinoite. Quitting."
 
 bootstrap "Fedora desktop setup(desktop)"
 
