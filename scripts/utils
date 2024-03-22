@@ -219,7 +219,15 @@ is_fedora() {
 }
 
 is_kinoite() {
-    [ -e /etc/os-release ] && grep 'Kinoite' /etc/os-release > /dev/null
+    [ -e /etc/os-release ] && grep -i 'kinoite' /etc/os-release > /dev/null
+}
+
+is_silverblue() {
+    [ -e /etc/os-release ] && grep -i 'silverblue' /etc/os-release > /dev/null
+}
+
+is_atomic_fedora() {
+    is_kinoite || is_silverblue
 }
 
 is_rocky() {
