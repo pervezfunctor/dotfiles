@@ -23,7 +23,7 @@ sudo rpm-ostree install -y zsh tmux tar trash-cli micro noevim
 Then run the following script
 
 ```bash
-bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/installers/kinoite)"
+bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/installers/atomic)"
 ```
 
 Reboot again. You might have to run the following command.

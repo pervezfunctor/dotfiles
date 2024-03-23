@@ -6,12 +6,13 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
     sudo rpm-ostree install zsh tmux trash-cli virt-manager libvirt
-    sudo systemctl enable --now libvirtd
 
-    kinoite-desktop-group_install
+    atomic-fedora-desktop-group_install
+
+    sudo systemctl enable --now libvirtd
 }
 
-is_atomic_fedora || err_exit "This script works only on Kinoite. Quitting."
+is_atomic_fedora || err_exit "This script works only on Kinoite/Silverblue. Quitting."
 
 bootstrap "Fedora desktop setup(desktop)"
 

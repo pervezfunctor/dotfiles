@@ -235,7 +235,7 @@ fonts_install() {
     if is_apt; then
         si fonts-cascadia-code fonts-jetbrains-mono
     elif is_rh; then
-        is_kinoite || si cascadia-fonts-all jetbrains-mono-fonts-all
+        is_atomic_fedora || si cascadia-fonts-all jetbrains-mono-fonts-all
     fi
 
     slog "Fonts installation done!"

@@ -327,7 +327,7 @@ min_packages_for_installer() {
         slog "Installing essential packages for the installer for ubuntu"
         sudo apt-get update
         sudo apt-get install -y curl wget git-core tar unzip trash-cli
-    elif is_kinoite; then
+    elif is_atomic_fedora; then
         warn "only app installation supported. Use distrobox container for everything else"
     elif is_rh; then
         slog "Installing essential packages for the installer for fedora"

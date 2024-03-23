@@ -119,7 +119,7 @@ clould-group_install() {
     set_zsh_as_default
 }
 
-kinoite-desktop-group_install() {
+atomic-fedora-desktop-group_install() {
     flathub_install
 
     fonts_install
