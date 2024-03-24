@@ -50,6 +50,8 @@ essential_install() {
     micro_install
     gh_install
 
+    webi_install
+
     slog "Essential packages installation done!"
 }
 

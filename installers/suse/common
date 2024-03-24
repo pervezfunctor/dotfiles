@@ -11,7 +11,7 @@ si() {
 
 update_packages() {
     slog "Updating"
-    
+
     if ! { sudo zypper refresh && sudo zypper dup -y; }; then
         err_exit "zypper refresh failed. quitting"
     fi
@@ -36,6 +36,7 @@ essential_install() {
 
     si tmux urlview fasd ShellCheck shfmt xclip xsel micro-editor
     sys_python_install
+    web_install
 
     si sd lsd bat hyperfine fd fzf ripgrep zoxide
 

@@ -11,6 +11,8 @@ essential_install() {
     brew install unar unzip p7zip zoxide ShellCheck git-extras zip gawk gh
     brew install git-delta dust choose sd procs xh starship lsd cheat curlie
 
+    webi_install
+
     slog "Essential packages installation done!"
 }
 

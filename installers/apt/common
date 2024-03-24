@@ -41,6 +41,8 @@ essential_install() {
 
     sys_python_install
 
+    webi_install
+
     si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
 
     slog "Essential packages installation done!"
