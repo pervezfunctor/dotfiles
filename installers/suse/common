@@ -89,22 +89,6 @@ snap_install() {
     slog "snap installation done!"
 }
 
-docker_install() {
-    has_cmd docker && return 0
-
-    slog "Installing docker..."
-
-    srm /tmp/get-docker.sh
-    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-    sudo sh /tmp/get-docker.sh
-    srm /tmp/get-docker.sh
-
-
-    docker_common_install
-
-    slog "Docker installation done!"
-}
-
 cockpit_install() {
     has_cmd cockpit && return 1
 

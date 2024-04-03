@@ -31,11 +31,12 @@ astro_install() {
     fmv ~/.local/state/nvim ~/.local/state/nvim.bak
     fmv ~/.cache/nvim ~/.cache/nvim.bak
 
-    sclone --depth=1 https://github.com/AstroNvim/AstroNvim ~/.config/nvim
+    sclone --depth=1 https://github.com/AstroNvim/template ~/.config/nvim
+    frm ~/.config/nvim/.git
 
     sclone https://github.com/pervezfunctor/astro-config.git ~/.config/nvim/lua/user
 
-     [[ "$USER" == "pervez" ]] || srm ~/.config/nvim/lua/user/.git
+     [[ "$USER" == "pervez" ]] || frm ~/.config/nvim/lua/user/.git
     slog "Please configure AstroNvim by editing files in ~/.config/nvim/lua/user"
 
     slog "AstroNvim installation done!"
@@ -86,7 +87,7 @@ neovim_install() {
 
     sudo mv squashfs-root /
     sudo ln -s /squashfs-root/AppRun /usr/bin/nvim
-    srm nvim.appimage
+    frm nvim.appimage
 
     treesitter_install
 
@@ -142,7 +143,7 @@ miniconda_install() {
     smd ~/miniconda3
     download_to https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
     bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-    srm ~/miniconda3/miniconda.sh
+    frm ~/miniconda3/miniconda.sh
     has_cmd bash && ~/miniconda3/bin/conda init bash
     has_cmd zsh && ~/miniconda3/bin/conda init zsh
 
@@ -346,6 +347,22 @@ docker_common_install() {
     sudo systemctl --now enable containerd
 }
 
+docker_install() {
+    has_cmd docker && return 0
+
+    slog "Installing docker..."
+
+    frm /tmp/get-docker.sh
+    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+    sudo sh /tmp/get-docker.sh
+    frm /tmp/get-docker.sh
+
+
+    docker_common_install
+
+    slog "Docker installation done!"
+}
+
 code_server_install() {
     has_cmd code-server && return 1
 
@@ -383,7 +400,7 @@ cmake_install() {
 
     sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
     sudo ln -s /opt/cmake/bin/ctest /usr/local/bin/ctest
-    srm "${TMP_DIR}"
+    frm "${TMP_DIR}"
 }
 
 go_shell_install() {

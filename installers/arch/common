@@ -27,8 +27,8 @@ sys_python_install() {
 }
 
 yay_install() {
-    srm /tmp/yay
-    git clone https://aur.archlinux.org/yay.git /tmp/yay && cd /tmp/yay && makepkg -si && cd - && srm /tmp/yay
+    frm /tmp/yay
+    git clone https://aur.archlinux.org/yay.git /tmp/yay && cd /tmp/yay && makepkg -si && cd - && frm /tmp/yay
 }
 
 essential_install() {
@@ -82,22 +82,6 @@ vscode_install() {
 apps_install() {
     si chromium virt-manager
     flatpak_apps_install
-}
-
-docker_install() {
-    has_cmd docker && return 0
-
-    slog "Installing docker..."
-
-    srm /tmp/get-docker.sh
-    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-    sudo sh /tmp/get-docker.sh
-    srm /tmp/get-docker.sh
-
-
-    docker_common_install
-
-    slog "Docker installation done!"
 }
 
 cockpit_install() {
