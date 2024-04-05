@@ -71,7 +71,6 @@ desktop-group_install() {
     python_install
 
     shell_install
-    alacritty_install
 
     neovim_install
     vscode_install
@@ -91,7 +90,6 @@ desktop-apps-group_install() {
     snap_install
 
     fonts_install
-    alacritty_install
 
     vscode_install
     apps_install

@@ -127,13 +127,6 @@ rust_install() {
     slog "rust installation done!"
 }
 
-alacritty_install() {
-    has_cmd alacritty && return 0
-
-    rust_install
-    cargo install alacritty
-}
-
 miniconda_install() {
     has_cmd conda && return 0
     dir_exists ~/miniconda3 && return 0
