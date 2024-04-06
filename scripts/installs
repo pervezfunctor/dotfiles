@@ -23,6 +23,22 @@ flatpak_apps_install() {
     fpi io.github.shiftey.Desktop
 }
 
+webi_install() {
+    has_cmd webi && return 0
+    has_cmd ~/.local/bin/webi && return 0
+
+    curl -sS https://webi.sh/webi | sh
+}
+
+webi_shell_install() {
+    webi node golang go-essentials  shellcheck shfmt brew pathman
+    webi bat curlie delta jq lsd rg gh
+    # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing k9s kubectx kubens
+    # webi pyenv
+    # webi fd git watchexec rustlang
+    # sudo apt install -y libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
+}
+
 astro_install() {
     slog "Installing AstroNvim"
 
