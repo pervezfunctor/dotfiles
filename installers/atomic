@@ -5,10 +5,13 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
-    sudo rpm-ostree install zsh tmux trash-cli virt-manager libvirt
+    webi_install
+    webi zsh tmux trash-cli
+    webi_apps_install
 
     atomic-fedora-desktop-group_install
 
+    sudo rpm-ostree install virt-manager libvirt
     sudo systemctl enable --now libvirtd
 }
 
