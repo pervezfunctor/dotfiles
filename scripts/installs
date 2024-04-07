@@ -61,6 +61,19 @@ astro_install() {
     slog "AstroNvim installation done!"
 }
 
+bash_install() {
+    if ! has_cmd starship; then
+        curl -sS https://starship.rs/install.sh | sh
+    fi
+    if ! grep -q starship ~/.bashrc; then
+        echo 'eval "$(starship init bash)"' >> ~/.bashrc
+    fi
+}
+
+code_config_install() {
+    scp ~/.config/dotfiles/extras/vscode/settings.json ~/.config/Code/User/settings.json
+}
+
 zsh_config_install() {
     slog "Installing zsh"
 
@@ -453,6 +466,7 @@ rust_shell_install() {
 }
 
 shell_install() {
+    bash_install
     go_shell_install
     rust_shell_install
 }
@@ -474,6 +488,7 @@ config_install() {
     has_cmd git && git_config_install
     has_cmd alacritty && alacritty_config_install
     has_cmd wezterm && wezterm_config_install
+    has_cmd code && code_config_install
 }
 
 poetry_install() {
