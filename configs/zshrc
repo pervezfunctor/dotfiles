@@ -189,7 +189,6 @@ if has_cmd flatpak; then
   has_cmd code || alias code="flatpak run com.visualstudio.code"
   has_cmd nvim || alias nvim="flatpak run io.neovim.nvim"
   has_cmd emacs|| alias emacs="flatpak run org.gnu.emacs"
-
 fi
 
 ssource "$HOME/.cargo/env"
