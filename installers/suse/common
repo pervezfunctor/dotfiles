@@ -41,7 +41,9 @@ essential_install() {
     webi_install
     webi brew pathman
 
-    si sd lsd bat hyperfine fd fzf ripgrep zoxide cheat curlie git-delta jq duf
+    si lazygit bottom sd lsd bat hyperfine fd fzf ripgrep zoxide cheat curlie git-delta jq duf lua54-luarocks python3-neovim
+
+    # brew install gdu
 
     slog "Essential packages installation done!"
 }

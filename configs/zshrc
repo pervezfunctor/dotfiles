@@ -172,6 +172,8 @@ alias rd="rmdir"
 alias ipa="ip -brief a"
 has_cmd batcat && alias cat="batcat"
 
+has_cmd gdu || has_cmd gdu-go && alias gdu="gdu-go"
+
 alias -g ..="../"
 alias -g ...="../../"
 alias -g ....="../../../"
