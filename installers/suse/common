@@ -35,6 +35,7 @@ essential_install() {
 
     core_install
 
+    sudo zypper install -y -t  pattern devel_basis
     si tmux urlview fasd ShellCheck shfmt xclip xsel micro-editor
     sys_python_install
     webi_install
