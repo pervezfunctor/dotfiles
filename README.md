@@ -14,21 +14,18 @@ bash -c "$(curl -sSL https://dub.sh/WFQOW36)"
 
 ### Kinoite/Silverblue
 
-First, install the necessary tools you want using `rpm-ostree` and reboot. For eg:
-
-```bash
-sudo rpm-ostree install -y zsh tmux tar trash-cli micro noevim
-```
-
-Then run the following script
-
 ```bash
 bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/installers/atomic)"
 ```
 
-Reboot again. You might have to run the following command.
+Please reboot and run the following commands.
 
 ```bash
+sudo systemctl enable --now cockpit.socket
+sudo systemctl enable --now firewalld
+sudo firewall-cmd --add-service=cockpit
+sudo firewall-cmd --add-service=cockpit --permanent
+
 sudo systemctl enable --now libvirtd
 ```
 
