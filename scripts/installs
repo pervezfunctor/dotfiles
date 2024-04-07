@@ -14,9 +14,9 @@ flatpak_apps_install() {
         return 1
     fi
 
-    fpi org.telegram.desktop
     # fpi com.jetbrains.CLion
     # fpi com.google.Chrome
+    fpi org.telegram.desktop
     fpi org.deluge_torrent.deluge
     fpi us.zoom.Zoom
     fpi org.wezfurlong.wezterm

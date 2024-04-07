@@ -123,11 +123,16 @@ atomic-fedora-desktop-group_install() {
     fonts_install
 
     flatpak_apps_install
+
     fpi org.chromium.Chromium
     fpi com.visualstudio.code
     fpi io.neovim.nvim
     fpi org.gnu.emacs
-    fpi org.virt_manager.virt-viewer
+
+    has_cmd chrome || alias chrome="flatpak run org.chromium.Chromium"
+    has_cmd code || alias code="flatpak run com.visualstudio.code"
+    has_cmd nvim || alias nvim="flatpak run io.neovim.nvim"
+    has_cmd emacs|| alias emacs="flatpak run org.gnu.emacs"
 
     config_install
 }
