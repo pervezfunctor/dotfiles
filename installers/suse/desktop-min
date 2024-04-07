@@ -11,22 +11,13 @@ main() {
 
     flathub_install
 
-    go_install
-    rust_install
-    pnpm_install
-
     fonts_install
-
-    cpp_install
-    python_install
 
     shell_install
 
     neovim_install
     vscode_install
     apps_install
-
-    virt_install
 
     config_install
 

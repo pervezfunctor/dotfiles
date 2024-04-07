@@ -326,13 +326,23 @@ dotfiles_install() {
     sclone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 }
 
+
+webi_install() {
+    has_cmd webi && return 0
+    has_cmd ~/.local/bin/webi && return 0
+
+    curl -sS https://webi.sh/webi | sh
+}
+
 min_packages_for_installer() {
     if is_apt; then
         slog "Installing essential packages for the installer for ubuntu"
         sudo apt-get update
         sudo apt-get install -y curl wget git-core tar unzip trash-cli
     elif is_atomic_fedora; then
-        warn "only app installation supported. Use distrobox container for everything else"
+        warn "You are using Atomic OS, partial support only. Please use toolbox/distrobox for everything."
+        # webi curl wget git-core tar trash-cli unzip
+        sleep 5
     elif is_rh; then
         slog "Installing essential packages for the installer for fedora"
         sudo dnf install -y curl wget git-core tar trash-cli unzip which util-linux-user

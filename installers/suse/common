@@ -37,8 +37,9 @@ essential_install() {
     si tmux urlview fasd ShellCheck shfmt xclip xsel micro-editor
     sys_python_install
     web_install
+    webi brew pathman
 
-    si sd lsd bat hyperfine fd fzf ripgrep zoxide
+    si sd lsd bat hyperfine fd fzf ripgrep zoxide cheat curlie git-delta jq duf
 
     slog "Essential packages installation done!"
 }
