@@ -11,11 +11,7 @@ brewi() {
     done
 }
 
-main() {
-    cmd_check git tar curl
-
-    webi_install
-
+atomic_brew_apps_install() {
     has_cmd wget || brew install wget
     has_cmd unzip || brew install unzip
     has_cmd trash || brew install trash-cli
@@ -29,11 +25,15 @@ main() {
     has_cmd zoxide || brew install zoxide
     has_cmd hyperfine || brew install hyperfine
     has_cmd micro || brew install micro
+}
 
+atomic_shell_install() {
+    webi_install
+    atomic_brew_apps_install
     webi_apps_install
+}
 
-    atomic-fedora-desktop-group_install
-
+atomic_virt_install() {
     declare -a pkgs
 
     has_cmd virt-manager || pkgs+=("virt-manager" "libvirt")
@@ -43,16 +43,18 @@ main() {
     has_cmd pipx || pkgs+=("pipx")
 
     sudo rpm-ostree install -y "${pkgs[@]}"
+}
 
-    sudo systemctl enable --now cockpit.socket
-    sudo systemctl enable --now firewalld
-    sudo firewall-cmd --add-service=cockpit
-    sudo firewall-cmd --add-service=cockpit --permanent
-    sudo systemctl enable --now libvirtd
+main() {
+    cmd_check git tar curl
+
+    atomic_shell_install
+    atomic-fedora-desktop-group_install
+    atomic_virt_install
 }
 
 is_atomic_fedora || err_exit "This script works only on Kinoite/Silverblue. Quitting."
 
 bootstrap "Fedora desktop setup(desktop)"
-
+slog "Please reboot and run script ~/.config/dotfiles/installers/post-atomic"
 }

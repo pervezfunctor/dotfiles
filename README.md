@@ -18,15 +18,10 @@ bash -c "$(curl -sSL https://dub.sh/WFQOW36)"
 bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/installers/atomic)"
 ```
 
-Please reboot and run the following commands.
+Please reboot and run script
 
 ```bash
-sudo systemctl enable --now cockpit.socket
-sudo systemctl enable --now firewalld
-sudo firewall-cmd --add-service=cockpit
-sudo firewall-cmd --add-service=cockpit --permanent
-
-sudo systemctl enable --now libvirtd
+~/.config/dotfiles/installers/post-atomic"
 ```
 
 ### Fedora
