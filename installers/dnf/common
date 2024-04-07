@@ -195,21 +195,16 @@ virt_install() {
     code_server_install
 }
 
-atomic_shell_install() {
-    webi_install
-    webi-shell_install
-}
 
-atomic_virt_install() {
+atomic_pkgs_install() {
     declare -a pkgs
 
-    has_cmd virt-manager || pkgs+=("virt-manager" "libvirt")
-    has_cmd distrobox || pkgs+=("distrobox")
-    has_cmd cockpit || pkgs+=("cockpit" "cockpit-file-sharing" "cockpit-machines" "cockpit-pcp"
-    "cockpit-podman" "cockpit-storaged")
     has_cmd pipx || pkgs+=("pipx")
     has_cmd xsel || pkgs+=("xsel")
     has_cmd xclip || pkgs+=("xclip")
+
+    has_cmd git || pkgs+=("git")
+    has_cmd tar || pkgs+=("tar")
 
     has_cmd wget || pkgs+=("wget")
     has_cmd unzip || pkgs+=("unzip")
@@ -223,6 +218,16 @@ atomic_virt_install() {
     has_cmd hyperfine || pkgs+=("hyperfine")
     has_cmd micro || pkgs+=("micro")
 
+    sudo rpm-ostree install -y "${pkgs[@]}"
+}
+
+atomic_virt_install() {
+    declare -a pkgs
+
+    has_cmd virt-manager || pkgs+=("virt-manager" "libvirt")
+    has_cmd distrobox || pkgs+=("distrobox")
+    has_cmd cockpit || pkgs+=("cockpit" "cockpit-file-sharing" "cockpit-machines" "cockpit-pcp"
+    "cockpit-podman" "cockpit-storaged")
     sudo rpm-ostree install -y "${pkgs[@]}"
 }
 

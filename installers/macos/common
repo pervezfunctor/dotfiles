@@ -53,7 +53,6 @@ virt_install() {
     slog "Virtualization packages installation done!"
 }
 
-
 pyenv_mac_install() {
     slog "Installing pyenv"
     brew install pyenv
