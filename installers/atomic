@@ -11,25 +11,8 @@ brewi() {
     done
 }
 
-atomic_brew_apps_install() {
-    has_cmd wget || brew install wget
-    has_cmd unzip || brew install unzip
-    has_cmd trash || brew install trash-cli
-    has_cmd zsh || brew install zsh
-    has_cmd tmux || brew install tmux
-    has_cmd xclip || brew install xclip
-    has_cmd xsel || brew install xsel
-    has_cmd urlview || brew install urlview
-    has_cmd fzf || brew install fzf
-    has_cmd fd || brew install fd
-    has_cmd zoxide || brew install zoxide
-    has_cmd hyperfine || brew install hyperfine
-    has_cmd micro || brew install micro
-}
-
 atomic_shell_install() {
     webi_install
-    atomic_brew_apps_install
     webi-shell_install
 }
 
@@ -41,6 +24,21 @@ atomic_virt_install() {
     has_cmd cockpit || pkgs+=("cockpit" "cockpit-file-sharing" "cockpit-machines" "cockpit-pcp"
     "cockpit-podman" "cockpit-storaged")
     has_cmd pipx || pkgs+=("pipx")
+    has_cmd xsel || pkgs+=("xsel")
+    has_cmd xclip || pkgs+=("xclip")
+
+    has_cmd wget || pkgs+=("wget")
+    has_cmd unzip || pkgs+=("unzip")
+    has_cmd trash || pkgs+=("trash-cli")
+    has_cmd zsh || pkgs+=("zsh")
+    has_cmd tmux || pkgs+=("tmux")
+    has_cmd urlview || pkgs+=("urlview")
+    has_cmd fzf || pkgs+=("fzf")
+    has_cmd fd || pkgs+=("fd-find")
+    has_cmd zoxide || pkgs+=("zoxide")
+    has_cmd hyperfine || pkgs+=("hyperfine")
+    has_cmd micro || pkgs+=("micro")
+
 
     sudo rpm-ostree install -y "${pkgs[@]}"
 }
