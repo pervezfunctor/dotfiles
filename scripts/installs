@@ -30,7 +30,7 @@ webi_install() {
     has_cmd ~/.local/bin/webi && return 0
 
     curl -sS https://webi.sh/webi | sh
-    [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+    source "$HOME/.config/envman/load.sh"
 }
 
 webi-shell_install() {
@@ -173,6 +173,11 @@ pnpm_install() {
 
     has_cmd bash && pnpm install-completion bash
     has_cmd zsh && pnpm install-completion zsh
+
+    slog "Installing npm packages"
+    pnpm install -g degit tldr gtop
+
+    slog "pnpm/node installation done!"
 }
 
 web_install() {
@@ -447,19 +452,9 @@ rust_shell_install() {
     has_cmd lsd || cargoi lsd
 }
 
-pnpm_shell_install() {
-    if ! has_cmd pnpm; then
-        warn "pnpm not installed, skipping some shell tools"
-    fi
-
-    pnpm install -g degit tldr gtop
-    pnpm install -g @githubnext/github-copilot-cli
-}
-
 shell_install() {
     go_shell_install
     rust_shell_install
-    pnpm_shell_install
 }
 
 alacritty_config_install() {

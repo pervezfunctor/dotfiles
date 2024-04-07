@@ -10,10 +10,9 @@ main() {
     essential_install
 
     flathub_install
+    pnpm_install
 
     fonts_install
-
-    shell_install
 
     neovim_install
     vscode_install
