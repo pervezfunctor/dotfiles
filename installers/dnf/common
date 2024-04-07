@@ -4,7 +4,7 @@
 
 si() {
     for p in "$@"; do
-    slog "Installing package $p"
+        slog "Installing package $p"
         sudo dnf -y install "$p"
     done
 }
