@@ -21,6 +21,8 @@ flatpak_apps_install() {
     fpi us.zoom.Zoom
     fpi org.wezfurlong.wezterm
     fpi io.github.shiftey.Desktop
+
+    alias wezterm="flatpak run org.wezfurlong.wezterm"
 }
 
 webi_install() {
@@ -459,17 +461,23 @@ shell_install() {
     pnpm_shell_install
 }
 
+alacritty_config_install() {
+    smd ~/.config/alacritty
+    scp "${DOT_DIR}/configs/alacritty.yml" ~/.config/alacritty/alacritty.yml
+}
+
+wezterm_config_install() {
+    scp "${DOT_DIR}/configs/wezterm.lua" ~/.wezterm.lua
+}
+
 config_install() {
     has_cmd zsh && zsh_config_install
     has_cmd tmux && tmux_config_install
     has_cmd nvim && astro_install
     has_cmd emacs && doom_install
     has_cmd git && git_config_install
-
-    if has_cmd alacritty; then
-        smd ~/.config/alacritty
-        scp "${DOT_DIR}/configs/alacritty.yml" ~/.config/alacritty/alacritty.yml
-    fi
+    has_cmd alacritty && alacritty_config_install
+    has_cmd wezterm && wezterm_config_install
 }
 
 poetry_install() {

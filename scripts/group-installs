@@ -117,8 +117,26 @@ clould-group_install() {
     set_zsh_as_default
 }
 
+atomic-config_install() {
+    zsh_config_install
+    tmux_config_install
+    astro_install
+    doom_install
+    git_config_install
+
+    if has_cmd alacritty; then
+        smd ~/.config/alacritty
+        scp "${DOT_DIR}/configs/alacritty.yml" ~/.config/alacritty/alacritty.yml
+    fi
+
+    has_cmd wezterm && scp "${DOT_DIR}/configs/wezterm.lua" ~/.wezterm.lua
+}
+
 atomic-fedora-desktop-group_install() {
-    flathub_install
+    cmd_check git tar curl
+
+    dotfiles_install
+    atomic_shell_install
 
     fonts_install
 
@@ -135,6 +153,9 @@ atomic-fedora-desktop-group_install() {
     has_cmd emacs|| alias emacs="flatpak run org.gnu.emacs"
 
     config_install
+
+    atomic_virt_install
+    flathub_install
 }
 
 }

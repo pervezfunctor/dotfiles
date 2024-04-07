@@ -266,6 +266,10 @@ cmd_check() {
     done
 }
 
+flatpak_installed() {
+    flatpak list | grep -q "$1"
+}
+
 file_exists() {
      [[ -f "$1" ]]
 }

@@ -4,51 +4,9 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-brewi() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        brew install "$p"
-    done
-}
-
-atomic_shell_install() {
-    webi_install
-    webi-shell_install
-}
-
-atomic_virt_install() {
-    declare -a pkgs
-
-    has_cmd virt-manager || pkgs+=("virt-manager" "libvirt")
-    has_cmd distrobox || pkgs+=("distrobox")
-    has_cmd cockpit || pkgs+=("cockpit" "cockpit-file-sharing" "cockpit-machines" "cockpit-pcp"
-    "cockpit-podman" "cockpit-storaged")
-    has_cmd pipx || pkgs+=("pipx")
-    has_cmd xsel || pkgs+=("xsel")
-    has_cmd xclip || pkgs+=("xclip")
-
-    has_cmd wget || pkgs+=("wget")
-    has_cmd unzip || pkgs+=("unzip")
-    has_cmd trash || pkgs+=("trash-cli")
-    has_cmd zsh || pkgs+=("zsh")
-    has_cmd tmux || pkgs+=("tmux")
-    has_cmd urlview || pkgs+=("urlview")
-    has_cmd fzf || pkgs+=("fzf")
-    has_cmd fd || pkgs+=("fd-find")
-    has_cmd zoxide || pkgs+=("zoxide")
-    has_cmd hyperfine || pkgs+=("hyperfine")
-    has_cmd micro || pkgs+=("micro")
-
-
-    sudo rpm-ostree install -y "${pkgs[@]}"
-}
 
 main() {
-    cmd_check git tar curl
 
-    atomic_shell_install
-    atomic-fedora-desktop-group_install
-    atomic_virt_install
 }
 
 is_atomic_fedora || err_exit "This script works only on Kinoite/Silverblue. Quitting."
