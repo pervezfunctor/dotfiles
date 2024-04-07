@@ -30,7 +30,7 @@ atomic_brew_apps_install() {
 atomic_shell_install() {
     webi_install
     atomic_brew_apps_install
-    webi_apps_install
+    webi-shell_install
 }
 
 atomic_virt_install() {

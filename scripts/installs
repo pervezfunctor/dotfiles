@@ -30,7 +30,7 @@ webi_install() {
     curl -sS https://webi.sh/webi | sh
 }
 
-webi_shell_install() {
+webi-shell_install() {
     webi node golang go-essentials  shellcheck shfmt brew pathman
     webi bat curlie delta jq lsd rg gh
     # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing k9s kubectx kubens
