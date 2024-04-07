@@ -18,7 +18,7 @@ update_packages() {
 }
 
 core_install() {
-    si curl wget git tar tree zsh unzip unar p7zip zip gh
+    si curl wget git tar tree zsh unzip unar 7zip zip gh
 }
 
 sys_python_install() {
