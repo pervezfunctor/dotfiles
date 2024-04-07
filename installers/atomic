@@ -6,7 +6,7 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 
 
 main() {
-
+  atomic-fedora-desktop-group_install
 }
 
 is_atomic_fedora || err_exit "This script works only on Kinoite/Silverblue. Quitting."
