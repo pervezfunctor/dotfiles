@@ -23,7 +23,7 @@ core_install() {
 
 sys_python_install() {
     si python3-pip python3-virtualenv
-    si pytnon311-pipx
+    si python311-pipx
     pipx install trash-cli
     # python3 -m pip install --user --upgrade pip setuptools
 }
