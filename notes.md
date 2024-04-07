@@ -21,5 +21,6 @@
 - You could install extensions using xargs
 
   ```bash
-  cat extensions.txt | xargs -L 1 code --install-extension
+  cat extensions.txt | xargs -L 1 code --install-extension # or
+  cat extensions.txt | xargs -L 1 flatpak run com.visualstudio.code --install-extension
   ```
