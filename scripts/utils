@@ -307,7 +307,7 @@ download_to() {
     if has_cmd curl; then
         curl -sSL "$1" -o "$2"
     elif has_cmd wget; then
-        wget "$1" -O "$2"
+        wget -nv "$1" -O "$2"
     else
         err_exit "curl or wget must be installed"
     fi
