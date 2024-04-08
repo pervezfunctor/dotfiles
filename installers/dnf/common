@@ -49,6 +49,7 @@ essential_install() {
     sys_python_install
     micro_install
     gh_install
+    gh extension install github/gh-copilot
 
     webi_install
 
