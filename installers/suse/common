@@ -17,15 +17,26 @@ update_packages() {
     fi
 }
 
-core_install() {
-    si curl wget git tar tree zsh unzip unar 7zip zip gh
+sys_python_install() {
+    si python3 python3-virtualenv python3-pip python3-setuptools
 }
 
-sys_python_install() {
-    si python3-pip python3-virtualenv
-    si python311-pipx
+core_install() {
+    si curl wget git tar tree zsh unzip unar zip micro-editor python311-pipx
+    sudo zypper install -y -t pattern devel_basis
     pipx install trash-cli
-    # python3 -m pip install --user --upgrade pip setuptools
+}
+
+snap_install() {
+    has_cmd snap && return 0
+
+    slog "Installing snap..."
+
+    sudo zypper addrepo --refresh https://download.opensuse.org/repositories/system:/snappy/openSUSE_Tumbleweed snappy
+    sudo zypper --gpg-auto-import-keys refresh
+    sudo zypper dup --from snappy
+
+    slog "snap installation done!"
 }
 
 essential_install() {
@@ -34,23 +45,25 @@ essential_install() {
     slog "Installing essential packages"
 
     core_install
+    
+    si gawk tmux urlview xclip xsel 7zip
+    si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel 
 
-    sudo zypper install -y -t  pattern devel_basis
-    si tmux urlview fasd ShellCheck shfmt xclip xsel micro-editor
     sys_python_install
+
     webi_install
     webi brew pathman
 
-    si lazygit bottom sd lsd bat hyperfine fd fzf ripgrep zoxide cheat curlie git-delta jq duf lua54-luarocks python3-neovim
-
-    # brew install gdu
+    snap_install
 
     slog "Essential packages installation done!"
 }
 
-flathub_install() {
-    si flatpak
-    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+cli_install() {
+    si gh ShellCheck shfmt neovim tree-sitter
+    gh extension install github/gh-copilot
+    si lazygit bottom sd lsd bat hyperfine fd fzf ripgrep zoxide cheat 
+    si curlie git-delta jq duf lua54-luarocks python3-neovim
 }
 
 cpp_install() {
@@ -70,7 +83,6 @@ cpp_install() {
 vscode_install() {
     has_cmd code && return 0
 
-
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/zypp/repos.d/vscode.repo'
     sudo zypper refresh
@@ -78,20 +90,10 @@ vscode_install() {
 }
 
 apps_install() {
-    si chromium-browser virt-manager
+    si chromium-browser virt-manager gnome-keyring
+    vscode_install
+    flathub_install
     flatpak_apps_install
-}
-
-snap_install() {
-    has_cmd snap && return 0
-
-    slog "Installing snap..."
-
-    sudo zypper addrepo --refresh https://download.opensuse.org/repositories/system:/snappy/openSUSE_Tumbleweed snappy
-    sudo zypper --gpg-auto-import-keys refresh
-    sudo zypper dup --from snappy
-
-    slog "snap installation done!"
 }
 
 cockpit_install() {
@@ -125,12 +127,12 @@ docker_install() {
 ct_install() {
     docker_install
     podman_install
+    cockpit_install
 }
 
 virt_install() {
     libvirt_install
     ct_install
-    cockpit_install
     code_server_install
 }
 

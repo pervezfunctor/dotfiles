@@ -28,7 +28,6 @@ main() {
 
     cpp_install
     python_install
-    neovim_install
 
     apps_install
 

@@ -19,14 +19,20 @@ update_packages() {
 
 core_install() {
     si software-properties-common apt-transport-https ca-certificates
-    si curl wget git trash-cli tar tree nala micro
-    si zsh zsh-syntax-highlighting zsh-autosuggestions
-    si build-essential unzip unar p7zip zip gawk gh
+    si curl wget git trash-cli tree zsh micro
+    si build-essential tar zip unzip unar 
 }
 
 sys_python_install() {
-    si python3 python3-pip python-is-python3 python3-venv pipx
-    # python3 -m pip install --user --upgrade pip setuptools
+    si python3 python3-venv python3-virtualenv python3-pip python3-setuptools python3-wheel python-is-python3 pipx
+}
+
+snap_install() {
+    has_cmd snap && return 0
+
+    slog "Installing snap..."
+    si snapd
+    slog "snap installation done!"
 }
 
 essential_install() {
@@ -36,21 +42,26 @@ essential_install() {
 
     core_install
 
-    si tmux pkg-config urlview fasd
-    si shellcheck git-extras xclip xsel
+    si gawk tmux pkg-config urlview nala p7zip xclip xsel
+    si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 
     sys_python_install
 
     webi_install
-
-    si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
+    webi brew pathman
+        
+    snap_install
 
     slog "Essential packages installation done!"
 }
 
-flathub_install() {
-    si flatpak
-    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+cli_install() {
+    si gh shellcheck 
+    webi curlie shfmt
+    si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
+    gh extension install github/gh-copilot
+
+    neovim_install
 }
 
 cpp_install() {
@@ -77,16 +88,10 @@ vscode_install() {
 }
 
 apps_install() {
-    si chromium-browser virt-manager
+    si chromium-browser virt-manager gnome-keyring
+    vscode_install
+    flathub_install
     flatpak_apps_install
-}
-
-snap_install() {
-    has_cmd snap && return 0
-
-    slog "Installing snap..."
-    si snapd
-    slog "snap installation done!"
 }
 
 cockpit_install() {
@@ -101,7 +106,7 @@ cockpit_install() {
 }
 
 podman_install() {
-    si podman podman-toolbox
+    si podman podman-toolbox podman-compose
 }
 
 libvirt_install() {

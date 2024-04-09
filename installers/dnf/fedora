@@ -24,7 +24,6 @@ main() {
 
     shell_install
 
-    neovim_install
     vscode_install
     apps_install
 

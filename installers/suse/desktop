@@ -9,8 +9,6 @@ main() {
     dotfiles_install
     essential_install
 
-    flathub_install
-
     go_install
     rust_install
     pnpm_install
@@ -22,8 +20,6 @@ main() {
 
     shell_install
 
-    neovim_install
-    vscode_install
     apps_install
 
     virt_install

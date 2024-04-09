@@ -18,11 +18,9 @@ main() {
     go_install
     rust_install
     pnpm_install
-
+    
     shell_install
-
-    neovim_install
-
+    
     config_install
 
     set_zsh_as_default

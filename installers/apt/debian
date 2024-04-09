@@ -22,9 +22,7 @@ main() {
     shell_install
 
     cpp_install
-    python_install
-
-    neovim_install
+    python_mini_install
 
     ct_install
 

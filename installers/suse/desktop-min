@@ -9,12 +9,10 @@ main() {
     dotfiles_install
     essential_install
 
-    flathub_install
     pnpm_install
 
     fonts_install
 
-    neovim_install
     vscode_install
     apps_install
 

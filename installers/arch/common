@@ -18,12 +18,12 @@ update_packages() {
 }
 
 core_install() {
-    si curl wget git base-devel trash-cli tar tree micro go unzip p7zip zip
-    si zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions
+    si curl wget git base-devel trash-cli tree micro 
+    si zsh zsh-completions base_devel tar zip unzip unarchiver
 }
 
 sys_python_install() {
-    si python python-pip python-virtualenv python-wheel python-pipx
+    si python python-pipx python-pip python-setuptools python-wheel python-virtualenv
 }
 
 yay_install() {
@@ -38,19 +38,26 @@ essential_install() {
 
     core_install
 
-    si tmux pkg-config fasd shfmt shellcheck xclip xsel micro github-cli
+    si gawk tmux pkg-config xclip xsel p7zip
+    si readline sqlite libffi zlib xz
 
     sys_python_install
+    
     webi_install
+    webi brew pathman curlie
 
-    si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
+    si pkgfile
+    sudo pkgfile --update 
+    
+    yay -Sy --noconfirm snapd
 
     slog "Essential packages installation done!"
 }
 
-flathub_install() {
-    si flatpak
-    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+cli_install() {
+    si neovim github-cli shellcheck shfmt python-pynvim
+    si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide    
+    gh extension install github/gh-copilot
 }
 
 cpp_install() {
@@ -70,17 +77,10 @@ vscode_install() {
     yay -Sy --noconfirm visual-studio-code-bin
 }
 
-# vscode_install() {
-#     has_cmd code && return 0
-#
-#     wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
-#     sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
-#     sudo apt-get update
-#     si code
-# }
-#
 apps_install() {
-    si chromium virt-manager
+    vscode_install
+    si chromium virt-manager neovide gnome-keyring
+    flathub_install
     flatpak_apps_install
 }
 
@@ -96,13 +96,18 @@ cockpit_install() {
 }
 
 podman_install() {
-    si podman podman-compose podman-docker
+    si podman podman-compose
 }
 
 libvirt_install() {
     si buildah libvirt virt-install distrobox
 
     sudo systemctl enable --now libvirtd
+}
+
+docker_install() {
+    si docker docker-compose
+    docker_common_install
 }
 
 ct_install() {

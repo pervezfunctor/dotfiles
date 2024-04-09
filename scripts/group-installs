@@ -27,7 +27,6 @@ shell-group_install() {
     pnpm_install
 
     shell_install
-    neovim_install
 
     config_install
     set_zsh_as_default
@@ -41,11 +40,10 @@ vm-group_install() {
     rust_install
     pnpm_install
 
-    python_install
+    python_mini_install
     cpp_install
 
     shell_install
-    neovim_install
 
     ct_install
 
@@ -56,10 +54,6 @@ vm-group_install() {
 desktop-group_install() {
     essential_install
     dotfiles_install
-
-    flathub_install
-    snap_install
-    brew_install
 
     go_install
     rust_install
@@ -72,7 +66,6 @@ desktop-group_install() {
 
     shell_install
 
-    neovim_install
     vscode_install
     apps_install
 
@@ -111,25 +104,10 @@ clould-group_install() {
     dotfiles_install
 
     cpp_install
-    python_install
+    python_mini_install
 
     config_install
     set_zsh_as_default
-}
-
-atomic-config_install() {
-    zsh_config_install
-    tmux_config_install
-    astro_install
-    doom_install
-    git_config_install
-
-    if has_cmd alacritty; then
-        smd ~/.config/alacritty
-        scp "${DOT_DIR}/configs/alacritty.yml" ~/.config/alacritty/alacritty.yml
-    fi
-
-    has_cmd wezterm && scp "${DOT_DIR}/configs/wezterm.lua" ~/.wezterm.lua
 }
 
 atomic-fedora-desktop-group_install() {

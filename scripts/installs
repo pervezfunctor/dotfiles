@@ -2,6 +2,16 @@
 
 {
 
+flathub_install() {
+    has_cmd flatpak || si flatpak
+
+    if has_cmd flatpak; then
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+    else
+        warn "flatpak not installed! Ignoring flathub config."
+    fi
+}
+
 fpi() {
     for pkg in "$@"; do
         flatpak install -y --user flathub "$pkg"
@@ -187,8 +197,6 @@ pnpm_install() {
     has_cmd bash && pnpm install-completion bash
     has_cmd zsh && pnpm install-completion zsh
 
-    slog "Installing npm packages"
-    pnpm install -g degit tldr gtop
 
     slog "pnpm/node installation done!"
 }
@@ -408,7 +416,7 @@ code_server_install() {
 conan_install() {
     has_cmd conan && return 1
 
-    python3 -m pip install --user conan
+    pipx install conan
 }
 
 cmake_install() {
@@ -465,10 +473,21 @@ rust_shell_install() {
     has_cmd lsd || cargoi lsd
 }
 
+pnpm_shell_install() {
+    if ! has_cmd pnpm; then
+        warn "pnpm not installed, skipping some shell tools"
+        return 1
+    fi
+
+    pnpm install -g degit tldr gtop neovim
+}
+
 shell_install() {
+    cli_install
     bash_install
     go_shell_install
     rust_shell_install
+    pnpm_shell_install
 }
 
 alacritty_config_install() {
@@ -534,15 +553,24 @@ pyenv_miniconda_install() {
     fi
 }
 
-python_install() {
+python_core_install() {
     pyenv_install
 
     export PYENV_ROOT="$HOME/.pyenv"
     export PATH="$PYENV_ROOT/bin:$PATH"
     eval "$(pyenv init --path)"
 
-    anaconda_install
     poetry_install
+}
+
+python_mini_install() {
+    python_core_install
+    pyenv_miniconda_install
+}
+
+python_install() {
+    python_core_install
+    anaconda_install
 }
 
 asdf_install() {

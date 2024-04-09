@@ -14,8 +14,6 @@ main() {
 
     shell_install
 
-    neovim_install
-
     config_install
 
     set_zsh_as_default
