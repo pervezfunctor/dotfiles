@@ -57,6 +57,9 @@ prompt pure
 
 ssource /etc/zsh_command_not_found
 
+# webi paths etc
+[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+
 if file_exists /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh; then
     source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 else
@@ -76,7 +79,7 @@ else
 fi
 
     if ! dir_exists ~/.zsh/alias-tips; then
-        has_cmd git && git clone --depth=1  https://github.com/djui/alias-tips.git 
+        has_cmd git && git clone --depth=1  https://github.com/djui/alias-tips.git
     fi
     ssource ~/.zsh/zsh-autosuggestions/alias-tips/alias-tips.plugin.zsh
 
@@ -155,6 +158,8 @@ alias gb='git branch'
 alias gbc='git checkout -b'
 alias gbc='git checkout -b'
 alias gsl='git stash list'
+alias gpp=safe_push "$@"
+alias clone='gh repo clone'
 
 if has_cmd code; then
     alias c='code'
@@ -239,12 +244,6 @@ elif has_cmd /$HOME/miniconda3/bin/conda; then
       fi
   fi
   unset __conda_setup
-fi
-
-alias clone='gh repo clone'
-
-if has_cmd github-copilot-cli; then
-    eval "$(github-copilot-cli alias -- "$0")"
 fi
 
 # Copied from oh-my-zsh
@@ -358,9 +357,6 @@ function safe_push() {
     git stash -u && git push "$@" && git stash pop
 }
 
-alias gpp=safe_push "$@"
-
-[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
 ssource "$HOME/.localzshrc"
 ssource "$HOME/.config/localzshrc"
