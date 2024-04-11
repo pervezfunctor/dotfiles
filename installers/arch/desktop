@@ -20,7 +20,7 @@ main() {
 
     shell_install
 
-    apps_install
+    ui_install
 
     virt_install
 

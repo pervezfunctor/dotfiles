@@ -45,9 +45,9 @@ essential_install() {
     slog "Installing essential packages"
 
     core_install
-    
-    si gawk tmux urlview xclip xsel 7zip
-    si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel 
+
+    si gawk tmux urlview 7zip
+    si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel
 
     sys_python_install
 
@@ -62,7 +62,7 @@ essential_install() {
 cli_install() {
     si gh ShellCheck shfmt neovim tree-sitter
     gh extension install github/gh-copilot
-    si lazygit bottom sd lsd bat hyperfine fd fzf ripgrep zoxide cheat 
+    si lazygit bottom sd lsd bat hyperfine fd fzf ripgrep zoxide cheat
     si curlie git-delta jq duf lua54-luarocks python3-neovim
 }
 
@@ -89,8 +89,8 @@ vscode_install() {
     si code
 }
 
-apps_install() {
-    si chromium-browser virt-manager gnome-keyring
+ui_install() {
+    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
     vscode_install
     flathub_install
     flatpak_apps_install

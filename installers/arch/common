@@ -18,7 +18,7 @@ update_packages() {
 }
 
 core_install() {
-    si curl wget git base-devel trash-cli tree micro 
+    si curl wget git base-devel trash-cli tree micro
     si zsh zsh-completions base_devel tar zip unzip unarchiver
 }
 
@@ -38,17 +38,17 @@ essential_install() {
 
     core_install
 
-    si gawk tmux pkg-config xclip xsel p7zip
+    si gawk tmux pkg-config p7zip
     si readline sqlite libffi zlib xz
 
     sys_python_install
-    
+
     webi_install
     webi brew pathman curlie
 
     si pkgfile
-    sudo pkgfile --update 
-    
+    sudo pkgfile --update
+
     yay -Sy --noconfirm snapd
 
     slog "Essential packages installation done!"
@@ -56,7 +56,7 @@ essential_install() {
 
 cli_install() {
     si neovim github-cli shellcheck shfmt python-pynvim
-    si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide    
+    si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
     gh extension install github/gh-copilot
 }
 
@@ -77,9 +77,9 @@ vscode_install() {
     yay -Sy --noconfirm visual-studio-code-bin
 }
 
-apps_install() {
+ui_install() {
     vscode_install
-    si chromium virt-manager neovide gnome-keyring
+    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard
     flathub_install
     flatpak_apps_install
 }

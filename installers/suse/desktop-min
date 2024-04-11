@@ -14,7 +14,7 @@ main() {
     fonts_install
 
     vscode_install
-    apps_install
+    ui_install
 
     config_install
 

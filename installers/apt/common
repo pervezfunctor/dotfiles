@@ -20,7 +20,7 @@ update_packages() {
 core_install() {
     si software-properties-common apt-transport-https ca-certificates
     si curl wget git trash-cli tree zsh micro
-    si build-essential tar zip unzip unar 
+    si build-essential tar zip unzip unar
 }
 
 sys_python_install() {
@@ -42,21 +42,21 @@ essential_install() {
 
     core_install
 
-    si gawk tmux pkg-config urlview nala p7zip xclip xsel
+    si gawk tmux pkg-config urlview nala p7zip
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 
     sys_python_install
 
     webi_install
     webi brew pathman
-        
+
     snap_install
 
     slog "Essential packages installation done!"
 }
 
 cli_install() {
-    si gh shellcheck 
+    si gh shellcheck
     webi curlie shfmt
     si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
     gh extension install github/gh-copilot
@@ -87,8 +87,8 @@ vscode_install() {
     si code
 }
 
-apps_install() {
-    si chromium-browser virt-manager gnome-keyring
+ui_install() {
+    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
     vscode_install
     flathub_install
     flatpak_apps_install

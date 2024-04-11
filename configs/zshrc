@@ -79,7 +79,7 @@ else
 fi
 
     if ! dir_exists ~/.zsh/alias-tips; then
-        has_cmd git && git clone --depth=1  https://github.com/djui/alias-tips.git
+        has_cmd git && git clone --depth=1 https://github.com/djui/alias-tips.git
     fi
     ssource ~/.zsh/zsh-autosuggestions/alias-tips/alias-tips.plugin.zsh
 
