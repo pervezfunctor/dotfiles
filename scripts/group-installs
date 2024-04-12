@@ -142,7 +142,7 @@ atomic_fedora_install() {
     dotfiles_install
     webi_install
 
-    shell_install
+    cli_install
     config_install
 
     if [ $cnd_cmd == "distrobox" ]; then
@@ -154,6 +154,8 @@ atomic_fedora_install() {
 
     $cnt_cmd exit
     slog "Exiting default distrobox container"
+
+    atomic_virt_install
 }
 
 # atomic-fedora-desktop-group_install() {
