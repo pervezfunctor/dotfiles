@@ -170,41 +170,4 @@ virt_install() {
     code_server_install
 }
 
-# atomic_pkgs_install() {
-#     declare -a pkgs
-
-#     has_cmd pipx || pkgs+=("pipx")
-#     has_cmd xsel || pkgs+=("xsel")
-#     has_cmd xclip || pkgs+=("xclip")
-
-#     has_cmd git || pkgs+=("git")
-#     has_cmd tar || pkgs+=("tar")
-
-#     has_cmd wget || pkgs+=("wget")
-#     has_cmd trash || pkgs+=("trash-cli")
-#     has_cmd unzip || pkgs+=("unzip")
-#     has_cmd zsh || pkgs+=("zsh")
-#     has_cmd tmux || pkgs+=("tmux")
-#     has_cmd urlview || pkgs+=("urlview")
-
-#     has_cmd fzf || pkgs+=("fzf")
-#     has_cmd fd || pkgs+=("fd-find")
-#     has_cmd zoxide || pkgs+=("zoxide")
-#     has_cmd hyperfine || pkgs+=("hyperfine")
-#     has_cmd micro || pkgs+=("micro")
-
-#     sudo rpm-ostree install -y "${pkgs[@]}"
-# }
-
-atomic_virt_install() {
-    declare -a pkgs
-
-    has_cmd virt-manager || pkgs+=("virt-manager" "libvirt")
-    has_cmd distrobox || pkgs+=("distrobox")
-    has_cmd cockpit || pkgs+=("cockpit" "cockpit-file-sharing" "cockpit-machines" "cockpit-pcp"
-    "cockpit-podman" "cockpit-storaged")
-
-    sudo rpm-ostree install -y "${pkgs[@]}"
-}
-
 }

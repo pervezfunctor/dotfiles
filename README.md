@@ -12,18 +12,6 @@ zsh -c "$(curl -sSL https://dub.sh/I2dJKhb)"
 bash -c "$(curl -sSL https://dub.sh/WFQOW36)"
 ```
 
-### Kinoite/Silverblue
-
-```bash
-bash -c "$(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/installers/atomic)"
-```
-
-Please reboot and run script
-
-```bash
-~/.config/dotfiles/installers/post-atomic"
-```
-
 ### Fedora
 
 ```bash
