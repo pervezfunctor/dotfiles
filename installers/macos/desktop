@@ -5,11 +5,14 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 ui_install() {
+    brew install github warp
     brew install --cask telegram
     brew install --cask zoom
     brew install --cask jetbrains-toolbox
     brew install --cask google-chrome
     brew install --cask zed
+    brew install --cask wezterm
+
     brew install deluge
     brew install visual-studio-code
 }
@@ -22,8 +25,8 @@ main() {
 
     dotfiles_install
     essential_install
+
     cli_install
-    cli_apps_install
     fonts_install
 
     pnpm_install

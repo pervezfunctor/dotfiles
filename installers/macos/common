@@ -35,10 +35,6 @@ cli_install() {
     alias gdu=gdu-go
 }
 
-cli_apps_install() {
-    brew install iterm2 github warp
-}
-
 fonts_install() {
     brew tap homebrew/cask-fonts
     brew install --cask font-jetbrains-mono-nerd-font
