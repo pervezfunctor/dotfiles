@@ -32,7 +32,7 @@ main() {
     pnpm_install
     cpp_install
     pyenv_mac_install
-#   pyenv_miniconda_install
+    anaconda_install
 
     ui_install
     virt_install

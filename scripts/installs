@@ -523,6 +523,7 @@ config_install() {
     has_cmd code && vscode_config_install
 }
 
+
 poetry_install() {
     has_cmd poetry && return 0
 
@@ -548,6 +549,14 @@ anaconda_install() {
             slog "Installing anaconda"
             local anacondaversion=`pyenv install --list | grep anaconda | tail -1`
             pyenv install $anacondaversion
+            smd ~/py
+            if cd py; then
+                pyenv global $anacondaversion
+                python -m pip install --user pipx neovim
+                poetry_install
+            else
+                warn "~/py doesn't exist, skipping part of python install"
+            fi
         fi
     else
         warn "pyenv not installed, skipping anaconda"
