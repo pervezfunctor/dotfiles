@@ -18,12 +18,13 @@ main() {
     slog "Install xcode"
     xcode-select --install
 
-    brew_install
+    homebrew_install
 
     dotfiles_install
     essential_install
     cli_install
     cli_apps_install
+    fonts_install
 
     pnpm_install
     cpp_install

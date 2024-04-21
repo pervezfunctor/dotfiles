@@ -80,8 +80,12 @@ bash_install() {
     fi
 }
 
-code_config_install() {
-    scp ~/.config/dotfiles/extras/vscode/settings.json ~/.config/Code/User/settings.json
+vscode_config_install() {
+    if is_mac; then
+        scp ~/.config/dotfiles/extras/vscode/settings.json "$HOME/Library/Application Support/Code/User/settings.json"
+    else
+        scp ~/.config/dotfiles/extras/vscode/settings.json ~/.config/Code/User/settings.json
+    fi
 }
 
 zsh_config_install() {
@@ -516,7 +520,7 @@ config_install() {
     has_cmd git && git_config_install
     has_cmd alacritty && alacritty_config_install
     has_cmd wezterm && wezterm_config_install
-    has_cmd code && code_config_install
+    has_cmd code && vscode_config_install
 }
 
 poetry_install() {

@@ -2,8 +2,13 @@
 
 {
 
+homebrew_install() {
+    brew_install
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+}
+
 core_install() {
-    brew install curl wget trash tree tar unar zip unzip coreutils
+    brew install curl wget trash tree unar zip unzip coreutils
 }
 
 essential_install() {
@@ -55,8 +60,8 @@ virt_install() {
     softwareupdate --install-rosetta --agree-to-license
     brew install podman
     brew install --cask podman-desktop
-    podman machine set --rootful
-    sudo /opt/homebrew/Cellar/podman/4.9.2/bin/podman-mac-helper install
+    # podman machine set --rootful
+    # sudo /opt/homebrew/Cellar/podman/4.9.2/bin/podman-mac-helper install
 
     dir_exists /Applications/Docker.app || brew install --cask docker
 
