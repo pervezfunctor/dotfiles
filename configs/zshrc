@@ -192,17 +192,17 @@ alias -g .....="../../../../"
 alias -g ......="../../../../../"
 
 if has_cmd flatpak; then
-  has_cmd wezterm || alias wezterm="flatpak run org.wezfurlong.wezterm"
-  has_cmd telegram || alias telegram="flatpak run org.telegram.desktop"
-  has_cmd clion || alias clion="flatpak run com.jetbrains.CLion"
-  has_cmd chrome || alias chrome="flatpak run com.google.Chrome"
-  has_cmd deluge || alias deluge="flatpak run org.deluge_torrent.deluge"
-  has_cmd zoom || alias zoom="flatpak run us.zoom.Zoom"
-  has_cmd shiftey || alias shiftey="flatpak run io.github.shiftey.Desktop"
-  has_cmd code || alias code="flatpak run com.visualstudio.code"
-  # has_cmd code || alias code="flatpak run com.visualstudio.code --password-store="gnome-libsecret""
-  has_cmd nvim || alias nvim="flatpak run io.neovim.nvim"
-  has_cmd emacs|| alias emacs="flatpak run org.gnu.emacs"
+    has_cmd wezterm || alias wezterm="flatpak run org.wezfurlong.wezterm"
+    has_cmd telegram || alias telegram="flatpak run org.telegram.desktop"
+    has_cmd clion || alias clion="flatpak run com.jetbrains.CLion"
+    has_cmd chrome || alias chrome="flatpak run com.google.Chrome"
+    has_cmd deluge || alias deluge="flatpak run org.deluge_torrent.deluge"
+    has_cmd zoom || alias zoom="flatpak run us.zoom.Zoom"
+    has_cmd shiftey || alias shiftey="flatpak run io.github.shiftey.Desktop"
+    has_cmd code || alias code="flatpak run com.visualstudio.code"
+    # has_cmd code || alias code="flatpak run com.visualstudio.code --password-store="gnome-libsecret""
+    has_cmd nvim || alias nvim="flatpak run io.neovim.nvim"
+    has_cmd emacs|| alias emacs="flatpak run org.gnu.emacs"
 fi
 
 ssource "$HOME/.cargo/env"
@@ -210,11 +210,20 @@ ssource "$HOME/.cargo/env"
 export DOTNET_ROOT="$HOME/.dotnet"
 export GOPATH="$HOME/go"
 
+if has_cmd /opt/homebrew/bin/brew; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
+test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+# echo "eval \$($(brew --prefix)/bin/brew shellenv)" >> ~/.bashrc
+
+# spath_export "/home/linuxbrew/.linuxbrew/bin"
+# spath_export "/opt/homebrew/bin"
+
 spath_export "/usr/bin"
 spath_export "/snap/bin"
 spath_export "$GOPATH/bin"
-spath_export "/home/linuxbrew/.linuxbrew/bin"
-spath_export "/opt/homebrew/bin"
 spath_export "$HOME/.config/dotfiles/bin"
 spath_export "$HOME/.config/emacs/bin"
 spath_export "$HOME/.local/bin"
@@ -256,63 +265,63 @@ fi
 # Make sure that the terminal is in application mode when zle is active, since
 # only then values from $terminfo are valid
 if (( ${+terminfo[smkx]} )) && (( ${+terminfo[rmkx]} )); then
-  function zle-line-init() {
+    function zle-line-init() {
     echoti smkx
-  }
-  function zle-line-finish() {
+    }
+    function zle-line-finish() {
     echoti rmkx
-  }
-  zle -N zle-line-init
-  zle -N zle-line-finish
+    }
+    zle -N zle-line-init
+    zle -N zle-line-finish
 fi
 
 # [PageUp] - Up a line of history
 if [[ -n "${terminfo[kpp]}" ]]; then
-  bindkey -M emacs "${terminfo[kpp]}" up-line-or-history
+    bindkey -M emacs "${terminfo[kpp]}" up-line-or-history
 fi
 # [PageDown] - Down a line of history
 if [[ -n "${terminfo[knp]}" ]]; then
-  bindkey -M emacs "${terminfo[knp]}" down-line-or-history
+    bindkey -M emacs "${terminfo[knp]}" down-line-or-history
 fi
 
 # Start typing + [Up-Arrow] - fuzzy find history forward
 if [[ -n "${terminfo[kcuu1]}" ]]; then
-  autoload -U up-line-or-beginning-search
-  zle -N up-line-or-beginning-search
+    autoload -U up-line-or-beginning-search
+    zle -N up-line-or-beginning-search
 
-  bindkey -M emacs "${terminfo[kcuu1]}" up-line-or-beginning-search
+    bindkey -M emacs "${terminfo[kcuu1]}" up-line-or-beginning-search
 fi
 # Start typing + [Down-Arrow] - fuzzy find history backward
 if [[ -n "${terminfo[kcud1]}" ]]; then
-  autoload -U down-line-or-beginning-search
-  zle -N down-line-or-beginning-search
+    autoload -U down-line-or-beginning-search
+    zle -N down-line-or-beginning-search
 
-  bindkey -M emacs "${terminfo[kcud1]}" down-line-or-beginning-search
+    bindkey -M emacs "${terminfo[kcud1]}" down-line-or-beginning-search
 fi
 
 # [Home] - Go to beginning of line
 if [[ -n "${terminfo[khome]}" ]]; then
-  bindkey -M emacs "${terminfo[khome]}" beginning-of-line
+    bindkey -M emacs "${terminfo[khome]}" beginning-of-line
 fi
 # [End] - Go to end of line
 if [[ -n "${terminfo[kend]}" ]]; then
-  bindkey -M emacs "${terminfo[kend]}"  end-of-line
+    bindkey -M emacs "${terminfo[kend]}"  end-of-line
 fi
 
 # [Shift-Tab] - move through the completion menu backwards
 if [[ -n "${terminfo[kcbt]}" ]]; then
-  bindkey -M emacs "${terminfo[kcbt]}" reverse-menu-complete
+    bindkey -M emacs "${terminfo[kcbt]}" reverse-menu-complete
 fi
 
 # [Backspace] - delete backward
 bindkey -M emacs '^?' backward-delete-char
 # [Delete] - delete forward
 if [[ -n "${terminfo[kdch1]}" ]]; then
-  bindkey -M emacs "${terminfo[kdch1]}" delete-char
+    bindkey -M emacs "${terminfo[kdch1]}" delete-char
 else
-  bindkey -M emacs "^[[3~" delete-char
+    bindkey -M emacs "^[[3~" delete-char
 
-  bindkey -M emacs "^[3;5~" delete-char
+    bindkey -M emacs "^[3;5~" delete-char
 fi
 
 # [Ctrl-Delete] - delete whole forward-word
