@@ -2,18 +2,36 @@
 
 {
 
+core_install() {
+    brew install curl wget trash tree tar unar zip unzip coreutils
+}
+
 essential_install() {
     slog "Installing Essential packages"
 
-    brew install unzip trash iterm2 warp coreutils golang github rust
-    brew install curl wget tree fzf ripgrep tmux pkg-config urlview
-    brew install zsh zsh-syntax-highlighting zsh-autosuggestions fd
-    brew install unar unzip p7zip zoxide ShellCheck git-extras zip gawk gh
-    brew install git-delta dust choose sd procs xh starship lsd cheat curlie
-
+    core_install
     webi_install
+    webi pathman
+
+    brew install gawk tmux pkg-config urlview p7zip
+    brew install zsh zsh-syntax-highlighting zsh-autosuggestions
 
     slog "Essential packages installation done!"
+}
+
+cli_install() {
+    brew install golang rust
+    brew install neovim lazygit neovide luarocks gdu bottom
+    brew install fzf ripgrep fd
+    brew install p7zip zoxide ShellCheck shfmt git-extras gawk gh
+    brew install git-delta dust choose sd procs xh starship lsd cheat curlie
+
+    gh extension install github/gh-copilot
+    alias gdu=gdu-go
+}
+
+cli_apps_install() {
+    brew install iterm2 github warp
 }
 
 fonts_install() {
@@ -29,14 +47,6 @@ cpp_install() {
 
     slog "C++ installation done!"
 
-}
-
-neovim_install() {
-    slog "Installing neovim"
-
-    brew install neovim lazygit neovide luarocks gdu bottom golang
-
-    slog "neovim installation done!"
 }
 
 virt_install() {
@@ -60,4 +70,3 @@ pyenv_mac_install() {
 }
 
 }
-

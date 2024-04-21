@@ -22,14 +22,16 @@ main() {
 
     dotfiles_install
     essential_install
+    cli_install
+    cli_apps_install
 
     pnpm_install
-    shell_install
-
     cpp_install
-    python_install
+    pyenv_mac_install
+#   pyenv_miniconda_install
 
     ui_install
+    virt_install
 
     config_install
 }
