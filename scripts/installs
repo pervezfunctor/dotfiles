@@ -84,6 +84,7 @@ vscode_config_install() {
     if is_mac; then
         scp ~/.config/dotfiles/extras/vscode/settings.json "$HOME/Library/Application Support/Code/User/settings.json"
     else
+        smd ~/.config/Code/User
         scp ~/.config/dotfiles/extras/vscode/settings.json ~/.config/Code/User/settings.json
     fi
 }
