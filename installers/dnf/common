@@ -120,7 +120,7 @@ cockpit_install() {
 
     slog "Installing cockpit"
 
-    si cockpit cockpit-file-sharing cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged firewalld
+    si cockpit cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged firewalld # cockpit-file-sharing
     sudo systemctl enable --now cockpit.socket
     sudo systemctl enable --now firewalld
     sudo firewall-cmd --add-service=cockpit

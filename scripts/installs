@@ -73,7 +73,7 @@ astro_install() {
 
 bash_install() {
     if ! has_cmd starship; then
-        curl -sS https://starship.rs/install.sh | sh
+        curl -sS https://starship.rs/install.sh | sh -s -- -y
     fi
     if ! grep -q starship ~/.bashrc; then
         echo 'eval "$(starship init bash)"' >> ~/.bashrc
@@ -287,7 +287,7 @@ fonts_install() {
     if is_apt; then
         si fonts-cascadia-code fonts-jetbrains-mono
     elif is_rh; then
-        is_1_fedora || si cascadia-fonts-all jetbrains-mono-fonts-all
+        is_fedora || si cascadia-fonts-all jetbrains-mono-fonts-all
     fi
 
     slog "Fonts installation done!"
@@ -550,7 +550,7 @@ anaconda_install() {
             local anacondaversion=`pyenv install --list | grep anaconda | tail -1`
             pyenv install $anacondaversion
             smd ~/py
-            if cd py; then
+            if cd ~/py; then
                 pyenv global $anacondaversion
                 python -m pip install --user pipx neovim
                 poetry_install
