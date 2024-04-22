@@ -12,7 +12,7 @@ ui_install() {
     brew install --cask google-chrome
     brew install --cask zed
     brew install --cask wezterm
-
+    brew install --cask microsoft-remote-desktop
     brew install deluge
     brew install visual-studio-code
 }
