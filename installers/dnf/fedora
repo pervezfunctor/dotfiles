@@ -10,8 +10,6 @@ main() {
     essential_install
 
     flathub_install
-    snap_install
-    brew_install
 
     go_install
     rust_install
