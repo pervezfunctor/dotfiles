@@ -21,6 +21,9 @@ core_install() {
     si software-properties-common apt-transport-https ca-certificates
     si curl wget git trash-cli tree zsh micro
     si build-essential tar zip unzip unar
+
+    si command-not-found
+    sudo apt-get update
 }
 
 sys_python_install() {
@@ -32,6 +35,8 @@ snap_install() {
 
     slog "Installing snap..."
     si snapd
+    sudo snap install core
+
     slog "snap installation done!"
 }
 
@@ -49,8 +54,9 @@ essential_install() {
 
     webi_install
     webi brew pathman
-
     snap_install
+
+    brew install just chezmoi atuin uutils-coreutils
 
     slog "Essential packages installation done!"
 }
