@@ -152,15 +152,14 @@ podman_install() {
 
 libvirt_install() {
     sudo dnf groupinstall -y --with-optional "System Tools"
-
     si libvirt buildah distrobox
-
     sudo systemctl enable --now libvirtd
 }
 
 ct_install() {
     docker_install
     podman_install
+    si buildah distrobox
     cockpit_install
 }
 

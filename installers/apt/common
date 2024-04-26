@@ -111,14 +111,15 @@ podman_install() {
 
 libvirt_install() {
     si buildah libvirt-daemon distrobox
-
     sudo systemctl enable --now libvirtd
 }
 
 ct_install() {
     docker_install
     podman_install
+    si buildah distrobox
     cockpit_install
+
 }
 
 virt_install() {

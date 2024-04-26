@@ -127,6 +127,7 @@ docker_install() {
 ct_install() {
     docker_install
     podman_install
+    si buildah distrobox
     cockpit_install
 }
 
