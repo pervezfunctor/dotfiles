@@ -203,6 +203,7 @@ if has_cmd flatpak; then
     # has_cmd code || alias code="flatpak run com.visualstudio.code --password-store="gnome-libsecret""
     has_cmd nvim || alias nvim="flatpak run io.neovim.nvim"
     has_cmd emacs|| alias emacs="flatpak run org.gnu.emacs"
+    has_cmd boxbuddy || alias boxbuddy="flatpak run io.github.dvlv.boxbuddyrs"
 fi
 
 ssource "$HOME/.cargo/env"

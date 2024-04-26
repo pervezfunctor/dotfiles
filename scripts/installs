@@ -31,7 +31,9 @@ flatpak_apps_install() {
     fpi us.zoom.Zoom
     fpi org.wezfurlong.wezterm
     fpi io.github.shiftey.Desktop
+    fpi io.github.dvlv.boxbuddyrs
 
+    alias boxbuddy="flatpak run io.github.dvlv.boxbuddyrs"
     alias wezterm="flatpak run org.wezfurlong.wezterm"
 }
 
