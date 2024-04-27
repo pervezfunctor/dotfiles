@@ -5,14 +5,14 @@
 si() {
     for p in "$@"; do
         slog "Installing package $p"
-        sudo zypper install -y "$p"
+        sudo zypper install -q -y "$p"
     done
 }
 
 update_packages() {
     slog "Updating"
 
-    if ! { sudo zypper refresh && sudo zypper dup -y; }; then
+    if ! { sudo zypper refresh && sudo zypper dup -q -y; }; then
         err_exit "zypper refresh failed. quitting"
     fi
 }

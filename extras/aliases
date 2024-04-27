@@ -106,7 +106,7 @@ if is_ubuntu; then
 fi
 
 if is_mac; then
-    alias si="brew install"
+    alias si="brew install -q"
     alias ss="brew search"
     alias sr="brew uninstall"
 fi

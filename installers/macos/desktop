@@ -5,16 +5,16 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 ui_install() {
-    brew install github warp
-    brew install --cask telegram
-    brew install --cask zoom
-    brew install --cask jetbrains-toolbox
-    brew install --cask google-chrome
-    brew install --cask zed
-    brew install --cask wezterm
-    brew install --cask microsoft-remote-desktop
-    brew install deluge
-    brew install visual-studio-code
+    brew install -q github warp
+    brew install -q --cask telegram
+    brew install -q --cask zoom
+    brew install -q --cask jetbrains-toolbox
+    brew install -q --cask google-chrome
+    brew install -q --cask zed
+    brew install -q --cask wezterm
+    brew install -q --cask microsoft-remote-desktop
+    brew install -q deluge
+    brew install -q visual-studio-code
 }
 
 main() {

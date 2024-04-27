@@ -8,7 +8,7 @@ homebrew_install() {
 }
 
 core_install() {
-    brew install curl wget trash tree unar zip unzip coreutils
+    brew install -q curl wget trash tree unar zip unzip coreutils
 }
 
 essential_install() {
@@ -18,18 +18,18 @@ essential_install() {
     webi_install
     webi pathman
 
-    brew install gawk tmux pkg-config urlview p7zip
-    brew install zsh zsh-syntax-highlighting zsh-autosuggestions
+    brew install -q gawk tmux pkg-config urlview p7zip
+    brew install -q zsh zsh-syntax-highlighting zsh-autosuggestions
 
     slog "Essential packages installation done!"
 }
 
 cli_install() {
-    brew install golang rust
-    brew install neovim lazygit neovide luarocks gdu bottom
-    brew install fzf ripgrep fd
-    brew install p7zip zoxide ShellCheck shfmt git-extras gawk gh
-    brew install git-delta dust choose sd procs xh starship lsd cheat curlie
+    brew install -q golang rust
+    brew install -q neovim lazygit neovide luarocks gdu bottom
+    brew install -q fzf ripgrep fd
+    brew install -q p7zip zoxide ShellCheck shfmt git-extras gawk gh
+    brew install -q git-delta dust choose sd procs xh starship lsd cheat curlie
 
     gh extension install github/gh-copilot
     alias gdu=gdu-go
@@ -37,14 +37,14 @@ cli_install() {
 
 fonts_install() {
     brew tap homebrew/cask-fonts
-    brew install --cask font-jetbrains-mono-nerd-font
-    brew install --cask font-monaspace-nerd-font
+    brew install -q --cask font-jetbrains-mono-nerd-font
+    brew install -q --cask font-monaspace-nerd-font
 }
 
 cpp_install() {
     slog "Installing C++"
 
-    brew install cmake boost catch2 ccache cppcheck pre-commit
+    brew install -q cmake boost catch2 ccache cppcheck pre-commit
 
     slog "C++ installation done!"
 
@@ -54,20 +54,20 @@ virt_install() {
     slog "Installing virtualization packages"
 
     softwareupdate --install-rosetta --agree-to-license
-    brew install podman
-    brew install --cask podman-desktop
+    brew install -q podman
+    brew install -q --cask podman-desktop
     # podman machine set --rootful
     # sudo /opt/homebrew/Cellar/podman/4.9.2/bin/podman-mac-helper install
 
-    dir_exists /Applications/Docker.app || brew install --cask docker
+    dir_exists /Applications/Docker.app || brew install -q --cask docker
 
     slog "Virtualization packages installation done!"
 }
 
 pyenv_mac_install() {
     slog "Installing pyenv"
-    brew install pyenv
-    brew install pyenv-virtualenv
+    brew install -q pyenv
+    brew install -q pyenv-virtualenv
 }
 
 }

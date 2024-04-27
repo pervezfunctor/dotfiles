@@ -319,7 +319,7 @@ emacs_install() {
         si emacs
     elif is_mac; then
         brew tap railwaycat/emacsmacport
-        brew install emacs-mac --with-modules
+        brew install -q emacs-mac --with-modules
         ln -s /usr/local/opt/emacs-mac/Emacs.app /Applications/Emacs.app
     fi
 

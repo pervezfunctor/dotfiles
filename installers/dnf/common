@@ -5,7 +5,7 @@
 si() {
     for p in "$@"; do
         slog "Installing package $p"
-        sudo dnf -y install "$p"
+        sudo dnf -q -y install "$p"
     done
 }
 
@@ -17,7 +17,7 @@ enable_epel() {
 
 update_packages() {
     slog "Updating packages"
-    if ! { sudo dnf update -y && sudo dnf upgrade -y; }; then
+    if ! { sudo dnf update -q -y && sudo dnf upgrade -q -y; }; then
         err_exit "dnf update/upgrade failed, quitting"
     fi
 }
@@ -62,7 +62,7 @@ cli_install() {
     gh extension install github/gh-copilot
     si git-delta procs fzf ripgrep fd-find hyperfine bat zoxide
 
-    brew install gdu
+    brew install -q gdu
     alias gdu=gdu-go
 }
 

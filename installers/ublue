@@ -5,16 +5,16 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
-    brew install trash-cli
+    brew install -q trash-cli
     dotfiles_install
     webi_install
     webi pathman
 
     webi curlie lsd shfmt gh lazygit gtop tldr
     gh extension install github/gh-copilot
-    brew install neovim neovide shellcheck gdu 
-    brew install git-delta procs fzf ripgrep fd hyperfine bat zoxide
-    brew install cheat curlie lazygit duf choose-rust sd bottom xh
+    brew install -q neovim neovide shellcheck gdu
+    brew install -q git-delta procs fzf ripgrep fd hyperfine bat zoxide
+    brew install -q cheat curlie lazygit duf choose-rust sd bottom xh
 
     fonts_install
 
