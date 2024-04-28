@@ -41,6 +41,7 @@ main() {
         ujust bluefin-cli
         # ujust update
         sudo reboot
+        exit 0
     fi
 
     brew install -q trash-cli
