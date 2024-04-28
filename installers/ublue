@@ -38,9 +38,8 @@ main() {
         has_cmd brew || ujust install-brew
         ujust setup-cockpit
         ujust dx-group
-        ujust-bluefin-cli
-        ujust update
-
+        ujust bluefin-cli
+        # ujust update
         sudo reboot
     fi
 
