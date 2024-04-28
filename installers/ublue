@@ -4,7 +4,46 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
+permissive_selinux() {
+    if ! has_cmd getenforce; then
+        slog "SELinux is not installed on your system, skipping selinux config"
+        return 1
+    fi
+
+    SELINUX_MODE=$(getenforce)
+
+    if [[ "$SELINUX_MODE" == "Enforcing" ]]; then
+        slog "SELinux is enabled and enforcing. Attempting to set SELinux to permissive mode..."
+        sudo setenforce 0
+
+        if [[ "$(getenforce)" == "Permissive" ]]; then
+            slog "Successfully set SELinux to permissive mode."
+        else
+            err_exit "Failed to set SELinux to permissive mode. Quitting."
+        fi
+    else
+        slog "SELinux is not enforcing. Current mode: $SELINUX_MODE"
+    fi
+
+    return 0
+}
+
 main() {
+    has_cmd ujust || err_exit "ujust not available"
+    slog "this script might reboot your system; press Ctrl+C now if you don't want to reboot"
+    sleep 10
+
+    if permissive_selinux; then
+        slog "You need to run this script again after system reboot"
+        has_cmd brew || ujust install-brew
+        ujust setup-cockpit
+        ujust dx-group
+        ujust-bluefin-cli
+        ujust update
+
+        sudo reboot
+    fi
+
     brew install -q trash-cli
     dotfiles_install
     webi_install
@@ -21,6 +60,8 @@ main() {
     flatpak_apps_install
 
     config_install
+
+    ujust conigure-shell
 }
 
 is_atomic_fedora || err_exit "This script works only on atomic fedora desktops(silverblue, kinoite etc). Quitting."
