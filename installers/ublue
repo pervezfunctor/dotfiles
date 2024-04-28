@@ -23,6 +23,7 @@ permissive_selinux() {
         fi
     else
         slog "SELinux is not enforcing. Current mode: $SELINUX_MODE"
+        return 1
     fi
 
     return 0
