@@ -1,0 +1,52 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -sSL https://dub.sh/z3pTnAK)
+
+bi() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        brew install -q -y install "$p"
+    done
+}
+
+bis() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        has_cmd "$p" || brew install -q -y install "$p"
+    done
+}
+
+main() {
+        webi_install
+        webi pathman
+        has_cmd git || webi git
+        has_cmd brew || webi brew
+        has_cmd brew || err_exit "brew not installed!"
+        has_cmd git || err_exit "need git"
+
+        bi trash-cli wget curl unzip gawk urlview tmux jq tree-sitter
+        bis curlie lsd shfmt gh lazygit gtop tldr shellcheck
+        bis cheat curlie lazygit duf choose-rust sd bottom xh
+
+        dotfiles_install
+
+        # bi eza direnv starship atuin uutils
+        has_cmd gdu-go || has_cmd go || bi gdu
+        has_cmd nvim || bi neovim
+        has_cmd rg || bi ripgrep
+        has_cmd batcat || has_cmd bat || bi bat
+        has_cmd delta || bi git-delta
+        bis procs fzf fd hyperfine zoxide
+        has_cmd choose || bi choose-rust
+        has_cmd btm || bi bottom
+        gh extension install github/gh-copilot
+
+        config_install
+    fi
+}
+
+bootstrap "Seartipy shell setup"
+
+}
