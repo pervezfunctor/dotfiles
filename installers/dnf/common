@@ -80,7 +80,7 @@ snap_install() {
 cpp_install() {
     slog "Installing C++"
 
-    sudo dnf groupinstall "Development Tools" -y
+    sudo dnf groupinstall -q -y "Development Tools"
     si gcc gcc-c++ gdb valgrind systemtap ltrace strace
     si clang clang-devel clang-tools-extra clang-libs
     si clang-analyzer lldb lld llvm llvm-devel
@@ -93,7 +93,7 @@ cpp_install() {
         si boost1.78 boost1.78-devel boost1.78-static catch-devel
     elif is_fedora; then
         si boost boost-devel boost-static catch-devel
-        sudo dnf groupinstall -y --with-optional "C Development Tools and Libraries"
+        sudo dnf groupinstall -q -y --with-optional "C Development Tools and Libraries"
     fi
 
     slog "C++ installation done!"
@@ -151,7 +151,7 @@ podman_install() {
 }
 
 libvirt_install() {
-    sudo dnf groupinstall -y --with-optional "System Tools"
+    sudo dnf groupinstall -q -y --with-optional "System Tools"
     si libvirt buildah distrobox
     sudo systemctl enable --now libvirtd
 }
