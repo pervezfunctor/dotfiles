@@ -296,6 +296,16 @@ file_check() {
     done
 }
 
+select-one() {
+    local PS3="Please enter your choice: "
+    select result in "$@"; do
+        if [[ -n $result ]]; then
+            break
+        fi
+    done
+    echo $result
+}
+
 keep_sudo_running() {
     slog "Keeping sudo alive"
     has_cmd sudo || err_exit "sudo must be installed"
@@ -379,7 +389,7 @@ bootstrap() {
 
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2> /dev/null
     keep_sudo_running
-    min_packages_for_installer
+    # min_packages_for_installer
 
     source_curl "${BASE_URL}/scripts/installs"
     source_curl "${BASE_URL}/scripts/group-installs"
