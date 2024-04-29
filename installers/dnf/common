@@ -26,7 +26,7 @@ core_install() {
     si 'dnf-command(copr)'
     si 'dnf-command(config-manager)'
 
-    si curl wget git trash-cli tree tar unar zip unzip zsh
+    si curl wget git trash-cli tree tar unar zip unzip zsh which util-linux-user
     sudo dnf group install -y "C Development Tools and Libraries"
 
     micro_install

@@ -12,15 +12,15 @@ fi
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
-    dotfiles_install
     essential_install
+    dotfiles_install
 
     go_install
     rust_install
     pnpm_install
-    
+
     shell_install
-    
+
     config_install
 
     set_zsh_as_default

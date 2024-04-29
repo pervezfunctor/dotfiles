@@ -23,8 +23,8 @@ main() {
 
     homebrew_install
 
-    dotfiles_install
     essential_install
+    dotfiles_install
 
     cli_install
     fonts_install

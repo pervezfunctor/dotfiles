@@ -18,8 +18,8 @@ main() {
     has_cmd ujust || err_exit "ujust not available"
 
     if ! has_cmd getenforce; then
-        slog "SELinux is not installed on your system, skipping selinux config."
-        return 1
+        slog "SELinux is not installed on your system, not ublue? Quitting."
+        exit 1
     fi
 
     SELINUX_MODE=$(getenforce)
@@ -70,8 +70,8 @@ main() {
     fi
 }
 
-is_atomic_fedora || err_exit "This script works only on atomic fedora desktops(silverblue, kinoite etc). Quitting."
+is_atomic_fedora || err_exit "This script works only on ublue derivatives like bluefin, aurora. Quitting."
 
-bootstrap "Fedora Atomic desktop setup(desktop)"
+bootstrap "ublue setup"
 
 }

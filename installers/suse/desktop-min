@@ -6,8 +6,8 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 
 
 main() {
-    dotfiles_install
     essential_install
+    dotfiles_install
 
     pnpm_install
 
