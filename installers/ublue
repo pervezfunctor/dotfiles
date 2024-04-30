@@ -5,8 +5,9 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 permissive_selinux() {
-    sudo setenforce 0
+    sed -i 's/^SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
 
+    sudo setenforce 0
     if [[ "$(getenforce)" == "Permissive" ]]; then
         slog "Successfully set SELinux to permissive mode."
     else
