@@ -22,6 +22,8 @@ main() {
 
 is_debian || err_exit "This installer works only on Debian. Quitting."
 
+export DEBIAN_FRONTEND=noninteractive
+
 bootstrap "Debian development system(vm)"
 
 }

@@ -28,6 +28,8 @@ main() {
 
 is_apt || err_exit "This installer works only on Debian/Ubuntu. Quitting."
 
+export DEBIAN_FRONTEND=noninteractive
+
 bootstrap "Debian development system(shell)"
 
 }

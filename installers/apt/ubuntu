@@ -39,6 +39,8 @@ main() {
 
 is_apt || err_exit "This script works only on Ubuntu. Quitting."
 
+export DEBIAN_FRONTEND=noninteractive
+
 bootstrap "Ubuntu desktop setup(desktop)"
 
 }

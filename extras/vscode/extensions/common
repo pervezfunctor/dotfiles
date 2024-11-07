@@ -18,7 +18,7 @@ meganrogge.template-string-converter
 metaseed.metago
 metaseed.metajump
 metaseed.metaword
-mhutchie.git-graph
+mhutchie.git-graph9
 ms-azuretools.vscode-docker
 ms-kubernetes-tools.vscode-kubernetes-tools
 ms-vscode-remote.remote-containers
@@ -29,7 +29,6 @@ ms-vscode.remote-explorer
 ms-vscode.remote-repositories
 ms-vscode.remote-server
 ms-vscode.vscode-github-issue-notebooks
-msjsdiag.vscode-react-native
 pflannery.vscode-versionlens
 ms-ossdata.vscode-postgresql
 pomdtr.excalidraw-editor
