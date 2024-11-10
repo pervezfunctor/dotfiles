@@ -314,7 +314,8 @@ emacs_install() {
     slog "Installing emacs"
 
     if is_apt; then
-      si -y --no-install-recommends emacs
+        echo "postfix postfix/main_mailer_type select No configuration" | sudo debconf-set-selections
+        si -y --no-install-recommends emacs
     elif is_rh; then
         si emacs
     elif is_mac; then
