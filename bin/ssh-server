@@ -2,7 +2,7 @@
 
 {
 
-if command -v curl > /dev/nulll then
+if command -v curl > /dev/null; then
     source <(curl -sSL https://dub.sh/z3pTnAK)
 elif command -v wget > /dev/null; then
     source <(wget -qO- https://dub.sh/z3pTnAK)
