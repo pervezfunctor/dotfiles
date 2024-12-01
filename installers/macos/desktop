@@ -21,7 +21,7 @@ main() {
     slog "Install xcode"
     xcode-select --install
 
-    homebrew_install
+    brew_install
 
     essential_install
     dotfiles_install

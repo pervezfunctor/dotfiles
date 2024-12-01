@@ -229,6 +229,14 @@ brew_install() {
     slog "Installing homebrew"
     NONINTERACTIVE=1 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     slog "homebrew installation done!"
+
+    if has_cmd /opt/homebrew/bin/brew; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif has_cmd /home/linuxbrew/.linuxbrew/bin/brew; then 
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    else
+        warn "Homebrew not installed properly!"
+    fi
 }
 
 monaspace_install() {

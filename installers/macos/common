@@ -2,11 +2,6 @@
 
 {
 
-homebrew_install() {
-    brew_install
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-}
-
 core_install() {
     brew install -q curl wget trash tree unar zip unzip coreutils
 }
@@ -18,7 +13,7 @@ essential_install() {
     webi_install
     webi pathman
 
-    brew install -q gawk tmux pkg-config urlview p7zip
+    brew install -q gawk tmux pkg-config urlview p7zip cmake
     brew install -q zsh zsh-syntax-highlighting zsh-autosuggestions
 
     slog "Essential packages installation done!"
