@@ -215,15 +215,15 @@ is_apt() {
 }
 
 is_fedora() {
-   [ -e /etc/redhat-release ] && grep 'Fedora' /etc/redhat-release > /dev/null
+   [ -e /etc/redhat-release ] && grep -q 'Fedora' /etc/redhat-release 
 }
 
 is_kinoite() {
-    [ -e /etc/os-release ] && grep -i 'kinoite' /etc/os-release > /dev/null
+    [ -e /etc/os-release ] && grep -iq 'kinoite' /etc/os-release 
 }
 
 is_silverblue() {
-    [ -e /etc/os-release ] && grep -i 'silverblue' /etc/os-release > /dev/null
+    [ -e /etc/os-release ] && grep -iq 'silverblue' /etc/os-release 
 }
 
 is_atomic_fedora() {
@@ -231,11 +231,11 @@ is_atomic_fedora() {
 }
 
 is_rocky() {
-    [ -e /etc/redhat-release ] && grep 'Rocky' /etc/redhat-release > /dev/null
+    [ -e /etc/redhat-release ] && grep  -q 'Rocky' /etc/redhat-release 
 }
 
 is_centos() {
-   [ -e /etc/redhat-release ] && grep 'Centos' /etc/redhat-release > /dev/null
+   [ -e /etc/redhat-release ] && grep  -q 'Centos' /etc/redhat-release 
 }
 
 is_rh() {
@@ -359,7 +359,7 @@ bootstrap() {
     export PATH="$HOME/.local/bin:$PNPM_HOME:/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="$HOME/.local/opt/brew/bin:$PATH"
     export PATH="$HOME/.config/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
-    export HOMEBREW_NO_ENV_HINTS=1
+    # export HOMEBREW_NO_ENV_HINTS=1
     export HOMEBREW_NO_AUTO_UPDATE=1
 
     curdir=$(pwd)
