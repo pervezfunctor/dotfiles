@@ -46,7 +46,7 @@ essential_install() {
 
     core_install
 
-    si gawk tmux urlview 7zip
+    si gawk tmux urlview 7zip cmake
     si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel
 
     sys_python_install

@@ -38,7 +38,7 @@ essential_install() {
 
     core_install
 
-    si gawk tmux pkg-config p7zip
+    si gawk tmux pkg-config p7zip cmake
     si readline sqlite libffi zlib xz
 
     sys_python_install
