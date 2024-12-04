@@ -44,7 +44,7 @@ qm set $VM_ID --ide2 $PROXMOX_STORAGE:cloudinit
 
 # Set the VM to use cloud-init for networking and SSH keys
 echo "Configuring cloud-init..."
-qm set $VM_ID --serial0 socket --vga serial0 --cipassword $PASSWORD --ciuser $USERNAME --sshkey ~/.ssh/id_rsa.pub
+qm set $VM_ID --serial0 socket --vga serial0 --cipassword $PASSWORD --ciuser $USERNAME
 
 # Convert the VM to a template
 echo "Converting VM to template..."
