@@ -8,7 +8,7 @@ set -e
 PROXMOX_STORAGE="local-lvm"   # Storage target for Proxmox
 VM_ID=9200                    # Unique ID for the new VM
 VM_NAME="fedora-template"     # Name for the VM
-FEDORA_IMAGE_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/41/Cloud/x86_64/images/Fedora-Cloud-Base-41-1.4.x86_64.qcow2" # Update for desired version
+FEDORA_IMAGE_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/41/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-41-1.4.x86_64.qcow2" # Update for desired version
 DISK_SIZE="20G"               # Size of the VM disk
 MEMORY="8192"                 # VM memory in MB
 CORES="4"                     # Number of CPU cores
