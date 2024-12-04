@@ -1,0 +1,20 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -sSL https://dub.sh/z3pTnAK)
+
+main() {
+    core_install
+    dotfiles_install
+
+    config_install
+
+    set_zsh_as_default
+}
+
+bootstrap "dotfiles setup(default)"
+
+slog "use 'installer' command to install more packages"
+
+}
