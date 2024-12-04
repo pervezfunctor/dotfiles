@@ -215,15 +215,15 @@ is_apt() {
 }
 
 is_fedora() {
-   [ -e /etc/redhat-release ] && grep -q 'Fedora' /etc/redhat-release 
+   [ -e /etc/redhat-release ] && grep -q 'Fedora' /etc/redhat-release
 }
 
 is_kinoite() {
-    [ -e /etc/os-release ] && grep -iq 'kinoite' /etc/os-release 
+    [ -e /etc/os-release ] && grep -iq 'kinoite' /etc/os-release
 }
 
 is_silverblue() {
-    [ -e /etc/os-release ] && grep -iq 'silverblue' /etc/os-release 
+    [ -e /etc/os-release ] && grep -iq 'silverblue' /etc/os-release
 }
 
 is_atomic_fedora() {
@@ -231,11 +231,11 @@ is_atomic_fedora() {
 }
 
 is_rocky() {
-    [ -e /etc/redhat-release ] && grep  -q 'Rocky' /etc/redhat-release 
+    [ -e /etc/redhat-release ] && grep -q 'Rocky' /etc/redhat-release
 }
 
 is_centos() {
-   [ -e /etc/redhat-release ] && grep  -q 'Centos' /etc/redhat-release 
+   [ -e /etc/redhat-release ] && grep -q 'Centos' /etc/redhat-release
 }
 
 is_rh() {

@@ -18,6 +18,8 @@ update_packages() {
 }
 
 core_install() {
+    update_packages
+
     si software-properties-common apt-transport-https ca-certificates gpg
     si curl wget git trash-cli tree zsh micro
     si build-essential tar zip unzip unar
@@ -41,8 +43,6 @@ snap_install() {
 }
 
 essential_install() {
-    update_packages
-
     slog "Installing essential packages"
 
     core_install

@@ -26,13 +26,16 @@ core_install() {
     si 'dnf-command(copr)'
     si 'dnf-command(config-manager)'
 
+    update_packages
+
     si curl wget git trash-cli tree tar unar zip unzip zsh which util-linux-user
-    if dnf group list -q | grep -q "C Development Tools and Libraries"; then
+
+    if dnf group list -q | grep -q "c-development"; then
+        si @c-development
+    elif dnf group list -q | grep -q "C Development Tools and Libraries"; then
         sudo dnf group install -y "C Development Tools and Libraries"
-    elif dnf group list -q | grep -q "c-development"; then
-        sudo dnf group install -y "c-development"
     fi
-    
+
     micro_install
 }
 

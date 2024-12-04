@@ -22,6 +22,8 @@ sys_python_install() {
 }
 
 core_install() {
+    update_packages
+
     si curl wget git tar tree zsh unzip unar zip micro-editor python311-pipx
     sudo zypper install -y -t pattern devel_basis
     pipx install trash-cli
@@ -40,8 +42,6 @@ snap_install() {
 }
 
 essential_install() {
-    update_packages
-
     slog "Installing essential packages"
 
     core_install

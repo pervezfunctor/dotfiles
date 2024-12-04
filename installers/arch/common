@@ -18,6 +18,8 @@ update_packages() {
 }
 
 core_install() {
+    update_packages
+
     si curl wget git base-devel trash-cli tree micro
     si zsh zsh-completions base_devel tar zip unzip unarchiver
 }
@@ -32,8 +34,6 @@ yay_install() {
 }
 
 essential_install() {
-    update_packages
-
     slog "Installing essential packages"
 
     core_install
