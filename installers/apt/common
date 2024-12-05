@@ -25,7 +25,6 @@ core_install() {
     si build-essential tar zip unzip unar
 
     si command-not-found
-    sudo apt-get update
 }
 
 sys_python_install() {
