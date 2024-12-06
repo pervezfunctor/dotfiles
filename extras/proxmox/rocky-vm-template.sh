@@ -28,7 +28,7 @@ if ! [ -f /tmp/rocky-cloud.qcow2 ]; then
     wget -O /tmp/rocky.qcow2 "$ROCKY_IMAGE_URL"
 fi
 
-qemu-img convert -f qcow2 -O qcow2 rocky-clould.qcow2 rocky.qcow2
+qemu-img convert -f qcow2 -O qcow2 /tmp/rocky.qcow2 /tmp/rocky-cloud.qcow2
 
 if [ $? -ne 0 ]; then
     echo "Failed to convert Rocky Linux image"
