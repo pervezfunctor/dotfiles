@@ -128,7 +128,7 @@ fi
 
 # Set the VM to use cloud-init for networking and SSH keys
 echo "Configuring cloud-init..."
-qm set $VM_ID --serial0 socket --vga serial0 --cipassword $PASSWORD --ciuser $USERNAME
+qm set $VM_ID --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --cipassword $PASSWORD --ciuser $USERNAME
 
 if [ $? -ne 0 ]; then
     echo "Failed to configure cloud-init"
