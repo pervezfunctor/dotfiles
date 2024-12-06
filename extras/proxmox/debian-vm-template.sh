@@ -7,7 +7,7 @@ set -e
 PROXMOX_STORAGE="local-lvm"   # Storage target for Proxmox
 VM_ID=9100                    # Unique ID for the new VM
 VM_NAME="debian-template"     # Name for the VM
-DEBIAN_IMAGE_URL="https://cdimage.debian.org/cdimage/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2" # Update for desired image
+DEBIAN_IMAGE_URL="https://cdimage.debian.org/cdimage/cloud/bookworm/latest/debian-12-nocloud-amd64.qcow2" # Update for desired image
 DISK_SIZE="20G"               # Size of the VM disk
 MEMORY="8192"                 # VM memory in MB
 CORES="4"                     # Number of CPU cores
