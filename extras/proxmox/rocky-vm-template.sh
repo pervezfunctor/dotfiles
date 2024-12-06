@@ -23,7 +23,7 @@ fi
 
 echo "Downloading Rocky Linux image..."
 
-if ! [ -f /tmp/rocky-cloud.qcow2 ]; then
+if ! [ -f /tmp/rocky.qcow2 ]; then
     wget -O /tmp/rocky.qcow2 "$ROCKY_IMAGE_URL"
 fi
 
