@@ -4,7 +4,7 @@ set -e
 
 # Default values
 PROXMOX_STORAGE="local-lvm"
-VM_ID=9300
+VM_ID=9500
 VM_NAME="rocky-linux-template"
 ROCKY_IMAGE_URL="https://dl.rockylinux.org/pub/rocky/9.5/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2"
 DISK_SIZE="20G"
@@ -82,7 +82,7 @@ fi
 
 # Enable cloud-init
 echo "Configuring cloud-init..."
-qm set  $VM_ID --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --cipassword $PASSWORD --ciuser $USERNAME
+qm set $VM_ID --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --cipassword $PASSWORD --ciuser $USERNAME
 
 
 if [ $? -ne 0 ]; then
