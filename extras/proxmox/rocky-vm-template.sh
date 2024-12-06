@@ -71,6 +71,15 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Add cloud-init drive
+echo "Adding cloud-init drive..."
+qm set $VM_ID --ide2 $PROXMOX_STORAGE:cloudinit
+
+if [ $? -ne 0 ]; then
+    echo "Failed to add cloud-init drive"
+    exit 1
+fi
+
 # Enable cloud-init
 echo "Configuring cloud-init..."
 qm set  $VM_ID --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --cipassword $PASSWORD --ciuser $USERNAME
