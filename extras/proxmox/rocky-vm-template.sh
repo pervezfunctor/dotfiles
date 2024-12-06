@@ -24,8 +24,15 @@ fi
 echo "Downloading Rocky Linux image..."
 
 if ! [ -f /tmp/rocky-cloud.qcow2 ]; then
-  rm -f /tmp/rocky-cloud.qcow2
-    wget -O /tmp/rocky-cloud.qcow2 "$ROCKY_IMAGE_URL"
+  rm -f /tmp/rocky.qcow2
+    wget -O /tmp/rocky.qcow2 "$ROCKY_IMAGE_URL"
+fi
+
+qemu-img convert -f qcow2 -O qcow2 rocky-clould.qcow2 rocky.qcow2
+
+if [ $? -ne 0 ]; then
+    echo "Failed to convert Rocky Linux image"
+    exit 1
 fi
 
 # Create the VM
