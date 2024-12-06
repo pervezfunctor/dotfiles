@@ -23,9 +23,8 @@ fi
 
 echo "Downloading Rocky Linux image..."
 
-if [ -f /tmp/rocky-cloud.qcow2 ]; then
+if ! [ -f /tmp/rocky-cloud.qcow2 ]; then
   rm -f /tmp/rocky-cloud.qcow2
-else
     wget -O /tmp/rocky-cloud.qcow2 "$ROCKY_IMAGE_URL"
 fi
 
@@ -39,6 +38,14 @@ qm create "$VM_ID" \
 
 if [ $? -ne 0 ]; then
     echo "Failed to create VM $VM_NAME with ID $VM_ID"
+    exit 1
+fi
+
+echo "Importing disk to Proxmox storage..."
+qm importdisk $VM_ID /tmp/rocky-cloud.qcow2 $PROXMOX_STORAGE
+
+if [ $? -ne 0 ]; then
+    echo "Failed to import disk to Proxmox storage"
     exit 1
 fi
 
