@@ -90,9 +90,4 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Clean up temporary files
-echo "Cleaning up..."
-rm -f /tmp/rocky-cloud.qcow2
-
 echo "Rocky Linux template $VM_NAME created successfully."
-
