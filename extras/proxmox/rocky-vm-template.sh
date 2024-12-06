@@ -8,8 +8,8 @@ VM_ID=9300
 VM_NAME="rocky-linux-template"
 ROCKY_IMAGE_URL="https://dl.rockylinux.org/pub/rocky/9.5/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2"
 DISK_SIZE="20G"
-RAM_SIZE="8192"
-CPU_CORES="4"
+MEMORY="8192"
+CORES="4"
 USERNAME="pervez"
 PASSWORD="program"
 
@@ -30,11 +30,7 @@ fi
 
 # Create the VM
 echo "Creating VM $VM_NAME with ID $VM_ID..."
-qm create "$VM_ID" \
-    --name "$VM_NAME" \
-    --memory "$RAM_SIZE" \
-    --cores "$CPU_CORES" \
-    --net0 "virtio,bridge=vmbr0"
+qm create $VM_ID --name $VM_NAME --memory $MEMORY --cores $CORES --net0 virtio,bridge=vmbr0
 
 if [ $? -ne 0 ]; then
     echo "Failed to create VM $VM_NAME with ID $VM_ID"
@@ -77,7 +73,7 @@ fi
 
 # Enable cloud-init
 echo "Configuring cloud-init..."
-qm set  $VM_ID --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --cipassword $PASSWORD --ciuser $USERNAME --agent enabled=1
+qm set  $VM_ID --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --cipassword $PASSWORD --ciuser $USERNAME
 
 
 if [ $? -ne 0 ]; then
