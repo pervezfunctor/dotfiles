@@ -48,7 +48,7 @@ fi
 
 # Attach the disk to the VM
 echo "Attaching disk to VM..."
-qm set $VM_ID --scsihw virtio-scsi-pci --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on"
+qm set $VM_ID --scsihw virtio-scsi-pci --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0"
 
 if [ $? -ne 0 ]; then
   echo "Failed to attach disk."
@@ -77,7 +77,7 @@ fi
 
 # Add cloud-init drive
 echo "Adding cloud-init drive..."
-qm set $VM_ID --scsi1 $PROXMOX_STORAGE:cloudinit
+qm set $VM_ID --ide2 $PROXMOX_STORAGE:cloudinit
 
 if [ $? -ne 0 ]; then
   echo "Failed to add cloud-init drive."
