@@ -52,7 +52,7 @@ fi
 
 # Attach the disk to the VM
 echo "Attaching disk to VM..."
-qm set $VM_ID --scsihw virtio-scsi-pci --scsi0 $PROXMOX_STORAGE:vm-$VM_ID-disk-0
+qm set $VM_ID --scsihw virtio-scsi-pci --scsi0 $PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on
 
 if [ $? -ne 0 ]; then
   echo "Failed to attach disk."
@@ -68,6 +68,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# sudo qm set 8001 --boot order=virtio0
+
 # Set the boot disk
 echo "Configuring boot options..."
 qm set $VM_ID --boot c --bootdisk scsi0
@@ -79,7 +81,7 @@ fi
 
 # Add cloud-init drive
 echo "Adding cloud-init drive..."
-qm set $VM_ID --ide2 $PROXMOX_STORAGE:cloudinit
+qm set $VM_ID --scsi1 $PROXMOX_STORAGE:cloudinit
 
 if [ $? -ne 0 ]; then
   echo "Failed to add cloud-init drive."
