@@ -88,7 +88,7 @@ fi
 
 # Enable cloud-init
 echo "Configuring cloud-init..."
-qm set $VM_ID --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --cipassword $PASSWORD --ciuser $USERNAME
+qm set $VM_ID --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --cpu host --socket 1 --cipassword $PASSWORD --ciuser $USERNAME
 
 
 if [ $? -ne 0 ]; then
