@@ -34,7 +34,7 @@ fi
 
 # Create a new VM
 echo "Creating VM $VM_NAME with ID $VM_ID..."
-qm create $VM_ID --name $VM_NAME --memory $MEMORY --cores $CORES --ostype l26 --agent 1 --bios ovmf --machine q35 --efidisk0 local-zfs:0,pre-enrolled-keys=0 --socket 1 --cpu host --net0 virtio,bridge=vmbr0
+qm create $VM_ID --name $VM_NAME --memory $MEMORY --cores $CORES --ostype l26 --agent 1 --bios ovmf --machine q35 --efidisk0 $PROXMOX_STORAGE:0,pre-enrolled-keys=0 --socket 1 --cpu host --net0 virtio,bridge=vmbr0
 
 if [ $? -ne 0 ]; then
   echo "Failed to create VM."
