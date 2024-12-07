@@ -30,3 +30,10 @@
   ```bash
   zypper search --type pattern
   ```
+
+- Incus firewall configuration
+
+  ```bash
+  sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
+  sudo firewall-cmd --reload
+  ```
