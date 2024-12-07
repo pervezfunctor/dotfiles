@@ -23,11 +23,7 @@ if [ $? -ne 0 ] || [ ! -f /tmp/ubuntu-cloud.img ]; then
   exit 1
 fi
 
-# Convert the image to Proxmox-compatible format
-echo "Converting image to qcow2 format..."
-qemu-img convert -f raw -O qcow2 /tmp/ubuntu-cloud.img /tmp/ubuntu-cloud.qcow2
-
-if [ $? -ne 0 ] || [ ! -f /tmp/ubuntu-cloud.qcow2 ]; then
+if [ $? -ne 0 ] || [ ! -f /tmp/ubuntu-cloud.img ]; then
   echo "Failed to convert Ubuntu image."
   exit 1
 fi
@@ -43,7 +39,7 @@ fi
 
 # Import the disk to Proxmox storage
 echo "Importing disk to Proxmox storage..."
-qm importdisk $VM_ID /tmp/ubuntu-cloud.qcow2 $PROXMOX_STORAGE
+qm importdisk $VM_ID /tmp/ubuntu-cloud.img $PROXMOX_STORAGE
 
 if [ $? -ne 0 ]; then
   echo "Failed to import disk."
@@ -108,6 +104,6 @@ fi
 
 # Clean up temporary files
 # echo "Cleaning up..."
-# rm -f /tmp/ubuntu-cloud.img /tmp/ubuntu-cloud.qcow2
+# rm -f /tmp/ubuntu-cloud.img /tmp/ubuntu-cloud.img
 
 echo "Ubuntu template $VM_NAME created successfully."
