@@ -17,7 +17,7 @@ PASSWORD="program"            # Password for cloud-init
 # Download the Ubuntu image
 echo "Downloading Ubuntu image..."
 
-if ! [ -f /tmp/ubuntu-cloud.qcow2 ]; then
+if ! [ -f /tmp/ubuntu-cloud.img ]; then
     wget -O /tmp/ubuntu-cloud.img "$UBUNTU_IMAGE_URL"
 fi
 
