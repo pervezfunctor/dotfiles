@@ -4,7 +4,7 @@
 set -e
 
 PROXMOX_STORAGE="local-lvm"   # Storage target for Proxmox
-VM_ID=9000                    # Unique ID for the new VM
+VM_ID=9400                    # Unique ID for the new VM
 VM_NAME="ubuntu-template"     # Name for the VM
 # UBUNTU_IMAGE_URL="https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 UBUNTU_IMAGE_URL="https://cloud-images.ubuntu.com/oracular/current/oracular-server-cloudimg-amd64.img"
