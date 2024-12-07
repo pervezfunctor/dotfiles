@@ -6,7 +6,7 @@ set -e
 PROXMOX_STORAGE="local-lvm"
 VM_ID=9500
 VM_NAME="rocky-linux-template"
-ROCKY_IMAGE_URL="https://dl.rockylinux.org/pub/rocky/9.5/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2"
+ROCKY_IMAGE_URL="https://dl.rockylinux.org/pub/rocky/9.5/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2"
 DISK_SIZE="20G"
 MEMORY="8192"
 CORES="4"
