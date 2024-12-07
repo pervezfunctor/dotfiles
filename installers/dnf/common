@@ -32,8 +32,10 @@ core_install() {
 
     if dnf group list -q | grep -q "c-development"; then
         si @c-development
-    elif dnf group list -q | grep -q "C Development Tools and Libraries"; then
-        sudo dnf group install -y "C Development Tools and Libraries"
+    elif dnf group list -q | grep -q "Development Tools"; then
+        sudo dnf group install --setop=install_weak_deps=False --with-optional -y "Development Tools"
+    else
+        si gcc make cmake autoconf automake binutils expect flex bison glibc-devel
     fi
 
     micro_install
