@@ -77,7 +77,7 @@ fi
 
 # Set the boot disk
 echo "Configuring boot options..."
-qm set $VM_ID --boot c --bootdisk virtio0
+qm set $VM_ID --boot order=virtio0
 
 if [ $? -ne 0 ]; then
   echo "Failed to set boot disk."
