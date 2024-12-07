@@ -23,11 +23,6 @@ if [ $? -ne 0 ] || [ ! -f /tmp/ubuntu-cloud.img ]; then
   exit 1
 fi
 
-if [ $? -ne 0 ] || [ ! -f /tmp/ubuntu-cloud.img ]; then
-  echo "Failed to convert Ubuntu image."
-  exit 1
-fi
-
 # Create a new VM
 echo "Creating VM $VM_NAME with ID $VM_ID..."
 qm create $VM_ID --name $VM_NAME --memory $MEMORY --cores $CORES --ostype l26 --agent 1 --bios ovmf --machine q35 --efidisk0 $PROXMOX_STORAGE:0,pre-enrolled-keys=0 --socket 1 --cpu host --net0 virtio,bridge=vmbr0
@@ -48,7 +43,8 @@ fi
 
 # Attach the disk to the VM
 echo "Attaching disk to VM..."
-qm set $VM_ID --scsihw virtio-scsi-pci --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0"
+qm set $VM_ID --scsihw virtio-scsi-pci
+qm set $VM_ID --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0"
 
 if [ $? -ne 0 ]; then
   echo "Failed to attach disk."
