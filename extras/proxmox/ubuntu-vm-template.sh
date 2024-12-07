@@ -24,7 +24,7 @@ if [ $? -ne 0 ] || [ ! -f /tmp/ubuntu-cloud.img ]; then
 fi
 
 echo "Convert the image to qcow2 format..."
-qemu-img convert -f raw -O qcow2 /tmp/ubuntu-cloud.img /tmp/ubuntu-cloud.qcow2
+qemu-img convert -f qcow2 /tmp/ubuntu-cloud.img /tmp/ubuntu-cloud.qcow2
 
 if [ $? -ne 0 ]; then
   echo "Failed to convert Ubuntu image."
