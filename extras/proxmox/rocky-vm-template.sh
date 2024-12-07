@@ -2,7 +2,6 @@
 
 set -e
 
-# Default values
 PROXMOX_STORAGE="local-lvm"
 VM_ID=9500
 VM_NAME="rocky-linux-template"
@@ -14,6 +13,43 @@ USERNAME="pervez"
 PASSWORD="program"
 
 
+usage() {
+    echo "Usage: $0 -i VM_ID -n VM_NAME -s STORAGE -u ROCKY_IMAGE_URL [--disk-size DISK_SIZE] [--memory MEMORY] [--cores CORES] [--username USERNAME] [--password PASSWORD]"
+    echo
+    echo "Options:"
+
+    echo "  -s, --storage STORAGE           Proxmox storage target (e.g., local-lvm)"
+    echo "  -i, --vm-id VM_ID               Unique ID for the new VM"
+    echo "  -n, --vm-name VM_NAME           Name for the VM"
+    echo "  -d, --disk-size DISK_SIZE       Size of the VM disk (default: 20G)"
+    echo "  -m, --memory MEMORY             VM memory in MB (default: 2048)"
+    echo "  -c, --cores CORES               Number of CPU cores (default: 4)"
+    echo "  -u, --username USERNAME         Username for cloud-init (default: pervez)"
+    echo "  -p, --password PASSWORD         Password for cloud-init (default: program)"
+    echo "  -U, --url ROCKY_IMAGE_URL       URL of the Rocky Linux cloud image"
+    echo "  -h, --help                      Display this help message"
+    exit 1
+}
+
+
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -s|--storage) STORAGE="$2"; shift ;;
+        -i|--vm-id) VM_ID="$2"; shift ;;
+        -n|--vm-name) VM_NAME="$2"; shift ;;
+        -d|--disk-size) DISK_SIZE="$2"; shift ;;
+        -m|--memory) MEMORY="$2"; shift ;;
+        -c|--cores) CORES="$2"; shift ;;
+        -u|--username) USERNAME="$2"; shift ;;
+        -p|--password) PASSWORD="$2"; shift ;;
+        -U|--url) ROCKY_IMAGE_URL="$2"; shift ;;
+        -h|--help) usage ;;
+        *) echo "Unknown parameter: $1"; usage ;;
+    esac
+    shift
+done
+
 CUR_DIR=$(dirname "$0")
 
 # Read options from options file, from the same directory as the script
@@ -23,23 +59,36 @@ fi
 
 echo "Downloading Rocky Linux image..."
 
-if ! [ -f /tmp/rocky.qcow2 ]; then
+if ! [ -f /tmp/rocky-cloud.qcow2 ]; then
     wget -O /tmp/rocky.qcow2 "$ROCKY_IMAGE_URL"
+
+    if [ $? -ne 0 ] || [ ! -f /tmp/rocky.qcow2 ]; then
+        echo "Failed to download Rocky Linux image."
+        exit 1
+    fi
+
+    qemu-img convert -f qcow2 -O qcow2 /tmp/rocky.qcow2 /tmp/rocky-cloud.qcow2
+    if [ $? -ne 0 ]; then
+        echo "Failed to convert Rocky Linux image"
+        exit 1
+    fi
+
+    rm /tmp/rocky.qcow2
 fi
 
-qemu-img convert -f qcow2 -O qcow2 /tmp/rocky.qcow2 /tmp/rocky-cloud.qcow2
-
-if [ $? -ne 0 ]; then
-    echo "Failed to convert Rocky Linux image"
-    exit 1
-fi
 
 # Create the VM
 echo "Creating VM $VM_NAME with ID $VM_ID..."
-qm create $VM_ID --name $VM_NAME --memory $MEMORY --cores $CORES --net0 virtio,bridge=vmbr0
+qm create $VM_ID    --name $VM_NAME \
+                    --memory $MEMORY \
+                    --cores $CORES \
+                    --ostype l26 \
+                    --agent 1 \
+                    --cpu host \
+                    --net0 virtio,bridge=vmbr0
 
 if [ $? -ne 0 ]; then
-    echo "Failed to create VM $VM_NAME with ID $VM_ID"
+    echo "Failed to create VM."
     exit 1
 fi
 
@@ -59,7 +108,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Resize the disk if necessary
 echo "Resizing disk to $DISK_SIZE..."
 qm resize $VM_ID scsi0 $DISK_SIZE
 
@@ -68,7 +116,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Set the boot disk
 echo "Configuring boot options..."
 qm set $VM_ID --boot c --bootdisk scsi0
 
@@ -77,7 +124,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Add cloud-init drive
 echo "Adding cloud-init drive..."
 qm set $VM_ID --ide2 $PROXMOX_STORAGE:cloudinit
 
@@ -86,9 +132,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Enable cloud-init
 echo "Configuring cloud-init..."
-qm set $VM_ID --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --cpu host --socket 1 --cipassword $PASSWORD --ciuser $USERNAME
+qm set $VM_ID   --serial0 socket \
+                --vga serial0 \
+                --ipconfig0 ip=dhcp \
+                --cipassword $PASSWORD \
+                --ciuser $USERNAME
 
 
 if [ $? -ne 0 ]; then
@@ -96,7 +145,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Convert the VM to a template
 echo "Converting VM to template..."
 qm template $VM_ID
 
