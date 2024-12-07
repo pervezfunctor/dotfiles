@@ -66,9 +66,7 @@ fi
 
 echo "Downloading Fedora image..."
 
-if [ -f /tmp/fedora-cloud.qcow2 ]; then
-  rm -f /tmp/fedora-cloud.qcow2
-else
+if ! [ -f /tmp/fedora-cloud.qcow2 ]; then
     wget -O /tmp/fedora-cloud.qcow2 "$FEDORA_IMAGE_URL"
 fi
 
@@ -145,8 +143,8 @@ if [ $? -ne 0 ]; then
 fi
 
 # Clean up temporary files
-echo "Cleaning up..."
-rm -f /tmp/fedora-cloud.qcow2
+# echo "Cleaning up..."
+# rm -f /tmp/fedora-cloud.qcow2
 
 echo "Fedora template $VM_NAME created successfully."
 

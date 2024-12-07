@@ -107,7 +107,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Clean up temporary files
-echo "Cleaning up..."
-rm -f /tmp/ubuntu-cloud.img /tmp/ubuntu-cloud.qcow2
+# echo "Cleaning up..."
+# rm -f /tmp/ubuntu-cloud.img /tmp/ubuntu-cloud.qcow2
 
 echo "Ubuntu template $VM_NAME created successfully."

@@ -51,7 +51,7 @@ echo "Converting VM to template..."
 qm template $VM_ID
 
 # Clean up temporary files
-echo "Cleaning up..."
-rm -f /tmp/debian-cloud.qcow2
+# echo "Cleaning up..."
+# rm -f /tmp/debian-cloud.qcow2
 
 echo "Debian template $VM_NAME created successfully."
