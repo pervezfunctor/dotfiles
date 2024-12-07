@@ -71,6 +71,8 @@ desktop-group_install() {
 
     virt_install
 
+    tailscale_install
+
     config_install
     set_zsh_as_default
 }

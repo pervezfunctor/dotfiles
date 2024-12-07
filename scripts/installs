@@ -46,7 +46,7 @@ webi_install() {
 }
 
 webi-shell_install() {
-    webi node golang go-essentials shellcheck shfmt brew pathman
+    webi node golang go-essentials shellcheck shfmt pathman
     webi bat curlie delta jq lsd rg gh
     # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing k9s kubectx kubens
     # webi pyenv
@@ -633,6 +633,11 @@ asdf_install() {
     slog "Installing asdf"
     git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
     slog "asdf installation done!"
+}
+
+tailscale_install() {
+    has_cmd tailscale && return 0
+    curl -fsSL https://tailscale.com/install.sh | sh
 }
 
 }
