@@ -38,7 +38,16 @@ fi
 
 # Create a new VM
 echo "Creating VM $VM_NAME with ID $VM_ID..."
-qm create $VM_ID --name $VM_NAME --memory $MEMORY --cores $CORES --ostype l26 --agent 1 --bios ovmf --machine q35 --efidisk0 $PROXMOX_STORAGE:0,pre-enrolled-keys=0 --socket 1 --cpu host --net0 virtio,bridge=vmbr0
+qm create $VM_ID  --name $VM_NAME \
+                  --memory $MEMORY \
+                  --cores $CORES \
+                  --ostype l26 \
+                  --agent 1 \
+                  --bios ovmf \
+                  --efidisk0 $PROXMOX_STORAGE:0,pre-enrolled-keys=0 \
+                  --socket 1 \
+                  --cpu host \
+                  --net0 virtio,bridge=vmbr0
 
 if [ $? -ne 0 ]; then
   echo "Failed to create VM."
@@ -77,7 +86,7 @@ fi
 
 # Add cloud-init drive
 echo "Adding cloud-init drive..."
-qm set $VM_ID --ide2 $PROXMOX_STORAGE:cloudinit
+qm set $VM_ID --scsi1 $PROXMOX_STORAGE:cloudinit
 
 if [ $? -ne 0 ]; then
   echo "Failed to add cloud-init drive."
@@ -86,7 +95,11 @@ fi
 
 # Set the VM to use cloud-init for networking and SSH keys
 echo "Configuring cloud-init..."
-qm set $VM_ID --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --cipassword $PASSWORD --ciuser $USERNAME
+qm set $VM_ID --serial0 socket \
+              --vga serial0 \
+              --ipconfig0 ip=dhcp \
+              --cipassword $PASSWORD \
+              --ciuser $USERNAME
 
 if [ $? -ne 0 ]; then
   echo "Failed to configure cloud-init."
