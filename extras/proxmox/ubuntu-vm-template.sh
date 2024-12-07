@@ -8,7 +8,7 @@ VM_ID=9400                    # Unique ID for the new VM
 VM_NAME="ubuntu-template"     # Name for the VM
 # UBUNTU_IMAGE_URL="https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 UBUNTU_IMAGE_URL="https://cloud-images.ubuntu.com/oracular/current/oracular-server-cloudimg-amd64.img"
-DISK_SIZE="20G"               # Size of the VM disk
+DISK_SIZE="32G"               # Size of the VM disk
 MEMORY="8192"                 # VM memory in MB
 CORES="4"                     # Number of CPU cores
 USERNAME="pervez"             # Username for cloud-init
@@ -16,7 +16,10 @@ PASSWORD="program"            # Password for cloud-init
 
 # Download the Ubuntu image
 echo "Downloading Ubuntu image..."
-wget -O /tmp/ubuntu-cloud.img "$UBUNTU_IMAGE_URL"
+
+if ! [ -f /tmp/ubuntu-cloud.img ]; then
+    wget -O /tmp/ubuntu-cloud.img "$UBUNTU_IMAGE_URL"
+fi
 
 if [ $? -ne 0 ] || [ ! -f /tmp/ubuntu-cloud.img ]; then
   echo "Failed to download Ubuntu image."
