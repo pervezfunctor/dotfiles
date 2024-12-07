@@ -62,7 +62,7 @@ desktop-group_install() {
     fonts_install
 
     cpp_install
-    python_install
+    python_simple_install
 
     shell_install
 

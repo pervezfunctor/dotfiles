@@ -232,7 +232,7 @@ brew_install() {
 
     if has_cmd /opt/homebrew/bin/brew; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif has_cmd /home/linuxbrew/.linuxbrew/bin/brew; then 
+    elif has_cmd /home/linuxbrew/.linuxbrew/bin/brew; then
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
     else
         warn "Homebrew not installed properly!"
@@ -593,8 +593,10 @@ python_core_install() {
     export PYENV_ROOT="$HOME/.pyenv"
     export PATH="$PYENV_ROOT/bin:$PATH"
     eval "$(pyenv init --path)"
+}
 
-    poetry_install
+python_simple_install() {
+    pipx install uv
 }
 
 python_mini_install() {
@@ -603,6 +605,7 @@ python_mini_install() {
 }
 
 python_install() {
+    python_simple_install
     python_core_install
     anaconda_install
 }
