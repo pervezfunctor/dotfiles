@@ -51,6 +51,7 @@ virt_install() {
     softwareupdate --install-rosetta --agree-to-license
     brew install -q podman
     brew install -q --cask podman-desktop
+    brew install -q colima
     # podman machine set --rootful
     # sudo /opt/homebrew/Cellar/podman/4.9.2/bin/podman-mac-helper install
 
