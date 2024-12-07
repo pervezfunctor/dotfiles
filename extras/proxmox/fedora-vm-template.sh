@@ -57,8 +57,6 @@ if [ -f "$CUR_DIR/options" ]; then
     source "$CUR_DIR/options"
 fi
 
-}
-
 
 # Validate required arguments
 # if [ -z "$VM_ID" ] || [ -z "$VM_NAME" ] || [ -z "$STORAGE" ] || [ -z "$FEDORA_IMAGE_URL" ] || [ -z "$DISK_SIZE" ] || [ -z "$MEMORY" ] || [ -z "$CORES" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
