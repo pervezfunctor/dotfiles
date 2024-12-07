@@ -22,6 +22,16 @@ update_packages() {
     fi
 }
 
+base_install() {
+    si 'dnf-command(copr)'
+    si 'dnf-command(config-manager)'
+
+    update_packages
+
+    si cmake gcc curl wget git-core trash-cli tree tar zip unzip which util-linux-user
+    micro_install
+}
+
 core_install() {
     si 'dnf-command(copr)'
     si 'dnf-command(config-manager)'
@@ -58,7 +68,8 @@ essential_install() {
     sys_python_install
 
     webi_install
-    webi brew pathman
+    brew_install
+    webi pathman
 
     snap_install
 

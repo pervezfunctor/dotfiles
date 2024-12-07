@@ -22,7 +22,7 @@ main() {
         webi_install
         webi pathman
         has_cmd git || webi git
-        has_cmd brew || webi brew
+        has_cmd brew || brew_install
         has_cmd brew || err_exit "brew not installed!"
         has_cmd git || err_exit "need git"
 

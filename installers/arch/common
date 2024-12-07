@@ -44,7 +44,8 @@ essential_install() {
     sys_python_install
 
     webi_install
-    webi brew pathman curlie
+    brew_install
+    webi pathman curlie
 
     si pkgfile
     sudo pkgfile --update

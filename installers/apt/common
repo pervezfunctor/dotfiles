@@ -52,7 +52,8 @@ essential_install() {
     sys_python_install
 
     webi_install
-    webi brew pathman
+    brew_install
+    webi pathman
     snap_install
 
     brew install -q just chezmoi atuin uutils-coreutils
