@@ -17,7 +17,7 @@ PASSWORD="program"            # Password for cloud-init
 # Download the Ubuntu image
 echo "Downloading Ubuntu image..."
 
-if ! [ -f /tmp/ubuntu-cloud.img ]; then
+if ! [ -f /tmp/ubuntu-cloud.qcow2 ]; then
     wget -O /tmp/ubuntu-cloud.img "$UBUNTU_IMAGE_URL"
 fi
 
@@ -77,7 +77,7 @@ fi
 
 # Set the boot disk
 echo "Configuring boot options..."
-qm set $VM_ID --boot c --bootdisk virtio
+qm set $VM_ID --boot c --bootdisk virtio0
 
 if [ $? -ne 0 ]; then
   echo "Failed to set boot disk."
