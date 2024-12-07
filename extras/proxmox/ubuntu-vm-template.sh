@@ -65,8 +65,7 @@ fi
 
 # Attach the disk to the VM
 echo "Attaching disk to VM..."
-qm set $VM_ID --scsihw virtio-scsi-pci
-qm set $VM_ID --virtio0 $PROXMOX_STORAGE:vm-$VM_ID-disk-0
+qm set $VM_ID --scsihw virtio-scsi-pci --virtio0 $PROXMOX_STORAGE:vm-$VM_ID-disk-1
 
 if [ $? -ne 0 ]; then
   echo "Failed to attach disk."
