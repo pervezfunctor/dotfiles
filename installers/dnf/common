@@ -159,6 +159,16 @@ podman_install() {
     si podman podman-compose podman-tui toolbox
 }
 
+incus_install() {
+    if ! is_fedora; then
+        sudo dnf -y copr enable neil/incus
+
+    fi
+
+    si incus
+    incus_config_install
+}
+
 libvirt_install() {
     sudo dnf groupinstall -q -y --with-optional "System Tools"
     si libvirt buildah distrobox
@@ -166,6 +176,7 @@ libvirt_install() {
 }
 
 ct_install() {
+    incus_install
     docker_install
     podman_install
     si buildah distrobox

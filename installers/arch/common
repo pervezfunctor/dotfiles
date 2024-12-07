@@ -110,11 +110,21 @@ docker_install() {
     docker_common_install
 }
 
+incus_install() {
+    si incus
+    incus_config_install
+}
+
 ct_install() {
+    si incus
     docker_install
     podman_install
     si buildah distrobox
     cockpit_install
+}
+
+incus_install() {
+    si incus
 }
 
 virt_install() {

@@ -129,7 +129,13 @@ libvirt_install() {
     sudo systemctl enable --now libvirtd
 }
 
+incus_install() {
+    si incus
+    incus_config_install
+}
+
 ct_install() {
+    incus_install
     docker_install
     podman_install
     si buildah distrobox

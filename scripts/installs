@@ -110,6 +110,22 @@ tmux_config_install() {
     fln "${DOT_DIR}/configs/tmux.conf" ~/.config/tmux/tmux.conf
 }
 
+incus_config_install() {
+    if ! has_cmd incus; then
+        warn "incus not installed, skipping incus config"
+        return 0
+    fi
+    slog "incus config"
+
+    sudo incus admin init --minimal
+    sudo usermod -aG incus $USER
+
+    if has_cmd firewalld; then
+        sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
+        sudo firewall-cmd --reload
+    fi
+}
+
 treesitter_install() {
     has_cmd tree-sitter && return 0
 
