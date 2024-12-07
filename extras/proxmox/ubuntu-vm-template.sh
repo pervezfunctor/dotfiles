@@ -23,11 +23,13 @@ if [ $? -ne 0 ] || [ ! -f /tmp/ubuntu-cloud.img ]; then
   exit 1
 fi
 
-echo "Convert the image to qcow2 format..."
-qemu-img convert -f qcow2 /tmp/ubuntu-cloud.img /tmp/ubuntu-cloud.qcow2
+# Resize the disk if necessary
+mv /tmp/ubuntu-cloud.img /tmp/ubuntu-cloud.qcow2
+echo "Resizing disk to $DISK_SIZE..."
+qemu-img resize /tmp/ubuntu-cloud.qcow2 $DISK_SIZE
 
 if [ $? -ne 0 ]; then
-  echo "Failed to convert Ubuntu image."
+  echo "Failed to resize disk."
   exit 1
 fi
 
@@ -56,15 +58,6 @@ qm set $VM_ID --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0"
 
 if [ $? -ne 0 ]; then
   echo "Failed to attach disk."
-  exit 1
-fi
-
-# Resize the disk if necessary
-echo "Resizing disk to $DISK_SIZE..."
-qm resize $VM_ID scsi0 $DISK_SIZE
-
-if [ $? -ne 0 ]; then
-  echo "Failed to resize disk."
   exit 1
 fi
 
