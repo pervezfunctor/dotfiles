@@ -611,17 +611,12 @@ python_core_install() {
     eval "$(pyenv init --path)"
 }
 
-python_simple_install() {
-    pipx install uv
-}
-
 python_mini_install() {
     python_core_install
     pyenv_miniconda_install
 }
 
 python_install() {
-    python_simple_install
     python_core_install
     anaconda_install
 }

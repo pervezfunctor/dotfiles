@@ -9,7 +9,6 @@ main() {
     dotfiles_install
 
     cpp_install
-    python_simple_install
     config_install
 
     si util-linux-user

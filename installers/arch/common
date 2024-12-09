@@ -26,6 +26,7 @@ core_install() {
 
 sys_python_install() {
     si python python-pipx python-pip python-setuptools python-wheel python-virtualenv
+    pipx install uv
 }
 
 yay_install() {
