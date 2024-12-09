@@ -21,7 +21,7 @@ core_install() {
     update_packages
 
     si curl wget git base-devel trash-cli tree micro
-    si zsh zsh-completions base_devel tar zip unzip unarchiver
+    si tar unzip
 }
 
 sys_python_install() {
@@ -39,6 +39,7 @@ essential_install() {
 
     core_install
 
+    zsh zsh-completions base_devel unarchiver zip
     si gawk tmux pkg-config p7zip cmake
     si readline sqlite libffi zlib xz
 

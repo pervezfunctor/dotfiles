@@ -25,7 +25,7 @@ sys_python_install() {
 core_install() {
     update_packages
 
-    si curl wget git tar tree zsh unzip unar zip micro-editor python311-pipx
+    si curl wget git tar tree unzip python311-pipx
     sudo zypper install -y -t pattern devel_basis
     pipx install trash-cli
 }
@@ -47,7 +47,7 @@ essential_install() {
 
     core_install
 
-    si gawk tmux urlview 7zip cmake
+    si unar zip micro-editor gawk tmux urlview 7zip cmake zsh
     si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel
 
     sys_python_install

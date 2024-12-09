@@ -21,10 +21,7 @@ core_install() {
     update_packages
 
     si software-properties-common apt-transport-https ca-certificates gpg
-    si curl wget git trash-cli tree zsh micro
-    si build-essential tar zip unzip unar
-
-    si command-not-found
+    si curl wget git trash-cli tree command-not-found
 }
 
 sys_python_install() {
@@ -47,6 +44,7 @@ essential_install() {
 
     core_install
 
+    si build-essential tar zip unzip unar zsh micro
     si gawk tmux pkg-config urlview nala p7zip cmake
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 
