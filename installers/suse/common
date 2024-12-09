@@ -25,7 +25,7 @@ sys_python_install() {
 core_install() {
     update_packages
 
-    si curl wget git tar tree unzip python311-pipx
+    si curl wget git tar tree unzip python312-pipx
     sudo zypper install -y -t pattern devel_basis
     pipx install trash-cli
 }
