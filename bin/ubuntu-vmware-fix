@@ -1,0 +1,5 @@
+#! /usr/bin/env bash
+
+sudo apt install imwheel
+echo 'imwheel -b "4 5" > /dev/null 2>&1' >> ~/.zshrc
+
