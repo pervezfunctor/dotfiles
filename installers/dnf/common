@@ -92,7 +92,6 @@ snap_install() {
 cpp_install() {
     slog "Installing C++"
 
-    sudo dnf groupinstall -q -y "Development Tools"
     si gcc gcc-c++ gdb valgrind systemtap ltrace strace
     si clang clang-devel clang-tools-extra clang-libs
     si clang-analyzer lldb lld llvm llvm-devel

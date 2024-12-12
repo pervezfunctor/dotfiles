@@ -101,7 +101,8 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Attaching disk to VM..."
-qm set "$VM_ID" --scsihw virtio-scsi-pci --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0"
+qm set "$VM_ID" --scsihw virtio-scsi-pci
+                --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0",discard=on,ssd=1
 
 if [ $? -ne 0 ]; then
     echo "Failed to attach disk to VM"

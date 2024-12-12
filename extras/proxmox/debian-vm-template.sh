@@ -66,13 +66,13 @@ if [ $? -ne 0 ] || [ ! -f /tmp/debian-cloud.qcow2 ]; then
 fi
 
 echo "Creating VM $VM_NAME with ID $VM_ID..."
-qm create $VM_ID --name $VM_NAME \
-                 --memory $MEMORY \
-                 --cores $CORES \
+qm create $VM_ID  --name $VM_NAME \
+                  --memory $MEMORY \
+                  --cores $CORES \
                   --ostype l26 \
                   --agent 1 \
                   --cpu host \
-                 --net0 virtio,bridge=vmbr0
+                  --net0 virtio,bridge=vmbr0
 
 if [ $? -ne 0 ]; then
   echo "Failed to create VM."
@@ -88,7 +88,8 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Attaching disk to VM..."
-qm set $VM_ID --scsihw virtio-scsi-pci --scsi0 $PROXMOX_STORAGE:vm-$VM_ID-disk-0
+qm set $VM_ID --scsihw virtio-scsi-pci \
+              --scsi0 $PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1
 
 if [ $? -ne 0 ]; then
   echo "Failed to attach disk."
