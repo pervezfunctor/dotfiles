@@ -12,16 +12,20 @@ ${BOLD}${GREEN}INFO: ${RESET} $1
 "
 }
 
+info() {
+    printf "\r\033[2K  [ \033[00;32mINFO\033[0m ] $1\n"
+}
+
+fail() {
+  printf "\r\033[2K  [ \033[0;31mFAIL\033[0m ] $1\n"
+}
+
 warn() {
-    echo "
-${BOLD}${YELLOW}WARNING: ${RESET} $1
-"
+    printf "\r\033[2K  [ \033[00;33mWARN\033[0m ] $1\n"
 }
 
 err_exit() {
-    echo "
-${BOLD}${RED}FATAL: ${RESET} $1
-"
+    fail $1
     exit 1
 }
 
@@ -342,6 +346,12 @@ webi_install() {
     has_cmd ~/.local/bin/webi && return 0
 
     curl -sS https://webi.sh/webi | sh
+}
+
+source_if_exists() {
+    if [[ -f "$1" ]]; then
+        source "$1"
+    fi
 }
 
 source_curl() {
