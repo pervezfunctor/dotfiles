@@ -1,0 +1,158 @@
+source ~/.config/dotfiles/scripts/utils
+
+alias g='git'
+alias gs="git stash -u"
+alias gst="git status"
+alias gsu="git status -u"
+alias gcan="git commit --amend --no-edit"
+alias gsa='git stash apply'
+alias gfm='git pull'
+alias gp='git push'
+alias gcm='git commit --message'
+alias gia='git add'
+alias gl='git log --topo-order --pretty=format:"$_git_log_medium_format"'
+alias gco='git checkout'
+alias gb='git branch'
+alias gbc='git checkout -b'
+alias gbc='git checkout -b'
+alias gsl='git stash list'
+alias gpp=safe_push "$@"
+alias clone='gh repo clone'
+
+if has_cmd code; then
+    alias c='code'
+    alias c.='code .'
+fi
+
+alias l='ls -1A'         # Lists in one column, hidden files.
+alias ll='ls -lh'        # Lists human readable sizes.
+alias lr='ll -R'         # Lists human readable sizes, recursively.
+alias la='ll -A'         # Lists human readable sizes, hidden files.
+alias lm='la | "$PAGER"' # Lists human readable sizes, hidden files through pager.
+alias lk='ll -Sr'        # Lists sorted by size, largest last.
+alias lt='ll -tr'        # Lists sorted by date, most recent last.
+alias lc='lt -c'         # Lists sorted by date, most recent last, shows change time.
+alias lu='lt -u'         # Lists sorted by date, most recent last, shows access time.
+alias sl='ls'            # Correction for common spelling error.
+
+alias md="mkdir -p"
+alias rd="rmdir"
+
+alias ipa="ip -brief a"
+has_cmd batcat && alias cat="batcat"
+
+has_cmd gdu || has_cmd gdu-go && alias gdu="gdu-go"
+
+alias -g ..="../"
+alias -g ...="../../"
+alias -g ....="../../../"
+alias -g .....="../../../../"
+alias -g ......="../../../../../"
+
+if has_cmd flatpak; then
+    has_cmd wezterm || alias wezterm="flatpak run org.wezfurlong.wezterm"
+    has_cmd telegram || alias telegram="flatpak run org.telegram.desktop"
+    has_cmd clion || alias clion="flatpak run com.jetbrains.CLion"
+    has_cmd chrome || alias chrome="flatpak run com.google.Chrome"
+    has_cmd deluge || alias deluge="flatpak run org.deluge_torrent.deluge"
+    has_cmd zoom || alias zoom="flatpak run us.zoom.Zoom"
+    has_cmd shiftey || alias shiftey="flatpak run io.github.shiftey.Desktop"
+    has_cmd code || alias code="flatpak run com.visualstudio.code"
+    # has_cmd code || alias code="flatpak run com.visualstudio.code --password-store="gnome-libsecret""
+    has_cmd nvim || alias nvim="flatpak run io.neovim.nvim"
+    has_cmd emacs|| alias emacs="flatpak run org.gnu.emacs"
+    has_cmd boxbuddy || alias boxbuddy="flatpak run io.github.dvlv.boxbuddyrs"
+fi
+
+source_if_exists "$HOME/.cargo/env"
+
+export DOTNET_ROOT="$HOME/.dotnet"
+export GOPATH="$HOME/go"
+
+if has_cmd /opt/homebrew/bin/brew; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+elif test -d /home/linuxbrew/.linuxbrew; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+
+spath_export "/usr/bin"
+spath_export "/snap/bin"
+spath_export "$GOPATH/bin"
+spath_export "$HOME/.config/dotfiles/bin"
+spath_export "$HOME/.config/emacs/bin"
+spath_export "$HOME/.local/bin"
+spath_export "$HOME/.local/share/pypoetry"
+spath_export "$HOME/.config/Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin"
+spath_export "$HOME/.console-ninja/.bin"
+
+# if is_mac; then
+#     export DOCKER_HOST='unix://$HOME/.local/share/containers/podman/machine/qemu/podman.sock'
+# else
+#     # export DOCKER_HOST=unix:///run/user/1000/docker.sock
+# fi
+
+if [[ -d "$HOME/.pyenv" ]]; then
+    export PYENV_ROOT="$HOME/.pyenv"
+    spath_export "$PYENV_ROOT/bin"
+    eval "$(pyenv init -)"
+    # eval "$(pyenv virtualenv-init -)"
+elif has_cmd /$HOME/miniconda3/bin/conda; then
+  __conda_setup="$('/$HOME/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+  if [ $? -eq 0 ]; then
+      eval "$__conda_setup"
+  else
+      if [ -f "/$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+          . "/$HOME/miniconda3/etc/profile.d/conda.sh"
+      else
+          export PATH="/$HOME/miniconda3/bin:$PATH"
+      fi
+  fi
+  unset __conda_setup
+fi
+
+
+# take parameters from the command line and pass it to git push
+function safe_push() {
+    git stash -u && git push "$@" && git stash pop
+}
+
+# webi paths etc
+[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+
+source_if_exists /usr/share/doc/fzf/examples/completion.zsh
+source_if_exists /usr/share/doc/fzf/examples/key-bindings.zsh
+
+alias cpr="cp -r"
+alias md="mkdir -p"
+alias rd="rmdir"
+
+if [[ -d "$HOME/.local/share/pnpm" ]]; then
+    # pnpm
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+    export PATH="$PNPM_HOME:$PATH"
+    # pnpm end
+
+    # tabtab source for packages
+    # uninstall by removing these lines
+    [[ -f ~/.config/tabtab/zsh/__tabtab.zsh ]] && . ~/.config/tabtab/zsh/__tabtab.zsh || true
+
+    alias n='pnpm'
+    alias ni='pnpm install'
+    alias nid='pnpm install -D'
+    alias nb='pnpm build'
+    alias nl='pnpm lint:dev'
+    alias ne='pnpm exec'
+    alias nd='pnpm dev'
+    alias nc='pnpm ci'
+    alias nt='pnpm types:dev'
+    alias ntc='pnpm types'
+    alias ntt='pnpm test:dev'
+    alias nttc='pnpm test:dev'
+    alias nci='pnpm types && pnpm lint'
+    alias ndb='pnpm db'
+    alias ndbt='pnpm db:types'
+    alias ndbp='pnpm db:push'
+    alias ndbs='pnpm db:seed'
+    alias ndbst='pnpm db:studio'
+    alias ndbr='pnpm db:repl'
+fi

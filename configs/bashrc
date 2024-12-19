@@ -1,4 +1,3 @@
-source "$XDG_CONFIG_HOME/dotfiles/scripts/utils"
+command -v starship > /dev/null && eval "$(starship init bash)"
 
-eval "$(starship init bash)"
-ssource "$HOME/.asdf/asdf.sh"
+source_if_exists ~/.config/dotfiles/configs/shellrc
