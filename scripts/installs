@@ -533,7 +533,11 @@ shell_install() {
 
 alacritty_config_install() {
     smd ~/.config/alacritty
-    scp "${DOT_DIR}/configs/alacritty.yml" ~/.config/alacritty/alacritty.yml
+    scp "${DOT_DIR}/configs/alacritty/alacritty.toml" ~/.config/alacritty/alacritty.toml
+    curl -LO --output-dir ~/.config/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-latte.toml
+    curl -LO --output-dir ~/.config/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-latte.toml
+    curl -LO --output-dir ~/.config/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-macchiato.toml
+    curl -LO --output-dir ~/.config/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-macchiato.toml
 }
 
 wezterm_config_install() {
