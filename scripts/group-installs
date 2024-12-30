@@ -5,9 +5,7 @@
 nano-group_install() {
     core_install
     dotfiles_install
-
     config_install
-    set_zsh_as_default
 }
 
 min-group_install() {

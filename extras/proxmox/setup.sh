@@ -34,8 +34,6 @@ proxmox_download_templates() {
 }
 
 proxmox_cloud_init_vms_install() {
-    apt update && apt upgrade -y
-    apt install git-core
     sclone https://github.com/pervezfunctor/dotfiles.git .dotfiles
     pushd .dotfiles/extras/proxmox
     ./debian-vm-template.sh
@@ -51,6 +49,10 @@ proxmox_cloud_init_vms_install() {
     ./fedora-vm-template.sh
     qm clone 9200 102 --name fedora-vm
     popd
+}
+
+proxmox_packages_install() {
+    apt install -y git-core micro
 }
 
 }
