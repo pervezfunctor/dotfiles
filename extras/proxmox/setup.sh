@@ -34,7 +34,7 @@ proxmox_download_templates() {
 }
 
 proxmox_cloud_init_vms_install() {
-    sclone https://github.com/pervezfunctor/dotfiles.git .dotfiles
+    git clone --depth=1 https://github.com/pervezfunctor/dotfiles.git .dotfiles
     pushd .dotfiles/extras/proxmox
     ./debian-vm-template.sh
     # clone vm from template debian-template
