@@ -4,6 +4,10 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
+macos_settings_install() {
+    defaults write -g NSWindowShouldDragOnGesture -bool true
+}
+
 ui_install() {
     brew install -q --cask telegram
     brew install -q --cask zoom
@@ -12,6 +16,7 @@ ui_install() {
     brew install -q --cask microsoft-remote-desktop
     brew install -q deluge
     brew install -q visual-studio-code
+    brew install -q --cask nikitabobko/tap/aerospace
 }
 
 main() {
@@ -30,10 +35,12 @@ main() {
     cpp_install
     python_uv_install
     # pyenv_mac_install
-    anaconda_install
+    # anaconda_install
 
     ui_install
     virt_install
+
+    macos_config_install
 
     config_install
 }
