@@ -1,5 +1,7 @@
 source ~/.config/dotfiles/scripts/utils
 
+export LANG=en_US.UTF-8
+
 alias g='git'
 alias gs="git stash -u"
 alias gst="git status"
@@ -18,6 +20,24 @@ alias gbc='git checkout -b'
 alias gsl='git stash list'
 alias gpp=safe_push "$@"
 alias clone='gh repo clone'
+alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
+
+alias nm="nmap -sC -sV -oN"
+
+alias v="nvim"
+alias c="code"
+alias t="tmux"
+
+alias d="docker"
+alias dco="docker compose"
+alias dps="docker ps"
+alias dpa="docker ps -a"
+alias dl="docker ps -l -q"
+alias dx="docker exec -it"
+alias dlogs="docker logs -f"
+
+alias la=tree
+
 
 if has_cmd code; then
     alias c='code'
@@ -155,4 +175,18 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
     alias ndbs='pnpm db:seed'
     alias ndbst='pnpm db:studio'
     alias ndbr='pnpm db:repl'
+fi
+
+# navigation
+cx() { cd "$@" && l; }
+fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
+f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
+fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
+
+
+# Eza
+if has_cmd eza; then
+    alias l="eza -l --icons --git -a"
+    alias lt="eza --tree --level=2 --long --icons --git"
+    alias ltree="eza --tree --level=2  --icons --git"
 fi

@@ -12,6 +12,9 @@ export_if_exists() {
     [[ -d "$1" ]] && export PATH="$1:$PATH"
 }
 
+# set XDG_CONFIG_HOME if not set
+export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+
 source_if_exists "$HOME/.asdf/asdf.sh"
 
 HISTFILE=~/.histfile
@@ -28,6 +31,9 @@ setopt PUSHD_TO_HOME
 setopt EXTENDED_GLOB
 setopt AUTO_MENU            # Show completion menu on a successive tab press.
 setopt AUTO_LIST            # Automatically list choices on ambiguous completion.
+setopt prompt_subst
+
+autoload bashcompinit && bashcompinit
 
 autoload -Uz compinit
 compinit
@@ -49,6 +55,9 @@ elif ! [[ -d ~/.zsh/pure ]]; then
 
     prompt pure
 fi
+
+has_cmd direnv && eval "$(direnv hook zsh)"
+has_cmd atuin && eval "$(atuin init zsh)"
 
 if has_cmd zoxide; then
     eval "$(zoxide init zsh)"
@@ -200,3 +209,10 @@ source_if_exists ~/.config/dotfiles/configs/shellrc
 source_if_exists "$HOME/.localzshrc"
 source_if_exists "$HOME/.config/localzshrc"
 source_if_exists "$HOME/.config/dotfiles/configs/localzshrc"
+
+bindkey '^w' autosuggest-execute
+bindkey '^e' autosuggest-accept
+bindkey '^u' autosuggest-toggle
+bindkey '^L' vi-forward-word
+bindkey '^k' up-line-or-search
+bindkey '^j' down-line-or-search

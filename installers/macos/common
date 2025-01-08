@@ -61,6 +61,10 @@ virt_install() {
     slog "Virtualization packages installation done!"
 }
 
+python_uv_install() {
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+}
+
 pyenv_mac_install() {
     slog "Installing pyenv"
     brew install -q pyenv
