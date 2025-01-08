@@ -32,7 +32,6 @@ cli_install() {
 }
 
 fonts_install() {
-    brew tap homebrew/cask-fonts
     brew install -q --cask font-jetbrains-mono-nerd-font
     brew install -q --cask font-monaspace-nerd-font
 }
