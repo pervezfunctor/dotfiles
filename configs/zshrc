@@ -12,8 +12,9 @@ export_if_exists() {
     [[ -d "$1" ]] && export PATH="$1:$PATH"
 }
 
-# set XDG_CONFIG_HOME if not set
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+
+source_if_exists ~/.config/dotfiles/configs/shellrc
 
 source_if_exists "$HOME/.asdf/asdf.sh"
 
@@ -40,19 +41,19 @@ compinit
 
 zstyle ':completion:::::default' menu select
 
-autoload -U promptinit; promptinit
-
 if has_cmd starship; then
     eval "$(starship init zsh)"
-elif ! [[ -d ~/.zsh/pure ]]; then
-    if  has_cmd git > /dev/null; then
-        git clone --depth=1 https://github.com/sindresorhus/pure.git ~/.zsh/pure
-    else
-        echo "git not installed"
+else
+    if ! [[ -d ~/.zsh/pure ]]; then
+        if  has_cmd git > /dev/null; then
+            git clone --depth=1 https://github.com/sindresorhus/pure.git ~/.zsh/pure
+        else
+            echo "git not installed"
+        fi
     fi
 
     fpath+=($HOME/.zsh/pure)
-
+    autoload -U promptinit; promptinit
     prompt pure
 fi
 
@@ -204,8 +205,6 @@ bindkey '^I' complete-word
 #bindkey -s '^[[Z' '\t'
 #
 
-source_if_exists ~/.config/dotfiles/configs/shellrc
-
 source_if_exists "$HOME/.localzshrc"
 source_if_exists "$HOME/.config/localzshrc"
 source_if_exists "$HOME/.config/dotfiles/configs/localzshrc"
@@ -216,3 +215,5 @@ bindkey '^u' autosuggest-toggle
 bindkey '^L' vi-forward-word
 bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
+
+PATH=~/.console-ninja/.bin:$PATH
