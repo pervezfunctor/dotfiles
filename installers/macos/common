@@ -20,12 +20,15 @@ essential_install() {
 }
 
 cli_install() {
-    # brew install bat eza lsd delta dust duf broot fd ripgrep fzf mcfly choose jq sd cheat tldr bottom glances gtop hyperfine gping procs httpie curlie xh zoxide doggo lazygit
     brew install -q golang rust
-    brew install -q neovim lazygit neovide luarocks gdu bottom
-    brew install -q fzf ripgrep fd
-    brew install -q p7zip zoxide ShellCheck shfmt git-extras gawk gh
+
+    brew install -q fzf ripgrep fd bat eza bottom gh nushell
+    brew install -q neovim lazygit neovide luarocks gdu lazydocker
+    brew install -q p7zip zoxide ShellCheck shfmt git-extras gawk
     brew install -q git-delta dust choose sd procs xh starship lsd cheat curlie
+
+    brew install -q gping procs hyperfine duf broot mcfly jq
+    brew install -q tldr doggo glances gtop httpie
 
     gh extension install github/gh-copilot
     alias gdu=gdu-go
