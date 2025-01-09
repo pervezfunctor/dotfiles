@@ -62,12 +62,9 @@ astro_install() {
     fmv ~/.local/state/nvim ~/.local/state/nvim.bak
     fmv ~/.cache/nvim ~/.cache/nvim.bak
 
-    sclone --depth=1 https://github.com/AstroNvim/template ~/.config/nvim
-    frm ~/.config/nvim/.git
+    sclone https://github.com/pervezfunctor/astronvim-config.git ~/.config/nvim
 
-    sclone https://github.com/pervezfunctor/astro-config.git ~/.config/nvim/lua/user
-
-     [[ "$USER" == "pervez" ]] || frm ~/.config/nvim/lua/user/.git
+    [[ "$USER" == "pervez" ]] || frm ~/.config/nvim/lua/user/.git
     slog "Please configure AstroNvim by editing files in ~/.config/nvim/lua/user"
 
     slog "AstroNvim installation done!"
