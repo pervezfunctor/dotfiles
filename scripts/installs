@@ -32,6 +32,7 @@ flatpak_apps_install() {
     fpi org.wezfurlong.wezterm
     fpi io.github.shiftey.Desktop
     fpi io.github.dvlv.boxbuddyrs
+    fpi md.obsidian.Obsidian
 
     alias boxbuddy="flatpak run io.github.dvlv.boxbuddyrs"
     alias wezterm="flatpak run org.wezfurlong.wezterm"
