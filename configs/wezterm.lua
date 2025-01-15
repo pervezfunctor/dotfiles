@@ -1,15 +1,29 @@
 local wezterm = require 'wezterm'
 
-local config = {}
+return {
+	adjust_window_size_when_changing_font_size = false,
+	color_scheme = 'Catppuccin Frappe',
+	enable_tab_bar = false,
+	font_size = 12.0,
+	font = wezterm.font('JetBrains Mono'),
+	macos_window_background_blur = 30,
+	window_background_opacity = 0.9,
+	window_decorations = 'RESIZE',
 
-if wezterm.config_builder then
-  config = wezterm.config_builder()
-end
+	-- keys = {
+		-- {
+		-- 	key = 'q',
+		-- 	mods = 'CTRL',
+		-- 	action = wezterm.action.ToggleFullScreen,
+		-- },
+	-- },
 
-config.color_scheme = 'Batman'
+	mouse_bindings = {
+	  {
+	    event = { Up = { streak = 1, button = 'Left' } },
+	    mods = 'CTRL',
+	    action = wezterm.action.OpenLinkAtMouseCursor,
+	  },
+	},
+}
 
-config.font = wezterm.font 'MonaspiceRn Nerd Font Mono'
-
-config.font_size = 14.0
-
-return config
