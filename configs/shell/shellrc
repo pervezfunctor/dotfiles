@@ -78,7 +78,7 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
 
 fi
 
-source_if_exists "$HOME/.config/dotfiles/aliases"
+source_if_exists "$XDG_CONFIG_HOME/dotfiles/configs/shell/aliases"
 alias ls='eza -lh --group-directories-first --icons'
 alias lsa='ls -a'
 alias lt='eza --tree --level=2 --long --icons --git'
