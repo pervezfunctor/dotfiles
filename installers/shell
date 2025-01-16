@@ -18,31 +18,38 @@ bis() {
     done
 }
 
+# eza bat fd fzf zoxide sd ripgrep lazygit dog atuin direnv dust ncdu duf
+# jq curlie lsd gtop tldr curlie sd bottom xh
+
+        brew install -q trash-cli wget curl unzip gawk urlview tmux jq tree-sitter lsd shfmt gh gtop tldr shellcheck gum cheat curlie lazygit duf choose-rust sd bottom xh eza dog atuin direnv dust ncdu procs fzf fd hyperfine zoxide starship just chezmoi gdu neovim ripgrep bat git-delta choose-rust bottom
+
 main() {
+        has_cmd git || err_exit "Install git before running this script"
+
         webi_install
-        webi pathman
-        has_cmd git || webi git
+        mise_install
+
         has_cmd brew || brew_install
         has_cmd brew || err_exit "brew not installed!"
-        has_cmd git || err_exit "need git"
+
 
         bi trash-cli wget curl unzip gawk urlview tmux jq tree-sitter
-        bis curlie lsd shfmt gh lazygit gtop tldr shellcheck
+        bis lsd shfmt gh gtop tldr shellcheck gum
         bis cheat curlie lazygit duf choose-rust sd bottom xh
+        bis eza dog atuin direnv dust ncdu
+        bis procs fzf fd hyperfine zoxide starship
+        bis just chezmoi
 
-        dotfiles_install
-
-        # bi eza direnv starship atuin uutils
-        has_cmd gdu-go || has_cmd go || bi gdu
+        has_cmd gdu || has_cmd gdu-go || bi gdu
         has_cmd nvim || bi neovim
         has_cmd rg || bi ripgrep
         has_cmd batcat || has_cmd bat || bi bat
         has_cmd delta || bi git-delta
-        bis procs fzf fd hyperfine zoxide
         has_cmd choose || bi choose-rust
         has_cmd btm || bi bottom
         gh extension install github/gh-copilot
 
+        dotfiles_install
         config_install
     fi
 }

@@ -46,10 +46,12 @@ essential_install() {
     sys_python_install
 
     webi_install
+    mise_install
     brew_install
-    webi pathman curlie
+    webi curlie
 
     si pkgfile
+    si gum
     sudo pkgfile --update
 
     yay -Sy --noconfirm snapd
@@ -82,7 +84,7 @@ vscode_install() {
 
 ui_install() {
     vscode_install
-    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard
+    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard ghostty
     flathub_install
     flatpak_apps_install
 }

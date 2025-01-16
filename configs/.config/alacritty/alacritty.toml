@@ -1,4 +1,4 @@
-# import = ["~/.config/alacritty/catppuccin-frappe.toml"]
+# import = ["$XDG_CONFIG_HOME/alacritty/catppuccin-frappe.toml"]
 
 [window]
 # decorations = "none"

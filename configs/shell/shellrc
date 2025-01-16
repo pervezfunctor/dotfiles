@@ -1,4 +1,4 @@
-source ~/.config/dotfiles/scripts/utils
+source $XDG_CONFIG_HOME/dotfiles/scripts/utils
 
 export LANG=en_US.UTF-8
 
@@ -63,11 +63,11 @@ has_cmd batcat && alias cat="batcat"
 
 has_cmd gdu || has_cmd gdu-go && alias gdu="gdu-go"
 
-alias -g ..="../"
-alias -g ...="../../"
-alias -g ....="../../../"
-alias -g .....="../../../../"
-alias -g ......="../../../../../"
+alias ..="../"
+alias ...="../../"
+alias ....="../../../"
+alias .....="../../../../"
+alias ......="../../../../../"
 
 if has_cmd flatpak; then
     has_cmd wezterm || alias wezterm="flatpak run org.wezfurlong.wezterm"
@@ -91,7 +91,7 @@ export GOPATH="$HOME/go"
 
 if has_cmd /opt/homebrew/bin/brew; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
-elif test -d /home/linuxbrew/.linuxbrew; then
+elif [[ -d /home/linuxbrew/.linuxbrew ]]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
@@ -139,12 +139,12 @@ function safe_push() {
 # webi paths etc
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
-source_if_exists /usr/share/doc/fzf/examples/completion.zsh
-source_if_exists /usr/share/doc/fzf/examples/key-bindings.zsh
-
-alias cpr="cp -r"
-alias md="mkdir -p"
-alias rd="rmdir"
+# has_cmd fzf && {
+#     export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --prompt="> "'
+#     export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow --exclude .git"
+#     export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
+#     export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
+# }
 
 if [[ -d "$HOME/.local/share/pnpm" ]]; then
     # pnpm
@@ -154,39 +154,8 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
 
     # tabtab source for packages
     # uninstall by removing these lines
-    [[ -f ~/.config/tabtab/zsh/__tabtab.zsh ]] && . ~/.config/tabtab/zsh/__tabtab.zsh || true
+    [[ -f $XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh ]] && . $XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh || true
 
-    alias n='pnpm'
-    alias ni='pnpm install'
-    alias nid='pnpm install -D'
-    alias nb='pnpm build'
-    alias nl='pnpm lint:dev'
-    alias ne='pnpm exec'
-    alias nd='pnpm dev'
-    alias nc='pnpm ci'
-    alias nt='pnpm types:dev'
-    alias ntc='pnpm types'
-    alias ntt='pnpm test:dev'
-    alias nttc='pnpm test:dev'
-    alias nci='pnpm types && pnpm lint'
-    alias ndb='pnpm db'
-    alias ndbt='pnpm db:types'
-    alias ndbp='pnpm db:push'
-    alias ndbs='pnpm db:seed'
-    alias ndbst='pnpm db:studio'
-    alias ndbr='pnpm db:repl'
 fi
 
-# navigation
-cx() { cd "$@" && l; }
-fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
-f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
-fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
-
-
-# Eza
-if has_cmd eza; then
-    alias l="eza -l --icons --git -a"
-    alias lt="eza --tree --level=2 --long --icons --git"
-    alias ltree="eza --tree --level=2  --icons --git"
-fi
+source_if_exists "$HOME/.config/dotfiles/aliases"

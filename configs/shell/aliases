@@ -1,0 +1,44 @@
+alias cpr="cp -r"
+alias md="mkdir -p"
+alias rd="rmdir"
+alias del="trash"
+
+if [[ -d "$HOME/.local/share/pnpm" ]]; then
+    alias n='pnpm'
+    alias ni='pnpm install'
+    alias nid='pnpm install -D'
+    alias nb='pnpm build'
+    alias nl='pnpm lint:dev'
+    alias ne='pnpm exec'
+    alias nd='pnpm dev'
+    alias nc='pnpm ci'
+    alias nt='pnpm types:dev'
+    alias ntc='pnpm types'
+    alias ntt='pnpm test:dev'
+    alias nttc='pnpm test:dev'
+    alias nci='pnpm types && pnpm lint'
+    alias ndb='pnpm db'
+    alias ndbt='pnpm db:types'
+    alias ndbp='pnpm db:push'
+    alias ndbs='pnpm db:seed'
+    alias ndbst='pnpm db:studio'
+    alias ndbr='pnpm db:repl'
+fi
+
+# navigation
+cx() { cd "$@" && l; }
+fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
+f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
+fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
+
+
+# Eza
+if has_cmd eza; then
+    alias l="eza -l --icons --git -a"
+    alias lt="eza --tree --level=2 --long --icons --git"
+    alias ltree="eza --tree --level=2  --icons --git"
+fi
+
+alias lv="NVIM_APPNAME=lazyvim nvim"
+
+

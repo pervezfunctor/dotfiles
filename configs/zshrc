@@ -14,7 +14,7 @@ export_if_exists() {
 
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
-source_if_exists ~/.config/dotfiles/configs/shellrc
+source_if_exists $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc
 
 source_if_exists "$HOME/.asdf/asdf.sh"
 
@@ -57,15 +57,6 @@ else
     prompt pure
 fi
 
-has_cmd direnv && eval "$(direnv hook zsh)"
-has_cmd atuin && eval "$(atuin init zsh)"
-
-if has_cmd zoxide; then
-    eval "$(zoxide init zsh)"
-elif has_cmd fasd; then
-    eval "$(fasd --init auto)"
-fi
-
 # # append completions to fpath
 fpath=(${ASDF_DIR}/completions $fpath)
 # initialise completions with ZSH's compinit
@@ -97,6 +88,7 @@ if ! [[ -d ~/.zsh/alias-tips ]]; then
 fi
 source_if_exists ~/.zsh/zsh-autosuggestions/alias-tips/alias-tips.plugin.zsh
 
+PATH=~/.console-ninja/.bin:$PATH
 
 # Copied from oh-my-zsh
 
@@ -177,7 +169,7 @@ bindkey -M emacs '^[[1;5D' backward-word
 
 bindkey '\ew' kill-region                             # [Esc-w] - Kill from the cursor to the mark
 bindkey -s '\el' 'ls\n'                               # [Esc-l] - run command: ls
-bindkey '^r' history-incremental-search-backward      # [Ctrl-r] - Search backward incrementally for a specified string. The string may begin with ^ to anchor the search to the beginning of the line.
+# bindkey '^r' history-incremental-search-backward      # [Ctrl-r] - Search backward incrementally for a specified string. The string may begin with ^ to anchor the search to the beginning of the line.
 bindkey ' ' magic-space                               # [Space] - don't do history expansion
 
 
@@ -205,10 +197,6 @@ bindkey '^I' complete-word
 #bindkey -s '^[[Z' '\t'
 #
 
-source_if_exists "$HOME/.localzshrc"
-source_if_exists "$HOME/.config/localzshrc"
-source_if_exists "$HOME/.config/dotfiles/configs/localzshrc"
-
 bindkey '^w' autosuggest-execute
 bindkey '^e' autosuggest-accept
 bindkey '^u' autosuggest-toggle
@@ -216,4 +204,13 @@ bindkey '^L' vi-forward-word
 bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
 
-PATH=~/.console-ninja/.bin:$PATH
+has_cmd mise && eval "$(mise activate zsh)"
+has_cmd direnv && eval "$(direnv hook zsh)"
+has_cmd zoxide && eval "$(zoxide init zsh)"
+has_cmd fzf && source <(fzf --zsh)
+has_cmd atuin && eval "$(atuin init zsh)"
+# has_cmd fasd && eval "$(fasd --init auto)"
+
+source_if_exists "$HOME/.localzshrc"
+source_if_exists "$HOME/.config/localzshrc"
+source_if_exists "$HOME/.config/dotfiles/configs/localzshrc"

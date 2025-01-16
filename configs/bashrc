@@ -1,3 +1,8 @@
 command -v starship > /dev/null && eval "$(starship init bash)"
 
-source_if_exists ~/.config/dotfiles/configs/shellrc
+source $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc
+
+alias fv="fzf --bind 'enter:become(vim {})'"
+
+# Set up fzf key bindings and fuzzy completion
+eval "$(fzf --bash)"

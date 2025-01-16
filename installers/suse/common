@@ -48,14 +48,13 @@ essential_install() {
     core_install
 
     si unar zip micro-editor gawk tmux urlview 7zip cmake zsh
-    si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel
+    si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel gum
 
     sys_python_install
 
     webi_install
+    mise_install
     brew_install
-    webi pathman
-
     snap_install
 
     slog "Essential packages installation done!"
@@ -92,7 +91,7 @@ vscode_install() {
 }
 
 ui_install() {
-    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
+    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard ghostty
     vscode_install
     flathub_install
     flatpak_apps_install

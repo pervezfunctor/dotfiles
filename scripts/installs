@@ -38,17 +38,9 @@ flatpak_apps_install() {
     alias wezterm="flatpak run org.wezfurlong.wezterm"
 }
 
-webi_install() {
-    has_cmd webi && return 0
-    has_cmd ~/.local/bin/webi && return 0
-
-    curl -sS https://webi.sh/webi | sh
-    source "$HOME/.config/envman/load.sh"
-}
-
 webi-shell_install() {
     webi node golang go-essentials shellcheck shfmt pathman
-    webi bat curlie delta jq lsd rg gh
+    webi bat curlie delta jq lsd rg gh fd sd
     # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing k9s kubectx kubens
     # webi pyenv
     # webi fd git watchexec rustlang
@@ -58,15 +50,15 @@ webi-shell_install() {
 astro_install() {
     slog "Installing AstroNvim"
 
-    fmv ~/.config/nvim ~/.config/nvim.bak
+    fmv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
     fmv ~/.local/share/nvim ~/.local/share/nvim.bak
     fmv ~/.local/state/nvim ~/.local/state/nvim.bak
     fmv ~/.cache/nvim ~/.cache/nvim.bak
 
-    sclone https://github.com/pervezfunctor/astronvim-config.git ~/.config/nvim
+    sclone https://github.com/pervezfunctor/astronvim-config.git $XDG_CONFIG_HOME/nvim
 
-    [[ "$USER" == "pervez" ]] || frm ~/.config/nvim/lua/user/.git
-    slog "Please configure AstroNvim by editing files in ~/.config/nvim/lua/user"
+    [[ "$USER" == "pervez" ]] || frm $XDG_CONFIG_HOME/nvim/lua/user/.git
+    slog "Please configure AstroNvim by editing files in $XDG_CONFIG_HOME/nvim/lua/user"
 
     slog "AstroNvim installation done!"
 }
@@ -78,14 +70,18 @@ bash_install() {
     if ! grep -q starship ~/.bashrc; then
         echo 'eval "$(starship init bash)"' >> ~/.bashrc
     fi
+
+    if ! grep -q $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc; then
+        echo "source $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc" >> ~/.bashrc
+    fi
 }
 
 vscode_config_install() {
     if is_mac; then
-        scp ~/.config/dotfiles/extras/vscode/settings.json "$HOME/Library/Application Support/Code/User/settings.json"
+        scp $XDG_CONFIG_HOME/dotfiles/extras/vscode/settings.json "$HOME/Library/Application Support/Code/User/settings.json"
     else
-        smd ~/.config/Code/User
-        scp ~/.config/dotfiles/extras/vscode/settings.json ~/.config/Code/User/settings.json
+        smd $XDG_CONFIG_HOME/Code/User
+        scp $XDG_CONFIG_HOME/dotfiles/extras/vscode/settings.json $XDG_CONFIG_HOME/Code/User/settings.json
     fi
 }
 
@@ -104,8 +100,8 @@ zsh_config_install() {
 tmux_config_install() {
     slog "tmux config"
 
-    smd ~/.config/tmux
-    fln "${DOT_DIR}/configs/tmux.conf" ~/.config/tmux/tmux.conf
+    smd $XDG_CONFIG_HOME/tmux
+    fln "${DOT_DIR}/configs/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
 }
 
 incus_config_install() {
@@ -319,11 +315,11 @@ fonts_install() {
 }
 
 doom_install() {
-    dir_exists ~/.config/doom && return 0
+    dir_exists $XDG_CONFIG_HOME/doom && return 0
 
-    sclone --depth=1 https://github.com/doomemacs/doomemacs ~/.config/emacs
-    fmv ~/.config/doom ~/.config/doom.backup
-    sclone https://github.com/pervezfunctor/doomemacs-config ~/.config/doom
+    sclone --depth=1 https://github.com/doomemacs/doomemacs $XDG_CONFIG_HOME/emacs
+    fmv $XDG_CONFIG_HOME/doom $XDG_CONFIG_HOME/doom.backup
+    sclone https://github.com/pervezfunctor/doomemacs-config $XDG_CONFIG_HOME/doom
 
     slog "Configure doom"
     doom sync
@@ -530,12 +526,12 @@ shell_install() {
 }
 
 alacritty_config_install() {
-    smd ~/.config/alacritty
-    scp "${DOT_DIR}/configs/alacritty/alacritty.toml" ~/.config/alacritty/alacritty.toml
-    curl -LO --output-dir ~/.config/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-latte.toml
-    curl -LO --output-dir ~/.config/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-latte.toml
-    curl -LO --output-dir ~/.config/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-macchiato.toml
-    curl -LO --output-dir ~/.config/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-macchiato.toml
+    smd $XDG_CONFIG_HOME/alacritty
+    scp "${DOT_DIR}/configs/alacritty/alacritty.toml" $XDG_CONFIG_HOME/alacritty/alacritty.toml
+    curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-frappe.toml
+    curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-latte.toml
+    curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-macchiato.toml
+    curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-macchiato.toml
 }
 
 wezterm_config_install() {

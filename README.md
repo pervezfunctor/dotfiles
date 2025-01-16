@@ -22,8 +22,8 @@ curl -sSL https://dub.sh/YY3a8Um > ~/.zshrc
 ### Tmux environment
 
 ```bash
-mv ~/.config/tmux.conf ~/.config/tmux.conf.bak
-curl -sSL https://dub.sh/me3OYAJ > ~/.config/tmux.conf
+mv $XDG_CONFIG_HOME/tmux.conf $XDG_CONFIG_HOME/tmux.conf.bak
+curl -sSL https://dub.sh/me3OYAJ > $XDG_CONFIG_HOME/tmux.conf
 ```
 
 ### Installer

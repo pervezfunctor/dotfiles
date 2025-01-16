@@ -60,8 +60,10 @@ essential_install() {
     sys_python_install
 
     webi_install
+    mise_install
     brew_install
-    webi pathman
+
+    si gum
 
     snap_install
 
@@ -119,10 +121,18 @@ vscode_install() {
     si code code-insiders
 }
 
+ghostty_install() {
+    has_cmd ghostty && return 1
+
+    sudo dnf copr -y enable pgdev/ghostty
+    si ghostty
+}
+
 ui_install() {
     vscode_install
     si virt-manager chromium gnome-keyring xsel xclip wl-clipboard
     flathub_install
+    ghostty_install
     flatpak_apps_install
 }
 

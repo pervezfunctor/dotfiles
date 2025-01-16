@@ -2,30 +2,24 @@
 
 {
 
-DOT_DIR=~/.config/dotfiles
+DOT_DIR=$XDG_CONFIG_HOME/dotfiles
 
 BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
 
 slog() {
-    echo "
-${BOLD}${GREEN}INFO: ${RESET} $1
-"
-}
-
-info() {
-    printf "\r\033[2K  [ \033[00;32mINFO\033[0m ] $1\n"
+    printf "\r\033[2K  [ \033[00;32mINFO\033[0m ] $*\n"
 }
 
 fail() {
-  printf "\r\033[2K  [ \033[0;31mFAIL\033[0m ] $1\n"
+  printf "\r\033[2K  [ \033[0;31mFAIL\033[0m ] $*\n"
 }
 
 warn() {
-    printf "\r\033[2K  [ \033[00;33mWARN\033[0m ] $1\n"
+    printf "\r\033[2K  [ \033[00;33mWARN\033[0m ] $*\n"
 }
 
 err_exit() {
-    fail $1
+    fail $*
     exit 1
 }
 
@@ -340,12 +334,22 @@ dotfiles_install() {
     sclone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 }
 
-
 webi_install() {
     has_cmd webi && return 0
     has_cmd ~/.local/bin/webi && return 0
 
     curl -sS https://webi.sh/webi | sh
+    source "$HOME/.config/envman/load.sh"
+    webi pathman
+}
+
+mise_install() {
+    has_cmd mise && return 0
+    has_cmd ~/.local/bin/mise && return 0
+
+    curl https://mise.run | sh
+
+    echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
 }
 
 source_if_exists() {
