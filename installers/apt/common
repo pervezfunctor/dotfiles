@@ -20,13 +20,20 @@ update_packages() {
 core_install() {
     update_packages
 
-    si software-properties-common apt-transport-https ca-certificates gpg
-    si curl wget git trash-cli tree command-not-found
+    si software-properties-common apt-transport-https ca-certificates gpg cmake
+    si curl wget git trash-cli tree command-not-found build-essential tar unzip
+
+    cmd_check gcc g++ make cmake curl wget git trash tree command-not-found
 }
 
 sys_python_install() {
+    slog "Installing python"
+
     si python3 python3-venv python3-virtualenv python3-pip python3-setuptools python3-wheel python-is-python3 pipx
     pipx install uv
+
+    slog "Python installation done!"
+    cmd_check uv
 }
 
 snap_install() {
@@ -44,9 +51,11 @@ essential_install() {
 
     core_install
 
-    si build-essential tar zip unzip unar zsh micro
-    si gawk tmux pkg-config urlview nala p7zip cmake
+    si zip unar zsh micro
+    si gawk tmux pkg-config urlview nala p7zip
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
+
+    cmd_check tmux zsh micro tar zup unar gawk
 
     sys_python_install
 
@@ -54,6 +63,8 @@ essential_install() {
     mise_install
     brew_install
     snap_install
+
+    cmd_check webi mise brew snap
 
     brew install -q just chezmoi atuin uutils-coreutils
 
@@ -67,6 +78,8 @@ cli_install() {
     gh extension install github/gh-copilot
 
     neovim_install
+
+    cmd_check gh shellcheck curlie shfmt sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
 }
 
 cpp_install() {
@@ -77,6 +90,8 @@ cpp_install() {
     si doxygen graphviz ccache cppcheck pre-commit
     si valgrind systemtap ltrace strace lldb lld
 
+    cmd_check gcc g++ gdb clang clang-tidy clang-format
+
     cmake_install
     conan_install
 
@@ -85,7 +100,6 @@ cpp_install() {
 
 vscode_install() {
     has_cmd code && return 0
-
 
     if ! grep -q "https://packages.microsoft.com/repos/code stable main" /etc/apt/sources.list.d/vscode.list; then
         echo "code code/add-microsoft-repo boolean true" | sudo debconf-set-selections
@@ -100,10 +114,14 @@ vscode_install() {
 
     sudo apt-get update
     si code
+
+    cmd_check code
 }
 
 ui_install() {
     si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
+    cmd_check chromium-browser virt-manager xsel xclip
+
     vscode_install
     flathub_install
     flatpak_apps_install
@@ -122,6 +140,8 @@ cockpit_install() {
 
 podman_install() {
     si podman podman-toolbox podman-compose
+
+    cmd_check podman
 }
 
 libvirt_install() {
@@ -137,6 +157,7 @@ incus_install() {
 ct_install() {
     incus_install
     docker_install
+    portainer_install
     podman_install
     si buildah distrobox
     cockpit_install
