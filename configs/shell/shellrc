@@ -1,88 +1,8 @@
 source $XDG_CONFIG_HOME/dotfiles/scripts/utils
+export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$XDG_CONFIG_HOME}
+source $XDG_CONFIG_HOME/dotfiles/scripts/utils
 
 export LANG=en_US.UTF-8
-
-alias g='git'
-alias gs="git stash -u"
-alias gst="git status"
-alias gsu="git status -u"
-alias gcan="git commit --amend --no-edit"
-alias gsa='git stash apply'
-alias gfm='git pull'
-alias gp='git push'
-alias gcm='git commit --message'
-alias gia='git add'
-alias gl='git log --topo-order --pretty=format:"$_git_log_medium_format"'
-alias gco='git checkout'
-alias gb='git branch'
-alias gbc='git checkout -b'
-alias gbc='git checkout -b'
-alias gsl='git stash list'
-alias gpp=safe_push "$@"
-alias clone='gh repo clone'
-alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
-
-alias nm="nmap -sC -sV -oN"
-
-alias v="nvim"
-alias c="code"
-alias t="tmux"
-
-alias d="docker"
-alias dco="docker compose"
-alias dps="docker ps"
-alias dpa="docker ps -a"
-alias dl="docker ps -l -q"
-alias dx="docker exec -it"
-alias dlogs="docker logs -f"
-
-alias la=tree
-
-
-if has_cmd code; then
-    alias c='code'
-    alias c.='code .'
-fi
-
-alias l='ls -1A'         # Lists in one column, hidden files.
-alias ll='ls -lh'        # Lists human readable sizes.
-alias lr='ll -R'         # Lists human readable sizes, recursively.
-alias la='ll -A'         # Lists human readable sizes, hidden files.
-alias lm='la | "$PAGER"' # Lists human readable sizes, hidden files through pager.
-alias lk='ll -Sr'        # Lists sorted by size, largest last.
-alias lt='ll -tr'        # Lists sorted by date, most recent last.
-alias lc='lt -c'         # Lists sorted by date, most recent last, shows change time.
-alias lu='lt -u'         # Lists sorted by date, most recent last, shows access time.
-alias sl='ls'            # Correction for common spelling error.
-
-alias md="mkdir -p"
-alias rd="rmdir"
-
-alias ipa="ip -brief a"
-has_cmd batcat && alias cat="batcat"
-
-has_cmd gdu || has_cmd gdu-go && alias gdu="gdu-go"
-
-alias ..="../"
-alias ...="../../"
-alias ....="../../../"
-alias .....="../../../../"
-alias ......="../../../../../"
-
-if has_cmd flatpak; then
-    has_cmd wezterm || alias wezterm="flatpak run org.wezfurlong.wezterm"
-    has_cmd telegram || alias telegram="flatpak run org.telegram.desktop"
-    has_cmd clion || alias clion="flatpak run com.jetbrains.CLion"
-    has_cmd chrome || alias chrome="flatpak run com.google.Chrome"
-    has_cmd deluge || alias deluge="flatpak run org.deluge_torrent.deluge"
-    has_cmd zoom || alias zoom="flatpak run us.zoom.Zoom"
-    has_cmd shiftey || alias shiftey="flatpak run io.github.shiftey.Desktop"
-    has_cmd code || alias code="flatpak run com.visualstudio.code"
-    # has_cmd code || alias code="flatpak run com.visualstudio.code --password-store="gnome-libsecret""
-    has_cmd nvim || alias nvim="flatpak run io.neovim.nvim"
-    has_cmd emacs|| alias emacs="flatpak run org.gnu.emacs"
-    has_cmd boxbuddy || alias boxbuddy="flatpak run io.github.dvlv.boxbuddyrs"
-fi
 
 source_if_exists "$HOME/.cargo/env"
 
@@ -98,11 +18,11 @@ fi
 spath_export "/usr/bin"
 spath_export "/snap/bin"
 spath_export "$GOPATH/bin"
-spath_export "$HOME/.config/dotfiles/bin"
-spath_export "$HOME/.config/emacs/bin"
+spath_export "$XDG_CONFIG_HOME/dotfiles/bin"
+spath_export "$XDG_CONFIG_HOME/emacs/bin"
 spath_export "$HOME/.local/bin"
 spath_export "$HOME/.local/share/pypoetry"
-spath_export "$HOME/.config/Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin"
+spath_export "$XDG_CONFIG_HOME/Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin"
 spath_export "$HOME/.console-ninja/.bin"
 
 # if is_mac; then
@@ -137,7 +57,7 @@ function safe_push() {
 }
 
 # webi paths etc
-[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+[ -s "$XDG_CONFIG_HOME/envman/load.sh" ] && source "$XDG_CONFIG_HOME/envman/load.sh"
 
 # has_cmd fzf && {
 #     export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --prompt="> "'
@@ -159,3 +79,22 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
 fi
 
 source_if_exists "$HOME/.config/dotfiles/aliases"
+alias ls='eza -lh --group-directories-first --icons'
+alias lsa='ls -a'
+alias lt='eza --tree --level=2 --long --icons --git'
+alias lta='lt -a'
+alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
+# alias fd='fdfind'
+
+cx() { cd "$@" && l; }
+fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
+f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
+fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
+
+
+# Eza
+if has_cmd eza; then
+    alias l="eza -l --icons --git -a"
+    alias lt="eza --tree --level=2 --long --icons --git"
+    alias ltree="eza --tree --level=2  --icons --git"
+fi
