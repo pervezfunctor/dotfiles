@@ -25,9 +25,12 @@ sys_python_install() {
 core_install() {
     update_packages
 
-    si curl wget git tar tree unzip python312-pipx
+    si curl wget git tar tree unzip python312-pipx cmake
     sudo zypper install -y -t pattern devel_basis
+
     pipx install trash-cli
+
+    cmd_check gcc g++ make cmake curl wget git trash tree
 }
 
 snap_install() {
@@ -47,24 +50,29 @@ essential_install() {
 
     core_install
 
-    si unar zip micro-editor gawk tmux urlview 7zip cmake zsh
+    si unar zip micro-editor 7zip
     si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel gum
 
     sys_python_install
 
-    webi_install
     mise_install
-    brew_install
     snap_install
 
     slog "Essential packages installation done!"
 }
 
 cli_install() {
-    si gh ShellCheck shfmt neovim tree-sitter
-    gh extension install github/gh-copilot
+    brew_install
+    webi_install
+
+    si gh ShellCheck shfmt neovim tree-sitter gawk tmux urlview zsh
     si lazygit bottom sd lsd bat hyperfine fd fzf ripgrep zoxide cheat
     si curlie git-delta jq duf lua54-luarocks python3-neovim
+
+    gh extension install github/gh-copilot
+
+    cmd_check gawk gh shellcheck curlie shfmt sd lsd bat hyperfine
+    cmd_check fd fzf ripgrep zoxide tmux zsh
 }
 
 cpp_install() {

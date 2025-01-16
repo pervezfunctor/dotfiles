@@ -31,8 +31,7 @@ sys_python_install() {
     slog "Installing python"
 
     si python3 python3-venv python3-virtualenv python3-pip python3-setuptools
-    si  python3-wheel python-is-python3 pipx
-
+    si python3-wheel python-is-python3 pipx
     pipx install uv
 
     slog "Python installation done!"
@@ -70,6 +69,9 @@ essential_install() {
 }
 
 cli_install() {
+    brew_install
+    webi_install
+
     si gawk tmux pkg-config urlview gh shellcheck zsh git
     si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
 

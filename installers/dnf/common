@@ -52,16 +52,14 @@ essential_install() {
 
     core_install
 
-    si gawk tmux pkg-config urlview zip p7zip cmake unar zsh
+    si zip p7zip cmake unar
     si readline-devel sqlite-devel libffi-devel bzip2-devel xz-devel
 
     micro_install
     base_dev_install
     sys_python_install
 
-    webi_install
     mise_install
-    brew_install
 
     si gum
 
@@ -71,10 +69,15 @@ essential_install() {
 }
 
 cli_install() {
-    si neovim ShellCheck python3-neovim
+    brew_install
+    webi_install
+
+    si zsh neovim ShellCheck python3-neovim tmux pkg-config urlview
+    si git-delta procs fzf ripgrep fd-find hyperfine bat zoxide gawk
+
     webi curlie lsd shfmt gh lazygit
+
     gh extension install github/gh-copilot
-    si git-delta procs fzf ripgrep fd-find hyperfine bat zoxide
 
     brew install -q gdu
     alias gdu=gdu-go
@@ -190,6 +193,7 @@ libvirt_install() {
 ct_install() {
     incus_install
     docker_install
+    portainer_install
     podman_install
     si buildah distrobox
     cockpit_install

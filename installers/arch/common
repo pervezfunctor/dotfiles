@@ -22,6 +22,8 @@ core_install() {
 
     si curl wget git base-devel trash-cli tree micro
     si tar unzip
+
+    cmd_check gcc g++ make cmake curl wget git trash tree
 }
 
 sys_python_install() {
@@ -45,10 +47,7 @@ essential_install() {
 
     sys_python_install
 
-    webi_install
     mise_install
-    brew_install
-    webi curlie
 
     si pkgfile
     si gum
@@ -60,9 +59,16 @@ essential_install() {
 }
 
 cli_install() {
+    webi_install
+    brew_install
+    webi curlie
+
     si neovim github-cli shellcheck shfmt python-pynvim
     si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
+
     gh extension install github/gh-copilot
+
+    cmd_check gawk gh shellcheck curlie shfmt sd lsd bat hyperfine fd fzf ripgrep zoxide tmux zsh
 }
 
 cpp_install() {
@@ -76,6 +82,8 @@ cpp_install() {
     conan_install
 
     slog "C++ installation done!"
+
+    cmd_check gcc gdb make cmake conan clang clang++ clang-tidy clang-format
 }
 
 vscode_install() {
@@ -123,6 +131,7 @@ incus_install() {
 ct_install() {
     si incus
     docker_install
+    portainer_install
     podman_install
     si buildah distrobox
     cockpit_install
