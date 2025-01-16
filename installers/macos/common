@@ -45,7 +45,6 @@ cpp_install() {
     brew install -q cmake boost catch2 ccache cppcheck pre-commit
 
     slog "C++ installation done!"
-
 }
 
 virt_install() {

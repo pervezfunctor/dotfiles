@@ -339,7 +339,7 @@ webi_install() {
     has_cmd ~/.local/bin/webi && return 0
 
     curl -sS https://webi.sh/webi | sh
-    source "$HOME/.config/envman/load.sh"
+    source "$XDG_CONFIG_HOME/envman/load.sh"
     webi pathman
 }
 
@@ -372,7 +372,7 @@ bootstrap() {
     export PNPM_HOME="$HOME/.local/share/pnpm"
     export PATH="$HOME/.local/bin:$PNPM_HOME:/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="$HOME/.local/opt/brew/bin:$PATH"
-    export PATH="$HOME/.config/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
+    export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
     # export HOMEBREW_NO_ENV_HINTS=1
     export HOMEBREW_NO_AUTO_UPDATE=1
 

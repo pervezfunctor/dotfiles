@@ -212,5 +212,4 @@ has_cmd atuin && eval "$(atuin init zsh)"
 # has_cmd fasd && eval "$(fasd --init auto)"
 
 source_if_exists "$HOME/.localzshrc"
-source_if_exists "$HOME/.config/localzshrc"
-source_if_exists "$HOME/.config/dotfiles/configs/localzshrc"
+source_if_exists "$XDG_CONFIG_HOME/localzshrc"
