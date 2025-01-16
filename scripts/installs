@@ -163,6 +163,8 @@ neovim_install() {
     sudo ln -s /squashfs-root/AppRun /usr/bin/nvim
     frm nvim.appimage
 
+    cmd_check nvim
+
     treesitter_install
 
     si luarocks
@@ -697,6 +699,26 @@ asdf_install() {
 tailscale_install() {
     has_cmd tailscale && return 0
     curl -fsSL https://tailscale.com/install.sh | sh
+}
+
+portainer_install() {
+    if ! has_cmd docker; then
+        warn "docker not installed, skipping portainer"
+        return 1
+    fi
+
+    if has_cmd docker && docker ps -a | grep -q portainer; then
+        slog "Portainer is already installed"
+        return 1
+    fi
+
+    if ! docker volume inspect portainer_data &>/dev/null; then
+        slog "Creating portainer_data volume"
+        docker volume create portainer_data
+        docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
+
+        slog "Portainer installation done!"
+    fi
 }
 
 }
