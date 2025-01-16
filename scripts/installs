@@ -578,6 +578,7 @@ pnpm_shell_install() {
 shell_install() {
     cli_install
     bash_install
+    brew_shell_install
     go_shell_install
     rust_shell_install
     pnpm_shell_install

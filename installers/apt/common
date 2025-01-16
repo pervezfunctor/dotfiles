@@ -20,8 +20,9 @@ update_packages() {
 core_install() {
     update_packages
 
-    si software-properties-common apt-transport-https ca-certificates gpg cmake
-    si curl wget git trash-cli tree command-not-found build-essential tar unzip
+    si software-properties-common apt-transport-https ca-certificates gpg
+    si curl wget git-core trash-cli tree command-not-found
+    si tar unzip cmake build-essential
 
     cmd_check gcc g++ make cmake curl wget git trash tree command-not-found
 }
@@ -29,7 +30,9 @@ core_install() {
 sys_python_install() {
     slog "Installing python"
 
-    si python3 python3-venv python3-virtualenv python3-pip python3-setuptools python3-wheel python-is-python3 pipx
+    si python3 python3-venv python3-virtualenv python3-pip python3-setuptools
+    si  python3-wheel python-is-python3 pipx
+
     pipx install uv
 
     slog "Python installation done!"
@@ -51,44 +54,47 @@ essential_install() {
 
     core_install
 
-    si zip unar zsh micro
-    si gawk tmux pkg-config urlview nala p7zip
+    si zip unar micro nala p7zip
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 
-    cmd_check tmux zsh micro tar zup unar gawk
+    cmd_check micro zip unar
 
     sys_python_install
 
-    webi_install
     mise_install
-    brew_install
     snap_install
 
     cmd_check webi mise brew snap
-
-    brew install -q just chezmoi atuin uutils-coreutils
 
     slog "Essential packages installation done!"
 }
 
 cli_install() {
-    si gh shellcheck
-    webi curlie shfmt
+    si gawk tmux pkg-config urlview gh shellcheck zsh git
     si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
+
+    webi curlie shfmt
+
     gh extension install github/gh-copilot
 
     neovim_install
 
-    cmd_check gh shellcheck curlie shfmt sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
+    cmd_check gawk gh shellcheck curlie shfmt sd lsd gdu bat hyperfine
+    cmd_check fd fzf ripgrep zoxide tmux zsh
 }
 
 cpp_install() {
     slog "Installing C++"
 
+    brew_install
+    webi_install
+
     si gcc gdb g++ libboost-all-dev catch2
     si clang llvm clang-tidy clang-format clang-tools libclang-dev
     si doxygen graphviz ccache cppcheck pre-commit
     si valgrind systemtap ltrace strace lldb lld
+
+    brew install -q just chezmoi atuin uutils-coreutils
 
     cmd_check gcc g++ gdb clang clang-tidy clang-format
 
