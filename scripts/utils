@@ -75,7 +75,7 @@ fln() {
     if [ -e "$1" ]; then
         srm "$2"
     else
-        slog "$1 does not exist, cannot create link $2"
+        warn "$1 does not exist, cannot create link $2"
         return 1
     fi
     slog "Creating link $2 to $1"
@@ -109,14 +109,14 @@ frm() {
             rm -f "$f"
         fi
     done
-    return 0
 }
 
 scp() {
     if [ -e "$1" ]; then
+        slog "Copying $1 to $2"
         cp -r "$1" "$2"
     else
-        slog "$1 does not exist, cannot copy to $2"
+        warn "$1 does not exist, cannot copy to $2"
         return 1
     fi
 }
@@ -125,9 +125,10 @@ fcp() {
     if [ -e "$1" ]; then
         srm "$2"
     else
-        slog "$1 does not exist, cannot copy to $2"
+        warn "$1 does not exist, cannot copy to $2"
         return 1
     fi
+    slog "Copying $1 to $2"
     cp -r "$1" "$2"
 }
 
@@ -135,9 +136,10 @@ fmv() {
     if [ -e "$1" ]; then
         srm "$2"
     else
-        slog "$1 does not exist, cannot move to $2"
+        warn "$1 does not exist, cannot move to $2"
         return 1
     fi
+    slog "Moving $1 to $2"
     mv "$1" "$2"
 }
 
@@ -278,6 +280,12 @@ dir_check() {
     done
 }
 
+cmd_check() {
+    for cmd in "$@"; do
+        has_cmd "$cmd" || warn "$cmd not installed"
+    done
+}
+
 ln_to_exists() {
     local rl=readlink
     is_mac && rl=greadlink
@@ -331,7 +339,10 @@ dotfiles_install() {
         err_exit "git not installed, cannot clone dotfiles"
     fi
 
+    slog "Cloning dotfiles to $DOT_DIR"
     sclone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
+
+    dir_check "$DOT_DIR"
 }
 
 webi_install() {
@@ -341,15 +352,20 @@ webi_install() {
     curl -sS https://webi.sh/webi | sh
     source "$XDG_CONFIG_HOME/envman/load.sh"
     webi pathman
+
+    cmd_check webi
 }
 
 mise_install() {
     has_cmd mise && return 0
     has_cmd ~/.local/bin/mise && return 0
 
+    slog "Installing mise"
     curl https://mise.run | sh
 
     echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+
+    cmd_check mise
 }
 
 source_if_exists() {
@@ -378,8 +394,7 @@ bootstrap() {
 
     curdir=$(pwd)
 
-    slog "Installing $@ ..."
-
+    slog "Removing old logs"
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2> /dev/null
     keep_sudo_running
     # min_packages_for_installer
@@ -401,18 +416,11 @@ bootstrap() {
         warn "unknown OS; cannot source common functions"
     fi
 
+    slog "Installing $@ ..."
     main "$@" > >(tee /tmp/dotfiles-output.log) 2> >(tee /tmp/dotfiles-error.log >&2)
-
     slog "Installation done! Look at /tmp/dotfiles-error.log for any errors."
 
     cd "$curdir"
-}
-
-cargoi() {
-  for p in "$@"; do
-    slog "Installing package $p"
-    cargo +stable install --locked "$p"
-  done
 }
 
 }

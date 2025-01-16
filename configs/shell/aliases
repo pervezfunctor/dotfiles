@@ -1,3 +1,116 @@
+#! /bin/bash
+
+if is_linux; then
+    alias upgrade="sudo apt-get update && sudo apt-get upgrade -y"
+    alias open="xdg-open"
+
+    pbcopy() {
+        if [ "$XDG_SESSION_TYPE" = "wayland" ] ; then
+            wl-copy --foreground
+        else
+            xsel --clipboard --input
+        fi
+    }
+
+    pbpaste() {
+        if [ "$XDG_SESSION_TYPE" = "wayland" ] ; then
+            wl-paste --no-newline
+        else
+            xsel --clipboard --output
+        fi
+    }
+fi
+
+if is_ubuntu; then
+    alias trash=trash-put
+    alias bat=batcat
+fi
+
+if is_mac; then
+    alias upgrade="brew update && brew upgrade"
+fi
+alias ec="emacsclient -c -n"
+
+alias en="emacs -nw"
+alias et="emacsclient -t"
+
+alias xen="TERM=xterm-256color emacs -nw"
+alias xet="TERM=xterm-256color emacsclient -t"
+
+alias ten= "TERM=xterm-24bits emacs -nw"
+alias tet="TERM=xterm-24bits emacsclient -t"
+
+alias emacs-kill="seartipy_kill_emacs"
+
+alias m="mkdir -p"
+
+alias a='fasd -a'        # any
+alias s='fasd -si'       # show / search / select
+alias d='fasd -d'        # directory
+alias f='fasd -f'        # file
+alias sd='fasd -sid'     # interactive directory selection
+alias sf='fasd -sif'     # interactive file selection
+alias z='fasd_cd -d'     # cd, same functionality as j in autojump
+alias zz='fasd_cd -d -i' # cd with interactive selection
+
+alias c="fasd -d -e code"
+alias c.="code ."
+
+alias git-unstage="git reset HEAD"
+alias git-discard="git checkout --"
+alias gst="git status"
+alias gsu="git status -u"
+alias tsgfm="git stash && ((git pull --rebase || git pull); git stash pop)"
+
+alias gun="git-unstage"
+alias gur="git-discard"
+alias gcm="git commit -m"
+alias gcne="git commit --no-edit"
+alias gca="git commit --amend"
+alias gcan="git commit --amend --no-edit"
+
+alias g='git'
+alias gst="git status"
+alias gsu="git status -u"
+alias gcan="git commit --amend --no-edit"
+alias gsa='git stash apply'
+alias gfm='git pull'
+alias gp='git push'
+alias gcm='git commit --message'
+alias gia='git add'
+alias gl='git log --topo-order --pretty=format:"$_git_log_medium_format"'
+alias gco='git checkout'
+alias gb='git branch'
+alias gbc='git checkout -b'
+alias gbc='git checkout -b'
+alias gsl='git stash list'
+
+alias n='pnpm'
+alias ni='pnpm install'
+alias ne='pnpm exec'
+alias nd='pnpm dev'
+alias nt='pnpm types'
+alias nc='pnpm ci'
+alias ntt='pnpm test'
+alias Gcm="git commit --no-verify -m"
+alias Gp="gp --no-verify"
+alias Gcan="gcan --no-verify"
+
+alias jf="code ~/programs/web/devfractal" # use j maybe?
+alias jd="code ~/.seartpy" # use j maybe?
+
+if is_ubuntu; then
+    alias si="sudo apt-get install -y"
+    alias ss="apt-cache search"
+    alias sr="sudo apt-get purge"
+fi
+
+if is_mac; then
+    alias si="brew install -q"
+    alias ss="brew search"
+    alias sr="brew uninstall"
+fi
+
 alias g='git'
 alias gs="git stash -u"
 alias gst="git status"
