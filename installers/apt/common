@@ -32,9 +32,11 @@ sys_python_install() {
 
     si python3 python3-venv python3-virtualenv python3-pip python3-setuptools
     si python3-wheel python-is-python3 pipx
+
     pipx install uv
 
     slog "Python installation done!"
+
     cmd_check uv
 }
 
@@ -72,31 +74,21 @@ cli_install() {
     brew_install
     webi_install
 
-    si gawk tmux pkg-config urlview gh shellcheck zsh git
-    si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
-
-    webi curlie shfmt
+    si gawk tmux pkg-config urlview gh shellcheck zsh git just
+    si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide shfmt
 
     gh extension install github/gh-copilot
 
     neovim_install
-
-    cmd_check gawk gh shellcheck curlie shfmt sd lsd gdu bat hyperfine
-    cmd_check fd fzf ripgrep zoxide tmux zsh
 }
 
 cpp_install() {
     slog "Installing C++"
 
-    brew_install
-    webi_install
-
     si gcc gdb g++ libboost-all-dev catch2
     si clang llvm clang-tidy clang-format clang-tools libclang-dev
     si doxygen graphviz ccache cppcheck pre-commit
     si valgrind systemtap ltrace strace lldb lld
-
-    brew install -q just chezmoi atuin uutils-coreutils
 
     cmd_check gcc g++ gdb clang clang-tidy clang-format
 

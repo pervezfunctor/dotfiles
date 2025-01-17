@@ -4,24 +4,9 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-bi() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        brew install -q -y install "$p"
-    done
-}
 
-bis() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        has_cmd "$p" || brew install -q -y install "$p"
-    done
-}
-
-# eza bat fd fzf zoxide sd ripgrep lazygit dog atuin direnv dust ncdu duf
+# eza bat fd fzf zoxide sd ripgrep lazygit doggo atuin direnv dust ncdu duf
 # jq curlie lsd gtop tldr curlie sd bottom xh
-
-        brew install -q trash-cli wget curl unzip gawk urlview tmux jq tree-sitter lsd shfmt gh gtop tldr shellcheck gum cheat curlie lazygit duf choose-rust sd bottom xh eza dog atuin direnv dust ncdu procs fzf fd hyperfine zoxide starship just chezmoi gdu neovim ripgrep bat git-delta choose-rust bottom
 
 main() {
         has_cmd git || err_exit "Install git before running this script"
@@ -33,12 +18,11 @@ main() {
         has_cmd brew || err_exit "brew not installed!"
 
 
-        bi trash-cli wget curl unzip gawk urlview tmux jq tree-sitter
+        bi trash-cli wget curl unzip gawk urlview tmux jq tree-sitter just
         bis lsd shfmt gh gtop tldr shellcheck gum
-        bis cheat curlie lazygit duf choose-rust sd bottom xh
-        bis eza dog atuin direnv dust ncdu
+        bis cheat curlie lazygit duf sd xh
+        bis eza doggo atuin direnv dust ncdu
         bis procs fzf fd hyperfine zoxide starship
-        bis just chezmoi
 
         has_cmd gdu || has_cmd gdu-go || bi gdu
         has_cmd nvim || bi neovim

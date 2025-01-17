@@ -278,6 +278,28 @@ brew_install() {
     cmd_check brew
 }
 
+bi() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        brew install -q -y install "$p"
+    done
+}
+
+bis() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        has_cmd "$p" || brew install -q -y install "$p"
+    done
+}
+
+
+wis() {
+    for p in "$@"; do
+        slog "Installing webi package $p"
+        has_cmd $p || webi $p
+    done
+}
+
 monaspace_install() {
     file_exists ~/.local/share/fonts/MonaspaceRadon-Regular.otf && return 0
 
@@ -522,28 +544,44 @@ cmake_install() {
     cmd_check cmake
 }
 
+webi_shell_install() {
+    wis dotenv bat curlie delta fd jq lsd sd yq
+}
+
+brew_shell_install() {
+    bis jq tree-sitter just lsd shfmt gh gtop tldr shellcheck gum
+    bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust ncdu
+    bis procs fzf fd hyperfine zoxide starship
+
+    has_cmd gdu || has_cmd gdu-go || bi gdu
+    has_cmd rg || bi ripgrep
+    has_cmd batcat || has_cmd bat || bi bat
+    has_cmd delta || bi git-delta
+    has_cmd choose || bi choose-rust
+    has_cmd btm || bi bottom
+
+    cmd_check gawk gh shellcheck curlie shfmt sd lsd gdu bat hyperfine
+    cmd_check fd fzf ripgrep zoxide tmux zsh just eza doggo atuin direnv dust ncdu
+    cmd_check procs gtop tldr gum cheat lazygit duf sd choose btm
+    cmd_check starship delta
+}
+
 go_shell_install() {
-    if ! has_cmd go; then
-        warn "go not installed, skipping some shell tools"
-        return 1
-    fi
+    has_cmd go || return 1
+
     slog "shell tools with go"
 
     has_cmd cheat || go install github.com/cheat/cheat/cmd/cheat@latest
     has_cmd curlie || go install github.com/rs/curlie@latest
     has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
     has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
-    has_cmd lemonade || go install github.com/lemonade-command/lemonade@latest
     has_cmd duf || go install github.com/muesli/duf@latest
 
     cmd_check cheat curlie lazygit gdu lemonade duf
 }
 
 rust_shell_install() {
-    if ! has_cmd cargo; then
-        warn "cargo not installed, skipping some shell tools"
-        return 1
-    fi
+    has_cmd rustup || return 1
 
     rustup update stable
 
@@ -563,10 +601,7 @@ rust_shell_install() {
 }
 
 pnpm_shell_install() {
-    if ! has_cmd pnpm; then
-        warn "pnpm not installed, skipping some shell tools"
-        return 1
-    fi
+    has_cmd pnpm || return 1
 
     slog "shell tools with pnpm"
     pnpm install -g degit neovim
@@ -577,11 +612,15 @@ pnpm_shell_install() {
 
 shell_install() {
     cli_install
-    bash_install
+
+    webi_shell_install
     brew_shell_install
+
     go_shell_install
     rust_shell_install
     pnpm_shell_install
+
+    bash_install
 }
 
 alacritty_config_install() {
