@@ -105,7 +105,7 @@ zsh_config_install() {
     sclone --depth=1 https://github.com/sindresorhus/pure.git ~/.zsh/pure
     sclone --depth=1 https://github.com/djui/alias-tips.git ~/.zsh/alias-tips
 
-    fln "${DOT_DIR}/configs/zshrc" ~/.zshrc
+    fln "${DOT_DIR}/configs/zsh/.zshrc" ~/.zshrc
 
     slog "zsh installation done!"
 }
@@ -114,7 +114,7 @@ tmux_config_install() {
     slog "tmux config"
 
     smd $XDG_CONFIG_HOME/tmux
-    fln "${DOT_DIR}/configs/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
+    fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
 }
 
 incus_config_install() {
