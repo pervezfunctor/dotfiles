@@ -12,20 +12,6 @@ bash -c "$(curl -sSL https://dub.sh/zEIpneC)"
 bash -c "$(wget -qO- https://dub.sh/aPKPT8V)"
 ```
 
-### Zsh environment
-
-```bash
-mv ~/.zshrc ~/.zshrc.bak
-curl -sSL https://dub.sh/YY3a8Um > ~/.zshrc
-```
-
-### Tmux environment
-
-```bash
-mv $XDG_CONFIG_HOME/tmux.conf $XDG_CONFIG_HOME/tmux.conf.bak
-curl -sSL https://dub.sh/me3OYAJ > $XDG_CONFIG_HOME/tmux.conf
-```
-
 ### Installer
 
 Once you run one of the above scripts, you could then select what you want to install from the following options.
