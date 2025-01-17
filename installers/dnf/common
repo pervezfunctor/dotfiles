@@ -75,12 +75,7 @@ cli_install() {
     si zsh neovim ShellCheck python3-neovim tmux pkg-config urlview
     si git-delta procs fzf ripgrep fd-find hyperfine bat zoxide gawk
 
-    webi curlie lsd shfmt gh lazygit
-
     gh extension install github/gh-copilot
-
-    brew install -q gdu
-    alias gdu=gdu-go
 }
 
 snap_install() {
