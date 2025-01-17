@@ -475,6 +475,11 @@ docker_common_install() {
         return 1
     fi
 
+    if has_cmd brew; then
+        brew install jesseduffield/lazydocker/lazydocker
+        brew install lazydocker
+    fi
+
     sudo groupadd docker
     sudo usermod -aG docker ${USER}
 
@@ -545,7 +550,7 @@ cmake_install() {
 }
 
 webi_shell_install() {
-    wis dotenv bat curlie delta fd jq lsd sd yq
+    wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq
 }
 
 brew_shell_install() {
@@ -559,6 +564,7 @@ brew_shell_install() {
     has_cmd delta || bi git-delta
     has_cmd choose || bi choose-rust
     has_cmd btm || bi bottom
+    alias gdu=gdu-go
 
     cmd_check gawk gh shellcheck curlie shfmt sd lsd gdu bat hyperfine
     cmd_check fd fzf ripgrep zoxide tmux zsh just eza doggo atuin direnv dust ncdu
