@@ -208,7 +208,7 @@ has_cmd mise && eval "$(mise activate zsh)"
 has_cmd direnv && eval "$(direnv hook zsh)"
 has_cmd zoxide && eval "$(zoxide init zsh)"
 has_cmd fzf && source <(fzf --zsh)
-has_cmd atuin && eval "$(atuin init zsh)"
+# has_cmd atuin && eval "$(atuin init zsh)"
 # has_cmd fasd && eval "$(fasd --init auto)"
 
 source_if_exists "$HOME/.localzshrc"

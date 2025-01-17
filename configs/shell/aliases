@@ -222,13 +222,6 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
     alias ndbr='pnpm db:repl'
 fi
 
-# navigation
-cx() { cd "$@" && l; }
-fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
-f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
-fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
-
-
 # Eza
 if has_cmd eza; then
     alias l="eza -l --icons --git -a"
@@ -238,4 +231,14 @@ fi
 
 alias lv="NVIM_APPNAME=lazyvim nvim"
 
+alias ls='eza -lh --group-directories-first --icons'
+alias lsa='ls -a'
+alias lt='eza --tree --level=2 --long --icons --git'
+alias lta='lt -a'
+alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
+# alias fd='fdfind'
 
+# cx() { cd "$@" && l; }
+# fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
+# f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
+# fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }

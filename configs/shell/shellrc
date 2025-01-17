@@ -79,18 +79,6 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
 fi
 
 source_if_exists "$XDG_CONFIG_HOME/dotfiles/configs/shell/aliases"
-alias ls='eza -lh --group-directories-first --icons'
-alias lsa='ls -a'
-alias lt='eza --tree --level=2 --long --icons --git'
-alias lta='lt -a'
-alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
-# alias fd='fdfind'
-
-cx() { cd "$@" && l; }
-fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
-f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
-fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
-
 
 # Eza
 if has_cmd eza; then
