@@ -9,7 +9,8 @@ bic() {
 }
 
 core_install() {
-    brew install -q curl wget trash tree unzip coreutils  gum bash
+    bi coreutils bash
+    bis curl wget trash tree unzip coreutils gum
 
     cmd_check curl wget trash tree unzip gum
 }

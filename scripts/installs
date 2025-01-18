@@ -293,7 +293,7 @@ brew_install() {
 bi() {
     for p in "$@"; do
         slog "Installing package $p"
-        brew install -q install "$p"
+        brew install -q "$p"
     done
 }
 
