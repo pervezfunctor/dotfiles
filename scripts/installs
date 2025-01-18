@@ -82,9 +82,11 @@ bash_install() {
         echo 'eval "$(starship init bash)"' >> ~/.bashrc
     fi
 
-    if ! grep -q $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc; then
+    if ! grep -q $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc ~/.bashrc; then
         echo "source $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc" >> ~/.bashrc
     fi
+
+    slog "bash config done!"
 }
 
 vscode_config_install() {
@@ -96,6 +98,8 @@ vscode_config_install() {
         smd $XDG_CONFIG_HOME/Code/User
         scp $XDG_CONFIG_HOME/dotfiles/extras/vscode/settings.json $XDG_CONFIG_HOME/Code/User/settings.json
     fi
+
+    slog "vscode config done!"
 }
 
 zsh_config_install() {
@@ -107,7 +111,7 @@ zsh_config_install() {
 
     fln "${DOT_DIR}/configs/zsh/.zshrc" ~/.zshrc
 
-    slog "zsh installation done!"
+    slog "zsh config done!"
 }
 
 tmux_config_install() {
@@ -115,9 +119,13 @@ tmux_config_install() {
 
     smd $XDG_CONFIG_HOME/tmux
     fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
+
+    slog "tmux config done!"
 }
 
 incus_config_install() {
+    slog "incus config"
+
     if ! has_cmd incus; then
         warn "incus not installed, skipping incus config"
         return 0
@@ -131,6 +139,8 @@ incus_config_install() {
         sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
         sudo firewall-cmd --reload
     fi
+
+    slog "incus config done!"
 }
 
 treesitter_install() {
@@ -150,6 +160,8 @@ treesitter_install() {
 }
 
 neovim_install() {
+    is_mac && return 0
+
     has_cmd nvim && return 0
 
     slog "Installing neovim..."
@@ -367,6 +379,8 @@ fonts_install() {
 doom_install() {
     dir_exists $XDG_CONFIG_HOME/doom && return 0
 
+    slog "Installing doom"
+
     sclone --depth=1 https://github.com/doomemacs/doomemacs $XDG_CONFIG_HOME/emacs
     fmv $XDG_CONFIG_HOME/doom $XDG_CONFIG_HOME/doom.backup
     sclone https://github.com/pervezfunctor/doomemacs-config $XDG_CONFIG_HOME/doom
@@ -374,6 +388,8 @@ doom_install() {
     slog "Configure doom"
     doom sync
     doom env
+
+    slog "doom installation done!"
 
     has_cmd update-locale && sudo update-locale LANG=en_US.UTF8
 }
@@ -420,6 +436,8 @@ git_config_install() {
         git_conf user.name "Pervez Iqbal"
         git_conf user.email "pervefunctor@gmail.com"
     fi
+
+    slog "git configuration done!"
 }
 
 go_install() {
@@ -519,6 +537,7 @@ conan_install() {
 
     slog "Installing conan"
     pipx install conan
+    slog "conan installation done!"
 
     cmd_check conan
 }
@@ -545,16 +564,22 @@ cmake_install() {
     sudo ln -s /opt/cmake/bin/ctest /usr/local/bin/ctest
     frm "${TMP_DIR}"
 
+    slog "cmake installation done!"
+
     cmd_check cmake
 }
 
 webi_shell_install() {
+    slog "shell tools with webi"
     wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq
+    slog "shell tools with webi done!"
 }
 
 brew_shell_install() {
     # bi yazi ffmpeg sevenzip jq poppler fd ripgrep fzf zoxide imagemagick font-symbols-only-nerd-font
     # bi -q glances
+
+    slog "shell tools with brew"
 
     bis jq tree-sitter just lsd shfmt gh gtop tldr shellcheck gum httpie
     bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust ncdu
@@ -567,6 +592,8 @@ brew_shell_install() {
     has_cmd choose || bi choose-rust
     has_cmd btm || bi bottom
     alias gdu=gdu-go
+
+    slog "shell tools with brew done!"
 
     cmd_check gawk gh shellcheck curlie shfmt sd lsd gdu bat hyperfine
     cmd_check fd fzf ripgrep zoxide tmux zsh just eza doggo atuin direnv dust ncdu
@@ -584,6 +611,8 @@ go_shell_install() {
     has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
     has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
     has_cmd duf || go install github.com/muesli/duf@latest
+
+    slog "shell tools with go done!"
 
     cmd_check cheat curlie lazygit gdu lemonade duf
 }
@@ -604,6 +633,8 @@ rust_shell_install() {
     has_cmd btm || cargoi bottom
     has_cmd xh || cargoi xh
     has_cmd lsd || cargoi lsd
+
+    slog "shell tools with rust done!"
 
     cmd_check starship delta dust choose sd procs btm xh lsd
 }
@@ -633,12 +664,15 @@ shell_install() {
 
 alacritty_config_install() {
     slog "alacritty config"
+
     smd $XDG_CONFIG_HOME/alacritty
     scp "${DOT_DIR}/configs/alacritty/alacritty.toml" $XDG_CONFIG_HOME/alacritty/alacritty.toml
     curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-frappe.toml
     curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-latte.toml
     curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-macchiato.toml
     curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-macchiato.toml
+
+    slog "alacritty config done!"
 }
 
 wezterm_config_install() {
@@ -665,6 +699,7 @@ poetry_install() {
         curl -sSL https://install.python-poetry.org | python3 -
         smd ~/.zfunc
         poetry completions zsh > ~/.zfunc/_poetry
+        slog "poetry installation done!"
     else
         warn "python3 not installed, skipping poetry"
     fi
@@ -675,8 +710,10 @@ poetry_install() {
 pyenv_install() {
     has_cmd pyenv && return 0
 
+    slog "Installing pyenv"
     sclone  https://github.com/yyuu/pyenv.git ~/.pyenv
     sclone https://github.com/yyuu/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv
+    slog "pyenv installation done!"
 
     cmd_check pyenv
 }
@@ -709,6 +746,7 @@ pyenv_miniconda_install() {
             slog "Installing miniconda"
             local minicondaversion=`pyenv install --list | grep miniconda | tail -1`
             pyenv install $minicondaversion
+            slog "miniconda installation done!"
         fi
     else
         warn "pyenv not installed, skipping miniconda"
@@ -731,7 +769,7 @@ python_mini_install() {
 }
 
 python_install() {
-    python_core_install
+     python_core_install
     anaconda_install
 }
 
@@ -746,7 +784,10 @@ asdf_install() {
 
 tailscale_install() {
     has_cmd tailscale && return 0
+
+    slog "Installing tailscale"
     curl -fsSL https://tailscale.com/install.sh | sh
+    slog "tailscale installation done!"
 }
 
 portainer_install() {
