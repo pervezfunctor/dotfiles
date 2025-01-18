@@ -117,7 +117,7 @@ tmux_config_install() {
     #smd $XDG_CONFIG_HOME/tmux
     # fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
 
-    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R tmux
+    stow --no-folding -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R tmux
 
     slog "tmux config done!"
 }
@@ -399,12 +399,12 @@ emacs_install() {
     if is_apt; then
         echo "postfix postfix/main_mailer_type select No configuration" | sudo debconf-set-selections
         si -y --no-install-recommends emacs
-    elif is_rh; then
-        si emacs
     elif is_mac; then
         brew tap railwaycat/emacsmacport
         bi emacs-mac --with-modules
         ln -s /usr/local/opt/emacs-mac/Emacs.app /Applications/Emacs.app
+    else
+        si emacs
     fi
 
     slog "emacs installation done!"
