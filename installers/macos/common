@@ -2,8 +2,16 @@
 
 {
 
+bic() {
+    for cmd in "$@"; do
+        brew install -q --cask "$cmd"
+    done
+}
+
 core_install() {
-    brew install -q curl wget trash tree unzip coreutils
+    brew install -q curl wget trash tree unzip coreutils  gum bash
+
+    cmd_check curl wget trash tree unzip gum
 }
 
 essential_install() {
@@ -13,30 +21,26 @@ essential_install() {
     webi_install
     mise_install
 
-    brew install -q gawk tmux pkg-config urlview p7zip cmake unar zip
-    brew install -q zsh-syntax-highlighting zsh-autosuggestions gum bash
+    bis gawk p7zip cmake unar zip
 
     slog "Essential packages installation done!"
+
+    cmd_check awk tmux cmake unar zip
 }
 
 cli_install() {
-    brew install -q golang rust
-
-    brew install -q fzf ripgrep fd bat eza bottom gh nushell
-    brew install -q neovim lazygit neovide luarocks gdu lazydocker
-    brew install -q p7zip zoxide ShellCheck shfmt git-extras gawk
-    brew install -q git-delta dust choose sd procs xh starship lsd cheat curlie
-
-    brew install -q gping procs hyperfine duf broot mcfly jq
-    brew install -q tldr doggo glances gtop httpie
+    bis tmux pkg-config urlview
+    bi zsh-syntax-highlighting zsh-autosuggestions
+    bi golang rust ripgrep neovim neovide luarocks lazydocker
+    bi starship gping broot mcfly jq
 
     gh extension install github/gh-copilot
-    alias gdu=gdu-go
+
+    cmd_check go rustc rg nvim neovide lazydocker starship gping broot mcfly jq
 }
 
 fonts_install() {
-    brew install -q --cask font-jetbrains-mono-nerd-font
-    brew install -q --cask font-monaspace-nerd-font
+    bic font-jetbrains-mono-nerd-font font-monaspace-nerd-font font-caskaydia-mono-nerd-font
 }
 
 cpp_install() {
@@ -52,7 +56,7 @@ virt_install() {
 
     softwareupdate --install-rosetta --agree-to-license
     brew install -q podman
-    brew install -q --cask podman-desktop
+    bic podman-desktop
     brew install -q colima
     # podman machine set --rootful
     # sudo /opt/homebrew/Cellar/podman/4.9.2/bin/podman-mac-helper install

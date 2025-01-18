@@ -554,9 +554,12 @@ webi_shell_install() {
 }
 
 brew_shell_install() {
-    bis jq tree-sitter just lsd shfmt gh gtop tldr shellcheck gum
+    # brew install yazi ffmpeg sevenzip jq poppler fd ripgrep fzf zoxide imagemagick font-symbols-only-nerd-font
+    # brew install -q glances
+
+    bis jq tree-sitter just lsd shfmt gh gtop tldr shellcheck gum httpie
     bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust ncdu
-    bis procs fzf fd hyperfine zoxide starship
+    bis procs fzf fd hyperfine zoxide starship nushell gping broot mcfly
 
     has_cmd gdu || has_cmd gdu-go || bi gdu
     has_cmd rg || bi ripgrep
