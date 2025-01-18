@@ -44,7 +44,7 @@ more_fonts_install() {
 }
 
 more_essential_install() {
-    brew install -q glow gum
+    bi glow gum
     si rclone restic wl-clipboard
 
     si edk2-ovmf genisoimage iotop p7zip-plugins p7zip

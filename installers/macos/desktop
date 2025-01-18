@@ -9,14 +9,14 @@ macos_settings_install() {
 }
 
 ui_install() {
-    brew install -q --cask telegram
-    brew install -q --cask zoom
-    brew install -q --cask ghostty
-    brew install -q --cask google-chrome
-    brew install -q --cask microsoft-remote-desktop
-    brew install -q deluge
-    brew install -q visual-studio-code
-    brew install -q --cask nikitabobko/tap/aerospace
+    bi deluge
+    bi visual-studio-code
+    bic telegram
+    bic zoom
+    bic ghostty
+    bic google-chrome
+    bic microsoft-remote-desktop
+    bic nikitabobko/tap/aerospace
 }
 
 main() {

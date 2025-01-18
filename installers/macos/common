@@ -46,7 +46,7 @@ fonts_install() {
 cpp_install() {
     slog "Installing C++"
 
-    brew install -q cmake boost catch2 ccache cppcheck pre-commit
+    bi cmake boost catch2 ccache cppcheck pre-commit
 
     slog "C++ installation done!"
 }
@@ -55,13 +55,13 @@ virt_install() {
     slog "Installing virtualization packages"
 
     softwareupdate --install-rosetta --agree-to-license
-    brew install -q podman
+    bi podman
     bic podman-desktop
-    brew install -q colima
+    bi colima
     # podman machine set --rootful
     # sudo /opt/homebrew/Cellar/podman/4.9.2/bin/podman-mac-helper install
 
-    dir_exists /Applications/Docker.app || brew install -q --cask docker
+    dir_exists /Applications/Docker.app || bic docker
 
     slog "Virtualization packages installation done!"
 }
@@ -72,8 +72,8 @@ python_uv_install() {
 
 pyenv_mac_install() {
     slog "Installing pyenv"
-    brew install -q pyenv
-    brew install -q pyenv-virtualenv
+    bi pyenv
+    bi pyenv-virtualenv
 }
 
 }

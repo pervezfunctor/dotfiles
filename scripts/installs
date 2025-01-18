@@ -78,7 +78,7 @@ bash_install() {
     if ! has_cmd starship; then
         curl -sS https://starship.rs/install.sh | sh -s -- -y
     fi
-    if ! grep -q starship ~/.bashrc; then
+    if ! grep -q starship ~/.bashrc ; then
         echo 'eval "$(starship init bash)"' >> ~/.bashrc
     fi
 
@@ -281,17 +281,16 @@ brew_install() {
 bi() {
     for p in "$@"; do
         slog "Installing package $p"
-        brew install -q -y install "$p"
+        brew install -q install "$p"
     done
 }
 
 bis() {
     for p in "$@"; do
         slog "Installing package $p"
-        has_cmd "$p" || brew install -q -y install "$p"
+        has_cmd "$p" || brew install -q install "$p"
     done
 }
-
 
 wis() {
     for p in "$@"; do
@@ -389,7 +388,7 @@ emacs_install() {
         si emacs
     elif is_mac; then
         brew tap railwaycat/emacsmacport
-        brew install -q emacs-mac --with-modules
+        bi emacs-mac --with-modules
         ln -s /usr/local/opt/emacs-mac/Emacs.app /Applications/Emacs.app
     fi
 
@@ -476,8 +475,8 @@ docker_common_install() {
     fi
 
     if has_cmd brew; then
-        brew install jesseduffield/lazydocker/lazydocker
-        brew install lazydocker
+        bi jesseduffield/lazydocker/lazydocker
+        bi lazydocker
     fi
 
     sudo groupadd docker
@@ -554,8 +553,8 @@ webi_shell_install() {
 }
 
 brew_shell_install() {
-    # brew install yazi ffmpeg sevenzip jq poppler fd ripgrep fzf zoxide imagemagick font-symbols-only-nerd-font
-    # brew install -q glances
+    # bi yazi ffmpeg sevenzip jq poppler fd ripgrep fzf zoxide imagemagick font-symbols-only-nerd-font
+    # bi -q glances
 
     bis jq tree-sitter just lsd shfmt gh gtop tldr shellcheck gum httpie
     bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust ncdu

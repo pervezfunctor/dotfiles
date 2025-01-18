@@ -198,7 +198,7 @@ is_arch() {
 }
 
 is_wsl() {
-    grep -qi microsoft /proc/version
+    [ -e /proc/version ] && grep -qi microsoft /proc/version
 }
 
 is_ubuntu() {

@@ -213,3 +213,6 @@ has_cmd fzf && source <(fzf --zsh)
 
 source_if_exists "$HOME/.localzshrc"
 source_if_exists "$XDG_CONFIG_HOME/localzshrc"
+
+# Generated for envman. Do not edit.
+[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
