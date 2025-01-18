@@ -596,7 +596,7 @@ brew_shell_install() {
     slog "shell tools with brew done!"
 
     cmd_check gawk gh shellcheck curlie shfmt sd lsd gdu bat hyperfine
-    cmd_check fd fzf ripgrep zoxide tmux zsh just eza doggo atuin direnv dust ncdu
+    cmd_check fd fzf rg zoxide tmux zsh just eza doggo atuin direnv dust ncdu
     cmd_check procs gtop tldr gum cheat lazygit duf sd choose btm
     cmd_check starship delta
 }
@@ -614,7 +614,7 @@ go_shell_install() {
 
     slog "shell tools with go done!"
 
-    cmd_check cheat curlie lazygit gdu lemonade duf
+    cmd_check cheat curlie lazygit gdu duf
 }
 
 rust_shell_install() {
@@ -646,7 +646,7 @@ pnpm_shell_install() {
     pnpm install -g degit neovim
     has_cmd tldr || pnpm install -g tldr
     has_cmd gtop || pnpm install -g gtop
-    cmd_check degit tldr gtop neovim
+    cmd_check degit tldr gtop
 }
 
 shell_install() {
