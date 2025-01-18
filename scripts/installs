@@ -82,8 +82,8 @@ bash_install() {
         echo 'eval "$(starship init bash)"' >> ~/.bashrc
     fi
 
-    if ! grep -q $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc ~/.bashrc; then
-        echo "source $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc" >> ~/.bashrc
+    if ! grep -q $DOT_DIR/configs/shell/shellrc ~/.bashrc; then
+        echo "source $DOT_DIR/configs/shell/shellrc" >> ~/.bashrc
     fi
 
     slog "bash config done!"
@@ -93,10 +93,10 @@ vscode_config_install() {
     slog "vscode config"
 
     if is_mac; then
-        scp $XDG_CONFIG_HOME/dotfiles/extras/vscode/settings.json "$HOME/Library/Application Support/Code/User/settings.json"
+        scp $DOT_DIR/extras/vscode/settings.json "$HOME/Library/Application Support/Code/User/settings.json"
     else
         smd $XDG_CONFIG_HOME/Code/User
-        scp $XDG_CONFIG_HOME/dotfiles/extras/vscode/settings.json $XDG_CONFIG_HOME/Code/User/settings.json
+        scp $DOT_DIR/extras/vscode/settings.json $XDG_CONFIG_HOME/Code/User/settings.json
     fi
 
     slog "vscode config done!"
