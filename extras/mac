@@ -140,7 +140,7 @@ mac_settings() {
 
 amethyst_install() {
     is_mac || return 1
-    brew cask install amethyst
+    bic amethyst
     [ -f ~/.seartipy/amethyst ] || return 1
 
     slog "Moving ~/.amethyst to $BACKUP_DIR"
