@@ -300,7 +300,7 @@ bi() {
 bis() {
     for p in "$@"; do
         slog "Installing package $p"
-        has_cmd "$p" || brew install -q install "$p"
+        has_cmd "$p" || brew install -q "$p"
     done
 }
 
