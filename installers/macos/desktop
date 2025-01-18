@@ -8,6 +8,11 @@ macos_settings_install() {
     defaults write -g NSWindowShouldDragOnGesture -bool true
 }
 
+macos_config_install() {
+    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R aerospace
+    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R amethyst
+}
+
 ui_install() {
     bi deluge
     bi visual-studio-code

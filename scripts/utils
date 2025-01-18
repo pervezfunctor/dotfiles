@@ -2,7 +2,7 @@
 
 {
 
-DOT_DIR=$XDG_CONFIG_HOME/dotfiles
+DOT_DIR=$HOME/.dotfiles
 
 BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
 

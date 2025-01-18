@@ -1,6 +1,7 @@
 command -v starship > /dev/null && eval "$(starship init bash)"
 
-source $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc
+export DOT_DIR=${DOT_DIR:-$HOME/.dotfiles}
+source $DOT_DIR/stow/.local/share/shell/shellrc
 
 alias fv="fzf --bind 'enter:become(vim {})'"
 

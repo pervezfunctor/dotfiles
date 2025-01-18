@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 
 if is_linux; then
     alias upgrade="sudo apt-get update && sudo apt-get upgrade -y"

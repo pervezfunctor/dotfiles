@@ -1,6 +1,5 @@
-source $XDG_CONFIG_HOME/dotfiles/scripts/utils
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$XDG_CONFIG_HOME}
-source $XDG_CONFIG_HOME/dotfiles/scripts/utils
+source $DOT_DIR/scripts/utils
 
 export LANG=en_US.UTF-8
 
@@ -18,7 +17,6 @@ fi
 spath_export "/usr/bin"
 spath_export "/snap/bin"
 spath_export "$GOPATH/bin"
-spath_export "$XDG_CONFIG_HOME/dotfiles/bin"
 spath_export "$XDG_CONFIG_HOME/emacs/bin"
 spath_export "$HOME/.local/bin"
 spath_export "$HOME/.local/share/pypoetry"
@@ -78,8 +76,7 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
 
 fi
 
-source_if_exists "$XDG_CONFIG_HOME/dotfiles/configs/shell/aliases"
-
+source_if_exists "$DOT_DIR/stow/.local/share/aliases"
 # Eza
 if has_cmd eza; then
     alias l="eza -l --icons --git -a"

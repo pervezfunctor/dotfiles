@@ -57,19 +57,16 @@ webi-shell_install() {
 }
 
 astro_install() {
-    slog "Installing AstroNvim"
+    slog "AstroNvim config"
 
     fmv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
     fmv ~/.local/share/nvim ~/.local/share/nvim.bak
     fmv ~/.local/state/nvim ~/.local/state/nvim.bak
     fmv ~/.cache/nvim ~/.cache/nvim.bak
 
-    sclone https://github.com/pervezfunctor/astronvim-config.git $XDG_CONFIG_HOME/nvim
+    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R nvim
 
-    [[ "$USER" == "pervez" ]] || frm $XDG_CONFIG_HOME/nvim/lua/user/.git
-    slog "Please configure AstroNvim by editing files in $XDG_CONFIG_HOME/nvim/lua/user"
-
-    slog "AstroNvim installation done!"
+    slog "AstroNvim config done!"
 }
 
 bash_install() {
@@ -82,8 +79,8 @@ bash_install() {
         echo 'eval "$(starship init bash)"' >> ~/.bashrc
     fi
 
-    if ! grep -q $DOT_DIR/configs/shell/shellrc ~/.bashrc; then
-        echo "source $DOT_DIR/configs/shell/shellrc" >> ~/.bashrc
+    if ! grep -q $DOT_DIR/stow/.local/share/shellrc ~/.bashrc; then
+        echo "source $DOT_DIR/stow/.local/share/shellrc" >> ~/.bashrc
     fi
 
     slog "bash config done!"
@@ -105,11 +102,11 @@ vscode_config_install() {
 zsh_config_install() {
     slog "zsh config"
 
-    smd ~/.zsh
-    sclone --depth=1 https://github.com/sindresorhus/pure.git ~/.zsh/pure
-    sclone --depth=1 https://github.com/djui/alias-tips.git ~/.zsh/alias-tips
+    smd $XDG_CONFIG_HOME/.config/zsh
+    sclone --depth=1 https://github.com/sindresorhus/pure.git $XDG_CONFIG_HOME/.config/zsh/pure
+    sclone --depth=1 https://github.com/djui/alias-tips.git $XDG_CONFIG_HOME/.config/zsh/alias-tips
 
-    fln "${DOT_DIR}/configs/zsh/.zshrc" ~/.zshrc
+    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R zsh
 
     slog "zsh config done!"
 }
@@ -117,8 +114,10 @@ zsh_config_install() {
 tmux_config_install() {
     slog "tmux config"
 
-    smd $XDG_CONFIG_HOME/tmux
-    fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
+    #smd $XDG_CONFIG_HOME/tmux
+    # fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
+
+    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R tmux
 
     slog "tmux config done!"
 }
@@ -422,6 +421,8 @@ git_config_install() {
 
     is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
 
+    # stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R git
+
     git_conf init.defaultBranch main
     git_conf pull.ff only
     git_conf delta.navigate true
@@ -436,6 +437,7 @@ git_config_install() {
         git_conf user.name "Pervez Iqbal"
         git_conf user.email "pervefunctor@gmail.com"
     fi
+
 
     slog "git configuration done!"
 }
@@ -665,18 +667,37 @@ shell_install() {
 alacritty_config_install() {
     slog "alacritty config"
 
-    smd $XDG_CONFIG_HOME/alacritty
-    scp "${DOT_DIR}/configs/alacritty/alacritty.toml" $XDG_CONFIG_HOME/alacritty/alacritty.toml
-    curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-frappe.toml
-    curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-latte.toml
-    curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-macchiato.toml
-    curl -LO --output-dir $XDG_CONFIG_HOME/alacritty https://github.com/catppuccin/alacritty/raw/main/catppuccin-macchiato.toml
+    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R alacritty
 
     slog "alacritty config done!"
 }
 
 wezterm_config_install() {
-    scp "${DOT_DIR}/configs/wezterm.lua" ~/.wezterm.lua
+        stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R wezterm
+}
+
+kitty_config_install() {
+    slog "kitty config"
+
+    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R kitty
+
+    slog "kitty config done!"
+}
+
+ghostty_config_install() {
+    slog "ghostty config"
+
+    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R ghostty
+
+    slog "ghostty config done!"
+}
+
+bin_config_install() {
+    slog "bin config"
+
+    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R bin
+
+    slog "bin config done!"
 }
 
 config_install() {
@@ -688,6 +709,9 @@ config_install() {
     has_cmd alacritty && alacritty_config_install
     has_cmd wezterm && wezterm_config_install
     has_cmd code && vscode_config_install
+    has_cmd kitty && kitty_config_install
+    has_cmd ghostty && ghostty_config_install
+    bin_config_install
 }
 
 

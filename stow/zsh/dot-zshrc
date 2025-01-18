@@ -13,8 +13,9 @@ export_if_exists() {
 }
 
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+export DOT_DIR=${DOT_DIR:-$HOME/.dotfiles}
 
-source_if_exists $XDG_CONFIG_HOME/dotfiles/configs/shell/shellrc
+source_if_exists $DOT_DIR/stow/.local/share/shellrc
 
 source_if_exists "$HOME/.asdf/asdf.sh"
 
@@ -44,15 +45,15 @@ zstyle ':completion:::::default' menu select
 if has_cmd starship; then
     eval "$(starship init zsh)"
 else
-    if ! [[ -d ~/.zsh/pure ]]; then
+    if ! [[ -d $XDG_CONFIG_HOME/.config/zsh/pure ]]; then
         if  has_cmd git > /dev/null; then
-            git clone --depth=1 https://github.com/sindresorhus/pure.git ~/.zsh/pure
+            git clone --depth=1 https://github.com/sindresorhus/pure.git $XDG_CONFIG_HOME/.config/zsh/pure
         else
             echo "git not installed"
         fi
     fi
 
-    fpath+=($HOME/.zsh/pure)
+    fpath+=($HOME/.config/zsh/pure)
     autoload -U promptinit; promptinit
     prompt pure
 fi
@@ -68,25 +69,25 @@ source_if_exists /etc/zsh_command_not_found
 if [[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
     source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 else
-    if ! [[ -d ~/.zsh/zsh-syntax-highlighting ]]; then
-        has_cmd git && git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.zsh/zsh-syntax-highlighting
+    if ! [[ -d $XDG_CONFIG_HOME/.config/zsh/zsh-syntax-highlighting ]]; then
+        has_cmd git && git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git $XDG_CONFIG_HOME/.config/zsh/zsh-syntax-highlighting
     fi
-    source_if_exists ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+    source_if_exists $XDG_CONFIG_HOME/.config/zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
 
 if [[ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
     source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 else
-    if ! [[ -d ~/.zsh/zsh-autosuggestions ]]; then
-        has_cmd git && git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
+    if ! [[ -d $XDG_CONFIG_HOME/.config/zsh/zsh-autosuggestions ]]; then
+        has_cmd git && git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions $XDG_CONFIG_HOME/.config/zsh/zsh-autosuggestions
     fi
-    source_if_exists ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+    source_if_exists $XDG_CONFIG_HOME/.config/zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 fi
 
-if ! [[ -d ~/.zsh/alias-tips ]]; then
-    has_cmd git && git clone --depth=1 https://github.com/djui/alias-tips.git
+if ! [[ -d $XDG_CONFIG_HOME/.config/zsh/alias-tips ]]; then
+    has_cmd git && git clone --depth=1 https://github.com/djui/alias-tips.git $XDG_CONFIG_HOME/.config/zsh/alias-tips
 fi
-source_if_exists ~/.zsh/zsh-autosuggestions/alias-tips/alias-tips.plugin.zsh
+source_if_exists $XDG_CONFIG_HOME/.config/zsh/zsh-autosuggestions/alias-tips/alias-tips.plugin.zsh
 
 PATH=~/.console-ninja/.bin:$PATH
 
