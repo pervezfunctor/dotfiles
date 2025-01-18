@@ -114,7 +114,7 @@ zsh_config_install() {
 tmux_config_install() {
     slog "tmux config"
 
-    #smd $XDG_CONFIG_HOME/tmux
+    smd $XDG_CONFIG_HOME/tmux
     # fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
 
     stow --no-folding -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R tmux
