@@ -1,0 +1,76 @@
+#! /usr/bin/env bash
+
+{
+
+if [[ -z "$DOT_DIR" ]]; then
+    source $DOT_DIR/scripts/utils
+    source $DOT_DIR/scripts/installs
+elif command -v curl > /dev/null; then
+    source <(curl -sSL https://dub.sh/z3pTnAK)
+elif command -v wget > /dev/null; then
+    source <(wget -qO- https://dub.sh/z3pTnAK)
+else
+    echo "curl or wget not found. Please install curl or wget and try again."
+    exit 1
+fi
+
+INSTALL_OPTIONS=("zsh" "tmux" "nvim" "code" "ghostty" "kitty" "wezterm" "alacritty" "emacs")
+
+DEFAULT_OPTIONS=("zsh","tmux","nvim")
+
+help() {
+    echo "Usage: $0 [OPTION1] [OPTION2] ..."
+    echo "Options:"
+    echo "  zsh         zsh config with starship prompt and common plugins."
+    echo "  tmux        tmux config, catppuccin theme and common plugins."
+    echo "  nvim        lazyvim based config and plugins."
+    echo "  code        vscode settings."
+    echo "  ghostty     ghostty config."
+    echo "  kitty       kitty config."
+    echo "  wezterm     wezterm config."
+    echo "  alacritty   alacritty config."
+    echo "  emacs       doom emacs config."
+    echo ""
+    echo ""
+}
+
+config() {
+    while [[ "$#" -gt 0 ]]; do
+    if fn_exists "${1}_install"; then
+        "${1}_install"
+    else
+        err_exit "No such config: $1"
+    fi
+    shift
+    done
+}
+
+main() {
+    if ! [[ "$#" -eq 0 ]]; then
+        config "$@"
+        exit 0
+    fi
+
+    if ! has_cmd gum; then
+        help
+        exit 1
+    fi
+
+
+    export COLORTERM=true
+    export TERM=xterm-256color
+    COLORTERM=true gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Install options"
+    # SELECTED_INSTALL_OPTIONS=$(| tr '\n' ' ')
+
+    if [[ -n "$SELECTED_INSTALL_OPTIONS" ]]; then
+        echo "Selected: $SELECTED_INSTALL_OPTIONS"
+        config $SELECTED_INSTALL_OPTIONS
+    else
+        slog "No options selected."
+        exit 1
+    fi
+}
+
+bootstrap "$@"
+
+}
