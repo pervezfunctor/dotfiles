@@ -63,7 +63,7 @@ main() {
         fonts_install
 
         flathub_install
-        flatpak_apps_install
+        apps_install
 
         config_install
 

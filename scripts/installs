@@ -9,6 +9,27 @@ cargoi() {
   done
 }
 
+bi() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        brew install -q "$p"
+    done
+}
+
+bis() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        has_cmd "$p" || brew install -q "$p"
+    done
+}
+
+wis() {
+    for p in "$@"; do
+        slog "Installing webi package $p"
+        has_cmd $p || webi $p
+    done
+}
+
 flathub_install() {
     has_cmd flatpak || si flatpak
 
@@ -27,7 +48,7 @@ fpi() {
     done
 }
 
-flatpak_apps_install() {
+apps_install() {
     if ! has_cmd flatpak; then
         warn "flatpak not installed, skipping flatpak apps"
         return 1
@@ -102,9 +123,9 @@ vscode_config_install() {
 zsh_config_install() {
     slog "zsh config"
 
-    smd $XDG_CONFIG_HOME/.config/zsh
-    sclone --depth=1 https://github.com/sindresorhus/pure.git $XDG_CONFIG_HOME/.config/zsh/pure
-    sclone --depth=1 https://github.com/djui/alias-tips.git $XDG_CONFIG_HOME/.config/zsh/alias-tips
+    smd $HOME/.zsh
+    sclone --depth=1 https://github.com/sindresorhus/pure.git $HOME/.zsh/pure
+    sclone --depth=1 https://github.com/djui/alias-tips.git $HOME/.zsh/alias-tips
 
     stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R zsh
 
@@ -287,27 +308,6 @@ brew_install() {
     fi
 
     cmd_check brew
-}
-
-bi() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        brew install -q "$p"
-    done
-}
-
-bis() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        has_cmd "$p" || brew install -q "$p"
-    done
-}
-
-wis() {
-    for p in "$@"; do
-        slog "Installing webi package $p"
-        has_cmd $p || webi $p
-    done
 }
 
 monaspace_install() {

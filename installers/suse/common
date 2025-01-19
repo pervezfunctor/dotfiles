@@ -102,7 +102,7 @@ ui_install() {
     si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard ghostty
     vscode_install
     flathub_install
-    flatpak_apps_install
+    apps_install
 }
 
 cockpit_install() {
@@ -122,7 +122,7 @@ podman_install() {
     si podman podman-remote
 }
 
-libvirt_install() {
+vm_install() {
     si buildah libvirt-daemon distrobox
 
     sudo systemctl enable --now libvirtd
@@ -147,7 +147,7 @@ ct_install() {
 }
 
 virt_install() {
-    libvirt_install
+    vm_install
     ct_install
     code_server_install
 }

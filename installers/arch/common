@@ -94,7 +94,7 @@ ui_install() {
     vscode_install
     si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard ghostty
     flathub_install
-    flatpak_apps_install
+    apps_install
 }
 
 cockpit_install() {
@@ -112,7 +112,7 @@ podman_install() {
     si podman podman-compose
 }
 
-libvirt_install() {
+vm_install() {
     si buildah libvirt virt-install distrobox
 
     sudo systemctl enable --now libvirtd
@@ -143,7 +143,7 @@ incus_install() {
 
 virt_install() {
     ct_install
-    libvirt_install
+    vm_install
     code_server_install
 }
 

@@ -131,7 +131,7 @@ ui_install() {
     si virt-manager chromium gnome-keyring xsel xclip wl-clipboard
     flathub_install
     ghostty_install
-    flatpak_apps_install
+    apps_install
 }
 
 cockpit_install() {
@@ -179,7 +179,7 @@ incus_install() {
     incus_config_install
 }
 
-libvirt_install() {
+vm_install() {
     sudo dnf groupinstall -q -y --with-optional "System Tools"
     si libvirt buildah distrobox
     sudo systemctl enable --now libvirtd
@@ -196,7 +196,7 @@ ct_install() {
 
 virt_install() {
     ct_install
-    libvirt_install
+    vm_install
     code_server_install
 }
 

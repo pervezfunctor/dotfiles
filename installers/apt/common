@@ -124,7 +124,7 @@ ui_install() {
 
     vscode_install
     flathub_install
-    flatpak_apps_install
+    apps_install
 }
 
 cockpit_install() {
@@ -144,8 +144,8 @@ podman_install() {
     cmd_check podman
 }
 
-libvirt_install() {
-    si buildah libvirt-daemon distrobox
+vm_install() {
+    si libvirt-daemon
     sudo systemctl enable --now libvirtd
 }
 
@@ -166,7 +166,7 @@ ct_install() {
 
 virt_install() {
     ct_install
-    libvirt_install
+    vm_install
     code_server_install
 }
 

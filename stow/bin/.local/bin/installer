@@ -2,7 +2,10 @@
 
 {
 
-if command -v curl > /dev/null; then
+
+if [[ -z "$DOT_DIR" ]]; then
+    source $DOT_DIR/scripts/utils
+elif command -v curl > /dev/null; then
     source <(curl -sSL https://dub.sh/z3pTnAK)
 elif command -v wget > /dev/null; then
     source <(wget -qO- https://dub.sh/z3pTnAK)
@@ -10,6 +13,25 @@ else
     echo "curl or wget not found. Please install curl or wget and try again."
     exit 1
 fi
+
+INSTALL_OPTIONS=("dotfiles" "shell" "cpp" "virt" "vm" "ct" "web" "vscode" "ui")
+
+help() {
+    echo "Usage: $0 [OPTION1] [OPTION2] ..."
+    echo "Options:"
+    echo "  shell       modern shell tools"
+    echo "  vscode      vscode and extensions."
+    echo "  cpp         Installs gcc, clang, cmake, boost etc"
+    echo "  ct          container tools like docker, podman, incus, distrobox."
+    echo "  vm          vm tools like buildah, distrobox, libvirt."
+    echo "  virt        vm and ct tools."
+    echo "  web         pnpm based web development tools."
+    echo "  ui          desktop apps like vscode, chromium, virt-manager, zoom, obsidian, wezterm."
+    echo "  dotfiles    dotfiles for zsh, tmux, neovim, etc."
+    echo ""
+    echo ""
+    echo "More fine grained options available like tmux, zsh, neovim, docker, podman, cockpit, apps"
+}
 
 installer() {
     while [[ "$#" -gt 0 ]]; do
@@ -23,7 +45,18 @@ installer() {
 }
 
 main() {
-    installer "$@"
+    OPTIONS
+    # if no arguments
+    if [[ "$#" -eq 0 ]]; then
+        if has_cmd gum; then
+            SELECTED_INSTALL_OPTIONS=$(gum choose "${OPTIONAL_APPS[@]}" --no-limit --selected $DEFAULT_OPTIONAL_APPS --height 7 --header "Select optional apps" | tr ' ' '-')
+            installer $SELECTED_INSTALL_OPTIONS
+        else
+            help
+            exit 1
+        fi
+    else
+        installer "$@"
 }
 
 bootstrap "$@"
