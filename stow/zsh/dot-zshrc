@@ -225,9 +225,9 @@ source_if_exists "$XDG_CONFIG_HOME/localzshrc"
 start_tmux() {
     tmux start-server
 
-    # Create a 'seartipy' session if no session has been defined in tmux.conf.
+    # Create a 'default' session if no session has been defined in tmux.conf.
     if ! tmux has-session 2> /dev/null; then
-        tmux_session='seartipy'
+        tmux_session='default'
         tmux \
             new-session -d -s "$tmux_session" \; \
             set-option -t "$tmux_session" destroy-unattached off &> /dev/null
@@ -237,4 +237,4 @@ start_tmux() {
     exec tmux attach-session
 }
 
-[[ -z "$TMUX" && -z "$EMACS" && -z "$INSIDE_EMACS" && -z "$VIM" ]] && start_tmux
+[[ -z "$TMUX" && -z "$EMACS" && -z "$INSIDE_EMACS" && -z "$VIM" && "$TERM_PROGRAM" != "vscode" ]] && start_tmux

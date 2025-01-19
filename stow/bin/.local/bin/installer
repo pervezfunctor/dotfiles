@@ -2,7 +2,6 @@
 
 {
 
-
 if [[ -z "$DOT_DIR" ]]; then
     source $DOT_DIR/scripts/utils
 elif command -v curl > /dev/null; then
@@ -14,7 +13,8 @@ else
     exit 1
 fi
 
-INSTALL_OPTIONS=("dotfiles" "shell" "cpp" "virt" "vm" "ct" "web" "vscode" "ui")
+INSTALL_OPTIONS=("shell" "cpp" "virt" "vm" "ct" "web" "vscode" "ui")
+DEFAULT_OPTIONS=("shell","ct","vscode")
 
 help() {
     echo "Usage: $0 [OPTION1] [OPTION2] ..."
@@ -27,10 +27,20 @@ help() {
     echo "  virt        vm and ct tools."
     echo "  web         pnpm based web development tools."
     echo "  ui          desktop apps like vscode, chromium, virt-manager, zoom, obsidian, wezterm."
-    echo "  dotfiles    dotfiles for zsh, tmux, neovim, etc."
     echo ""
     echo ""
-    echo "More fine grained options available like tmux, zsh, neovim, docker, podman, cockpit, apps"
+    echo "More fine grained options available like"
+    echo "  tmux        tmux config, theme and plugins."
+    echo "  zsh         zsh env, base config, starship prompt and common plugins."
+    echo "  neovim      neovim and lazyvim based config and plugins."
+    echo "  docker      docker only"
+    echo "  podman      podman only"
+    echo "  cockpit     cockpit only"
+    echo "  apps        flatpak apps like firefox, chromium, zoom, obsidian, wezterm."
+    echo "  config      config only for git, ssh, gpg, tmux, zsh, neovim."
+    echo "  brew        homebrew for macos and linuxbrew for linux."
+    echo "  essential   only essential tools like git, curl, wget, cmake."
+    echo ""
 }
 
 installer() {
@@ -45,18 +55,25 @@ installer() {
 }
 
 main() {
-    OPTIONS
-    # if no arguments
-    if [[ "$#" -eq 0 ]]; then
-        if has_cmd gum; then
-            SELECTED_INSTALL_OPTIONS=$(gum choose "${OPTIONAL_APPS[@]}" --no-limit --selected $DEFAULT_OPTIONAL_APPS --height 7 --header "Select optional apps" | tr ' ' '-')
-            installer $SELECTED_INSTALL_OPTIONS
-        else
-            help
-            exit 1
-        fi
-    else
+    if ! [[ "$#" -eq 0 ]]; then
         installer "$@"
+        exit 0
+    fi
+
+    if ! has_cmd gum; then
+        help
+        exit 1
+    fi
+
+    SELECTED_INSTALL_OPTIONS=$(gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Install options"| tr '\n' ' ')
+
+    if [[ -n "$SELECTED_INSTALL_OPTIONS" ]]; then
+        echo "Selected: $SELECTED_INSTALL_OPTIONS"
+        installer $SELECTED_INSTALL_OPTIONS
+    else
+        slog "No options selected."
+        exit 1
+    fi
 }
 
 bootstrap "$@"
