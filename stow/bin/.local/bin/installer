@@ -2,16 +2,7 @@
 
 {
 
-if [[ -z "$DOT_DIR" ]]; then
-    source $DOT_DIR/scripts/utils
-elif command -v curl > /dev/null; then
-    source <(curl -sSL https://dub.sh/z3pTnAK)
-elif command -v wget > /dev/null; then
-    source <(wget -qO- https://dub.sh/z3pTnAK)
-else
-    echo "curl or wget not found. Please install curl or wget and try again."
-    exit 1
-fi
+source <(curl -sSL https://dub.sh/z3pTnAK)
 
 INSTALL_OPTIONS=("shell" "cpp" "virt" "vm" "ct" "web" "vscode" "ui")
 DEFAULT_OPTIONS=("shell","ct","vscode")
@@ -65,7 +56,7 @@ main() {
         exit 1
     fi
 
-    SELECTED_INSTALL_OPTIONS=$(gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Install options"| tr '\n' ' ')
+    SELECTED_INSTALL_OPTIONS=$(gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
 
     if [[ -n "$SELECTED_INSTALL_OPTIONS" ]]; then
         echo "Selected: $SELECTED_INSTALL_OPTIONS"
@@ -76,6 +67,6 @@ main() {
     fi
 }
 
-bootstrap "$@"
+CLICOLOR_FORCE=1 bootstrap "$@"
 
 }
