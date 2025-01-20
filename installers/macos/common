@@ -34,6 +34,7 @@ cli_install() {
     bi zsh-syntax-highlighting zsh-autosuggestions
     bi golang rust ripgrep neovim neovide luarocks lazydocker
     bi starship gping broot mcfly jq
+    bi install reattach-to-user-namespace
 
     gh extension install github/gh-copilot
 
