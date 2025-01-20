@@ -238,8 +238,6 @@ alias lta='lt -a'
 alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
 alias fv="fzf --bind 'enter:become(vim {})'"
 
-alias stowdf="stow -d $DOT_DIR/stow -t $HOME --dotfiles -R"
-
 # alias fd='fdfind'
 
 # cx() { cd "$@" && l; }

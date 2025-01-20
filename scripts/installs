@@ -2,34 +2,6 @@
 
 {
 
-cargoi() {
-  for p in "$@"; do
-    slog "Installing cargo package $p"
-    cargo +stable install --locked "$p"
-  done
-}
-
-bi() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        brew install -q "$p"
-    done
-}
-
-bis() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        has_cmd "$p" || brew install -q "$p"
-    done
-}
-
-wis() {
-    for p in "$@"; do
-        slog "Installing webi package $p"
-        has_cmd $p || webi $p
-    done
-}
-
 flathub_install() {
     has_cmd flatpak || si flatpak
 
@@ -77,13 +49,6 @@ webi-shell_install() {
     # sudo apt install -y libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 }
 
-ds() {
-    for p in "$@"; do
-        slog "stow $p"
-        stow -d $DOT_DIR/stow -t $HOME --dotfiles -R $p
-    done
-}
-
 astro_install() {
     slog "AstroNvim config"
 
@@ -92,7 +57,7 @@ astro_install() {
     fmv ~/.local/state/nvim ~/.local/state/nvim.bak
     fmv ~/.cache/nvim ~/.cache/nvim.bak
 
-    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R nvim
+    stowdf nvim
 
     slog "AstroNvim config done!"
 }
@@ -134,7 +99,7 @@ zsh_config_install() {
     sclone --depth=1 https://github.com/sindresorhus/pure.git $HOME/.zsh/pure
     sclone --depth=1 https://github.com/djui/alias-tips.git $HOME/.zsh/alias-tips
 
-    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R zsh
+    stowdf zsh
 
     slog "zsh config done!"
 }
@@ -145,7 +110,7 @@ tmux_config_install() {
     smd $XDG_CONFIG_HOME/tmux
     # fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
 
-    stow --no-folding -d $DOT_DIR/stow -t $HOME --dotfiles -R tmux
+    stownf tmux
 
     slog "tmux config done!"
 }
@@ -428,7 +393,7 @@ git_config_install() {
 
     is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
 
-    # stow -d $DOT_DIR/stow -t $HOME --dotfiles -R git
+    # stowdf git
 
     git_conf init.defaultBranch main
     git_conf pull.ff only
@@ -674,19 +639,19 @@ shell_install() {
 alacritty_config_install() {
     slog "alacritty config"
 
-    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R alacritty
+    stowdf alacritty
 
     slog "alacritty config done!"
 }
 
 wezterm_config_install() {
-        stow -d $DOT_DIR/stow -t $HOME --dotfiles -R wezterm
+        stowdf wezterm
 }
 
 kitty_config_install() {
     slog "kitty config"
 
-    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R kitty
+    stowdf kitty
 
     slog "kitty config done!"
 }
@@ -694,7 +659,7 @@ kitty_config_install() {
 ghostty_config_install() {
     slog "ghostty config"
 
-    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R ghostty
+    stowdf ghostty
 
     slog "ghostty config done!"
 }
@@ -702,7 +667,7 @@ ghostty_config_install() {
 bin_config_install() {
     slog "bin config"
 
-    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R bin
+    stowdf bin
 
     slog "bin config done!"
 }

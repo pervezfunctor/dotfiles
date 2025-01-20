@@ -346,6 +346,20 @@ dotfiles_install() {
 
 }
 
+stowdf() {
+    for p in "$@"; do
+        slog "stow $p"
+        stow -d $DOT_DIR/stow -t $HOME --dotfiles -R $p
+    done
+}
+
+stownf() {
+    for p in "$@"; do
+        slog "stow $p"
+        stow --no-folding -d $DOT_DIR/stow -t $HOME --dotfiles -R $p
+    done
+}
+
 webi_install() {
     has_cmd webi && return 0
     has_cmd ~/.local/bin/webi && return 0
@@ -367,6 +381,34 @@ mise_install() {
     echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
 
     cmd_check mise
+}
+
+cargoi() {
+  for p in "$@"; do
+    slog "Installing cargo package $p"
+    cargo +stable install --locked "$p"
+  done
+}
+
+bi() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        brew install -q "$p"
+    done
+}
+
+bis() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        has_cmd "$p" || brew install -q "$p"
+    done
+}
+
+wis() {
+    for p in "$@"; do
+        slog "Installing webi package $p"
+        has_cmd $p || webi $p
+    done
 }
 
 source_if_exists() {
