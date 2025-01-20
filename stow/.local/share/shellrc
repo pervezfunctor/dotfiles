@@ -83,3 +83,18 @@ if has_cmd eza; then
     alias lt="eza --tree --level=2 --long --icons --git"
     alias ltree="eza --tree --level=2  --icons --git"
 fi
+
+start_tmux() {
+    local tmux_session="default"
+
+    [[ -n "$TMUX" || -n "$EMACS" || -n "$INSIDE_EMACS" || -n "$VIM" || -n "$VSCODE_RESOLVING_ENVIRONMENT" || "$TERM_PROGRAM" == "vscode" ]] && return
+
+    tmux start-server
+
+    # Check and create session if not exists
+    if ! tmux has-session -t "$tmux_session" 2>/dev/null; then
+        tmux new-session -d -s "$tmux_session"
+    fi
+
+    exec tmux attach-session -t "$tmux_session"
+}

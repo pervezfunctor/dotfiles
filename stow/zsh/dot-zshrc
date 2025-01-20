@@ -221,20 +221,4 @@ bindkey '^j' down-line-or-search
 source_if_exists "$HOME/.localzshrc"
 source_if_exists "$XDG_CONFIG_HOME/localzshrc"
 
-# copied from tmux prezto module
-start_tmux() {
-    tmux start-server
-
-    # Create a 'default' session if no session has been defined in tmux.conf.
-    if ! tmux has-session 2> /dev/null; then
-        tmux_session='default'
-        tmux \
-            new-session -d -s "$tmux_session" \; \
-            set-option -t "$tmux_session" destroy-unattached off &> /dev/null
-    fi
-
-    # Attach to the 'prezto' session or to the last session used.
-    exec tmux attach-session
-}
-
-[[ -z "$TMUX" && -z "$EMACS" && -z "$INSIDE_EMACS" && -z "$VIM" && "$TERM_PROGRAM" != "vscode" ]] && start_tmux
+start_tmux
