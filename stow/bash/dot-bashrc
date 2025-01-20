@@ -1,14 +1,19 @@
+export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+export DOT_DIR=${DOT_DIR:-$HOME/.dotfiles}
+
 source $DOT_DIR/stow/.local/share/shell/shellrc
 
 # if interactive shell then return
 [[ $- == *i* ]] || return
 
-alias fv="fzf --bind 'enter:become(vim {})'"
-
+has_cmd mise && eval "$(mise activate zsh)"
+has_cmd direnv && eval "$(direnv hook zsh)"
+has_cmd zoxide && eval "$(zoxide init zsh)"
+has_cmd fzf && source <(fzf --zsh)
 
 command -v starship > /dev/null && eval "$(starship init bash)"
 
 eval "$(fzf --bash)"
 
-start_tmux
+start_default_tmux_session
 

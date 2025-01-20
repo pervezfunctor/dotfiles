@@ -1,7 +1,8 @@
-export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$XDG_CONFIG_HOME}
 source $DOT_DIR/scripts/utils
 
 export LANG=en_US.UTF-8
+
+source_if_exists "$DOT_DIR/stow/.local/share/aliases"
 
 source_if_exists "$HOME/.cargo/env"
 
@@ -23,17 +24,10 @@ spath_export "$HOME/.local/share/pypoetry"
 spath_export "$XDG_CONFIG_HOME/Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin"
 spath_export "$HOME/.console-ninja/.bin"
 
-# if is_mac; then
-#     export DOCKER_HOST='unix://$HOME/.local/share/containers/podman/machine/qemu/podman.sock'
-# else
-#     # export DOCKER_HOST=unix:///run/user/1000/docker.sock
-# fi
-
 if [[ -d "$HOME/.pyenv" ]]; then
     export PYENV_ROOT="$HOME/.pyenv"
     spath_export "$PYENV_ROOT/bin"
     eval "$(pyenv init -)"
-    # eval "$(pyenv virtualenv-init -)"
 elif has_cmd /$HOME/miniconda3/bin/conda; then
   __conda_setup="$('/$HOME/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
   if [ $? -eq 0 ]; then
@@ -48,22 +42,6 @@ elif has_cmd /$HOME/miniconda3/bin/conda; then
   unset __conda_setup
 fi
 
-
-# take parameters from the command line and pass it to git push
-function safe_push() {
-    git stash -u && git push "$@" && git stash pop
-}
-
-# webi paths etc
-[ -s "$XDG_CONFIG_HOME/envman/load.sh" ] && source "$XDG_CONFIG_HOME/envman/load.sh"
-
-# has_cmd fzf && {
-#     export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --prompt="> "'
-#     export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow --exclude .git"
-#     export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
-#     export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
-# }
-
 if [[ -d "$HOME/.local/share/pnpm" ]]; then
     # pnpm
     export PNPM_HOME="$HOME/.local/share/pnpm"
@@ -76,15 +54,14 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
 
 fi
 
-source_if_exists "$DOT_DIR/stow/.local/share/aliases"
-# Eza
-if has_cmd eza; then
-    alias l="eza -l --icons --git -a"
-    alias lt="eza --tree --level=2 --long --icons --git"
-    alias ltree="eza --tree --level=2  --icons --git"
-fi
+function safe_push() {
+    git stash -u && git push "$@" && git stash pop
+}
 
-start_tmux() {
+# webi paths etc
+[ -s "$XDG_CONFIG_HOME/envman/load.sh" ] && source "$XDG_CONFIG_HOME/envman/load.sh"
+
+start_default_tmux_session() {
     local tmux_session="default"
 
     [[ -n "$TMUX" || -n "$EMACS" || -n "$INSIDE_EMACS" || -n "$VIM" || -n "$VSCODE_RESOLVING_ENVIRONMENT" || "$TERM_PROGRAM" == "vscode" ]] && return
@@ -98,3 +75,12 @@ start_tmux() {
 
     exec tmux attach-session -t "$tmux_session"
 }
+
+source_if_exists "$DOT_DIR/stow/.local/share/aliases"
+
+# has_cmd fzf && {
+#     export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --prompt="> "'
+#     export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow --exclude .git"
+#     export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
+#     export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
+# }

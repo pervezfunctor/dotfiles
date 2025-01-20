@@ -59,7 +59,9 @@ main() {
     SELECTED_INSTALL_OPTIONS=$(gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
 
     if [[ -n "$SELECTED_INSTALL_OPTIONS" ]]; then
+        echo ""
         echo "Selected: $SELECTED_INSTALL_OPTIONS"
+        echo ""
         installer $SELECTED_INSTALL_OPTIONS
     else
         slog "No options selected."

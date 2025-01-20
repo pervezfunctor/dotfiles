@@ -37,7 +37,7 @@ help() {
 config() {
     while [[ "$#" -gt 0 ]]; do
     if fn_exists "${1}_install"; then
-        "${1}_install"
+        "${1}_config_install"
     else
         err_exit "No such config: $1"
     fi
@@ -56,14 +56,12 @@ main() {
         exit 1
     fi
 
-
-    export COLORTERM=true
-    export TERM=xterm-256color
-    COLORTERM=true gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Install options"
-    # SELECTED_INSTALL_OPTIONS=$(| tr '\n' ' ')
+    SELECTED_INSTALL_OPTIONS=$(gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
 
     if [[ -n "$SELECTED_INSTALL_OPTIONS" ]]; then
+        echo ""
         echo "Selected: $SELECTED_INSTALL_OPTIONS"
+        echo ""
         config $SELECTED_INSTALL_OPTIONS
     else
         slog "No options selected."
@@ -71,6 +69,6 @@ main() {
     fi
 }
 
-bootstrap "$@"
+CLICOLOR_FORCE=1 bootstrap "$@"
 
 }

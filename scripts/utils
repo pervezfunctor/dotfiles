@@ -343,6 +343,7 @@ dotfiles_install() {
     sclone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 
     dir_check "$DOT_DIR"
+
 }
 
 webi_install() {

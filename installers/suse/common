@@ -30,7 +30,7 @@ core_install() {
 
     pipx install trash-cli
 
-    cmd_check gcc g++ make cmake curl wget git trash tree
+    cmd_check gcc g++ make cmake curl wget git trash tree stow
 }
 
 snap_install() {

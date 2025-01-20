@@ -22,7 +22,7 @@ core_install() {
 
     si software-properties-common apt-transport-https ca-certificates gpg
     si curl wget git-core trash-cli tree command-not-found
-    si tar unzip cmake build-essential
+    si tar unzip cmake build-essential stow
 
     cmd_check gcc g++ make cmake curl wget git trash tree command-not-found
 }

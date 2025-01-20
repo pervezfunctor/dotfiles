@@ -10,7 +10,7 @@ bic() {
 
 core_install() {
     bi coreutils bash
-    bis curl wget trash tree unzip coreutils gum
+    bis curl wget trash tree unzip coreutils gum stow
 
     cmd_check curl wget trash tree unzip gum
 }

@@ -77,6 +77,13 @@ webi-shell_install() {
     # sudo apt install -y libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 }
 
+ds() {
+    for p in "$@"; do
+        slog "stow $p"
+        stow -d $DOT_DIR/stow -t $HOME --dotfiles -R $p
+    done
+}
+
 astro_install() {
     slog "AstroNvim config"
 
@@ -85,7 +92,7 @@ astro_install() {
     fmv ~/.local/state/nvim ~/.local/state/nvim.bak
     fmv ~/.cache/nvim ~/.cache/nvim.bak
 
-    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R nvim
+    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R nvim
 
     slog "AstroNvim config done!"
 }
@@ -127,7 +134,7 @@ zsh_config_install() {
     sclone --depth=1 https://github.com/sindresorhus/pure.git $HOME/.zsh/pure
     sclone --depth=1 https://github.com/djui/alias-tips.git $HOME/.zsh/alias-tips
 
-    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R zsh
+    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R zsh
 
     slog "zsh config done!"
 }
@@ -138,7 +145,7 @@ tmux_config_install() {
     smd $XDG_CONFIG_HOME/tmux
     # fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
 
-    stow --no-folding -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R tmux
+    stow --no-folding -d $DOT_DIR/stow -t $HOME --dotfiles -R tmux
 
     slog "tmux config done!"
 }
@@ -421,7 +428,7 @@ git_config_install() {
 
     is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
 
-    # stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R git
+    # stow -d $DOT_DIR/stow -t $HOME --dotfiles -R git
 
     git_conf init.defaultBranch main
     git_conf pull.ff only
@@ -667,19 +674,19 @@ shell_install() {
 alacritty_config_install() {
     slog "alacritty config"
 
-    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R alacritty
+    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R alacritty
 
     slog "alacritty config done!"
 }
 
 wezterm_config_install() {
-        stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R wezterm
+        stow -d $DOT_DIR/stow -t $HOME --dotfiles -R wezterm
 }
 
 kitty_config_install() {
     slog "kitty config"
 
-    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R kitty
+    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R kitty
 
     slog "kitty config done!"
 }
@@ -687,7 +694,7 @@ kitty_config_install() {
 ghostty_config_install() {
     slog "ghostty config"
 
-    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R ghostty
+    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R ghostty
 
     slog "ghostty config done!"
 }
@@ -695,7 +702,7 @@ ghostty_config_install() {
 bin_config_install() {
     slog "bin config"
 
-    stow -d $HOME/.dotfiles/stow -t $HOME --dotfiles -R bin
+    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R bin
 
     slog "bin config done!"
 }

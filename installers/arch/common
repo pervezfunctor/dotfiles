@@ -23,7 +23,7 @@ core_install() {
     si curl wget git base-devel trash-cli tree micro
     si tar unzip
 
-    cmd_check gcc g++ make cmake curl wget git trash tree
+    cmd_check gcc g++ make cmake curl wget git trash tree stow
 }
 
 sys_python_install() {

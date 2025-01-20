@@ -29,7 +29,7 @@ core_install() {
 
     update_packages
 
-    si curl wget git-core trash-cli tree tar unzip which util-linux-user
+    si curl wget git-core trash-cli tree tar unzip which util-linux-user stow
 }
 
 sys_python_install() {

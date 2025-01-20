@@ -1,3 +1,6 @@
+export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+export DOT_DIR=${DOT_DIR:-$HOME/.dotfiles}
+
 has_cmd() {
     command -v "$1" > /dev/null
 }
@@ -12,12 +15,15 @@ export_if_exists() {
     [[ -d "$1" ]] && export PATH="$1:$PATH"
 }
 
-export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
-export DOT_DIR=${DOT_DIR:-$HOME/.dotfiles}
-
 source_if_exists $DOT_DIR/stow/.local/share/shellrc
 
 source_if_exists "$HOME/.asdf/asdf.sh"
+
+# Generated for envman. Do not edit.
+[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+
+# if interactive shell then return
+[[ $- == *i* ]] || return
 
 has_cmd mise && eval "$(mise activate zsh)"
 has_cmd direnv && eval "$(direnv hook zsh)"
@@ -25,12 +31,6 @@ has_cmd zoxide && eval "$(zoxide init zsh)"
 has_cmd fzf && source <(fzf --zsh)
 # has_cmd atuin && eval "$(atuin init zsh)"
 # has_cmd fasd && eval "$(fasd --init auto)"
-
-# Generated for envman. Do not edit.
-[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
-
-
-[[ $- == *i* ]] || return
 
 HISTFILE=~/.histfile
 HISTSIZE=1000
@@ -221,4 +221,4 @@ bindkey '^j' down-line-or-search
 source_if_exists "$HOME/.localzshrc"
 source_if_exists "$XDG_CONFIG_HOME/localzshrc"
 
-start_tmux
+start_default_tmux_session
