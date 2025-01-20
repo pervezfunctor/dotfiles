@@ -236,6 +236,9 @@ alias lsa='ls -a'
 alias lt='eza --tree --level=2 --long --icons --git'
 alias lta='lt -a'
 alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
+
+alias stowdf="stow -d $DOT_DIR/stow -t $HOME --dotfiles -R"
+
 # alias fd='fdfind'
 
 # cx() { cd "$@" && l; }
