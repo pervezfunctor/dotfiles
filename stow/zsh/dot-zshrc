@@ -218,7 +218,10 @@ bindkey '^L' vi-forward-word
 bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
 
+
+source_if_exists "$DOT_DIR/stow/.local/share/aliases"
+
 source_if_exists "$HOME/.localzshrc"
 source_if_exists "$XDG_CONFIG_HOME/localzshrc"
 
-start_default_tmux_session
+# start_default_tmux_session
