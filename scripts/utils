@@ -20,6 +20,7 @@ warn() {
 
 err_exit() {
     fail $*
+    sleep 3
     exit 1
 }
 
@@ -426,21 +427,24 @@ sh_curl() {
     curl -sSL "$1" | bash
 }
 
-bootstrap() {
+environs() {
     export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
     export PNPM_HOME="$HOME/.local/share/pnpm"
     export PATH="$HOME/.local/bin:$PNPM_HOME:/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="$HOME/.local/opt/brew/bin:$PATH"
     export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
-    # export HOMEBREW_NO_ENV_HINTS=1
+    export HOMEBREW_NO_ENV_HINTS=1
     export HOMEBREW_NO_AUTO_UPDATE=1
+}
+
+bootstrap() {
+    environs
 
     curdir=$(pwd)
 
     slog "Removing old logs"
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2> /dev/null
     keep_sudo_running
-    # min_packages_for_installer
 
     source_curl "${BASE_URL}/scripts/installs"
     source_curl "${BASE_URL}/scripts/group-installs"
@@ -456,7 +460,7 @@ bootstrap() {
     elif is_mac; then
         source_curl "${BASE_URL}/installers/macos/common"
     else
-        warn "unknown OS; cannot source common functions"
+        err_exit "unknown OS; skipping installation"
     fi
 
     slog "Installing $@ ..."
