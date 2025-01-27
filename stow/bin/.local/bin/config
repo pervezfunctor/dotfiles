@@ -3,7 +3,7 @@
 {
 
 if [[ -z "$DOT_DIR" ]]; then
-    source $DOT_DIR/scripts/utils
+    source $DOT_DIR/utils
     source $DOT_DIR/scripts/installs
 elif command -v curl > /dev/null; then
     source <(curl -sSL https://dub.sh/z3pTnAK)

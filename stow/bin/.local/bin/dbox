@@ -5,7 +5,7 @@
 if [[ -z "$DOT_DIR" ]]; then
     err_exit "DOT_DIR not set."
 else
-    source "$DOT_DIR/scripts/utils"
+    source "$DOT_DIR/utils"
 fi
 
 source "$DOT_DIR/stow/.local/share/fns"

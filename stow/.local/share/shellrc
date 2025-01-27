@@ -1,4 +1,4 @@
-source $DOT_DIR/scripts/utils
+source $DOT_DIR/utils
 
 export LANG=en_US.UTF-8
 
