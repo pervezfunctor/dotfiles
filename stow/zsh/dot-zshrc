@@ -224,4 +224,4 @@ source_if_exists "$DOT_DIR/stow/.local/share/aliases"
 source_if_exists "$HOME/.localzshrc"
 source_if_exists "$XDG_CONFIG_HOME/localzshrc"
 
-# start_default_tmux_session
+# one_shell_tmux

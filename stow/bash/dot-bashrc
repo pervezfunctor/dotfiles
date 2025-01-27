@@ -17,5 +17,5 @@ eval "$(fzf --bash)"
 
 source_if_exists "$DOT_DIR/stow/.local/share/aliases"
 
-# start_default_tmux_session
+# one_shell_tmux
 

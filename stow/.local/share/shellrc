@@ -59,7 +59,7 @@ function safe_push() {
 # webi paths etc
 [ -s "$XDG_CONFIG_HOME/envman/load.sh" ] && source "$XDG_CONFIG_HOME/envman/load.sh"
 
-start_default_tmux_session() {
+one_shell_tmux() {
     local tmux_session="default"
 
     [[ -n "$TMUX" || -n "$EMACS" || -n "$INSIDE_EMACS" || -n "$VIM" || -n "$VSCODE_RESOLVING_ENVIRONMENT" || "$TERM_PROGRAM" == "vscode" ]] && return
