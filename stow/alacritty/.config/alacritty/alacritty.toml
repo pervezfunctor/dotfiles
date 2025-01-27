@@ -1,8 +1,9 @@
-# import = ["$XDG_CONFIG_HOME/alacritty/catppuccin-frappe.toml"]
+[general]
+import = ["~/.config/alacritty/catppuccin-frappe.toml"]
 
 [window]
 # decorations = "none"
-opacity = 0.96
+opacity = 0.97
 
 [env]
 TERM = "xterm-256color"
