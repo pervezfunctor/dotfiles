@@ -2,6 +2,26 @@
 
 {
 
+macos_settings_install() {
+    defaults write -g NSWindowShouldDragOnGesture -bool true
+}
+
+macos_config_install() {
+    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R aerospace
+    stow -d $DOT_DIR/stow -t $HOME --dotfiles -R amethyst
+}
+
+ui_install() {
+    bi deluge
+    bi visual-studio-code
+    bic telegram
+    bic zoom
+    bic ghostty
+    bic google-chrome
+    bic microsoft-remote-desktop
+    bic nikitabobko/tap/aerospace
+}
+
 bic() {
     for cmd in "$@"; do
         brew install -q --cask "$cmd"
@@ -9,6 +29,10 @@ bic() {
 }
 
 core_install() {
+    slog "Install xcode"
+    xcode-select --install
+    brew_install
+
     bi coreutils bash
     bis curl wget trash tree unzip coreutils gum stow
 

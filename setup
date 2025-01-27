@@ -10,6 +10,6 @@ main() {
 
 bootstrap "dotfiles setup"
 
-slog "use 'group-installer command to install more packages"
+slog "Reboot and use 'group-installer command to install more packages"
 
 }
