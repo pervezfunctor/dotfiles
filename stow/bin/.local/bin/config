@@ -4,7 +4,7 @@
 
 if [[ -z "$DOT_DIR" ]]; then
     source $DOT_DIR/utils
-    source $DOT_DIR/scripts/installs
+    source $DOT_DIR/installers/common
 elif command -v curl > /dev/null; then
     source <(curl -sSL https://dub.sh/z3pTnAK)
 elif command -v wget > /dev/null; then

@@ -446,18 +446,18 @@ bootstrap() {
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2> /dev/null
     keep_sudo_running
 
-    source_curl "${BASE_URL}/scripts/installs"
+    source_curl "${BASE_URL}/installers/common"
 
     if is_apt; then
-        source_curl "${BASE_URL}/installers/apt/common"
+        source_curl "${BASE_URL}/installers/apt"
     elif is_rh; then
-        source_curl "${BASE_URL}/installers/dnf/common"
+        source_curl "${BASE_URL}/installers/dnf"
     elif is_suse; then
-        source_curl "${BASE_URL}/installers/suse/common"
+        source_curl "${BASE_URL}/installers/suse"
     elif is_arch; then
-        source_curl "${BASE_URL}/installers/arch/common"
+        source_curl "${BASE_URL}/installers/arch"
     elif is_mac; then
-        source_curl "${BASE_URL}/installers/macos/common"
+        source_curl "${BASE_URL}/installers/mac"
     else
         err_exit "unknown OS; skipping installation"
     fi
