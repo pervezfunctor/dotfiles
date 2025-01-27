@@ -2,6 +2,15 @@
 
 {
 
+export DEBIAN_FRONTEND=noninteractive
+
+if command -v apt-get > /dev/null; then
+    sudo apt-get install -y curl sudo
+else
+    echo "apt-get not found. Quitting."
+    exit 1
+fi
+
 si() {
     for p in "$@"; do
       slog "Installing package $p"
