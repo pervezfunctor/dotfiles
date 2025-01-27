@@ -5,9 +5,6 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 
-# eza bat fd fzf zoxide sd ripgrep lazygit doggo atuin direnv dust ncdu duf
-# jq curlie lsd gtop tldr curlie sd bottom xh
-
 main() {
         has_cmd git || err_exit "Install git before running this script"
 
@@ -16,7 +13,6 @@ main() {
 
         has_cmd brew || brew_install
         has_cmd brew || err_exit "brew not installed!"
-
 
         bi trash-cli wget curl unzip gawk urlview tmux jq tree-sitter just
         bis lsd shfmt gh gtop tldr shellcheck gum

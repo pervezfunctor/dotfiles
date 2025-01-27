@@ -5,16 +5,11 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
-    core_install
-    dotfiles_install
-
-    config_install
-
-    set_zsh_as_default
+    base_install
 }
 
-bootstrap "dotfiles setup(default)"
+bootstrap "dotfiles setup"
 
-slog "use 'installer' command to install more packages"
+slog "use 'group-installer command to install more packages"
 
 }

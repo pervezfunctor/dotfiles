@@ -28,9 +28,18 @@ distrobox_create_tumbleweed() {
     distrobox create --image opensuse/tumbleweed --home /home/pervez/homes/tw --name tw
 }
 
-distrobox_ublue_all() {
+distrobox_create_bluefin() {
     distrobox create --image ghcr.io/ublue-os/bluefin-cli --home /home/pervez/homes/bluefin-cli --name bluefin-cli
+}
+
+distrobox_create_wolfi() {
     distrobox create --image ghcr.io/ublue-os/wolfi-toolbox --home /home/pervez/homes/wolfi-ublue --name wolfi-ublue
+}
+
+distrobox_ublue_all() {
+    distrobox_create_bluefin
+    distrobox_create_wolfi
+
     distrobox create --image ghcr.io/ublue-os/ubuntu-toolbox --home /home/pervez/homes/ubuntu-ublue --name ubuntu-ublue
     distrobox create --image ghcr.io/ublue-os/fedora-toolbox --home /home/pervez/homes/fedora-ublue --name fedora-ublue
     distrobox create --image ghcr.io/ublue-os/arch-distrobox --home /home/pervez/homes/arch-ublue --name arch-ublue
