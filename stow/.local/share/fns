@@ -1,0 +1,46 @@
+#! /usr/bin/env bash
+
+distrobox_create_ubuntu() {
+    distrobox create --image ubuntu:latest --home /home/pervez/homes/ubuntu --name ubuntu
+}
+
+distrobox_create_arch() {
+    distrobox create --image archlinux:latest --home /home/pervez/homes/arch --name arch
+}
+
+distrobox_create_fedora() {
+    distrobox create --image fedora:latest --home /home/pervez/homes/fedora --name fedora
+}
+
+distrobox_create_centos() {
+    distrobox create --image centos:latest --home /home/pervez/homes/centos --name centos
+}
+
+distrobox_create_debian() {
+    distrobox create --image debian:latest --home /home/pervez/homes/debian --name debian
+}
+
+distrobox_create_rocky() {
+    distrobox create --image  quay.io/rockylinux/rockylinux:9 --home /home/pervez/homes/rocky --name rocky
+}
+
+distrobox_create_tumbleweed() {
+    distrobox create --image opensuse/tumbleweed --home /home/pervez/homes/tw --name tw
+}
+
+distrobox_ublue_all() {
+    distrobox create --image ghcr.io/ublue-os/bluefin-cli --home /home/pervez/homes/bluefin-cli --name bluefin-cli
+    distrobox create --image ghcr.io/ublue-os/wolfi-toolbox --home /home/pervez/homes/wolfi-ublue --name wolfi-ublue
+    distrobox create --image ghcr.io/ublue-os/ubuntu-toolbox --home /home/pervez/homes/ubuntu-ublue --name ubuntu-ublue
+    distrobox create --image ghcr.io/ublue-os/fedora-toolbox --home /home/pervez/homes/fedora-ublue --name fedora-ublue
+    distrobox create --image ghcr.io/ublue-os/arch-distrobox --home /home/pervez/homes/arch-ublue --name arch-ublue
+}
+
+distrobox_toolbox_all() {
+    distrobox create --image ubuntu-toolbox:latest --home /home/pervez/homes/ubuntu-toolbox --name ubuntu-toolbox
+    distrobox create --image fedora-toolbox:latest --home /home/pervez/homes/fedora-toolbox --name fedora-toolbox
+    distrobox create --image arch-distrobox:latest --home /home/pervez/homes/arch-distrobox --name arch-distrobox
+    distrobox create --image centos-toolbox:latest --home /home/pervez/homes/centos-toolbox --name centos-toolbox
+    distrobox create --image debian-toolbox:latest --home /home/pervez/homes/debian-toolbox --name debian-toolbox
+    distrobox create --image rockylinux-toolbox:9 --home /home/pervez/homes/rockylinux-toolbox --name rockylinux-toolbox
+}
