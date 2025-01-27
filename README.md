@@ -1,99 +1,65 @@
 # Ilm development environment
 
-### Installation on Fedora/Rocky
+### Base installation on Ubuntu/Fedora/Debian/Rocky/Macos/Arch/Tumbleweed
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/zEIpneC)"
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
 ```
 
-### Minimal installation on Ubuntu/Debian
+Reboot your machine and use `group-installer` command to setup your shell or workstation in virtual machine or your desktop.
 
 ```bash
-bash -c "$(wget -qO- https://dub.sh/aPKPT8V)"
+group-installer shell # or
+group-installer # You can pick from shell, ct, vm options
+group-installer help # to get all options and short descriptions
 ```
 
-### Installer
+`shell` installation will install and configure bash, zsh(shells with starship prompt), neovim(with lazyvim) and tmux. Installs many modern shell tools like
 
-Once you run one of the above scripts, you could then select what you want to install from the following options.
+- fzf
+- zoxide
+- fd
+- just
+- gh(github cli)
+- eza
 
-Following editors are supported
-
-- neovim
-- vscode
-- emacs
-
-Following languages are supported
-
-- python(pyenv and miniconda)
-- pnpm(web development)
-- cpp(cmake, boost, gcc, clang)
-- rust
-- go
-
-Following virtualization tools are supported
+When you group install `ct` following will be installed, along with `shell` packages above.
 
 - docker
 - podman
 - incus
-- libvirt
-- cockpit
-- ct(docker, podman, incus)
-- virt(ct and libvirt)
-
-If you want a good shell configuration, following options are supported
-
-- config (this will configure zsh, tmux, and git, but without installing any packages)
-- shell (installs all shell tools but without any config)
-
-On your desktop, following options are supported
-
-- alacritty
-- fonts
-- apps(telegram, zoom, chromium etc)
-
-For example if you need web and zsh environment, you would run
+- portainer
+- lazydocker
 
 ```bash
-bash -c "$(wget -qO- https://dub.sh/kceoClT)" -- web config
+group-installer ct
+```
+You could also install libvirt etc with group `vm` which includes `ct` packages
+
+For desktop group, following will be installed
+
+- ghostty terminal
+- vscode editor
+- nerd fonts for jetbrains mono, cascadia mono
+- apps(telegram, zoom, obsidian, chromium etc)
+
+In addition to the above group installs, you could use `installer` to setup various tools including `vscode`, `emacs`.
+
+```bash
+installer emacs # or
+installer vscode
 ```
 
-If I only need configuration without any packages(for eg: On arch linux, install any of zsh, git, tmux, neovim, emacs)
+If you run `installer` without any arguments, you will be provided with list of options to select from.
 
 ```bash
-bash -c "$(wget -qO- https://dub.sh/kceoClT)" -- config
+installer
+installer help # to get all options and short descriptions
 ```
 
-## Full Installations(Not recommended).
-
-IF you are on a desktop, you could install everything in go using the following commands.
-
-### MacOS
+You could also install necessary tools and libraries for the following languages.
+Following languages are supported. **Note**: For python just use `uv`.
 
 ```bash
-zsh -c "$(curl -sSL https://dub.sh/I2dJKhb)"
-```
-
-### Rocky Linux
-
-```bash
-bash -c "$(curl -sSL https://dub.sh/WFQOW36)"
-```
-
-### Fedora
-
-```bash
-bash -c "$(curl -sSL https://dub.sh/OKPDJA4)"
-```
-
-### Ubuntu
-
-```bash
-bash -c "$(wget -qO- https://dub.sh/NAWwPIu)"
-```
-
-### Debian
-
-```bash
-
-bash -c "$(wget -qO- https://dub.sh/6a0zdj1)"
+installer rust go cpp web
 ```
