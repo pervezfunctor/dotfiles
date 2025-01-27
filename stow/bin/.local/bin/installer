@@ -31,18 +31,8 @@ help() {
     echo "  config      config only for git, ssh, gpg, tmux, zsh, neovim."
     echo "  brew        homebrew for macos and linuxbrew for linux."
     echo "  essential   only essential tools like git, curl, wget, cmake."
+    echo "  help        show this help."
     echo ""
-}
-
-installer() {
-    while [[ "$#" -gt 0 ]]; do
-    if fn_exists "${1}_install"; then
-        "${1}_install"
-    else
-        err_exit "No such installer: $1"
-    fi
-    shift
-    done
 }
 
 main() {
@@ -68,6 +58,11 @@ main() {
         exit 1
     fi
 }
+
+if [[ "$1" == "help" ]]; then
+    help
+    exit 0
+fi
 
 CLICOLOR_FORCE=1 bootstrap "$@"
 

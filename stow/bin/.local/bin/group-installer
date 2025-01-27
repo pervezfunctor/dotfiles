@@ -11,7 +11,7 @@ fi
 INSTALL_OPTIONS=("min" "shell" "ct" "vm" "prog" "all")
 
 help() {
-    echo "Usage: $0 [OPTION1] [OPTION2] ..."
+    echo "Usage: $0 [OPTION]"
     echo "Options:"
     echo "  min         essential packages only."
     echo "  shell       min and shell tools and config for zsh, tmux, neovim."
@@ -19,6 +19,7 @@ help() {
     echo "  vm          ct and vm tools like buildah, libvirt."
     echo "  prog        vm and programming tools for rust, go, web, c++, python."
     echo "  all         everything(not recommended)."
+    echo "  help        show this help."
     echo ""
 }
 
@@ -45,6 +46,11 @@ main() {
         exit 1
     fi
 }
+
+if [[ "$1" == "help" ]]; then
+    help
+    exit 0
+fi
 
 CLICOLOR_FORCE=1 bootstrap "$@"
 

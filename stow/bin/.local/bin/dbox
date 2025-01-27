@@ -24,6 +24,7 @@ help() {
     echo "  bluefin     Bluefin distrobox."
     echo "  bluefin-all All bluefin defined distroboxes(bluefin, wolfi, fedora, arch, ubuntu)."
     echo "  toolboxes   All distroboxes from toolbox images(ubuntu, fedora, arch, centos, debian, rocky)."
+    echo "  help        Show this help."
     echo ""
 }
 
@@ -67,6 +68,11 @@ main() {
         exit 1
     fi
 }
+
+if [[ "$1" == "help" ]]; then
+    help
+    exit 0
+fi
 
 CLICOLOR_FORCE=1 bootstrap "$@"
 

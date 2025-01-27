@@ -5,11 +5,17 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
+    if [[ "$#" -eq 1 ]] && has_cmd "${1}-group_install"; then
+        "${1}-group_install"
+        exit 0
+    fi
+
     base_install
+    installer "$@"
 }
 
-bootstrap "dotfiles setup"
+bootstrap "$@"
 
-slog "Reboot and use 'group-installer' command to install more packages"
+slog "Installation done! Once you reboot you can use 'group-installer' command to install more packages"
 
 }
