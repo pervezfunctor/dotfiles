@@ -1,0 +1,51 @@
+#! /usr/bin/env bash
+
+{
+
+if [[ -z "$DOT_DIR" ]]; then
+    source <(curl -sSL https://dub.sh/z3pTnAK)
+else
+    source "$DOT_DIR/scripts/utils"
+fi
+
+INSTALL_OPTIONS=("min" "shell" "ct" "vm" "prog" "all")
+
+help() {
+    echo "Usage: $0 [OPTION1] [OPTION2] ..."
+    echo "Options:"
+    echo "  min         essential packages only."
+    echo "  shell       min and shell tools and config for zsh, tmux, neovim."
+    echo "  ct          shell and container tools - docker, podman, incus, distrobox."
+    echo "  vm          ct and vm tools like buildah, libvirt."
+    echo "  prog        vm and programming tools for rust, go, web, c++, python."
+    echo "  all         everything(not recommended)."
+    echo ""
+}
+
+main() {
+    if ! [[ "$#" -eq 0 ]]; then
+        "${1}-group_install"
+        exit 0
+    fi
+
+    if ! has_cmd gum; then
+        help
+        exit 1
+    fi
+
+    SELECTED_OPTION=$(gum choose "${INSTALL_OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
+
+    if [[ -n "$SELECTED_OPTION" ]]; then
+        echo ""
+        echo "Selected: $SELECTED_OPTION"
+        echo ""
+        "${1}-group_install"
+    else
+        slog "No option selected."
+        exit 1
+    fi
+}
+
+CLICOLOR_FORCE=1 bootstrap "$@"
+
+}
