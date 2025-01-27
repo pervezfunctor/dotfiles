@@ -147,6 +147,12 @@ alias dlogs="docker logs -f"
 alias lzg='lazygit'
 alias lzd='lazydocker'
 
+alias dbox='distrobox'
+alias dboxe='distrobox enter'
+alias dboxl='distrobox list'
+alias dboxr='distrobox run'
+alias dboxc='distrobox create'
+
 alias la=tree
 
 
