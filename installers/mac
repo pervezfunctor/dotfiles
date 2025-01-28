@@ -41,7 +41,7 @@ essential_install() {
     slog "Installing Essential packages"
 
     core_install
-    mise_install
+    # mise_install
 
     bis gawk p7zip cmake unar zip
 

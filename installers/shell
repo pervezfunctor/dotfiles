@@ -9,7 +9,7 @@ main() {
         has_cmd git || err_exit "Install git before running this script"
 
         webi_install
-        mise_install
+        # mise_install
 
         has_cmd brew || brew_install
         has_cmd brew || err_exit "brew not installed!"

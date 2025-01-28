@@ -51,7 +51,7 @@ main() {
         brew install -q trash-cli
         dotfiles_install
         webi_install
-        mise_install
+        # mise_install
 
         # brew install -q eza direnv starship atuin uutils
         brew install -q curlie lsd shfmt gh

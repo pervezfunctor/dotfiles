@@ -4,6 +4,9 @@
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell # zsh, neovim, tmux, modern linux tools
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- vm    # shell + docker, distrobox, libvirt
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- desktop # vm + vscode, ghostty/alacritty, chromium, obsidian etc
 ```
 
 Reboot your machine and use `group-installer` command to setup your shell or workstation in virtual machine or your desktop.
