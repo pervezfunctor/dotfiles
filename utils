@@ -378,7 +378,9 @@ mise_install() {
     slog "Installing mise"
     curl https://mise.run | sh
 
-    echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+    if ! grep -q 'eval "$(~/.local/bin/mise activate bash)"' ~/.bashrc; then
+        echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+    fi
 
     cmd_check mise
 }

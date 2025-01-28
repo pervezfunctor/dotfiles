@@ -560,7 +560,7 @@ brew_shell_install() {
 
     bis jq tree-sitter just lsd shfmt gh tldr shellcheck gum
     bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust
-    bis procs fzf fd hyperfine zoxide starship gping broot mcfly
+    bis procs fzf fd hyperfine zoxide starship
     # bis nushell gping ncdu httpie
 
     has_cmd gdu || has_cmd gdu-go || bi gdu
@@ -834,7 +834,7 @@ shell-group_install() {
 
     cmd_check atuin bat brew btm cheat choose curlie delta direnv doggo dotenv
     cmd_check duf dust eza fd fzf gawk gdu gh gum hyperfine jq just lazygit lsd
-    cmd_check ncdu nvim procs rg sd shellcheck shfmt starship tmux webi yq
+    cmd_check nvim procs rg sd shellcheck shfmt starship tmux webi yq
     cmd_check zoxide zsh htop
 }
 

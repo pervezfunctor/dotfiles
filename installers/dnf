@@ -39,9 +39,9 @@ sys_python_install() {
 }
 
 core_install() {
-    is_fedora || enable_epel
     si 'dnf-command(copr)'
     si 'dnf-command(config-manager)'
+    is_fedora || enable_epel
 
     update_packages
     base_dev_install
