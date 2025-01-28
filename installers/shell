@@ -18,7 +18,7 @@ main() {
         bis lsd shfmt gh shellcheck gum
         bis cheat curlie lazygit duf sd xh
         bis eza doggo atuin direnv dust
-        bis procs fzf fd hyperfine zoxide starship
+        bis procs fzf fd hyperfine zoxide
 
         has_cmd gdu || has_cmd gdu-go || bi gdu
         has_cmd nvim || bi neovim

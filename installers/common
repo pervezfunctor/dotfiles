@@ -62,12 +62,15 @@ astro_install() {
     slog "AstroNvim config done!"
 }
 
+starship_install() {
+    has_cmd starship && return 0
+
+    curl -sS https://starship.rs/install.sh | sh -s -- -y
+}
+
 bash_install() {
     slog "Configuring bash"
 
-    if ! has_cmd starship; then
-        curl -sS https://starship.rs/install.sh | sh -s -- -y
-    fi
     if ! grep -q starship ~/.bashrc ; then
         echo 'eval "$(starship init bash)"' >> ~/.bashrc
     fi
@@ -628,11 +631,12 @@ shell_install() {
     webi_shell_install
     brew_shell_install
 
+    starship_install
+    bash_install
+
     # go_shell_install
     # rust_shell_install
     # pnpm_shell_install
-
-    bash_install
 }
 
 alacritty_config_install() {
@@ -823,7 +827,7 @@ min-group_install() {
     base-group_install
     essential_install
 
-    cmd_check micro webi mise zip unar
+    cmd_check micro webi zip unar
 }
 
 shell-group_install() {
