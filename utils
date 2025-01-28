@@ -150,17 +150,7 @@ omv() {
     else
         return 1
     fi
-    slog "Moving $1 to $2"
-    mv "$1" "$2"
-}
 
-mv() {
-    if [ -e "$1" ]; then
-        srm "$2"
-    else
-        warn "$1 does not exist, cannot move to $2"
-        return 1
-    fi
     slog "Moving $1 to $2"
     mv "$1" "$2"
 }

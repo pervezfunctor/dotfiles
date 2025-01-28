@@ -63,7 +63,7 @@ essential_install() {
     core_install
     # mise_install
     sys_python_install
-    snap_install
+    is_ubuntu && snap_install
 
     si zip unar micro nala p7zip
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
