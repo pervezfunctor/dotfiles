@@ -49,7 +49,7 @@ essential_install() {
     core_install
     mise_install
     sys_python_install
-    snap_install
+    # snap_install
 
     si unar zip micro-editor 7zip
     si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel gum
@@ -64,7 +64,7 @@ cli_install() {
 
     si gh ShellCheck shfmt neovim tree-sitter gawk tmux urlview zsh
     si lazygit bottom sd lsd bat hyperfine fd fzf ripgrep zoxide cheat
-    si curlie git-delta jq duf lua54-luarocks python3-neovim htop
+    si curlie git-delta jq duf lua54-luarocks python3-neovim
 
     gh extension install github/gh-copilot
 }
