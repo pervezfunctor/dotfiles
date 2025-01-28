@@ -15,7 +15,7 @@ main() {
         has_cmd brew || err_exit "brew not installed!"
 
         bi trash-cli wget curl unzip gawk urlview tmux jq tree-sitter just
-        bis lsd shfmt gh gtop tldr shellcheck gum
+        bis lsd shfmt gh shellcheck gum
         bis cheat curlie lazygit duf sd xh
         bis eza doggo atuin direnv dust ncdu
         bis procs fzf fd hyperfine zoxide starship

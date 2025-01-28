@@ -558,7 +558,7 @@ brew_shell_install() {
 
     slog "shell tools with brew"
 
-    bis jq tree-sitter just lsd shfmt gh gtop tldr shellcheck gum httpie
+    bis jq tree-sitter just lsd shfmt gh tldr shellcheck gum httpie
     bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust ncdu
     bis procs fzf fd hyperfine zoxide starship nushell gping broot mcfly
 
@@ -831,7 +831,7 @@ shell-group_install() {
     config_install
     set_zsh_as_default
 
-    cmd_check atuin bat brew btm cheat choose curlie delta direnv doggo dotenv duf dust eza fd fzf gawk gdu gh gtop gum hyperfine jq just lazygit lsd ncdu nvim procs rg sd shellcheck shfmt starship tldr tmux webi yq z zoxide zsh
+    cmd_check atuin bat brew btm cheat choose curlie delta direnv doggo dotenv duf dust eza fd fzf gawk gdu gh gum hyperfine jq just lazygit lsd ncdu nvim procs rg sd shellcheck shfmt starship tmux webi yq z zoxide zsh
 }
 
 ct-group_install() {

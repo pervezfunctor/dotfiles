@@ -432,7 +432,8 @@ environs() {
     export PATH="$HOME/.local/bin:$PNPM_HOME:/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="$HOME/.local/opt/brew/bin:$PATH"
     export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
-    export HOMEBREW_NO_ENV_HINTS=1
+export HOMEBREW_NO_ENV_HINTS=1
+    export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
     export HOMEBREW_NO_AUTO_UPDATE=1
 }
 

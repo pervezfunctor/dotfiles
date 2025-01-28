@@ -54,7 +54,7 @@ main() {
         mise_install
 
         # brew install -q eza direnv starship atuin uutils
-        brew install -q curlie lsd shfmt gh lazygit gtop tldr
+        brew install -q curlie lsd shfmt gh
         brew install -q neovim neovide shellcheck gdu
         brew install -q git-delta procs fzf ripgrep fd hyperfine bat zoxide
         brew install -q cheat curlie lazygit duf choose-rust sd bottom xh

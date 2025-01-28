@@ -2,6 +2,8 @@ source $DOT_DIR/utils
 
 export LANG=en_US.UTF-8
 
+export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
+
 source_if_exists "$HOME/.cargo/env"
 
 export DOTNET_ROOT="$HOME/.dotnet"
@@ -82,3 +84,4 @@ one_shell_tmux() {
 # }
 
 source_if_exists "$DOT_DIR/stow/.local/share/aliases"
+
