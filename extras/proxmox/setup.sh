@@ -52,7 +52,7 @@ proxmox_cloud_init_vms_install() {
 }
 
 proxmox_packages_install() {
-    apt install -y git-core micro
+    apt-get -qq -y install git-core micro
 }
 
 }

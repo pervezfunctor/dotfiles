@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 if is_linux; then
-    alias upgrade="sudo apt-get update && sudo apt-get upgrade -y"
+    alias upgrade="sudo apt-get -qq update && sudo apt-get -qq -y upgrade"
     alias open="xdg-open"
 
     pbcopy() {
@@ -100,7 +100,7 @@ alias jf="code ~/programs/web/devfractal" # use j maybe?
 alias jd="code ~/.seartpy" # use j maybe?
 
 if is_ubuntu; then
-    alias si="sudo apt-get install -y"
+    alias si="sudo apt-get -qq -y install"
     alias ss="apt-cache search"
     alias sr="sudo apt-get purge"
 fi

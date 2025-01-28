@@ -5,7 +5,7 @@
 export DEBIAN_FRONTEND=noninteractive
 
 if command -v apt-get > /dev/null; then
-    sudo apt-get install -y curl sudo
+    sudo apt-get -qq -y install curl sudo
 else
     echo "apt-get not found. Quitting."
     exit 1
@@ -74,12 +74,11 @@ essential_install() {
     slog "Essential packages installation done!"
 }
 
-sudo apt install -y \
-  build-essential pkg-config autoconf bison clang rustc \
-  libssl-dev libreadline-dev zlib1g-dev libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev libjemalloc2 \
-  libvips imagemagick libmagickwand-dev mupdf mupdf-tools gir1.2-gtop-2.0 gir1.2-clutter-1.0 \
-  redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common
-sudo apt install wl-clipboard
+# sudo apt-get -qq -y install \
+#   build-essential pkg-config autoconf bison clang rustc \
+#   libssl-dev libreadline-dev zlib1g-dev libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev libjemalloc2 \
+#   libvips imagemagick libmagickwand-dev mupdf mupdf-tools gir1.2-gtop-2.0 gir1.2-clutter-1.0 \
+#   redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common wl-clipboard
 
 cli_install() {
     brew_install
@@ -124,7 +123,7 @@ vscode_install() {
         rm -f packages.microsoft.gpg
     fi
 
-    sudo apt-get update
+    sudo apt-get -qq update
     si code
 
     cmd_check code

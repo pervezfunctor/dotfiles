@@ -10,7 +10,7 @@ main() {
         exit 0
     fi
 
-    base_install
+    base-group_install
     installer "$@"
 }
 
