@@ -20,8 +20,7 @@ update_packages() {
 core_install() {
     update_packages
 
-    si curl wget git base-devel trash-cli tree micro
-    si tar unzip stow cmake base_devel
+    si curl wget git base-devel trash-cli tree micro tar unzip stow cmake
 }
 
 sys_python_install() {
