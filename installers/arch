@@ -21,9 +21,7 @@ core_install() {
     update_packages
 
     si curl wget git base-devel trash-cli tree micro
-    si tar unzip stow
-
-    cmd_check gcc g++ make cmake curl wget git trash tree stow
+    si tar unzip stow cmake base_devel
 }
 
 sys_python_install() {
@@ -41,7 +39,7 @@ essential_install() {
 
     core_install
 
-    zsh zsh-completions base_devel unarchiver zip
+    zsh zsh-completions unarchiver zip
     si gawk tmux pkg-config p7zip cmake
     si readline sqlite libffi zlib xz
 
@@ -67,8 +65,6 @@ cli_install() {
     si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
 
     gh extension install github/gh-copilot
-
-    cmd_check gawk gh shellcheck curlie shfmt sd lsd bat hyperfine fd fzf ripgrep zoxide tmux zsh
 }
 
 cpp_install() {
@@ -88,13 +84,16 @@ cpp_install() {
 
 vscode_install() {
     yay -Sy --noconfirm visual-studio-code-bin
+
+    cmd_check code
 }
 
 ui_install() {
     vscode_install
-    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard ghostty
+    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboardghostty
     flathub_install
     apps_install
+
 }
 
 cockpit_install() {
