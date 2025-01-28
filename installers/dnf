@@ -223,7 +223,7 @@ more_ui_install() {
 
     if is_kde; then
         si libadwaita-qt5 libadwaita-qt6 kde-runtime-docs kdeplasma-addons plasma-wallpapers-dynamic
-    else is_gnome; then
+    elif is_gnome; then
         si gnome-shell-extension-appindicator gnome-shell-extension-blur-my-shell
         si gnome-shell-extension-caffeine gnome-shell-extension-dash-to-dock
         si gnome-shell-extension-gsconnect
