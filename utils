@@ -170,7 +170,7 @@ get_os() {
     local ID=""
     if [ -f /etc/os-release ]; then
         . /etc/os-release
-        ID=${ID:-$NAME} # Use ID if available, fallback to NAME
+        ID=${ID:-$NAME}
     elif [ -f /etc/lsb-release ]; then
         . /etc/lsb-release
         ID=${DISTRIB_ID}
@@ -203,15 +203,6 @@ is_arch() {
 is_wsl() {
     [ -e /proc/version ] && grep -qi microsoft /proc/version
 }
-
-# is_ubuntu() {
-#     has_cmd lsb_release || return 1
-
-#     local OS
-#     OS=$(lsb_release -i | cut -d ':' -f2 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-
-#     [[ " ubuntu neon elementary linuxmint pop " =~ " $OS " ]]
-# }
 
 is_ubuntu() {
     local ID
