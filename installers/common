@@ -95,6 +95,8 @@ vscode_config_install() {
 zsh_config_install() {
     slog "zsh config"
 
+    fmv $HOME/.zsh $HOME/.zsh.bak
+
     smd $HOME/.zsh
     sclone --depth=1 https://github.com/sindresorhus/pure.git $HOME/.zsh/pure
     sclone --depth=1 https://github.com/djui/alias-tips.git $HOME/.zsh/alias-tips
@@ -106,6 +108,7 @@ zsh_config_install() {
 
 tmux_config_install() {
     slog "tmux config"
+    fmv $HOME/.tmux $HOME/.tmux.bak
 
     smd $XDG_CONFIG_HOME/tmux
     # fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf

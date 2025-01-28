@@ -46,7 +46,8 @@ core_install() {
     update_packages
     base_dev_install
 
-    si curl wget git-core trash-cli tree tar unzip which util-linux-user stow
+    si curl wget git-core trash-cli cmake tree tar unzip stow
+    si util-linux-user which
 }
 
 essential_install() {
