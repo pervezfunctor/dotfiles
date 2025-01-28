@@ -668,6 +668,11 @@ bin_config_install() {
 }
 
 config_install() {
+    if ! has_cmd stow; then
+        warn "stow not installed, skipping config"
+        return 1
+    fi
+
     has_cmd zsh && zsh_config_install
     has_cmd tmux && tmux_config_install
     has_cmd nvim && astro_install
@@ -828,7 +833,7 @@ shell-group_install() {
 
 ct-group_install() {
     shell-group_install
-    ct_install
+    ct_instal
 
     cmd_check incus docker podman distrobox
 }
