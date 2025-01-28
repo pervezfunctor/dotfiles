@@ -21,7 +21,7 @@ core_install() {
     update_packages
 
     si curl wget git base-devel trash-cli tree micro
-    si tar unzip
+    si tar unzip stow
 
     cmd_check gcc g++ make cmake curl wget git trash tree stow
 }
