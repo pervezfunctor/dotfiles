@@ -14,7 +14,7 @@ group-installer # You can pick from shell, ct, vm options
 group-installer help # to get all options and short descriptions
 ```
 
-`shell` installation will install and configure bash, zsh(shells with starship prompt), neovim(with lazyvim) and tmux. Installs many modern shell tools like
+`shell` installation will install and configure bash, zsh(shells with starship prompt), neovim(with astronvim) and tmux. Installs many modern shell tools like
 
 - fzf
 - zoxide
