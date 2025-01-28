@@ -35,8 +35,6 @@ core_install() {
 
     bi coreutils bash
     bis curl wget trash tree unzip coreutils gum stow
-
-    cmd_check curl wget trash tree unzip gum
 }
 
 essential_install() {
@@ -49,8 +47,6 @@ essential_install() {
     bis gawk p7zip cmake unar zip
 
     slog "Essential packages installation done!"
-
-    cmd_check awk tmux cmake unar zip
 }
 
 cli_install() {
@@ -61,8 +57,6 @@ cli_install() {
     bi install reattach-to-user-namespace
 
     gh extension install github/gh-copilot
-
-    cmd_check go rustc rg nvim neovide lazydocker starship gping broot mcfly jq
 }
 
 fonts_install() {

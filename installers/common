@@ -568,11 +568,6 @@ brew_shell_install() {
     alias gdu=gdu-go
 
     slog "shell tools with brew done!"
-
-    cmd_check gawk gh shellcheck curlie shfmt sd lsd gdu bat hyperfine
-    cmd_check fd fzf rg zoxide tmux zsh just eza doggo atuin direnv dust ncdu
-    cmd_check procs gtop tldr gum cheat lazygit duf sd choose btm
-    cmd_check starship delta
 }
 
 go_shell_install() {
@@ -811,11 +806,15 @@ base-group_install() {
     core_install
     dotfiles_install
     config_install
+
+    cmd_check gcc g++ make cmake curl wget git trash tree tar unzip stow
 }
 
 min-group_install() {
     base-group_install
     essential_install
+
+    cmd_check micro webi mise zip unar
 }
 
 shell-group_install() {
@@ -823,16 +822,22 @@ shell-group_install() {
     shell_install
     config_install
     set_zsh_as_default
+
+    cmd_check atuin bat brew btm cheat choose curlie delta direnv doggo dotenv duf dust eza fd fzf gawk gdu gh gtop gum hyperfine jq just lazygit lsd ncdu nvim procs rg sd shellcheck shfmt starship tldr tmux webi yq z zoxide zsh
 }
 
 ct-group_install() {
     shell-group_install
     ct_install
+
+    cmd_check incus docker podman distrobox
 }
 
 vm-group_install() {
     ct-group_install
     libvirt_install
+
+    cmd_check virt-manager cockpit
 }
 
 desktop-group_install() {
@@ -849,12 +854,16 @@ prog-group_install() {
     rust_install
     pnpm_install
     python_install
+
+    cmd_check go rustc pnpm uv pyenv conda
 }
 
 all-group_install() {
     prog-group_install
     asdf_install
     emacs_install
+
+    cmd_check asdf emacs
 }
 
 is_gnome() {
@@ -947,6 +956,40 @@ gnome_config_install() {
 
 }
 
+plasma_major_version() {
+    has_cmd plasmashell && plasmashell --version | cut -d' ' -f2 | cut -d'.' -f1
+}
+
+gnome_major_version() {
+    has_cmd gnome-shell && gnome-shell --version | cut -d' ' -f3 | cut -d'.' -f1
+}
+
+kwin_script_install() {
+    local SCRIPT="$1"
+
+    if plasmapkg2 -t kwinscript -l | grep -q "krohnkite"; then
+        echo "Upgrading KWin script $SCRIPT ..."
+        plasmapkg2 -t kwinscript -u "$SCRIPT"
+    else
+        echo "Installing KWin script $SCRIPT ..."
+        plasmapkg2 -t kwinscript -i "$SCRIPT"
+    fi
+}
+
+kde_settings() {
+    if ! is_kde; then
+        warn "Not running KDE, skipping KDE settings"
+        return 1
+    fi
+
+    if ! [[ $(plasma_major_version) -eq 6 ]]; then
+        warn "KDE Plasma 6 is required"
+        return 1
+    fi
+
+    kwin_script_install "krohnkite.kwinscript"
+}
+
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-hotkeys.sh
 gnome_keybindings() {
     # Alt+F4 is very cumbersome
@@ -1036,6 +1079,22 @@ ulauncher_install() {
     gtk-launch ulauncher.desktop >/dev/null 2>&1
     sleep 2 # ensure enough time for ulauncher to set defaults
     cp ~/.local/share/omakub/configs/ulauncher.json ~/.config/ulauncher/settings.json
+}
+
+gnome_settings() {
+        if ! is_gnome; then
+        warn "Not running GNOME, skipping GNOME keybindings"
+        return 1
+    fi
+
+    if [[ $(gnome_major_version) -lt 47 ]]; then
+        warn "GNOME 47 or later is required"
+        return 1
+    fi
+
+    gnome_keybindings
+    gnome_config_install
+    more_gnome_settings
 }
 
 }

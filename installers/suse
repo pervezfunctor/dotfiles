@@ -29,8 +29,6 @@ core_install() {
     sudo zypper install -y -t pattern devel_basis
 
     pipx install trash-cli
-
-    cmd_check gcc g++ make cmake curl wget git trash tree stow
 }
 
 snap_install() {
@@ -70,9 +68,6 @@ cli_install() {
     si curlie git-delta jq duf lua54-luarocks python3-neovim
 
     gh extension install github/gh-copilot
-
-    cmd_check gawk gh shellcheck curlie shfmt sd lsd bat hyperfine
-    cmd_check fd fzf ripgrep zoxide tmux zsh
 }
 
 cpp_install() {

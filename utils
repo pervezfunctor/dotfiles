@@ -167,17 +167,19 @@ is_mac() {
 }
 
 get_os() {
-    local ID
+    local ID=""
     if [ -f /etc/os-release ]; then
         . /etc/os-release
+        ID=${ID:-$NAME} # Use ID if available, fallback to NAME
     elif [ -f /etc/lsb-release ]; then
         . /etc/lsb-release
+        ID=${DISTRIB_ID}
     elif [ -f /etc/redhat-release ]; then
-        ID=$(cat /etc/redhat-release | awk '{print $1}')
+        ID=$(awk '{print $1}' /etc/redhat-release)
     else
-        ID=$(uname)
+        ID=$(uname -s)
     fi
-    echo "$ID" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]'
+    echo "$ID" | tr '[:upper:]' '[:lower:]'
 }
 
 is_debian() {
@@ -202,13 +204,19 @@ is_wsl() {
     [ -e /proc/version ] && grep -qi microsoft /proc/version
 }
 
+# is_ubuntu() {
+#     has_cmd lsb_release || return 1
+
+#     local OS
+#     OS=$(lsb_release -i | cut -d ':' -f2 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+
+#     [[ " ubuntu neon elementary linuxmint pop " =~ " $OS " ]]
+# }
+
 is_ubuntu() {
-    has_cmd lsb_release || return 1
-
-    local OS
-    OS=$(lsb_release -i | cut -d ':' -f2 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-
-    [[ " ubuntu neon elementary linuxmint pop " =~ " $OS " ]]
+    local ID
+    ID=$(get_os)
+    [[ "$ID" == *"ubuntu"* ]] || [[ "$ID" == *"neon"* ]] || [[ "$ID" == *"elementary"* ]] || [[ "$ID" == *"linuxmint"* ]] || [[ "$ID" == *"pop"* ]]
 }
 
 is_apt() {

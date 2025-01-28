@@ -32,8 +32,6 @@ core_install() {
     si software-properties-common apt-transport-https ca-certificates gpg
     si curl wget git-core trash-cli tree command-not-found
     si tar unzip cmake build-essential stow
-
-    cmd_check gcc g++ make cmake curl wget git trash tree command-not-found
 }
 
 sys_python_install() {
@@ -67,17 +65,21 @@ essential_install() {
     si zip unar micro nala p7zip
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 
-    cmd_check micro zip unar
 
     sys_python_install
 
     mise_install
     snap_install
 
-    cmd_check webi mise brew snap
-
     slog "Essential packages installation done!"
 }
+
+sudo apt install -y \
+  build-essential pkg-config autoconf bison clang rustc \
+  libssl-dev libreadline-dev zlib1g-dev libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev libjemalloc2 \
+  libvips imagemagick libmagickwand-dev mupdf mupdf-tools gir1.2-gtop-2.0 gir1.2-clutter-1.0 \
+  redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common
+sudo apt install wl-clipboard
 
 cli_install() {
     brew_install
@@ -99,10 +101,11 @@ cpp_install() {
     si doxygen graphviz ccache cppcheck pre-commit
     si valgrind systemtap ltrace strace lldb lld
 
-    cmd_check gcc g++ gdb clang clang-tidy clang-format
-
     cmake_install
     conan_install
+
+    cmd_check gcc g++ gdb clang clang-tidy clang-format
+    cmd_check cmake conan
 
     slog "C++ installation done!"
 }
@@ -168,14 +171,14 @@ ct_install() {
     docker_install
     portainer_install
     podman_install
-    si buildah distrobox
     cockpit_install
-
+    si buildah distrobox
 }
 
 virt_install() {
     ct_install
     vm_install
+
     code_server_install
 }
 
