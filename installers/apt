@@ -83,7 +83,7 @@ cli_install() {
     webi_install
 
     si gawk tmux pkg-config urlview gh shellcheck zsh git just htop
-    si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide shfmt
+    si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide shfmt tree-sitter-cli
 
     gh extension install github/gh-copilot
 

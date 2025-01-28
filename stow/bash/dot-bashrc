@@ -6,7 +6,7 @@ source $DOT_DIR/stow/.local/share/shell/shellrc
 # if interactive shell then return
 [[ $- == *i* ]] || return
 
-has_cmd mise && eval "$(mise activate bash)"
+has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 has_cmd direnv && eval "$(direnv hook bash)"
 has_cmd zoxide && eval "$(zoxide init bash)"
 has_cmd fzf && source <(fzf --bash)
