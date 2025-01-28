@@ -53,7 +53,7 @@ cli_install() {
     brew_install
 
     si neovim github-cli shellcheck shfmt python-pynvim
-    si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
+    si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide htop
 
     gh extension install github/gh-copilot
 }

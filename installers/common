@@ -831,7 +831,7 @@ shell-group_install() {
     config_install
     set_zsh_as_default
 
-    cmd_check atuin bat brew btm cheat choose curlie delta direnv doggo dotenv duf dust eza fd fzf gawk gdu gh gum hyperfine jq just lazygit lsd ncdu nvim procs rg sd shellcheck shfmt starship tmux webi yq z zoxide zsh
+    cmd_check atuin bat brew btm cheat choose curlie delta direnv doggo dotenv duf dust eza fd fzf gawk gdu gh gum hyperfine jq just lazygit lsd ncdu nvim procs rg sd shellcheck shfmt starship tmux webi yq z zoxide zsh htop
 }
 
 ct-group_install() {

@@ -82,7 +82,7 @@ cli_install() {
     brew_install
     webi_install
 
-    si gawk tmux pkg-config urlview gh shellcheck zsh git just
+    si gawk tmux pkg-config urlview gh shellcheck zsh git just htop
     si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide shfmt
 
     gh extension install github/gh-copilot
