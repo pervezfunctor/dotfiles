@@ -38,20 +38,13 @@ essential_install() {
     slog "Installing essential packages"
 
     core_install
-
-    zsh zsh-completions unarchiver zip
-    si gawk tmux pkg-config p7zip cmake
-    si readline sqlite libffi zlib xz
-
-    sys_python_install
-
     mise_install
-
-    si pkgfile
-    si gum
-    sudo pkgfile --update
-
+    sys_python_install
     yay -Sy --noconfirm snapd
+
+    si zsh zsh-completions unarchiver zip gawk tmux pkg-config
+    si  p7zip cmake readline sqlite libffi zlib xz pkgfile gum
+    sudo pkgfile --update
 
     slog "Essential packages installation done!"
 }
@@ -59,7 +52,6 @@ essential_install() {
 cli_install() {
     webi_install
     brew_install
-    webi curlie
 
     si neovim github-cli shellcheck shfmt python-pynvim
     si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide
@@ -89,11 +81,11 @@ vscode_install() {
 }
 
 ui_install() {
+    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard ghostty
+
     vscode_install
-    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboardghostty
     flathub_install
     apps_install
-
 }
 
 cockpit_install() {
@@ -132,8 +124,9 @@ ct_install() {
     docker_install
     portainer_install
     podman_install
-    si buildah distrobox
     cockpit_install
+
+    si buildah distrobox
 }
 
 incus_install() {
@@ -143,6 +136,7 @@ incus_install() {
 virt_install() {
     ct_install
     vm_install
+
     code_server_install
 }
 

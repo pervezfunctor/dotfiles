@@ -61,15 +61,13 @@ essential_install() {
     slog "Installing essential packages"
 
     core_install
+    mise_install
+    sys_python_install
+    snap_install
 
     si zip unar micro nala p7zip
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 
-
-    sys_python_install
-
-    mise_install
-    snap_install
 
     slog "Essential packages installation done!"
 }
@@ -131,7 +129,6 @@ vscode_install() {
 
 ui_install() {
     si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
-    cmd_check chromium-browser virt-manager xsel xclip
 
     vscode_install
     flathub_install
@@ -171,6 +168,7 @@ ct_install() {
     portainer_install
     podman_install
     cockpit_install
+
     si buildah distrobox
 }
 

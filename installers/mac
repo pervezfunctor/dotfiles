@@ -41,7 +41,6 @@ essential_install() {
     slog "Installing Essential packages"
 
     core_install
-    webi_install
     mise_install
 
     bis gawk p7zip cmake unar zip
@@ -50,6 +49,8 @@ essential_install() {
 }
 
 cli_install() {
+    webi_install
+
     bis tmux pkg-config urlview
     bi zsh-syntax-highlighting zsh-autosuggestions
     bi golang rust ripgrep neovim neovide luarocks lazydocker

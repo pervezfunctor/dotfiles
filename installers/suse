@@ -47,14 +47,13 @@ essential_install() {
     slog "Installing essential packages"
 
     core_install
+    mise_install
+    sys_python_install
+    snap_install
 
     si unar zip micro-editor 7zip
     si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel gum
 
-    sys_python_install
-
-    mise_install
-    snap_install
 
     slog "Essential packages installation done!"
 }
@@ -91,10 +90,13 @@ vscode_install() {
     sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/zypp/repos.d/vscode.repo'
     sudo zypper refresh
     si code
+
+    cmd_check code
 }
 
 ui_install() {
     si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard ghostty
+
     vscode_install
     flathub_install
     apps_install
@@ -137,13 +139,15 @@ ct_install() {
     incus_install
     docker_install
     podman_install
-    si buildah distrobox
     cockpit_install
+
+    si buildah distrobox
 }
 
 virt_install() {
     vm_install
     ct_install
+
     code_server_install
 }
 
