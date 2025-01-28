@@ -52,10 +52,10 @@ webi-shell_install() {
 astro_install() {
     slog "AstroNvim config"
 
-    fmv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
-    fmv ~/.local/share/nvim ~/.local/share/nvim.bak
-    fmv ~/.local/state/nvim ~/.local/state/nvim.bak
-    fmv ~/.cache/nvim ~/.cache/nvim.bak
+    omv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
+    omv ~/.local/share/nvim ~/.local/share/nvim.bak
+    omv ~/.local/state/nvim ~/.local/state/nvim.bak
+    omv ~/.cache/nvim ~/.cache/nvim.bak
 
     stowdf nvim
 
@@ -95,7 +95,7 @@ vscode_config_install() {
 zsh_config_install() {
     slog "zsh config"
 
-    fmv $HOME/.zsh $HOME/.zsh.bak
+    omv $HOME/.zsh $HOME/.zsh.bak
 
     smd $HOME/.zsh
     sclone --depth=1 https://github.com/sindresorhus/pure.git $HOME/.zsh/pure
@@ -108,7 +108,7 @@ zsh_config_install() {
 
 tmux_config_install() {
     slog "tmux config"
-    fmv $HOME/.tmux $HOME/.tmux.bak
+    omv $HOME/.tmux $HOME/.tmux.bak
 
     smd $XDG_CONFIG_HOME/tmux
     # fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
@@ -356,7 +356,7 @@ doom_install() {
     slog "Installing doom"
 
     sclone --depth=1 https://github.com/doomemacs/doomemacs $XDG_CONFIG_HOME/emacs
-    fmv $XDG_CONFIG_HOME/doom $XDG_CONFIG_HOME/doom.backup
+    omv $XDG_CONFIG_HOME/doom $XDG_CONFIG_HOME/doom.backup
     sclone https://github.com/pervezfunctor/doomemacs-config $XDG_CONFIG_HOME/doom
 
     slog "Configure doom"
