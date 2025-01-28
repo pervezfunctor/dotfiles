@@ -1082,7 +1082,7 @@ ulauncher_install() {
 }
 
 gnome_settings() {
-        if ! is_gnome; then
+    if ! is_gnome; then
         warn "Not running GNOME, skipping GNOME keybindings"
         return 1
     fi
