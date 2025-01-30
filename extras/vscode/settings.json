@@ -41,7 +41,7 @@
   "editor.inlineSuggest.enabled": true,
   "editor.insertSpaces": true,
   "editor.lightbulb.enabled": "off",
-  "editor.lineNumbers": "off",
+  "editor.lineNumbers": "relative",
   "editor.linkedEditing": true,
   "editor.minimap.enabled": false,
   "editor.multiCursorModifier": "ctrlCmd",
@@ -174,7 +174,7 @@
   "workbench.settings.openDefaultSettings": false,
   "workbench.sideBar.location": "right",
   "workbench.startupEditor": "none",
-  "workbench.statusBar.visible": true,
+  "workbench.statusBar.visible": true
   // "terminal.integrated.defaultProfile.linux": "bash",
   // "terminal.integrated.profiles.linux": {
   //   "bash": {
