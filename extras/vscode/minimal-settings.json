@@ -1,0 +1,65 @@
+{
+  "editor.fontFamily": "'JetbrainsMono Nerd Font Mono', 'Source Code Pro', 'Droid Sans Mono', 'monospace', monospace",
+  "editor.fontLigatures": true,
+  "editor.fontSize": 15,
+  "editor.acceptSuggestionOnEnter": "smart",
+  "editor.autoIndent": "advanced",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.detectIndentation": true,
+  "editor.emptySelectionClipboard": false,
+  "editor.find.autoFindInSelection": "never",
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.glyphMargin": true,
+  "editor.gotoLocation.multipleDefinitions": "goto",
+  "editor.gotoLocation.multipleImplementations": "goto",
+  "editor.guides.indentation": false,
+  "editor.indentSize": 2,
+  "editor.inlineSuggest.enabled": true,
+  "editor.insertSpaces": true,
+  "editor.lightbulb.enabled": "off",
+  "editor.lineNumbers": "relative",
+  "editor.linkedEditing": true,
+  "editor.multiCursorModifier": "ctrlCmd",
+  "editor.parameterHints.cycle": true,
+  "editor.renderWhitespace": "boundary",
+  "editor.rulers": [
+    80
+  ],
+  "editor.smoothScrolling": true,
+  "editor.snippetSuggestions": "bottom",
+  "editor.suggest.localityBonus": true,
+  "editor.suggestSelection": "first",
+  "editor.tabCompletion": "on",
+  "editor.tabSize": 2,
+  "editor.trimAutoWhitespace": true,
+  "editor.wordBasedSuggestions": "off",
+  "editor.wordWrap": "on",
+  "files.autoSave": "onFocusChange",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "git.openRepositoryInParentFolders": "always",
+  "terminal.integrated.fontFamily": "JetbrainsMono Nerd Font Mono",
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "host-spawn",
+      "args": [
+        "bash"
+      ]
+    },
+    "zsh": {
+      "path": "host-spawn",
+      "args": [
+        "bash"
+      ]
+    }
+  },
+  "editor.minimap.enabled": false,
+  "git.autofetch": true,
+  "window.commandCenter": true,
+  "workbench.commandPalette.preserveInput": true,
+  "workbench.editor.highlightModifiedTabs": true,
+  "workbench.colorTheme": "Catppuccin Frappé"
+}
