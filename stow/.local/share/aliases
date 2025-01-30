@@ -127,7 +127,7 @@ alias gb='git branch'
 alias gbc='git checkout -b'
 alias gbc='git checkout -b'
 alias gsl='git stash list'
-alias gpp=safe_push "$@"
+alias gpp='safe_push "$@"'
 alias clone='gh repo clone'
 alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
 
