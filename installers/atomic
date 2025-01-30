@@ -1,0 +1,59 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -sSL https://dub.sh/z3pTnAK)
+
+vscode_flatpak_config() {
+    flatpak install com.visualstudio.code.tool.podman
+}
+
+nix_install() {
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
+    nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+    # nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+    nix-channel --update
+    # nix-shell '<home-manager>' -A install
+    nix-env -iA nixpkgs.gtop
+}
+
+ui_install() {
+    flathub_install
+    apps_install
+}
+
+ami() {
+    for pkg in "$@"; do
+        slog "Installing appImage package $pkg"
+        appman install "$pkg"
+    done    
+}
+
+appman_install() {
+    has_cmd appman && return 0
+
+    wget -q https://raw.githubusercontent.com/ivan-hc/AM/main/AM-INSTALLER && chmod a+x ./AM-INSTALLER && echo 2 ./AM-INSTALLER | trash ./AM-INSTALLER
+    
+    cmd_check appman
+}
+
+atomic_flatpak_apps_install() {
+    fpi app.devsuite.Ptyxis
+    fpi org.wireshark.Wireshark
+    fpi sh.cider.Cider
+    fpi com.bitwarden.desktop
+    fpi dev.neovide.neovide
+    fpi io.dbeaver.DBeaverCommunity
+    fpi io.podman_desktop.PodmanDesktop
+    fpi io.github.zyedidia.micro
+}
+more_essential_install() {
+    ami install atuin jq zoxide lsd gh shellcheck gum
+    ami install cheat curlie duf sd eza doggo dust 
+    ami install procs fzf fd hyperfine gping tmux nvim 
+    # tree-sitter just lazygit xh direnv shfmt tldr
+}
+
+}
