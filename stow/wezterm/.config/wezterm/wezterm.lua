@@ -8,7 +8,7 @@ return {
 	font = wezterm.font('JetBrains Mono'),
 	macos_window_background_blur = 30,
 	window_background_opacity = 0.9,
-	window_decorations = 'RESIZE',
+	-- window_decorations = 'RESIZE',
 
 	-- keys = {
 		-- {
