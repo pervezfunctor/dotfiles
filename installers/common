@@ -18,9 +18,9 @@ appman_install() {
 }
 
 amm_shell_install() {
-    ami install atuin jq zoxide lsd gh shellcheck gum
-    ami install cheat curlie duf sd eza doggo dust 
-    ami install procs fzf fd hyperfine gping tmux nvim 
+    ami atuin jq zoxide lsd gh shellcheck gum
+    ami cheat curlie duf sd eza doggo dust 
+    ami procs fzf fd hyperfine gping tmux nvim 
     # tree-sitter just lazygit xh direnv shfmt tldr
 }
 
