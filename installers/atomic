@@ -6,9 +6,11 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 
 vscode_flatpak_install() {
     fpi com.visualstudio.code
-    flatpak install com.visualstudio.code.tool.podman
+    fpi com.visualstudio.code.tool.podman
     alias code="flatpak run com.visualstudio.code"
+    cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 flatpak run com.visualstudio.code --install-extension  
 }
+
 
 nix_install() {
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
