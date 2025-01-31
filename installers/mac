@@ -51,11 +51,12 @@ essential_install() {
 cli_install() {
     webi_install
 
-    bis tmux pkg-config urlview htop
+    bis tmux pkg-config urlview htop starship gping
+    bis broot mcfly jq
+
     bi zsh-syntax-highlighting zsh-autosuggestions
     bi golang rust ripgrep neovim neovide luarocks lazydocker
-    bi starship gping broot mcfly jq
-    bi install reattach-to-user-namespace
+    bi reattach-to-user-namespace
 
     gh extension install github/gh-copilot
 }
@@ -85,10 +86,6 @@ virt_install() {
     dir_exists /Applications/Docker.app || bic docker
 
     slog "Virtualization packages installation done!"
-}
-
-python_uv_install() {
-    curl -LsSf https://astral.sh/uv/install.sh | sh
 }
 
 pyenv_mac_install() {
