@@ -18,6 +18,12 @@ si() {
     done
 }
 
+pacstall_install() {
+    has_cmd pacstall && return 1
+
+    sudo bash -c "$(curl -fsSL https://pacstall.dev/q/install)"
+}
+
 update_packages() {
     slog "Updating"
 
@@ -63,6 +69,7 @@ essential_install() {
     core_install
     # mise_install
     sys_python_install
+    pacstall_install
     is_ubuntu && snap_install
 
     si zip unar micro nala p7zip
