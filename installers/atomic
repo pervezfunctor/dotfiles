@@ -8,9 +8,8 @@ vscode_flatpak_install() {
     fpi com.visualstudio.code
     fpi com.visualstudio.code.tool.podman
     alias code="flatpak run com.visualstudio.code"
-    cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 flatpak run com.visualstudio.code --install-extension  
+    cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 flatpak run com.visualstudio.code --install-extension
 }
-
 
 nix_install() {
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
@@ -23,9 +22,19 @@ nix_install() {
     nix-env -iA nixpkgs.gtop
 }
 
+atomic_python_install() {
+    python3 -m ensurepip --upgrade
+    python3 -m pip install --upgrade pip
+    python3 -m pip install --upgrade pipx
+    python3 -m pip install --upgrade uv
+    pipx install trash-cli
+}
+
 main() {
     appman_install
     amm_shell_install
+    asdf_install
+    mise_install
     nerd_font_install
     vscode_flatpak_install
     config_install

@@ -2,26 +2,96 @@
 
 {
 
+
+webi_install() {
+    has_cmd webi && return 0
+    has_cmd ~/.local/bin/webi && return 0
+
+    curl -sS https://webi.sh/webi | sh
+    source "$XDG_CONFIG_HOME/envman/load.sh"
+    webi pathman
+
+    cmd_check webi
+}
+
+mise_install() {
+    has_cmd mise && return 0
+    has_cmd ~/.local/bin/mise && return 0
+    slog "Installing mise"
+    curl https://mise.run | MISE_QUIET=1 sh
+    eval "$($HOME/.local/bin/mise activate bash)"
+    ~/.local/bin/mise use -g usage
+    ~/.local/bin/mise settings experimental=true
+
+    cmd_check mise
+}
+
+cargoi() {
+  for p in "$@"; do
+    slog "Installing cargo package $p"
+    cargo +stable install --locked "$p"
+  done
+}
+
+bi() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        brew install -q "$p"
+    done
+}
+
+bis() {
+    for p in "$@"; do
+        slog "Installing package $p"
+        has_cmd "$p" || brew install -q "$p"
+    done
+}
+
+wis() {
+    for p in "$@"; do
+        slog "Installing webi package $p"
+        has_cmd $p || webi $p
+    done
+}
+
 ami() {
     for pkg in "$@"; do
         slog "Installing appImage package $pkg"
         appman install "$pkg"
-    done    
+    done
 }
 
 appman_install() {
     has_cmd appman && return 0
 
     wget -q https://raw.githubusercontent.com/ivan-hc/AM/main/AM-INSTALLER && chmod a+x ./AM-INSTALLER && echo 2 ./AM-INSTALLER | rm -f ./AM-INSTALLER
-    
+
     cmd_check appman
 }
 
+mis() {
+    for pkg in "$@"; do
+        slog "Installing mise package $pkg"
+        has_cmd $pkg || ~/.local/bin/mise install "$pkg"
+    done
+}
+
+mi() {
+    for pkg in "$@"; do
+        slog "Installing mise package $pkg"
+        ~/.local/bin/mise install "$pkg"
+    done
+}
+
+mise_shell_install() {
+    mis tree-sitter just lazygit lazydocker starship shfmt ripgrep
+    mis lsd gh shellcheck gum xh bottom fzf fd hyperfine
+    mis cheat duf eza dust zoxide gdu bat choose jq yq tmux
+}
+
 amm_shell_install() {
-    ami atuin jq zoxide lsd gh shellcheck gum
-    ami cheat curlie duf sd eza doggo dust 
-    ami procs fzf fd hyperfine gping tmux nvim 
-    # tree-sitter just lazygit xh direnv shfmt tldr
+    ami atuin curlie sd doggo gping procs nvim lsd gh shellcheck gum
+    ami atuin jq zoxide fzf fd hyperfine tmux duf sd eza dust cheat curlie
 }
 
 flathub_install() {
@@ -49,8 +119,7 @@ apps_install() {
     fi
 
     slog "Installing flatpak apps"
-    # fpi com.jetbrains.CLion
-    # fpi com.google.Chrome
+
     fpi org.telegram.desktop
     fpi org.deluge_torrent.deluge
     fpi us.zoom.Zoom
@@ -60,6 +129,8 @@ apps_install() {
     fpi md.obsidian.Obsidian
 
     alias wezterm="flatpak run org.wezfurlong.wezterm"
+
+    slog "Flatpak apps installation done!"
 }
 
 more_apps_install() {
@@ -71,6 +142,8 @@ more_apps_install() {
     fpi io.dbeaver.DBeaverCommunity
     fpi io.podman_desktop.PodmanDesktop
     fpi io.github.zyedidia.micro
+    # fpi com.jetbrains.CLion
+    # fpi com.google.Chrome
 }
 
 webi-shell_install() {
@@ -790,6 +863,12 @@ pyenv_miniconda_install() {
     fi
 
     cmd_check conda
+}
+
+python_uv_install() {
+    has_cmd uv && return 0
+
+    curl -LsSf https://astral.sh/uv/install.sh | sh
 }
 
 python_core_install() {

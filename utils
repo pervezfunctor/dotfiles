@@ -371,57 +371,8 @@ stownf() {
     done
 }
 
-webi_install() {
-    has_cmd webi && return 0
-    has_cmd ~/.local/bin/webi && return 0
-
-    curl -sS https://webi.sh/webi | sh
-    source "$XDG_CONFIG_HOME/envman/load.sh"
-    webi pathman
-
-    cmd_check webi
-}
-
-mise_install() {
-    has_cmd mise && return 0
-    has_cmd ~/.local/bin/mise && return 0
-
-    slog "Installing mise"
-    curl https://mise.run | sh
-
-    if ! grep -q 'eval "$(~/.local/bin/mise activate bash)"' ~/.bashrc; then
-        echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
-    fi
-
-    cmd_check mise
-}
-
-cargoi() {
-  for p in "$@"; do
-    slog "Installing cargo package $p"
-    cargo +stable install --locked "$p"
-  done
-}
-
-bi() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        brew install -q "$p"
-    done
-}
-
-bis() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        has_cmd "$p" || brew install -q "$p"
-    done
-}
-
-wis() {
-    for p in "$@"; do
-        slog "Installing webi package $p"
-        has_cmd $p || webi $p
-    done
+get_shell() {
+    echo $SHELL | sed 's/.*\///'
 }
 
 source_if_exists() {

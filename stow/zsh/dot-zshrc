@@ -29,6 +29,8 @@ has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate zsh)"
 has_cmd direnv && eval "$(direnv hook zsh)"
 has_cmd zoxide && eval "$(zoxide init zsh)"
 has_cmd fzf && source <(fzf --zsh)
+has_cmd $HOME/.local/bin/mise && eval "$($HOME/.local/bin/mise activate zsh)"
+
 # has_cmd atuin && eval "$(atuin init zsh)"
 # has_cmd fasd && eval "$(fasd --init auto)"
 

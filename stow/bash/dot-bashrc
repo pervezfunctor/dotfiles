@@ -10,6 +10,7 @@ has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 has_cmd direnv && eval "$(direnv hook bash)"
 has_cmd zoxide && eval "$(zoxide init bash)"
 has_cmd fzf && source <(fzf --bash)
+has_cmd $HOME/.local/bin/mise && eval "$($HOME/.local/bin/mise activate bash)"
 
 command -v starship > /dev/null && eval "$(starship init bash)"
 
