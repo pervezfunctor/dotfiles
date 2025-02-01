@@ -190,6 +190,12 @@ bash_install() {
     slog "bash config done!"
 }
 
+vscode_extensions_install() {
+    slog "Installing vscode extensions"
+    cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 code --install-extension
+    slog "vscode extensions installation done!"
+}
+
 vscode_config_install() {
     slog "vscode config"
 
@@ -199,6 +205,8 @@ vscode_config_install() {
         smd $XDG_CONFIG_HOME/Code/User
         scp $DOT_DIR/extras/vscode/settings.json $XDG_CONFIG_HOME/Code/User/settings.json
     fi
+
+    vscode_extensions_install
 
     slog "vscode config done!"
 }
