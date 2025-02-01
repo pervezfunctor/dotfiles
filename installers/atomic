@@ -32,9 +32,9 @@ atomic_python_install() {
 
 main() {
     appman_install
-    amm_shell_install
-    asdf_install
     mise_install
+    mise_shell_install
+    amm_shell_install
     nerd_font_install
     vscode_flatpak_install
     config_install

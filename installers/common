@@ -889,15 +889,6 @@ python_install() {
     anaconda_install
 }
 
-asdf_install() {
-    has_cmd asdf && return 1
-    dir_exists ~/.asdf && return 1
-
-    slog "Installing asdf"
-    git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
-    slog "asdf installation done!"
-}
-
 tailscale_install() {
     has_cmd tailscale && return 0
 
@@ -988,10 +979,10 @@ prog-group_install() {
 
 all-group_install() {
     prog-group_install
-    asdf_install
+    mise_install
     emacs_install
 
-    cmd_check asdf emacs
+    cmd_check mise emacs
 }
 
 is_gnome() {

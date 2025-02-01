@@ -17,8 +17,6 @@ export_if_exists() {
 
 source_if_exists $DOT_DIR/stow/.local/share/shellrc
 
-source_if_exists "$HOME/.asdf/asdf.sh"
-
 # Generated for envman. Do not edit.
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
@@ -73,8 +71,6 @@ else
     prompt pure
 fi
 
-# # append completions to fpath
-fpath=(${ASDF_DIR}/completions $fpath)
 # initialise completions with ZSH's compinit
 autoload -Uz compinit && compinit
 
