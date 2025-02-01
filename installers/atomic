@@ -35,13 +35,14 @@ main() {
     mise_install
 
     mise_shell_install
-    if has_cmd nu && ! grep -q 'has_cmd nu && nu'; then
-        echo "has_cmd nu && nu"
-    fi
-
     amm_shell_install
+
     nerd_font_install
+
+    flathub_install
     vscode_flatpak_install
+    apps_install
+
     config_install
 }
 
