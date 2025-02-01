@@ -20,8 +20,9 @@ mise_install() {
     slog "Installing mise"
     curl https://mise.run | MISE_QUIET=1 sh
     eval "$($HOME/.local/bin/mise activate bash)"
-    ~/.local/bin/mise use -g usage
-    ~/.local/bin/mise settings experimental=true
+    mise use -g usage
+    mise settings experimental=true
+    mise use -g cargo-binstall
 
     cmd_check mise
 }
@@ -87,6 +88,7 @@ mise_shell_install() {
     mis tree-sitter just lazygit lazydocker starship shfmt ripgrep
     mis lsd gh shellcheck gum xh bottom fzf fd hyperfine
     mis cheat duf eza dust zoxide gdu bat choose jq yq tmux
+    has_cmd nu || mise use -g cargo:nu
 }
 
 amm_shell_install() {
