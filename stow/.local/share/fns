@@ -1,6 +1,4 @@
-#! /usr/bin/env bash
-
-distrobox_create_ubuntu() {
+echodistrobox_create_ubuntu() {
     distrobox create --image ubuntu:latest --home /home/pervez/homes/ubuntu --name ubuntu
 }
 
@@ -48,9 +46,25 @@ distrobox_ublue_all() {
 distrobox_toolbox_all() {
     distrobox create --image ubuntu-toolbox:latest --home /home/pervez/homes/ubuntu-toolbox --name ubuntu-toolbox
     distrobox create --image fedora-toolbox:latest --home /home/pervez/homes/fedora-toolbox --name fedora-toolbox
-    distrobox create --image arch-distrobox:latest --home /home/pervez/homes/arch-distrobox --name arch-distrobox
+    distrobox create --image arch-toolbox:latest --home /home/pervez/homes/arch-toolbox --name arch-toolbox
     distrobox create --image centos-toolbox:latest --home /home/pervez/homes/centos-toolbox --name centos-toolbox
     distrobox create --image debian-toolbox:latest --home /home/pervez/homes/debian-toolbox --name debian-toolbox
     distrobox create --image rockylinux-toolbox:9 --home /home/pervez/homes/rockylinux-toolbox --name rockylinux-toolbox
 }
 
+toolbox_create_all() {
+    slog "Creating toolbox containers"
+
+    is_arch || toolbox create --assumeyes --distro arch arch
+    is_fedora || toolbox create --assumeyes --distro fedora fedora
+    is_ubuntu || toolbox create --assumeyes --distro ubuntu --release 24.10 ubuntu
+    # toolbox create --distro rhel --release 9.5 rhel
+
+    is_suse || toolbox create --assumeyes --image registry.opensuse.org/opensuse/toolbox:latest tw
+    is_rocky || toolbox create --assumeyes --image quay.io/rockylinux/rockylinux:9 rocky
+    # is_centos || toolbox create --image quay.io/toolbx-images/centos-toolbox:latest centos
+
+    toolbox create
+
+    slog "Done creating toolbox containers"
+}
