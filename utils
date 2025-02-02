@@ -398,11 +398,6 @@ environs() {
     export HOMEBREW_NO_AUTO_UPDATE=1
 }
 
-# write a function to return current running shell, bash or zsh or fish
-get_current_shell() {
-    
-}
-
 installer() {
     while [[ "$#" -gt 0 ]]; do
     if fn_exists "${1}_install"; then

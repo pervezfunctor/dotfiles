@@ -48,7 +48,7 @@ core_install() {
     base_dev_install
 
     si curl wget git-core trash-cli cmake tree tar unzip stow
-    si util-linux-user which
+    si util-linux-user which fuse fuse-libs zstd
 }
 
 essential_install() {
