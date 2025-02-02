@@ -4,35 +4,50 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-
 main() {
-        has_cmd git || err_exit "Install git before running this script"
+    has_cmd git || err_exit "Install git before running this script"
 
-        webi_install
-        # mise_install
-
-        has_cmd brew || brew_install
-        has_cmd brew || err_exit "brew not installed!"
-
-        bi trash-cli wget curl unzip gawk urlview tmux jq tree-sitter just
-        bis lsd shfmt gh shellcheck gum
-        bis cheat curlie lazygit duf sd xh
-        bis eza doggo atuin direnv dust
-        bis procs fzf fd hyperfine zoxide
-
-        has_cmd gdu || has_cmd gdu-go || bi gdu
-        has_cmd nvim || bi neovim
-        has_cmd rg || bi ripgrep
-        has_cmd batcat || has_cmd bat || bi bat
-        has_cmd delta || bi git-delta
-        has_cmd choose || bi choose-rust
-        has_cmd btm || bi bottom
-        gh extension install github/gh-copilot
-
-        dotfiles_install
-        config_install
+    if is_linux && has_cmd python3; then
+        atomic_python_install
     fi
+
+    if is_mac; then
+        brew_install
+    else
+        appman_install
+    fi
+
+    mise_install
+
+    if is_linux; then
+        mis tree-sitter just lazygit starship ripgrep gh xh
+        mis bottom fzf fd eza zoxide bat tmux duf
+        mise use -g cargo:git-delta
+        ami sd nvim
+
+        if has_cmd flatpak; then
+            smd ~/.local/share/fonts
+            jetbrains_nerd_font_install
+
+            fpi app.devsuite.Ptyxis
+            fpi org.wezfurlong.wezterm
+            alias wezterm="flatpak run org.wezfurlong.wezterm"
+        fi
+    elif is_mac; then
+        bis tree-sitter just lazygit starship gh xh git-delta sd luarocks
+        bis fzf fd eza zoxide bat tmux duf
+        bi bottom ripgrep neovim zsh-syntax-highlighting zsh-autosuggestions
+        bi reattach-to-user-namespace
+
+        bic wezterm font-jetbrains-mono-nerd-font
+    fi
+    gh extension install github/gh-copilot
+
+    dotfile_install
+    confile_install
 }
+
+is_linux || is_mac || err_exit "This script is only for Linux and Mac"
 
 bootstrap "Seartipy shell setup"
 
