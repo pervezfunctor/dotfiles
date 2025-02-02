@@ -16,6 +16,7 @@ command -v starship > /dev/null && eval "$(starship init bash)"
 
 eval "$(fzf --bash)"
 
+source_if_exists "$DOT_DIR/stow/.local/share/fns"
 source_if_exists "$DOT_DIR/stow/.local/share/aliases"
 
 # one_shell_tmux

@@ -217,6 +217,7 @@ bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
 
 
+source_if_exists "$DOT_DIR/stow/.local/share/fns"
 source_if_exists "$DOT_DIR/stow/.local/share/aliases"
 
 source_if_exists "$HOME/.localzshrc"
