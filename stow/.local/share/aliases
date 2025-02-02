@@ -153,6 +153,12 @@ alias dboxl='distrobox list'
 alias dboxr='distrobox run'
 alias dboxc='distrobox create'
 
+alias tbox='toolbox'
+alias tboxe='toolbox enter'
+alias tboxl='toolbox list'
+alias tboxr='toolbox run'
+alias tboxc='toolbox create'
+
 alias la=tree
 
 
