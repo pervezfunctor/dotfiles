@@ -22,14 +22,6 @@ nix_install() {
     nix-env -iA nixpkgs.gtop
 }
 
-atomic_python_install() {
-    python3 -m ensurepip --upgrade
-    python3 -m pip install --upgrade pip
-    python3 -m pip install --upgrade pipx
-    python3 -m pip install --upgrade uv
-    pipx install trash-cli
-}
-
 main() {
     appman_install
     mise_install
@@ -37,14 +29,19 @@ main() {
     mise_shell_install
     amm_shell_install
 
-    nerd_font_install
+    smd ~/.local/share/fonts
+    jetbrains_nerd_font_install
 
     flathub_install
     vscode_flatpak_install
     apps_install
 
+    dotfile_install
     config_install
 }
+
+
+is_linux || err_exit "This script is only for Linux"
 
 bootstrap "Immutable OS"
 

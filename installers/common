@@ -1,7 +1,6 @@
-#! /usr/bin/env bash
+    #! /usr/bin/env bash
 
 {
-
 
 webi_install() {
     has_cmd webi && return 0
@@ -17,9 +16,11 @@ webi_install() {
 mise_install() {
     has_cmd mise && return 0
     has_cmd ~/.local/bin/mise && return 0
+
     slog "Installing mise"
     curl https://mise.run | MISE_QUIET=1 sh
     eval "$($HOME/.local/bin/mise activate bash)"
+
     mise use -g usage
     mise settings experimental=true
     mise use -g cargo-binstall
@@ -93,7 +94,7 @@ mise_shell_install() {
 
 amm_shell_install() {
     ami atuin curlie sd doggo gping procs nvim lsd gh shellcheck gum
-    ami atuin jq zoxide fzf fd hyperfine tmux duf sd eza dust cheat curlie
+    ami jq zoxide fzf fd hyperfine tmux duf eza dust cheat curlie
 }
 
 flathub_install() {
@@ -420,17 +421,17 @@ monaspace_install() {
     frm /tmp/monaspace /tmp/monaspace.zip
 }
 
-nerd_font_install() {
-    smd ~/.local/share/fonts
-
-    if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
-        frm /tmp/monaspace /tmp/CascadiaMono.zip
+cascadia_nerd_font_install() {
+    if ! file_exists ~/.local/share/fonts/CaskaydiaMonoNerdFont-Regular.ttf; then
+        frm /tmp/cascadia /tmp/CascadiaMono.zip
         wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip -O /tmp/CascadiaMono.zip
-        unzip -qq -d /tmp/monaspace -o /tmp/CascadiaMono.zip
-        cp /tmp/monaspace/*.ttf ~/.local/share/fonts
-        frm /tmp/monaspace /tmp/CascadiaMono.zip
+        unzip -qq -d /tmp/cascadia -o /tmp/CascadiaMono.zip
+        cp /tmp/cascadia/*.ttf ~/.local/share/fonts
+        frm /tmp/cascadia /tmp/CascadiaMono.zip
     fi
+}
 
+monaspace_nerd_font_install() {
     if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
         frm /tmp/monaspace /tmp/Monaspace.zip
         wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip -O /tmp/Monaspace.zip
@@ -439,6 +440,9 @@ nerd_font_install() {
         frm /tmp/monaspace /tmp/Monaspace.zip
     fi
 
+}
+
+jetbrains_nerd_font_install() {
     if ! file_exists ~/.local/share/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf; then
         frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
         wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
@@ -446,7 +450,14 @@ nerd_font_install() {
         cp /tmp/jetbrains-mono/*.ttf ~/.local/share/fonts
         frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
     fi
+}
 
+nerd_font_install() {
+    smd ~/.local/share/fonts
+
+    cascadia_nerd_font_install
+    jetbrains_nerd_font_install
+    monaspace_nerd_font_install
 }
 
 fonts_install() {
@@ -873,6 +884,14 @@ pyenv_miniconda_install() {
     fi
 
     cmd_check conda
+}
+
+atomic_python_install() {
+    python3 -m ensurepip --upgrade
+    python3 -m pip install --upgrade pip
+    python3 -m pip install --upgrade pipx
+    python3 -m pip install --upgrade uv
+    pipx install trash-cli
 }
 
 python_uv_install() {
