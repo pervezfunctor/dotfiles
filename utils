@@ -398,7 +398,7 @@ environs() {
     export HOMEBREW_NO_AUTO_UPDATE=1
 }
 
-installer() {
+fg-installer() {
     while [[ "$#" -gt 0 ]]; do
     if fn_exists "${1}_install"; then
         "${1}_install"

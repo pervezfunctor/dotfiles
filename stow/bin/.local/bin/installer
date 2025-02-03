@@ -37,7 +37,7 @@ help() {
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        installer "$@"
+        fg-installer "$@"
         exit 0
     fi
 
@@ -52,7 +52,7 @@ main() {
         echo ""
         echo "Selected: $SELECTED_INSTALL_OPTIONS"
         echo ""
-        installer $SELECTED_INSTALL_OPTIONS
+        fg-installer $SELECTED_INSTALL_OPTIONS
     else
         slog "No options selected."
         exit 1
