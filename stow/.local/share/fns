@@ -68,3 +68,22 @@ toolbox_create_all() {
 
     slog "Done creating toolbox containers"
 }
+
+function safe_push() {
+    git stash -u && git push "$@" && git stash pop
+}
+
+one_shell_tmux() {
+    local tmux_session="default"
+
+    [[ -n "$TMUX" || -n "$EMACS" || -n "$INSIDE_EMACS" || -n "$VIM" || -n "$VSCODE_RESOLVING_ENVIRONMENT" || "$TERM_PROGRAM" == "vscode" ]] && return
+
+    tmux start-server
+
+    # Check and create session if not exists
+    if ! tmux has-session -t "$tmux_session" 2>/dev/null; then
+        tmux new-session -d -s "$tmux_session"
+    fi
+
+    exec tmux attach-session -t "$tmux_session"
+}

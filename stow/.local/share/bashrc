@@ -10,14 +10,15 @@ has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 has_cmd direnv && eval "$(direnv hook bash)"
 has_cmd zoxide && eval "$(zoxide init bash)"
 has_cmd fzf && source <(fzf --bash)
-has_cmd $HOME/.local/bin/mise && eval "$($HOME/.local/bin/mise activate bash)"
 
-command -v starship > /dev/null && eval "$(starship init bash)"
+has_cmd starship > /dev/null && eval "$(starship init bash)"
 
 eval "$(fzf --bash)"
 
 source_if_exists "$DOT_DIR/stow/.local/share/fns"
 source_if_exists "$DOT_DIR/stow/.local/share/aliases"
 
-# one_shell_tmux
+source_if_exists "$HOME/.localbashrc"
+source_if_exists "$XDG_CONFIG_HOME/localbashrc"
 
+# one_shell_tmux

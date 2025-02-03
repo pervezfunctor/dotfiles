@@ -4,6 +4,8 @@ export LANG=en_US.UTF-8
 
 export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
 
+source_if_exists "$HOME/.config/envman/load.sh"
+
 source_if_exists "$HOME/.cargo/env"
 
 export DOTNET_ROOT="$HOME/.dotnet"
@@ -53,28 +55,6 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
     [[ -f $XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh ]] && . $XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh || true
 
 fi
-
-function safe_push() {
-    git stash -u && git push "$@" && git stash pop
-}
-
-# webi paths etc
-[ -s "$XDG_CONFIG_HOME/envman/load.sh" ] && source "$XDG_CONFIG_HOME/envman/load.sh"
-
-one_shell_tmux() {
-    local tmux_session="default"
-
-    [[ -n "$TMUX" || -n "$EMACS" || -n "$INSIDE_EMACS" || -n "$VIM" || -n "$VSCODE_RESOLVING_ENVIRONMENT" || "$TERM_PROGRAM" == "vscode" ]] && return
-
-    tmux start-server
-
-    # Check and create session if not exists
-    if ! tmux has-session -t "$tmux_session" 2>/dev/null; then
-        tmux new-session -d -s "$tmux_session"
-    fi
-
-    exec tmux attach-session -t "$tmux_session"
-}
 
 # has_cmd fzf && {
 #     export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --prompt="> "'

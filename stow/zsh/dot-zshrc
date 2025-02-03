@@ -1,24 +1,9 @@
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export DOT_DIR=${DOT_DIR:-$HOME/.dotfiles}
 
-has_cmd() {
-    command -v "$1" > /dev/null
-}
-
-source_if_exists() {
-    if [[ -f "$1" ]]; then
-        source "$1"
-    fi
-}
-
-export_if_exists() {
-    [[ -d "$1" ]] && export PATH="$1:$PATH"
-}
+source $DOT_DIR/stow/.local/share/shell/shellrc
 
 source_if_exists $DOT_DIR/stow/.local/share/shellrc
-
-# Generated for envman. Do not edit.
-[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
 # if interactive shell then return
 [[ $- == *i* ]] || return
@@ -27,7 +12,6 @@ has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate zsh)"
 has_cmd direnv && eval "$(direnv hook zsh)"
 has_cmd zoxide && eval "$(zoxide init zsh)"
 has_cmd fzf && source <(fzf --zsh)
-has_cmd $HOME/.local/bin/mise && eval "$($HOME/.local/bin/mise activate zsh)"
 
 # has_cmd atuin && eval "$(atuin init zsh)"
 # has_cmd fasd && eval "$(fasd --init auto)"
@@ -99,8 +83,6 @@ if ! [[ -d $HOME/.zsh/alias-tips ]]; then
     has_cmd git && git clone --depth=1 https://github.com/djui/alias-tips.git $HOME/.zsh/alias-tips
 fi
 source_if_exists $HOME/.zsh/zsh-autosuggestions/alias-tips/alias-tips.plugin.zsh
-
-PATH=~/.console-ninja/.bin:$PATH
 
 # Copied from oh-my-zsh
 

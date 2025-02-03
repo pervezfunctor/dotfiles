@@ -180,12 +180,8 @@ starship_install() {
 bash_install() {
     slog "Configuring bash"
 
-    if ! grep -q starship ~/.bashrc ; then
-        echo 'eval "$(starship init bash)"' >> ~/.bashrc
-    fi
-
-    if ! grep -q $DOT_DIR/stow/.local/share/shellrc ~/.bashrc; then
-        echo "source $DOT_DIR/stow/.local/share/shellrc" >> ~/.bashrc
+    if ! grep -q $DOT_DIR/stow/.local/share/bashrc ~/.bashrc; then
+        echo "source $DOT_DIR/stow/.local/share/bashrc" >> ~/.bashrc
     fi
 
     slog "bash config done!"
