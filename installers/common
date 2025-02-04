@@ -808,7 +808,6 @@ bin_config_install() {
 
 config_install() {
     bash_config_install
-    bin_config_install
 
     if ! has_cmd stow; then
         warn "stow not installed, skipping config"
@@ -825,6 +824,7 @@ config_install() {
     has_cmd code && vscode_config_install
     has_cmd kitty && kitty_config_install
     has_cmd ghostty && ghostty_config_install
+    bin_config_install
 }
 
 poetry_install() {
