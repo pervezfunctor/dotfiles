@@ -23,9 +23,9 @@ main() {
         slog "Installing shell tools"
 
         mis tree-sitter just lazygit starship ripgrep gh xh
-        mis bottom fzf fd eza zoxide bat tmux duf
+        mis bottom fzf fd eza zoxide bat duf
         mise use -g cargo:git-delta
-        ami sd nvim
+        ami sd nvim tmux
 
         slog "shell tools installation done!"
 
