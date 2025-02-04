@@ -53,7 +53,7 @@ main() {
         slog "shell tools installation done!"
     fi
 
-    cmd_check tree-sitter just starship rg gh xh btm fzf fd eza zoxide bat tmux duf git-delta sd nvim
+    cmd_check tree-sitter just starship rg gh xh btm fzf fd eza zoxide bat tmux duf delta sd nvim
 
     gh extension install github/gh-copilot
 
