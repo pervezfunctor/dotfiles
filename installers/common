@@ -888,15 +888,20 @@ pyenv_miniconda_install() {
 atomic_python_install() {
     slog "python setup"
 
-    python3 -m ensurepip --force-reinstall --default-pip
-    python3 -m pip install --user --upgrade pip
-    python3 -m pip install --upgrade pipx
-    python3 -m pip install --upgrade uv
-    python3 -m pipx install trash-cli
+    python3 -m ensurepip --default-pip
+    python3 -m pip install --user --force-reinstall --upgrade pip
+    cmd_check pip
+
+    pip install --upgrade --force-reinstall pipx
+    cmd_check pipx
+
+    pip install --upgrade --force-reinstall uv
+    cmd_check uv
+
+    pipx install --force trash-cli
+    cmd_check trash
 
     slog "python setup done!"
-
-    cmd_check pip pipx trash
 }
 
 python_uv_install() {
