@@ -1,7 +1,7 @@
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export DOT_DIR=${DOT_DIR:-$HOME/.dotfiles}
 
-source $DOT_DIR/stow/.local/share/shell/shellrc
+source $DOT_DIR/stow/.local/share/shellrc
 
 source_if_exists $DOT_DIR/stow/.local/share/shellrc
 
@@ -59,7 +59,6 @@ fi
 autoload -Uz compinit && compinit
 
 source_if_exists /etc/zsh_command_not_found
-
 
 if [[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
     source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
@@ -160,12 +159,10 @@ bindkey -M emacs '^[[1;5C' forward-word
 # [Ctrl-LeftArrow] - move backward one word
 bindkey -M emacs '^[[1;5D' backward-word
 
-
 bindkey '\ew' kill-region                             # [Esc-w] - Kill from the cursor to the mark
 bindkey -s '\el' 'ls\n'                               # [Esc-l] - run command: ls
 # bindkey '^r' history-incremental-search-backward      # [Ctrl-r] - Search backward incrementally for a specified string. The string may begin with ^ to anchor the search to the beginning of the line.
 bindkey ' ' magic-space                               # [Space] - don't do history expansion
-
 
 # Edit the current command line in $EDITOR
 autoload -U edit-command-line
@@ -197,7 +194,6 @@ bindkey '^u' autosuggest-toggle
 bindkey '^L' vi-forward-word
 bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
-
 
 source_if_exists "$DOT_DIR/stow/.local/share/fns"
 source_if_exists "$DOT_DIR/stow/.local/share/aliases"
