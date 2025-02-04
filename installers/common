@@ -79,14 +79,14 @@ appman_install() {
 mis() {
     for pkg in "$@"; do
         slog "Installing mise package $pkg"
-        has_cmd $pkg || ~/.local/bin/mise install "$pkg"
+        has_cmd $pkg || ~/.local/bin/mise use -g "$pkg"
     done
 }
 
 mi() {
     for pkg in "$@"; do
         slog "Installing mise package $pkg"
-        ~/.local/bin/mise install "$pkg"
+        ~/.local/bin/mise use -g "$pkg"
     done
 }
 
