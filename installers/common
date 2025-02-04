@@ -886,8 +886,8 @@ pyenv_miniconda_install() {
 atomic_python_install() {
     slog "python setup"
 
-    python3 -m ensurepip --upgrade
-    python3 -m pip install --upgrade pip
+    python3 -m ensurepip --force-reinstall --default-pip
+    python3 -m pip install --user --upgrade pip
     python3 -m pip install --upgrade pipx
     python3 -m pip install --upgrade uv
     python3 -m pipx install trash-cli
