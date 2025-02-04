@@ -14,8 +14,10 @@ webi_install() {
 }
 
 mise_install() {
-    has_cmd mise && return 0
-    has_cmd ~/.local/bin/mise && return 0
+    if has_cmd mise || has_cmd ~/.local/bin/mise; then
+        eval "$($HOME/.local/bin/mise activate bash)"
+        return 0
+    fi
 
     slog "Installing mise"
     curl https://mise.run | MISE_QUIET=1 sh
@@ -816,7 +818,7 @@ config_install() {
     has_cmd code && vscode_config_install
     has_cmd kitty && kitty_config_install
     has_cmd ghostty && ghostty_config_install
-    bin_config_install
+    # bin_config_install
 }
 
 poetry_install() {
