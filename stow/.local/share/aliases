@@ -161,7 +161,6 @@ alias tboxc='toolbox create'
 
 alias la=tree
 
-
 if has_cmd code; then
     alias c='code'
     alias c.='code .'

@@ -75,7 +75,6 @@ essential_install() {
     si zip unar micro nala p7zip
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 
-
     slog "Essential packages installation done!"
 }
 

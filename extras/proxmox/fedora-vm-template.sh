@@ -33,7 +33,6 @@ usage() {
     exit 1
 }
 
-
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -s|--storage) STORAGE="$2"; shift ;;
@@ -56,7 +55,6 @@ CUR_DIR=$(dirname "$0")
 if [ -f "$CUR_DIR/options" ]; then
     source "$CUR_DIR/options"
 fi
-
 
 # Validate required arguments
 # if [ -z "$VM_ID" ] || [ -z "$VM_NAME" ] || [ -z "$STORAGE" ] || [ -z "$FEDORA_IMAGE_URL" ] || [ -z "$DISK_SIZE" ] || [ -z "$MEMORY" ] || [ -z "$CORES" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then

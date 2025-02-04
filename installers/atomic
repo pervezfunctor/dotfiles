@@ -40,7 +40,6 @@ main() {
     config_install
 }
 
-
 is_linux || err_exit "This script is only for Linux"
 
 bootstrap "Immutable OS"

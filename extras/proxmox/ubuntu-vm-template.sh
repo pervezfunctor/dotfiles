@@ -12,7 +12,6 @@ CORES="4"
 USERNAME="pervez"
 PASSWORD="program"
 
-
 usage() {
     echo "Usage: $0 -i VM_ID -n VM_NAME -s STORAGE -u DEBIAN_IMAGE_URL [--disk-size DISK_SIZE] [--memory MEMORY] [--cores CORES] [--username USERNAME] [--password PASSWORD]"
     echo
@@ -101,7 +100,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Attaching disk to VM..."
-qm set $VM_ID --scsihw virtio-scsi-pci 
+qm set $VM_ID --scsihw virtio-scsi-pci
 qm set $VM_ID --virtio0 $PROXMOX_STORAGE:vm-$VM_ID-disk-1,discard=on
 
 if [ $? -ne 0 ]; then

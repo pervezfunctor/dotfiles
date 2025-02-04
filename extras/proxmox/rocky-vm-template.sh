@@ -12,7 +12,6 @@ CORES="4"
 USERNAME="pervez"
 PASSWORD="program"
 
-
 usage() {
     echo "Usage: $0 -i VM_ID -n VM_NAME -s STORAGE -u ROCKY_IMAGE_URL [--disk-size DISK_SIZE] [--memory MEMORY] [--cores CORES] [--username USERNAME] [--password PASSWORD]"
     echo
@@ -30,8 +29,6 @@ usage() {
     echo "  -h, --help                      Display this help message"
     exit 1
 }
-
-
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -75,7 +72,6 @@ if ! [ -f /tmp/rocky-cloud.qcow2 ]; then
 
     rm /tmp/rocky.qcow2
 fi
-
 
 # Create the VM
 echo "Creating VM $VM_NAME with ID $VM_ID..."
@@ -139,7 +135,6 @@ qm set $VM_ID   --serial0 socket \
                 --ipconfig0 ip=dhcp \
                 --cipassword $PASSWORD \
                 --ciuser $USERNAME
-
 
 if [ $? -ne 0 ]; then
     echo "Failed to configure cloud-init"

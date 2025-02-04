@@ -54,7 +54,6 @@ essential_install() {
     si unar zip micro-editor 7zip
     si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel gum
 
-
     slog "Essential packages installation done!"
 }
 

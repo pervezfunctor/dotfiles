@@ -390,7 +390,6 @@ sh_curl() {
     curl -sSL "$1" | bash
 }
 
-
 environs() {
     export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
     export PNPM_HOME="$HOME/.local/share/pnpm"

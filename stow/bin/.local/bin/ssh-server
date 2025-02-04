@@ -1,6 +1,5 @@
 #! /usr/bin/env bash
 
-
 {
 
 if command -v curl > /dev/null; then

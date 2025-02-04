@@ -29,7 +29,6 @@ main() {
 
         slog "shell tools installation done!"
 
-
         if has_cmd flatpak; then
             slog "Setting up shell for desktop"
             smd ~/.local/share/fonts

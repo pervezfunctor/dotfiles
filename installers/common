@@ -371,7 +371,6 @@ pnpm_install() {
     has_cmd bash && pnpm install-completion bash
     has_cmd zsh && pnpm install-completion zsh
 
-
     slog "pnpm/node installation done!"
 
     cmd_check pnpm
@@ -418,7 +417,6 @@ monaspace_install() {
     frm /tmp/monaspace /tmp/monaspace.zip
     wget -nv https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip -O /tmp/monaspace.zip
     unzip -qq -d /tmp/monaspace -o /tmp/monaspace.zip
-
 
     cp /tmp/monaspace/monaspace-*/fonts/otf/* ~/.local/share/fonts
     cp /tmp/monaspace/monaspace-*/fonts/variable/* ~/.local/share/fonts
@@ -548,7 +546,6 @@ git_config_install() {
         git_conf user.email "pervefunctor@gmail.com"
     fi
 
-
     slog "git configuration done!"
 }
 
@@ -625,7 +622,6 @@ docker_install() {
     curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
     sudo sh /tmp/get-docker.sh
     frm /tmp/get-docker.sh
-
 
     docker_common_install
 
@@ -768,6 +764,28 @@ shell_install() {
     # go_shell_install
     # rust_shell_install
     # pnpm_shell_install
+}
+
+sone() {
+    local dst=$2
+    local src=$1
+
+    smd $(dirname $2)
+    fln -s $src $dst
+}
+
+sall() {
+    local dst=$2
+    local src=$1
+
+    if [ -d $1 ] && [ -d $2 ]; then
+        smd $dst
+        for f in $src/; do
+            fln -s $f $dst/$(basename $f)
+        done
+    else
+        warn "$1 or $2 not a directory, cannot symlink all"
+    fi
 }
 
 alacritty_config_install() {
@@ -961,7 +979,6 @@ portainer_install() {
         slog "Portainer installation done!"
     fi
 }
-
 
 base-group_install() {
     core_install

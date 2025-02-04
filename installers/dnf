@@ -22,7 +22,6 @@ update_packages() {
     fi
 }
 
-
 base_dev_install() {
     if dnf group list -q | grep -q "c-development"; then
         si @c-development
@@ -65,7 +64,6 @@ essential_install() {
     micro_install
 
     si gum
-
 
     slog "Essential packages installation done!"
 }
@@ -208,7 +206,6 @@ virt_install() {
 
     code_server_install
 }
-
 
 more_virt_install() {
     si samba-dcerpc samba-ldb-ldap-modules samba-winbind-clients
