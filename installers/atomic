@@ -4,6 +4,10 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
+rpm_ostree_packages_install() {
+    sudo rpm-ostree -q install -y gnome-keyring g++ cmake gcc glibc-devel make stow zsh libvirt libvirt-daemon libvirt-daemon-config-network libvirt-daemon-driver-interface libvirt-daemon-driver-network libvirt-daemon-driver-nwfilter libvirt-daemon-driver-qemu libvirt-daemon-driver-secret libvirt-daemon-driver-storage-core
+}
+
 vscode_flatpak_install() {
     fpi com.visualstudio.code
     fpi com.visualstudio.code.tool.podman
