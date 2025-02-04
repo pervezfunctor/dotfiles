@@ -1,0 +1,90 @@
+@import "frappe.css";
+
+* {
+  font-family: JetbrainsMono NF Medium;
+  font-size: 12px;
+  font-weight: bold;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+}
+
+#waybar {
+  background-color: shade(@base, 0.9);
+  /* background-color: transparent; */
+  border: 2px solid alpha(@crust, 0.3);
+  color: @text;
+}
+
+#window {
+  color: @text;
+}
+
+#workspaces {
+  border-radius: 1rem;
+  margin: 2px;
+  background-color: @surface0;
+  margin-left: 1rem;
+}
+
+#workspaces button {
+  color: @lavender;
+  border-radius: 1rem;
+  padding: 0.2rem 0.8rem;
+}
+
+#workspaces button.focused {
+  color: @sky;
+  border-radius: 1rem;
+}
+
+#workspaces button:hover {
+  color: @sapphire;
+  border-radius: 1rem;
+}
+
+#custom-music,
+#tray,
+#backlight,
+#clock,
+#battery,
+#network,
+#pulseaudio,
+#custom-lock,
+#custom-power {
+  background-color: @surface0;
+  padding: 0.1rem 0.8rem;
+  /* margin: 5px 0; */
+}
+
+#network {
+  border-radius: 1rem 0px 0px 1rem;
+  color: @peach;
+}
+
+#clock {
+  color: @blue;
+  border-radius: 0px 1rem 1rem 0px;
+  margin-right: 1rem;
+}
+
+#tray {
+  margin-right: 1rem;
+  border-radius: 1rem;
+}
+
+#pulseaudio {
+  color: @maroon;
+  margin-left: 1rem;
+  border-radius: 1rem 0px 0px 1rem;
+}
+
+#custom-power {
+  margin-right: 1rem;
+  color: @red;
+  border-radius: 0px 1rem 1rem 0px;
+}
+
+#workspaces button.urgent {
+  color: @red;
+}
