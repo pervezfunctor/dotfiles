@@ -180,7 +180,7 @@ starship_install() {
     curl -sS https://starship.rs/install.sh | sh -s -- -y
 }
 
-bash_install() {
+bash_config_install() {
     slog "Configuring bash"
 
     if ! grep -q $DOT_DIR/stow/.local/share/bashrc ~/.bashrc; then
@@ -756,7 +756,6 @@ shell_install() {
     brew_shell_install
 
     starship_install
-    bash_install
 
     # go_shell_install
     # rust_shell_install
@@ -800,6 +799,8 @@ bin_config_install() {
 }
 
 config_install() {
+    bash_config_install
+
     if ! has_cmd stow; then
         warn "stow not installed, skipping config"
         return 1
@@ -817,7 +818,6 @@ config_install() {
     has_cmd ghostty && ghostty_config_install
     bin_config_install
 }
-
 
 poetry_install() {
     has_cmd poetry && return 0
@@ -884,11 +884,17 @@ pyenv_miniconda_install() {
 }
 
 atomic_python_install() {
+    slog "python setup"
+
     python3 -m ensurepip --upgrade
     python3 -m pip install --upgrade pip
     python3 -m pip install --upgrade pipx
     python3 -m pip install --upgrade uv
-    pipx install trash-cli
+    python3 -m pipx install trash-cli
+
+    slog "python setup done!"
+
+    cmd_check pip pipx trash
 }
 
 python_uv_install() {

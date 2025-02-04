@@ -20,27 +20,41 @@ main() {
     mise_install
 
     if is_linux; then
+        slog "Installing shell tools"
+
         mis tree-sitter just lazygit starship ripgrep gh xh
         mis bottom fzf fd eza zoxide bat tmux duf
         mise use -g cargo:git-delta
         ami sd nvim
 
+        slog "shell tools installation done!"
+
+
         if has_cmd flatpak; then
+            slog "Setting up shell for desktop"
             smd ~/.local/share/fonts
             jetbrains_nerd_font_install
             flathub_install
             fpi app.devsuite.Ptyxis
             fpi org.wezfurlong.wezterm
             alias wezterm="flatpak run org.wezfurlong.wezterm"
+            slog "Shell setup for desktop done!"
         fi
     elif is_mac; then
+        slog "Installing shell tools"
+
         bis tree-sitter just lazygit starship gh xh git-delta sd luarocks
         bis fzf fd eza zoxide bat tmux duf
         bi bottom ripgrep neovim zsh-syntax-highlighting zsh-autosuggestions
         bi reattach-to-user-namespace
 
         bic wezterm font-jetbrains-mono-nerd-font
+
+        slog "shell tools installation done!"
     fi
+
+    cmd_check tree-sitter just starship rg gh xh btm fzf fd eza zoxide bat tmux duf git-delta sd nvim
+
     gh extension install github/gh-copilot
 
     dotfiles_install
