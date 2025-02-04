@@ -69,7 +69,13 @@ appman_install() {
     has_cmd appman && return 0
 
     slog "Installing appman"
-    wget -q https://raw.githubusercontent.com/ivan-hc/AM/main/AM-INSTALLER && chmod a+x ./AM-INSTALLER && echo 2 ./AM-INSTALLER | rm -f ./AM-INSTALLER
+
+    cd
+    rm -f ./AM-INSTALLER
+    wget -q https://raw.githubusercontent.com/ivan-hc/AM/main/AM-INSTALLER
+    chmod a+x ./AM-INSTALLER
+    echo 2 | ./AM-INSTALLER
+    rm -f ./AM-INSTALLER
 
     slog "appman installation done!"
 
@@ -888,7 +894,7 @@ pyenv_miniconda_install() {
 atomic_python_install() {
     slog "python setup"
 
-    python3 -m ensurepip --default-pip
+    python3 -m ensurepip --user --default-pip
     python3 -m pip install --user --force-reinstall --upgrade pip
     cmd_check pip
 
