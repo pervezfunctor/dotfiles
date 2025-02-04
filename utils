@@ -114,8 +114,12 @@ frm() {
 
 scp() {
     if [ -e "$1" ]; then
-        slog "Copying $1 to $2"
-        cp -r "$1" "$2"
+        if [ -e "$2" ]; then
+            warn "$2 already exists, cannot copy $1"
+        else
+            slog "Copying $1 to $2"
+            cp -r "$1" "$2"
+        fi
     else
         warn "$1 does not exist, cannot copy to $2"
         return 1

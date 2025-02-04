@@ -28,7 +28,7 @@ main() {
         if has_cmd flatpak; then
             smd ~/.local/share/fonts
             jetbrains_nerd_font_install
-
+            flathub_install
             fpi app.devsuite.Ptyxis
             fpi org.wezfurlong.wezterm
             alias wezterm="flatpak run org.wezfurlong.wezterm"
@@ -43,8 +43,8 @@ main() {
     fi
     gh extension install github/gh-copilot
 
-    dotfile_install
-    confile_install
+    dotfiles_install
+    config_install
 }
 
 is_linux || is_mac || err_exit "This script is only for Linux and Mac"

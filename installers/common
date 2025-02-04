@@ -66,7 +66,10 @@ ami() {
 appman_install() {
     has_cmd appman && return 0
 
+    slog "Installing appman"
     wget -q https://raw.githubusercontent.com/ivan-hc/AM/main/AM-INSTALLER && chmod a+x ./AM-INSTALLER && echo 2 ./AM-INSTALLER | rm -f ./AM-INSTALLER
+
+    slog "appman installation done!"
 
     cmd_check appman
 }
@@ -202,8 +205,6 @@ vscode_config_install() {
         smd $XDG_CONFIG_HOME/Code/User
         scp $DOT_DIR/extras/vscode/settings.json $XDG_CONFIG_HOME/Code/User/settings.json
     fi
-
-    vscode_extensions_install
 
     slog "vscode config done!"
 }
@@ -793,7 +794,7 @@ ghostty_config_install() {
 bin_config_install() {
     slog "bin config"
 
-    stowdf bin
+    stownf bin
 
     slog "bin config done!"
 }
@@ -1033,7 +1034,7 @@ gnome_config_install() {
     gnome-extensions disable tiling-assistant@ubuntu.com
     gnome-extensions disable ubuntu-appindicators@ubuntu.com
     gnome-extensions disable ubuntu-dock@ubuntu.com
-    gnome-extensions disable ding@rastersoft.com
+    -extensions disable ding@rastersoft.com
 
     # Install new extensions
     gext install tactile@lundal.io
@@ -1239,6 +1240,13 @@ gnome_settings() {
     gnome_keybindings
     gnome_config_install
     more_gnome_settings
+}
+
+sway_config_install() {
+    python3 -m ensurepip --upgrade
+    python3 -m pip install --upgrade pip
+    python3 -m pip install i3ipc
+    python3 -m pip install autotiling
 }
 
 }

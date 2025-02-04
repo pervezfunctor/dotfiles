@@ -247,8 +247,11 @@ alias lv="NVIM_APPNAME=lazyvim nvim"
 
 alias lsa='ls -a'
 alias lta='lt -a'
-alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
-alias fv="fzf --bind 'enter:become(vim {})'"
+
+if has_cmd fzf; then
+    alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
+    alias fv="fzf --bind 'enter:become(vim {})'"
+fi
 
 # alias fd='fdfind'
 
