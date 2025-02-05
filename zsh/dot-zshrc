@@ -1,9 +1,7 @@
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
-export DOT_DIR=${DOT_DIR:-$HOME/.dotfiles}
+export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
-source $DOT_DIR/scripts/shellrc
-
-source_if_exists $DOT_DIR/scripts/shellrc
+source ~/.local/share/ilm/shellrc
 
 # if interactive shell then return
 [[ $- == *i* ]] || return
@@ -12,9 +10,7 @@ has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate zsh)"
 has_cmd direnv && eval "$(direnv hook zsh)"
 has_cmd zoxide && eval "$(zoxide init zsh)"
 has_cmd fzf && source <(fzf --zsh)
-
-# has_cmd atuin && eval "$(atuin init zsh)"
-# has_cmd fasd && eval "$(fasd --init auto)"
+has_cmd atuin && eval "$(atuin init zsh)"
 
 HISTFILE=~/.histfile
 HISTSIZE=1000
@@ -195,10 +191,9 @@ bindkey '^L' vi-forward-word
 bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
 
-source_if_exists "$DOT_DIR/stow/.local/share/fns"
-source_if_exists "$DOT_DIR/stow/.local/share/aliases"
+source_if_exists "~/.local/share/ilm/fns"
+source_if_exists "~/.local/share/ilm/aliases"
 
 source_if_exists "$HOME/.localzshrc"
-source_if_exists "$XDG_CONFIG_HOME/localzshrc"
 
 # one_shell_tmux

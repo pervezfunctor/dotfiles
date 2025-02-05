@@ -2,7 +2,7 @@
 
 {
 
-DOT_DIR=$HOME/.dotfiles
+DOT_DIR=$HOME/.ilm
 
 BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
 
@@ -382,14 +382,14 @@ dotfiles_install() {
 stowdf() {
     for p in "$@"; do
         slog "stow $p"
-        stow -d $DOT_DIR/stow -t $HOME --dotfiles -R $p
+        stow -d $DOT_DIR -t $HOME --dotfiles -R $p
     done
 }
 
 stownf() {
     for p in "$@"; do
         slog "stow $p"
-        stow --no-folding -d $DOT_DIR/stow -t $HOME --dotfiles -R $p
+        stow --no-folding -d $DOT_DIR -t $HOME --dotfiles -R $p
     done
 }
 
@@ -424,18 +424,19 @@ bootstrap() {
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2> /dev/null
     keep_sudo_running
 
-    source_curl "${BASE_URL}/installers/common"
+    INSTALLERS="${BASE_URL}/share/dot-local/share/ilm/installers"
+    source_curl "$INSTALLERS/common"
 
     if is_apt; then
-        source_curl "${BASE_URL}/installers/apt"
+        source_curl "$INSTALLERS/apt"
     elif is_rh; then
-        source_curl "${BASE_URL}/installers/dnf"
+        source_curl "$INSTALLERS/dnf"
     elif is_suse; then
-        source_curl "${BASE_URL}/installers/suse"
+        source_curl "$INSTALLERS/suse"
     elif is_arch; then
-        source_curl "${BASE_URL}/installers/arch"
+        source_curl "$INSTALLERS/arch"
     elif is_mac; then
-        source_curl "${BASE_URL}/installers/mac"
+        source_curl "$INSTALLERS/mac"
     else
         err_exit "unknown OS; skipping installation"
     fi

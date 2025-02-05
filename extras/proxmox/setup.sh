@@ -1,5 +1,6 @@
 #! /usr/bin/env bash
 
+DOT_DIR=~/.ilm
 set -e
 
 {
@@ -34,8 +35,8 @@ proxmox_download_templates() {
 }
 
 proxmox_cloud_init_vms_install() {
-    git clone --depth=1 https://github.com/pervezfunctor/dotfiles.git .dotfiles
-    pushd .dotfiles/extras/proxmox
+    git clone --depth=1 https://github.com/pervezfunctor/dotfiles.git $DOT_DIR
+    pushd $DOT_DIR/extras/proxmox
     ./debian-vm-template.sh
     # clone vm from template debian-template
     qm clone 9100 101 --name debian-vm

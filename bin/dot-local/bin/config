@@ -2,17 +2,8 @@
 
 {
 
-if [[ -z "$DOT_DIR" ]]; then
-    source $DOT_DIR/scripts/utils
-    source $DOT_DIR/installers/common
-elif command -v curl > /dev/null; then
-    source <(curl -sSL https://dub.sh/z3pTnAK)
-elif command -v wget > /dev/null; then
-    source <(wget -qO- https://dub.sh/z3pTnAK)
-else
-    echo "curl or wget not found. Please install curl or wget and try again."
-    exit 1
-fi
+source ~/.local/share/ilm/utils
+source ~/.local/share/ilm/installers/common
 
 INSTALL_OPTIONS=("zsh" "tmux" "nvim" "code" "ghostty" "kitty" "wezterm" "alacritty" "emacs")
 

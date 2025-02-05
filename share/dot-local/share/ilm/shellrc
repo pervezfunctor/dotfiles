@@ -1,4 +1,4 @@
-source $DOT_DIR/scripts/utils
+source ~/.local/share/ilm/utils
 
 export LANG=en_US.UTF-8
 

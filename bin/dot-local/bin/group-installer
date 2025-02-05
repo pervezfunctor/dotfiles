@@ -2,11 +2,7 @@
 
 {
 
-if [[ -z "$DOT_DIR" ]]; then
-    source <(curl -sSL https://dub.sh/z3pTnAK)
-else
-    source "$DOT_DIR/scripts/utils"
-fi
+source "~/.local/share/ilm/utils"
 
 INSTALL_OPTIONS=("min" "shell" "ct" "vm" "prog" "all")
 
