@@ -1,9 +1,9 @@
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export DOT_DIR=${DOT_DIR:-$HOME/.dotfiles}
 
-source $DOT_DIR/stow/.local/share/shellrc
+source $DOT_DIR/scripts/shellrc
 
-source_if_exists $DOT_DIR/stow/.local/share/shellrc
+source_if_exists $DOT_DIR/scripts/shellrc
 
 # if interactive shell then return
 [[ $- == *i* ]] || return

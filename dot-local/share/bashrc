@@ -1,7 +1,7 @@
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export DOT_DIR=${DOT_DIR:-$HOME/.dotfiles}
 
-source $DOT_DIR/stow/.local/share/shellrc
+source $DOT_DIR/scripts/shellrc
 
 # if interactive shell then return
 [[ $- == *i* ]] || return
@@ -13,8 +13,8 @@ has_cmd fzf && source <(fzf --bash)
 
 has_cmd starship > /dev/null && eval "$(starship init bash)"
 
-source_if_exists "$DOT_DIR/stow/.local/share/fns"
-source_if_exists "$DOT_DIR/stow/.local/share/aliases"
+source_if_exists "$DOT_DIR/dot-local/share/fns"
+source_if_exists "$DOT_DIR/dot-local/share/aliases"
 
 source_if_exists "$HOME/.localbashrc"
 source_if_exists "$XDG_CONFIG_HOME/localbashrc"

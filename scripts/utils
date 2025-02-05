@@ -6,8 +6,27 @@ DOT_DIR=$HOME/.dotfiles
 
 BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
 
-slog() {
-    printf "\r\033[2K  [ \033[00;32mINFO\033[0m ] $*\n"
+source_if_exists() {
+    if [ -f "$1" ]; then
+        source "$1"
+    fi
+}
+
+source_curl() {
+    slog "sourcing: $1"
+    source <(curl -sSL "$1")
+}
+
+sh_curl() {
+    curl -sSL "$1" | bash
+}
+
+source_dotfile() {
+    if [ -d $DOT_DIR ]; then
+        source "$DOT_DIR/$1"
+    else
+        source_curl "$BASE_URL/$1"
+    fi
 }
 
 fail() {
@@ -31,7 +50,6 @@ dir_exists() {
 file_exists() {
     [[ -f "$1" ]]
 }
-
 exists() {
     [[ -e "$1" ]]
 }
@@ -373,21 +391,6 @@ stownf() {
         slog "stow $p"
         stow --no-folding -d $DOT_DIR/stow -t $HOME --dotfiles -R $p
     done
-}
-
-source_if_exists() {
-    if [[ -f "$1" ]]; then
-        source "$1"
-    fi
-}
-
-source_curl() {
-    slog "sourcing: $1"
-    source <(curl -sSL "$1")
-}
-
-sh_curl() {
-    curl -sSL "$1" | bash
 }
 
 environs() {

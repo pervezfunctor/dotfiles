@@ -191,8 +191,8 @@ starship_install() {
 bash_config_install() {
     slog "Configuring bash"
 
-    if ! grep -q $DOT_DIR/stow/.local/share/bashrc ~/.bashrc; then
-        echo "source $DOT_DIR/stow/.local/share/bashrc" >> ~/.bashrc
+    if ! grep -q ~/.local/share/bashrc ~/.bashrc; then
+        echo "source ~/.local/share/bashrc" >> ~/.bashrc
     fi
 
     slog "bash config done!"
