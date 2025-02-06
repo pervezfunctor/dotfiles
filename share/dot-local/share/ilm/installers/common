@@ -96,7 +96,6 @@ mi() {
     done
 }
 
-foo_
 mise_shell_install() {
     mis tree-sitter just lazygit lazydocker starship shfmt ripgrep
     mis lsd shellcheck gum xh bottom fzf fd hyperfine
@@ -179,6 +178,7 @@ astro_install() {
     omv ~/.cache/nvim ~/.cache/nvim.bak
 
     stowdf nvim
+    nvim --headless "+Lazy! sync" +qa
 
     slog "AstroNvim config done!"
 }
@@ -690,7 +690,7 @@ brew_shell_install() {
 
     slog "shell tools with brew"
 
-    bis jq tree-sitter just lsd shfmt gh tldr shellcheck gum
+    bis jq tree-sitter just lsd shfmt gh tldr shellcheck gum lazydocker
     bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust
     bis procs fzf fd hyperfine zoxide starship
     # bis nushell gping ncdu httpie
