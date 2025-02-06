@@ -1,4 +1,5 @@
 {
+  "window.titleBarStyle": "custom",
   "editor.fontFamily": "'JetbrainsMono Nerd Font Mono', 'Source Code Pro', 'Droid Sans Mono', 'monospace', monospace",
   "editor.fontLigatures": true,
   "editor.fontSize": 15,
