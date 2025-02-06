@@ -4,8 +4,9 @@ include '$("/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/c
 
 exec env.sh
 exec_always swayidle -w \
-    timeout 300 'swaymsg "output * dpms off"' \
-    resume 'swaymsg "output * dpms on"'
+    timeout 180 'swaymsg "output * dpms off"' \
+    resume 'swaymsg "output * dpms on"' \
+    timeout 600 'systemctl suspend'
 
 # exec_always swaybg -i /usr/share/backgrounds/default.png -m fill
 
