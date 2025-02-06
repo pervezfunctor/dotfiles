@@ -96,6 +96,7 @@ mi() {
     done
 }
 
+foo_
 mise_shell_install() {
     mis tree-sitter just lazygit lazydocker starship shfmt ripgrep
     mis lsd shellcheck gum xh bottom fzf fd hyperfine
