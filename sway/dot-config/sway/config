@@ -133,7 +133,7 @@ bindsym $mod+6 workspace number 6
 bindsym $mod+7 workspace number 7
 bindsym $mod+8 workspace number 8
 bindsym $mod+9 workspace number 9
-bindsym $mod+0 workspace number 10
+# bindsym $mod+0 workspace number 10
 # Move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace number 1
 bindsym $mod+Shift+2 move container to workspace number 2
@@ -144,7 +144,7 @@ bindsym $mod+Shift+6 move container to workspace number 6
 bindsym $mod+Shift+7 move container to workspace number 7
 bindsym $mod+Shift+8 move container to workspace number 8
 bindsym $mod+Shift+9 move container to workspace number 9
-bindsym $mod+Shift+0 move container to workspace number 10
+# bindsym $mod+Shift+0 move container to workspace number 10
 
 bindsym $mod+ctrl+left workspace next
 bindsym $mod+ctrl+right workspace prev
@@ -272,3 +272,6 @@ for_window [class="Timeset-gui"] floating enable border normal
 for_window [class="(?i)virtualbox"] floating enable border normal
 for_window [class="(?i)virtualbox"] fullscreen enable
 for_window [class="Xfburn"] floating enable
+
+for_window [app_id="firefox"] opacity 0.96
+for_window [app_id="Visual Studio Code"] opacity 0.96
