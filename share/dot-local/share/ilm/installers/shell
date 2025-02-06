@@ -22,10 +22,10 @@ main() {
     if is_linux; then
         slog "Installing shell tools"
 
-        mis tree-sitter just lazygit starship ripgrep gh xh
+        mis tree-sitter just lazygit starship ripgrep xh
         mis bottom fzf fd eza zoxide bat duf
         mise use -g cargo:git-delta
-        ami sd nvim tmux
+        ami sd nvim tmux gh
 
         slog "shell tools installation done!"
 

@@ -98,7 +98,7 @@ mi() {
 
 mise_shell_install() {
     mis tree-sitter just lazygit lazydocker starship shfmt ripgrep
-    mis lsd gh shellcheck gum xh bottom fzf fd hyperfine
+    mis lsd shellcheck gum xh bottom fzf fd hyperfine
     mis cheat duf eza dust zoxide gdu bat choose jq yq tmux
     has_cmd nu || mise use -g cargo:nu
 }
