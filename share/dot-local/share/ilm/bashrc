@@ -13,8 +13,8 @@ has_cmd fzf && source <(fzf --bash)
 
 has_cmd starship > /dev/null && eval "$(starship init bash)"
 
-source_if_exists "~/.local/share/ilm/fns"
-source_if_exists "~/.local/share/ilm/aliases"
+source_if_exists ~/.local/share/ilm/fns
+source_if_exists ~/.local/share/ilm/aliases
 
 source_if_exists "$HOME/.localbashrc"
 source_if_exists "$XDG_CONFIG_HOME/localbashrc"

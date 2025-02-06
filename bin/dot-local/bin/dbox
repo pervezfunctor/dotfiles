@@ -2,8 +2,8 @@
 
 {
 
-source "~/.local/share/ilm/utils"
-source "~/.local/share/ilm/fns"
+source ~/.local/share/ilm/utils
+source ~/.local/share/ilm/fns
 
 OPTIONS=("ubuntu" "debian" "arch" "fedora" "tumbleweed" "rocky" "bluefin" "bluefin-all" "toolboxes")
 

@@ -2,7 +2,7 @@
 
 {
 
-source "~/.local/share/ilm/utils"
+source ~/.local/share/ilm/utils
 
 INSTALL_OPTIONS=("min" "shell" "ct" "vm" "prog" "all")
 

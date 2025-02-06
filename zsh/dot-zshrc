@@ -191,8 +191,8 @@ bindkey '^L' vi-forward-word
 bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
 
-source_if_exists "~/.local/share/ilm/fns"
-source_if_exists "~/.local/share/ilm/aliases"
+source_if_exists ~/.local/share/ilm/fns
+source_if_exists ~/.local/share/ilm/aliases
 
 # Called before prompt(?)
 function precmd {
