@@ -1,4 +1,4 @@
-    #! /usr/bin/env bash
+#! /usr/bin/env bash
 
 {
 
@@ -825,6 +825,14 @@ bin_config_install() {
     slog "bin config done!"
 }
 
+share_config_install() {
+    slog "bin config"
+
+    stownf bin
+
+    slog "bin config done!"
+}
+
 config_install() {
     bash_config_install
 
@@ -832,6 +840,9 @@ config_install() {
         warn "stow not installed, skipping config"
         return 1
     fi
+
+    share_config_install
+    bin_config_install
 
     has_cmd zsh && zsh_config_install
     has_cmd tmux && tmux_config_install
@@ -843,7 +854,6 @@ config_install() {
     has_cmd code && vscode_config_install
     has_cmd kitty && kitty_config_install
     has_cmd ghostty && ghostty_config_install
-    bin_config_install
 }
 
 poetry_install() {
