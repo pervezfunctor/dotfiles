@@ -255,15 +255,45 @@ is_fedora() {
 }
 
 is_kinoite() {
-    [ -e /etc/os-release ] && grep -iq 'kinoite' /etc/os-release
+    if [ ! -f /etc/os-release ]; then
+        return 1
+    fi
+
+    . /etc/os-release
+    [[ "${ID:-}" =~ .*kinoite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*kinoite.* ]]
 }
 
 is_silverblue() {
-    [ -e /etc/os-release ] && grep -iq 'silverblue' /etc/os-release
+    if [ ! -f /etc/os-release ]; then
+        return 1
+    fi
+
+    . /etc/os-release
+    [[ "${ID:-}" =~ .*silverblue.* ]] || [[ "${PRETTY_NAME:-}" =~ .*silverblue.* ]]
+}
+
+is_aurora() {
+    if [ ! -f /etc/os-release ]; then
+        return 1
+    fi
+
+    # Check both ID and PRETTY_NAME fields for aurora
+    . /etc/os-release
+    [[ "${ID:-}" =~ .*aurora.* ]] || [[ "${PRETTY_NAME:-}" =~ .*aurora.* ]]
+}
+
+is_bluefin() {
+    if [ ! -f /etc/os-release ]; then
+        return 1
+    fi
+
+    # Check both ID and PRETTY_NAME fields for bluefin
+    . /etc/os-release
+    [[ "${ID:-}" =~ .*bluefin.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bluefin.* ]]
 }
 
 is_atomic_fedora() {
-    is_kinoite || is_silverblue
+    is_kinoite || is_silverblue || is_aurora || is_bluefin
 }
 
 is_rocky() {
