@@ -1,5 +1,13 @@
 # Ilm development environment
 
+### Recommonded Installation
+
+Install [https://getaurora.dev/en](Aurora), an immutable image based KDE distribution based on Fedora Atomic. Use the following script setup vscode, mise and install essential shell utilities.
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/Hr0YTqp || wget -qO- https://dub.sh/Hr0YTqp)" # aurora
+```
+
 ### Base installation on Ubuntu/Fedora/Debian/Rocky/Macos/Arch/Tumbleweed
 
 ```bash
