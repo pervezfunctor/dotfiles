@@ -6,7 +6,7 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
     if has_cmd brew; then
-        ujust aurora-cli
+        brew_shell_install
         bi neovim stow
         astronvim_install
     else
@@ -19,7 +19,7 @@ main() {
         fpi us.zoom.Zoom
         fpi md.obsidian.Obsidian
     else
-        warn "flatpak not installed; skipping apps instalation"
+        warn "flatpak not installed; skipping apps installation"
     fi
 
     if has_cmd code; then

@@ -85,15 +85,10 @@ essential_install() {
 #   redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common wl-clipboard
 
 cli_install() {
-    brew_install
-    webi_install
-
     si gawk tmux pkg-config urlview gh shellcheck zsh git just htop
     si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide shfmt tree-sitter-cli
 
     gh extension install github/gh-copilot
-
-    neovim_install
 }
 
 cpp_install() {

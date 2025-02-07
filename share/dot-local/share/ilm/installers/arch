@@ -50,9 +50,6 @@ essential_install() {
 }
 
 cli_install() {
-    webi_install
-    brew_install
-
     si neovim github-cli shellcheck shfmt python-pynvim tree-sitter-cli
     si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide htop
 

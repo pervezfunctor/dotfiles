@@ -66,6 +66,7 @@ ami() {
 }
 
 appman_install() {
+    is_mac && return 0
     has_cmd appman && return 0
 
     slog "Installing appman"
@@ -169,7 +170,7 @@ webi-shell_install() {
     # sudo apt install -y libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 }
 
-astro_install() {
+nvim_config_install() {
     slog "AstroNvim config"
 
     omv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
@@ -192,7 +193,7 @@ starship_install() {
 bash_config_install() {
     slog "Configuring bash"
 
-    if ! grep -q ~/.local/share/ilm/bashrc ~/.bashrc; then
+    if ! grep -q .local/share/ilm/bashrc ~/.bashrc; then
         echo "source ~/.local/share/ilm/bashrc" >> ~/.bashrc
     fi
 
@@ -201,7 +202,7 @@ bash_config_install() {
 
 vscode_extensions_install() {
     slog "Installing vscode extensions"
-    cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 code --install-extension
+    cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 code --install-extension
     slog "vscode extensions installation done!"
 }
 
@@ -209,10 +210,10 @@ vscode_config_install() {
     slog "vscode config"
 
     if is_mac; then
-        scp $DOT_DIR/extras/vscode/settings.json "$HOME/Library/Application Support/Code/User/settings.json"
+        scp $DOT_DIR/extras/vscode/minimal-settings.json "$HOME/Library/Application Support/Code/User/settings.json"
     else
         smd $XDG_CONFIG_HOME/Code/User
-        scp $DOT_DIR/extras/vscode/settings.json $XDG_CONFIG_HOME/Code/User/settings.json
+        scp $DOT_DIR/extras/vscode/minimal-settings.json $XDG_CONFIG_HOME/Code/User/settings.json
     fi
 
     slog "vscode config done!"
@@ -221,12 +222,10 @@ vscode_config_install() {
 zsh_config_install() {
     slog "zsh config"
 
-    omv $HOME/.zsh $HOME/.zsh.bak
-
+    srm $HOME/.zshrc
     smd $HOME/.zsh
     sclone --depth=1 https://github.com/sindresorhus/pure.git $HOME/.zsh/pure
     sclone --depth=1 https://github.com/djui/alias-tips.git $HOME/.zsh/alias-tips
-
     stowdf zsh
 
     slog "zsh config done!"
@@ -234,11 +233,9 @@ zsh_config_install() {
 
 tmux_config_install() {
     slog "tmux config"
-    omv $HOME/.tmux $HOME/.tmux.bak
 
+    srm $XDG_CONFIG_HOME/tmux
     smd $XDG_CONFIG_HOME/tmux
-    # fln "${DOT_DIR}/configs/.config/tmux/tmux.conf" $XDG_CONFIG_HOME/tmux/tmux.conf
-
     stownf tmux
 
     slog "tmux config done!"
@@ -690,7 +687,7 @@ brew_shell_install() {
 
     slog "shell tools with brew"
 
-    bis jq tree-sitter just lsd shfmt gh tldr shellcheck gum lazydocker
+    bis jq tree-sitter just lsd shfmt gh tldr shellcheck gum lazydocker stow neovim
     bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust
     bis procs fzf fd hyperfine zoxide starship
     # bis nushell gping ncdu httpie
@@ -755,10 +752,15 @@ pnpm_shell_install() {
 }
 
 shell_install() {
+    brew_install
+    webi_install
+    appman_install
+
     cli_install
 
     webi_shell_install
     brew_shell_install
+    # appman_shell_install
 
     starship_install
 
@@ -791,19 +793,25 @@ sall() {
 
 alacritty_config_install() {
     slog "alacritty config"
-
+    smd $XDG_CONFIG_HOME/alacritty
     stowdf alacritty
 
     slog "alacritty config done!"
 }
 
 wezterm_config_install() {
-        stowdf wezterm
+    slog "wezterm config"
+
+    smd $XDG_CONFIG_HOME/wezterm
+    stowdf wezterm
+
+    slog "wezterm config done!"
 }
 
 kitty_config_install() {
     slog "kitty config"
 
+    smd $XDG_CONFIG_HOME/kitty
     stowdf kitty
 
     slog "kitty config done!"
@@ -812,6 +820,7 @@ kitty_config_install() {
 ghostty_config_install() {
     slog "ghostty config"
 
+    smd $XDG_CONFIG_HOME/ghostty
     stowdf ghostty
 
     slog "ghostty config done!"
@@ -846,7 +855,7 @@ config_install() {
 
     has_cmd zsh && zsh_config_install
     has_cmd tmux && tmux_config_install
-    has_cmd nvim && astro_install
+    has_cmd nvim && nvim_config_install
     has_cmd emacs && doom_install
     has_cmd git && git_config_install
     has_cmd alacritty && alacritty_config_install
@@ -854,6 +863,11 @@ config_install() {
     has_cmd code && vscode_config_install
     has_cmd kitty && kitty_config_install
     has_cmd ghostty && ghostty_config_install
+    has_cmd waybar && waybar_config_install
+    has_cmd sway && sway_config_install
+    has_cmd rofi && rofi_config_install
+    has_cmd konsole && konsole_config_install
+    has_cmd amethyst && amethyst_config_install
 }
 
 poetry_install() {
