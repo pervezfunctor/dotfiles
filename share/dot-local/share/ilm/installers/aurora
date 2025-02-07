@@ -7,7 +7,7 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 main() {
     if has_cmd brew; then
         ujust aurora-cli
-        bi neovim
+        bi neovim stow
         astronvim_install
     else
         warn "brew not installed; skipping shell utilities installation"
@@ -42,6 +42,7 @@ main() {
     fi
 
     mise_install
+    appman_install
 }
 
 is_aurora || err_exit "This script is only for Aurora"
