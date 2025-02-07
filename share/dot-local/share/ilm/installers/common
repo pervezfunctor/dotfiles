@@ -634,7 +634,7 @@ brew_shell_install() {
 
     bis jq tree-sitter just lsd shfmt gh tldr shellcheck gum lazydocker stow neovim
     bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust
-    bis procs fzf fd hyperfine zoxide starship
+    bis procs fzf fd hyperfine zoxide starship pixi yq ugrep
     # bis nushell gping ncdu httpie
 
     has_cmd gdu || has_cmd gdu-go || bi gdu
@@ -643,6 +643,11 @@ brew_shell_install() {
     has_cmd delta || bi git-delta
     has_cmd choose || bi choose-rust
     has_cmd btm || bi bottom
+    has_cmd tv || bi television
+    has_cmd nu || bi nushell
+    bi bash-preexec tealdeer
+    # bi glab
+
     alias gdu=gdu-go
 
     slog "shell tools with brew done!"
@@ -898,6 +903,14 @@ python_mini_install() {
 python_install() {
      python_core_install
     anaconda_install
+}
+
+pixi_install() {
+    has_cmd pixi && return 0
+
+    slog "Installing pixi"
+    curl -fsSL https://pixi.sh/install.sh | bash
+    slog "pixi installation done!"
 }
 
 tailscale_install() {
