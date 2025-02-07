@@ -7,9 +7,7 @@ DOT_DIR=$HOME/.ilm
 BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
 
 source_if_exists() {
-    if [ -f "$1" ]; then
-        source "$1"
-    fi
+    [ -f "$1" ] && source "$1"
 }
 
 source_curl() {
@@ -54,6 +52,7 @@ dir_exists() {
 file_exists() {
     [[ -f "$1" ]]
 }
+
 exists() {
     [[ -e "$1" ]]
 }
@@ -403,9 +402,15 @@ environs() {
     export PATH="$HOME/.local/bin:$PNPM_HOME:/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="$HOME/.local/opt/brew/bin:$PATH"
     export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
+
+    has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
+
     export HOMEBREW_NO_ENV_HINTS=1
     export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
     export HOMEBREW_NO_AUTO_UPDATE=1
+
+    # set locale
+    export LANG=en_US.UTF-8
 }
 
 fg-installer() {
