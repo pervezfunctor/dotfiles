@@ -1,23 +1,29 @@
 # Ilm development environment
 
-### Recommonded Installation
+### Recommended Installation
 
 Install [https://getaurora.dev/en](Aurora), an immutable image based KDE distribution based on Fedora Atomic. Use the following script setup vscode, mise and install essential shell utilities.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/Hr0YTqp || wget -qO- https://dub.sh/Hr0YTqp)" # aurora
+bash -c "$(curl -sSL https://dub.sh/Hr0YTqp || wget -qO- https://dub.sh/Hr0YTqp)"
 ```
 
 ### Base installation on Ubuntu/Fedora/Debian/Rocky/Macos/Arch/Tumbleweed
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)"
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell # zsh, neovim, tmux, modern linux tools
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- vm    # shell + docker, distrobox, libvirt
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- desktop # vm + vscode, ghostty/alacritty, chromium, obsidian etc
+
+ # zsh, neovim, tmux, modern linux tools
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
+
+# shell + docker, distrobox, libvirt
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- vm
+
+# vm + vscode, ghostty/wezterm terminal, chromium browser, obsidian note taking app, etc
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- desktop
 ```
 
-Reboot your machine and use `group-installer` command to setup your shell or workstation in virtual machine or your desktop.
+After you reboot your machine, you could use `group-installer` command to setup your shell or workstation in a virtual machine or your desktop.
 
 ```bash
 group-installer shell # or
