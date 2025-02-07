@@ -133,7 +133,7 @@ frm() {
     done
 }
 
-scp() {
+safe-cp() {
     if [ -e "$1" ]; then
         if [ -e "$2" ]; then
             warn "$2 already exists, cannot copy $1"
@@ -413,6 +413,10 @@ dotfiles_install() {
 }
 
 stowdf() {
+    if ! has_cmd stow; then
+        err_exit "stow not installed, cannot stow dotfiles"
+    fi
+
     for p in "$@"; do
         slog "stow $p"
         stow -d $DOT_DIR -t $HOME --dotfiles -R $p
@@ -420,9 +424,109 @@ stowdf() {
 }
 
 stownf() {
+    if ! has_cmd stow; then
+        err_exit "stow not installed, cannot stow dotfiles"
+    fi
+
     for p in "$@"; do
         slog "stow $p"
         stow --no-folding -d $DOT_DIR -t $HOME --dotfiles -R $p
+    done
+}
+
+mis() {
+    if ! has_cmd ~/.local/bin/mise; then
+        warn "mise not installed, skipping mise packages"
+        return 1
+    fi
+
+    for pkg in "$@"; do
+        slog "Installing mise package $pkg"
+        has_cmd $pkg || ~/.local/bin/mise use -g "$pkg"
+    done
+}
+
+mi() {
+    if ! has_cmd ~/.local/bin/mise; then
+        warn "mise not installed, skipping mise packages"
+        return 1
+    fi
+
+    for pkg in "$@"; do
+        slog "Installing mise package $pkg"
+        ~/.local/bin/mise use -g "$pkg"
+    done
+}
+
+cargoi() {
+    if ! has_cmd cargo; then
+        warn "cargo not installed, skipping cargo packages"
+        return 1
+    fi
+
+    for p in "$@"; do
+        slog "Installing cargo package $p"
+        cargo +stable install --locked "$p"
+    done
+}
+
+bi() {
+    if ! has_cmd brew; then
+        warn "brew not installed, skipping brew packages"
+        return 1
+    fi
+
+    for p in "$@"; do
+        slog "Installing package $p"
+        brew install -q "$p"
+    done
+}
+
+bis() {
+    if ! has_cmd brew; then
+        warn "brew not installed, skipping brew packages"
+        return 1
+    fi
+
+    for p in "$@"; do
+        slog "Installing package $p"
+        has_cmd "$p" || brew install -q "$p"
+    done
+}
+
+wis() {
+    if ! has_cmd webi; then
+        warn "webi not installed, skipping webi packages"
+        return 1
+    fi
+
+    for p in "$@"; do
+        slog "Installing webi package $p"
+        has_cmd $p || webi $p
+    done
+}
+
+ami() {
+    if ! has_cmd appman; then
+        warn "appman not installed, skipping appman packages"
+        return 1
+    fi
+
+    for pkg in "$@"; do
+        slog "Installing appImage package $pkg"
+        appman install "$pkg"
+    done
+}
+
+fpi() {
+    if ! has_cmd flatpak; then
+        warn "flatpak not installed, skipping flatpak packages"
+        return 1
+    fi
+
+    for pkg in "$@"; do
+        slog "Installing flatpak package $pkg"
+        flatpak install -y --user flathub "$pkg"
     done
 }
 
