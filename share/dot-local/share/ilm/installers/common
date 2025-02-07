@@ -905,6 +905,15 @@ python_install() {
     anaconda_install
 }
 
+devbox_install() {
+    has_cmd devbox && return 0
+
+    slog "Installing devbox"
+    curl -fsSL https://get.jetify.com/devbox | bash
+
+    slog "devbox installation done!"
+}
+
 pixi_install() {
     has_cmd pixi && return 0
 
