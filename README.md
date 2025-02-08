@@ -1,5 +1,19 @@
 # Development environment
 
+## TLDR
+
+Install shell tools
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
+```
+
+Install vscode
+
+```bash
+installer vscode
+```
+
 ## Recommended Setup
 
 ### ublue
@@ -113,11 +127,13 @@ You could pick from `shell`, `ct`, `vm`, `desktop` and `all` groups. This is the
 - [nerd fonts for jetbrains mono, cascadia code mono](https://github.com/ryanoasis/nerd-fonts)
 - apps(telegram, [zoom](https://zoom.us), [obsidian](https://obsidian.md), chromium etc)
 
-In addition to the above group installs, you could also use `installer` to setup various tools like `emacs`. Pass `help` to get all options and short descriptions, run
+In addition to the above group installs, you could also use `installer` to setup various tools like `emacs`.
 
 ```bash
 installer
 ```
+
+Pass `help` to get all options and short descriptions, run
 
 ```bash
 installer help
@@ -131,13 +147,19 @@ For most development tools, use could use [mise](https://mise.dev). For python j
 
 You could also install necessary tools and libraries for rust, go, c++ development using `installer`.
 
+Installer rust tools
+
 ```bash
 installer rust
 ```
 
+Install go tools
+
 ```bash
 installer go
 ```
+
+Install c++ tools
 
 ```bash
 installer cpp
