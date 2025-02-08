@@ -2,7 +2,7 @@
 
 ### Recommended Setup
 
-If you are an experienced linux user and and an experienced developer, then  [https://getaurora.dev/en](Aurora) or [https://bluefin.io](Bluefin) would the perfect setup because of the following reasons.
+If you are an experienced linux user and and an experienced developer, then  [https://getaurora.dev/en](Aurora) or [https://projectbluefin.io](Bluefin) would the perfect setup because of the following reasons.
 
   - Bluefin and Aurora are immutable(image based) distributions based on Fedora Atomic.
   - You install shell tools using homebrew[https://brew.sh], which is comparable to nix or aur in package selection. You also get the latest versions of packages.
