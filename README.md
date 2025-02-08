@@ -9,7 +9,7 @@ If you are an experienced linux user and and an experienced developer, then [Aur
   - Install shell tools using [homebrew](https://brew.sh), which is comparable to `nix` or `aur` in package selection. You also get the latest versions of packages.
   - Install desktop apps using [flatpak](https://flathub.org), most modern apps on linux are available.
   - [Visual studio code](https://code.visualstudio.com) is installed and configured properly.
-  - Use [podman](https://podman.io)(open source) for containers.
+  - Use [docker](https://docker.com) or [podman](https://podman.io)(open source) for containers.
   - Use [distrobox](https://distrobox.it) for software development. You could use scripts from [Alternate setup](#alternate-setup) to setup the container.
   - [libvirt](https://libvirt.org)/[virt-manager](https://virt-manager.org) for virtual machines.
   - [incus](https://linuxcontainers.org/incus) for virtual machines and [lxc(stateful)](https://linuxcontainers.org/lxc) containers.
