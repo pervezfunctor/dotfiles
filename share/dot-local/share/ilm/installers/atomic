@@ -12,22 +12,15 @@ rpm_ostree_packages_install() {
     sudo rpm-ostree -q install -y gnome-keyring g++ cmake gcc glibc-devel make stow zsh libvirt libvirt-daemon libvirt-daemon-config-network libvirt-daemon-driver-interface libvirt-daemon-driver-network libvirt-daemon-driver-nwfilter libvirt-daemon-driver-qemu libvirt-daemon-driver-secret libvirt-daemon-driver-storage-core
 }
 
-vscode_flatpak_install() {
-    fpi com.visualstudio.code
-    fpi com.visualstudio.code.tool.podman
-    alias code="flatpak run com.visualstudio.code"
-    cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 flatpak run com.visualstudio.code --install-extension
+home_manager_install() {
+    nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+    nix-channel --update
+    nix-shell '<home-manager>' -A install
 }
 
 nix_install() {
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-
-    nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
-    # nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
-    nix-channel --update
-    # nix-shell '<home-manager>' -A install
-    nix-env -iA nixpkgs.gtop
 }
 
 main() {
