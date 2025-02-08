@@ -24,6 +24,7 @@ nix_install() {
 }
 
 main() {
+    has_cmd git || err_exit "git not installed! Qutting."
     appman_install
     mise_install
 
@@ -37,11 +38,11 @@ main() {
     vscode_flatpak_install
     apps_install
 
-    dotfile_install
+    dotfiles_install
     config_install
 }
 
-is_linux || err_exit "This script is only for Linux"
+is_std_atomic || err_exit "This script is only for Linux"
 
 bootstrap "Immutable OS"
 

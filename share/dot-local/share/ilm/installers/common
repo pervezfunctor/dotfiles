@@ -793,6 +793,26 @@ atuin_config_install() {
     slog "atuin config done!"
 }
 
+waybar_config_install() {
+    slog "waybar config"
+
+    srm $XDG_CONFIG_HOME/waybar
+    smd $XDG_CONFIG_HOME/waybar
+    stowdf waybar
+
+    slog "waybar config done!"
+}
+
+rofi_config_install() {
+    slog "rofi config"
+
+    srm $XDG_CONFIG_HOME/rofi/config.toml
+    smd $XDG_CONFIG_HOME/rofi
+    stowdf rofi
+
+    slog "rofi config done!"
+}
+
 config_install() {
     bash_config_install
 

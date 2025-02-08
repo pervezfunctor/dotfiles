@@ -1,3 +1,5 @@
+xwayland disable
+
 include catppuccin-frappe
 
 include '$("/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf")'
@@ -19,7 +21,7 @@ default_floating_border pixel 3
 gaps inner 4
 gaps outer 2
 
-output * bg ~/.config/flatppuccin_4k_macchiato.png fill
+# output * bg ~/.config/wallpapers/wallpaper.png fill
 
 bindsym $mod+shift+g exec swaymsg gaps outer all set 0 && swaymsg gaps inner all set 5
 bindsym $mod+g exec swaymsg gaps outer all set 0 && swaymsg gaps inner all set 0
@@ -77,8 +79,6 @@ exec wl-paste --watch cliphist store
 #       middle_emulation enabled
 #   }
 #
-
-# xwayland disable
 
 input "type:keyboard" {
 	xkb_options ctrl:nocaps

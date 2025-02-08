@@ -292,7 +292,11 @@ is_bluefin() {
     [[ "${ID:-}" =~ .*bluefin.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bluefin.* ]]
 }
 
-is_atomic_fedora() {
+is_std_atomic() {
+    is_kinoite || is_silverblue # || sway atomic
+}
+
+is_atomic() {
     is_kinoite || is_silverblue || is_aurora || is_bluefin
 }
 
