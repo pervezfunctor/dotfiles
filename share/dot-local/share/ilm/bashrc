@@ -11,7 +11,7 @@ has_cmd direnv && eval "$(direnv hook bash)"
 has_cmd zoxide && eval "$(zoxide init bash)"
 has_cmd fzf && source <(fzf --bash)
 has_cmd starship > /dev/null && eval "$(starship init bash)"
-has_cmd atuin && eval "$(atuin init bash --disable-up-arrow --disable-up-arrow)"
+has_cmd atuin && eval "$(atuin init bash --disable-up-arrow --disable-ctrl-r)"
 has_cmd pixi && eval "$(pixi completion --shell bash)"
 
 source_if_exists ~/.local/share/ilm/fns
