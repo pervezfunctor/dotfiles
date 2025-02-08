@@ -252,6 +252,14 @@ if has_cmd fzf; then
     alias fv="fzf --bind 'enter:become(vim {})'"
 fi
 
+# function c() {
+#     code --enable-features=UseOzonePlatform --ozone-platform-hint=auto "$@"
+# }
+
+# function ci() {
+#     code-insiders --enable-features=UseOzonePlatform --ozone-platform-hint=auto "$@"
+# }
+
 # alias fd='fdfind'
 
 # cx() { cd "$@" && l; }

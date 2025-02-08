@@ -734,111 +734,103 @@ shell_install() {
 
 alacritty_config_install() {
     slog "alacritty config"
-    smd $XDG_CONFIG_HOME/alacritty
     stowdf alacritty
-
     slog "alacritty config done!"
 }
 
 wezterm_config_install() {
     slog "wezterm config"
-
-    smd $XDG_CONFIG_HOME/wezterm
     stowdf wezterm
-
     slog "wezterm config done!"
 }
 
 kitty_config_install() {
     slog "kitty config"
-
-    smd $XDG_CONFIG_HOME/kitty
     stowdf kitty
-
     slog "kitty config done!"
 }
 
 ghostty_config_install() {
     slog "ghostty config"
-
-    smd $XDG_CONFIG_HOME/ghostty
     stowdf ghostty
-
     slog "ghostty config done!"
 }
 
 bin_config_install() {
     slog "bin config"
-
     stownf bin
-
     slog "bin config done!"
 }
 
 share_config_install() {
     slog "bin config"
-
     stownf bin
-
     slog "bin config done!"
 }
 
 atuin_config_install() {
     slog "atuin config"
-
     srm $XDG_CONFIG_HOME/atuin/config.toml
-    smd $XDG_CONFIG_HOME/atuin
     stowdf atuin
-
     slog "atuin config done!"
 }
 
 waybar_config_install() {
     slog "waybar config"
-
-    srm $XDG_CONFIG_HOME/waybar
-    smd $XDG_CONFIG_HOME/waybar
     stowdf waybar
-
     slog "waybar config done!"
 }
 
 rofi_config_install() {
     slog "rofi config"
-
-    srm $XDG_CONFIG_HOME/rofi/config.toml
-    smd $XDG_CONFIG_HOME/rofi
+    srm $XDG_CONFIG_HOME/rofi
     stowdf rofi
 
     slog "rofi config done!"
 }
 
+amethyst_config_install() {
+    slog "amethyst config"
+    stowdf amethyst
+    slog "amethyst config done!"
+
+}
+
+aerospace_config_install() {
+    slog "aerospace config"
+    stowdf aerospace
+}
+
 config_install() {
     bash_config_install
+    has_cmd emacs && doom_install
+    has_cmd code && vscode_config_install
 
     if ! has_cmd stow; then
         warn "stow not installed, skipping config"
         return 1
     fi
 
+    stowdf wallpapers
     share_config_install
     bin_config_install
 
-    has_cmd zsh && zsh_config_install
-    has_cmd tmux && tmux_config_install
-    has_cmd nvim && nvim_config_install
-    has_cmd emacs && doom_install
-    has_cmd git && git_config_install
+    has_cmd aerospace && aerospace_config_install
     has_cmd alacritty && alacritty_config_install
-    has_cmd wezterm && wezterm_config_install
-    has_cmd code && vscode_config_install
-    has_cmd kitty && kitty_config_install
-    has_cmd ghostty && ghostty_config_install
-    has_cmd waybar && waybar_config_install
-    has_cmd sway && sway_config_install
-    has_cmd rofi && rofi_config_install
     has_cmd amethyst && amethyst_config_install
+    has_cmd appman && appman_config_install
     has_cmd atuin && atuin_config_install
+    has_cmd foot && foot_config_install
+    has_cmd ghostty && ghostty_config_install
+    has_cmd git && git_config_install
+    has_cmd kitty && kitty_config_install
+    has_cmd nvim && nvim_config_install
+    has_cmd rofi && rofi_config_install
+    has_cmd sway && sway_config_install
+    has_cmd tmux && tmux_config_install
+    has_cmd waybar && waybar_config_install
+    has_cmd wezterm && wezterm_config_install
+    has_cmd zsh && zsh_config_install
 }
 
 poetry_install() {
