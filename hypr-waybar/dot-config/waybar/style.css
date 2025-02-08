@@ -33,7 +33,7 @@
   padding: 0.2rem 0.8rem;
 }
 
-#workspaces button.focused {
+#workspaces button.active {
   color: @sky;
   border-radius: 1rem;
 }
@@ -49,6 +49,8 @@
 #clock,
 #battery,
 #network,
+#cpu,
+#memory,
 #pulseaudio,
 #custom-lock,
 #custom-power {
