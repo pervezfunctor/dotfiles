@@ -45,7 +45,7 @@ main() {
     appman_install
 }
 
-is_aurora || err_exit "This script is only for Aurora"
+is_aurora || is_bluefin || err_exit "This script is only for Aurora"
 
 bootstrap "Aurora OS"
 
