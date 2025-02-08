@@ -4,75 +4,49 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-permissive_selinux() {
-    sed -i 's/^SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
-
-    sudo setenforce 0
-    if [[ "$(getenforce)" == "Permissive" ]]; then
-        slog "Successfully set SELinux to permissive mode."
-    else
-        err_exit "Failed to set SELinux to permissive mode. Quitting."
-    fi
-}
-
 main() {
-    has_cmd ujust || err_exit "ujust not available"
-
-    if ! has_cmd getenforce; then
-        slog "SELinux is not installed on your system, not ublue? Quitting."
-        return 1
-    fi
-
-    SELINUX_MODE=$(getenforce)
-    slog "Current selinux mode is $SELENUX_MODE"
-
-    if [[ "$SELINUX_MODE" == "Enforcing" ]]; then
-        slog "SELinux is enabled and enforcing. Attempting to set SELinux to permissive mode..."
-        permissive_selinux
-
-        slog "You need to run this script again after system reboot"
-        has_cmd brew || ujust install-brew
-        ujust setup-cockpit
-        ujust dx-group
-        ujust bluefin-cli
-        # ujust update
-
-        slog "Now your system will reboot, run this script again after reboot."
-        sleep 10
-
-        sudo reboot
-        return 0
+    if has_cmd brew; then
+        brew_shell_install
+        bi neovim stow
+        astronvim_install
     else
-        ujust install-incus
-
-        sudo systemctl enable --now lxd.socket
-        sudo systemctl enable --now lxd
-
-        brew install -q trash-cli
-        dotfiles_install
-        webi_install
-        # mise_install
-
-        # brew install -q eza direnv starship atuin uutils
-        brew install -q curlie lsd shfmt gh
-        brew install -q neovim neovide shellcheck gdu
-        brew install -q git-delta procs fzf ripgrep fd hyperfine bat zoxide
-        brew install -q cheat curlie lazygit duf choose-rust sd bottom xh
-        gh extension install github/gh-copilot
-
-        fonts_install
-
-        flathub_install
-        apps_install
-
-        config_install
-
-        ujust configure-shell
+        warn "brew not installed; skipping shell utilities installation"
     fi
+
+    if has_cmd flatpak; then
+        fpi org.telegram.desktop
+        fpi org.deluge_torrent.deluge
+        fpi us.zoom.Zoom
+        fpi md.obsidian.Obsidian
+    else
+        warn "flatpak not installed; skipping apps installation"
+    fi
+
+    if has_cmd code; then
+        vscode_extensions_install
+        vscode_config_install
+    else
+        warn "code not installed; skipping vscode configuration"
+    fi
+
+    if has_cmd git; then
+        dotfile_install
+
+        if has_cmd stow; then
+            config_install
+        else
+            warn "stow not installed; skipping configuration"
+        fi
+    else
+        warn "git not installed skipping dotfiles"
+    fi
+
+    mise_install
+    appman_install
 }
 
-is_atomic_fedora || err_exit "This script works only on ublue derivatives like bluefin, aurora. Quitting."
+is_aurora || is_bluefin || err_exit "This script is only for Aurora"
 
-bootstrap "ublue setup"
+bootstrap "Aurora OS"
 
 }
