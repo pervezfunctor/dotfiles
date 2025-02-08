@@ -783,6 +783,16 @@ share_config_install() {
     slog "bin config done!"
 }
 
+atuin_config_install() {
+    slog "atuin config"
+
+    srm $XDG_CONFIG_HOME/atuin/config.toml
+    smd $XDG_CONFIG_HOME/atuin
+    stowdf atuin
+
+    slog "atuin config done!"
+}
+
 config_install() {
     bash_config_install
 
@@ -808,6 +818,7 @@ config_install() {
     has_cmd sway && sway_config_install
     has_cmd rofi && rofi_config_install
     has_cmd amethyst && amethyst_config_install
+    has_cmd atuin && atuin_config_install
 }
 
 poetry_install() {
