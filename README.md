@@ -8,7 +8,7 @@ Install shell tools
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
 
-Install vscode
+Reboot your machine and install vscode with the following command.
 
 ```bash
 installer vscode
