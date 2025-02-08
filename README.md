@@ -1,62 +1,58 @@
-#  Development environment
+# Development environment
 
-### Recommended Setup
+## Recommended Setup
 
-If you are an experienced linux user and and an experienced developer, then  [Aurora](https://getaurora.dev/en) or [Bluefin](https://projectbluefin.io) would the perfect setup because of the following reasons.
+### ublue
+
+If you are an experienced linux user and and an experienced developer, then [Aurora](https://getaurora.dev/en) or [Bluefin](https://projectbluefin.io) would the perfect setup.
 
   - Bluefin and Aurora are immutable(image based) distributions based on Fedora Atomic.
-  - You install shell tools using [homebrew](https://brew.sh), which is comparable to nix or aur in package selection. You also get the latest versions of packages.
-  - You can install desktop apps using flatpak, most modern apps on linux are available.
-  - vscode is already installed and configured.
-  - [podman](https://podman.io)(open source docker) for containers.
-  - [distrobox](https://distrobox.it) for software development, mostly a wrapper around podman.
+  - Install shell tools using [homebrew](https://brew.sh), which is comparable to nix or aur in package selection. You also get the latest versions of packages.
+  - Install desktop apps using flatpak, most modern apps on linux are available.
+  - vscode is installed and configured.
+  - Use [podman](https://podman.io)(open source docker) for containers.
+  - Use [distrobox](https://distrobox.it) for software development.
   - [libvirt](https://libvirt.org)/[virt-manager](https://virt-manager.org) or [incus](https://linuxcontainers.org/incus) for virtual machines and [lxc(stateful)](https://linuxcontainers.org/lxc) containers.
 
-You could further improve your shell setup by using the following command.
+You could install and configure shell tools and desktop apps using the following command. Works only or bluefin and aurora.
 
 ```bash
-ujust aurora-cli # for aurora
-ujust bluefin-cli # for bluefin
-```
-
-You could install and configure additional shell tools and desktop apps using the following command
-```bash
-# works only or bluefin and aurora
 bash -c "$(curl -sSL https://dub.sh/Hr0YTqp || wget -qO- https://dub.sh/Hr0YTqp)"
 ```
 
-If you want to use Fedora Atomic([Fedora Sway Atomic](https://fedoraproject.org/atomic-desktops/sway)/[Kinoite](https://fedoraproject.org/atomic-desktops/kinoite)/[Silverblue](https://fedoraproject.org/atomic-desktops/kinoite)) instead, then use the following command. Note that, you would be missing some packages as I currently don't use `rpm-ostree` for installing packages. For `shell` tools I am using `mise` instead of homebrew for this setup. You would also need to use `flatpak` version of vscode, and the experience might not be smooth especially on wayland.
+### Fedora Atomic
+
+If you prefer Fedora Atomic([Fedora Sway Atomic - a tiling window manager](https://fedoraproject.org/atomic-desktops/sway)/[Kinoite](https://fedoraproject.org/atomic-desktops/kinoite)/[Silverblue](https://fedoraproject.org/atomic-desktops/kinoite)), then use the following command. You would be missing some packages as `rpm-ostree` is not used for installing packages. `mise` is used instead of homebrew for this setup. You would also need to use `flatpak` version of vscode.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/RCrpnUm || wget -qO- https://dub.sh/RCrpnUm)"
 ```
 
-### Alternate setup
+### Vanilla OS
 
-**Note**: All of the following scripts should work fine on most flavors of Ubuntu, Fedora(Not Atomic), Debian, Arch, Opensuse Tumbleweed.
+I have not looked at `Vanilla OS` yet, as it's not stable in a virtual machine for me.
+
+## Alternate setup
+
+**Note**: All of the following scripts should work fine on most flavors of `Ubuntu`, `Fedora`(Not Atomic), `Debian`, `Arch` and `Opensuse Tumbleweed`.
 
 If you are a beginner linux developer, look at [Rhino Linux](https://rhinolinux.org), an ubuntu based rolling release. It's an ubuntu XFCE distribution. Make sure you select container and virtualization tools in the post install dialog.
 
-If you are an experienced linux developer, but don't want to use immutable distributions, I would recommend Opensuse Tumbleweed, a rolling release, similar to Arch Linux, but a bit more stable.
+If you are an experienced linux developer, but don't want to use immutable distributions, I would recommend Opensuse Tumbleweed, a rolling release, similar to Arch Linux, simpler and more stable. You could always use Arch Linux, but do not that it's not for the faint hearted.
 
-You could always use Arch Linux, but do not that it's not for the faint hearted.
-
-If you only need to install and configure shell tools, use the following command.
-
+Install and configure shell tools with the following command.
 ```bash
-# zsh, neovim, tmux, modern linux tools
+
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
-If you need to install container and virtualization tools along with shell tools and configuration, use the following command.
+Install container and virtualization tools in addition to above shell tools and configuration, with following command.
 
 ```bash
-# shell + docker, distrobox, libvirt
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- vm
 ```
-If you need to install desktop apps especially vscode, use the following command.
+Install desktop apps including vscode, with the following command.
 
 ```bash
-# vm + vscode, ghostty/wezterm terminal, chromium browser, obsidian note taking app, etc
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- desktop
 ```
 
@@ -66,15 +62,16 @@ You could also, first install the base setup
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)"
 ```
 
-and then at any point(after reboot), use `group-installer`
+and then at any point(after reboot), use `group-installer`.
 
 ```bash
-group-installer shell # or
-group-installer # You can pick from shell, ct, vm options
-group-installer help # to get all options and short descriptions
+group-installer
+group-installer help
 ```
 
-`shell` installation will install and configure bash, zsh(shells with [starship](https://starship.rs) prompt), neovim(with [astronvim](https://astronvim.com)) and [tmux](https://github.com/tmux/tmux/wiki). Installs many modern shell tools like
+You could pick from `shell`, `ct`, `vm`, `desktop` and `all` groups.
+
+`shell` will install and configure bash, zsh(shells with [starship](https://starship.rs) prompt), neovim(with [astronvim](https://astronvim.com)) and [tmux](https://github.com/tmux/tmux/wiki). Installs modern shell tools like
 
 - [gh - github cli](https://cli.github.com)
 - [just - task runner](https://github.com/casey/just)
@@ -92,7 +89,7 @@ group-installer help # to get all options and short descriptions
 - [cheat - cheat sheet](https://github.com/cheat/cheat)
 - [lazygit - git ui](https://github.com/jesseduffield/lazygit)
 
-When you group install `ct` following will be installed, along with `shell` packages above.
+`ct` will install the following, along with `shell` packages above.
 
 - [docker](https://docker.com)
 - [portainer](https://portainer.io)
@@ -100,18 +97,17 @@ When you group install `ct` following will be installed, along with `shell` pack
 - [podman](https://podman.io)
 - [incus](https://linuxcontainers.org/incus)
 
-For desktop group, following will be installed
+`desktop` will install the following, along with `shell` packages above.
 
 - [ghostty terminal](https://github.com/pgdev92/ghostty) or [wezterm](https://wezfurlong.org/wezterm)
 - [vscode editor](https://code.visualstudio.com)
 - [nerd fonts for jetbrains mono, cascadia code mono](https://github.com/ryanoasis/nerd-fonts)
 - apps(telegram, [zoom](https://zoom.us), [obsidian](https://obsidian.md), chromium etc)
 
-In addition to the above group installs, you could also use `installer` to setup various tools like `emacs`. If you run `installer` without any arguments, you will be provided with list of options to select from.
+In addition to the above group installs, you could also use `installer` to setup various tools like `emacs`.
 
 ```bash
 installer
-installer emacs
 ```
 To get all options and short descriptions, run
 
@@ -119,13 +115,13 @@ To get all options and short descriptions, run
 installer help
 ```
 
-### Container Setup
+## Container Setup
 
-Most development should happen in a container, either [devcontainer](https://code.visualstudio.com/docs/devcontainers/containers) or [distrobox](https://github.com/89luca89/distrobox). You could use the same scripts as above to setup shell tools.
+Most development should happen in a container, either in a [devcontainer](https://code.visualstudio.com/docs/devcontainers/containers) or in a [distrobox](https://github.com/89luca89/distrobox). You could use the same scripts as above to setup shell.
 
 For most development tools, use could use [mise](https://mise.dev). For python just use `uv`.
 
-You could also install necessary tools and libraries for rust, go, c++ development.
+You could also install necessary tools and libraries for rust, go, c++ development using `installer`.
 
 ```bash
 installer rust
