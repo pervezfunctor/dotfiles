@@ -20,7 +20,7 @@ main() {
 
     if ! has_cmd getenforce; then
         slog "SELinux is not installed on your system, not ublue? Quitting."
-        exit 1
+        return 1
     fi
 
     SELINUX_MODE=$(getenforce)
@@ -41,7 +41,7 @@ main() {
         sleep 10
 
         sudo reboot
-        exit 0
+        return 0
     else
         ujust install-incus
 

@@ -7,11 +7,10 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 main() {
     if [[ "$#" -eq 1 ]] && has_cmd "${1}-group_install"; then
         "${1}-group_install"
-        exit 0
+    else
+        base-group_install
+        installer "$@"
     fi
-
-    base-group_install
-    installer "$@"
 }
 
 bootstrap "$@"

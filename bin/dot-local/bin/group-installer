@@ -22,12 +22,12 @@ help() {
 main() {
     if ! [[ "$#" -eq 0 ]]; then
         "${1}-group_install"
-        exit 0
+        return 0
     fi
 
     if ! has_cmd gum; then
         help
-        exit 1
+        return 1
     fi
 
     SELECTED_OPTION=$(gum choose "${INSTALL_OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
@@ -39,15 +39,14 @@ main() {
         "${1}-group_install"
     else
         slog "No option selected."
-        exit 1
+        return 1
     fi
 }
 
 if [[ "$1" == "help" ]]; then
     help
-    exit 0
+else
+    CLICOLOR_FORCE=1 bootstrap "$@"
 fi
-
-CLICOLOR_FORCE=1 bootstrap "$@"
 
 }

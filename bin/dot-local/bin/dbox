@@ -28,13 +28,10 @@ installer() {
 
     if [[ "$1" == "bluefin" ]]; then
         distrobox_ublue_all
-        return 0
     elif [[ "$1" == "toolboxes" ]]; then
         distrobox_toolbox_all
-        return 0
     elif has_cmd "distrobox_create_$1"; then
         "distrobox_create_$1"
-        return 0
     else
         err_exit "No installer found for $1"
     fi
@@ -43,12 +40,12 @@ installer() {
 main() {
     if ! [[ "$#" -eq 0 ]]; then
         installer $1
-        exit 0
+        return 0
     fi
 
     if ! has_cmd gum; then
         help
-        exit 1
+        return 1
     fi
 
     SELECTED_OPTION=$(gum choose "${OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
@@ -60,15 +57,14 @@ main() {
         bluefin
     else
         slog "No option selected."
-        exit 1
+        return 1
     fi
 }
 
 if [[ "$1" == "help" ]]; then
     help
-    exit 0
+else
+    CLICOLOR_FORCE=1 bootstrap "$@"
 fi
-
-CLICOLOR_FORCE=1 bootstrap "$@"
 
 }

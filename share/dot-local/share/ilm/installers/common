@@ -713,10 +713,6 @@ shell_install() {
     # appman_shell_install
 
     starship_install
-
-    # go_shell_install
-    # rust_shell_install
-    # pnpm_shell_install
 }
 
 alacritty_config_install() {
@@ -794,7 +790,6 @@ config_install() {
     has_cmd waybar && waybar_config_install
     has_cmd sway && sway_config_install
     has_cmd rofi && rofi_config_install
-    has_cmd konsole && konsole_config_install
     has_cmd amethyst && amethyst_config_install
 }
 

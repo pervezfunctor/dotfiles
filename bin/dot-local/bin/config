@@ -39,12 +39,12 @@ config() {
 main() {
     if ! [[ "$#" -eq 0 ]]; then
         config "$@"
-        exit 0
+        return 0
     fi
 
     if ! has_cmd gum; then
         help
-        exit 1
+        return 1
     fi
 
     SELECTED_INSTALL_OPTIONS=$(gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
@@ -56,7 +56,7 @@ main() {
         config $SELECTED_INSTALL_OPTIONS
     else
         slog "No options selected."
-        exit 1
+        return 1
     fi
 }
 

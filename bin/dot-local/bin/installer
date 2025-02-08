@@ -38,12 +38,12 @@ help() {
 main() {
     if ! [[ "$#" -eq 0 ]]; then
         fg-installer "$@"
-        exit 0
+        return 0
     fi
 
     if ! has_cmd gum; then
         help
-        exit 1
+        return 1
     fi
 
     SELECTED_INSTALL_OPTIONS=$(gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
@@ -55,15 +55,14 @@ main() {
         fg-installer $SELECTED_INSTALL_OPTIONS
     else
         slog "No options selected."
-        exit 1
+        return 1
     fi
 }
 
 if [[ "$1" == "help" ]]; then
     help
-    exit 0
+else
+    CLICOLOR_FORCE=1 bootstrap "$@"
 fi
-
-CLICOLOR_FORCE=1 bootstrap "$@"
 
 }
