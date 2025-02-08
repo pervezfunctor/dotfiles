@@ -14,7 +14,7 @@ If you are an experienced linux user and and an experienced developer, then [Aur
   - [libvirt](https://libvirt.org)/[virt-manager](https://virt-manager.org) for virtual machines.
   - [incus](https://linuxcontainers.org/incus) for virtual machines and [lxc(stateful)](https://linuxcontainers.org/lxc) containers.
 
-Install and configure shell tools and desktop apps using the following command. Works only or bluefin and aurora.
+Install and configure shell tools and desktop apps using the following command. Works only on bluefin and aurora.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/Hr0YTqp || wget -qO- https://dub.sh/Hr0YTqp)"
@@ -25,13 +25,16 @@ bash -c "$(curl -sSL https://dub.sh/Hr0YTqp || wget -qO- https://dub.sh/Hr0YTqp)
 
 If you prefer Fedora Atomic([Kinoite](https://fedoraproject.org/atomic-desktops/kinoite) or [Silverblue](https://fedoraproject.org/atomic-desktops/kinoite)), then use the following command. If you prefer an immutable OS along with a tiling window manager, then [Fedora Sway Atomic](https://fedoraproject.org/atomic-desktops/sway) is an excellent option.
 
-You might be missing some packages as `rpm-ostree` is NOT used for installing any packages. `mise` is used instead of `homebrew` for this setup. `flatpak` version of vscode is installed.
-
 ```bash
 bash -c "$(curl -sSL https://dub.sh/RCrpnUm || wget -qO- https://dub.sh/RCrpnUm)"
 ```
 
- Don't install everything on the host. Use [toolbox](https://docs.fedoraproject.org/en-US/fedora-silverblue/toolbox) for almost everything. You can Install `visual studio code` inside a `toolbox` container. [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal has great support for toolbox.
+  - You might be missing some packages as `rpm-ostree` is NOT used for installing any packages.
+  - `mise` is used instead of `homebrew` for this setup.
+  - `flatpak` version of vscode is installed.
+  - Don't install everything on the host. Use [toolbox](https://docs.fedoraproject.org/en-US/fedora-silverblue/toolbox) for almost everything.
+  - You can even `visual studio code` inside a `toolbox` container, if you need to.
+  - [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal has great support for toolbox.
 
 ### Vanilla OS
 
@@ -40,23 +43,23 @@ I have not looked at `Vanilla OS` yet, as it's not stable in a virtual machine f
 
 ## Alternate setup
 
-**Note**: All of the following scripts should work fine on most flavors of `Ubuntu`, `Fedora`(Not Atomic), `Debian`, `Arch` and `Opensuse Tumbleweed`.
+**Note**: All of the following scripts should work fine on most flavors of `Ubuntu`, `Fedora`(Not Atomic), `Debian`, `Rocky`, `Arch` and `Opensuse Tumbleweed`.
 
-If you are a beginner linux developer, look at [Rhino Linux](https://rhinolinux.org), an ubuntu based rolling release. It's an ubuntu XFCE distribution. Make sure you select container and virtualization tools in the post install dialog.
+If you are a beginner linux developer, look at [Rhino Linux](https://rhinolinux.org), an ubuntu based rolling release. Make sure you select container and virtualization tools in the post install dialog. Note that this uses xfce, perfect for low end laptops.
 
-If you are an experienced linux developer, but don't want to use immutable distributions, I would recommend Opensuse Tumbleweed, a rolling release, similar to Arch Linux, simpler and more stable. You could always use Arch Linux, but do not that it's not for the faint hearted.
+If you are an experienced linux developer, but don't want to use immutable distributions, I would recommend Opensuse Tumbleweed, a rolling release distribution similar to Arch Linux, but simpler and a bit more stable. You could always use Arch Linux, but do note that it's not for the faint hearted.
 
 Install and configure shell tools with the following command.
-```bash
 
+```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
-Install container and virtualization tools in addition to above shell tools and configuration, with following command.
+Install container and virtualization tools(in addition to above shell tools and configuration), with following command.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- vm
 ```
-Install desktop apps including vscode, with the following command.
+Install desktop apps including vscode(in addition to above), with the following command.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- desktop
@@ -75,9 +78,9 @@ group-installer
 group-installer help
 ```
 
-You could pick from `shell`, `ct`, `vm`, `desktop` and `all` groups.
+You could pick from `shell`, `ct`, `vm`, `desktop` and `all` groups. This is the same as above installation commands.
 
-`shell` will install and configure bash, zsh(shells with [starship](https://starship.rs) prompt), neovim(with [astronvim](https://astronvim.com)) and [tmux](https://github.com/tmux/tmux/wiki). Installs modern shell tools like
+`shell` will install and configure zsh and bash(with [starship](https://starship.rs) prompt), neovim(with [astronvim](https://astronvim.com)) and [tmux](https://github.com/tmux/tmux/wiki). Installs modern shell tools like
 
 - [gh - github cli](https://cli.github.com)
 - [just - task runner](https://github.com/casey/just)
@@ -110,12 +113,11 @@ You could pick from `shell`, `ct`, `vm`, `desktop` and `all` groups.
 - [nerd fonts for jetbrains mono, cascadia code mono](https://github.com/ryanoasis/nerd-fonts)
 - apps(telegram, [zoom](https://zoom.us), [obsidian](https://obsidian.md), chromium etc)
 
-In addition to the above group installs, you could also use `installer` to setup various tools like `emacs`.
+In addition to the above group installs, you could also use `installer` to setup various tools like `emacs`. Pass `help` to get all options and short descriptions, run
 
 ```bash
 installer
 ```
-To get all options and short descriptions, run
 
 ```bash
 installer help
@@ -131,6 +133,12 @@ You could also install necessary tools and libraries for rust, go, c++ developme
 
 ```bash
 installer rust
+```
+
+```bash
 installer go
+```
+
+```bash
 installer cpp
 ```
