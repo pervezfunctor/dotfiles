@@ -4,33 +4,39 @@
 
 ### ublue
 
-If you are an experienced linux user and and an experienced developer, then [Aurora](https://getaurora.dev/en) or [Bluefin](https://projectbluefin.io) would be the perfect setup.
+If you are an experienced linux user and and an experienced developer, then [Aurora](https://getaurora.dev/en) or [Bluefin](https://projectbluefin.io) would be perfect. Bluefin and Aurora are based on Fedora Atomic.
 
-  - Bluefin and Aurora are immutable(image based) distributions based on Fedora Atomic.
-  - Install shell tools using [homebrew](https://brew.sh), which is comparable to nix or aur in package selection. You also get the latest versions of packages.
-  - Install desktop apps using flatpak, most modern apps on linux are available.
-  - vscode is installed and configured.
-  - Use [podman](https://podman.io)(open source docker) for containers.
-  - Use [distrobox](https://distrobox.it) for software development.
-  - [libvirt](https://libvirt.org)/[virt-manager](https://virt-manager.org) or [incus](https://linuxcontainers.org/incus) for virtual machines and [lxc(stateful)](https://linuxcontainers.org/lxc) containers.
+  - Install shell tools using [homebrew](https://brew.sh), which is comparable to `nix` or `aur` in package selection. You also get the latest versions of packages.
+  - Install desktop apps using [flatpak](https://flathub.org), most modern apps on linux are available.
+  - [Visual studio code](https://code.visualstudio.com) is installed and configured properly.
+  - Use [podman](https://podman.io)(open source) for containers.
+  - Use [distrobox](https://distrobox.it) for software development. You could use scripts from [Alternate setup](#alternate-setup) to setup the container.
+  - [libvirt](https://libvirt.org)/[virt-manager](https://virt-manager.org) for virtual machines.
+  - [incus](https://linuxcontainers.org/incus) for virtual machines and [lxc(stateful)](https://linuxcontainers.org/lxc) containers.
 
-You could install and configure shell tools and desktop apps using the following command. Works only or bluefin and aurora.
+Install and configure shell tools and desktop apps using the following command. Works only or bluefin and aurora.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/Hr0YTqp || wget -qO- https://dub.sh/Hr0YTqp)"
 ```
 
+
 ### Fedora Atomic
 
-If you prefer Fedora Atomic([Fedora Sway Atomic - a tiling window manager](https://fedoraproject.org/atomic-desktops/sway)/[Kinoite](https://fedoraproject.org/atomic-desktops/kinoite)/[Silverblue](https://fedoraproject.org/atomic-desktops/kinoite)), then use the following command. You would be missing some packages as `rpm-ostree` is not used for installing packages. `mise` is used instead of homebrew for this setup. You would also need to use `flatpak` version of vscode.
+If you prefer Fedora Atomic([Kinoite](https://fedoraproject.org/atomic-desktops/kinoite) or [Silverblue](https://fedoraproject.org/atomic-desktops/kinoite)), then use the following command. If you prefer an immutable OS along with a tiling window manager, then [Fedora Sway Atomic](https://fedoraproject.org/atomic-desktops/sway) is an excellent option.
+
+You might be missing some packages as `rpm-ostree` is NOT used for installing any packages. `mise` is used instead of `homebrew` for this setup. `flatpak` version of vscode is installed.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/RCrpnUm || wget -qO- https://dub.sh/RCrpnUm)"
 ```
 
+ Don't install everything on the host. Use [toolbox](https://docs.fedoraproject.org/en-US/fedora-silverblue/toolbox) for almost everything. You can Install `visual studio code` inside a `toolbox` container. [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal has great support for toolbox.
+
 ### Vanilla OS
 
 I have not looked at `Vanilla OS` yet, as it's not stable in a virtual machine for me.
+
 
 ## Alternate setup
 
