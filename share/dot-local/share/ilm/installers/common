@@ -775,12 +775,6 @@ atuin_config_install() {
     slog "atuin config done!"
 }
 
-waybar_config_install() {
-    slog "waybar config"
-    stowdf waybar
-    slog "waybar config done!"
-}
-
 rofi_config_install() {
     slog "rofi config"
     srm $XDG_CONFIG_HOME/rofi
@@ -827,8 +821,8 @@ config_install() {
     has_cmd nvim && nvim_config_install
     has_cmd rofi && rofi_config_install
     has_cmd sway && sway_config_install
+    has_cmd hypr && hypr_config_install
     has_cmd tmux && tmux_config_install
-    has_cmd waybar && waybar_config_install
     has_cmd wezterm && wezterm_config_install
     has_cmd zsh && zsh_config_install
 }
@@ -1287,6 +1281,9 @@ gnome_settings() {
 }
 
 sway_config_install() {
+    has_cmd sway && stowdf sway
+    has_cmd waybar && stowdf waybar
+
     has_cmd pip || has_cmd python3 && python3 -m ensurepip --user --default-pip
 
     if ! has_cmd pip; then
@@ -1296,6 +1293,15 @@ sway_config_install() {
 
     pip install --user --force-reinstall --upgrade i3ipc
     pip install --user --force-reinstall --upgrade autotiling
+}
+
+hypr_config_install() {
+    slog "hypr config install"
+    srm ~/.config/hypr
+    srm ~/.config/waybar
+    stowdf hypr
+    stowdf hypr-waybar
+    slog "hypr config done!"
 }
 
 }
