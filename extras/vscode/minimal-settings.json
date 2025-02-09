@@ -11,7 +11,6 @@
   "editor.find.autoFindInSelection": "never",
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
-  "editor.glyphMargin": true,
   "editor.gotoLocation.multipleDefinitions": "goto",
   "editor.gotoLocation.multipleImplementations": "goto",
   "editor.guides.indentation": false,
@@ -47,5 +46,11 @@
   "window.commandCenter": true,
   "workbench.commandPalette.preserveInput": true,
   "workbench.editor.highlightModifiedTabs": true,
-  "workbench.colorTheme": "Catppuccin Frappé"
+  "workbench.colorTheme": "Catppuccin Frappé",
+  "breadcrumbs.enabled": false,
+  "editor.folding": false,
+  "editor.glyphMargin": false,
+  "workbench.sideBar.location": "right",
+  "window.menuBarVisibility": "toggle",
+  "workbench.activityBar.location": "hidden"
 }
