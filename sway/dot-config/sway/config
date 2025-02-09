@@ -4,6 +4,9 @@ include catppuccin-frappe
 
 include '$("/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf")'
 
+exec-once=dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+exec-once=/usr/libexec/lxqt-policykit-agent
+
 exec env.sh
 exec_always swayidle -w \
     timeout 180 'swaymsg "output * dpms off"' \

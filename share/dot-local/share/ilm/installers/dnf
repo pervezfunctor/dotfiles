@@ -253,7 +253,7 @@ more_essential_install() {
 }
 
 tiling_common_install() {
-    si waybar wlogout pavucontrol Thunar wl-clipboard thunar-archive-plugin pmv network-manager-applet blueman gnome-keyring-pam gnome-themes-extra kanshi sddm imv mpv playerctl wlsunset rofi-wayland rofi-themes dunst swaync lxqt-policykit
+    si waybar wlogout pavucontrol Thunar wl-clipboard thunar-archive-plugin pmv network-manager-applet blueman gnome-keyring-pam gnome-keyring gnome-themes-extra kanshi sddm imv mpv playerctl wlsunset rofi-wayland rofi-themes dunst swaync lxqt-policykit network-manager-applet xdg-desktop-portal-gtk
 
     stowdf waybar
 }
@@ -262,7 +262,7 @@ hyprland_install() {
     slog "Installing hyprland..."
 
     tiling_common_install
-    si  hyprland hyprland-devel hyprutils hyprutils-devel rofi-wayland rofi-themes hypridle hyprpaper hyprpicker hyprlock
+    si  hyprland hyprland-devel hyprutils hyprutils-devel rofi-wayland rofi-themes hypridle hyprpaper hyprpicker hyprlock kitty
 
     stowdf hypr
 
