@@ -261,7 +261,7 @@ tiling_common_install() {
     si gnome-themes-extra kanshi sddm playerctl wlsunset rofi-wayland
     si rofi-themes dunst swaync lxqt-policykit network-manager-applet
     si xdg-desktop-portal-gtk pmv imv mpv wlogout qt6-qtquickcontrols2 qt6-qtsvg
-
+    si SwayNotificationCenter
     stowdf waybar
 }
 
