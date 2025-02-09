@@ -60,7 +60,7 @@
 }
 
 #network {
-  border-radius: 1rem 0px 0px 1rem;
+  /* border-radius: 1rem 0px 0px 1rem; */
   color: @peach;
 }
 
@@ -71,8 +71,8 @@
 }
 
 #tray {
-  margin-right: 1rem;
-  border-radius: 1rem;
+  margin-right: 0.1rem;
+  border-radius: 1rem 0px 0px 1rem;
 }
 
 #pulseaudio {
