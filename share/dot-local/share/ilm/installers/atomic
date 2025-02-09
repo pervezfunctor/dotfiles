@@ -9,7 +9,8 @@ gtk_cursor_theme() {
 }
 
 rpm_ostree_packages_install() {
-    sudo rpm-ostree -q install -y gnome-keyring g++ cmake gcc glibc-devel make stow zsh libvirt libvirt-daemon libvirt-daemon-config-network libvirt-daemon-driver-interface libvirt-daemon-driver-network libvirt-daemon-driver-nwfilter libvirt-daemon-driver-qemu libvirt-daemon-driver-secret libvirt-daemon-driver-storage-core
+    sudo rpm-ostree -q install -y gnome-keyring g++ cmake gcc glibc-devel make stow zsh luarocks
+    # autoconf automake binutils bison flex gcc gcc-c++ gdb glibc-devel libtool make pkgconf strace
 }
 
 home_manager_install() {
@@ -25,6 +26,8 @@ nix_install() {
 
 main() {
     has_cmd git || err_exit "git not installed! Qutting."
+
+    micro_install
     appman_install
     mise_install
 
