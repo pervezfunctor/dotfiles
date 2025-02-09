@@ -142,7 +142,8 @@ cockpit_install() {
 
     slog "Installing cockpit"
 
-    si cockpit cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged firewalld # cockpit-file-sharing
+    si cockpit cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged
+    si firewalld # cockpit-file-sharing
     sudo systemctl enable --now cockpit.socket
     sudo systemctl enable --now firewalld
     sudo firewall-cmd --add-service=cockpit
@@ -161,7 +162,8 @@ docker_install() {
     is_rocky && sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
     is_fedora && sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
 
-    si docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    si docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+    si docker-compose-plugin
 
     docker_common_install
 
@@ -208,8 +210,8 @@ more_virt_install() {
     si samba-dcerpc samba-ldb-ldap-modules samba-winbind-clients
     si samba-winbind-modules samba
 
-    si cockpit-machines cockpit-networkmanager cockpit-system
-    si cockpit-ostree cockpit-pcp cockpit-podman cockpit-selinux cockpit-storaged
+    si cockpit-machines cockpit-networkmanager cockpit-system cockpit-storaged
+    si cockpit-ostree cockpit-pcp cockpit-podman cockpit-selinux
     si podman-compose podman-tui podmansh powertop qemu-char-spice
     si qemu-device-display-virtio-gpu qemu-device-display-virtio-vga
     si qemu-device-usb-redirect qemu-img qemu-system-x86-core qemu-user-binfmt
@@ -225,11 +227,12 @@ more_ui_install() {
     si mesa-libGLU playerctl pulseaudio-utils
 
     if is_kde; then
-        si libadwaita-qt5 libadwaita-qt6 kde-runtime-docs kdeplasma-addons plasma-wallpapers-dynamic
+        si libadwaita-qt5 libadwaita-qt6 kde-runtime-docs kdeplasma-addons
+        si plasma-wallpapers-dynamic
     elif is_gnome; then
-        si gnome-shell-extension-appindicator gnome-shell-extension-blur-my-shell
+        si gnome-shell-extension-appindicator
         si gnome-shell-extension-caffeine gnome-shell-extension-dash-to-dock
-        si gnome-shell-extension-gsconnect
+        si gnome-shell-extension-gsconnect gnome-shell-extension-blur-my-shell
         # si gnome-shell-extension-search-light gnome-shell-extension-logo-menu
         si libgda libgda-sqlite
         si libratbag-ratbagd nautilus-gsconnect openssh-askpass yaru-theme
@@ -238,9 +241,9 @@ more_ui_install() {
 }
 
 more_fonts_install() {
-    si cascadia-code-fonts adobe-source-code-pro-fonts mozilla-fira-mono-fonts fira-code-fonts
+    si cascadia-code-fonts adobe-source-code-pro-fonts mozilla-fira-mono-fonts
     si jetbrains-mono-fonts-all google-go-mono-fonts ibm-plex-mono-fonts
-    si google-droid-sans-mono-fonts powerline-fonts
+    si google-droid-sans-mono-fonts powerline-fonts fira-code-fonts
 }
 
 more_essential_install() {
@@ -253,7 +256,11 @@ more_essential_install() {
 }
 
 tiling_common_install() {
-    si waybar wlogout pavucontrol Thunar wl-clipboard thunar-archive-plugin pmv network-manager-applet blueman gnome-keyring-pam gnome-keyring gnome-themes-extra kanshi sddm imv mpv playerctl wlsunset rofi-wayland rofi-themes dunst swaync lxqt-policykit network-manager-applet xdg-desktop-portal-gtk
+    si waybar pavucontrol Thunar wl-clipboard thunar-archive-plugin
+    si network-manager-applet blueman gnome-keyring-pam gnome-keyring
+    si gnome-themes-extra kanshi sddm playerctl wlsunset rofi-wayland
+    si rofi-themes dunst swaync lxqt-policykit network-manager-applet
+    si xdg-desktop-portal-gtk pmv imv mpv wlogout qt6-qtquickcontrols2 qt6-qtsvg
 
     stowdf waybar
 }
@@ -262,7 +269,8 @@ hyprland_install() {
     slog "Installing hyprland..."
 
     tiling_common_install
-    si  hyprland hyprland-devel hyprutils hyprutils-devel rofi-wayland rofi-themes hypridle hyprpaper hyprpicker hyprlock kitty
+    si hyprland hyprland-devel hyprutils hyprutils-devel rofi-wayland
+    si rofi-themes hypridle hyprpaper hyprpicker hyprlock kitty
 
     stowdf hypr
 
@@ -273,7 +281,8 @@ sway_install() {
     slog "Installing sway..."
 
     tiliing_common_install
-    si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway sway-config-fedora
+    si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway
+    si sway-config-fedora
 
     stowdf sway
 
