@@ -253,7 +253,7 @@ more_essential_install() {
 }
 
 tiling_common_install() {
-    si waybar wlogout pavucontrol Thunar wl-clipboard thunar-archive-plugin pmv network-manager-applet blueman gnome-keyring-pam gnome-themes-extra kanshi sddm imv mpv playerctl wlsunset rofi-wayland rofi-themes dunst swaync
+    si waybar wlogout pavucontrol Thunar wl-clipboard thunar-archive-plugin pmv network-manager-applet blueman gnome-keyring-pam gnome-themes-extra kanshi sddm imv mpv playerctl wlsunset rofi-wayland rofi-themes dunst swaync lxqt-policykit
 
     stowdf waybar
 }
