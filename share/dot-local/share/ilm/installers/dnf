@@ -252,4 +252,32 @@ more_essential_install() {
     si hplip ifuse input-remapper libimobiledevice libxcrypt-compat
 }
 
+tiling_common_install() {
+    si waybar wlogout pavucontrol Thunar wl-clipboard thunar-archive-plugin pmv network-manager-applet blueman gnome-keyring-pam gnome-themes-extra kanshi sddm imv mpv playerctl wlsunset rofi-wayland rofi-themes dunst swaync
+
+    stowdf waybar
+}
+
+hyprland_install() {
+    slog "Installing hyprland..."
+
+    tiling_common_install
+    si  hyprland hyprland-devel hyprutils hyprutils-devel rofi-wayland rofi-themes hypridle hyprpaper hyprpicker hyprlock
+
+    stowdf hypr
+
+    slog "hyprland installation done!"
+}
+
+sway_install() {
+    slog "Installing sway..."
+
+    tiliing_common_install
+    si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway sway-config-fedora
+
+    stowdf sway
+
+    slog "Installing sway done!"
+}
+
 }
