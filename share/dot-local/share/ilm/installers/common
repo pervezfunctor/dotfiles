@@ -51,8 +51,10 @@ appman_install() {
 mise_shell_install() {
     mis tree-sitter just lazygit lazydocker starship shfmt ripgrep
     mis lsd shellcheck gum xh bottom fzf fd hyperfine
-    mis cheat duf eza dust zoxide gdu bat choose jq yq tmux
+    mis cheat duf eza dust zoxide gdu bat choose jq yq tmux yazi
+    mi superfile
     has_cmd nu || mise use -g cargo:nu
+
 }
 
 amm_shell_install() {
@@ -261,8 +263,8 @@ neovim_install() {
 
     si luarocks
 
-    if has_cmd npm; then
-        npm install -g neovim
+    if has_cmd pnpm; then
+        pnpm install -g neovim
     elif has_cmd npm; then
         npm install -g neovim
     fi
@@ -644,7 +646,7 @@ webi_shell_install() {
 }
 
 brew_shell_install() {
-    # bi yazi ffmpeg sevenzip jq poppler fd ripgrep fzf zoxide imagemagick font-symbols-only-nerd-font
+    # bi ffmpeg sevenzip poppler imagemagick font-symbols-only-nerd-font
     # bi -q glances
 
     slog "shell tools with brew"
@@ -652,6 +654,7 @@ brew_shell_install() {
     bis jq tree-sitter just lsd shfmt gh tldr shellcheck gum lazydocker stow neovim
     bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust
     bis procs fzf fd hyperfine zoxide starship pixi yq ugrep yazi
+
     # bis nushell gping ncdu httpie
 
     has_cmd spf || bi superfile
@@ -796,6 +799,12 @@ aerospace_config_install() {
     stowdf aerospace
 }
 
+yazi_config_install() {
+    slog "yazi config"
+    stownf yazi
+    slog "yazi config done!"
+}
+
 config_install() {
     bash_config_install
     has_cmd emacs && doom_install
@@ -826,6 +835,10 @@ config_install() {
     has_cmd tmux && tmux_config_install
     has_cmd wezterm && wezterm_config_install
     has_cmd zsh && zsh_config_install
+    if has_cmd yazi; then
+        has_cmd ya && ya pack -a yazi-rs/flavors:catppuccin-frappe
+        yazi_config_install
+    fi
 }
 
 poetry_install() {
