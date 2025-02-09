@@ -10,14 +10,14 @@
         "hyprland/window"
     ],
     "modules-right": [
-        // "pulseaudio",
+        "pulseaudio",
         "network",
         // "power-profiles-daemon",
         // "cpu",
         // "memory",
         "clock",
-        "tray"
-        // "custom/power"
+        "tray",
+        "custom/power"
     ],
     "hyprland/workspaces": {
         "persistent-workspaces": {
