@@ -27,6 +27,8 @@ nix_install() {
 main() {
     has_cmd git || err_exit "git not installed! Qutting."
 
+    dotfiles_install
+
     micro_install
     appman_install
     mise_install
@@ -41,7 +43,6 @@ main() {
     vscode_flatpak_install
     apps_install
 
-    dotfiles_install
     config_install
 }
 
