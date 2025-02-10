@@ -46,7 +46,7 @@ main() {
     config_install
 }
 
-is_std_atomic || err_exit "This script is only for Linux"
+is_std_atomic || err_exit "This script is only for Atomic"
 
 bootstrap "Immutable OS"
 
