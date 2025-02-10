@@ -91,7 +91,7 @@ vscode_flatpak_install() {
     fpi com.visualstudio.code
     flatpak install com.visualstudio.code.tool.podman
     alias code="flatpak run com.visualstudio.code"
-    cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 flatpak run com.visualstudio.code --install-extension
+    cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 flatpak run com.visualstudio.code --install-extension
     vscode_flatpak_config_install
 }
 
@@ -171,7 +171,7 @@ bash_config_install() {
 
 vscode_extensions_install() {
     slog "Installing vscode extensions"
-    cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 code --install-extension
+    cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 code --install-extension
     slog "vscode extensions installation done!"
 }
 
