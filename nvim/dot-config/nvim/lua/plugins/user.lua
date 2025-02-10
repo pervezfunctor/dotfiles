@@ -53,6 +53,7 @@ return {
   {
     "catppuccin",
     opts = {
+      transparent_background = true,
       flavour = "frappe",
     },
   },
