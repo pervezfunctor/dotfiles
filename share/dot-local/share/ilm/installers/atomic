@@ -29,24 +29,30 @@ main() {
 
     dotfiles_install
 
-    micro_install
-    appman_install
+    webi_install
     mise_install
+    appman_install
 
+    webi_shell_install
     mise_shell_install
     amm_shell_install
 
     smd ~/.local/share/fonts
     jetbrains_nerd_font_install
 
+    micro_install
+
+    toolbox --assumeyes create
+    toolbox run sudo dnf install -y stow
+    toolbox run stow -d $DOT_DIR -t $HOME --dotfiles -R share bin tmux nvim wezterm zsh
+    bash_config_install
+
     flathub_install
     vscode_flatpak_install
     apps_install
-
-    config_install
 }
 
-is_std_atomic || err_exit "This script is only for Atomic"
+# is_std_atomic || err_exit "This script is only for Atomic"
 
 bootstrap "Immutable OS"
 

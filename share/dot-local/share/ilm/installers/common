@@ -48,18 +48,32 @@ appman_install() {
     cmd_check appman
 }
 
+amm_shell_install() {
+    slog "shell tools with appman"
+
+    ami tmux doggo gping procs nvim atuin gh
+
+    slog "shell tools with appman done!"
+}
+
+webi_shell_install() {
+    slog "shell tools with webi"
+
+    wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq
+
+    slog "shell tools with webi done!"
+}
+
 mise_shell_install() {
-    mis tree-sitter just lazygit lazydocker starship shfmt ripgrep
-    mis lsd shellcheck gum xh bottom fzf fd hyperfine
-    mis cheat duf eza dust zoxide gdu bat choose jq yq tmux yazi
+    slog "shell tools with mise"
+
+    mis tree-sitter just lazygit lazydocker starship ripgrep
+    mis shellcheck gum xh bottom fzf hyperfine
+    mis cheat duf eza dust zoxide gdu choose yazi
     mi superfile
     has_cmd nu || mise use -g cargo:nu
 
-}
-
-amm_shell_install() {
-    ami atuin curlie sd doggo gping procs nvim lsd gh shellcheck gum
-    ami jq zoxide fzf fd hyperfine tmux duf eza dust cheat curlie
+    slog "shell tools with mise done!"
 }
 
 flathub_install() {
@@ -75,7 +89,7 @@ flathub_install() {
 
 vscode_flatpak_install() {
     fpi com.visualstudio.code
-    fpi com.visualstudio.code.tool.podman
+    flatpak install com.visualstudio.code.tool.podman
     alias code="flatpak run com.visualstudio.code"
     cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 flatpak run com.visualstudio.code --install-extension
     vscode_flatpak_config_install
@@ -282,7 +296,7 @@ micro_install() {
     slog "Installing micro"
 
     curl https://getmic.ro | bash
-    sudo mv micro /usr/bin/
+    mv micro $HOME/.local/bin/
 
     slog "micro installation done!"
 
@@ -637,12 +651,6 @@ cmake_install() {
     slog "cmake installation done!"
 
     cmd_check cmake
-}
-
-webi_shell_install() {
-    slog "shell tools with webi"
-    wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq
-    slog "shell tools with webi done!"
 }
 
 brew_shell_install() {
