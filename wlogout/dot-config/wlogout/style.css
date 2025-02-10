@@ -1,10 +1,11 @@
 * {
-  font-family: "Fira Sans Semibold", FontAwesome, Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Fira Sans Semibold", FontAwesome, Roboto, Cascadia Code, Jetbrains Mono, Helvetica, Arial, sans-serif;
   background-image: none;
   box-shadow: none;
 }
 
 window {
+
   background-color: rgba(48, 52, 70, 0.90);
   background-size: cover;
   font-size: 16pt;
@@ -24,7 +25,6 @@ button {
   background-size: 25%;
 
   animation: gradient_f 20s ease-in infinite;
-
   transition: all 0.3s cubic-bezier(.55, 0.0, .28, 1.682), box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
 
