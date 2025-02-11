@@ -813,6 +813,7 @@ yazi_config_install() {
     slog "yazi config"
 
     srm $XDG_CONFIG_HOME/yazi
+    smd $XDG_CONFIG_HOME/yazi
     stownf yazi
     slog "yazi config done!"
 }
