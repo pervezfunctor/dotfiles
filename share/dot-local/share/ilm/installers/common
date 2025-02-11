@@ -371,7 +371,7 @@ brew_install() {
     has_cmd brew && return 0
 
     slog "Installing homebrew"
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     slog "homebrew installation done!"
 
     if has_cmd /opt/homebrew/bin/brew; then
@@ -1030,14 +1030,14 @@ shell-group_install() {
 
 ct-group_install() {
     shell-group_install
-    ct_instal
+    ct_install
 
     cmd_check incus docker podman distrobox
 }
 
 vm-group_install() {
     ct-group_install
-    libvirt_install
+    vm_install
 
     cmd_check virt-manager cockpit
 }
