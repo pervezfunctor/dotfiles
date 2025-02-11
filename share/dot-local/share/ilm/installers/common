@@ -733,6 +733,7 @@ pnpm_shell_install() {
 shell_install() {
     brew_install
     webi_install
+    mise_install
     appman_install
 
     cli_install
@@ -740,6 +741,7 @@ shell_install() {
     webi_shell_install
     brew_shell_install
     # appman_shell_install
+    # mise_shell_install
 
     starship_install
 }
@@ -1020,7 +1022,6 @@ shell-group_install() {
     min-group_install
     shell_install
     config_install
-    set_zsh_as_default
 
     cmd_check atuin bat brew btm cheat choose curlie delta direnv doggo dotenv
     cmd_check duf dust eza fd fzf gawk gdu gh gum hyperfine jq just lazygit lsd
@@ -1060,7 +1061,7 @@ prog-group_install() {
 
 all-group_install() {
     prog-group_install
-    mise_install
+    pixi_install
     emacs_install
 
     cmd_check mise emacs

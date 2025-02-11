@@ -54,8 +54,8 @@ essential_install() {
     slog "Installing essential packages"
 
     core_install
-    mise_install
     sys_python_install
+    # mise_install
     # snap_install
 
     si zip p7zip cmake unar
