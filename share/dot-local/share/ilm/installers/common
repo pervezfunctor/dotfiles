@@ -1038,8 +1038,6 @@ ct-group_install() {
 vm-group_install() {
     ct-group_install
     vm_install
-
-    cmd_check virt-manager cockpit
 }
 
 desktop-group_install() {
