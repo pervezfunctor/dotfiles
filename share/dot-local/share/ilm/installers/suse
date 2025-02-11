@@ -60,7 +60,7 @@ essential_install() {
 cli_install() {
     si gh ShellCheck shfmt neovim tree-sitter gawk tmux urlview zsh
     si lazygit bottom sd lsd bat hyperfine fd fzf ripgrep zoxide cheat
-    si curlie git-delta jq duf lua54-luarocks python3-neovim
+    si curlie git-delta jq duf lua54-luarocks python3-neovim htop gdu
 
     gh extension install github/gh-copilot
 }
