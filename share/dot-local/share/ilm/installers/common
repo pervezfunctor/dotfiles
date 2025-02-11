@@ -811,6 +811,8 @@ aerospace_config_install() {
 
 yazi_config_install() {
     slog "yazi config"
+
+    srm $XDG_CONFIG_HOME/yazi
     stownf yazi
     slog "yazi config done!"
 }
