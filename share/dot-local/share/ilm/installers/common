@@ -848,7 +848,11 @@ config_install() {
     has_cmd wezterm && wezterm_config_install
     has_cmd zsh && zsh_config_install
     if has_cmd yazi; then
-        has_cmd ya && ya pack -a yazi-rs/flavors:catppuccin-frappe
+        if has_cmd ya; then
+            ya pack -a yazi-rs/flavors:catppuccin-frappe
+            ya pack -u
+        fi
+
         yazi_config_install
     fi
 }
