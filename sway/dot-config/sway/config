@@ -6,6 +6,7 @@ include '$("/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/c
 
 exec-once=dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
 exec-once=/usr/libexec/lxqt-policykit-agent
+# exec-once=/usr/libexec/polkit-gnome-authentication-agent-1
 
 exec env.sh
 exec_always swayidle -w \
@@ -143,16 +144,16 @@ bindsym $mod+8 workspace number 8
 bindsym $mod+9 workspace number 9
 # bindsym $mod+0 workspace number 10
 # Move focused container to workspace
-bindsym $mod+Shift+1 move container to workspace number 1
-bindsym $mod+Shift+2 move container to workspace number 2
-bindsym $mod+Shift+3 move container to workspace number 3
-bindsym $mod+Shift+4 move container to workspace number 4
-bindsym $mod+Shift+5 move container to workspace number 5
-bindsym $mod+Shift+6 move container to workspace number 6
-bindsym $mod+Shift+7 move container to workspace number 7
-bindsym $mod+Shift+8 move container to workspace number 8
-bindsym $mod+Shift+9 move container to workspace number 9
-# bindsym $mod+Shift+0 move container to workspace number 10
+bindsym $mod+Shift+1 move container to workspace number 1, workspace 1
+bindsym $mod+Shift+2 move container to workspace number 2, workspace 2
+bindsym $mod+Shift+3 move container to workspace number 3, workspace 3
+bindsym $mod+Shift+4 move container to workspace number 4, workspace 4
+bindsym $mod+Shift+5 move container to workspace number 5, workspace 5
+bindsym $mod+Shift+6 move container to workspace number 6, workspace 6
+bindsym $mod+Shift+7 move container to workspace number 7, workspace 7
+bindsym $mod+Shift+8 move container to workspace number 8, workspace 8
+bindsym $mod+Shift+9 move container to workspace number 9, workspace 9
+# bindsym $mod+Shift+0 move container to workspace number 10, workspace 10
 
 bindsym $mod+ctrl+left workspace next
 bindsym $mod+ctrl+right workspace prev
@@ -169,6 +170,9 @@ bindsym $mod+shift+ctrl+right move container to workspace prev, workspace prev
 # respectively.
 bindsym $mod+b splith
 bindsym $mod+v splitv
+
+bindsym $mod+tab workspace next_on_output
+bindsym $mod+Shift+tab workspace prev_on_output
 
 # Switch the current container between different layout styles
 bindsym $mod+s layout stacking
@@ -232,19 +236,90 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-# Set shut down, restart and locking features
+# Media keys
+bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
+
+bindsym XF86MonBrightnessDown exec brightnessctl -q set 5%- && ( echo $((`brightnessctl get` * 100 / `brightnessctl m`)) > $SWAYSOCK.wob )
+bindsym XF86MonBrightnessUp exec brightnessctl -q set +5% && ( echo $((`brightnessctl get` * 100 / `brightnessctl m`)) > $SWAYSOCK.wob )
+
+bindsym XF86AudioRaiseVolume exec pamixer --allow-boost -ui 2 && dc -e "[`pamixer --get-volume`]sM 100d `pamixer --get-volume`<Mp" > $SWAYSOCK.wob
+bindsym XF86AudioLowerVolume exec pamixer --allow-boost -ud 2 && dc -e "[`pamixer --get-volume`]sM 100d `pamixer --get-volume`<Mp" > $SWAYSOCK.wob
+bindsym XF86AudioMute exec pamixer --toggle-mute && ( pamixer --get-mute && echo 0 > $SWAYSOCK.wob )
+
+# Media player controls
+bindsym --no-warn XF86AudioPlay exec playerctl play-pause
+bindsym --no-warn XF86AudioNext exec playerctl next
+bindsym --no-warn XF86AudioPrev exec playerctl previous
+
+# Screenshots
+set $selected_window swaymsg -t get_tree | jq -r '.. | select(.pid? and .visible?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"' | slurp
+set $focused_window swaymsg -t get_tree | jq -j '.. | select(.type?) | select(.focused).rect | "\(.x),\(.y) \(.width)x\(.height)"'
+set $focused_output swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name'
+
+## Screenshot commands
+### Full
+set $screenshot_full grim
+set $screenshot_full_clipboard grim - | wl-copy
+### Selected window
+set $screenshot_selected_window $selected_window | grim -g-
+set $screenshot_selected_window_clipboard $selected_window | grim -g- - | wl-copy
+### Selected area
+set $screenshot_selected_area slurp | grim -g-
+set $screenshot_selected_area_clipboard slurp | grim -g- - | wl-copy
+### Focused window
+set $screenshot_focused_window $focused_window | grim -g-
+set $screenshot_focused_window_clipboard $focused_window | grim -g- - | wl-copy
+### Focused output
+set $screenshot_focused_output grim -o $($focused_output)
+set $screenshot_focused_output_clipboard grim -o $($focused_output) - | wl-copy
+
+## Screenshot mode menu
+set $screenshot "Screenshot: (f) full, (s) select window, (a) select area, (w) focused window, (o) focused output [Ctrl+ saves to clipboard]"
+mode $screenshot {
+    # Full
+    bindsym f exec $screenshot_full; mode "default"
+    bindsym Ctrl+f exec $screenshot_full_clipboard; mode "default"
+    # Selected window
+    bindsym s exec $screenshot_selected_window; mode "default"
+    bindsym Ctrl+s exec $screenshot_selected_window_clipboard; mode "default"
+    # Selected area
+    bindsym a exec $screenshot_selected_area; mode "default"
+    bindsym Ctrl+a exec $screenshot_selected_area_clipboard; mode "default"
+    # Focused window
+    bindsym w exec $screenshot_focused_window; mode "default"
+    bindsym Ctrl+w exec $screenshot_focused_window_clipboard; mode "default"
+    # Focused output
+    bindsym o exec $screenshot_focused_output; mode "default"
+    bindsym Ctrl+o exec $screenshot_focused_output_clipboard; mode "default"
+
+    # Exit screenshot mode menu
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+    bindsym $mod+Print mode "default"
+}
+bindsym $mod+Print mode $screenshot
+
+exec_always {
+    systemctl --user import-environment
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+    gsettings set org.gnome.desktop.interface icon-theme 'Adwaita'
+    gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+    test -e $SWAYSOCK.wob || mkfifo $SWAYSOCK.wob
+    tail -f $SWAYSOCK.wob | $wob
+    swaync --style /etc/sway/swaync/style.css --config /etc/sway/swaync/config.json
+}
+
 bindsym $mod+0 mode "$mode_system"
 set $mode_system (l)ock, (e)xit, switch_(u)ser, (s)uspend, (h)ibernate, (r)eboot, (Shift+s)hutdown
 mode "$mode_system" {
-    bindsym l exec --no-startup-id i3exit lock, mode "default"
-    bindsym s exec --no-startup-id i3exit suspend, mode "default"
-    bindsym u exec --no-startup-id i3exit switch_user, mode "default"
-    bindsym e exec --no-startup-id i3exit logout, mode "default"
-    bindsym h exec --no-startup-id i3exit hibernate, mode "default"
-    bindsym r exec --no-startup-id i3exit reboot, mode "default"
-    bindsym Shift+s exec --no-startup-id i3exit shutdown, mode "default"
-
-    # exit system mode: "Enter" or "Escape"
+    bindsym l exec swaylock, mode "default"
+    bindsym s exec systemctl suspend, mode "default"
+    bindsym u exec systemctl restart sddm, mode "default"
+    bindsym e exec swaymsg exit, mode "default"
+    bindsym h exec systemctl hibernate, mode "default"
+    bindsym r exec systemctl reboot, mode "default"
+    bindsym Shift+s exec systemctl poweroff, mode "default"
     bindsym Return mode "default"
     bindsym Escape mode "default"
 }
@@ -283,3 +358,24 @@ for_window [class="Xfburn"] floating enable
 
 for_window [app_id="firefox"] opacity 0.96
 for_window [app_id="Visual Studio Code"] opacity 0.96
+
+# for_window [app_id="(Calendar|Calculator|Power-statistics|Control-center)"] floating enable
+# for_window [app_id="org.gnome.(Nautilus|Weather)"] floating enable
+# for_window [app_id="nm-connection-editor"] floating enable
+# for_window [app_id="(pavucontrol|psensor)"] floating enable
+# for_window [app_id="evolution-alarm-notify"] floating enable
+# for_window [app_id="nemo"] floating enable
+# for_window [app_id="evolution" title="Compose Message"] floating enable
+# for_window [app_id="evolution" title="Re(.*)"] floating enable
+# for_window [app_id="evolution" title="Fwd(.*)"] floating enable
+# for_window [app_id="mpv"] floating enable
+# for_window [app_id="mpv"] resize set 960 540
+# for_window [app_id="mpv"] border pixel 0
+# for_window [app_id="firefox" title="Pushbullet"] floating enable
+# for_window [app_id="firefox" title="Firefox — Sharing Indicator"] floating enable
+# for_window [app_id="firefox" title="Picture-in-Picture"] floating enable
+# for_window [app_id="firefox" title="Pushbullet – Mozilla Firefox"] floating enable
+# for_window [app_id="firefox" title="About Mozilla Firefox"] floating enable
+
+# # Brave, chrome, chromium
+# for_window [title="Picture-in-picture"] floating enable
