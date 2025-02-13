@@ -1,28 +1,32 @@
+xwayland disable
+
 input "type:keyboard" {
 	xkb_options ctrl:nocaps
 }
 
-# Super is mode
+# set mod to Super/Windows
 set $mod Mod4
 
+# vim like navigation
 set $left h
 set $down j
 set $up k
 set $right l
 
-set $term alacritty --config-file /etc/alacritty/alacritty.toml
+set $term alacritty --config-file ~/.config/alacritty/alacritty.toml
+set $menu wofi --conf=/etc/wofi/config --style=/etc/wofi/style.css
+set $screenlock 'swaylock --config ~/.config/swaylock/swaylock.conf'
+set $wob wob --config /etc/sway/wob/wob.ini
 
-output * bg /usr/share/wallpapers/openSUSEdefault/contents/images/default-dark.png fill
-
-#output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
+# output * bg /usr/share/wallpapers/openSUSEdefault/contents/images/default-dark.png fill
 output HDMI-A-1 resolution 3840x2160 position 0,0 scale 1.75
 
-xwayland disable
+exec_always swaybg -i ~/.config/wallpapers/wallpaper.png -m fill
 
 exec swayidle -w \
-         timeout 300 'swaylock -f -c 000000' \
+         timeout 300 $screenlock \
          timeout 300 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
-         before-sleep 'swaylock -f -c 000000' \
+         before-sleep $screenlock \
          timeout 900 'systemctl suspend'
 
 bindsym $mod+Return exec $$term
@@ -110,8 +114,6 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-set $menu wofi --conf=/etc/wofi/config --style=/etc/wofi/style.css
-
 input "type:touchpad" {
   tap enabled
   natural_scroll enabled
@@ -120,9 +122,6 @@ input "type:touchpad" {
 
 bindsym $mod+tab workspace next_on_output
 bindsym $mod+Shift+tab workspace prev_on_output
-
-# Lockscreen configuration
-set $screenlock 'swaylock --config /etc/swaylock/openSUSEway.conf'
 
 # bindsym --to-code {
 #     $mod+b splith
@@ -216,20 +215,19 @@ bindsym $mod+Shift+e mode $mode_system
 set $toggle_notification "swaync-client -t -sw"
 bindsym $mod+Shift+n exec $toggle_notification
 
-default_border pixel 3
+default_border pixel 4
 gaps inner 10
 
-# client.focused #6da741 #173f4f #73ba25
+# client.focused #6da741 173f4f #73ba25
+# client.focused #39ff14 #173f4f #73ba25
 client.unfocused #00a489 #173f4f #35b9ab
 client.focused_inactive #6da741 #00a489 #173f4f
 
-set $wob wob --config /etc/sway/wob/wob.ini
 
+seat * xcursor_theme Adwaita 32
 
 exec_always {
     systemctl --user import-environment
-
-    seat * xcursor_theme Adwaita 32
 
     gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
     gsettings set org.gnome.desktop.interface icon-theme 'Adwaita'
