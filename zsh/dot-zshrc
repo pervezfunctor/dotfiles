@@ -4,7 +4,7 @@ export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 source ~/.local/share/ilm/shellrc
 
 # if interactive shell then return
-[[ $- == *i* ]] || return
+[[ $- == *i* ]] && return
 
 # has_cmd direnv && eval "$(direnv hook zsh)"
 has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate zsh)"
