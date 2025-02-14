@@ -1,5 +1,8 @@
 source ~/.local/share/ilm/utils
 
+### "nvim" as manpager
+has_cmd nvim && export MANPAGER="nvim +Man!"
+
 export LANG=en_US.UTF-8
 
 export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
@@ -24,9 +27,20 @@ spath_export "/snap/bin"
 spath_export "$GOPATH/bin"
 spath_export "$XDG_CONFIG_HOME/emacs/bin"
 spath_export "$HOME/.local/bin"
+spath_export "$HOME/bin"
+spath_export "$HOME/.bin"
+spath_export "$HOME/Applications"
 spath_export "$HOME/.local/share/pypoetry"
 spath_export "$XDG_CONFIG_HOME/Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin"
 spath_export "$HOME/.console-ninja/.bin"
+
+if [ -z "$XDG_DATA_HOME" ] ; then
+    export XDG_DATA_HOME="$HOME/.local/share"
+fi
+
+if [ -z "$XDG_CACHE_HOME" ] ; then
+    export XDG_CACHE_HOME="$HOME/.cache"
+fi
 
 if [[ -d "$HOME/.pyenv" ]]; then
     export PYENV_ROOT="$HOME/.pyenv"
