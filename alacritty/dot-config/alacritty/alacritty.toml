@@ -25,7 +25,7 @@ family = "MonaspiceRn Nerd Font Mono"
 style = "Bold Italic"
 
 [font.italic]
-family = "MonoLisaScript Nerd Font"
+family = "MonaspiceRn Nerd Font"
 style = "Italic"
 
 [font.normal]
