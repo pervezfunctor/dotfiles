@@ -1,4 +1,8 @@
-;;; emacs configuration
+;;; init --- emacs configuration
+
+;; emacs configuration that works in terminal
+
+;;; Code:
 
 (setq package-enable-at-startup nil)
 (setq initial-major-mode 'text-mode)
@@ -39,8 +43,7 @@
   (setq w32-apps-modifier 'hyper))
 
 ;;;; store custom settings in ~/.emacs.d/custom.el
-
-(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(setq custom-file (expand-file-name ".custom.el" user-emacs-directory))
 (when (file-exists-p custom-file)
   (load custom-file))
 
@@ -76,29 +79,23 @@
 ;; do not ask to follow link
 (customize-set-variable 'find-file-visit-truename t)
 
-;; (customize-set-variable 'dired-dwim-target t)
-;; (customize-set-variable 'dired-auto-revert-buffer t)
-;; (customize-set-variable 'eshell-scroll-to-bottom-on-input 'this)
-;; (customize-set-variable 'switch-to-buffer-in-dedicated-window 'pop)
-;; (customize-set-variable 'switch-to-buffer-obey-display-actions t)
-;; (customize-set-variable 'switch-to-buffer-obey-display-actions t)
-;; (customize-set-variable 'ibuffer-old-time 24)
+(customize-set-variable 'dired-dwim-target t)
+(customize-set-variable 'dired-auto-revert-buffer t)
+(customize-set-variable 'eshell-scroll-to-bottom-on-input 'this)
+(customize-set-variable 'switch-to-buffer-in-dedicated-window 'pop)
+(customize-set-variable 'switch-to-buffer-obey-display-actions t)
+(customize-set-variable 'switch-to-buffer-obey-display-actions t)
+(customize-set-variable 'ibuffer-old-time 24)
 
-;; (keymap-global-set "<remap> <list-buffers>" #'ibuffer-list-buffers)
+(keymap-global-set "<remap> <list-buffers>" #'ibuffer-list-buffers)
 
-;; (if (version< emacs-version "28")
-;;     (if (locate-library "icomplete-vertical")
-;;         (icomplete-vertical-mode 1)
-;;       (icomplete-mode 1))
-;;   (fido-vertical-mode 1))
+(unless (version< emacs-version "28")
+  (repeat-mode 1))
 
-;; (unless (version< emacs-version "28")
-;;   (repeat-mode 1))
-
-;; ;; Better support for files with long lines
-;; (setq-default bidi-paragraph-direction 'left-to-right)
-;; (setq-default bidi-inhibit-bpa t)
-;; (global-so-long-mode 1)
+;; Better support for files with long lines
+(setq-default bidi-paragraph-direction 'left-to-right)
+(setq-default bidi-inhibit-bpa t)
+(global-so-long-mode 1)
 
 ;; modes
 
@@ -151,6 +148,12 @@
 
 ;; (ido-mode +1)
 
+;; (if (version< emacs-version "28")
+;;     (if (locate-library "icomplete-vertical")
+;;         (icomplete-vertical-mode 1)
+;;       (icomplete-mode 1))
+;;   (fido-vertical-mode 1))
+
 ;; Disable startup message
 (setq inhibit-startup-message t)
 
@@ -167,7 +170,7 @@
 (global-font-lock-mode t)
 
 ;; Set default font (change if needed)
-(set-face-attribute 'default nil :font "JetbrainsMono Nerd Font" :height 120)
+;; (set-face-attribute 'default nil :font "JetbrainsMono Nerd Font" :height 120)
 
 ;; Better scrolling
 (setq scroll-margin 8
@@ -239,36 +242,95 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-(setq straight-use-package-by-default t)  ;; Ensures all use-package statements use straight.el
+;; Ensures all use-package statements use straight.el
+(setq straight-use-package-by-default t)
 
 (straight-use-package 'use-package)  ;; Install use-package via straight.el
 
 
-;; (use-package catppuccin-theme)
-;; (load-theme 'catppuccin t)
-
-;; (use-package xdg
-;;   :config
-;;   (setq user-emacs-directory (xdg-config-home "emacs/"))
-;;   (setq package-user-dir (xdg-data-home "emacs/elpa/"))
-;;   (setq backup-directory-alist `(("." . ,(xdg-cache-home "emacs/backups/"))))
-;;   (setq auto-save-file-name-transforms `((".*" ,(xdg-cache-home "emacs/auto-save/") t))))
+(use-package catppuccin-theme)
+(load-theme 'catppuccin t)
+(setq catppucin-flavor 'frappe)
+(catppuccin-reload)
 
 (use-package kkp
   :ensure t
   :config
-  ;; (setq kkp-alt-modifier 'alt) ;; use this if you want to map the Alt keyboard modifier to Alt in Emacs (and not to Meta)
-  (global-kkp-mode +1))
+  ;; macOS-style keybindings
+  (global-set-key (kbd "s-c") 'kill-ring-save)   ;; ⌘ C - Copy
+  (global-set-key (kbd "s-x") 'kill-region)      ;; ⌘ X - Cut
+  (global-set-key (kbd "s-v") 'yank)             ;; ⌘ V - Paste
+  (global-set-key (kbd "s-z") 'undo)             ;; ⌘ Z - Undo
+  (global-set-key (kbd "s-a") 'mark-whole-buffer) ;; ⌘ A - Select All
+  (global-set-key (kbd "s-s") 'save-buffer)      ;; ⌘ S - Save
+  (global-set-key (kbd "s-w") 'kill-this-buffer) ;; ⌘ W - Close Buffer
+  (global-set-key (kbd "s-q") 'save-buffers-kill-terminal) ;; ⌘Q - Quit Emacs
+  (global-set-key (kbd "s-n") 'make-frame-command) ;; ⌘ N - New Window
+  (global-set-key (kbd "s-t") 'tab-new)          ;; ⌘ T - New Tab (Emacs 28+)
+  (global-set-key (kbd "s-o") 'find-file)        ;; ⌘ O - Open File
+  (global-set-key (kbd "s-f") 'isearch-forward)  ;; ⌘ F - Search
+
+  ;; to map the Alt keyboard modifier to Alt in Emacs (and not to Meta)
+  ;; (setq kkp-alt-modifier 'alt)
+  ;;(global-kkp-mode +1)
+  )
 
 (use-package diminish)
 
-(use-package no-littering
-  :ensure t)
+;; (use-package minions
+;;   :ensure t
+;;   :config
+;;   (minions-mode))  ;; Groups minor modes into a single menu
 
-;; Persist history over Emacs restarts. Vertico sorts by history position.
-(use-package savehist
+(use-package no-littering
+  :ensure t
   :init
-  (savehist-mode))
+  (eval-and-compile ; Ensure values don't differ at compile time.
+    (setq no-littering-etc-directory
+          (expand-file-name "etc/" user-emacs-directory))
+    (setq no-littering-var-directory
+          (expand-file-name "var/" user-emacs-directory))
+    (require 'no-littering))
+
+(use-package xdg
+  :after no-littering
+  :ensure t
+  :config
+  ;; Set user-emacs-directory to XDG-compliant location
+  (setq user-emacs-directory (expand-file-name "emacs/" (xdg-config-home)))
+  (setq tmp-dir (expand-file-name "name/" user-emacs-directory))
+  (setq package-user-dir (expand-file-name "elpa/" tmp-dir))
+  (setq backup-directory-alist `(("." . ,(concat tmp-dir "/backups/"))))
+  (setq auto-save-file-name-transforms
+        `((".*" ,(concat tmp-dir "/auto-save/") t)))
+  (let ((dir (no-littering-expand-var-file-name "lock-files/")))
+    (make-directory dir t)
+    (setq lock-file-name-transforms `((".*" ,dir t))))
+  )
+
+;; Ensure `recentf` doesn’t track temporary Emacs-generated files
+(use-package recentf
+  :init
+
+  (setq recentf-max-saved-items 100
+        recentf-auto-save-timer (run-with-idle-timer 600 t 'recentf-save-list)
+        recentf-exclude '("/tmp/" "/ssh:"))
+
+  :ensure t
+  :config
+  (setq recentf-save-file (no-littering-expand-var-file-name "recentf"))
+  (add-to-list 'recentf-exclude
+               (recentf-expand-file-name no-littering-var-directory))
+  (add-to-list 'recentf-exclude
+               (recentf-expand-file-name no-littering-etc-directory))
+  (recentf-mode +1))
+
+(when (and (fboundp 'startup-redirect-eln-cache)
+           (fboundp 'native-comp-available-p)
+           (native-comp-available-p))
+  (startup-redirect-eln-cache
+   (convert-standard-filename
+    (expand-file-name  "eln-cache/" no-littering-var-directory))))
 
 (use-package which-key
   :diminish which-key-mode
@@ -287,6 +349,7 @@
 
 (defconst *seartipy-default-fonts*
   '("JetbrainsMono Nerd Font"
+    "MonaspiceRn Nerd Font"
     "Jetbrains Mono"
     "Monaco"
     "Consolas"
@@ -300,7 +363,7 @@
 
 (-when-let (font (-first 'seartipy/font-available-p
                          *seartipy-default-fonts*))
-  (set-frame-font (concat font " 13")))
+  (set-frame-font (concat font " 11")))
 
 (use-package server
   :config
@@ -309,10 +372,12 @@
 
 (use-package savehist
   :init
-  (setq enable-recursive-minibuffers  t    ; Allow commands in minibuffers
+  ;; Allow commands in minibuffers
+  (setq enable-recursive-minibuffers  t
         history-length                1000
         kill-ring-max                 19
         savehist-autosave-interval    60
+        savehist-file (no-littering-expand-var-file-name "savehist"
         savehist-additional-variables '(mark-ring
                                         global-mark-ring
                                         kill-ring
@@ -325,62 +390,315 @@
 
 (use-package saveplace
   :init
-  (setq save-place-file (expand-file-name "places" user-emacs-directory))
+  (setq save-place-file (no-littering-expand-var-file-name "saveplace"))
   (save-place-mode 1))
 
-;; (use-package restart-emacs
-;;   :bind ("C-x M-c" . restart-emacs))
+(use-package restart-emacs
+  :bind ("C-x M-c" . restart-emacs))
 
-(straight-use-package 'project)  ;; Ensure Straight does not install it
+ ;; Ensure Straight does not install it
+(straight-use-package 'project)
 
-(use-package recentf
+(use-package avy
   :init
-  (setq recentf-max-saved-items 100
-        recentf-auto-save-timer (run-with-idle-timer 600 t 'recentf-save-list)
-        recentf-exclude '("/tmp/" "/ssh:"))
+  (setq avy-keys (number-sequence ?a ?z))
+  (setq avy-background t)
 
   :config
-  (add-to-list 'recentf-exclude
-               (file-truename (concat user-emacs-directory "elpa/")))
+  (avy-setup-default))
 
-  (recentf-mode +1))
+(use-package ace-window
+  :bind ("C-x o" . ace-window)
+  :init
+  (setq aw-dispatch-always t))
 
-;; (use-package consult
-;;   :bind
-;;   (("C-s" . consult-line)  ;; Search in buffer (like Telescope live_grep)
-;;    ("C-x b" . consult-buffer)  ;; Switch buffers (like Telescope buffers)
-;;    ("M-y" . consult-yank-pop)  ;; Search kill-ring
-;;    ("M-g g" . consult-goto-line)  ;; Jump to line
-;;    ("C-x C-r" . consult-recent-file)  ;; Open recent files
-;;    ("M-g f" . consult-find)  ;; Fuzzy find files
-;;    ("M-g r" . consult-ripgrep)))  ;; Project-wide search
+(winner-mode)
+(windmove-default-keybindings)
 
-;; (use-package fzf
-;;   :bind
-;;     ;; Don't forget to set keybinds!
-;;   :config
-;;   (setq fzf/args "-x --color bw --print-query --margin=1,0 --no-hscroll"
-;;         fzf/executable "fzf"
-;;         fzf/git-grep-args "-i --line-number %s"
-;;         ;; command used for `fzf-grep-*` functions
-;;         ;; example usage for ripgrep:
-;;         ;; fzf/grep-command "rg --no-heading -nH"
-;;         fzf/grep-command "grep -nrH"
-;;         ;; If nil, the fzf buffer will appear at the top of the window
-;;         fzf/position-bottom t
-;;         fzf/window-height 15))
+(use-package winum
+  :init
+  (setq winum-auto-setup-mode-line nil)
+
+  :config
+  (winum-mode))
+
+(use-package buffer-move
+  :bind (("<C-S-up>" . buf-move-up)
+         ("<C-S-down>" . buf-move-down)
+         ("<C-S-left>" . buf-move-left)
+         ("<C-S-right>" . buf-move-right)))
+
+(bind-key [remap just-one-space] 'cycle-spacing)
+(bind-key "RET" 'newline-and-indent)
+
+(use-package whitespace
+  :diminish whitespace-mode
+  :defer t
+
+  :init
+  (dolist (hook '(prog-mode-hook text-mode-hook))
+    (add-hook hook #'whitespace-mode))
+  (add-hook 'before-save-hook #'whitespace-cleanup)
+
+  :config
+  (setq whitespace-line-column 80) ;; limit line length
+  (setq whitespace-style '(face tabs empty trailing lines-tail)))
+
+(use-package move-dup
+  :bind (("M-S-<down>" . md/move-lines-down)
+         ("M-s-<down>" . md/duplicate-down)
+         ("M-s-<up>" . md/duplicate-up)
+         ("M-S-<up>" . md/move-lines-up)))
+
+(use-package easy-kill
+  :defer t
+
+  :init
+  (global-set-key [remap kill-ring-save] 'easy-kill)
+  (global-set-key [remap mark-sexp] 'easy-mark))
+
+(use-package expand-region
+  :bind (("C-=" . er/expand-region)
+         ("C-c =" . er/expand-region)))
+
+(use-package multiple-cursors
+  :bind (("C-c C-c" . mc/edit-lines)
+         ("C-c C-e" . mc/edit-ends-of-lines)
+         ("C-c C-a" . mc/edit-beginnings-of-lines)
+         ("C-c >" . mc/mark-next-like-this)
+         ("C-c <" . mc/mark-previous-like-this)
+         ("C->" . mc/mark-next-like-this)
+         ("C-<" . mc/mark-previous-like-this)))
+
+(use-package goto-chg
+  :bind(
+        ("C-." . goto-last-change)
+        ("C-," . goto-last-change-reverse)
+        ("C-c ." . goto-last-change)
+        ("C-c ," . goto-last-change-reverse)))
+
+(use-package undo-fu
+  :straight t
+  :bind (("C-." . undo-fu-only-undo)   ;; Jump to last change (backward)
+         ("C-," . undo-fu-only-redo)   ;; Jump to newer change (forward)
+         ("C-c ." . undo-fu-only-undo)
+         ("C-c ," . undo-fu-only-redo)))
+
+(use-package undo-fu-session
+  :straight t
+  :config
+  (undo-fu-session-global-mode))
+
+(global-set-key (kbd "C-c u") 'undo-fu-only-undo)
+(global-set-key (kbd "C-c r") 'undo-fu-only-redo)
+
+(use-package wgrep)
+
+;; ;; macOS-style redo
+;; (when (fboundp 'undo-redo)
+;;   (global-set-key (kbd "s-Z") 'undo-redo)) ;; ⌘⇧Z - Redo (Emacs 28+)
+
+(straight-use-package 'iedit
+  :diminish iedit-mode)
+
+(use-package zop-to-char
+  :bind (("M-z" . zop-up-to-char)
+         ("M-Z" . zop-to-char)))
+
+(use-package super-save
+  :diminish super-save-mode
+
+  :config
+  (super-save-mode +1))
+
+(use-package ediff
+  :defer t
+  :init
+  (setq  ediff-window-setup-function 'ediff-setup-windows-plain
+         ediff-split-window-function 'split-window-horizontally
+         ediff-merge-split-window-function 'split-window-horizontally))
+
+(use-package diff-hl
+  :init
+  (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
+  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
+  :config
+  (global-diff-hl-mode +1))
+
+(use-package drag-stuff
+  :init
+  (drag-stuff-global-mode 1)
+  (drag-stuff-define-keys))
+
+(use-package nerd-icons
+  ;; :custom
+  ;; The Nerd Font you want to use in GUI
+  ;; "Symbols Nerd Font Mono" is the default and is recommended
+  ;; but you can use any other Nerd Font if you want
+  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+  )
+
+(use-package sudo-edit)
+(use-package tldr)
+
+(use-package rainbow-mode
+  :diminish
+  :hook org-mode prog-mode)
+
+(use-package rainbow-delimiters
+  :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
+         (clojure-mode . rainbow-delimiters-mode)))
+
+
+(use-package neotree
+  :init
+  (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
+  :config
+  (setq neo-smart-open t
+        neo-show-hidden-files t
+        neo-window-width 55
+        neo-window-fixed-size nil
+        inhibit-compacting-font-caches t
+        projectile-switch-project-action 'neotree-projectile-action)
+        ;; truncate long file names in neotree
+        (add-hook 'neo-after-create-hook
+           #'(lambda (_)
+               (with-current-buffer (get-buffer neo-buffer-name)
+                 (setq truncate-lines t)
+                 (setq word-wrap nil)
+                 (make-local-variable 'auto-hscroll-mode)
+                 (setq auto-hscroll-mode nil)))))
+
+(use-package yasnippet
+  :diminish yas-minor-mode
+  :defer t
+
+  :init
+  (add-hook 'prog-mode-hook #'yas-minor-mode)
+
+  :config
+  (yas-reload-all))
+
+(use-package eldoc
+  :diminish eldoc-mode
+  :defer t
+
+  :init
+  (add-hook 'eval-expression-minibuffer-setup-hook #'eldoc-mode)
+  (add-hook 'ielm-mode-hook #'eldoc-mode)
+  (add-hook 'emacs-lisp-mode-hook #'eldoc-mode))
+
+(use-package exec-path-from-shell
+  :config
+  (custom-set-variables '(exec-path-from-shell-check-startup-files nil))
+  (exec-path-from-shell-initialize)
+  (dolist (var '("SSH_AUTH_SOCK" "SSH_AGENT_PID" "GPG_AGENT_INFO"
+                 "PATH" "PYTHONPATH" "GOPATH" "GOROOT" "GOBIN"
+                 "GO111MODULE" "GOMODCACHE" "GOCACHE"
+                 "LANG" "LC_CTYPE" "JAVA_HOME" "JDK_HOME"))
+    (add-to-list 'exec-path-from-shell-variables var)))
+
+
+(use-package flycheck
+  :ensure t
+  :defer t
+  :diminish
+  :init (global-flycheck-mode))
+
+(use-package vterm
+:config
+(setq shell-file-name "/bin/bash"
+      vterm-max-scrollback 5000))
+
+(defun my/project-vterm ()
+  "Open a vterm in the project root."
+  (interactive)
+  (let ((default-directory (project-root (project-current t))))
+    (vterm)))
+
+(global-set-key (kbd "C-x p v") #'my/project-vterm)
+
+(use-package vterm-toggle
+  :config
+  (global-set-key [f2] 'vterm-toggle)
+  (global-set-key [C-f2] 'vterm-toggle-cd)
+
+  ;; you can cd to the directory where your previous buffer file exists
+  ;; after you have toggle to the vterm buffer with `vterm-toggle'.
+  (define-key vterm-mode-map [(control return)]   #'vterm-toggle-insert-cd)
+
+                                        ;Switch to next vterm buffer
+  (define-key vterm-mode-map (kbd "s-n")   'vterm-toggle-forward)
+                                        ;Switch to previous vterm buffer
+  (define-key vterm-mode-map (kbd "s-p")   'vterm-toggle-backward))
+
+(use-package nerd-icons
+  ;; :custom
+  ;; The Nerd Font you want to use in GUI
+  ;; "Symbols Nerd Font Mono" is the default and is recommended
+  ;; but you can use any other Nerd Font if you want
+  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+  )
+
+(use-package sudo-edit)
+(use-package tldr)
+
+(use-package project
+  :ensure nil
+  :bind (("C-x p f" . project-find-file)
+         ("C-x p p" . project-switch-project)
+         ("C-x p g" . project-find-regexp)
+         ("C-x p r" . project-query-replace-regexp)
+         ("C-x p e" . project-eshell)
+         ("C-x p s" . project-shell)
+         ("C-x p c" . project-compile))
+  :config
+  (setq project-switch-commands
+        '((project-find-file "Find file")
+          (magit-project-status "Magit" ?m)
+          (project-eshell "Eshell" ?e)
+          (project-shell "Shell" ?s)
+          (project-compile "Compile" ?c)
+          (project-find-regexp "Grep" ?g))))
+
+(defun my/kill-project-buffers ()
+  "Kill all buffers associated with the current project."
+  (interactive)
+  (when-let ((project (project-current)))
+    (mapc #'kill-buffer (project-buffers project))
+    (message "Killed all project buffers.")))
+
+(global-set-key (kbd "C-x p k") #'my/kill-project-buffers)
+
+(use-package rainbow-mode
+  :diminish
+  :hook org-mode prog-mode)
+
+(use-package rainbow-delimiters
+  :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
+         (clojure-mode . rainbow-delimiters-mode)))
+
+
+(use-package neotree
+  :config
+  (setq neo-smart-open t
+        neo-show-hidden-files t
+        neo-window-width 55
+        neo-window-fixed-size nil
+        inhibit-compacting-font-caches t
+        projectile-switch-project-action 'neotree-projectile-action)
+        ;; truncate long file names in neotree
+        (add-hook 'neo-after-create-hook
+           #'(lambda (_)
+               (with-current-buffer (get-buffer neo-buffer-name)
+                 (setq truncate-lines t)
+                 (setq word-wrap nil)
+                 (make-local-variable 'auto-hscroll-mode)
+                 (setq auto-hscroll-mode nil)))))
 
 (use-package vertico
   :init
   (vertico-mode))
-
-;; (use-package dirvish
-;;   :init (dirvish-override-dired-mode))
-
-;; (use-package marginalia
-;;   :after vertico
-;;   :init
-;;   (marginalia-mode))
 
 (use-package orderless
   :ensure t
@@ -659,382 +977,45 @@
   ;; package.
   (marginalia-mode))
 
-(use-package wgrep)
+;; (use-package dirvish
+;;   :init (dirvish-override-dired-mode))
 
-(use-package avy
-  :init
-  (setq avy-keys (number-sequence ?a ?z))
-  (setq avy-background t)
+(use-package tabspaces
+  :hook (after-init . tabspaces-mode)
+  :custom
+  (tabspaces-keymap-prefix "C-c t")
+  (tabspaces-use-filtered-buffers-as-default t)  ;; Only show buffers from the current workspace
+  (tabspaces-default-tab "Default")             ;; Start in a default tab
+  (tabspaces-remove-to-default t))
 
+(with-eval-after-load 'dired
+  (require 'dired-x)
+  (setq dired-guess-shell-alist-user '(("gif" . "imv")
+                                ("jpg" . "imv")
+                                ("png" . "imv")
+                                ("mkv" . "mpv")
+                                ("mp4" . "mpv"))))
+
+(setq image-dired-thumb-size 128)  ;; Set thumbnail size
+(with-eval-after-load 'dired
+  (require 'image-dired))
+
+(use-package consult-todo
+  :after consult
+  :bind (("C-c t" . consult-todo)))  ;; Bind `C-c t` to search for TODOs
+
+(use-package magit-todos
+  :after magit
+  :hook (magit-mode . magit-todos-mode)
   :config
-  (avy-setup-default))
+  (setq magit-todos-keywords '("TODO" "FIXME" "HACK" "BUG" "REVIEW" "OPTIMIZE"))
+  (setq magit-todos-depth 3)   ;; Search subdirectories up to depth 3
+  (setq magit-todos-exclude-globs '("node_modules" "vendor" "dist"))  ;; Ignore these directories
+  (setq magit-todos-group-by 'default))  ;; Group TODOs normally
 
-(use-package swiper)
-
-(use-package ace-window
-  :bind ("C-x o" . ace-window)
-  :init
-  (setq aw-dispatch-always t))
-
-(winner-mode)
-(windmove-default-keybindings)
-
-(use-package winum
-  :init
-  (setq winum-auto-setup-mode-line nil)
-
+(use-package mood-line
   :config
-  (winum-mode))
-
-(use-package buffer-move
-  :bind (("<C-S-up>" . buf-move-up)
-         ("<C-S-down>" . buf-move-down)
-         ("<C-S-left>" . buf-move-left)
-         ("<C-S-right>" . buf-move-right)))
-
-(bind-key [remap just-one-space] 'cycle-spacing)
-(bind-key "RET" 'newline-and-indent)
-
-(use-package whitespace
-  :diminish whitespace-mode
-  :defer t
-
-  :init
-  (dolist (hook '(prog-mode-hook text-mode-hook))
-    (add-hook hook #'whitespace-mode))
-  (add-hook 'before-save-hook #'whitespace-cleanup)
-
-  :config
-  (setq whitespace-line-column 80) ;; limit line length
-  (setq whitespace-style '(face tabs empty trailing lines-tail)))
-
-(use-package move-dup
-  :bind (("M-S-<down>" . md/move-lines-down)
-         ("M-s-<down>" . md/duplicate-down)
-         ("M-s-<up>" . md/duplicate-up)
-         ("M-S-<up>" . md/move-lines-up)))
-
-(use-package easy-kill
-  :defer t
-
-  :init
-  (global-set-key [remap kill-ring-save] 'easy-kill)
-  (global-set-key [remap mark-sexp] 'easy-mark))
-
-(use-package expand-region
-  :bind (("C-=" . er/expand-region)
-         ("C-c =" . er/expand-region)))
-
-(use-package multiple-cursors
-  :bind (("C-c C-c" . mc/edit-lines)
-         ("C-c C-e" . mc/edit-ends-of-lines)
-         ("C-c C-a" . mc/edit-beginnings-of-lines)
-         ("C-c >" . mc/mark-next-like-this)
-         ("C-c <" . mc/mark-previous-like-this)
-         ("C->" . mc/mark-next-like-this)
-         ("C-<" . mc/mark-previous-like-this)))
-
-(use-package goto-chg
-  :bind(
-        ("C-." . goto-last-change)
-        ("C-," . goto-last-change-reverse)
-        ("C-c ." . goto-last-change)
-        ("C-c ," . goto-last-change-reverse)))
-
-(use-package undo-fu
-  :straight t
-  :bind (("C-." . undo-fu-only-undo)   ;; Jump to last change (backward)
-         ("C-," . undo-fu-only-redo)   ;; Jump to newer change (forward)
-         ("C-c ." . undo-fu-only-undo)
-         ("C-c ," . undo-fu-only-redo)))
-
-(use-package undo-fu-session
-  :straight t
-  :config
-  (undo-fu-session-global-mode))
-
-(global-set-key (kbd "C-c u") 'undo-fu-only-undo)
-(global-set-key (kbd "C-c r") 'undo-fu-only-redo)
-
-;; (use-package iedit
-;;   :diminish iedit-mode)
-
-;; (use-package zop-to-char
-;;   :bind (("M-z" . zop-up-to-char)
-;;          ("M-Z" . zop-to-char)))
-
-;; (use-package super-save
-;;   :diminish super-save-mode
-
-;;   :config
-;;   (super-save-mode +1))
-
-(use-package magit
-  :bind (("C-x g" . magit-status)
-         ("C-x M-g" . magit-dispatch-popup)
-         :map magit-status-mode-map
-         ("C-M-<up>" . magit-section-up))
-
-  :init
-  (setq   magit-log-arguments '("--graph" "--show-signature")
-          magit-completing-read-function 'ivy-completing-read
-          magit-process-popup-time 10
-          magit-diff-refine-hunk t
-          magit-push-always-verify nil)
-
-  :config
-  (global-git-commit-mode))
-
-(use-package ediff
-  :defer t
-  :init
-  (setq  ediff-window-setup-function 'ediff-setup-windows-plain
-         ediff-split-window-function 'split-window-horizontally
-         ediff-merge-split-window-function 'split-window-horizontally))
-
-(use-package diff-hl
-  :init
-  (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
-  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
-  :config
-  (global-diff-hl-mode +1))
-
-(use-package drag-stuff
-  :init
-  (drag-stuff-global-mode 1)
-  (drag-stuff-define-keys))
-
-(use-package nerd-icons
-  ;; :custom
-  ;; The Nerd Font you want to use in GUI
-  ;; "Symbols Nerd Font Mono" is the default and is recommended
-  ;; but you can use any other Nerd Font if you want
-  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
-  )
-
-(use-package sudo-edit)
-(use-package tldr)
-
-(use-package rainbow-mode
-  :diminish
-  :hook org-mode prog-mode)
-
-(use-package rainbow-delimiters
-  :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
-         (clojure-mode . rainbow-delimiters-mode)))
-
-
-(use-package neotree
-  :config
-  (setq neo-smart-open t
-        neo-show-hidden-files t
-        neo-window-width 55
-        neo-window-fixed-size nil
-        inhibit-compacting-font-caches t
-        projectile-switch-project-action 'neotree-projectile-action)
-        ;; truncate long file names in neotree
-        (add-hook 'neo-after-create-hook
-           #'(lambda (_)
-               (with-current-buffer (get-buffer neo-buffer-name)
-                 (setq truncate-lines t)
-                 (setq word-wrap nil)
-                 (make-local-variable 'auto-hscroll-mode)
-                 (setq auto-hscroll-mode nil)))))
-
-(use-package doom-themes
-  :ensure t
-  :config
-  ;; Global settings (defaults)
-  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-        doom-themes-enable-italic t) ; if nil, italics is universally disabled
-   (load-theme 'doom-one t)
-
-  ;; Enable flashing mode-line on errors
-  (doom-themes-visual-bell-config)
-
-  (doom-themes-neotree-config)
-  ;; Corrects (and improves) org-mode's native fontification.
-  (doom-themes-org-config))
-
-(use-package doom-modeline
-  :ensure t
-  :init (doom-modeline-mode 1)
-  :config
-  (setq doom-modeline-major-mode-icon t))
-
-(use-package neotree
-  :config
-  (setq neo-smart-open t
-        neo-show-hidden-files t
-        neo-window-width 55
-        neo-window-fixed-size nil
-        inhibit-compacting-font-caches t
-        projectile-switch-project-action 'neotree-projectile-action)
-        ;; truncate long file names in neotree
-        (add-hook 'neo-after-create-hook
-           #'(lambda (_)
-               (with-current-buffer (get-buffer neo-buffer-name)
-                 (setq truncate-lines t)
-                 (setq word-wrap nil)
-                 (make-local-variable 'auto-hscroll-mode)
-                 (setq auto-hscroll-mode nil)))))
-
-;; (use-package company
-;;   :defer 2
-;;   :diminish
-;;   :custom
-;;   (company-begin-commands '(self-insert-command))
-;;   (company-idle-delay .1)
-;;   (company-minimum-prefix-length 2)
-;;   (company-show-numbers t)
-;;   (company-tooltip-align-annotations 't)
-;;   (global-company-mode t))
-
-;; (use-package company-box
-;;   :after company
-;;   :diminish
-;;   :hook (company-mode . company-box-mode))
-
-(use-package flycheck
-  :ensure t
-  :defer t
-  :diminish
-  :init (global-flycheck-mode))
-
-(use-package vterm
-:config
-(setq shell-file-name "/bin/bash"
-      vterm-max-scrollback 5000))
-
-(defun my/project-vterm ()
-  "Open a vterm in the project root."
-  (interactive)
-  (let ((default-directory (project-root (project-current t))))
-    (vterm)))
-
-(global-set-key (kbd "C-x p v") #'my/project-vterm)
-
-(use-package vterm-toggle
-  :config
-  (global-set-key [f2] 'vterm-toggle)
-  (global-set-key [C-f2] 'vterm-toggle-cd)
-
-  ;; you can cd to the directory where your previous buffer file exists
-  ;; after you have toggle to the vterm buffer with `vterm-toggle'.
-  (define-key vterm-mode-map [(control return)]   #'vterm-toggle-insert-cd)
-
-                                        ;Switch to next vterm buffer
-  (define-key vterm-mode-map (kbd "s-n")   'vterm-toggle-forward)
-                                        ;Switch to previous vterm buffer
-  (define-key vterm-mode-map (kbd "s-p")   'vterm-toggle-backward))
-
-(use-package nerd-icons
-  ;; :custom
-  ;; The Nerd Font you want to use in GUI
-  ;; "Symbols Nerd Font Mono" is the default and is recommended
-  ;; but you can use any other Nerd Font if you want
-  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
-  )
-
-(use-package sudo-edit)
-(use-package tldr)
-
-(use-package project
-  :ensure nil
-  :bind (("C-x p f" . project-find-file)
-         ("C-x p p" . project-switch-project)
-         ("C-x p g" . project-find-regexp)
-         ("C-x p r" . project-query-replace-regexp)
-         ("C-x p e" . project-eshell)
-         ("C-x p s" . project-shell)
-         ("C-x p c" . project-compile))
-  :config
-  (setq project-switch-commands
-        '((project-find-file "Find file")
-          (magit-project-status "Magit" ?m)
-          (project-eshell "Eshell" ?e)
-          (project-shell "Shell" ?s)
-          (project-compile "Compile" ?c)
-          (project-find-regexp "Grep" ?g))))
-
-(defun my/kill-project-buffers ()
-  "Kill all buffers associated with the current project."
-  (interactive)
-  (when-let ((project (project-current)))
-    (mapc #'kill-buffer (project-buffers project))
-    (message "Killed all project buffers.")))
-
-(global-set-key (kbd "C-x p k") #'my/kill-project-buffers)
-
-(use-package rainbow-mode
-  :diminish
-  :hook org-mode prog-mode)
-
-(use-package rainbow-delimiters
-  :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
-         (clojure-mode . rainbow-delimiters-mode)))
-
-
-(use-package neotree
-  :config
-  (setq neo-smart-open t
-        neo-show-hidden-files t
-        neo-window-width 55
-        neo-window-fixed-size nil
-        inhibit-compacting-font-caches t
-        projectile-switch-project-action 'neotree-projectile-action)
-        ;; truncate long file names in neotree
-        (add-hook 'neo-after-create-hook
-           #'(lambda (_)
-               (with-current-buffer (get-buffer neo-buffer-name)
-                 (setq truncate-lines t)
-                 (setq word-wrap nil)
-                 (make-local-variable 'auto-hscroll-mode)
-                 (setq auto-hscroll-mode nil)))))
-
-(use-package doom-themes
-  :ensure t
-  :config
-  ;; Global settings (defaults)
-  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-        doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'doom-tokyo-night t)
-
-  ;; Enable flashing mode-line on errors
-  (doom-themes-visual-bell-config)
-
-  (doom-themes-neotree-config)
-  ;; Corrects (and improves) org-mode's native fontification.
-  (doom-themes-org-config))
-
-(use-package doom-modeline
-  :ensure t
-  :init (doom-modeline-mode 1)
-  :config
-  (setq doom-modeline-major-mode-icon t))
-
-(use-package neotree
-  :config
-  (setq neo-smart-open t
-        neo-show-hidden-files t
-        neo-window-width 55
-        neo-window-fixed-size nil
-        inhibit-compacting-font-caches t
-        projectile-switch-project-action 'neotree-projectile-action)
-        ;; truncate long file names in neotree
-        (add-hook 'neo-after-create-hook
-           #'(lambda (_)
-               (with-current-buffer (get-buffer neo-buffer-name)
-                 (setq truncate-lines t)
-                 (setq word-wrap nil)
-                 (make-local-variable 'auto-hscroll-mode)
-                 (setq auto-hscroll-mode nil)))))
-
-(use-package flycheck
-  :ensure t
-  :defer t
-  :diminish
-  :init (global-flycheck-mode))
+  (mood-line-mode)) ;; Automatically hides unnecessary mode-line info
 
 (use-package eglot
   :hook ((prog-mode . eglot-ensure)
@@ -1106,87 +1087,6 @@
 
 ;; (use-package imenu-anywhere
 ;;   :bind(("M-I" . imenu-anywhere)))
-
-(use-package yasnippet
-  :diminish yas-minor-mode
-  :defer t
-
-  :init
-  (add-hook 'prog-mode-hook #'yas-minor-mode)
-
-  :config
-  (yas-reload-all))
-
-(use-package eldoc
-  :diminish eldoc-mode
-  :defer t
-
-  :init
-  (add-hook 'eval-expression-minibuffer-setup-hook #'eldoc-mode)
-  (add-hook 'ielm-mode-hook #'eldoc-mode)
-  (add-hook 'emacs-lisp-mode-hook #'eldoc-mode))
-
-(use-package exec-path-from-shell
-  :config
-  (custom-set-variables '(exec-path-from-shell-check-startup-files nil))
-  (exec-path-from-shell-initialize)
-  (dolist (var '("SSH_AUTH_SOCK" "SSH_AGENT_PID" "GPG_AGENT_INFO"
-                 "PATH" "PYTHONPATH" "GOPATH" "GOROOT" "GOBIN"
-                 "GO111MODULE" "GOMODCACHE" "GOCACHE"
-                 "LANG" "LC_CTYPE" "JAVA_HOME" "JDK_HOME"))
-    (add-to-list 'exec-path-from-shell-variables var)))
-
-(use-package tabspaces
-  :hook (after-init . tabspaces-mode)
-  :custom
-  (tabspaces-keymap-prefix "C-c t")
-  (tabspaces-use-filtered-buffers-as-default t)  ;; Only show buffers from the current workspace
-  (tabspaces-default-tab "Default")             ;; Start in a default tab
-  (tabspaces-remove-to-default t))
-
-(with-eval-after-load 'dired
-  (require 'dired-x)
-  (setq dired-guess-shell-alist-user '(("gif" . "imv")
-                                ("jpg" . "imv")
-                                ("png" . "imv")
-                                ("mkv" . "mpv")
-                                ("mp4" . "mpv"))))
-
-(setq image-dired-thumb-size 128)  ;; Set thumbnail size
-(with-eval-after-load 'dired
-  (require 'image-dired))
-
-(use-package consult-todo
-  :after consult
-  :bind (("C-c t" . consult-todo)))  ;; Bind `C-c t` to search for TODOs
-
-(use-package magit-todos
-  :after magit
-  :hook (magit-mode . magit-todos-mode)
-  :config
-  (setq magit-todos-keywords '("TODO" "FIXME" "HACK" "BUG" "REVIEW" "OPTIMIZE"))
-  (setq magit-todos-depth 3)   ;; Search subdirectories up to depth 3
-  (setq magit-todos-exclude-globs '("node_modules" "vendor" "dist"))  ;; Ignore these directories
-  (setq magit-todos-group-by 'default))  ;; Group TODOs normally
-
-;; macOS-style keybindings
-(global-set-key (kbd "s-c") 'kill-ring-save)   ;; ⌘C - Copy
-(global-set-key (kbd "s-x") 'kill-region)      ;; ⌘X - Cut
-(global-set-key (kbd "s-v") 'yank)             ;; ⌘V - Paste
-(global-set-key (kbd "s-z") 'undo)             ;; ⌘Z - Undo
-(global-set-key (kbd "s-a") 'mark-whole-buffer) ;; ⌘A - Select All
-(global-set-key (kbd "s-s") 'save-buffer)      ;; ⌘S - Save
-(global-set-key (kbd "s-w") 'kill-this-buffer) ;; ⌘W - Close Buffer
-(global-set-key (kbd "s-q") 'save-buffers-kill-terminal) ;; ⌘Q - Quit Emacs
-(global-set-key (kbd "s-n") 'make-frame-command) ;; ⌘N - New Window
-(global-set-key (kbd "s-t") 'tab-new)          ;; ⌘T - New Tab (Emacs 28+)
-(global-set-key (kbd "s-o") 'find-file)        ;; ⌘O - Open File
-(global-set-key (kbd "s-f") 'isearch-forward)  ;; ⌘F - Search
-
-;; macOS-style redo
-(when (fboundp 'undo-redo)
-  (global-set-key (kbd "s-Z") 'undo-redo)) ;; ⌘⇧Z - Redo (Emacs 28+)
-
 
 ;; ;; Expands to: (elpaca evil (use-package evil :demand t))
 ;; (use-package evil
@@ -1481,3 +1381,61 @@
 ;; (global-set-key (kbd "C--") 'text-scale-decrease)
 ;; (global-set-key (kbd "<C-wheel-up>") 'text-scale-increase)
 ;; (global-set-key (kbd "<C-wheel-down>") 'text-scale-decrease)
+
+;; (use-package doom-themes
+;;   :ensure t
+;;   :config
+;;   ;; Global settings (defaults)
+;;   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+;;         doom-themes-enable-italic t) ; if nil, italics is universally disabled
+;;    (load-theme 'doom-one t)
+
+;;   ;; Enable flashing mode-line on errors
+;;   (doom-themes-visual-bell-config)
+
+;;   (doom-themes-neotree-config)
+;;   ;; Corrects (and improves) org-mode's native fontification.
+;;   (doom-themes-org-config))
+
+;; (use-package doom-modeline
+;;   :ensure t
+;;   :init (doom-modeline-mode 1)
+;;   :config
+;;   (setq doom-modeline-major-mode-icon t))
+
+;; (use-package neotree
+;;   :config
+;;   (setq neo-smart-open t
+;;         neo-show-hidden-files t
+;;         neo-window-width 55
+;;         neo-window-fixed-size nil
+;;         inhibit-compacting-font-caches t
+;;         projectile-switch-project-action 'neotree-projectile-action)
+;;         ;; truncate long file names in neotree
+;;         (add-hook 'neo-after-create-hook
+;;            #'(lambda (_)
+;;                (with-current-buffer (get-buffer neo-buffer-name)
+;;                  (setq truncate-lines t)
+;;                  (setq word-wrap nil)
+;;                  (make-local-variable 'auto-hscroll-mode)
+;;                  (setq auto-hscroll-mode nil)))))
+
+;; (use-package company
+;;   :defer 2
+;;   :diminish
+;;   :custom
+;;   (company-begin-commands '(self-insert-command))
+;;   (company-idle-delay .1)
+;;   (company-minimum-prefix-length 2)
+;;   (company-show-numbers t)
+;;   (company-tooltip-align-annotations 't)
+;;   (global-company-mode t))
+
+;; (use-package company-box
+;;   :after company
+;;   :diminish
+;;   :hook (company-mode . company-box-mode))
+
+(provide 'init)
+
+;;; init.el ends here
