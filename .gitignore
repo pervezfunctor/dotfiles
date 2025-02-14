@@ -1,3 +1,8 @@
 .history
 local*
 lazy-lock.json
+/emacs/dot-emacs.d/auto-save-list/
+/emacs/dot-emacs.d/eln-cache/
+/emacs/dot-emacs.d/elpa/
+/emacs/dot-emacs.d/history
+/emacs/dot-emacs.d/straight/
