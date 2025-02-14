@@ -289,7 +289,7 @@
     (setq no-littering-etc-directory
           (expand-file-name "etc/" user-emacs-directory))
     (setq no-littering-var-directory
-          (expand-file-name "var/" user-emacs-directory))
+          (expand-file-name "var/" user-emacs-directory)))
     (require 'no-littering))
 
 (use-package xdg
@@ -377,7 +377,7 @@
         history-length                1000
         kill-ring-max                 19
         savehist-autosave-interval    60
-        savehist-file (no-littering-expand-var-file-name "savehist"
+        savehist-file (no-littering-expand-var-file-name "savehist")
         savehist-additional-variables '(mark-ring
                                         global-mark-ring
                                         kill-ring
@@ -498,8 +498,8 @@
 ;; (when (fboundp 'undo-redo)
 ;;   (global-set-key (kbd "s-Z") 'undo-redo)) ;; ⌘⇧Z - Redo (Emacs 28+)
 
-(straight-use-package 'iedit
-  :diminish iedit-mode)
+(use-package iedit
+  :straight t)
 
 (use-package zop-to-char
   :bind (("M-z" . zop-up-to-char)
