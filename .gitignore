@@ -6,3 +6,9 @@ lazy-lock.json
 /emacs/dot-emacs.d/elpa/
 /emacs/dot-emacs.d/history
 /emacs/dot-emacs.d/straight/
+/emacs/dot-emacs.d/var/
+/emacs/dot-emacs.d/transient/
+/emacs/dot-emacs.d/places
+/emacs/dot-emacs.d/recentf
+/emacs/dot-emacs.d/saved-places
+/emacs/dot-emacs.d/projects
