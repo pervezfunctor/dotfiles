@@ -29,10 +29,6 @@ fi
 if is_mac; then
     alias upgrade="brew update && brew upgrade"
 fi
-alias ec="emacsclient -c -n"
-
-alias en="emacs -nw"
-alias et="emacsclient -t"
 
 alias xen="TERM=xterm-256color emacs -nw"
 alias xet="TERM=xterm-256color emacsclient -t"
@@ -266,3 +262,14 @@ fi
 # fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
 # f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
 # fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
+
+if has_cmd emacs; then
+    EMACS_VERSION=$(emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1)
+    if [ "$EMACS_VERSION" -gt 25 ]; then
+        export EDITOR="emacsclient -t"
+        export VISUAL="emacsclient -c -n"
+        alias e="emacsclient -t"
+        alias ec="emacsclient -c -n"
+        alias en="emacs -nw"
+    fi
+fi

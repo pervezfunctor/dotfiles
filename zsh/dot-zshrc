@@ -209,12 +209,4 @@ function preexec {
 
 source_if_exists "$HOME/.localzshrc"
 
-# if emacs version > 28
-if (( $+commands[emacs] )) && (( $(emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1) > 25 )); then
-    export EDITOR="emacsclient -t"
-    export VISUAL="emacsclient -c"
-    alias e="emacsclient -t"
-    alias ec="emacsclient -c"
-fi
-
 # one_shell_tmux
