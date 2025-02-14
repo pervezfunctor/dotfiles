@@ -191,8 +191,9 @@
 ;; (set-frame-parameter (selected-frame) 'alpha '(85 . 85))
 ;; (add-to-list 'default-frame-alist '(alpha . (85 . 85)))
 
-(custom-set-faces
- '(default ((t (:background "unspecified-bg")))))  ;; Keep terminal transparency
+
+;; (custom-set-faces
+;;  '(default ((t (:background "unspecified-bg")))))  ;; Keep terminal transparency
 
 
 (unless (display-graphic-p)
@@ -892,7 +893,7 @@
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
         doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  ;; (load-theme 'doom-one t)
+  (load-theme 'doom-tokyo-night t)
 
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
@@ -924,6 +925,12 @@
                  (make-local-variable 'auto-hscroll-mode)
                  (setq auto-hscroll-mode nil)))))
 
+(use-package flycheck
+  :ensure t
+  :defer t
+  :diminish
+  :init (global-flycheck-mode))
+
 (use-package company
   :defer 2
   :diminish
@@ -939,44 +946,6 @@
   :after company
   :diminish
   :hook (company-mode . company-box-mode))
-
-(use-package flycheck
-  :ensure t
-  :defer t
-  :diminish
-  :init (global-flycheck-mode))
-
-(use-package vterm
-:config
-(setq shell-file-name "/bin/bash"
-      vterm-max-scrollback 5000))
-
-(use-package vterm-toggle
-  :config
-  (global-set-key [f2] 'vterm-toggle)
-  (global-set-key [C-f2] 'vterm-toggle-cd)
-
-  ;; you can cd to the directory where your previous buffer file exists
-  ;; after you have toggle to the vterm buffer with `vterm-toggle'.
-  (define-key vterm-mode-map [(control return)]   #'vterm-toggle-insert-cd)
-
-                                        ;Switch to next vterm buffer
-  (define-key vterm-mode-map (kbd "s-n")   'vterm-toggle-forward)
-                                        ;Switch to previous vterm buffer
-  (define-key vterm-mode-map (kbd "s-p")   'vterm-toggle-backward))
-
-(setq interprogram-cut-function
-      (lambda (text &optional push)
-        (let ((process-connection-type nil))
-          (let ((proc (start-process "wl-copy" "*Messages*" "wl-copy")))
-            (process-send-string proc text)
-            (process-send-eof proc)))))
-
-(setq interprogram-paste-function
-      (lambda ()
-        (if (executable-find "wl-paste")
-            (shell-command-to-string "wl-paste")
-          nil)))
 
 ;; (use-package dashboard
 ;;   :ensure t
