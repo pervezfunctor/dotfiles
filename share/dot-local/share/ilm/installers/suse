@@ -5,14 +5,14 @@
 si() {
     for p in "$@"; do
         slog "Installing package $p"
-        sudo zypper --non-interactive-include-reboot-patches --terse --quiet install --auto-agree-with-licenses "$p"
+        sudo zypper --terse --non-interactive-include-reboot-patches --quiet install --auto-agree-with-licenses "$p"
     done
 }
 
 update_packages() {
     slog "Updating"
 
-    if ! { sudo zypper refresh && sudo zypper --non-interactive-include-reboot-patches --terse --quiet dup; }; then
+    if ! { sudo zypper refresh && sudo zypper --terse --non-interactive-include-reboot-patches --quiet dup; }; then
         err_exit "zypper refresh failed. quitting"
     fi
 }
