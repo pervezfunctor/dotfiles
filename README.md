@@ -164,3 +164,15 @@ Install c++ tools
 ```bash
 installer cpp
 ```
+
+## Only dotfiles(Advanced)
+
+I use [stow](https://www.gnu.org/software/stow) with this repository. If you know what you are doing, and make sure all the software needed is installed, you could use stow to get your system configured. For eg.
+
+```bash
+git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
+cd ~/.ilm
+stow share bin # this is required
+stow zsh
+stow emacs nvim sway # folder names
+```
