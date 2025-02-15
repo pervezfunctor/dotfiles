@@ -24,10 +24,9 @@ output HDMI-A-1 resolution 3840x2160 position 0,0 scale 1.75
 exec_always swaybg -i ~/.config/wallpapers/wallpaper.png -m fill
 
 exec swayidle -w \
-         timeout 150 $screenlock \
-         timeout 120 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
-         before-sleep $screenlock \
-         timeout 600 'systemctl suspend'
+     swayidle -w timeout 120 'swaymsg "output * dpms off"' \
+     resume 'swaymsg "output * dpms on"' \
+     timeout 600 'systemctl suspend'
 
 bindsym $mod+Return exec $$term
 bindsym $mod+Shift+q kill
@@ -240,7 +239,8 @@ exec_always {
     swaync --style /etc/sway/swaync/style.css --config /etc/sway/swaync/config.json
 }
 
-exec /usr/libexec/polkit-gnome-authentication-agent-1
+exec [ -x /usr/libexec/polkit-gnome-authentication-agent-1 ] && /usr/libexec/polkit-gnome-authentication-agent-1
+# exec /usr/libexec/polkit-gnome-authentication-agent-1
 
 # Wayland default floats
 for_window [app_id="(Calendar|Calculator|Power-statistics|Control-center)"] floating enable
