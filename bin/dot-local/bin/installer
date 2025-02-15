@@ -43,7 +43,7 @@ main() {
 
     if ! has_cmd gum; then
         help
-        return 1
+        exit 0
     fi
 
     SELECTED_INSTALL_OPTIONS=$(gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')

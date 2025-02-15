@@ -27,7 +27,7 @@ main() {
 
     if ! has_cmd gum; then
         help
-        return 1
+        exit 0
     fi
 
     SELECTED_OPTION=$(gum choose "${INSTALL_OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
