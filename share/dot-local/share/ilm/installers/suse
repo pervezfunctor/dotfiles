@@ -5,14 +5,14 @@
 si() {
     for p in "$@"; do
         slog "Installing package $p"
-        sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$p"
+        sudo zypper --non-interactive-include-reboot-patches --terse --quiet install --auto-agree-with-licenses "$p"
     done
 }
 
 update_packages() {
     slog "Updating"
 
-    if ! { sudo zypper refresh && sudo zypper --non-interactive --quiet dup; }; then
+    if ! { sudo zypper refresh && sudo zypper --non-interactive-include-reboot-patches --terse --quiet dup; }; then
         err_exit "zypper refresh failed. quitting"
     fi
 }
@@ -25,7 +25,7 @@ sys_python_install() {
 core_install() {
     update_packages
 
-    si curl wget git tar tree unzip python312-pipx cmake stow
+    si curl wget git tar tree unzip python313-pipx cmake stow
     sudo zypper install -y -t pattern devel_basis
 
     pipx install trash-cli
@@ -47,7 +47,6 @@ essential_install() {
     slog "Installing essential packages"
 
     core_install
-    # mise_install
     sys_python_install
     # snap_install
 
@@ -58,9 +57,10 @@ essential_install() {
 }
 
 cli_install() {
-    si gh ShellCheck shfmt neovim tree-sitter gawk tmux urlview zsh
-    si lazygit bottom sd lsd bat hyperfine fd fzf ripgrep zoxide cheat
-    si curlie git-delta jq duf lua54-luarocks python3-neovim htop gdu
+    si gh neovim zsh tree-sitter tmux sd bat fd fzf ripgrep zoxide
+    si lazygit bottom lsd git-delta htop xh
+    si lua54-luarocks python3-neovim ImageMagick
+    si hyperfine cheat curlie jq ShellCheck shfmt urlview gawk gdu duf
 
     gh extension install github/gh-copilot
 }
@@ -155,14 +155,43 @@ sway_install() {
     sudo zypper install -y -t pattern openSuseway
 
     si openSuseway qt6ct alacritty swaylock swaybg swayidle swaynag waybar grim
-    si clipman imv mpv bluez slirp qt5ct qt6ct sway-marker waybar polkit-gnome
+    si clipman imv mpv bluez slirp qt5ct qt6ct sway-marker polkit-gnome
     si brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl
-    si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard
+    si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard firefox
+
+    nerd_fonts_install
 
     cmd_check sway swaylock swaybg swayidle swaymsg sway-marker
     cmd_check swaynag pactl waybar grim clipman imv mpv
     cmd_check brightnessctl pamixer playerctl greetd alacritty
     cmd_check /usr/libexec/polkit-gnome-authentication-agent-1
     cmd_check bluetoothctl bluemoon tlp firefox slurp qt5ct
+
+    shell-group_install
+    # emacs_install
 }
+
+hyprland_install() {
+    # si grep aaa_base bash-completion ghostscript-fonts-std NetworkManager curl tar pipewire wget xdg-utils sudo xdg-desktop-portal xdg-desktop-portal-gtk git gzip bzip2 jq adwaita-icon-theme dejavu-fonts glibc-locale less wl-clipboard google-roboto-fonts noto-sans-fonts google-droid-fonts google-opensans-fonts gtk3-metatheme-adwaita noto-coloremoji-fonts adobe-sourcecodepro-fonts command-not-found greetd metatheme-adwaita-common xdg-desktop-portal-wlr adobe-sourcesanspro-fonts adobe-sourceserifpro-fonts cantarell-fonts ghostscript-fonts-other google-carlito-fonts noto-emoji-fonts clipman mpris-ctl sway-branding-openSUSE sway-marker waybar-branding-openSUSE
+
+    si hyprcursor hypridle hyprland hyprland-bash-completion hyprland-devel
+    si hyprlock hyprland-wallpapers hyprland-zsh-completion hyprpaper
+    si hyprpicker hyprpolkitagent hyprshot xdg-desktop-portal-hyprland
+    si hyprland-qt-support hyprland-qtutils qt6ct swaybg waybar imv mpv
+    si clipman bluez slirp qt5ct qt6ct ghostty firefox
+    si brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl
+    si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard
+
+    nerd_fonts_install
+
+    cmd_check hyprcursor hypridle hyprctl hyprlock hyproiccker
+    cmd_check pactl waybar clipman imv mpv hyprshot ghostty
+    cmd_check brightnessctl pamixer playerctl greetd
+    # cmd_check /usr/libexec/polkit-gnome-authentication-agent-1
+    cmd_check bluetoothctl bluemoon tlp firefox slurp qt5ct
+
+    shell-group_install
+    # emacs_install
+}
+
 }
