@@ -901,9 +901,13 @@ pyenv_install() {
     slog "pyenv installation done!"
 
     cmd_check pyenv
+
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init --path)"
 }
 
-anaconda_install() {
+pyenv_anaconda_install() {
     if has_cmd pyenv; then
         if ! pyenv versions | grep anaconda > /dev/null; then
             slog "Installing anaconda"
@@ -959,28 +963,24 @@ atomic_python_install() {
     slog "python setup done!"
 }
 
-python_uv_install() {
+uv_install() {
     has_cmd uv && return 0
 
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    if has_cmd pipx; then
+        pipx install uv
+    else
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    fi
 }
 
-python_core_install() {
+mini_install() {
     pyenv_install
-
-    export PYENV_ROOT="$HOME/.pyenv"
-    export PATH="$PYENV_ROOT/bin:$PATH"
-    eval "$(pyenv init --path)"
-}
-
-python_mini_install() {
-    python_core_install
     pyenv_miniconda_install
 }
 
-python_install() {
-     python_core_install
-    anaconda_install
+anaconda_install() {
+    pyenv_install
+    pyenv_anaconda_install
 }
 
 devbox_install() {
@@ -1030,28 +1030,45 @@ portainer_install() {
 
 base-group_install() {
     core_install
-    dotfiles_install
-    config_install
-
     cmd_check gcc g++ make cmake curl wget git trash tree tar unzip stow
+
+    dotfiles_install
+    dir_check ~/.ilm
+
+    stowdf wallpapers
+    share_config_install
+    bin_config_install
+    bash_config_install
 }
 
 min-group_install() {
-    base-group_install
+    base-grou_install
     essential_install
 
-    cmd_check micro webi zip unar
+    cmd_check micro webi zip unar gum
 }
 
 shell-group_install() {
     min-group_install
     shell_install
-    config_install
 
-    cmd_check atuin bat brew btm cheat choose curlie delta direnv doggo dotenv
-    cmd_check duf dust eza fd fzf gawk gdu gh gum hyperfine jq just lazygit lsd
-    cmd_check nvim procs rg sd shellcheck shfmt starship tmux webi yq
-    cmd_check zoxide zsh htop
+    cmd_check nvim gh neovim zsh tree-sitter tmux lazygit sd lsd bat fd
+    cmd_check fzf ripgrep zoxide gum bat brew btm htop btm rg starship
+    cmd_check eza fd fzf atuin delta
+    # cmd_check cheat choose curlie direnv doggo dotenv  procs
+    # cmd_check duf dust gawk gdu hyperfine jq just shellcheck shfmt yq
+
+    has_cmd zsh && zsh_config_install
+    has_cmd nvim && nvim_config_install
+    has_cmd tmux && tmux_config_install
+    if has_cmd yazi; then
+        if has_cmd ya; then
+            ya pack -a yazi-rs/flavors:catppuccin-frappe
+            ya pack -u
+        fi
+
+        yazi_config_install
+    fi
 }
 
 ct-group_install() {
@@ -1066,12 +1083,29 @@ vm-group_install() {
     vm_install
 }
 
+work-group_install() {
+    ct-group_install
+    jetbrains_nerd_font_install
+    vscode_install
+    jetbrains
+    flathub_install
+    fpi org.wezfurlong.wezterm
+    alias wezterm="flatpak run org.wezfurlong.wezterm"
+    wezterm_config_install
+}
+
 desktop-group_install() {
     vm-group_install
     fonts_install
     ui_install
 
     tailscale_install
+
+    has_cmd code && vscode_config_install
+    has_cmd foot && foot_config_install
+    has_cmd ghostty && ghostty_config_install
+    has_cmd kitty && kitty_config_install
+    has_cmd wezterm && wezterm_config_install
 }
 
 prog-group_install() {
@@ -1089,7 +1123,7 @@ all-group_install() {
     pixi_install
     emacs_install
 
-    cmd_check mise emacs
+    cmd_check pixi emacs
 }
 
 is_gnome() {
