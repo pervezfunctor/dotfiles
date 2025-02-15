@@ -15,7 +15,7 @@ set $right l
 
 set $term alacritty --config-file ~/.config/alacritty/alacritty.toml
 set $menu wofi --conf=/etc/wofi/config --style=/etc/wofi/style.css
-set $screenlock 'swaylock --config ~/.config/swaylock/swaylock.conf'
+set $screenlock 'swaylock --config ~/.ilm/suseway/dot-config/swaylock.conf'
 set $wob wob --config /etc/sway/wob/wob.ini
 
 # output * bg /usr/share/wallpapers/openSUSEdefault/contents/images/default-dark.png fill
@@ -24,10 +24,10 @@ output HDMI-A-1 resolution 3840x2160 position 0,0 scale 1.75
 exec_always swaybg -i ~/.config/wallpapers/wallpaper.png -m fill
 
 exec swayidle -w \
-         timeout 300 $screenlock \
-         timeout 300 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
+         timeout 150 $screenlock \
+         timeout 120 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
          before-sleep $screenlock \
-         timeout 900 'systemctl suspend'
+         timeout 600 'systemctl suspend'
 
 bindsym $mod+Return exec $$term
 bindsym $mod+Shift+q kill
