@@ -5,7 +5,7 @@
 si() {
     for p in "$@"; do
         slog "Installing package $p"
-        sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$p" > /dev/null
+        sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$p"
     done
 }
 
