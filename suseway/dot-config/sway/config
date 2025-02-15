@@ -14,6 +14,8 @@ set $up k
 set $right l
 
 set $term alacritty --config-file ~/.config/alacritty/alacritty.toml
+exec "command -v kitty && swaymsg 'set $term kitty'"
+
 set $menu wofi --conf=/etc/wofi/config --style=/etc/wofi/style.css
 set $screenlock 'swaylock --config ~/.ilm/suseway/dot-config/swaylock.conf'
 set $wob wob --config /etc/sway/wob/wob.ini
