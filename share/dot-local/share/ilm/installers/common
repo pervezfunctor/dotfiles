@@ -13,6 +13,24 @@ webi_install() {
     cmd_check webi
 }
 
+kitty_install() {
+    is_linux || return 1
+
+    has_cmd kitty && return 1
+    has_cmd ~.local/kitty.app/bin/kitty && return 1
+
+    curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+
+    # force link
+    ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
+
+    # smd ~/.local/share/applications
+    # safe-cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
+    # safe-cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
+
+    # echo 'kitty.desktop' > ~/.config/xdg-terminals.list
+}
+
 mise_install() {
     if has_cmd mise || has_cmd ~/.local/bin/mise; then
         eval "$($HOME/.local/bin/mise activate bash)"
