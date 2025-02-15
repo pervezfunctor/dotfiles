@@ -677,7 +677,7 @@ brew_shell_install() {
 
     slog "shell tools with brew"
 
-    bis jq tree-sitter just lsd shfmt gh tldr shellcheck gum lazydocker stow neovim
+    bis jq tree-sitter just lsd shfmt gh shellcheck gum lazydocker stow neovim
     bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust
     bis procs fzf fd hyperfine zoxide starship pixi yq ugrep yazi
 
