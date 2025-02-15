@@ -150,8 +150,6 @@ virt_install() {
 }
 
 sway_install() {
-    # si grep aaa_base bash-completion ghostscript-fonts-std NetworkManager curl tar pipewire wget xdg-utils sudo xdg-desktop-portal xdg-desktop-portal-gtk git gzip bzip2 jq adwaita-icon-theme dejavu-fonts glibc-locale less wl-clipboard google-roboto-fonts noto-sans-fonts google-droid-fonts google-opensans-fonts gtk3-metatheme-adwaita noto-coloremoji-fonts adobe-sourcecodepro-fonts command-not-found greetd metatheme-adwaita-common xdg-desktop-portal-wlr adobe-sourcesanspro-fonts adobe-sourceserifpro-fonts cantarell-fonts ghostscript-fonts-other google-carlito-fonts noto-emoji-fonts clipman mpris-ctl sway-branding-openSUSE sway-marker waybar-branding-openSUSE
-
     sudo zypper install -y -t pattern openSuseway
 
     si openSuseway qt6ct alacritty swaylock swaybg swayidle swaynag waybar grim
@@ -172,12 +170,12 @@ sway_install() {
 }
 
 hyprland_install() {
-    # si grep aaa_base bash-completion ghostscript-fonts-std NetworkManager curl tar pipewire wget xdg-utils sudo xdg-desktop-portal xdg-desktop-portal-gtk git gzip bzip2 jq adwaita-icon-theme dejavu-fonts glibc-locale less wl-clipboard google-roboto-fonts noto-sans-fonts google-droid-fonts google-opensans-fonts gtk3-metatheme-adwaita noto-coloremoji-fonts adobe-sourcecodepro-fonts command-not-found greetd metatheme-adwaita-common xdg-desktop-portal-wlr adobe-sourcesanspro-fonts adobe-sourceserifpro-fonts cantarell-fonts ghostscript-fonts-other google-carlito-fonts noto-emoji-fonts clipman mpris-ctl sway-branding-openSUSE sway-marker waybar-branding-openSUSE
+    si grep aaa_base bash-completion ghostscript-fonts-std NetworkManager curl tar pipewire wget xdg-utils sudo xdg-desktop-portal xdg-desktop-portal-gtk git gzip bzip2 jq adwaita-icon-theme dejavu-fonts glibc-locale less wl-clipboard google-roboto-fonts noto-sans-fonts google-droid-fonts google-opensans-fonts gtk3-metatheme-adwaita noto-coloremoji-fonts adobe-sourcecodepro-fonts command-not-found greetd metatheme-adwaita-common xdg-desktop-portal-wlr adobe-sourcesanspro-fonts adobe-sourceserifpro-fonts cantarell-fonts ghostscript-fonts-other google-carlito-fonts noto-emoji-fonts mpris-ctl
 
     si hyprcursor hypridle hyprland hyprland-bash-completion hyprland-devel
     si hyprlock hyprland-wallpapers hyprland-zsh-completion hyprpaper
     si hyprpicker hyprpolkitagent hyprshot xdg-desktop-portal-hyprland
-    si hyprland-qt-support hyprland-qtutils qt6ct swaybg waybar imv mpv
+    si hyprland-qt-support hyprland-qtutils qt6ctwaybar imv mpv
     si clipman bluez slirp qt5ct qt6ct ghostty firefox
     si brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl
     si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard
