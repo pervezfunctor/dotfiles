@@ -8,7 +8,7 @@ main() {
     if has_cmd brew; then
         brew_shell_install
         bi neovim stow
-        astronvim_install
+        nvim_config_install
     else
         warn "brew not installed; skipping shell utilities installation"
     fi

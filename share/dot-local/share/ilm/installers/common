@@ -140,7 +140,7 @@ webi-shell_install() {
 }
 
 nvim_config_install() {
-    slog "AstroNvim config"
+    slog "nvim config"
 
     omv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
     omv ~/.local/share/nvim ~/.local/share/nvim.bak
@@ -150,7 +150,7 @@ nvim_config_install() {
     stowdf nvim
     nvim --headless "+Lazy! sync" +qa
 
-    slog "AstroNvim config done!"
+    slog "nvim config done!"
 }
 
 starship_install() {

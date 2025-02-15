@@ -94,7 +94,7 @@ group-installer help
 
 You could pick from `shell`, `ct`, `vm`, `desktop` and `all` groups. This is the same as above installation commands.
 
-`shell` will install and configure zsh and bash(with [starship](https://starship.rs) prompt), neovim(with [astronvim](https://astronvim.com)) and [tmux](https://github.com/tmux/tmux/wiki). Installs modern shell tools like
+`shell` will install and configure zsh and bash(with [starship](https://starship.rs) prompt), neovim(with lazyvim](http://www.lazyvim.org)) and [tmux](https://github.com/tmux/tmux/wiki). Installs modern shell tools like
 
 - [gh - github cli](https://cli.github.com)
 - [just - task runner](https://github.com/casey/just)
