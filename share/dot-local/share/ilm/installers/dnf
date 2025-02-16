@@ -262,31 +262,18 @@ tiling_common_install() {
     si rofi-themes dunst swaync lxqt-policykit network-manager-applet
     si xdg-desktop-portal-gtk pmv imv mpv wlogout qt6-qtquickcontrols2 qt6-qtsvg
     si SwayNotificationCenter
-    stowdf waybar
 }
 
-hyprland_install() {
-    slog "Installing hyprland..."
-
+hyprland_bin_install() {
     tiling_common_install
     si hyprland hyprland-devel hyprutils hyprutils-devel
     si hypridle hyprpaper hyprpicker hyprlock kitty hyprcursor
-
-    stowdf hypr
-
-    slog "hyprland installation done!"
 }
 
-sway_install() {
-    slog "Installing sway..."
-
+sway_bin_install() {
     tiliing_common_install
     si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway
-    si sway-config-fedora
-
-    stowdf sway
-
-    slog "Installing sway done!"
+    si sway-config-fedora kitty
 }
 
 }

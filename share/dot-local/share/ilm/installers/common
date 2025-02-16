@@ -840,6 +840,12 @@ yazi_config_install() {
     srm $XDG_CONFIG_HOME/yazi
     smd $XDG_CONFIG_HOME/yazi
     stownf yazi
+
+    if has_cmd ya; then
+        ya pack -a yazi-rs/flavors:catppuccin-frappe
+        ya pack -u
+    fi
+
     slog "yazi config done!"
 }
 
@@ -869,18 +875,11 @@ config_install() {
     has_cmd nvim && nvim_config_install
     has_cmd rofi && rofi_config_install
     has_cmd sway && sway_config_install
-    has_cmd hypr && hypr_config_install
+    has_cmd hypr && hyprland_config_install
     has_cmd tmux && tmux_config_install
     has_cmd wezterm && wezterm_config_install
     has_cmd zsh && zsh_config_install
-    if has_cmd yazi; then
-        if has_cmd ya; then
-            ya pack -a yazi-rs/flavors:catppuccin-frappe
-            ya pack -u
-        fi
-
-        yazi_config_install
-    fi
+    has_cmd yazi && yazi_config_install
 }
 
 poetry_install() {
@@ -1376,28 +1375,119 @@ gnome_settings() {
     more_gnome_settings
 }
 
-sway_config_install() {
-    has_cmd sway && stowdf sway
-    has_cmd waybar && stowdf waybar
-
-    has_cmd pip || has_cmd python3 && python3 -m ensurepip --user --default-pip
-
-    if ! has_cmd pip; then
-        warn "pip not installed, cannot install autotiling"
-        return 1
-    fi
-
-    pip install --user --force-reinstall --upgrade i3ipc
-    pip install --user --force-reinstall --upgrade autotiling
+waybar_config_install() {
+    has_cmd waybar || return 1
+    srm ~/.config/waybar
+    smd ~/.config/waybar
+    stowdf waybar
 }
 
-hypr_config_install() {
+hypr-waybar_config_install() {
+    has_cmd waybar || return 1
+    srm ~/.config/waybar
+    smd ~/.config/waybar
+    stowdf hypr-waybar
+}
+
+wlogout_config_install() {
+    has_cmd wlogout || return 1
+    srm ~/.config/wlogout
+    smd ~/.config/wlogout
+    stowdf wlogout
+}
+
+kitty_config_install() {
+    has_cmd kitty || return 1
+    srm ~/.config/kitty
+    smd ~/.config/kitty
+    stowdf kitty
+}
+
+sway_config_install() {
+    has_cmd sway || return 1
+    srm ~/.config/sway
+    smd ~/.config/sway
+    stowdf sway
+}
+
+rofi_config_install() {
+    has_cmd rofi || return 1
+    srm ~/.config/rofi
+    smd ~/.config/rofi
+    stowdf rofi
+}
+
+    # has_cmd pip || has_cmd python3 && python3 -m ensurepip --user --default-pip
+
+    # if ! has_cmd pip; then
+    #     warn "pip not installed, cannot install autotiling"
+    #     return 1
+    # fi
+
+    # pip install --user --force-reinstall --upgrade i3ipc
+    # pip install --user --force-reinstall --upgrade autotiling
+
+hyprland_config_install() {
     slog "hypr config install"
     srm ~/.config/hypr
     srm ~/.config/waybar
     stowdf hypr
     stowdf hypr-waybar
     slog "hypr config done!"
+}
+
+sway_install() {
+    slog "Installing sway..."
+
+    sway_bin_install
+
+    waybar_config_install
+    kitty_config_install
+    sway_config_install
+    rofi_config_install
+
+    slog "Installing sway done!"
+}
+
+hyprland_install() {
+    slog "Installing hyprland..."
+
+    hyprland_bin_install
+
+    hyprland_config_install
+    hypr-waybar_config_install
+    kitty_config_install
+    sway_config_install
+    rofi_config_install
+
+    slog "hyprland installation done!"
+}
+
+sway-group_install() {
+    slog "Installing sway"
+    shell-group_install
+
+    stowdf share
+    stowdf bin
+    stowdf wallpapers
+
+    sway_install
+
+    slog "sway instalation done!"
+}
+
+
+hyprland-group_install() {
+    slog "Installing hyprland"
+    shell-group_install
+
+    stowdf share
+    stowdf bin
+    stowdf wallpapers
+
+    hyprland_install
+
+    slog "hyprland instalation done!"
 }
 
 }
