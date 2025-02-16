@@ -51,6 +51,7 @@ alias m="mkdir -p"
 # alias c="fasd -d -e code"
 
 alias c.="code ."
+alias cs="code --password-store=gnome-libsecret"
 
 alias git-unstage="git reset HEAD"
 alias git-discard="git checkout --"
