@@ -155,7 +155,7 @@ sway_install() {
     si openSuseway qt6ct alacritty swaylock swaybg swayidle swaynag waybar grim
     si clipman imv mpv bluez slirp qt5ct qt6ct sway-marker polkit-gnome
     si brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl
-    si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard firefox
+    si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard firefox rofi-wayland
 
     nerd_fonts_install
 
@@ -178,7 +178,7 @@ hyprland_install() {
     si hyprland-qt-support hyprland-qtutils qt6ctwaybar imv mpv
     si clipman bluez slirp qt5ct qt6ct ghostty firefox
     si brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl
-    si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard
+    si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard rofi-wayland
 
     nerd_fonts_install
 

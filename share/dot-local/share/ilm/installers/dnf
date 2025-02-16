@@ -269,8 +269,8 @@ hyprland_install() {
     slog "Installing hyprland..."
 
     tiling_common_install
-    si hyprland hyprland-devel hyprutils hyprutils-devel rofi-wayland
-    si rofi-themes hypridle hyprpaper hyprpicker hyprlock kitty
+    si hyprland hyprland-devel hyprutils hyprutils-devel
+    si hypridle hyprpaper hyprpicker hyprlock kitty hyprcursor
 
     stowdf hypr
 
