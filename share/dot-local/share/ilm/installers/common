@@ -671,29 +671,36 @@ cmake_install() {
     cmd_check cmake
 }
 
+brew_shell_essential_install() {
+    bis tree-sitter gh gum stow neovim bash-preexec
+    bis lazygit eza fzf fd zoxide starship yazi
+
+    has_cmd rg || bi ripgrep
+    has_cmd batcat || has_cmd bat || bi bat
+}
+
 brew_shell_install() {
-    # bi ffmpeg sevenzip poppler imagemagick font-symbols-only-nerd-font
+    # bi ffmpeg sevenzip poppler imagemagick
+    # bis gping ncdu httpie font-symbols-only-nerd-font
+    # bi glab
     # bi -q glances
 
     slog "shell tools with brew"
 
-    bis jq tree-sitter just lsd shfmt gh shellcheck gum lazydocker stow neovim
-    bis cheat curlie lazygit duf sd xh eza doggo atuin direnv dust
-    bis procs fzf fd hyperfine zoxide starship pixi yq ugrep yazi
+    brew_shell_essential_install
 
-    # bis nushell gping ncdu httpie
+    bis jq just lsd shfmt shellcheck lazydocker
+    bis cheat curlie duf sd xh doggo atuin direnv dust
+    bis procs hyperfine pixi yq ugrep yazi htop
 
     has_cmd spf || bi superfile
     has_cmd gdu || has_cmd gdu-go || bi gdu
-    has_cmd rg || bi ripgrep
-    has_cmd batcat || has_cmd bat || bi bat
+    has_cmd tldr || bi tealdeer
     has_cmd delta || bi git-delta
     has_cmd choose || bi choose-rust
     has_cmd btm || bi bottom
     has_cmd tv || bi television
     has_cmd nu || bi nushell
-    bi bash-preexec tealdeer
-    # bi glab
 
     alias gdu=gdu-go
 
@@ -1104,7 +1111,7 @@ desktop-group_install() {
     vm-group_install
     fonts_install
     ui_install
-    
+
     tailscale_install
 
     has_cmd code && vscode_extensions_install
