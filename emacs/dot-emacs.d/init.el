@@ -218,10 +218,6 @@
 ;; (set-frame-parameter (selected-frame) 'alpha '(85 . 85))
 ;; (add-to-list 'default-frame-alist '(alpha . (85 . 85)))
 
-(when (not (display-graphic-p))
-  (custom-set-faces
-   '(default ((t (:background "unspecified-bg"))))))  ;; Keep terminal transparency
-
 (unless (display-graphic-p)
   (require 'mouse)
   (xterm-mouse-mode 1)
@@ -1012,6 +1008,10 @@
   :config
   (treesit-auto-add-to-auto-mode-alist 'all)
   (global-treesit-auto-mode))
+
+(when (not (display-graphic-p))
+  (custom-set-faces
+   '(default ((t (:background "unspecified-bg"))))))  ;; Keep terminal transparency
 
 ;; (use-package company
 ;;   :defer 2

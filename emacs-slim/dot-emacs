@@ -39,6 +39,10 @@
 
 (load-theme 'wombat t)
 
+(when (not (display-graphic-p))
+  (custom-set-faces
+   '(default ((t (:background "unspecified-bg"))))))
+
 (use-package emacs
   :init
   (setq create-lockfiles nil)
@@ -47,6 +51,7 @@
   (setq-default indent-tabs-mode nil)
   (setq-default tab-width 4)
   (setq ring-bell-function 'ignore)
+
   :custom
   (user-full-name "Your Name")
   (user-mail-address "your.email@example.com")
