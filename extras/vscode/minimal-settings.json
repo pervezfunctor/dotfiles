@@ -51,6 +51,6 @@
   "editor.folding": false,
   "editor.glyphMargin": false,
   "workbench.sideBar.location": "right",
-  "window.menuBarVisibility": "toggle",
-  "workbench.activityBar.location": "hidden"
+  // "workbench.activityBar.location": "hidden",
+  "window.menuBarVisibility": "toggle"
 }
