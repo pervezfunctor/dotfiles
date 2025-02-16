@@ -37,7 +37,9 @@ main() {
 
     mise_install
 
-    if has_dir "$DOT_DIR" && has_cmd stow; then
+    if dir_check "$DOT_DIR"; then
+        warn "$DOT_DIR doesn't exist, skipping configuration"
+    elif has_cmd stow; then
         stowdf wallpapers
         share_config_install
         bin_config_install
@@ -47,7 +49,7 @@ main() {
         has_cmd tmux && tmux_config_install
         has_cmd emacs && stowdf emacs-slim
     else
-        warn "git not installed skipping dotfiles"
+        warn "stow not installed, skipping configuration"
     fi
 }
 
