@@ -20,6 +20,7 @@ main() {
     fi
 
     if has_cmd flatpak; then
+        flathub_install
         fpi org.telegram.desktop
         fpi org.deluge_torrent.deluge
         fpi us.zoom.Zoom
