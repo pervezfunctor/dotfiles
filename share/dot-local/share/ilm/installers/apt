@@ -108,7 +108,7 @@ cpp_install() {
     slog "C++ installation done!"
 }
 
-vscode_install() {
+vscode_bin_install() {
     has_cmd code && return 0
 
     if ! grep -q "https://packages.microsoft.com/repos/code stable main" /etc/apt/sources.list.d/vscode.list; then
@@ -133,7 +133,7 @@ vscode_install() {
 ui_install() {
     si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
 
-    vscode_install
+    vscode_bin_install
     flathub_install
     apps_install
 }

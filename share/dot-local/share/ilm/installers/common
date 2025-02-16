@@ -1028,6 +1028,12 @@ portainer_install() {
     fi
 }
 
+vscode_install() {
+    vscode_bin_install
+    vscode_extensions_install
+    vscode_config_install
+}
+
 base-group_install() {
     core_install
     cmd_check gcc g++ make cmake curl wget git trash tree tar unzip stow
@@ -1098,9 +1104,10 @@ desktop-group_install() {
     vm-group_install
     fonts_install
     ui_install
-
+    
     tailscale_install
 
+    has_cmd code && vscode_extensions_install
     has_cmd code && vscode_config_install
     has_cmd foot && foot_config_install
     has_cmd ghostty && ghostty_config_install

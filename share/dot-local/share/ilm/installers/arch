@@ -71,7 +71,7 @@ cpp_install() {
     cmd_check gcc gdb make cmake conan clang clang++ clang-tidy clang-format
 }
 
-vscode_install() {
+vscode_bin_install() {
     yay -Sy --noconfirm visual-studio-code-bin
 
     vscode_extensions_install
@@ -82,7 +82,7 @@ vscode_install() {
 ui_install() {
     si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard ghostty
 
-    vscode_install
+    vscode_bin_install
     flathub_install
     apps_install
 }

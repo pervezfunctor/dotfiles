@@ -108,7 +108,7 @@ cpp_install() {
     slog "C++ installation done!"
 }
 
-vscode_install() {
+vscode_bin_install() {
     has_cmd code && return 1
 
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
@@ -132,7 +132,7 @@ ui_install() {
     si virt-manager chromium gnome-keyring xsel xclip wl-clipboard
 
     ghostty_install
-    vscode_install
+    vscode_bin_install
     flathub_install
     apps_install
 }
