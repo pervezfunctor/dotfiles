@@ -38,7 +38,7 @@ main() {
 
     mise_install
 
-    if dir_check "$DOT_DIR"; then
+    if ! dir_exists "$DOT_DIR"; then
         warn "$DOT_DIR doesn't exist, skipping configuration"
     elif has_cmd stow; then
         stowdf wallpapers
