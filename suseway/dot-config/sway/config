@@ -4,6 +4,9 @@ input "type:keyboard" {
 	xkb_options ctrl:nocaps
 }
 
+# output * bg /usr/share/wallpapers/openSUSEdefault/contents/images/default-dark.png fill
+output HDMI-A-1 resolution 3840x2160 position 0,0 scale 1.75
+
 # set mod to Super/Windows
 set $mod Mod4
 
@@ -18,10 +21,12 @@ exec "command -v kitty && swaymsg 'set $term kitty'"
 
 set $menu wofi --conf=/etc/wofi/config --style=/etc/wofi/style.css
 set $screenlock 'swaylock --config ~/.ilm/suseway/dot-config/swaylock.conf'
+set $menu_window $rofi_cmd -show window
 set $wob wob --config /etc/sway/wob/wob.ini
 
-# output * bg /usr/share/wallpapers/openSUSEdefault/contents/images/default-dark.png fill
-output HDMI-A-1 resolution 3840x2160 position 0,0 scale 1.75
+exec swaync --style ~/.config/swaync/style.css --config ~/.config/swaync/config.json
+exec nm-applet
+exec wl-paste -t text --watch clipman store --no-persist
 
 exec_always swaybg -i ~/.config/wallpapers/wallpaper.png -m fill
 
@@ -29,6 +34,46 @@ exec swayidle -w \
      swayidle -w timeout 120 'swaymsg "output * dpms off"' \
      resume 'swaymsg "output * dpms on"' \
      timeout 600 'systemctl suspend'
+
+exec_always {
+    systemctl --user import-environment
+
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+    gsettings set org.gnome.desktop.interface icon-theme 'Adwaita'
+    gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+
+    test -e $SWAYSOCK.wob || mkfifo $SWAYSOCK.wob
+    tail -f $SWAYSOCK.wob | $wob
+}
+
+exec [ -x /usr/libexec/polkit-gnome-authentication-agent-1 ] && /usr/libexec/polkit-gnome-authentication-agent-1
+# exec /usr/libexec/polkit-gnome-authentication-agent-1
+#exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+
+seat * xcursor_theme Adwaita 32
+
+default_border pixel 4
+default_floating_border pixel 4
+
+gaps outer 10
+gaps inner 10
+
+# Format: client.<class> <border> <background> <text> <indicator> [<child_border>]
+
+# Example with all 5 values:
+client.focused          #6da741 #173f4f #73ba25 #39ff14 #6da741
+client.unfocused        #00a489 #173f4f #35b9ab #484e50 #173f4f
+client.focused_inactive #6da741 #00a489 #173f4f #484e50 #00a489
+
+# # client.focused #6da741 173f4f #73ba25
+# # client.focused #39ff14 #173f4f #73ba25
+# client.unfocused #00a489 #173f4f #35b9ab
+# client.focused_inactive #6da741 #00a489 #173f4f
+
+bar {
+    swaybar_command waybar
+}
 
 bindsym $mod+Return exec $$term
 bindsym $mod+Shift+q kill
@@ -192,10 +237,6 @@ mode $screenshot {
 }
 bindsym $mod+Print mode $screenshot
 
-bar {
-    swaybar_command waybar
-}
-
 # System mode menu
 set $mode_system "What to do? (l) lock, (e) logout, (r) reboot, (s) suspend, (Shift+s) shutdown"
 mode $mode_system {
@@ -215,34 +256,6 @@ bindsym $mod+Shift+e mode $mode_system
 # Toggle notification bar
 set $toggle_notification "swaync-client -t -sw"
 bindsym $mod+Shift+n exec $toggle_notification
-
-default_border pixel 4
-gaps inner 10
-
-# client.focused #6da741 173f4f #73ba25
-# client.focused #39ff14 #173f4f #73ba25
-client.unfocused #00a489 #173f4f #35b9ab
-client.focused_inactive #6da741 #00a489 #173f4f
-
-
-seat * xcursor_theme Adwaita 32
-
-exec_always {
-    systemctl --user import-environment
-
-    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
-    gsettings set org.gnome.desktop.interface icon-theme 'Adwaita'
-    gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
-    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-
-    test -e $SWAYSOCK.wob || mkfifo $SWAYSOCK.wob
-    tail -f $SWAYSOCK.wob | $wob
-
-    swaync --style /etc/sway/swaync/style.css --config /etc/sway/swaync/config.json
-}
-
-exec [ -x /usr/libexec/polkit-gnome-authentication-agent-1 ] && /usr/libexec/polkit-gnome-authentication-agent-1
-# exec /usr/libexec/polkit-gnome-authentication-agent-1
 
 # Wayland default floats
 for_window [app_id="(Calendar|Calculator|Power-statistics|Control-center)"] floating enable
