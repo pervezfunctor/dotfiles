@@ -4,21 +4,16 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-main() {
-    if has_cmd git; then
-        dotfiles_install
-    else
-        warn "git not installed, cannot clone dotfiles and setup configuration on your system. Moving on to installing packages"
-    fi
-
+brew_setup() {
     if has_cmd brew; then
-        brew_shell_essential_install
-        slog "Installing terminal only emacs, for GUI, use flatpak"
-        bis emacs
-    else
         warn "brew not installed; skipping shell utilities installation."
     fi
 
+    brew_shell_essential_install
+    bis emacs
+}
+
+apps_setup() {
     if has_cmd flatpak; then
         flathub_install
         fpi org.telegram.desktop
@@ -28,40 +23,58 @@ main() {
     else
         warn "flatpak not installed; skipping apps installation"
     fi
-
-    if has_cmd code; then
-        vscode_extensions_install
-        vscode_config_install
-    else
-        warn "code not installed; skipping vscode configuration"
-    fi
-
-    mise_install
-
-    if ! dir_exists "$DOT_DIR"; then
-        warn "$DOT_DIR doesn't exist, skipping configuration"
-    elif has_cmd stow; then
-        stowdf wallpapers
-        share_config_install
-        bin_config_install
-        bash_config_install
-        has_cmd zsh && zsh_config_install
-        has_cmd nvim && nvim_config_install
-        has_cmd tmux && tmux_config_install
-        has_cmd emacs && stowdf emacs-slim
-    else
-        warn "stow not installed, skipping configuration"
-    fi
-
-    # if ! has_cmd distrobox; then
-    #     warn "distrobox not installed, skipping distrobox creation"
-    # else
-    #     source_dotfile fns
-    #     distrobox_ublue_all
-    # fi
 }
 
-is_aurora || is_bluefin || err_exit "This script is only for Aurora"
+code_setup() {
+    if ! has_cmd code; then
+        warn "code not installed; skipping vscode configuration"
+    fi
+    vscode_extensions_install
+    vscode_config_install
+}
+
+config_setup() {
+    if ! dir_exists "$DOT_DIR"; then
+        warn "$DOT_DIR doesn't exist, skipping configuration"
+        return 1
+    fi
+
+    if ! has_cmd stow; then
+        warn "stow not installed, skipping configuration"
+        return 1
+    fi
+
+    stowdf wallpapers
+    share_config_install
+    bin_config_install
+    bash_config_install
+    has_cmd zsh && zsh_config_install
+    has_cmd nvim && nvim_config_install
+    has_cmd tmux && tmux_config_install
+    has_cmd emacs && stowdf emacs-slim
+}
+
+# distrobox_setup() {
+#     if ! has_cmd distrobox; then
+#         warn "distrobox not installed, skipping distrobox creation"
+#     else
+#         source_dotfile fns
+#         distrobox_ublue_all
+#     fi
+# }
+
+main() {
+    dotfiles_install
+    brew_setup
+    apps_setup
+    code_setup
+    mise_install
+    config_setup
+}
+
+is_aurora || is_bluefin || err_exit "This script is only for Aurora/Bluefin"
+
+has_cmd git || err_exit "git not installed! Qutting."
 
 bootstrap "uBlue OS"
 

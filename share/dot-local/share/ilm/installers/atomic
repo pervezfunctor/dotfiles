@@ -24,6 +24,12 @@ nix_install() {
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 }
 
+toolbox_setup() {
+    toolbox --assumeyes create
+    toolbox run sudo dnf install -y stow
+    toolbox run stow -d $DOT_DIR -t $HOME --dotfiles -R share bin tmux nvim wezterm zsh
+}
+
 main() {
     has_cmd git || err_exit "git not installed! Qutting."
 
@@ -38,13 +44,7 @@ main() {
     smd ~/.local/share/fonts
     jetbrains_nerd_font_install
 
-    micro_install
-
-    toolbox --assumeyes create
-    toolbox run sudo dnf install -y stow
-    toolbox run stow -d $DOT_DIR -t $HOME --dotfiles -R share bin tmux nvim wezterm zsh
-    bash_config_install
-
+    toolbox_setup
     flathub_install
     vscode_flatpak_install
     apps_install
