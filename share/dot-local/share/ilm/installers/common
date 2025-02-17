@@ -1375,7 +1375,7 @@ gnome_settings() {
     more_gnome_settings
 }
 
-waybar_config_install() {
+sway_waybar_config_install() {
     has_cmd waybar || return 1
     srm ~/.config/waybar
     smd ~/.config/waybar
@@ -1441,10 +1441,11 @@ sway_install() {
 
     sway_bin_install
 
-    waybar_config_install
+    sway_waybar_config_install
     kitty_config_install
     sway_config_install
     rofi_config_install
+    wlogout_config_install
 
     slog "Installing sway done!"
 }
@@ -1459,6 +1460,7 @@ hyprland_install() {
     kitty_config_install
     sway_config_install
     rofi_config_install
+    wlogout_config_install
 
     slog "hyprland installation done!"
 }

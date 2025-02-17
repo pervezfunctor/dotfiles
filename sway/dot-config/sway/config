@@ -61,7 +61,7 @@ set $rofi_cmd rofi -terminal '$term'
 set $menu $rofi_cmd -show drun
 set $menu_window $rofi_cmd -show window
 
-output HDMI-A-1 resolution 3840x2160 position 0,0 scale 1.75
+output HDMI-A-1 resolution 3840x2160 position 0,0 scale 2
 
 exec nm-applet
 exec dunst
