@@ -703,6 +703,12 @@ brew_shell_essential_install() {
     has_cmd batcat || has_cmd bat || bi bat
 }
 
+atomic_shell_essential_install() {
+    wis gh bat fd rg
+    mis lazygit eza fzf zoxide starship yazi # tree-sitter
+    # ami tmux nvim
+}
+
 brew_shell_install() {
     # bi ffmpeg sevenzip poppler imagemagick
     # bis gping ncdu httpie font-symbols-only-nerd-font
