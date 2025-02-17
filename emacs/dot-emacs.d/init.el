@@ -304,6 +304,12 @@
     (setq lock-file-name-transforms `((".*" ,dir t))))
   )
 
+(autoload 'zap-up-to-char "misc"
+  "Kill up to, but not including ARGth occurrence of CHAR." t)
+
+(require 'uniquify)
+(setq uniquify-buffer-name-style 'forward)
+
 ;; Ensure `recentf` doesn’t track temporary Emacs-generated files
 (use-package recentf
   :init
@@ -360,6 +366,13 @@
 (-when-let (font (-first 'seartipy/font-available-p
                          *seartipy-default-fonts*))
   (set-frame-font (concat font " 11")))
+
+(global-set-key (kbd "C-=") 'text-scale-increase)
+(global-set-key (kbd "C--") 'text-scale-decrease)
+(customize-set-variable 'text-scale-mode-step 1.05)
+(global-set-key (kbd "C-0") (lambda () (interactive) (text-scale-set 0)))
+(global-set-key (kbd "<C-wheel-up>") 'text-scale-increase)
+(global-set-key (kbd "<C-wheel-down>") 'text-scale-decrease)
 
 (use-package server
   :config
@@ -587,13 +600,12 @@
 (use-package exec-path-from-shell
   :config
   (custom-set-variables '(exec-path-from-shell-check-startup-files nil))
-  (exec-path-from-shell-initialize)
+  ;;  (exec-path-from-shell-initialize)
   (dolist (var '("SSH_AUTH_SOCK" "SSH_AGENT_PID" "GPG_AGENT_INFO"
                  "PATH" "PYTHONPATH" "GOPATH" "GOROOT" "GOBIN"
                  "GO111MODULE" "GOMODCACHE" "GOCACHE"
                  "LANG" "LC_CTYPE" "JAVA_HOME" "JDK_HOME"))
     (add-to-list 'exec-path-from-shell-variables var)))
-
 
 (use-package flycheck
   :ensure t
@@ -693,8 +705,8 @@
                  (setq auto-hscroll-mode nil)))))
 
 (use-package vertico
-  :init
-  (vertico-mode))
+  :config
+  (vertico-mode t))
 
 (use-package orderless
   :ensure t
@@ -708,13 +720,10 @@
   ;; `completion-list-mode-map'.
   :bind (:map minibuffer-local-map
          ("M-A" . marginalia-cycle))
-  :init
-  (marginalia-mode))
+  :config
+  (marginalia-mode t))
 
-(use-package combobulate
-  :hook ((python-mode rust-mode c++-mode c-mode yaml-mode toml-mode json-mode) . combobulate-mode))
-
-;; Example configuration for Consult
+;; example configuration for Consult
 (use-package consult
   ;; Replace bindings. Lazily loaded by `use-package'.
   :bind (;; C-c bindings in `mode-specific-map'
@@ -871,7 +880,10 @@
   ;; Recommended: Enable Corfu globally.  This is recommended since Dabbrev can
   ;; be used globally (M-/).  See also the customization variable
   ;; `global-corfu-modes' to exclude certain modes.
-  :init
+  :config
+  ;; Enable auto completion and configure quitting
+  (setq corfu-auto t
+        corfu-quit-no-match 'separator)
   (global-corfu-mode))
 
 ;; ;; A few more useful configurations...
@@ -1118,14 +1130,15 @@
 
 ;; (use-package general
 ;;   :config
-;;   (general-evil-setup)
+;;   ;; (general-evil-setup)
 
 ;;   ;; set up 'SPC' as the global leader key
 ;;   (general-create-definer dt/leader-keys
-;;     :states '(normal insert visual emacs)
 ;;     :keymaps 'override
-;;     :prefix "SPC" ;; set leader
-;;     :global-prefix "M-SPC") ;; access leader in insert mode
+;;     ;; :states '(normal insert visual emacs)
+;;     ;; :global-prefix "M-SPC"
+;;     :prefix "M-SPC" ;; set leader
+;;     ) ;; access leader in insert mode
 
 ;;   (dt/leader-keys
 ;;     "SPC" '(counsel-M-x :wk "Counsel M-x")
@@ -1188,7 +1201,7 @@
 ;;     "e s" '(eshell :which-key "Eshell")
 ;;     "e w" '(eww :which-key "EWW emacs web wowser"))
 
-;;   (dt/leader-keys
+;; (dt/leader-keys
 ;;     "f" '(:ignore t :wk "Files")
 ;;     "f c" '((lambda () (interactive)
 ;;               (find-file "~/.config/emacs/config.org"))
@@ -1341,13 +1354,7 @@
 ;;     ;; Words
 ;;     "w d" '(downcase-word :wk "Downcase word")
 ;;     "w u" '(upcase-word :wk "Upcase word")
-;;     "w =" '(count-words :wk "Count words/lines for buffer"))
-;; )
-
-;; (global-set-key (kbd "C-=") 'text-scale-increase)
-;; (global-set-key (kbd "C--") 'text-scale-decrease)
-;; (global-set-key (kbd "<C-wheel-up>") 'text-scale-increase)
-;; (global-set-key (kbd "<C-wheel-down>") 'text-scale-decrease)
+;;     "w =" '(count-words :wk "Count words/lines for buffer")))
 
 ;; (use-package doom-themes
 ;;   :ensure t
