@@ -495,6 +495,27 @@ doom_install() {
     has_cmd update-locale && sudo update-locale LANG=en_US.UTF8
 }
 
+emacs_config_install() {
+    slog "emacs config"
+
+    # srm $XDG_CONFIG_HOME/.emacs
+    # srm $XDG_CONFIG_HOME/.emacs.d
+    srm $XDG_CONFIG_HOME/emacs
+    smd $XDG_CONFIG_HOME/emacs
+    stowdf emacs
+
+    slog "emacs config done!"
+}
+
+emacs_slim_install() {
+    slog "Installing slim emacs"
+
+    srm ~/.emacs
+    stowdf emacs-slim
+
+    slog "emacs slim installation done!"
+}
+
 emacs_install() {
     slog "Installing emacs"
 
