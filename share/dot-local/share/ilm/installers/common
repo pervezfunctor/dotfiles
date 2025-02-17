@@ -888,11 +888,19 @@ yazi_config_install() {
     if has_cmd ya; then
         ya pack -a yazi-rs/flavors:catppuccin-frappe
         ya pack -a yazi-rs/flavors:catppuccin-mocha
-        ya pack -a yazi-rs/flavors:catppuccin-machiato
+        ya pack -a yazi-rs/flavors:catppuccin-macchiato
         ya pack -u
     fi
 
     slog "yazi config done!"
+}
+
+foot_config_install() {
+    slog "foot config"
+    srm $XDG_CONFIG_HOME/foot
+    smd $XDG_CONFIG_HOME/foot
+    stowdf foot
+    slog "foot config done!"
 }
 
 config_install() {
@@ -914,7 +922,7 @@ config_install() {
     has_cmd amethyst && amethyst_config_install
     has_cmd appman && appman_config_install
     has_cmd atuin && atuin_config_install
-    has_cmd foot && foot_config_install # @TODO:
+    has_cmd foot && foot_config_install
     has_cmd ghostty && ghostty_config_install
     has_cmd git && git_config_install
     has_cmd kitty && kitty_config_install
