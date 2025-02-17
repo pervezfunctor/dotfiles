@@ -417,6 +417,19 @@ dotfiles_install() {
 
 }
 
+stowgf() {
+    if ! has_cmd stow; then
+        err_exit "stow not installed, cannot stow dotfiles"
+    fi
+
+    for p in "$@"; do
+        slog "stow $p"
+        srm $XDG_CONFIG_HOME/$p
+        smd $XDG_CONFIG_HOME/$p
+        stow -d $DOT_DIR -t $HOME --dotfiles -R $p
+    done
+}
+
 stowdf() {
     if ! has_cmd stow; then
         err_exit "stow not installed, cannot stow dotfiles"
