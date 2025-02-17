@@ -1,6 +1,13 @@
 ;; This should be in your early-init.el file
 (setq package-enable-at-startup nil)
 
+(load-theme 'tango-dark t)
+;; (load-theme 'leuven t)
+;; (load-theme 'wombat t)
+
+;; (when (not (display-graphic-p))
+;;   (custom-set-faces
+;;    '(default ((t (:background "unspecified-bg"))))))
 
 (setq initial-major-mode 'text-mode)
 
@@ -36,12 +43,6 @@
 (customize-set-variable 'find-file-visit-truename t)
 
 (fset 'yes-or-no-p 'y-or-n-p)
-
-(load-theme 'wombat t)
-
-(when (not (display-graphic-p))
-  (custom-set-faces
-   '(default ((t (:background "unspecified-bg"))))))
 
 (use-package emacs
   :init
@@ -109,19 +110,8 @@
 (setq-default show-trailing-whitespace t)
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
-(use-package ido
-  :ensure nil
-  :config
-  (setq ido-enable-flex-matching t
-        ido-enable-prefix                         nil
-        ido-enable-flex-matching                  t
-        ido-everywhere t
-        ido-create-new-buffer 'always
-        ido-use-filename-at-point 'guess
-        ido-max-prospects 10
-        ido-default-file-method 'selected-window
-        ido-auto-merge-work-directories-length -1)
-  (ido-mode 1))
+(fido-mode 1)
+(fido-vertical-mode 1)
 
 (use-package ace-window
   :ensure nil
@@ -218,8 +208,7 @@
   (eldoc-idle-delay 0.2))
 
 (use-package cc-mode
-  :ensure nil
-  :mode ("\\.h\\'" . c++-mode))
+  :ensure nil)
 
 (use-package python
   :ensure nil
@@ -553,13 +542,6 @@
 ;;   (wgrep-auto-save-buffer t)
 ;;   (wgrep-change-readonly-file t))
 
-;; (use-package corfu
-;;   :ensure nil
-;;   :custom
-;;   (corfu-auto t)
-;;   (corfu-quit-no-match 'separator)
-;;   (corfu-preview-current 'always))
-
 ;; (use-package dired
 ;;   :config
 ;;   (setq dired-recursive-copies 'always
@@ -569,54 +551,6 @@
 ;;   (put 'dired-find-alternate-file 'disabled nil)
 ;;   :hook
 ;;   (dired-mode . dired-hide-details-mode))
-
-;; (use-package dired-x
-;;   :after dired
-;;   :config
-;;   (setq dired-omit-files
-;;         (concat dired-omit-files "\\|^\\..+$"))
-;;   :hook
-;;   (dired-mode . dired-omit-mode))
-
-
-;; (use-package ido-vertical-mode
-;;   :ensure t
-;;   :config
-;;   (ido-vertical-mode 1)
-;;   (setq ido-vertical-define-keys 'C-n-and-C-p-only))
-
-;; (use-package flx-ido
-;;   :ensure t
-;;   :config
-;;   (flx-ido-mode 1)
-;;   (setq ido-use-faces nil))
-
-;; (use-package sudo-edit)
-
-;; (use-package nerd-icons
-;;   ;; :custom
-;;   ;; The Nerd Font you want to use in GUI
-;;   ;; "Symbols Nerd Font Mono" is the default and is recommended
-;;   ;; but you can use any other Nerd Font if you want
-;;   ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
-;;   )
-
-;; (use-package rainbow-mode
-;;   :diminish
-;;   :hook org-mode prog-mode)
-
-;; (use-package rainbow-delimiters
-;;   :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
-;;          (clojure-mode . rainbow-delimiters-mode)))
-
-;; (use-package rainbow-mode
-;;   :ensure nil
-;;   :hook org-mode prog-mode)
-
-;; (use-package rainbow-delimiters
-;;   :ensure nil
-;;   :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
-;;          (clojure-mode . rainbow-delimiters-mode)))
 
 ;; (use-package harfbuzz
 ;;   :ensure nil
@@ -638,3 +572,27 @@
 ;;   :ensure nil
 ;;   :custom
 ;;   (bidi-display-reordering t))
+
+;; (use-package dired-x
+;;   :after dired
+;;   :config
+;;   (setq dired-omit-files
+;;         (concat dired-omit-files "\\|^\\..+$"))
+;;   :hook
+;;   (dired-mode . dired-omit-mode))
+
+;; (use-package sudo-edit)
+
+;; (use-package flx-ido
+;;   :ensure t
+;;   :config
+;;   (flx-ido-mode 1)
+;;   (setq ido-use-faces nil))
+
+;; (use-package rainbow-mode
+;;   :diminish
+;;   :hook org-mode prog-mode)
+
+;; (use-package rainbow-delimiters
+;;   :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
+;;          (clojure-mode . rainbow-delimiters-mode)))
