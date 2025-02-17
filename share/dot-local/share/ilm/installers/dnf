@@ -71,7 +71,7 @@ essential_install() {
 cli_install() {
     si zsh neovim ShellCheck python3-neovim tmux pkg-config urlview htop
     si git-delta procs fzf ripgrep fd-find hyperfine bat zoxide gawk
-    si rust-tree-sitter-cli
+    si rust-tree-sitter-cli gh
 
     gh extension install github/gh-copilot
 }

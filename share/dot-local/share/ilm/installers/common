@@ -128,7 +128,7 @@ apps_install() {
     fpi io.github.shiftey.Desktop
     fpi io.github.dvlv.boxbuddyrs
     fpi md.obsidian.Obsidian
-    fpi flathub io.github.getnf.embellish
+    fpi io.github.getnf.embellish
 
     alias wezterm="flatpak run org.wezfurlong.wezterm"
 
@@ -385,19 +385,29 @@ web_install() {
     fi
 }
 
-brew_install() {
-    has_cmd brew && return 0
-
-    slog "Installing homebrew"
-    /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    slog "homebrew installation done!"
-
+eval_brew() {
     if has_cmd /opt/homebrew/bin/brew; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
     elif has_cmd /home/linuxbrew/.linuxbrew/bin/brew; then
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-    else
-        warn "Homebrew not installed properly!"
+    fi
+    return 1
+}
+
+brew_install() {
+    has_cmd brew && return 0
+
+    slog "Installing homebrew"
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    if ! eval_brew; then
+        warn "homebrew not installed, trying again"
+        /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        if eval_brew; then
+            slog "homebrew installation done!"
+        else
+            warn "homebrew installation failed"
+        fi
     fi
 
     cmd_check brew
@@ -696,9 +706,11 @@ cmake_install() {
 }
 
 brew_shell_essential_install() {
-    bis tree-sitter gh gum stow neovim bash-preexec
+    bis tree-sitter gh gum stow
     bis lazygit eza fzf fd zoxide starship yazi
 
+    bi bash-preexec
+    has_cmd nvim || bi neovim
     has_cmd rg || bi ripgrep
     has_cmd batcat || has_cmd bat || bi bat
 }
@@ -799,6 +811,8 @@ shell_install() {
     # mise_shell_install
 
     starship_install
+
+    gh extension install github/gh-copilot
 }
 
 alacritty_config_install() {
@@ -900,7 +914,7 @@ config_install() {
     has_cmd amethyst && amethyst_config_install
     has_cmd appman && appman_config_install
     has_cmd atuin && atuin_config_install
-    has_cmd foot && foot_config_install
+    has_cmd foot && foot_config_install # @TODO:
     has_cmd ghostty && ghostty_config_install
     has_cmd git && git_config_install
     has_cmd kitty && kitty_config_install
@@ -1096,8 +1110,8 @@ shell-group_install() {
     min-group_install
     shell_install
 
-    cmd_check nvim gh neovim zsh tree-sitter tmux lazygit sd lsd bat fd
-    cmd_check fzf ripgrep zoxide gum bat brew btm htop btm rg starship
+    cmd_check gh nvim zsh tree-sitter tmux lazygit sd lsd bat fd
+    cmd_check fzf zoxide gum bat brew btm htop btm rg starship
     cmd_check eza fd fzf atuin delta
     # cmd_check cheat choose curlie direnv doggo dotenv  procs
     # cmd_check duf dust gawk gdu hyperfine jq just shellcheck shfmt yq
@@ -1136,7 +1150,7 @@ desktop-group_install() {
     fonts_install
     ui_install
 
-    tailscale_install
+    # tailscale_install
 
     has_cmd code && vscode_extensions_install
     has_cmd code && vscode_config_install

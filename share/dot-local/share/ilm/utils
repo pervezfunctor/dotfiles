@@ -453,26 +453,26 @@ stownf() {
 }
 
 mis() {
-    if ! has_cmd ~/.local/bin/mise; then
+    if ! has_cmd mise; then
         warn "mise not installed, skipping mise packages"
         return 1
     fi
 
     for pkg in "$@"; do
         slog "Installing mise package $pkg"
-        has_cmd $pkg || ~/.local/bin/mise use -g "$pkg"
+        has_cmd $pkg || mise use -g "$pkg"
     done
 }
 
 mi() {
-    if ! has_cmd ~/.local/bin/mise; then
+    if ! has_cmd mise; then
         warn "mise not installed, skipping mise packages"
         return 1
     fi
 
     for pkg in "$@"; do
         slog "Installing mise package $pkg"
-        ~/.local/bin/mise use -g "$pkg"
+        mise use -g "$pkg"
     done
 }
 
@@ -549,13 +549,19 @@ fpi() {
 }
 
 environs() {
+    smd ~/.local/bin
+    smd ~/bin
+    smd ~/.bin
+
     export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
-    export PNPM_HOME="$HOME/.local/share/pnpm"
-    export PATH="$HOME/.local/bin:$PNPM_HOME:/home/linuxbrew/.linuxbrew/bin:$PATH"
+    export PNPM_HOME="$HOME/.local/share/pnpm:$PATH"
+    export PATH="$HOME/.local/bin:$PATH"
+    export PATH="$PNPM_HOME:$PATH"
+    export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="$HOME/.local/opt/brew/bin:$PATH"
     export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
 
-    has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
+    has_cmd mise && eval "$(mise activate bash)"
 
     export HOMEBREW_NO_ENV_HINTS=1
     export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1

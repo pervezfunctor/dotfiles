@@ -7,7 +7,7 @@ source ~/.local/share/ilm/shellrc
 [[ $- == *i* ]] && return
 
 # has_cmd direnv && eval "$(direnv hook zsh)"
-has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate zsh)"
+has_cmd mise && eval "$(mise activate zsh)"
 has_cmd zoxide && eval "$(zoxide init zsh)"
 has_cmd fzf && source <(fzf --zsh)
 has_cmd atuin && eval "$(atuin init zsh --disable-up-arrow --disable-ctrl-r)"
