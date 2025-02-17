@@ -52,6 +52,13 @@ main() {
     else
         warn "stow not installed, skipping configuration"
     fi
+
+    # if ! has_cmd distrobox; then
+    #     warn "distrobox not installed, skipping distrobox creation"
+    # else
+    #     source_dotfile fns
+    #     distrobox_ublue_all
+    # fi
 }
 
 is_aurora || is_bluefin || err_exit "This script is only for Aurora"

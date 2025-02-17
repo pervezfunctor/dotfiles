@@ -33,9 +33,7 @@ main() {
     mise_install
     appman_install
 
-    webi_shell_install
-    mise_shell_install
-    amm_shell_install
+    atomic_shell_essential_install
 
     smd ~/.local/share/fonts
     jetbrains_nerd_font_install
