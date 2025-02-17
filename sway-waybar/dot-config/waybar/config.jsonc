@@ -91,7 +91,8 @@
         "format-alt": "{:%Y-%m-%d}"
     },
     "cpu": {
-        "format": "{usage}% ",
+        "format": "{usage:>3}% ",
+        "interval": 1,
         "tooltip": false
     },
     "memory": {
