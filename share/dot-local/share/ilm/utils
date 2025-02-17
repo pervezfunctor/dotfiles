@@ -269,8 +269,7 @@ is_silverblue() {
     fi
 
     . /etc/os-release
-    # @TODO: Case should not matter
-    [[ "${ID:-}" =~ .*Silverblue.* ]] || [[ "${PRETTY_NAME:-}" =~ .*Silverblue.* ]]
+    [[ "${ID:-}" =~ .*[Ss]ilverblue.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Ss]ilverblue.* ]]
 }
 
 is_aurora() {
