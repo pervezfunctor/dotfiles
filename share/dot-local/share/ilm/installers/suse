@@ -156,6 +156,8 @@ sway_install() {
     si clipman imv mpv bluez slirp qt5ct qt6ct sway-marker polkit-gnome
     si brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl
     si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard firefox rofi-wayland
+    si SwayNotificationCenter SwayNotificationCenter-bash-completion
+    si SwayNotificationCenter-zsh-completion
 
     nerd_fonts_install
 
@@ -164,9 +166,7 @@ sway_install() {
     cmd_check brightnessctl pamixer playerctl greetd alacritty
     cmd_check /usr/libexec/polkit-gnome-authentication-agent-1
     cmd_check bluetoothctl bluemoon tlp firefox slurp qt5ct
-
-    shell-group_install
-    # emacs_install
+    cmd_check swaync swaync-client
 }
 
 hyprland_install() {
@@ -179,6 +179,8 @@ hyprland_install() {
     si clipman bluez slirp qt5ct qt6ct ghostty firefox
     si brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl
     si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard rofi-wayland
+    si SwayNotificationCenter SwayNotificationCenter-bash-completion
+    si SwayNotificationCenter-zsh-completion
 
     nerd_fonts_install
 
@@ -187,9 +189,7 @@ hyprland_install() {
     cmd_check brightnessctl pamixer playerctl greetd
     # cmd_check /usr/libexec/polkit-gnome-authentication-agent-1
     cmd_check bluetoothctl bluemoon tlp firefox slurp qt5ct
-
-    shell-group_install
-    # emacs_install
+    cmd_check swaync swaync-client
 }
 
 }
