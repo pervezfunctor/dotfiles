@@ -1,5 +1,5 @@
 [general]
-import = ["~/.config/alacritty/catppuccin-frappe.toml"]
+import = ["~/.config/alacritty/catppuccin-mocha.toml"]
 
 [window]
 # decorations = "none"

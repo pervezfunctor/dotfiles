@@ -843,6 +843,8 @@ yazi_config_install() {
 
     if has_cmd ya; then
         ya pack -a yazi-rs/flavors:catppuccin-frappe
+        ya pack -a yazi-rs/flavors:catppuccin-mocha
+        ya pack -a yazi-rs/flavors:catppuccin-machiato
         ya pack -u
     fi
 
@@ -1073,14 +1075,7 @@ shell-group_install() {
     has_cmd zsh && zsh_config_install
     has_cmd nvim && nvim_config_install
     has_cmd tmux && tmux_config_install
-    if has_cmd yazi; then
-        if has_cmd ya; then
-            ya pack -a yazi-rs/flavors:catppuccin-frappe
-            ya pack -u
-        fi
-
-        yazi_config_install
-    fi
+    has_cmd yazi && yazi_config_install
 }
 
 ct-group_install() {

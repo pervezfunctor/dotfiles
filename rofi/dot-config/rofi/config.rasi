@@ -13,5 +13,5 @@ configuration{
     sidebar-mode: true;
 }
 
-@theme "~/.config/rofi/themes/catppuccin-frappe"
+@theme "~/.config/rofi/themes/catppuccin-mocha"
 

@@ -1,6 +1,6 @@
 xwayland disable
 
-include catppuccin-frappe
+include catppuccin-mocha
 
 include '$("/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf")'
 

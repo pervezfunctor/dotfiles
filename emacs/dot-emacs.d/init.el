@@ -246,7 +246,7 @@
 
 (use-package catppuccin-theme)
 (load-theme 'catppuccin t)
-(setq catppucin-flavor 'frappe)
+(setq catppucin-flavor 'mocha)
 (catppuccin-reload)
 
 (use-package kkp
