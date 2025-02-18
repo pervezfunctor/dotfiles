@@ -174,7 +174,7 @@ nvim_config_install() {
     omv ~/.cache/nvim ~/.cache/nvim.bak
 
     stowdf nvim
-    nvim --headless "+Lazy! sync" +qa
+    nvim --headless "+Lazy sync" +qa
 
     slog "nvim config done!"
 }
