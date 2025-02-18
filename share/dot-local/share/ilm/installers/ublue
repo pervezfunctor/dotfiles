@@ -7,28 +7,28 @@ source <(curl -sSL https://dub.sh/z3pTnAK)
 brew_setup() {
     if has_cmd brew; then
         warn "brew not installed; skipping shell utilities installation."
+        return 1
     fi
 
-    brew_shell_essential_install
+    brew_shell_slim_install
     bis emacs
 }
 
 apps_setup() {
-    if has_cmd flatpak; then
-        flathub_install
-        fpi org.telegram.desktop
-        fpi org.deluge_torrent.deluge
-        fpi us.zoom.Zoom
-        fpi md.obsidian.Obsidian
-    else
+    if ! has_cmd flatpak; then
         warn "flatpak not installed; skipping apps installation"
+        return 1
     fi
+
+    apps_slim_install
 }
 
 code_setup() {
     if ! has_cmd code; then
         warn "code not installed; skipping vscode configuration"
+        return 1
     fi
+
     vscode_extensions_install
     vscode_config_install
 }
@@ -54,14 +54,15 @@ config_setup() {
     has_cmd emacs && stowdf emacs-slim
 }
 
-# distrobox_setup() {
-#     if ! has_cmd distrobox; then
-#         warn "distrobox not installed, skipping distrobox creation"
-#     else
-#         source_dotfile fns
-#         distrobox_ublue_all
-#     fi
-# }
+distrobox_setup() {
+    if ! has_cmd distrobox; then
+        warn "distrobox not installed, skipping distrobox creation"
+        return 1
+    fi
+
+    source_dotfile fns
+    distrobox_ublue_all
+}
 
 main() {
     dotfiles_install

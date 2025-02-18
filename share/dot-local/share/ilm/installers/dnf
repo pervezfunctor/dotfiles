@@ -134,7 +134,6 @@ ui_install() {
 
     ghostty_install
     vscode_bin_install
-    flathub_install
     apps_install
 }
 

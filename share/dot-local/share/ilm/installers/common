@@ -113,21 +113,29 @@ vscode_flatpak_install() {
     vscode_flatpak_config_install
 }
 
-apps_install() {
+apps_slim_install() {
     if ! has_cmd flatpak; then
         warn "flatpak not installed, skipping flatpak apps"
         return 1
     fi
 
-    slog "Installing flatpak apps"
+    flathub_install
 
     fpi org.telegram.desktop
     fpi org.deluge_torrent.deluge
     fpi us.zoom.Zoom
+    fpi md.obsidian.Obsidian
+}
+
+apps_install() {
+
+    slog "Installing flatpak apps"
+
+    apps_slim_install
+
     fpi org.wezfurlong.wezterm
     fpi io.github.shiftey.Desktop
     fpi io.github.dvlv.boxbuddyrs
-    fpi md.obsidian.Obsidian
     fpi io.github.getnf.embellish
 
     alias wezterm="flatpak run org.wezfurlong.wezterm"
@@ -705,7 +713,7 @@ cmake_install() {
     cmd_check cmake
 }
 
-brew_shell_essential_install() {
+brew_shell_slim_install() {
     bis tree-sitter gh gum stow
     bis lazygit eza fzf fd zoxide starship yazi
 
@@ -715,10 +723,25 @@ brew_shell_essential_install() {
     has_cmd batcat || has_cmd bat || bi bat
 }
 
-atomic_shell_essential_install() {
+home_manager_install() {
+    nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+    nix-channel --update
+    nix-shell '<home-manager>' -A install
+}
+
+nix_install() {
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+}
+
+atomic_shell_slim_install() {
     wis gh bat fd rg
     mis lazygit eza fzf zoxide starship yazi # tree-sitter
+
+    # Use distrobox/toolbox for most things.
+    # So tmux and nvim need not be installed on host
     # ami tmux nvim
+    micro_install
 }
 
 brew_shell_install() {
@@ -729,7 +752,7 @@ brew_shell_install() {
 
     slog "shell tools with brew"
 
-    brew_shell_essential_install
+    brew_shell_slim_install
 
     bis jq just lsd shfmt shellcheck lazydocker
     bis cheat curlie duf sd xh doggo atuin direnv dust

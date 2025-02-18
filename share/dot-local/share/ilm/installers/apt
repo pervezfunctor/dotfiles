@@ -134,7 +134,6 @@ ui_install() {
     si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
 
     vscode_bin_install
-    flathub_install
     apps_install
 }
 

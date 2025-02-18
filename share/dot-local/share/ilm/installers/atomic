@@ -13,17 +13,6 @@ rpm_ostree_packages_install() {
     # autoconf automake binutils bison flex gcc gcc-c++ gdb glibc-devel libtool make pkgconf strace
 }
 
-home_manager_install() {
-    nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
-    nix-channel --update
-    nix-shell '<home-manager>' -A install
-}
-
-nix_install() {
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
-    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-}
-
 toolbox_setup() {
     toolbox --assumeyes create
     toolbox run sudo dnf install -y stow
@@ -39,13 +28,12 @@ main() {
     mise_install
     appman_install
 
-    atomic_shell_essential_install
+    atomic_shell_slim_install
 
     smd ~/.local/share/fonts
     jetbrains_nerd_font_install
 
     toolbox_setup
-    flathub_install
     vscode_flatpak_install
     apps_install
 }
