@@ -5,7 +5,7 @@
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 brew_setup() {
-    if has_cmd brew; then
+    if ! has_cmd brew; then
         warn "brew not installed; skipping shell utilities installation."
         return 1
     fi
