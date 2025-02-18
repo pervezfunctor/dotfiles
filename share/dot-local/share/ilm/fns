@@ -52,6 +52,15 @@ distrobox_toolbox_all() {
     distrobox create --image rockylinux-toolbox:9 --home /home/pervez/homes/rockylinux-toolbox --name rockylinux-toolbox
 }
 
+distrobox_with_init() {
+    distrobox create -i alpine:latest --init --additional-packages "openrc" -n test
+    distrobox create -i debian:stable --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" -n test
+    distrobox create -i ubuntu:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" -n test
+    distrobox create -i archlinux:latest --init --additional-packages "systemd" -n test
+    distrobox create -i registry.opensuse.org/opensuse/tumbleweed:latest --init --additional-packages "systemd" -n test
+    distrobox create -i registry.fedoraproject.org/fedora:latest --init --additional-packages "systemd" -n test
+}
+
 toolbox_create_all() {
     slog "Creating toolbox containers"
 
