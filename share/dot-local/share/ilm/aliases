@@ -189,18 +189,28 @@ alias .....="../../../../"
 alias ......="../../../../../"
 
 if has_cmd flatpak; then
-    has_cmd wezterm || alias wezterm="flatpak run org.wezfurlong.wezterm"
-    has_cmd telegram || alias telegram="flatpak run org.telegram.desktop"
-    has_cmd clion || alias clion="flatpak run com.jetbrains.CLion"
-    has_cmd chrome || alias chrome="flatpak run com.google.Chrome"
-    has_cmd deluge || alias deluge="flatpak run org.deluge_torrent.deluge"
-    has_cmd zoom || alias zoom="flatpak run us.zoom.Zoom"
-    has_cmd shiftey || alias shiftey="flatpak run io.github.shiftey.Desktop"
-    has_cmd code || alias code="flatpak run com.visualstudio.code"
-    # has_cmd code || alias code="flatpak run com.visualstudio.code --password-store="gnome-libsecret""
-    has_cmd nvim || alias nvim="flatpak run io.neovim.nvim"
-    has_cmd emacs|| alias emacs="flatpak run org.gnu.emacs"
-    has_cmd boxbuddy || alias boxbuddy="flatpak run io.github.dvlv.boxbuddyrs"
+    FLATPAK_LIST=$(flatpak list)
+
+    alias_if_exists() {
+        local cmd="$1"
+        local flatpak_id="$2"
+
+        if ! has_cmd "$cmd"; then
+            if echo "$FLATPAK_LIST" | grep -q "$flatpak_id"; then
+                alias "$cmd"="flatpak run $flatpak_id"
+            fi
+        fi
+    }
+
+    alias_if_exists wezterm "org.wezfurlong.wezterm"
+    alias_if_exists clion "com.jetbrains.CLion"
+    alias_if_exists chrome "com.google.Chrome"
+    alias_if_exists code "com.visualstudio.code --password-store=gnome-libsecret"
+    alias_if_exists nvim "io.neovim.nvim"
+    alias_if_exists emacs "org.gnu.emacs"
+
+    unset FLATPAK_LIST
+    unset -f alias_if_exists
 fi
 
 alias cpr="cp -r"
