@@ -43,7 +43,13 @@ main() {
     elif is_mac; then
         slog "Installing shell tools"
 
-        bis tree-sitter just lazygit starship gh xh git-delta sd luarocks
+        bis tree-sitter just lazygit starship gh xh git-delta sd
+
+        if ! has_cmd luarocks; then
+            bi luarocks
+            brew link luarocks
+        fi
+
         bis fzf fd eza zoxide bat tmux duf
         bi bottom ripgrep neovim zsh-syntax-highlighting zsh-autosuggestions
         bi reattach-to-user-namespace

@@ -14,3 +14,11 @@ lazy-lock.json
 /emacs/dot-emacs.d/projects
 /emacs/dot-emacs.d/tree-sitter/
 .DS_Store
+tt.*
+.tests
+doc/tags
+debug
+.repro
+foo.*
+*.log
+data
