@@ -669,6 +669,8 @@ If PASTE-TRANSFORM is non-nil, it is a function applied to the paste output."
   (blackout 'auto-revert-mode)
   (blackout 'company-mode))
 
+(use-package sudo-edit)
+
 ;; (use-package flycheck
 ;;   :init (global-flycheck-mode))
 
