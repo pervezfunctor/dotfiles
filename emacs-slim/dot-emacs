@@ -284,9 +284,14 @@
   :ensure nil
   :hook ((python-mode . eglot-ensure)
          (rust-mode . eglot-ensure)
+         (c++-mode . eglot-ensure)
+         (c-mode . eglot-ensure)
          (go-mode . eglot-ensure))
   :config
   (add-to-list 'eglot-server-programs '(go-mode . ("gopls")))
+  (add-to-list 'eglot-server-programs
+               '(python-mode . ("pyright"))
+               '((c++-mode c-mode) . ("clangd" "ccls")))
   (setq eglot-autoshutdown t))
 
 (use-package treesit
