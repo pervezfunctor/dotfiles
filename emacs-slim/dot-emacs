@@ -696,6 +696,10 @@ If PASTE-TRANSFORM is non-nil, it is a function applied to the paste output."
   (forge-topic-list-limit '(100 . -10))  ;; Show last 100 issues & PRs
   (auth-sources '("~/.authinfo.gpg")))  ;; Store credentials securely
 
+(use-package which-key
+  :init
+  (which-key-mode))
+
 ;; (use-package flycheck
 ;;   :init (global-flycheck-mode))
 
