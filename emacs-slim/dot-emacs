@@ -10,6 +10,12 @@
 (unless (display-graphic-p)
   (set-face-background 'default "unspecified-bg"))
 
+(when (display-graphic-p)
+  (set-face-attribute 'default nil
+                      :family "JetBrains Mono"
+                      :weight 'bold
+                      :height 120))
+
 (setq initial-major-mode 'text-mode)
 
 (setq locale-coding-system 'utf-8)
