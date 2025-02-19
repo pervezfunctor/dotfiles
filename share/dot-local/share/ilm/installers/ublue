@@ -11,8 +11,13 @@ brew_setup() {
     fi
 
     brew_shell_slim_install
+}
+
+emacs_setup() {
     bis emacs clang-format
     bi cmake emacs-clang-complete-async
+    srm ~/.emacs
+    stowdf emacs-slim
 }
 
 apps_setup() {
@@ -52,7 +57,31 @@ config_setup() {
     has_cmd zsh && zsh_config_install
     has_cmd nvim && nvim_config_install
     has_cmd tmux && tmux_config_install
-    has_cmd emacs && stowdf emacs-slim
+}
+
+pipx_setup() {
+    if ! has_cmd pipx; then
+        if ! has_cmd pip; then
+            python3 -m ensurepip --user --default-pip
+            python3 -m pip install --user --force-reinstall --upgrade pip
+        fi
+        has_cmd pip || return 1
+        pip install --upgrade --force-reinstall pipx
+        has_cmd pipx || return 1
+    fi
+}
+
+ublue_gnome_setup() {
+    pipx_setup
+
+    if ! has_cmd pipx; then
+        warn "pipx not installed, skipping gnome settings"
+        return 1
+    fi
+
+    pipx install gnome-extensions-cli --system-site-packages
+    gnome_extensions_install
+    gnome_basic_settings
 }
 
 distrobox_setup() {
@@ -60,6 +89,8 @@ distrobox_setup() {
         warn "distrobox not installed, skipping distrobox creation"
         return 1
     fi
+
+    is_bluefn && ublue_gnome_setup
 
     source_dotfile fns
     distrobox_ublue_all
@@ -72,6 +103,7 @@ main() {
     code_setup
     mise_install
     config_setup
+    # emacs_setup
 }
 
 is_aurora || is_bluefin || err_exit "This script is only for Aurora/Bluefin"

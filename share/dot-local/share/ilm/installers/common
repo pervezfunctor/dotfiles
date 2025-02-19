@@ -1123,7 +1123,7 @@ base-group_install() {
     cmd_check gcc g++ make cmake curl wget git trash tree tar unzip stow
 
     dotfiles_install
-    dir_check ~/.ilm
+    dir_check $DOT_DIR
 
     stowdf wallpapers
     share_config_install
@@ -1222,20 +1222,12 @@ is_hyprland() {
     [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Hyprland" ]]
 }
 
-# https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
-gnome_config_install() {
-    si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
-    pipx install gnome-extensions-cli --system-site-packages
+gnome_extension_install() {
+    if ! has_cmd gext; then
+        warn "gext not installed, skipping gnome extensions"
+        return 1
+    fi
 
-    # xdg-settings set default-web-browser google-chrome.desktop
-
-    # Turn off default Ubuntu extensions
-    gnome-extensions disable tiling-assistant@ubuntu.com
-    gnome-extensions disable ubuntu-appindicators@ubuntu.com
-    gnome-extensions disable ubuntu-dock@ubuntu.com
-    gnome-extensions disable ding@rastersoft.com
-
-    # Install new extensions
     gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
     gext install Vitals@CoreCoding.com
     gext install tailscale@joaophi.github.com
@@ -1245,6 +1237,34 @@ gnome_config_install() {
     gext install blur-my-shell@aunetx
     gext install undecorate@sun.wxg@gmail.com
     gext install AlphabeticalAppGrid@stuarthayhurst
+}
+
+gnome_basic_settings() {
+    if ! has_cmd gsettings; then
+        warn "gsettings not found, skipping gnome basic settings"
+        return 1
+    fi
+
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+    gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+    gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
+}
+
+# https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
+gnome_config_install() {
+    si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
+    pipx install gnome-extensions-cli --system-site-packages
+
+    gnome-extensions disable tiling-assistant@ubuntu.com
+    gnome-extensions disable ubuntu-appindicators@ubuntu.com
+    gnome-extensions disable ubuntu-dock@ubuntu.com
+    gnome-extensions disable ding@rastersoft.com
+    # xdg-settings set default-web-browser google-chrome.desktop
+
+    # Turn off default Ubuntu extensions
+
+    # Install new extensions
 
     # gext install tophat@fflewddur.github.io
     # gext install space-bar@luchrioh
@@ -1303,11 +1323,6 @@ gnome_config_install() {
 
     # # Configure AlphabeticalAppGrid
     # gsettings set org.gnome.shell.extensions.alphabetical-app-grid folder-order-position 'end'
-
-    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
-    gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
-    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-    gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
 }
 
 plasma_major_version() {
