@@ -700,6 +700,10 @@ If PASTE-TRANSFORM is non-nil, it is a function applied to the paste output."
   :init
   (which-key-mode))
 
+(use-package xclip
+  :config
+  (xclip-mode +1))
+
 ;; (use-package flycheck
 ;;   :init (global-flycheck-mode))
 
