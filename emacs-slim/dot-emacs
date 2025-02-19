@@ -671,6 +671,31 @@ If PASTE-TRANSFORM is non-nil, it is a function applied to the paste output."
 
 (use-package sudo-edit)
 
+(use-package magit
+  :ensure t
+  :bind (("C-x g" . magit-status))
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+  (magit-diff-refine-hunk 'all)  ;; Highlight word changes in diffs
+  (magit-save-repository-buffers 'dontask)  ;; Prevent Magit from asking to save buffers
+  ;; (magit-repository-directories '(("~/programs" . 2) ("~/.ilm" . 1)))  ;; Define Git repos
+  :config
+  ;; Improve Magit performance on large repositories
+  (setq magit-refresh-status-buffer nil)
+
+  ;; ** Automatically Refresh Magit Buffers**
+  (add-hook 'after-save-hook #'magit-after-save-refresh-status)
+
+  (with-eval-after-load 'project
+    (define-key project-prefix-map (kbd "m") #'magit-project-status)))
+
+;; ** GitHub/GitLab Issues & PRs**
+(use-package forge
+  :after magit
+  :custom
+  (forge-topic-list-limit '(100 . -10))  ;; Show last 100 issues & PRs
+  (auth-sources '("~/.authinfo.gpg")))  ;; Store credentials securely
+
 ;; (use-package flycheck
 ;;   :init (global-flycheck-mode))
 
