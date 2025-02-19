@@ -7,6 +7,9 @@
 ;;   (custom-set-faces
 ;;    '(default ((t (:background "unspecified-bg"))))))
 
+(unless (display-graphic-p)
+  (set-face-background 'default "unspecified-bg"))
+
 (setq initial-major-mode 'text-mode)
 
 (setq locale-coding-system 'utf-8)
