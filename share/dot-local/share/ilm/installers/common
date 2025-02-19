@@ -168,10 +168,11 @@ webi-shell_install() {
 nvim_config_install() {
     slog "nvim config"
 
+    frm $XDG_CONFIG_HOME/nvim.bak
     omv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
-    omv ~/.local/share/nvim ~/.local/share/nvim.bak
-    omv ~/.local/state/nvim ~/.local/state/nvim.bak
-    omv ~/.cache/nvim ~/.cache/nvim.bak
+    frm ~/.local/share/nvim ~/.local/share/nvim.bak
+    frm ~/.local/state/nvim ~/.local/state/nvim.bak
+    frm ~/.cache/nvim ~/.cache/nvim.bak
 
     stowdf nvim
     nvim --headless "+Lazy sync" +qa
