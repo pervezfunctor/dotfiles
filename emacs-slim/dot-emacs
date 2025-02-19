@@ -589,72 +589,6 @@
   (flymake-start-on-flymake-mode t)
   (flymake-no-changes-timeout 1))
 
-(defun my/set-clipboard (copy-cmd copy-args paste-cmd paste-args &optional paste-transform)
-  "Helper to set up Emacs clipboard integration.
-COPY-CMD is the command used for copying with COPY-ARGS.
-PASTE-CMD is the command used for pasting with PASTE-ARGS.
-If PASTE-TRANSFORM is non-nil, it is a function applied to the paste output."
-  (setq interprogram-cut-function
-        (lambda (text &optional push)
-          (let ((process-connection-type nil))
-            (let ((proc (apply 'start-process "clipboard-copy" "*Messages*"
-                                copy-cmd copy-args)))
-              (process-send-string proc text)
-              (process-send-eof proc)))))
-  (setq interprogram-paste-function
-        (lambda ()
-          (let ((result (shell-command-to-string
-                         (mapconcat 'identity (cons paste-cmd paste-args) " "))))
-            (if paste-transform
-                (funcall paste-transform result)
-              result)))))
-
-(defun my/setup-clipboard ()
-  "Configure clipboard integration for macOS, Wayland, and X11."
-  (cond
-   ;; macOS: Use pbcopy/pbpaste (preinstalled)
-   ((eq system-type 'darwin)
-    (my/set-clipboard "pbcopy" '() "pbpaste" '()))
-   ;; Wayland: Use wl-clipboard tools with a paste transform to remove carriage returns
-   ((getenv "WAYLAND_DISPLAY")
-    (my/set-clipboard "wl-copy" '("-n")
-                        "wl-paste" '("-n")
-                        (lambda (s) (replace-regexp-in-string "\r" "" s))))
-   ;; X11: Try xclip first, then xsel as a fallback
-   ((getenv "DISPLAY")
-    (cond
-     ((executable-find "xclip")
-      (my/set-clipboard "xclip" '("-selection" "clipboard")
-                          "xclip" '("-o" "-selection" "clipboard")))
-     ((executable-find "xsel")
-      (my/set-clipboard "xsel" '("--clipboard" "--input")
-                          "xsel" '("--clipboard" "--output")))))))
-
-;; Enable the clipboard configuration.
-(my/setup-clipboard)
-
-;; (use-package sudo-edit)
-
-;; (use-package which-key
-;;   :ensure nil
-;;   :init
-;;   (which-key-mode))
-
-;; (use-package wgrep
-;;   :ensure nil
-;;   :custom
-;;   (wgrep-auto-save-buffer t)
-;;   (wgrep-change-readonly-file t))
-
-;; (use-package rainbow-mode
-;;   :diminish
-;;   :hook org-mode prog-mode)
-
-;; (use-package rainbow-delimiters
-;;   :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
-;;          (clojure-mode . rainbow-delimiters-mode)))
-
-;; ;; Flycheck for on-the-fly syntax checking
 (use-package blackout
   :ensure t
   :config
@@ -700,6 +634,7 @@ If PASTE-TRANSFORM is non-nil, it is a function applied to the paste output."
   :init
   (which-key-mode))
 
+(use-package sqlite3)
 
 (use-package wgrep
   :custom
@@ -740,72 +675,28 @@ If PASTE-TRANSFORM is non-nil, it is a function applied to the paste output."
   :config
   (xclip-mode +1))
 
+;; Flycheck for on-the-fly syntax checking
 ;; (use-package flycheck
 ;;   :init (global-flycheck-mode))
 
-;; (use-package company
-;;   :defer 2
-;;   :diminish
-;;   :custom
-;;   (company-begin-commands '(self-insert-command))
-;;   (company-idle-delay .1)
-;;   (company-minimum-prefix-length 2)
-;;   (company-show-numbers t)
-;;   (company-tooltip-align-annotations 't)
-;;   (global-company-mode t))
-
-;; (use-package company-box
-;;   :after company
-;;   :diminish
-;;   :hook (company-mode . company-box-mode))
-
+;; format code automatically using clang-format, prettier, ruff etc
 ;; (use-package apheleia
 ;;   :ensure t
 ;;   :config
-;;   (apheleia-global-mode +1))
+;;   ;; Optional: Add or tweak formatters
+;;   (setq apheleia-formatters
+;;         (append apheleia-formatters
+;;                 '((clang-format . ("clang-format" "-style=file"))
+;;                   (prettier . ("prettier" "--stdin-filepath" filepath)))))
+;;   (setf (alist-get 'ruff apheleia-formatters)
+;;         '("ruff" "format" "-"))
+;;   ;; Set ruff as the default formatter for Python
+;;   (setf (alist-get 'python-mode apheleia-mode-alist) 'ruff)
 
-;; ;; Optional: Add or tweak formatters
-;; (setq apheleia-formatters
-;;       (append apheleia-formatters
-;;               '((clang-format . ("clang-format" "-style=file"))
-;;                 (prettier . ("prettier" "--stdin-filepath" filepath))
-;;                 (black . ("black" "-")))))
+;;   (apheleia-global-mode +1))
 
 ;; ;; Example: Automatically format C++ on save
 ;; (add-hook 'c++-mode-hook
 ;;           (lambda ()
 ;;             (setq apheleia-formatter 'clang-format)
 ;;             (apheleia-mode 1)))
-
-;; (use-package bidi-display-reordering
-;;   :ensure nil
-;;   :custom
-;;   (bidi-display-reordering t))
-
-;; (use-package dired-x
-;;   :after dired
-;;   :config
-;;   (setq dired-omit-files
-;;         (concat dired-omit-files "\\|^\\..+$"))
-;;   :hook
-;;   (dired-mode . dired-omit-mode))
-
-;; (use-package flx-ido
-;;   :ensure t
-;;   :config
-;;   (flx-ido-mode 1)
-;;   (setq ido-use-faces nil))
-
-;; ;; Eglot for LSP integration
-;; (use-package eglot
-;;   :hook ((c++-mode . eglot-ensure)
-;;          (c-mode . eglot-ensure))
-;;   :config
-;;   (add-to-list 'eglot-server-programs
-;;                '((c++-mode c-mode) . ("clangd" "ccls"))))
-
-;; (use-package orderless
-;;   :custom
-;;   (completion-styles '(orderless))
-;;   (completion-category-defaults nil)
-;;   (completion-category-overrides '((eglot (styles orderless)))))
