@@ -129,7 +129,7 @@ if [[ -n "${terminfo[khome]}" ]]; then
 fi
 # [End] - Go to end of line
 if [[ -n "${terminfo[kend]}" ]]; then
-    bindkey -M emacs "${terminfo[kend]}"  end-of-line
+    bindkey -M emacs "${terminfo[kend]}" end-of-line
 fi
 
 # [Shift-Tab] - move through the completion menu backwards

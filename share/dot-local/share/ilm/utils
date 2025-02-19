@@ -9,7 +9,7 @@ BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
 source_if_exists() {
-    [ -f "$1" ] && source "$1"
+    [[ -f "$1" ]] && source "$1"
 }
 
 source_curl() {
@@ -85,7 +85,9 @@ fclone() {
 smv() {
     if mv "$1" "$2" 2> /dev/null; then
         slog "Moved $1 to $2"
+        return 0
     fi
+    return 1
 }
 
 smd() {
@@ -183,12 +185,17 @@ omv() {
 }
 
 sln() {
-    if ! [ -e "$1" ]; then
+    if [[ $# -ne 2 ]]; then
+        fail "sln requires exactly 2 arguments"
+        return 1
+    fi
+
+    if ! [[ -e "$1" ]]; then
         warn "$1 does not exist, cannot create the link $2"
         return 1
-    elif [ -L "$2" ]; then
+    elif [[ -L "$2" ]]; then
         srm "$2"
-    elif [ -e "$2" ]; then
+    elif [[ -e "$2" ]]; then
         warn "$2 exists and not a symbolic link! not creating link"
         return 1
     fi
@@ -340,10 +347,6 @@ cmd_check() {
 
 flatpak_installed() {
     flatpak list | grep -q "$1"
-}
-
-file_exists() {
-     [[ -f "$1" ]]
 }
 
 dir_check() {

@@ -1,13 +1,13 @@
 ;; This should be in your early-init.el file
 (setq package-enable-at-startup nil)
 
-(load-theme 'tango-dark t)
+;; (load-theme 'tango-dark t)
 ;; (load-theme 'leuven t)
-;; (load-theme 'wombat t)
+(load-theme 'wombat t)
 
-;; (when (not (display-graphic-p))
-;;   (custom-set-faces
-;;    '(default ((t (:background "unspecified-bg"))))))
+(when (not (display-graphic-p))
+  (custom-set-faces
+   '(default ((t (:background "unspecified-bg"))))))
 
 (setq initial-major-mode 'text-mode)
 
