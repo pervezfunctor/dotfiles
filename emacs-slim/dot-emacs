@@ -701,6 +701,11 @@ If PASTE-TRANSFORM is non-nil, it is a function applied to the paste output."
   (which-key-mode))
 
 
+(use-package wgrep
+  :custom
+  (wgrep-auto-save-buffer t)
+  (wgrep-change-readonly-file t))
+
 (use-package rainbow-mode
   :diminish
   :hook org-mode prog-mode)
