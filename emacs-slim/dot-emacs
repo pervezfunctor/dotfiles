@@ -700,6 +700,29 @@ If PASTE-TRANSFORM is non-nil, it is a function applied to the paste output."
   :init
   (which-key-mode))
 
+
+(use-package company
+  :defer 2
+  :diminish
+  :custom
+  (company-begin-commands '(self-insert-command))
+  (company-idle-delay .1)
+  (company-minimum-prefix-length 2)
+  (company-show-numbers t)
+  (company-tooltip-align-annotations 't)
+  (global-company-mode t))
+
+(use-package company-box
+  :after company
+  :diminish
+  :hook (company-mode . company-box-mode))
+
+(use-package orderless
+  :custom
+  (completion-styles '(orderless))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((eglot (styles orderless)))))
+
 (use-package xclip
   :config
   (xclip-mode +1))
