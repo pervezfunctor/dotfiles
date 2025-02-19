@@ -188,7 +188,7 @@ alias ....="../../../"
 alias .....="../../../../"
 alias ......="../../../../../"
 
-if has_cmd flatpak; then
+if [[ ! -v CONTAINER_ID ]] && has_cmd flatpak; then
     FLATPAK_LIST=$(flatpak list)
 
     alias_if_exists() {
@@ -197,7 +197,7 @@ if has_cmd flatpak; then
 
         if ! has_cmd "$cmd"; then
             if echo "$FLATPAK_LIST" | grep -q "$flatpak_id"; then
-                alias "$cmd"="flatpak run $flatpak_id"
+                eval "alias $cmd='flatpak run $flatpak_id'"
             fi
         fi
     }
