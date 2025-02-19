@@ -11,7 +11,8 @@ brew_setup() {
     fi
 
     brew_shell_slim_install
-    bis emacs
+    bis emacs clang-format
+    bi cmake emacs-clang-complete-async
 }
 
 apps_setup() {
