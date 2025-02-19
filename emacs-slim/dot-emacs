@@ -589,20 +589,6 @@
   (flymake-start-on-flymake-mode t)
   (flymake-no-changes-timeout 1))
 
-(use-package blackout
-  :ensure t
-  :config
-  (blackout 'auto-fill-mode)
-  (blackout 'flymake-mode)
-  (blackout 'rainbow-mode)
-  (blackout 'apheleia-mode)
-  (blackout 'word-wrap-whitespace-mode)
-  (blackout 'flycheck-mode)
-  (blackout 'which-key-mode)
-  (blackout 'visual-line-mode)
-  (blackout 'auto-revert-mode)
-  (blackout 'company-mode))
-
 (use-package sudo-edit)
 
 (use-package magit
@@ -674,6 +660,22 @@
 (use-package xclip
   :config
   (xclip-mode +1))
+
+(use-package blackout
+  :ensure t
+  :config
+  (blackout 'auto-fill-mode)
+  (blackout 'flymake-mode)
+  (blackout 'auto-revert-mode)
+  (blackout 'rainbow-mode)
+  (blackout 'apheleia-mode)
+  (blackout 'word-wrap-whitespace-mode)
+  (blackout 'flycheck-mode)
+  (blackout 'which-key-mode)
+  (blackout 'visual-line-mode)
+  (blackout 'hs-minor-mode)
+  (blackout 'auto-revert-mode)
+  (blackout 'company-mode))
 
 ;; Flycheck for on-the-fly syntax checking
 ;; (use-package flycheck
