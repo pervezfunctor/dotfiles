@@ -655,6 +655,20 @@ If PASTE-TRANSFORM is non-nil, it is a function applied to the paste output."
 ;;          (clojure-mode . rainbow-delimiters-mode)))
 
 ;; ;; Flycheck for on-the-fly syntax checking
+(use-package blackout
+  :ensure t
+  :config
+  (blackout 'auto-fill-mode)
+  (blackout 'flymake-mode)
+  (blackout 'rainbow-mode)
+  (blackout 'apheleia-mode)
+  (blackout 'word-wrap-whitespace-mode)
+  (blackout 'flycheck-mode)
+  (blackout 'which-key-mode)
+  (blackout 'visual-line-mode)
+  (blackout 'auto-revert-mode)
+  (blackout 'company-mode))
+
 ;; (use-package flycheck
 ;;   :init (global-flycheck-mode))
 
