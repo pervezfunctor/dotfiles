@@ -69,8 +69,8 @@ essential_install() {
     core_install
     # mise_install
     sys_python_install
-    pacstall_install
-    is_ubuntu && snap_install
+    # pacstall_install
+    # is_ubuntu && snap_install
 
     si zip unar micro nala p7zip
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
@@ -85,17 +85,21 @@ essential_install() {
 #   redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common wl-clipboard
 
 cli_install() {
-    si gawk tmux pkg-config urlview gh shellcheck zsh git just htop
-    si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide shfmt tree-sitter-cli
+    sudo apt purge -y stow # old version does not work on dot-* folders
+    si gawk tmux pkg-config urlview zsh git
 
-    gh extension install github/gh-copilot
+    # better installed using brew
+    # si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
+    # si gh shellcheck just htop shfmt tree-sitter-cli
+
+    # gh extension install github/gh-copilot
 }
 
 cpp_install() {
     slog "Installing C++"
 
     si gcc gdb g++ libboost-all-dev catch2
-    si clang llvm clang-tidy clang-format clang-tools libclang-dev
+    si clang llvm clang-tidy clang-format clang-tools libclang-dev clangd
     si doxygen graphviz ccache cppcheck pre-commit
     si valgrind systemtap ltrace strace lldb lld
 
