@@ -174,7 +174,7 @@ nvim_config_install() {
     frm ~/.local/state/nvim
     frm ~/.cache/nvim
 
-    stowdf nvim
+    stowgf nvim
     nvim --headless "+Lazy sync" +qa
 
     slog "nvim config done!"
@@ -832,39 +832,37 @@ shell_install() {
 
 alacritty_config_install() {
     slog "alacritty config"
-    stowdf alacritty
+    stowgf alacritty
     slog "alacritty config done!"
 }
 
 wezterm_config_install() {
     slog "wezterm config"
-    stowdf wezterm
+    stowgf wezterm
     slog "wezterm config done!"
 }
 
 kitty_config_install() {
     slog "kitty config"
-    stowdf kitty
+    stowgf kitty
     slog "kitty config done!"
 }
 
 ghostty_config_install() {
     slog "ghostty config"
-    stowdf ghostty
+    stowgf ghostty
     slog "ghostty config done!"
 }
 
 atuin_config_install() {
     slog "atuin config"
-    srm $XDG_CONFIG_HOME/atuin/config.toml
-    stowdf atuin
+    stowgf atuin
     slog "atuin config done!"
 }
 
 rofi_config_install() {
     slog "rofi config"
-    srm $XDG_CONFIG_HOME/rofi
-    stowdf rofi
+    stowgf rofi
 
     slog "rofi config done!"
 }
@@ -878,7 +876,7 @@ amethyst_config_install() {
 
 aerospace_config_install() {
     slog "aerospace config"
-    stowdf aerospace
+    stowgf aerospace
 }
 
 yazi_config_install() {
@@ -888,6 +886,7 @@ yazi_config_install() {
     smd $XDG_CONFIG_HOME/yazi
     stownf yazi
 
+    # @TODO: use package.toml file to install flavors
     if has_cmd ya; then
         ya pack -a yazi-rs/flavors:catppuccin-frappe
         ya pack -a yazi-rs/flavors:catppuccin-mocha
@@ -900,9 +899,7 @@ yazi_config_install() {
 
 foot_config_install() {
     slog "foot config"
-    srm $XDG_CONFIG_HOME/foot
-    smd $XDG_CONFIG_HOME/foot
-    stowdf foot
+    stowgf foot
     slog "foot config done!"
 }
 
@@ -1439,45 +1436,40 @@ gnome_settings() {
 }
 
 sway_waybar_config_install() {
+    slog "waybar config"
     has_cmd waybar || return 1
-    srm ~/.config/waybar
-    smd ~/.config/waybar
-    stowdf waybar
+    stowgf waybar
+    slog "waybar config done!"
 }
 
 hypr-waybar_config_install() {
     has_cmd waybar || return 1
-    srm ~/.config/waybar
-    smd ~/.config/waybar
-    stowdf hypr-waybar
+
+    slog "waybar config"
+    stowgf hypr-waybar
+    slog "waybar config done!"
 }
 
 wlogout_config_install() {
+    slog "wlogout config"
     has_cmd wlogout || return 1
-    srm ~/.config/wlogout
-    smd ~/.config/wlogout
-    stowdf wlogout
-}
-
-kitty_config_install() {
-    has_cmd kitty || return 1
-    srm ~/.config/kitty
-    smd ~/.config/kitty
-    stowdf kitty
+    stowgf wlogout
+    slog "wlogout config done!"
 }
 
 sway_config_install() {
     has_cmd sway || return 1
-    srm ~/.config/sway
-    smd ~/.config/sway
-    stowdf sway
+    slog "sway config"
+    stowgf sway
+    slog "sway config done!"
 }
 
 rofi_config_install() {
     has_cmd rofi || return 1
-    srm ~/.config/rofi
-    smd ~/.config/rofi
-    stowdf rofi
+
+    slog "rofi config"
+    stowgf rofi
+    slog "rofi config done!"
 }
 
     # has_cmd pip || has_cmd python3 && python3 -m ensurepip --user --default-pip
@@ -1492,10 +1484,12 @@ rofi_config_install() {
 
 hyprland_config_install() {
     slog "hypr config install"
-    srm ~/.config/hypr
-    srm ~/.config/waybar
-    stowdf hypr
-    stowdf hypr-waybar
+
+    hypr_waybar_config_install
+    wlogout_config_install
+    rofi_config_install
+    kitty_config_install
+
     slog "hypr config done!"
 }
 
