@@ -1,7 +1,9 @@
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
-source ~/.local/share/ilm/shellrc
+[[ -d $DOT_DIR ]] || return
+
+source $DOT_DIR/share/shellrc
 
 # if interactive shell then return
 [[ $- == *i* ]] || return
@@ -14,8 +16,8 @@ has_cmd starship > /dev/null && eval "$(starship init bash)"
 has_cmd atuin && eval "$(atuin init bash --disable-up-arrow --disable-ctrl-r)"
 has_cmd pixi && eval "$(pixi completion --shell bash)"
 
-source_if_exists ~/.local/share/ilm/fns
-source_if_exists ~/.local/share/ilm/aliases
+source_if_exists $DOT_DIR/share/fns
+source_if_exists $DOT_DIR/share/aliases
 
 source_if_exists "$HOME/.localbashrc"
 source_if_exists "$XDG_CONFIG_HOME/localbashrc"

@@ -2,8 +2,12 @@
 
 {
 
-source ~/.local/share/ilm/utils
-source ~/.local/share/ilm/fns
+DOT_DIR={DOT_DIR:-$HOME/.ilm}
+
+[[ -d $DOT_DIR ]] || err_exit "Please clone dotfiles to $DOT_DIR"
+
+source $DOT_DIR/share/utils
+source $DOT_DIR/share/fns
 
 OPTIONS=("ubuntu" "debian" "arch" "fedora" "tumbleweed" "rocky" "bluefin" "bluefin-all" "toolboxes")
 

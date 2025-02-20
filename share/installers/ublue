@@ -50,9 +50,6 @@ config_setup() {
         return 1
     fi
 
-    stowdf wallpapers
-    share_config_install
-    bin_config_install
     bash_config_install
     has_cmd zsh && zsh_config_install
     has_cmd nvim && nvim_config_install

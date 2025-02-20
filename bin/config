@@ -2,8 +2,8 @@
 
 {
 
-source ~/.local/share/ilm/utils
-source ~/.local/share/ilm/installers/common
+source $DOT_DIR/share/utils
+source $DOT_DIR/share/installers/common
 
 INSTALL_OPTIONS=("zsh" "tmux" "nvim" "code" "ghostty" "kitty" "wezterm" "alacritty" "emacs")
 

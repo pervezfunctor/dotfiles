@@ -2,7 +2,9 @@
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
-source ~/.local/share/ilm/shellrc
+[[ -d $DOT_DIR ]] || return
+
+source $DOT_DIR/share/shellrc
 
 # if interactive shell then return
 [[ $- == *i* ]] || return
@@ -192,8 +194,8 @@ bindkey '^L' vi-forward-word
 bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
 
-source_if_exists ~/.local/share/ilm/fns
-source_if_exists ~/.local/share/ilm/aliases
+source_if_exists $DOT_DIR/share/fns
+source_if_exists $DOT_DIR/share/aliases
 
 has_cmd pixi && eval "$(pixi completion --shell zsh)"
 

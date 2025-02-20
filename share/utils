@@ -552,6 +552,15 @@ fpi() {
     done
 }
 
+eval_brew() {
+    if has_cmd /opt/homebrew/bin/brew; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif has_cmd /home/linuxbrew/.linuxbrew/bin/brew; then
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    fi
+    return 1
+}
+
 environs() {
     smd ~/.local/bin
     smd ~/bin
@@ -560,6 +569,10 @@ environs() {
     export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
     export PNPM_HOME="$HOME/.local/share/pnpm:$PATH"
     export PATH="$HOME/.local/bin:$PATH"
+    export PATH="$HOME/.bin:$PATH"
+    export PATH="$HOME/bin:$PATH"
+    export PATH="$HOME/.ilm/bin:$PATH"
+    export PATH="$HOME/Applications"
     export PATH="$PNPM_HOME:$PATH"
     export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="$HOME/.local/opt/brew/bin:$PATH"
@@ -570,6 +583,7 @@ environs() {
     export HOMEBREW_NO_ENV_HINTS=1
     export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
     export HOMEBREW_NO_AUTO_UPDATE=1
+    eval_brew
 
     # set locale
     export LANG=en_US.UTF-8
@@ -595,7 +609,7 @@ bootstrap() {
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2> /dev/null
     keep_sudo_running
 
-    INSTALLERS="${BASE_URL}/share/dot-local/share/ilm/installers"
+    INSTALLERS="${BASE_URL}/share/installers"
     source_curl "$INSTALLERS/common"
 
     if is_apt; then

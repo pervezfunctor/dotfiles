@@ -2,7 +2,7 @@
 
 {
 
-source ~/.local/share/ilm/utils
+source <(curl -sSL https://dub.sh/z3pTnAK)
 
 INSTALL_OPTIONS=("min" "shell" "ct" "vm" "prog" "all")
 

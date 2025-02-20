@@ -1,4 +1,6 @@
-source ~/.local/share/ilm/utils
+export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+
+source $DOT_DIR/share/utils
 
 ### "nvim" as manpager
 has_cmd nvim && export MANPAGER="nvim +Man!"
@@ -29,6 +31,7 @@ spath_export "$XDG_CONFIG_HOME/emacs/bin"
 spath_export "$HOME/.local/bin"
 spath_export "$HOME/bin"
 spath_export "$HOME/.bin"
+spath_export "$HOME/.ilm/bin"
 spath_export "$HOME/Applications"
 spath_export "$HOME/.local/share/pypoetry"
 spath_export "$XDG_CONFIG_HOME/Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin"

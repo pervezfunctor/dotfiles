@@ -170,9 +170,9 @@ nvim_config_install() {
 
     frm $XDG_CONFIG_HOME/nvim.bak
     omv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
-    frm ~/.local/share/nvim ~/.local/share/nvim.bak
-    frm ~/.local/state/nvim ~/.local/state/nvim.bak
-    frm ~/.cache/nvim ~/.cache/nvim.bak
+    frm ~/.local/share/nvim
+    frm ~/.local/state/nvim
+    frm ~/.cache/nvim
 
     stowdf nvim
     nvim --headless "+Lazy sync" +qa
@@ -392,15 +392,6 @@ web_install() {
         pnpm dlx playwright install-deps
         pnpm dlx playwright install
     fi
-}
-
-eval_brew() {
-    if has_cmd /opt/homebrew/bin/brew; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif has_cmd /home/linuxbrew/.linuxbrew/bin/brew; then
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-    fi
-    return 1
 }
 
 brew_install() {
@@ -863,18 +854,6 @@ ghostty_config_install() {
     slog "ghostty config done!"
 }
 
-bin_config_install() {
-    slog "bin config"
-    stownf bin
-    slog "bin config done!"
-}
-
-share_config_install() {
-    slog "bin config"
-    stownf share
-    slog "bin config done!"
-}
-
 atuin_config_install() {
     slog "atuin config"
     srm $XDG_CONFIG_HOME/atuin/config.toml
@@ -936,10 +915,6 @@ config_install() {
         warn "stow not installed, skipping config"
         return 1
     fi
-
-    stowdf wallpapers
-    share_config_install
-    bin_config_install
 
     has_cmd aerospace && aerospace_config_install
     has_cmd alacritty && alacritty_config_install
@@ -1125,9 +1100,6 @@ base-group_install() {
     dotfiles_install
     dir_check $DOT_DIR
 
-    stowdf wallpapers
-    share_config_install
-    bin_config_install
     bash_config_install
 }
 
@@ -1560,10 +1532,6 @@ sway-group_install() {
     slog "Installing sway"
     shell-group_install
 
-    stowdf share
-    stowdf bin
-    stowdf wallpapers
-
     sway_install
 
     slog "sway instalation done!"
@@ -1573,10 +1541,6 @@ sway-group_install() {
 hyprland-group_install() {
     slog "Installing hyprland"
     shell-group_install
-
-    stowdf share
-    stowdf bin
-    stowdf wallpapers
 
     hyprland_install
 
