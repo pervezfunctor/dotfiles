@@ -249,6 +249,10 @@
 (setq catppucin-flavor 'mocha)
 (catppuccin-reload)
 
+(use-package xclip
+  :config
+  (xclip-mode +1))
+
 (use-package kkp
   :ensure t
   :config
