@@ -189,8 +189,8 @@ starship_install() {
 bash_config_install() {
     slog "Configuring bash"
 
-    if ! grep -q .local/share/ilm/bashrc ~/.bashrc; then
-        echo "source ~/.local/share/ilm/bashrc" >> ~/.bashrc
+    if ! grep -q .ilm/share/bashrc ~/.bashrc; then
+        echo "source ~/.ilm/share/bashrc" >> ~/.bashrc
     fi
 
     slog "bash config done!"
@@ -706,9 +706,13 @@ cmake_install() {
 }
 
 brew_shell_slim_install() {
-    bis tree-sitter gh gum stow
+    bis tree-sitter gh gum stow trash-cli
     bis lazygit eza fzf fd zoxide starship yazi
 
+    if ! has_cmd luarocks; then 
+        bi luarocks
+        brew link luarocks # unfortunately, this is needed currently.
+    fi
     bi bash-preexec
     has_cmd nvim || bi neovim
     has_cmd rg || bi ripgrep
