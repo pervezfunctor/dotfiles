@@ -175,7 +175,7 @@ nvim_config_install() {
     frm ~/.cache/nvim
 
     stowgf nvim
-    nvim --headless "+Lazy sync" +qa
+    nvim --headless "+Lazy! sync" +qa
 
     slog "nvim config done!"
 }
