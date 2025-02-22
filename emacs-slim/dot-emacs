@@ -4,6 +4,24 @@
 (defconst *is-a-linux* (eq system-type 'gnu/linux))
 (defconst *is-a-windows* (eq system-type 'windows-nt))
 
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+(straight-use-package 'use-package)
+
 (use-package emacs
   :init
   (load-theme 'wombat t)
@@ -124,17 +142,17 @@
 (setq use-package-always-ensure t)
 (setq use-package-expand-minimally t)
 
-(use-package package
-  :custom
-  (package-archives '(("melpa" . "https://melpa.org/packages/")
-                      ("org" . "https://orgmode.org/elpa/")
-                      ("elpa" . "https://elpa.gnu.org/packages/")))
-  :config
-  (package-initialize)
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
-  (setq use-package-always-ensure t))
+;; (use-package package
+;;   :custom
+;;   (package-archives '(("melpa" . "https://melpa.org/packages/")
+;;                       ("org" . "https://orgmode.org/elpa/")
+;;                       ("elpa" . "https://elpa.gnu.org/packages/")))
+;;   :config
+;;   (package-initialize)
+;;   (unless (package-installed-p 'use-package)
+;;     (package-refresh-contents)
+;;     (package-install 'use-package))
+;;   (setq use-package-always-ensure t))
 
 (use-package xdg
   :ensure t
@@ -331,11 +349,34 @@
   (setq treesit-language-source-alist
         '((python "https://github.com/tree-sitter/tree-sitter-python")
           (rust "https://github.com/tree-sitter/tree-sitter-rust")
+          (c "https://github.com/tree-sitter/tree-sitter-c")
+          (ocaml "https://github.com/tree-sitter/tree-sitter-ocaml")
+          (go "https://github.com/tree-sitter/tree-sitter-go")
+          (html "https://github.com/tree-sitter/tree-sitter-html")
+          (css "https://github.com/tree-sitter/tree-sitter-css")
+          (java "https://github.com/tree-sitter/tree-sitter-java")
+          (haskell "https://github.com/tree-sitter/tree-sitter-haskell")
+          (scala "https://github.com/tree-sitter/tree-sitter-scala")
+          (toml "https://github.com/tree-sitter/tree-sitter-toml")
+          (json "https://github.com/tree-sitter/tree-sitter-json")
+          (javascript "https://github.com/tree-sitter/tree-sitter-javascript")
+          (typescript "https://github.com/tree-sitter/tree-sitter-typescript")
+          (bash "https://github.com/tree-sitter/tree-sitter-bash")
           (cpp "https://github.com/tree-sitter/tree-sitter-cpp")))
-  (dolist (lang '(python rust))
+
+  (dolist (lang '(c cpp python json toml bash))
+    (unless (treesit-language-available-p lang)
+      (treesit-install-language-grammar lang)))
+
+  (dolist (lang '(python rust c c++ json toml bash))
     (add-to-list 'major-mode-remap-alist
                  (cons (intern (format "%s-mode" lang))
                        (intern (format "%s-ts-mode" lang))))))
+
+(straight-use-package
+ '(corfu-terminal
+   :type git
+   :repo "https://codeberg.org/akib/emacs-corfu-terminal.git"))
 
 (use-package corfu
   :ensure t
@@ -348,7 +389,11 @@
   (corfu-quit-no-match 'separator)
   (corfu-scroll-margin 5)
   :init
-  (global-corfu-mode))
+  (global-corfu-mode)
+  (unless (display-graphic-p)
+    (corfu-terminal-mode +1)))
+
+
 
 (use-package cape
   :ensure t
@@ -356,7 +401,6 @@
   ;; Useful completion sources
   (add-to-list 'completion-at-point-functions #'cape-file)
   (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-  (add-to-list 'completion-at-point-functions #'cape-symbol)
   (add-to-list 'completion-at-point-functions #'cape-keyword))
 
 (use-package orderless
@@ -369,6 +413,7 @@
   :ensure nil
   :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
   :config
+
   (with-eval-after-load 'eglot
     (add-to-list 'eglot-server-programs
                  '(c++-ts-mode . ("clangd" "--stdlib=c++")))))
@@ -399,8 +444,6 @@
   (blackout 'hs-minor-mode)
   (blackout 'auto-revert-mode)
   (blackout 'company-mode))
-
-(use-package flycheck)
 
 (use-package apheleia
   :ensure t
@@ -490,6 +533,17 @@
   (json-reformat:pretty-string? t)
   (json-serialize-pretty t)
   (json-object-type 'plist))
+
+(use-package flycheck
+  :ensure t)
+
+(defun my-c++-mode-setup ()
+  "Enable Flycheck and disable Flymake locally for C++ modes."
+  (flymake-mode -1)  ;; Disable Flymake locally
+  (flycheck-mode 1)) ;; Enable Flycheck only in C++ buffers
+
+(add-hook 'c++-mode-hook #'my-c++-mode-setup)
+(add-hook 'c++-ts-mode-hook #'my-c++-mode-setup) ;; For tree-sitter C++ mode
 
 ;; (use-package flymake
 ;;   :ensure nil
