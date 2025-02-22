@@ -14,17 +14,25 @@ brew_setup() {
 }
 
 emacs_setup() {
-    bis emacs  
+    slog "emacs installation and setup"
+
+    bis emacs
     bi emacs-clang-complete-async
     srm ~/.emacs
     # srm ~/.emacs.d
     # srm $XDG_CONFIG_HOME/emacs
     stowdf emacs-slim # or emacs
+
+    slog "emacs installation done!"
 }
 
 cpp_setup() {
+    slog "cpp installation"
+
     bi llvm lld
     bis clang-format cmake
+
+    slog "cpp isntallation done!"
 }
 
 apps_setup() {
@@ -37,6 +45,8 @@ apps_setup() {
 }
 
 code_setup() {
+    slog "code setup"
+
     if ! has_cmd code; then
         warn "code not installed; skipping vscode configuration"
         return 1
@@ -44,6 +54,8 @@ code_setup() {
 
     vscode_extensions_install
     vscode_config_install
+
+    slog "code setup done!"
 }
 
 config_setup() {
@@ -57,13 +69,19 @@ config_setup() {
         return 1
     fi
 
+    slog "config setup"
+
     bash_config_install
     has_cmd zsh && zsh_config_install
     has_cmd nvim && nvim_config_install
     has_cmd tmux && tmux_config_install
+
+    slog "config setup done!"
 }
 
 pipx_setup() {
+    slog "pipx setup"
+
     if ! has_cmd pipx; then
         if ! has_cmd pip; then
             python3 -m ensurepip --user --default-pip
@@ -73,6 +91,8 @@ pipx_setup() {
         pip install --upgrade --force-reinstall pipx
         has_cmd pipx || return 1
     fi
+
+    slog "pipx setup done!"
 }
 
 ublue_gnome_setup() {
@@ -83,9 +103,13 @@ ublue_gnome_setup() {
         return 1
     fi
 
+    slog "gnome setup"
+
     pipx install gnome-extensions-cli --system-site-packages
     gnome_extensions_install
     gnome_basic_settings
+
+    slog "gnome setup done!"
 }
 
 distrobox_setup() {
@@ -94,8 +118,10 @@ distrobox_setup() {
         return 1
     fi
 
+    slog "Creating multiple distroboxes for testing"
     source_dotfile fns
     distrobox_ublue_all
+    slog "distroboxes setup done!"
 }
 
 main() {
@@ -105,7 +131,7 @@ main() {
         ujust aurora-cli
     fi
 
-    ujust --choose cockpit
+    ujust cockpit
 
     dotfiles_install
     brew_setup
