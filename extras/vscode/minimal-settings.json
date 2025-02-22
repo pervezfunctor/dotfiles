@@ -1,6 +1,6 @@
 {
   "window.titleBarStyle": "custom",
-  "editor.fontFamily": "'JetbrainsMono Nerd Font Mono', 'Source Code Pro', 'Droid Sans Mono', 'monospace', monospace",
+  "editor.fontFamily": "'JetbrainsMono Nerd Font Mono', 'Jetbrains Mono', 'MonaspiceRn Nerd Font Mono', 'Cascadia Mono', 'Monaco', 'Consolas', 'Fira Code Mono', 'Ubuntu Mono', 'Source Code Pro', 'Droid Sans Mono', 'monospace', monospace",
   "editor.fontLigatures": true,
   "editor.fontSize": 15,
   "editor.acceptSuggestionOnEnter": "smart",
@@ -46,7 +46,7 @@
   "window.commandCenter": true,
   "workbench.commandPalette.preserveInput": true,
   "workbench.editor.highlightModifiedTabs": true,
-  "workbench.colorTheme": "Catppuccin Frappé",
+  "workbench.colorTheme": "Catppuccin Mocha",
   "breadcrumbs.enabled": false,
   "editor.folding": false,
   "editor.glyphMargin": false,

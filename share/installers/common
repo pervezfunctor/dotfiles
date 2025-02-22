@@ -718,6 +718,7 @@ brew_shell_slim_install() {
     has_cmd nvim || bi neovim
     has_cmd rg || bi ripgrep
     has_cmd batcat || has_cmd bat || bi bat
+    has_cmd emacs || bis micro
 }
 
 home_manager_install() {
