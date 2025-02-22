@@ -710,7 +710,7 @@ brew_shell_slim_install() {
     bis tree-sitter gh gum stow trash-cli
     bis lazygit eza fzf fd zoxide starship yazi
 
-    if ! has_cmd luarocks; then 
+    if ! has_cmd luarocks; then
         bi luarocks
         brew link luarocks # unfortunately, this is needed currently.
     fi
@@ -1199,7 +1199,7 @@ is_hyprland() {
     [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Hyprland" ]]
 }
 
-gnome_extension_install() {
+gnome_extensions_install() {
     if ! has_cmd gext; then
         warn "gext not installed, skipping gnome extensions"
         return 1

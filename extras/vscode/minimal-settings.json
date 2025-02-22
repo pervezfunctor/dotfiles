@@ -39,7 +39,6 @@
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
   "git.openRepositoryInParentFolders": "always",
-  "terminal.integrated.fontFamily": "JetbrainsMono Nerd Font Mono",
   "terminal.integrated.fontSize": 14,
   "editor.minimap.enabled": false,
   "git.autofetch": true,
