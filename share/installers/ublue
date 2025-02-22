@@ -94,6 +94,14 @@ distrobox_setup() {
 }
 
 main() {
+    if is_bluefin; then
+        ujust bluefin-cli
+    else
+        ujust aurora-cli
+    fi
+
+    ujust --choose cockpit
+
     dotfiles_install
     brew_setup
     apps_setup
@@ -101,6 +109,7 @@ main() {
     mise_install
     config_setup
     # emacs_setup
+    ujust update
 }
 
 is_ublue || err_exit "This script is only for Aurora/Bluefin"
