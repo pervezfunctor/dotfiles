@@ -715,9 +715,11 @@ brew_shell_slim_install() {
         brew link luarocks # unfortunately, this is needed currently.
     fi
     bi bash-preexec
+    has_cmd delta || bi git-delta
     has_cmd nvim || bi neovim
     has_cmd rg || bi ripgrep
     has_cmd batcat || has_cmd bat || bi bat
+    has_cmd ug || bi ugrep
     has_cmd emacs || bis micro
 }
 
@@ -754,7 +756,8 @@ brew_shell_install() {
 
     bis jq just lsd shfmt shellcheck lazydocker
     bis cheat curlie duf sd xh doggo atuin direnv dust
-    bis procs hyperfine pixi yq ugrep yazi htop
+    bis procs hyperfine pixi yq ugrep yazi htop dysk
+    has_cmd tv || bi
 
     has_cmd spf || bi superfile
     has_cmd gdu || has_cmd gdu-go || bi gdu
@@ -762,7 +765,6 @@ brew_shell_install() {
     has_cmd delta || bi git-delta
     has_cmd choose || bi choose-rust
     has_cmd btm || bi bottom
-    has_cmd tv || bi television
     has_cmd nu || bi nushell
 
     alias gdu=gdu-go
@@ -1298,6 +1300,37 @@ gnome_config_install() {
 
     # # Configure AlphabeticalAppGrid
     # gsettings set org.gnome.shell.extensions.alphabetical-app-grid folder-order-position 'end'
+
+    # app/com.github.rafostar.Clapper
+    # app/org.fedoraproject.MediaWriter
+    # app/com.github.tchx84.Flatseal
+    # app/io.github.flattool.Ignition
+    # app/io.github.flattool.Warehouse
+    # app/org.gnome.baobab
+    # app/org.gnome.Calculator
+    # app/org.gnome.Calendar
+    # app/org.gnome.Characters
+    # app/org.gnome.clocks
+    # app/org.gnome.Connections
+    # app/org.gnome.Contacts
+    # app/org.gnome.DejaDup
+    # app/org.gnome.Papers
+    # app/com.mattjakeman.ExtensionManager
+    # app/org.gnome.FileRoller
+    # app/org.gnome.font-viewer
+    # app/org.gnome.Logs
+    # app/org.gnome.Loupe
+    # app/org.gnome.Maps
+    # app/org.gnome.NautilusPreviewer
+    # app/org.gnome.World.PikaBackup
+    # app/org.gnome.TextEditor
+    # app/org.gnome.Weather
+    # app/io.missioncenter.MissionCenter
+    # app/org.mozilla.firefox
+    # app/org.mozilla.Thunderbird
+    # app/org.gustavoperedo.FontDownloader
+    # runtime/org.gtk.Gtk3theme.adw-gtk3/x86_64/3.22
+    # runtime/org.gtk.Gtk3theme.adw-gtk3-dark/x86_64/3.22
 }
 
 plasma_major_version() {
