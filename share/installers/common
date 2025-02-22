@@ -218,6 +218,7 @@ vscode_config_install() {
         safe-cp $DOT_DIR/extras/vscode/minimal-settings.json "$HOME/Library/Application Support/Code/User/settings.json"
     else
         smd $XDG_CONFIG_HOME/Code/User
+        fmv $XDG_CONFIG_HOME/Code/User/settings.json $XDG_CONFIG_HOME/Code/User/settings.json.bak
         safe-cp $DOT_DIR/extras/vscode/minimal-settings.json $XDG_CONFIG_HOME/Code/User/settings.json
     fi
 
