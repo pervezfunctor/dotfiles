@@ -85,10 +85,12 @@ essential_install() {
 #   redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common wl-clipboard
 
 cli_install() {
-    sudo apt purge -y stow # old version does not work on dot-* folders
+    # old fzf doesn't support --bash
+    # old stow version does not work on dot-* folders; 
+    sudo apt purge -y stow fzf
     si gawk tmux pkg-config urlview zsh git
 
-    # better installed using brew
+    # installed using brew
     # si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
     # si gh shellcheck just htop shfmt tree-sitter-cli
 
