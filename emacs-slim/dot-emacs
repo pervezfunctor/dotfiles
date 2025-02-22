@@ -20,11 +20,32 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
+(setq straight-use-package-by-default t)
 (straight-use-package 'use-package)
+
+(use-package catppuccin-theme
+  :config
+  (load-theme 'catppuccin :no-confirm))
+
+;; (require 'use-package)
+;; (setq use-package-always-ensure t)
+;; (setq use-package-expand-minimally t)
+
+;; (use-package package
+;;   :custom
+;;   (package-archives '(("melpa" . "https://melpa.org/packages/")
+;;                       ("org" . "https://orgmode.org/elpa/")
+;;                       ("elpa" . "https://elpa.gnu.org/packages/")))
+;;   :config
+;;   (package-initialize)
+;;   (unless (package-installed-p 'use-package)
+;;     (package-refresh-contents)
+;;     (package-install 'use-package))
+;;   (setq use-package-always-ensure t))
 
 (use-package emacs
   :init
-  (load-theme 'wombat t)
+  ;; (load-theme 'wombat t)
 
   (when (display-graphic-p)
     (if (find-font (font-spec :name "Jetbrains Mono"))
@@ -138,21 +159,39 @@
   (scroll-conservatively 100)
   (use-short-answers t))
 
-(require 'use-package)
-(setq use-package-always-ensure t)
-(setq use-package-expand-minimally t)
+(use-package mouse
+  :straight nil
+  :config
+  (setq mouse-drag-and-drop-region t
+        mouse-drag-and-drop-region-cut-when-buffers-differ t
+        mouse-drag-and-drop-region-show-tooltip t
+        mouse-drag-and-drop-region-show-cursor t)
 
-;; (use-package package
-;;   :custom
-;;   (package-archives '(("melpa" . "https://melpa.org/packages/")
-;;                       ("org" . "https://orgmode.org/elpa/")
-;;                       ("elpa" . "https://elpa.gnu.org/packages/")))
-;;   :config
-;;   (package-initialize)
-;;   (unless (package-installed-p 'use-package)
-;;     (package-refresh-contents)
-;;     (package-install 'use-package))
-;;   (setq use-package-always-ensure t))
+  (unless (display-graphic-p)
+    (require 'mouse)
+    (xterm-mouse-mode 1)
+    (global-set-key [mouse-4] (lambda () (interactive) (scroll-down 5)))
+    (global-set-key [mouse-5] (lambda () (interactive) (scroll-up 5)))))
+
+(use-package uniquify
+  :straight nil
+  :init
+  (setq uniquify-buffer-name-style 'forward
+        uniquify-separator "/"
+        uniquify-after-kill-buffer-p t
+        uniquify-ignore-buffers-re "^\\*"
+        uniquify-min-dir-content 1))
+
+(use-package blackout
+  :ensure t
+  :config
+  (blackout 'auto-fill-mode)
+  (blackout 'flymake-mode)
+  (blackout 'auto-revert-mode)
+  (blackout 'word-wrap-whitespace-mode)
+  (blackout 'visual-line-mode)
+  (blackout 'hs-minor-mode)
+  (blackout 'auto-revert-mode))
 
 (use-package xdg
   :ensure t
@@ -178,7 +217,7 @@
   (setq tramp-persistency-file-name (expand-file-name "emacs/tramp" (xdg-state-home))))
 
 (use-package recentf
-  :ensure nil
+  :straight nil
   :config
   (recentf-mode 1)
   :custom
@@ -190,36 +229,30 @@
   :bind ("C-x C-r" . recentf-open-files))
 
 (use-package savehist
-  :ensure nil
+  :straight nil
   :config
   (savehist-mode 1)
   :custom
   (savehist-additional-variables '(search-ring regexp-search-ring))
   (savehist-autosave-interval 60))
 
-(use-package uniquify
-  :ensure nil
-  :custom
-  (uniquify-buffer-name-style 'forward)
-  (uniquify-separator "/")
-  (uniquify-after-kill-buffer-p t)
-  (uniquify-ignore-buffers-re "^\\*"))
-
 (use-package server
-  :ensure nil
+  :straight nil
   :config
   (unless (server-running-p)
     (server-start)))
 
 (use-package saveplace
-  :ensure nil
+  :straight nil
   :config
   (save-place-mode 1)
   :custom
   (save-place-file (locate-user-emacs-file "places")))
 
 (use-package savehist
-  :ensure nil
+  :straight nil
+  :init
+  (setq desktop-save 'if-exists)
   :config
   (savehist-mode 1)
   :custom
@@ -228,7 +261,7 @@
   (savehist-autosave-interval 60))
 
 (use-package desktop
-  :ensure nil
+  :straight nil
   :config
   (desktop-save-mode 1)
   :custom
@@ -241,24 +274,24 @@
   :config
   (xclip-mode +1))
 
-(use-package mouse
-  :ensure nil
-  :custom
-  (mouse-drag-and-drop-region t)
-  (mouse-drag-and-drop-region-cut-when-buffers-differ t)
-  (mouse-drag-and-drop-region-show-tooltip t)
-  (mouse-drag-and-drop-region-show-cursor t)
+(use-package sudo-edit
+  :bind (("C-c C-r" . sudo-edit)
+         ("C-c C-f" . sudo-edit-find-file))
   :config
-  (unless (display-graphic-p)
-    (require 'mouse)
-    (xterm-mouse-mode 1)
-    (global-set-key [mouse-4] (lambda () (interactive) (scroll-down 5)))
-    (global-set-key [mouse-5] (lambda () (interactive) (scroll-up 5)))))
+  (setq sudo-edit-indicator-mode t
+        sudo-edit-local-method "sudo")
 
-(use-package sudo-edit)
+  (defun my/sudo-edit-on-save-error ()
+    "Automatically reopen file with sudo if save fails due to permissions."
+    (interactive)
+    (when (and buffer-file-name
+               (not (file-writable-p buffer-file-name)))
+      (when (y-or-n-p "File not writable. Reopen it as root? ")
+        (sudo-edit))))
+
+  (add-hook 'find-file-hook #'my/sudo-edit-on-save-error))
 
 (use-package ace-window
-  :ensure nil
   :bind ("C-x o" . ace-window)
   :init
   (setq aw-dispatch-always t))
@@ -267,7 +300,6 @@
 (windmove-default-keybindings)
 
 (use-package buffer-move
-  :ensure nil
   :bind (("<C-S-up>" . buf-move-up)
          ("<C-S-down>" . buf-move-down)
          ("<C-S-left>" . buf-move-left)
@@ -277,38 +309,39 @@
 (bind-key "RET" 'newline-and-indent)
 
 (use-package move-dup
-  :bind (("M-S-<down>" . md/move-lines-down)
-         ("M-s-<down>" . md/duplicate-down)
-         ("M-s-<up>" . md/duplicate-up)
-         ("M-S-<up>" . md/move-lines-up)))
+  :bind (("M-S-<down>" . move-dup-move-lines-down)
+         ("M-s-<down>" . move-dup-duplicate-down)
+         ("M-s-<up>" . move-dup-duplicate-up)
+         ("M-S-<up>" . move-dup-move-lines-up)))
 
-;; magit needs sqlite3 in emacs 29?
-;; (use-package sqlite3)
+(use-package magit
+  :ensure t
+  :bind (("C-x g" . magit-status))
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+  (magit-diff-refine-hunk 'all)
+  (magit-save-repository-buffers 'dontask)
+  ;; (magit-repository-directories '(("~/programs" . 2) ("~/.ilm" . 1)))  ;; Define Git repos
+  :config
+  ;; Improve Magit performance on large repositories
+  (setq magit-refresh-status-buffer nil)
 
-;; (use-package magit
-;;   :ensure t
-;;   :bind (("C-x g" . magit-status))
-;;   :custom
-;;   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
-;;   (magit-diff-refine-hunk 'all)
-;;   (magit-save-repository-buffers 'dontask)
-;;   ;; (magit-repository-directories '(("~/programs" . 2) ("~/.ilm" . 1)))  ;; Define Git repos
-;;   :config
-;;   ;; Improve Magit performance on large repositories
-;;   (setq magit-refresh-status-buffer nil)
+  ;; Automatically Refresh Magit Buffers**
+  (add-hook 'after-save-hook #'magit-after-save-refresh-status)
 
-;;   ;; Automatically Refresh Magit Buffers**
-;;   (add-hook 'after-save-hook #'magit-after-save-refresh-status)
+  (with-eval-after-load 'project
+    (define-key project-prefix-map (kbd "m") #'magit-project-status)))
 
-;;   (with-eval-after-load 'project
-;;     (define-key project-prefix-map (kbd "m") #'magit-project-status)))
+;; (use-package sqlite3) ;; forge needs sqlite3
 
 ;; GitHub/GitLab Issues & PRs**
-(use-package forge
-  :after magit
-  :custom
-  (forge-topic-list-limit '(100 . -10))  ;; Show last 100 issues & PRs
-  (auth-sources '("~/.authinfo.gpg")))  ;; Store credentials securely
+;; (use-package forge
+;;   :after magit
+;;   :config
+;;   (setq forge-alist nil)
+;;   :custom
+;;   (forge-topic-list-limit '(100 . -10))  ;; Show last 100 issues & PRs
+;;   (auth-sources '("~/.authinfo.gpg")))  ;; Store credentials securely
 
 (use-package which-key
   :init
@@ -320,7 +353,7 @@
   (wgrep-change-readonly-file t))
 
 (use-package rainbow-mode
-  :diminish
+  :blackout rainbow-mode
   :hook org-mode prog-mode)
 
 (use-package rainbow-delimiters
@@ -329,7 +362,7 @@
 
 ;; (use-package company
 ;;   :defer 2
-;;   :diminish
+;;   :blackout company-mode
 ;;   :custom
 ;;   (company-begin-commands '(self-insert-command))
 ;;   (company-idle-delay .1)
@@ -340,11 +373,11 @@
 
 ;; (use-package company-box
 ;;   :after company
-;;   :diminish
+;;   :blackout company-box-mode
 ;;   :hook (company-mode . company-box-mode))
 
 (use-package treesit
-  :ensure nil
+  :straight nil
   :config
   (setq treesit-language-source-alist
         '((python "https://github.com/tree-sitter/tree-sitter-python")
@@ -373,11 +406,6 @@
                  (cons (intern (format "%s-mode" lang))
                        (intern (format "%s-ts-mode" lang))))))
 
-(straight-use-package
- '(corfu-terminal
-   :type git
-   :repo "https://codeberg.org/akib/emacs-corfu-terminal.git"))
-
 (use-package corfu
   :ensure t
   :custom
@@ -390,10 +418,25 @@
   (corfu-scroll-margin 5)
   :init
   (global-corfu-mode)
+  :bind
+  (:map corfu-map
+        ("M-d" . corfu-popupinfo--toggle))
+  :config
+  (corfu-popupinfo-mode 1))
+
+(use-package corfu-terminal
+  :config
   (unless (display-graphic-p)
     (corfu-terminal-mode +1)))
 
-
+(use-package kind-icon
+  :ensure t
+  :config
+  (add-hook 'my-completion-ui-mode-hook
+   	    (lambda ()
+   	      (setq completion-in-region-function
+   		    (kind-icon-enhance-completion
+   		     completion-in-region-function)))))
 
 (use-package cape
   :ensure t
@@ -410,40 +453,25 @@
   (completion-category-overrides '((eglot (styles orderless)))))
 
 (use-package eglot
-  :ensure nil
-  :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
-  :config
+  :straight nil
 
+  :hook ((c-mode c++-mode c-ts-mode c++-ts-mode python-mode python-ts-mode rust-mode rust-ts-mode) . eglot-ensure)
+
+  :config
   (with-eval-after-load 'eglot
     (add-to-list 'eglot-server-programs
-                 '(c++-ts-mode . ("clangd" "--stdlib=c++")))))
-
-(use-package eldoc
-  :ensure nil
-  :diminish eldoc-mode
-  :init
-  (add-hook 'eval-expression-minibuffer-setup-hook #'eldoc-mode)
-  (add-hook 'ielm-mode-hook #'eldoc-mode)
-  (add-hook 'emacs-lisp-mode-hook #'eldoc-mode)
-  :custom
-  (eldoc-idle-delay 0.2))
-
-(use-package blackout
-  :defer 3
-  :ensure t
-  :config
-  (blackout 'auto-fill-mode)
-  (blackout 'flymake-mode)
-  (blackout 'auto-revert-mode)
-  (blackout 'rainbow-mode)
-  (blackout 'apheleia-mode)
-  (blackout 'word-wrap-whitespace-mode)
-  (blackout 'flycheck-mode)
-  (blackout 'which-key-mode)
-  (blackout 'visual-line-mode)
-  (blackout 'hs-minor-mode)
-  (blackout 'auto-revert-mode)
-  (blackout 'company-mode))
+                 '(c++-mode . ("clangd"
+                               "-j=8"
+                               "-std=c++23"
+                               "-stdlib=c++"
+                               "--log=error"
+                               "--malloc-trim"
+                               "--background-index"
+                               "--clang-tidy"
+                               "--completion-style=detailed"
+                               "--pch-storage=memory"
+                               "--header-insertion=never"
+                               "--header-insertion-decorators=0")))))
 
 (use-package apheleia
   :ensure t
@@ -459,13 +487,8 @@
 
   (apheleia-global-mode +1))
 
-(use-package python
-  :ensure nil
-  :custom
-  (python-indent-offset 2))
-
 (use-package isearch
-  :ensure nil
+  :straight nil
   :custom
   (isearch-allow-scroll t)
   (isearch-lazy-highlight t)
@@ -493,8 +516,18 @@
   ;; ⚡ Recenter after search end
   (add-hook 'isearch-mode-end-hook #'(lambda () (recenter))))
 
+(use-package eldoc
+  :straight nil
+  :blackout eldoc-mode
+  :init
+  (add-hook 'eval-expression-minibuffer-setup-hook #'eldoc-mode)
+  (add-hook 'ielm-mode-hook #'eldoc-mode)
+  (add-hook 'emacs-lisp-mode-hook #'eldoc-mode)
+  :custom
+  (eldoc-idle-delay 0.2))
+
 (use-package dired
-  :ensure nil
+  :straight nil
   :config
   (setq dired-recursive-copies 'always
         dired-recursive-deletes 'always
@@ -509,14 +542,14 @@
   (dired-recursive-copies 'always))
 
 (use-package ediff
-  :ensure nil
+  :straight nil
   :init
   (setq  ediff-window-setup-function 'ediff-setup-windows-plain
          ediff-split-window-function 'split-window-horizontally
          ediff-merge-split-window-function 'split-window-horizontally))
 
 (use-package grep
-  :ensure nil
+  :straight nil
   :config
   (when (eq system-type 'windows-nt)
     (setq grep-use-null-device t))
@@ -527,7 +560,7 @@
   (grep-scroll-output t))
 
 (use-package json
-  :ensure nil
+  :straight nil
   :mode "\\.json\\'"
   :custom
   (json-reformat:pretty-string? t)
@@ -537,23 +570,12 @@
 (use-package flycheck
   :ensure t)
 
-(defun my-c++-mode-setup ()
-  "Enable Flycheck and disable Flymake locally for C++ modes."
-  (flymake-mode -1)  ;; Disable Flymake locally
-  (flycheck-mode 1)) ;; Enable Flycheck only in C++ buffers
+;; (use-package cc-mode
+;;   :straight nil
+;;   :config
+;;   (defun my-c++-mode-setup ()
+;;     (flymake-mode -1)
+;;     (flycheck-mode 1))
 
-(add-hook 'c++-mode-hook #'my-c++-mode-setup)
-(add-hook 'c++-ts-mode-hook #'my-c++-mode-setup) ;; For tree-sitter C++ mode
-
-;; (use-package flymake
-;;   :ensure nil
-;;   :custom
-;;   (flymake-start-on-flymake-mode t)
-;;   (flymake-no-changes-timeout 1))
-
-;; (use-package json-ts-mode
-;;   :ensure nil
-;;   :mode "\\.json\\'"
-;;   :hook
-;;   (json-mode .eglot-ensure)
-;;   (json-ts-mode . eglot-ensure))
+;;   (add-hook 'c++-mode-hook #'my-c++-mode-setup)
+;;   (add-hook 'c++-ts-mode-hook #'my-c++-mode-setup))
