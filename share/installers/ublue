@@ -103,7 +103,7 @@ main() {
     # emacs_setup
 }
 
-is_aurora || is_bluefin || err_exit "This script is only for Aurora/Bluefin"
+is_ublue || err_exit "This script is only for Aurora/Bluefin"
 
 has_cmd git || err_exit "git not installed! Qutting."
 

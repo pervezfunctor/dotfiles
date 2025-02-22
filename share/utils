@@ -301,6 +301,10 @@ is_bluefin() {
     [[ "${ID:-}" =~ .*bluefin.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bluefin.* ]]
 }
 
+is_ublue() {
+    is_aurora || is_bluefin
+}
+
 is_std_atomic() {
     is_kinoite || is_silverblue # || sway atomic
 }
