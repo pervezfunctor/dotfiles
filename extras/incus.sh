@@ -13,4 +13,3 @@ incus_vms() {
   incus launch images:opensuse/tumbleweed-vm tumbleweed --vm
   incus launch images:archlinux/current archlinux-vm --vm
 }
-

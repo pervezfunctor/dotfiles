@@ -255,6 +255,10 @@ is_ubuntu() {
     [[ "$ID" == *"ubuntu"* ]] || [[ "$ID" == *"neon"* ]] || [[ "$ID" == *"elementary"* ]] || [[ "$ID" == *"linuxmint"* ]] || [[ "$ID" == *"pop"* ]]
 }
 
+is_inside_distrobox() {
+    [[ "$CONTAINER_ID" != "" ]]
+}
+
 is_apt() {
     is_ubuntu || is_debian
 }

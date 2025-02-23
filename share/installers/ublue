@@ -126,11 +126,14 @@ distrobox_setup() {
 
 main() {
     if is_bluefin; then
+        slog "Setup Bluefin CLI"
         ujust bluefin-cli
     else
+        slog "Setup Aurora CLI"
         ujust aurora-cli
     fi
 
+    slog "Setup cockpit"
     ujust cockpit
 
     dotfiles_install
@@ -147,6 +150,7 @@ main() {
         emacs_setup
     fi
 
+    slog "Update system"
     ujust update
 }
 
