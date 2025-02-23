@@ -1222,10 +1222,12 @@ gnome_basic_settings() {
         return 1
     fi
 
+    gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
     gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
     gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
     gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
+    gsettings set org.gnome.desktop.interface accent-color 'purple'
 }
 
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
