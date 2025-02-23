@@ -1,7 +1,7 @@
 xwayland disable
 
 input "type:keyboard" {
-	xkb_options ctrl:nocaps
+	xkb_options caps:ctrl_modifier
 }
 
 # output * bg /usr/share/wallpapers/openSUSEdefault/contents/images/default-dark.png fill
