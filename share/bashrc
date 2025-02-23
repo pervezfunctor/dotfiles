@@ -17,7 +17,7 @@ source_if_exists $DOT_DIR/share/aliases
 source_if_exists "$HOME/.localbashrc"
 source_if_exists "$XDG_CONFIG_HOME/localbashrc"
 
-if ! $is_ublue && has_cmd starship; then
+if ! is_ublue && has_cmd starship; then
     has_cmd direnv && eval "$(direnv hook bash)"
     has_cmd zoxide && eval "$(zoxide init bash)"
     has_cmd fzf && source <(fzf --bash)

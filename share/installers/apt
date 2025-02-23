@@ -86,7 +86,7 @@ essential_install() {
 
 cli_install() {
     # old fzf doesn't support --bash
-    # old stow version does not work on dot-* folders; 
+    # old stow version does not work on dot-* folders;
     sudo apt purge -y stow fzf
     si gawk tmux pkg-config urlview zsh git
 
@@ -117,7 +117,7 @@ cpp_install() {
 vscode_bin_install() {
     has_cmd code && return 0
 
-    if ! grep -q "https://packages.microsoft.com/repos/code stable main" /etc/apt/sources.list.d/vscode.list; then
+    if ! grep -q "https://packages.microsoft.com/repos/code stable main" /etc/apt/sources.list.d/vscode.list 2> /dev/null; then
         echo "code code/add-microsoft-repo boolean true" | sudo debconf-set-selections
 
         wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
