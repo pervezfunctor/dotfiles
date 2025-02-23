@@ -310,8 +310,8 @@
 
 (use-package move-dup
   :bind (("M-S-<down>" . move-dup-move-lines-down)
-         ("M-s-<down>" . move-dup-duplicate-down)
-         ("M-s-<up>" . move-dup-duplicate-up)
+         ("M-<down>" . move-dup-duplicate-down)
+         ("M-<up>" . move-dup-duplicate-up)
          ("M-S-<up>" . move-dup-move-lines-up)))
 
 (use-package magit
@@ -433,10 +433,10 @@
   :ensure t
   :config
   (add-hook 'my-completion-ui-mode-hook
-   	    (lambda ()
-   	      (setq completion-in-region-function
-   		    (kind-icon-enhance-completion
-   		     completion-in-region-function)))))
+   	        (lambda ()
+   	          (setq completion-in-region-function
+   		            (kind-icon-enhance-completion
+   		             completion-in-region-function)))))
 
 (use-package cape
   :ensure t
@@ -462,8 +462,8 @@
     (add-to-list 'eglot-server-programs
                  '(c++-mode . ("clangd"
                                "-j=8"
-                               "-std=c++23"
-                               "-stdlib=c++"
+                               ;; "-std=c++23"
+                               ;; "-stdlib=c++"
                                "--log=error"
                                "--malloc-trim"
                                "--background-index"
@@ -567,15 +567,4 @@
   (json-serialize-pretty t)
   (json-object-type 'plist))
 
-(use-package flycheck
-  :ensure t)
-
-;; (use-package cc-mode
-;;   :straight nil
-;;   :config
-;;   (defun my-c++-mode-setup ()
-;;     (flymake-mode -1)
-;;     (flycheck-mode 1))
-
-;;   (add-hook 'c++-mode-hook #'my-c++-mode-setup)
-;;   (add-hook 'c++-ts-mode-hook #'my-c++-mode-setup))
+(use-package flycheck :ensure t)
