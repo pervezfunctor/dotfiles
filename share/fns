@@ -96,3 +96,29 @@ one_shell_tmux() {
 
     exec tmux attach-session -t "$tmux_session"
 }
+
+dbox_nvidia_container_toolkit() {
+    if has_cmd podman; then
+        distrobox create --name example-nvidia-toolkit --additional-flags "--gpus all" --image docker.io/nvidia/cuda
+    elif has_cmd docker; then
+        distrobox create --name example-nvidia-toolkit --additional-flags "--gpus all --device=nvidia.com/gpu=all" --image docker.io/nvidia/cuda
+    else
+        warn "podman or docker not found"
+    fi
+}
+
+dbox_to_image() {
+    if has_cmd podman; then
+        podman container commit -p distrobox_name $1
+        podman save $1:latest | bzip2 > $1.tar.bz
+    elif has_cmd docker; then
+        docker container commit -p distrobox_name $1
+        docker save $1:latest | gzip > $1.tar.gz
+    fi
+}
+
+dbox_from_image() {
+    distrobox create --image $1:latest --name distrobox_name
+    distrobox enter --name distrobox_name
+}
+

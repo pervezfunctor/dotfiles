@@ -156,6 +156,8 @@ alias tboxl='toolbox list'
 alias tboxr='toolbox run'
 alias tboxc='toolbox create'
 
+[[ "${CONTAINER_ID}" != "" ]] && alias on-host='distrobox-host-exec'
+
 alias la=tree
 
 if has_cmd code; then
@@ -241,12 +243,14 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
 fi
 
 if has_cmd eza; then
+    alias ls="eza --icons=auto --group-directories-first"
     alias ll='eza -l --icons=auto --group-directories-first'
     alias l1='eza -1'
     alias l="eza -l --icons --git -a"
     alias lt="eza --tree --level=2 --long --icons --git"
     alias ltree="eza --tree --level=2  --icons --git"
-    alias ls='eza -lh --group-directories-first --icons'
+    # alias ls='eza -lh --group-directories-first --icons'
+
     alias lt='eza --tree --level=2 --long --icons --git'
     alias l.='eza -d .*'
 fi
