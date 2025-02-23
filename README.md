@@ -176,3 +176,7 @@ stow share bin # this is required
 stow zsh
 stow emacs nvim sway # folder names
 ```
+
+## Tips
+
+1. [Don’t change your login shell, use a modern terminal emulator](https://tim.siosm.fr/blog/2023/12/22/dont-change-defaut-login-shell/)
