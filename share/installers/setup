@@ -2,7 +2,13 @@
 
 {
 
-source <(curl -sSL https://dub.sh/z3pTnAK || wget -qO- https://dub.sh/z3pTnAK)
+if command -v curl 2>&1; then
+    source <(curl -sSL https://dub.sh/z3pTnAK)
+elif command -v wget 2>&1; then
+    source <(wget -qO- https://dub.sh/z3pTnAK)
+else
+    echo "curl or wget is not installed"
+fi
 
 main() {
     if [[ "$#" -eq 1 ]] && has_cmd "${1}-group_install"; then

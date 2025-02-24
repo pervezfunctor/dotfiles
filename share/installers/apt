@@ -4,13 +4,6 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-if command -v apt-get > /dev/null; then
-    sudo apt-get -qq -y install curl sudo
-else
-    echo "apt-get not found. Quitting."
-    exit 1
-fi
-
 si() {
     for p in "$@"; do
       slog "Installing package $p"
@@ -134,6 +127,23 @@ vscode_bin_install() {
     vscode_extensions_install
 
     cmd_check code
+}
+
+windsurf_install() {
+    has_cmd windsurf && return 0
+
+    slog "Installing windsurf"
+
+    # first ceck if it's already added
+    if ! [ -f /etc/apt/sources.list.d/windsurf.list ]; then
+        curl -fsSL "https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/windsurf.gpg" | sudo gpg --dearmor -o /usr/share/keyrings/windsurf-stable-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/windsurf-stable-archive-keyring.gpg arch=amd64] https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/apt stable main" | sudo tee /etc/apt/sources.list.d/windsurf.list > /dev/null
+    fi
+
+    sudo apt-get -qq update
+    si windsurf
+
+    slog "windsurf installation done!"
 }
 
 ui_install() {
