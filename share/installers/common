@@ -105,6 +105,19 @@ flathub_install() {
     fi
 }
 
+cursor_install() {
+    has_cmd cursor && return 0
+
+    if ! has_cmd appman; then
+        warn "appman not installed, skipping cursor"
+        return 1
+    fi
+
+    slog "Installing cursor"
+    ami cursor
+    slog "cursor installation done!"
+}
+
 vscode_flatpak_install() {
     fpi com.visualstudio.code
     flatpak install com.visualstudio.code.tool.podman
@@ -1302,6 +1315,7 @@ gnome_config_install() {
 
     # # Configure AlphabeticalAppGrid
     # gsettings set org.gnome.shell.extensions.alphabetical-app-grid folder-order-position 'end'
+
 
     # app/com.github.rafostar.Clapper
     # app/org.fedoraproject.MediaWriter
