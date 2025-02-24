@@ -57,6 +57,8 @@ essential_install() {
 }
 
 cli_install() {
+    slog "Installing cli tools using zypper"
+
     si gh neovim zsh tree-sitter tmux sd bat fd fzf ripgrep zoxide
     si lazygit bottom lsd git-delta htop xh
     si lua54-luarocks python3-neovim ImageMagick

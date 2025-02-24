@@ -1,4 +1,4 @@
-[general]
+# [general]
 import = ["~/.config/alacritty/catppuccin-mocha.toml"]
 
 [window]
@@ -17,19 +17,19 @@ x = 5
 y = 5
 
 [font.bold]
-family = "MonaspiceRn Nerd Font Mono"
+family = "JetbrainsMono Nerd Font"
 style = "Bold"
 
 [font.bold_italic]
-family = "MonaspiceRn Nerd Font Mono"
+family = "JetbrainsMono Nerd Font"
 style = "Bold Italic"
 
 [font.italic]
-family = "MonaspiceRn Nerd Font"
+family = "JetbrainsMono Nerd Font"
 style = "Italic"
 
 [font.normal]
-family = "MonaspiceRn Nerd Font Mono"
+family = "JetbrainsMono Nerd Font"
 
 [font]
 size = 12.0

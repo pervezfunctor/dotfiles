@@ -78,6 +78,8 @@ essential_install() {
 #   redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common wl-clipboard
 
 cli_install() {
+    slog "Installing cli tools using apt"
+
     # old fzf doesn't support --bash
     # old stow version does not work on dot-* folders;
     sudo apt purge -y stow fzf
