@@ -149,7 +149,7 @@ windsurf_install() {
 }
 
 ui_install() {
-    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
+    si kitty chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
 
     vscode_bin_install
     apps_install
