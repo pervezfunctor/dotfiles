@@ -22,3 +22,4 @@ debug
 foo.*
 *.log
 data
+yazi/dot-config/yazi/package.toml
