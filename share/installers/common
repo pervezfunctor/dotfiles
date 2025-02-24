@@ -146,7 +146,6 @@ apps_install() {
 
     apps_slim_install
 
-    fpi org.wezfurlong.wezterm
     fpi io.github.shiftey.Desktop
     fpi io.github.dvlv.boxbuddyrs
     fpi io.github.getnf.embellish
@@ -157,6 +156,8 @@ apps_install() {
 }
 
 more_apps_install() {
+    fpi org.wezfurlong.wezterm
+    fpi app.devsuite.Ptyxis
     fpi app.devsuite.Ptyxis
     fpi org.wireshark.Wireshark
     fpi sh.cider.Cider
