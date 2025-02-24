@@ -14,7 +14,7 @@ source_if_exists() {
 
 source_curl() {
     slog "sourcing: $1"
-    source <(curl -sSL "$1")
+    source <(curl -sSL "$1" || wget -qO- "$1")
 }
 
 sh_curl() {
