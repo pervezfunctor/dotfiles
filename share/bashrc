@@ -5,7 +5,7 @@ export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
 source $DOT_DIR/share/shellrc
 
-# if interactive shell then return
+
 [[ $- == *i* ]] || return
 
 has_cmd mise && eval "$(mise activate bash)"
@@ -17,12 +17,14 @@ source_if_exists $DOT_DIR/share/aliases
 source_if_exists "$HOME/.localbashrc"
 source_if_exists "$XDG_CONFIG_HOME/localbashrc"
 
-if ! is_ublue && has_cmd starship; then
-    has_cmd direnv && eval "$(direnv hook bash)"
+is_ublue && return
+
+if has_cmd starship; then
+    eval "$(starship init bash)"
     has_cmd zoxide && eval "$(zoxide init bash)"
     has_cmd fzf && source <(fzf --bash)
-    has_cmd atuin && eval "$(atuin init bash --disable-up-arrow --disable-ctrl-r)"
-    eval "$(starship init bash)"
+    # has_cmd direnv && eval "$(direnv hook bash)"
+    # has_cmd atuin && eval "$(atuin init bash --disable-up-arrow --disable-ctrl-r)"
 fi
 
 # one_shell_tmux
