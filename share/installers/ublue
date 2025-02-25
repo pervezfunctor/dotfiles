@@ -127,14 +127,11 @@ distrobox_setup() {
 main() {
     if is_bluefin; then
         slog "Setup Bluefin CLI"
-        ujust bluefin-cli
+        just bluefin-cli
     else
         slog "Setup Aurora CLI"
-        ujust aurora-cli
+        just aurora-cli
     fi
-
-    slog "Setup cockpit"
-    ujust cockpit
 
     dotfiles_install
     brew_setup
@@ -150,8 +147,8 @@ main() {
         emacs_setup
     fi
 
-    slog "Update system"
-    ujust update
+    slog "Setup cockpit"
+    just cockpit
 }
 
 is_ublue || err_exit "This script is only for Aurora/Bluefin"
