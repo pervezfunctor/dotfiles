@@ -14,6 +14,7 @@ has_cmd mise && eval "$(mise activate zsh)"
 has_cmd zoxide && eval "$(zoxide init zsh)"
 has_cmd fzf && source <(fzf --zsh)
 has_cmd atuin && eval "$(atuin init zsh --disable-up-arrow --disable-ctrl-r)"
+has_cmd pixi && eval "$(pixi completion --shell zsh)"
 
 HISTFILE=~/.histfile
 HISTSIZE=1000
@@ -122,7 +123,7 @@ if [[ -n "${terminfo[kcud1]}" ]]; then
     autoload -U down-line-or-beginning-search
     zle -N down-line-or-beginning-search
 
-    bindkey -M emacs "${terminfo[kcud1]}" down-line-or-beginning-search
+bindkey -M emacs "${terminfo[kcud1]}" down-line-or-beginning-search
 fi
 
 # [Home] - Go to beginning of line
@@ -197,8 +198,6 @@ bindkey '^j' down-line-or-search
 source_if_exists $DOT_DIR/share/fns
 source_if_exists $DOT_DIR/share/aliases
 
-has_cmd pixi && eval "$(pixi completion --shell zsh)"
-
 # Called before prompt(?)
 function precmd {
     # Set window title
@@ -213,3 +212,6 @@ function preexec {
 source_if_exists "$HOME/.localzshrc"
 
 # one_shell_tmux
+
+# Generated for envman. Do not edit.
+[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
