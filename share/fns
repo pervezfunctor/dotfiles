@@ -1,40 +1,50 @@
-echodistrobox_create_ubuntu() {
+distrobox_create_ubuntu() {
+    smd ~/homes
     distrobox create --image ubuntu:latest --home /home/pervez/homes/ubuntu --name ubuntu
 }
 
 distrobox_create_arch() {
+    smd ~/homes
     distrobox create --image archlinux:latest --home /home/pervez/homes/arch --name arch
 }
 
 distrobox_create_fedora() {
+    smd ~/homes
     distrobox create --image fedora:latest --home /home/pervez/homes/fedora --name fedora
 }
 
 distrobox_create_centos() {
+    smd ~/homes
     distrobox create --image centos:latest --home /home/pervez/homes/centos --name centos
 }
 
 distrobox_create_debian() {
+    smd ~/homes
     distrobox create --image debian:latest --home /home/pervez/homes/debian --name debian
 }
 
 distrobox_create_rocky() {
+    smd ~/homes
     distrobox create --image  quay.io/rockylinux/rockylinux:9 --home /home/pervez/homes/rocky --name rocky
 }
 
 distrobox_create_tumbleweed() {
+    smd ~/homes
     distrobox create --image opensuse/tumbleweed --home /home/pervez/homes/tw --name tw
 }
 
 distrobox_create_bluefin() {
+    smd ~/homes
     distrobox create --image ghcr.io/ublue-os/bluefin-cli --home /home/pervez/homes/bluefin-cli --name bluefin-cli
 }
 
 distrobox_create_wolfi() {
+    smd ~/homes
     distrobox create --image ghcr.io/ublue-os/wolfi-toolbox --home /home/pervez/homes/wolfi-ublue --name wolfi-ublue
 }
 
 distrobox_ublue_all() {
+    smd ~/homes
     distrobox_create_bluefin
     distrobox_create_wolfi
 
@@ -44,6 +54,7 @@ distrobox_ublue_all() {
 }
 
 distrobox_toolbox_all() {
+    smd ~/homes
     distrobox create --image ubuntu-toolbox:latest --home /home/pervez/homes/ubuntu-toolbox --name ubuntu-toolbox
     distrobox create --image fedora-toolbox:latest --home /home/pervez/homes/fedora-toolbox --name fedora-toolbox
     distrobox create --image arch-toolbox:latest --home /home/pervez/homes/arch-toolbox --name arch-toolbox
@@ -53,6 +64,7 @@ distrobox_toolbox_all() {
 }
 
 distrobox_with_init() {
+    smd ~/homes
     distrobox create -i alpine:latest --init --additional-packages "openrc" -n test
     distrobox create -i debian:stable --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" -n test
     distrobox create -i ubuntu:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" -n test
@@ -64,6 +76,7 @@ distrobox_with_init() {
 toolbox_create_all() {
     slog "Creating toolbox containers"
 
+    smd ~/homes
     is_arch || toolbox create --assumeyes --distro arch arch
     is_fedora || toolbox create --assumeyes --distro fedora fedora
     is_ubuntu || toolbox create --assumeyes --distro ubuntu --release 24.10 ubuntu
@@ -98,6 +111,7 @@ one_shell_tmux() {
 }
 
 dbox_nvidia_container_toolkit() {
+    smd ~/homes
     if has_cmd podman; then
         distrobox create --name example-nvidia-toolkit --additional-flags "--gpus all" --image docker.io/nvidia/cuda
     elif has_cmd docker; then
@@ -108,6 +122,7 @@ dbox_nvidia_container_toolkit() {
 }
 
 dbox_to_image() {
+    smd ~/homes
     if has_cmd podman; then
         podman container commit -p distrobox_name $1
         podman save $1:latest | bzip2 > $1.tar.bz
@@ -118,6 +133,7 @@ dbox_to_image() {
 }
 
 dbox_from_image() {
+    smd ~/homes
     distrobox create --image $1:latest --name distrobox_name
     distrobox enter --name distrobox_name
 }
