@@ -24,11 +24,11 @@ kitty_install() {
     # force link
     ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
 
-    # smd ~/.local/share/applications
-    # safe-cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
-    # safe-cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
+    smd ~/.local/share/applications
+    cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
+    cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
 
-    # echo 'kitty.desktop' > ~/.config/xdg-terminals.list
+    echo 'kitty.desktop' > ~/.config/xdg-terminals.list
 }
 
 mise_install() {
@@ -769,16 +769,6 @@ nix_install() {
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 }
 
-atomic_shell_slim_install() {
-    wis gh bat fd rg
-    mis lazygit eza fzf zoxide starship yazi # tree-sitter
-
-    # Use distrobox/toolbox for most things.
-    # So tmux and nvim need not be installed on host
-    # ami tmux nvim
-    micro_install
-}
-
 brew_shell_install() {
     # bi ffmpeg sevenzip poppler imagemagick
     # bis gping ncdu httpie font-symbols-only-nerd-font
@@ -1133,7 +1123,7 @@ vscode_install() {
 }
 
 base-group_check() {
-    cmd_check gcc g++ make cmake curl wget git trash tree tar unzip stow
+    cmd_check gcc make curl wget git trash tree tar unzip stow
     dir_check $DOT_DIR
     bash_config_check
 }
