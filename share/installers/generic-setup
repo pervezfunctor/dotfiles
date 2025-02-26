@@ -1,0 +1,96 @@
+core_install() {
+  brew_install
+
+  bis git gcc make curl wget tree tar unzip stow
+  has_cmd trash || bi trash-cli
+}
+
+essential_install() {
+  core_install
+  # python_setup
+
+    bis zip unar micro cmake
+}
+
+cli_install() {
+  bis gh
+
+  bis zsh starship zsh-syntax-highlighting zsh-autosuggestions fzf fd bat zoxide trash-cli eza htop
+
+  bi bash-preexec
+
+  has_cmd trash || bi trash-cli
+  has_cmd rg || bi ripgrep
+  has_cmd delta || bi git-delta
+}
+
+nvim_brew_install() {
+    has_cmd nvim || bi neovim
+    bis tree-sitter luarocks gcc make
+}
+
+emacs_install() {
+  bis emacs clang-format clang-build-analyzer llvm cmake
+
+  emacs_config_install
+}
+
+shell_install() {
+  shell_required_brew_install
+  nvim_brew_install
+  emacs_brew_install
+}
+
+cpp_install() {
+  slog "Installing C++"
+
+  bi gcc gdb cmake boost catch2 ccache cppcheck pre-commit llvm clang-format clang-build-analyzer lld strace valgrind cppcheck
+
+  slog "C++ installation done!"
+}
+
+distrobox_install() {
+  has_cmd distrobox && return 0
+
+  curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh
+}
+
+ct_install() {
+  distrobox_install
+}
+
+vm_install() {
+  appman install virtualbox
+
+  has_cmd virt-manager && return 1
+
+  # if has_cmd distrobox; then
+  #   distrobox create -i fedora:latest --init -n virt-env
+  #   distrobox enter virt-env
+  #   sudo dnf install @virtualization
+  #   # sudo systemctl enable --now libvirtd
+  # fi
+}
+
+vscode_install() {
+  has_cmd code && return 0
+  has_cmd flatpak || return 1
+
+  vscode_flatpak_install
+}
+
+ui_install() {
+    kitty_install
+
+    if !has_cmd flatpak; then
+      cursor_install
+      warn "flatpal not installed, skipping apps"
+    fi
+
+    vscode_install
+    apps_install
+}
+
+has_cmd git || err_exit "git not installed! Qutting."
+
+bootstrap "generic OS"
