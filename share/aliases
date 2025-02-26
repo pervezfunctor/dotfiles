@@ -50,59 +50,69 @@ alias m="mkdir -p"
 # alias zz='fasd_cd -d -i' # cd with interactive selection
 # alias c="fasd -d -e code"
 
-alias c.="code ."
-alias cs="code --password-store=gnome-libsecret"
+if has_cmd code; then
+    alias c='code'
+    alias c.='code .'
+    alias cs="code --password-store=gnome-libsecret"
+fi
 
-alias git-unstage="git reset HEAD"
-alias git-discard="git checkout --"
-alias gst="git status"
-alias gsu="git status -u"
-alias tsgfm="git stash && ((git pull --rebase || git pull); git stash pop)"
+if has_cmd git; then
+    alias git-unstage="git reset HEAD"
+    alias git-discard="git checkout --"
+    alias gst="git status"
+    alias gsu="git status -u"
+    alias tsgfm="git stash && ((git pull --rebase || git pull); git stash pop)"
 
-alias gun="git-unstage"
-alias gur="git-discard"
-alias gcm="git commit -m"
-alias gcne="git commit --no-edit"
-alias gca="git commit --amend"
-alias gcan="git commit --amend --no-edit"
+    alias gun="git-unstage"
+    alias gur="git-discard"
+    alias gcm="git commit -m"
+    alias gcne="git commit --no-edit"
+    alias gca="git commit --amend"
+    alias gcan="git commit --amend --no-edit"
 
-alias g='git'
-alias gst="git status"
-alias gsu="git status -u"
-alias gcan="git commit --amend --no-edit"
-alias gsa='git stash apply'
-alias gfm='git pull'
-alias gp='git push'
-alias gcm='git commit --message'
-alias gia='git add'
-alias gl='git log --topo-order --pretty=format:"$_git_log_medium_format"'
-alias gco='git checkout'
-alias gb='git branch'
-alias gbc='git checkout -b'
-alias gbc='git checkout -b'
-alias gsl='git stash list'
+    alias g='git'
+    alias gst="git status"
+    alias gsu="git status -u"
+    alias gcan="git commit --amend --no-edit"
+    alias gsa='git stash apply'
+    alias gfm='git pull'
+    alias gp='git push'
+    alias gcm='git commit --message'
+    alias gia='git add'
+    alias gl='git log --topo-order --pretty=format:"$_git_log_medium_format"'
+    alias gco='git checkout'
+    alias gb='git branch'
+    alias gbc='git checkout -b'
+    alias gbc='git checkout -b'
+    alias gsl='git stash list'
+    alias Gcm="git commit --no-verify -m"
+    alias Gp="gp --no-verify"
+    alias Gcan="gcan --no-verify"
+fi
 
-alias n='pnpm'
-alias ni='pnpm install'
-alias ne='pnpm exec'
-alias nd='pnpm dev'
-alias nt='pnpm types'
-alias nc='pnpm ci'
-alias ntt='pnpm test'
-alias Gcm="git commit --no-verify -m"
-alias Gp="gp --no-verify"
-alias Gcan="gcan --no-verify"
-
-alias jf="code ~/programs/web/devfractal" # use j maybe?
-alias jd="code ~/.seartpy" # use j maybe?
+if has_cmd pnpm;then
+    alias n='pnpm'
+    alias ni='pnpm install'
+    alias ne='pnpm exec'
+    alias nd='pnpm dev'
+    alias nt='pnpm types'
+    alias nc='pnpm ci'
+    alias ntt='pnpm test'
+fi
 
 if is_ubuntu; then
     alias si="sudo apt-get -qq -y install"
     alias ss="apt-cache search"
     alias sr="sudo apt-get purge"
-fi
-
-if is_mac; then
+elif is_rh; then
+    alias si="sudo dnf -q -y install"
+    alias ss="dnf search"
+    alias sr="sudo dnf remove"
+elif is_suse; then
+    alias si="sudo zypper --non-interactive --quiet install --auto-agree-with-licenses"
+    alias ss="zypper search"
+    alias sr="sudo zypper remove"
+elif is_mac; then
     alias si="brew install -q"
     alias ss="brew search"
     alias sr="brew uninstall"
@@ -134,36 +144,39 @@ alias v="nvim"
 alias c="code"
 alias t="tmux"
 
-alias d="docker"
-alias dco="docker compose"
-alias dps="docker ps"
-alias dpa="docker ps -a"
-alias dl="docker ps -l -q"
-alias dx="docker exec -it"
-alias dlogs="docker logs -f"
-alias lzg='lazygit'
-alias lzd='lazydocker'
+if has_cmd docker; then
+    alias d="docker"
+    alias dco="docker compose"
+    alias dps="docker ps"
+    alias dpa="docker ps -a"
+    alias dl="docker ps -l -q"
+    alias dx="docker exec -it"
+    alias dlogs="docker logs -f"
+    alias lzg='lazygit'
+    alias lzd='lazydocker'
+fi
 
-alias dbox='distrobox'
-alias dboxe='distrobox enter'
-alias dboxl='distrobox list'
-alias dboxr='distrobox run'
-alias dboxc='distrobox create'
+if has_cmd distrobox; then
+    alias dbox='distrobox'
+    alias dboxe='distrobox enter'
+    alias dboxl='distrobox list'
+    alias dboxr='distrobox run'
+    alias dboxc='distrobox create'
 
-alias tbox='toolbox'
-alias tboxe='toolbox enter'
-alias tboxl='toolbox list'
-alias tboxr='toolbox run'
-alias tboxc='toolbox create'
+    [[ "${CONTAINER_ID}" != "" ]] && alias on-host='distrobox-host-exec'
+fi
 
-[[ "${CONTAINER_ID}" != "" ]] && alias on-host='distrobox-host-exec'
+if has_cmd toolbox; then
+    alias tbox='toolbox'
+    alias tboxe='toolbox enter'
+    alias tboxl='toolbox list'
+    alias tboxr='toolbox run'
+    alias tboxc='toolbox create'
+fi
+
 
 alias la=tree
 
-if has_cmd code; then
-    alias c='code'
-    alias c.='code .'
-fi
 
 alias l='ls -1A'         # Lists in one column, hidden files.
 alias ll='ls -lh'        # Lists human readable sizes.
@@ -265,7 +278,9 @@ if has_cmd ug ]; then
     alias xzfgrep='ug -zF'
 fi
 
-alias lv="NVIM_APPNAME=lazyvim nvim"
+if has_cmd lazyvim && has_cmd nvim; then
+    alias lv="NVIM_APPNAME=lazyvim nvim"
+fi
 
 alias lsa='ls -a'
 alias lta='lt -a'
