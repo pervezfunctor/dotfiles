@@ -126,6 +126,16 @@ vscode_flatpak_install() {
     vscode_flatpak_config_install
 }
 
+ptyxis_install() {
+    fpi app.devsuite.Ptyxis
+
+    if has_cmd gsettings; then
+        gsettings set org.gnome.Ptyxis use-system-font false
+        gsettings set org.gnome.Ptyxis font-name 'JetBrainsMono Nerd Font Medium 12'
+        gsettings set org.gnome.Ptyxis interface-style 'dark'
+    fi
+}
+
 apps_slim_install() {
     if ! has_cmd flatpak; then
         warn "flatpak not installed, skipping flatpak apps"
@@ -158,7 +168,6 @@ apps_install() {
 more_apps_install() {
     fpi org.wezfurlong.wezterm
     fpi app.devsuite.Ptyxis
-    fpi app.devsuite.Ptyxis
     fpi org.wireshark.Wireshark
     fpi sh.cider.Cider
     fpi com.bitwarden.desktop
@@ -189,7 +198,7 @@ nvim_config_install() {
     frm ~/.cache/nvim
 
     stowgf nvim
-    nvim --headless "+Lazy! sync" +qa
+    # nvim --headless "+Lazy! sync" +qa
 
     slog "nvim config done!"
 }
@@ -200,10 +209,18 @@ starship_install() {
     curl -sS https://starship.rs/install.sh | sh -s -- -y
 }
 
+bash_config_exists() {
+    grep -q .ilm/share/bashrc ~/.bashrc
+}
+
+bash_config_check() {
+    bash_config_exists || warn "bash config is not setup correctly"
+}
+
 bash_config_install() {
     slog "Configuring bash"
 
-    if ! grep -q .ilm/share/bashrc ~/.bashrc; then
+    if ! bash_config_exists; then
         echo "source ~/.ilm/share/bashrc" >> ~/.bashrc
     fi
 
@@ -272,6 +289,9 @@ incus_config_install() {
 
     sudo incus admin init --minimal
     sudo usermod -aG incus $USER
+    sudo usermod -aG incus-admin $USER
+    sudo systemctl enable --now incus.socket
+    sudo systemctl enable --now incus.service
 
     if has_cmd firewalld; then
         sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
@@ -721,7 +741,7 @@ cmake_install() {
 }
 
 brew_shell_slim_install() {
-    bis tree-sitter gh gum stow trash-cli
+    bis tree-sitter gh gum stow tmux
     bis lazygit eza fzf fd zoxide starship yazi
 
     if ! has_cmd luarocks; then
@@ -729,6 +749,7 @@ brew_shell_slim_install() {
         brew link luarocks # unfortunately, this is needed currently.
     fi
     bi bash-preexec
+    has_cmd trash || bi trash-cli
     has_cmd delta || bi git-delta
     has_cmd nvim || bi neovim
     has_cmd rg || bi ripgrep
@@ -770,7 +791,7 @@ brew_shell_install() {
 
     bis jq just lsd shfmt shellcheck lazydocker
     bis cheat curlie duf sd xh doggo atuin direnv dust
-    bis procs hyperfine pixi yq ugrep yazi htop dysk
+    bis procs hyperfine pixi yq yazi htop dysk
     has_cmd tv || bi
 
     has_cmd spf || bi superfile
@@ -927,7 +948,6 @@ foot_config_install() {
 
 config_install() {
     bash_config_install
-    has_cmd emacs && doom_install
     has_cmd code && vscode_config_install
 
     if ! has_cmd stow; then
@@ -935,23 +955,23 @@ config_install() {
         return 1
     fi
 
-    has_cmd aerospace && aerospace_config_install
-    has_cmd alacritty && alacritty_config_install
-    has_cmd amethyst && amethyst_config_install
+    has_cmd git && git_config_install
+    has_cmd nvim && nvim_config_install
+    has_cmd tmux && tmux_config_install
+    has_cmd zsh && zsh_config_install
+
     has_cmd appman && appman_config_install
     has_cmd atuin && atuin_config_install
+    has_cmd yazi && yazi_config_install
+
+    has_cmd alacritty && alacritty_config_install
     has_cmd foot && foot_config_install
     has_cmd ghostty && ghostty_config_install
-    has_cmd git && git_config_install
     has_cmd kitty && kitty_config_install
-    has_cmd nvim && nvim_config_install
-    has_cmd rofi && rofi_config_install
-    has_cmd sway && sway_config_install
-    has_cmd hypr && hyprland_config_install
-    has_cmd tmux && tmux_config_install
     has_cmd wezterm && wezterm_config_install
-    has_cmd zsh && zsh_config_install
-    has_cmd yazi && yazi_config_install
+
+    has_cmd aerospace && aerospace_config_install
+    has_cmd amethyst && amethyst_config_install
 }
 
 poetry_install() {
@@ -1112,27 +1132,32 @@ vscode_install() {
     vscode_config_install
 }
 
+base-group_check() {
+    cmd_check gcc g++ make cmake curl wget git trash tree tar unzip stow
+    dir_check $DOT_DIR
+    bash_config_check
+}
+
 base-group_install() {
     core_install
-    cmd_check gcc g++ make cmake curl wget git trash tree tar unzip stow
-
     dotfiles_install
-    dir_check $DOT_DIR
-
     bash_config_install
+
+    base-group_check
+}
+
+min-group_check() {
+    cmd_check micro webi zip unar gum
 }
 
 min-group_install() {
     base-group_install
     essential_install
 
-    cmd_check micro webi zip unar gum
+    min-group_check
 }
 
-shell-group_install() {
-    min-group_install
-    shell_install
-
+shell-group_check() {
     cmd_check gh nvim zsh tree-sitter tmux lazygit sd lsd bat fd
     cmd_check fzf zoxide gum bat brew btm htop btm rg starship
     cmd_check eza fd fzf atuin delta
@@ -1145,11 +1170,22 @@ shell-group_install() {
     has_cmd yazi && yazi_config_install
 }
 
+shell-group_install() {
+    min-group_install
+    shell_install
+
+    shell-group_check
+}
+
+ct-group_check() {
+    cmd_check incus docker podman distrobox
+}
+
 ct-group_install() {
     shell-group_install
     ct_install
 
-    cmd_check incus docker podman distrobox
+    ct-group_check
 }
 
 vm-group_install() {
@@ -1159,13 +1195,12 @@ vm-group_install() {
 
 work-group_install() {
     ct-group_install
+
     jetbrains_nerd_font_install
     vscode_install
-    jetbrains
+
     flathub_install
-    fpi org.wezfurlong.wezterm
-    alias wezterm="flatpak run org.wezfurlong.wezterm"
-    wezterm_config_install
+    ptyxis_install
 }
 
 desktop-group_install() {
@@ -1174,6 +1209,7 @@ desktop-group_install() {
     ui_install
 
     # tailscale_install
+    # @TODO: flatpak aliases?
 
     has_cmd code && vscode_extensions_install
     has_cmd code && vscode_config_install
@@ -1183,6 +1219,10 @@ desktop-group_install() {
     has_cmd wezterm && wezterm_config_install
 }
 
+prog-group_check() {
+    cmd_check go rustc pnpm uv pyenv conda
+}
+
 prog-group_install() {
     vm-group_install
     go_install
@@ -1190,7 +1230,11 @@ prog-group_install() {
     pnpm_install
     python_install
 
-    cmd_check go rustc pnpm uv pyenv conda
+    prog-group_check
+}
+
+all-group_check() {
+    cmd_check pixi emacs
 }
 
 all-group_install() {
@@ -1198,7 +1242,7 @@ all-group_install() {
     pixi_install
     emacs_install
 
-    cmd_check pixi emacs
+    all-group_check
 }
 
 is_gnome() {
@@ -1239,6 +1283,7 @@ gnome_basic_settings() {
     gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
     gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
     gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
+    gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
     gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
     gsettings set org.gnome.desktop.interface accent-color 'purple'
@@ -1595,6 +1640,15 @@ hyprland-group_install() {
     hyprland_install
 
     slog "hyprland instalation done!"
+}
+
+github_user_setup() {
+    if ! has_cmd gh; then
+        warn "gh not installed, skipping github user setup"
+        return 1
+    fi
+
+    gh auth login
 }
 
 }
