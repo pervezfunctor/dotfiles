@@ -4,15 +4,32 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-rpm_ostree_packages_install() {
-    sudo rpm-ostree -q install -y gnome-keyring g++ cmake gcc glibc-devel make zsh
-    # autoconf automake binutils bison flex gcc gcc-c++ gdb glibc-devel libtool make pkgconf strace
+pi() {
+    for p in "$@"; do
+        pixi global add "$p"
+    done
+}
+
+pis() {
+    for p in "$@"; do
+        has_cmd "$p" || pixi global add "$p"
+    done
+}
+
+pixi_shell_install() {
+    has_cmd trash || pi trash-cli
+    has_cmd || pi stow
+    has_cmd rg || pi ripgrep
+
+    pis lazygit eza fzf zoxide starship bat fd gh
 }
 
 toolbox_setup() {
+    has_cmd toolbox || return 0
+
     toolbox --assumeyes create
-    toolbox run sudo dnf install -y stow
-    toolbox run stow -d $DOT_DIR -t $HOME --dotfiles -R tmux nvim zsh emacs-slim
+
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
 }
 
 main() {
@@ -20,24 +37,22 @@ main() {
 
     dotfiles_install
 
-    webi_install
-
-    github_user_setup
+    pixi_install
+    has_cmd gh && github_user_setup
 
     mise_install
-    appman_install
 
-    atomic_shell_slim_install
-
-    smd ~/.local/share/fonts
-    jetbrains_nerd_font_install
-
+    if is_desktop; then
+        smd ~/.local/share/fonts
+        jetbrains_nerd_font_install
+        kitty_install
+        kitty_config_install
+        vscode_flatpak_install
+    fi
     toolbox_setup
-    vscode_flatpak_install
-    apps_install
 }
 
-# is_std_atomic || err_exit "This script is only for Atomic"
+is_linux || err_exit "This script is only for Linux"
 
 bootstrap "Immutable OS"
 
