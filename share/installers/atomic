@@ -4,19 +4,15 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-gtk_cursor_theme() {
-    gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
-}
-
 rpm_ostree_packages_install() {
-    sudo rpm-ostree -q install -y gnome-keyring g++ cmake gcc glibc-devel make stow zsh luarocks
+    sudo rpm-ostree -q install -y gnome-keyring g++ cmake gcc glibc-devel make zsh
     # autoconf automake binutils bison flex gcc gcc-c++ gdb glibc-devel libtool make pkgconf strace
 }
 
 toolbox_setup() {
     toolbox --assumeyes create
     toolbox run sudo dnf install -y stow
-    toolbox run stow -d $DOT_DIR -t $HOME --dotfiles -R share bin tmux nvim wezterm zsh
+    toolbox run stow -d $DOT_DIR -t $HOME --dotfiles -R tmux nvim zsh emacs-slim
 }
 
 main() {
@@ -25,6 +21,9 @@ main() {
     dotfiles_install
 
     webi_install
+
+    github_user_setup
+
     mise_install
     appman_install
 
