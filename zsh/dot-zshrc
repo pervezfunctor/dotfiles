@@ -9,13 +9,6 @@ source $DOT_DIR/share/shellrc
 # if interactive shell then return
 [[ $- == *i* ]] || return
 
-# has_cmd direnv && eval "$(direnv hook zsh)"
-has_cmd mise && eval "$(mise activate zsh)"
-has_cmd zoxide && eval "$(zoxide init zsh)"
-has_cmd fzf && source <(fzf --zsh)
-has_cmd atuin && eval "$(atuin init zsh --disable-up-arrow --disable-ctrl-r)"
-has_cmd pixi && eval "$(pixi completion --shell zsh)"
-
 HISTFILE=~/.histfile
 HISTSIZE=1000
 SAVEHIST=1000
@@ -57,6 +50,13 @@ fi
 
 # initialise completions with ZSH's compinit
 autoload -Uz compinit && compinit
+
+# has_cmd direnv && eval "$(direnv hook zsh)"
+has_cmd mise && eval "$(mise activate zsh)"
+has_cmd zoxide && eval "$(zoxide init zsh)"
+has_cmd fzf && source <(fzf --zsh)
+has_cmd atuin && eval "$(atuin init zsh --disable-up-arrow --disable-ctrl-r)"
+has_cmd pixi && eval "$(pixi completion --shell zsh)"
 
 source_if_exists /etc/zsh_command_not_found
 
@@ -212,6 +212,3 @@ function preexec {
 source_if_exists "$HOME/.localzshrc"
 
 # one_shell_tmux
-
-# Generated for envman. Do not edit.
-[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
