@@ -764,11 +764,6 @@ home_manager_install() {
     nix-shell '<home-manager>' -A install
 }
 
-nix_install() {
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
-    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-}
-
 brew_shell_install() {
     # bi ffmpeg sevenzip poppler imagemagick
     # bis gping ncdu httpie font-symbols-only-nerd-font

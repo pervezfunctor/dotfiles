@@ -409,6 +409,17 @@ select-one() {
     echo $result
 }
 
+nix_install() {
+    has_cmd nix && return 0
+
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+}
+
+hms() {
+    nix run home-manager switch --flake ~/.ilm/home-manager/dot-config/home-manager#ilm --impure -b bak
+}
+
 keep_sudo_running() {
     slog "Keeping sudo alive"
     has_cmd sudo || err_exit "sudo must be installed"
