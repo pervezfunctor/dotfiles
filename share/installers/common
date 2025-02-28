@@ -758,6 +758,7 @@ brew_shell_slim_install() {
     has_cmd emacs || bis micro
 }
 
+# nix-channel is old, don't use it
 home_manager_install() {
     nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
     nix-channel --update

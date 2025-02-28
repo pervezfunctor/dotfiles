@@ -27,12 +27,21 @@ fi
 
 nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
 
+if grep -q nix-command flakes /etc/nix/nix.conf; then
+    slog "nix-command and flakes are already enabled"
+else
+    echo "extra-experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
+fi
+
 is_desktop || return 0
 
-# smd ~/.local/share/fonts
-# jetbrains_nerd_font_install
-# kitty_install
-# kitty_config_install
-# vscode_flatpak_install
+if grep -q kitty /etc/nix/nix.conf 2> /dev/null; then
+    return 0
+fi
+
+jetbrains_nerd_font_install
+kitty_install
+kitty_config_install
+cursor_install
 
 }

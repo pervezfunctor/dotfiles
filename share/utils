@@ -415,9 +415,13 @@ select-one() {
 
 nix_install() {
     has_cmd nix && return 0
+    slog "Installing nix"
 
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
+    # drop determinate?
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
+    slog "nix installation done!"
 }
 
 hms() {

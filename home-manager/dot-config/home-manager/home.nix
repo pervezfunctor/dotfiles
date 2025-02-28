@@ -113,4 +113,9 @@
 
   programs.zsh.enable = true;
   home.shellPath = "${pkgs.zsh}/bin/zsh";
+
+  programs.bash.initExtra = ''
+      [ -f ~/.ilm/share/bashrc ] && source ~/.ilm/share/bashrc
+      has_cmd starship && eval "$(starship init bash)"
+    '';
 }
