@@ -138,3 +138,10 @@ dbox_from_image() {
     distrobox enter --name distrobox_name
 }
 
+
+distrobox_nix() {
+    local CONTAINER_NAME=${1:-deb-nix}
+    srm ~/homes/${CONTAINER_NAME}
+    distrobox create -n ${CONTAINER_NAME} -i debian:stable --init --additional-packages "systemd libpam-systemd" --home ~/homes/${CONTAINER_NAME}
+    distrobox enter ${CONTAINER_NAME} -- curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | -s -- install --no-confirm
+}
