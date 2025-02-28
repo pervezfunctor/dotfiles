@@ -1,0 +1,38 @@
+#! /usr/bin/env bash
+
+{
+
+if command -v curl > /dev/null || command -v wget > /dev/null; then
+    source <(curl -sSL https://dub.sh/z3pTnAK || wget -qO- https://dub.sh/z3pTnAK)
+else
+    echo "curl or wget is not installed"
+fi
+
+is_linux || err_exit "This script is only for Linux"
+
+nix_install
+
+has_cmd nix > /dev/null || err_exit "nix not installed! Qutting."
+
+slog "Cloning dotfiles to ~/.ilm"
+
+nix run "nixpkgs#git" --extra-experimental-features 'nix-command flakes' -- clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
+
+slog "Setting up home-manager"
+
+if ! dir_exists ~/.ilm; then
+    warn "could not clone dotfiles respository to ~/.ilm, Quitting"
+    return 1
+fi
+
+nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
+
+is_desktop || return 0
+
+# smd ~/.local/share/fonts
+# jetbrains_nerd_font_install
+# kitty_install
+# kitty_config_install
+# vscode_flatpak_install
+
+}

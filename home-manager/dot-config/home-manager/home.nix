@@ -18,7 +18,23 @@
   # The home.packages option allows you to install Nix packages into your
   # environment.
   home.packages = [
-    pkgs.clang
+    pkgs.trash-cli
+    pkgs.starship
+    pkgs.gh
+    pkgs.stow
+    pkgs.just
+    pkgs.ripgrep
+    pkgs.zsh
+    pkgs.fzf
+    pkgs.delta
+    pkgs.lazygit
+    pkgs.eza
+    pkgs.fd
+    pkgs.zoxide
+    pkgs.bat
+    pkgs.tmux
+    pkgs.neovim
+
     # # Adds the 'hello' command to your environment. It prints a friendly
     # # "Hello, world!" when run.
     # pkgs.hello
@@ -45,6 +61,10 @@
     # # symlink to the Nix store copy.
     # ".screenrc".source = dotfiles/screenrc;
 
+    ".zshrc".source = ~/.ilm/zsh/dot-zshrc;
+    ".config/nvim" = { source = ~/.ilm/nvim/dot-config/nvim; };
+    ".config/tmux" = { source = ~/.ilm/tmux/dot-config/tmux; recursive = true; };
+
     # # You can also set the file content immediately.
     # ".gradle/gradle.properties".text = ''
     #   org.gradle.console=verbose
@@ -58,7 +78,7 @@
   # through Home Manager then you have to manually source 'hm-session-vars.sh'
   # located at either
   #
-  #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
+  # ~/.nix-profile/etc/profile.d/hm-session-vars.sh
   #
   # or
   #
@@ -66,7 +86,7 @@
   #
   # or
   #
-  #  /etc/profiles/per-user/pervez/etc/profile.d/hm-session-vars.sh
+  #  /etc/profiles/per-user/<user-name>/etc/profile.d/hm-session-vars.sh
   #
   home.sessionVariables = {
     # EDITOR = "emacs";
