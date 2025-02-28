@@ -4,6 +4,14 @@
 
 export DOT_DIR=$HOME/.ilm
 
+if [ "$(readlink -f "$HOME")" != "$HOME" ]; then
+    REAL_HOME=$(readlink -f "$HOME")
+else
+    REAL_HOME="$HOME"
+fi
+
+export REAL_HOME
+
 BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
 
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
@@ -417,15 +425,14 @@ nix_install() {
     has_cmd nix && return 0
     slog "Installing nix"
 
-    # drop determinate?
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 
     slog "nix installation done!"
 }
 
 hms() {
-    nix run home-manager -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
+    nix run home-manager -- switch --flake $REAL_HOME/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
 }
 
 keep_sudo_running() {

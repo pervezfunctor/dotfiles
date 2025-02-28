@@ -3,8 +3,8 @@
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username = config.home.username;
-  home.homeDirectory = config.home.homeDirectory;
+  home.username = "pervez";
+  home.homeDirectory = "/var/home/pervez";
 
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
@@ -62,24 +62,24 @@
     # # symlink to the Nix store copy.
     # ".screenrc".source = dotfiles/screenrc;
 
-    ".zshrc" = { source = ~/.ilm/zsh/dot-zshrc; };
-    ".config/nvim" = { source = ~/.ilm/nvim/dot-config/nvim; };
-    ".config/tmux" = {
-        source = ~/.ilm/tmux/dot-config/tmux;
-        recursive = true;
-    };
-    ".gitconfig" = {
-        source = ~/.ilm/git/dot-gitconfig;
-        copy = true;
-    };
-    ".config/Code/User/settings.json" = {
-        source = ~/.ilm/extras/vscode/minimal-settings.json;
-        copy = true;
-    };
-    ".emacs" = {
-        source = ~/.ilm/emacs-slim/dot-eamcs;
-        copy = true;
-    };
+    # ".zshrc" = { source = ~/.ilm/zsh/dot-zshrc; };
+    # ".config/nvim" = { source = ~/.ilm/nvim/dot-config/nvim; };
+    # ".config/tmux" = {
+    #     source = ~/.ilm/tmux/dot-config/tmux;
+    #     recursive = true;
+    # };
+    # ".gitconfig" = {
+    #     source = ~/.ilm/git/dot-gitconfig;
+    #     copy = true;
+    # };
+    # ".config/Code/User/settings.json" = {
+    #     source = ~/.ilm/extras/vscode/minimal-settings.json;
+    #     copy = true;
+    # };
+    # ".emacs" = {
+    #     source = ~/.ilm/emacs-slim/dot-eamcs;
+    #     copy = true;
+    # };
 
     # # You can also set the file content immediately.
     # ".gradle/gradle.properties".text = ''
@@ -111,8 +111,8 @@
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
-  programs.zsh.enable = true;
-  home.shellPath = "${pkgs.zsh}/bin/zsh";
+  # programs.zsh.enable = true;
+  # home.shellPath = "${pkgs.zsh}/bin/zsh";
 
   programs.bash.initExtra = ''
       [ -f ~/.ilm/share/bashrc ] && source ~/.ilm/share/bashrc
