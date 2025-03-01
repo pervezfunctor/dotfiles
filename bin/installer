@@ -4,7 +4,7 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-INSTALL_OPTIONS=("essential" "shell" "vscode" "cpp" "ct" "vm" "virt" "ui" "webi" "kitty" "mise" "appman" "flathub" "cursor" "vscode_flatpak" "ptyxis" "apps" "rust" "miniconda" "pnpm" "web" "brew" "monaspace" "jetbrains_nerd_font" "fonts" "doom" "go" "docker" "code_server" "conan" "cmake" "home_manager" "pyenv" "uv" "devbox" "pixi" "tailscale" "portainer" "cockpit" "podman" "incus" "@min" "@work" "@shell" "@ct" "@vm" "@prog" "@all" "@hyprland" "@sway")
+INSTALL_OPTIONS=("essential" "shell" "vscode" "cpp" "ct" "vm" "virt" "ui" "webi" "kitty" "mise" "appman" "flathub" "cursor" "vscode_flatpak" "ptyxis" "apps" "rust" "miniconda" "pnpm" "web" "brew" "monaspace" "jetbrains_nerd_font" "fonts" "doom" "go" "docker" "code_server" "conan" "cmake" "home_manager" "pyenv" "uv" "devbox" "pixi" "tailscale" "portainer" "cockpit" "podman" "incus" "@nix" "@min" "@shell" "@ct" "@vm" "@work" "@desktop" "@prog" "@all" "@sway" "@hyprland")
 
 DEFAULT_OPTIONS=("shell","ct","vscode")
 
@@ -35,10 +35,12 @@ help() {
     echo ""
     echo "Group Options"
     echo "  @min         essential packages only."
+    echo "  @nix         nix installation"
     echo "  @work        min and vscode, flatpak apps."
     echo "  @shell       min and shell tools and config for zsh, tmux, neovim."
     echo "  @ct          shell and container tools - docker, podman, incus, distrobox."
     echo "  @vm          ct and vm tools like buildah, libvirt."
+    echo "  @desktop     vm and desktop apps like vscode, zoom, obsidian."
     echo "  @prog        vm and programming tools for rust, go, web, c++, python."
     echo "  @all         everything(not recommended)."
     echo "  @hyprland    hyprland desktop on fedora and tumbleweed."
