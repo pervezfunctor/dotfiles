@@ -25,7 +25,7 @@
 
 (use-package catppuccin-theme
   :config
-  (load-theme 'catppuccin :no-confirm))
+  (load-theme 'catppuccin t))
 
 ;; (require 'use-package)
 ;; (setq use-package-always-ensure t)
