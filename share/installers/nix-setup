@@ -2,47 +2,5 @@
 
 {
 
-if command -v curl > /dev/null || command -v wget > /dev/null; then
-    source <(curl -sSL https://dub.sh/z3pTnAK || wget -qO- https://dub.sh/z3pTnAK)
-else
-    echo "curl or wget is not installed"
-fi
-
-is_linux || err_exit "This script is only for Linux"
-
-nix_install
-
-has_cmd nix > /dev/null || err_exit "nix not installed! Qutting."
-
-slog "Cloning dotfiles to ~/.ilm"
-
-nix run "nixpkgs#git" --extra-experimental-features 'nix-command flakes' -- clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
-
-slog "Setting up home-manager"
-
-if ! dir_exists ~/.ilm; then
-    warn "could not clone dotfiles respository to ~/.ilm, Quitting"
-    return 1
-fi
-
-nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
-
-if ! grep -q nix-command flakes /etc/nix/nix.conf 2> /dev/null; then
-    echo "extra-experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
-fi
-
-INSTALLERS="${BASE_URL}/share/installers"
-source_curl "$INSTALLERS/common"
-
-bash_config_install
-
-if grep -q kitty /etc/nix/nix.conf 2> /dev/null; then
-    return 0
-fi
-
-jetbrains_nerd_font_install
-kitty_install
-kitty_config_install
-cursor_install
 
 }

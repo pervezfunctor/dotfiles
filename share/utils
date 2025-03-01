@@ -16,6 +16,13 @@ BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
 
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
+safe_append() {
+    if ! grep -q "$1" "$2" 2> /dev/null; then
+        slog "Adding $1 to $2"
+        echo $1 >> $2
+    fi
+}
+
 source_if_exists() {
     [[ -f "$1" ]] && source "$1"
 }

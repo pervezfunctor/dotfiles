@@ -1118,6 +1118,29 @@ vscode_install() {
     vscode_config_install
 }
 
+home_manager_install() {
+    has_cmd home-manager && return 0
+
+    slog "Setting up home-manager"
+
+    if ! dir_exists ~/.ilm; then
+        warn "could not clone dotfiles respository to ~/.ilm, Quitting"
+        return 1
+    fi
+
+    nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
+
+    if file_exists /etc/nix/nix.conf; then
+        if ! grep -q nix-command flakes /etc/nix/nix.conf 2> /dev/null; then
+            slog "enabling flakes in /etc/nix/nix.conf"
+            echo "extra-experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
+        fi
+    elif ! grep -q nix-command flakes "$XDG_CONFIG_HOME/nix/nix.conf" 2> /dev/null; then
+        slog "enabling flakes in $XDG_CONFIG_HOME/nix/nix.conf"
+        echo "extra-experimental-features = nix-command flakes" >> "$XDG_CONFIG_HOME/nix/nix.conf"
+    fi
+}
+
 base-group_check() {
     cmd_check gcc make curl wget git trash tree tar unzip stow
     dir_check $DOT_DIR
@@ -1130,6 +1153,14 @@ base-group_install() {
     bash_config_install
 
     base-group_check
+}
+
+nix-group_install() {
+    base-group_install
+    nix_install
+    home_manager_install
+
+    cmd_check home-manager nix
 }
 
 min-group_check() {
