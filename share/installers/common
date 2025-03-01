@@ -1028,6 +1028,16 @@ pyenv_miniconda_install() {
     cmd_check conda
 }
 
+atomic_distrobox_install() {
+    has_cmd distrobox && return 0
+
+    slog "Installing distrobox"
+
+    curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
+
+    slog "distrobox installation done!"
+}
+
 atomic_python_install() {
     slog "python setup"
 
@@ -1041,7 +1051,7 @@ atomic_python_install() {
     pip install --upgrade --force-reinstall uv
     cmd_check uv
 
-    pipx install --force trash-cli
+    has_cmd trash || pipx install --force trash-cli
     cmd_check trash
 
     slog "python setup done!"
@@ -1147,7 +1157,7 @@ base-group_check() {
     bash_config_check
 }
 
-base-group_install() {
+base_groupstall() {
     core_install
     dotfiles_install
     bash_config_install
@@ -1155,8 +1165,8 @@ base-group_install() {
     base-group_check
 }
 
-nix-group_install() {
-    base-group_install
+nix_groupstall() {
+    base_groupstall
     nix_install
     home_manager_install
 
@@ -1167,8 +1177,8 @@ min-group_check() {
     cmd_check micro webi zip unar gum
 }
 
-min-group_install() {
-    base-group_install
+min_groupstall() {
+    base_groupstall
     essential_install
 
     min-group_check
@@ -1187,31 +1197,31 @@ shell-group_check() {
     has_cmd yazi && yazi_config_install
 }
 
-shell-group_install() {
-    min-group_install
+shell_groupstall() {
+    min_groupstall
     shell_install
 
     shell-group_check
 }
 
 ct-group_check() {
-    cmd_check incus docker podman distrobox
+    cmd_check incus docker podman distrobox toolbox
 }
 
-ct-group_install() {
-    shell-group_install
+ct_groupstall() {
+    shell_groupstall
     ct_install
 
     ct-group_check
 }
 
-vm-group_install() {
-    ct-group_install
+vm_groupstall() {
+    ct_groupstall
     vm_install
 }
 
-work-group_install() {
-    ct-group_install
+work_groupstall() {
+    ct_groupstall
 
     jetbrains_nerd_font_install
     vscode_install
@@ -1220,8 +1230,8 @@ work-group_install() {
     ptyxis_install
 }
 
-desktop-group_install() {
-    vm-group_install
+desktop_groupstall() {
+    vm_groupstall
     fonts_install
     ui_install
 
@@ -1240,8 +1250,8 @@ prog-group_check() {
     cmd_check go rustc pnpm uv pyenv conda
 }
 
-prog-group_install() {
-    vm-group_install
+prog_groupstall() {
+    vm_groupstall
     go_install
     rust_install
     pnpm_install
@@ -1254,24 +1264,12 @@ all-group_check() {
     cmd_check pixi emacs
 }
 
-all-group_install() {
-    prog-group_install
+all_groupstall() {
+    prog_groupstall
     pixi_install
     emacs_install
 
     all-group_check
-}
-
-is_gnome() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME" ]] || [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME-Shell" ]]
-}
-
-is_kde() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "KDE" ]]
-}
-
-is_hyprland() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Hyprland" ]]
 }
 
 gnome_extensions_install() {
@@ -1640,9 +1638,9 @@ hyprland_install() {
     slog "hyprland installation done!"
 }
 
-sway-group_install() {
+sway_groupstall() {
     slog "Installing sway"
-    shell-group_install
+    shell_groupstall
 
     sway_install
 
@@ -1650,9 +1648,9 @@ sway-group_install() {
 }
 
 
-hyprland-group_install() {
+hyprland_groupstall() {
     slog "Installing hyprland"
-    shell-group_install
+    shell_groupstall
 
     hyprland_install
 
