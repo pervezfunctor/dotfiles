@@ -457,6 +457,13 @@
                                "--header-insertion=never"
                                "--header-insertion-decorators=0")))))
 
+;; Enable LLDB Debugging in Emacs
+(use-package realgud-lldb
+  :ensure t
+  :commands (realgud-lldb)
+  :config
+  (setq realgud:lldb-command-name "lldb"))
+
 (use-package apheleia
   :ensure t
   :config
