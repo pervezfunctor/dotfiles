@@ -77,7 +77,9 @@ err_exit() {
 }
 
 igum() {
-    TERM=screen gum "$@" < /dev/tty > /dev/tty 2>&1
+    local output
+    output=$(TERM=screen gum "$@" < /dev/tty 2>/dev/tty)
+    echo "$output"
 }
 
 dir_exists() {
@@ -296,6 +298,22 @@ is_apt() {
     is_ubuntu || is_debian
 }
 
+is_gnome() {
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME" ]] || [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME-Shell" ]] && [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "gnome" ]]
+}
+
+is_kde() {
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "KDE" ]] ||  [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "plasma" ]]
+}
+
+is_sway() {
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Sway" ]] || [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "sway" ]]
+}
+
+is_hyprland() {
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Hyprland" ]]  || [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "hyprland" ]]
+}
+
 is_fedora() {
    [ -e /etc/redhat-release ] && grep -q 'Fedora' /etc/redhat-release
 }
@@ -368,6 +386,10 @@ is_linux() {
 
 is_mac() {
     [[ "$OSTYPE" == "darwin"* ]]
+}
+
+is_wayland() {
+    [[ -n "$WAYLAND_DISPLAY" ]]
 }
 
 is_desktop() {
@@ -659,12 +681,16 @@ environs() {
 
 fg-installer() {
     while [[ "$#" -gt 0 ]]; do
-    if fn_exists "${1}_install"; then
-        "${1}_install"
-    else
-        err_exit "No such installer: $1"
-    fi
-    shift
+        if [[ "$1" == @* ]]; then
+            if fn_exists "${1:1}_groupstall"; then
+                "${1:1}_groupstall"
+            fi
+        elif fn_exists "${1}_install"; then
+            "${1}_install"
+        else
+            err_exit "No such installer: $1"
+        fi
+        shift
     done
 }
 

@@ -4,24 +4,27 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-INSTALL_OPTIONS=("min" "shell" "ct" "vm" "prog" "all")
+INSTALL_OPTIONS=("min" "shell" "ct" "vm" "prog" "all" "sway" "hyprland")
 
 help() {
     echo "Usage: $0 [OPTION]"
     echo "Options:"
     echo "  min         essential packages only."
+    echo "  work        min and vscode, flatpak apps."
     echo "  shell       min and shell tools and config for zsh, tmux, neovim."
     echo "  ct          shell and container tools - docker, podman, incus, distrobox."
     echo "  vm          ct and vm tools like buildah, libvirt."
     echo "  prog        vm and programming tools for rust, go, web, c++, python."
     echo "  all         everything(not recommended)."
+    echo "  hyprland    hyprland desktop on fedora and tumbleweed."
+    echo "  sway        sway desktop on fedora and tumbleweed."
     echo "  help        show this help."
     echo ""
 }
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        "${1}-group_install"
+        "${1}_groupstall"
         return 0
     fi
 
@@ -36,7 +39,7 @@ main() {
         echo ""
         echo "Selected: $SELECTED_OPTION"
         echo ""
-        "${1}-group_install"
+        "${1}_groupstall"
     else
         slog "No option selected."
         return 1

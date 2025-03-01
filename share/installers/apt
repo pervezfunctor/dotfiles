@@ -60,10 +60,7 @@ essential_install() {
     slog "Installing essential packages"
 
     core_install
-    # mise_install
     sys_python_install
-    # pacstall_install
-    # is_ubuntu && snap_install
 
     si zip unar micro nala p7zip
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
@@ -160,7 +157,9 @@ cockpit_install() {
 
     slog "Installing cockpit"
 
-    si cockpit cockpit-machines cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged
+    si cockpit cockpit-machines cockpit-networkmanager cockpit-packagekit
+    si cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged
+    si cockpit-system
     sudo systemctl enable --now cockpit.socket
 
     slog "cockpit installation done!"
@@ -168,8 +167,6 @@ cockpit_install() {
 
 podman_install() {
     si podman podman-toolbox podman-compose
-
-    cmd_check podman
 }
 
 vm_install() {
