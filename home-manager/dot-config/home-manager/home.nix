@@ -54,10 +54,8 @@
         source = ~/.ilm/tmux/dot-config/tmux;
         recursive = true;
     };
-    ".gitconfig" = {
-        source = ~/.ilm/git/dot-gitconfig;
-        copy = true;
-    };
+    ".gitconfig" = { source = ~/.ilm/git/dot-gitconfig; };
+
     # ".config/Code/User/settings.json" = {
     #     source = ~/.ilm/extras/vscode/minimal-settings.json;
     #     copy = true;
