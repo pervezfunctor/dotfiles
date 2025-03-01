@@ -76,6 +76,10 @@ err_exit() {
     exit 1
 }
 
+igum() {
+    TERM=screen gum "$@" < /dev/tty > /dev/tty 2>&1
+}
+
 dir_exists() {
     [[ -d "$1" ]]
 }

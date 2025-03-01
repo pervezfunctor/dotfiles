@@ -52,7 +52,7 @@ main() {
         exit 0
     fi
 
-    SELECTED_OPTION=$(gum choose "${OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
+    SELECTED_OPTION=$(igum choose "${OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
 
     if [[ -n "$SELECTED_OPTION" ]]; then
         echo ""
