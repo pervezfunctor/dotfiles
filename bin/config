@@ -5,7 +5,7 @@
 source $DOT_DIR/share/utils
 source $DOT_DIR/share/installers/common
 
-INSTALL_OPTIONS=("zsh" "tmux" "nvim" "code" "ghostty" "kitty" "wezterm" "alacritty" "emacs")
+INSTALL_OPTIONS=("nvim" "bash" "vscode_flatpak" "vscode" "zsh" "tmux" "emacs" "git" "incus" "gnome" "sway" "hyprland")
 
 DEFAULT_OPTIONS=("zsh","tmux","nvim")
 
@@ -15,12 +15,18 @@ help() {
     echo "  zsh         zsh config with starship prompt and common plugins."
     echo "  tmux        tmux config, catppuccin theme and common plugins."
     echo "  nvim        lazyvim based config and plugins."
-    echo "  code        vscode settings."
+    echo "  vscode      vscode settings."
     echo "  ghostty     ghostty config."
     echo "  kitty       kitty config."
     echo "  wezterm     wezterm config."
     echo "  alacritty   alacritty config."
     echo "  emacs       doom emacs config."
+    echo "  git         git config."
+    echo "  incus       incus config."
+    echo "  sway        sway config."
+    echo "  hyprland    hyprland config."
+    echo "  gnome       gnome config."
+    echo "  help        show this help."
     echo ""
     echo ""
 }
