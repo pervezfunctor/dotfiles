@@ -39,9 +39,10 @@ main() {
 
     if [[ -n "$SELECTED_OPTION" ]]; then
         echo ""
-        echo "Selected: $SELECTED_OPTION"
+        slog "Selected: ${SELECTED_OPTION}. Installing.."
         echo ""
         "${1}_groupstall"
+        slog "Installation complete."
     else
         slog "No option selected."
         return 1

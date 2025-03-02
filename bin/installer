@@ -4,7 +4,7 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-INSTALL_OPTIONS=("essential" "shell" "vscode" "cpp" "ct" "vm" "virt" "ui" "webi" "kitty" "mise" "appman" "flathub" "cursor" "vscode_flatpak" "ptyxis" "apps" "rust" "miniconda" "pnpm" "web" "brew" "monaspace" "jetbrains_nerd_font" "fonts" "doom" "go" "docker" "code_server" "conan" "cmake" "home_manager" "pyenv" "uv" "devbox" "pixi" "tailscale" "portainer" "cockpit" "podman" "incus" "@nix" "@min" "@shell" "@ct" "@vm" "@work" "@desktop" "@prog" "@all" "@sway" "@hyprland")
+INSTALL_OPTIONS=("shell" "vscode" "cpp" "ct" "vm" "virt" "ui" "essential" "webi" "kitty" "mise" "appman" "flathub" "cursor" "vscode_flatpak" "ptyxis" "apps" "rust" "miniconda" "pnpm" "web" "brew" "monaspace" "jetbrains_nerd_font" "fonts" "doom" "go" "docker" "code_server" "conan" "cmake" "home_manager" "pyenv" "uv" "devbox" "pixi" "tailscale" "portainer" "cockpit" "podman" "incus" "@nix" "@min" "@shell" "@ct" "@vm" "@work" "@desktop" "@prog" "@all" "@sway" "@hyprland")
 
 DEFAULT_OPTIONS=("shell","ct","vscode")
 
@@ -50,12 +50,6 @@ help() {
 
 }
 
-igum() {
-    local output
-    output=$(TERM=screen gum "$@" < /dev/tty 2>/dev/tty)
-    echo "$output"
-}
-
 main() {
     if ! [[ "$#" -eq 0 ]]; then
         fg-installer "$@"
@@ -67,13 +61,14 @@ main() {
         exit 0
     fi
 
-    SELECTED_INSTALL_OPTIONS=$(igum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
+    SELECTED_OPTIONS=$(igum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
 
-    if [[ -n "$SELECTED_INSTALL_OPTIONS" ]]; then
+    if [[ -n "$SELECTED_OPTIONS" ]]; then
         echo ""
-        echo "Selected: $SELECTED_INSTALL_OPTIONS"
+        slog "Selected: ${SELECTED_OPTIONS}. Installing..."
         echo ""
-        fg-installer $SELECTED_INSTALL_OPTIONS
+        fg-installer $SELECTED_OPTIONS
+        slog "Installation complete."
     else
         slog "No options selected."
         return 1

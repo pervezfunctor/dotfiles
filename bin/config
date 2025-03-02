@@ -2,10 +2,9 @@
 
 {
 
-source $DOT_DIR/share/utils
-source $DOT_DIR/share/installers/common
+source <(curl -sSL https://dub.sh/z3pTnAK)
 
-INSTALL_OPTIONS=("nvim" "bash" "vscode_flatpak" "vscode" "zsh" "tmux" "emacs" "git" "incus" "gnome" "sway" "hyprland")
+INSTALL_OPTIONS=("nvim" "bash" "vscode_flatpak" "vscode" "zsh" "tmux" "emacs" "git" "gnome" "sway" "hyprland")
 
 DEFAULT_OPTIONS=("zsh","tmux","nvim")
 
@@ -16,13 +15,8 @@ help() {
     echo "  tmux        tmux config, catppuccin theme and common plugins."
     echo "  nvim        lazyvim based config and plugins."
     echo "  vscode      vscode settings."
-    echo "  ghostty     ghostty config."
-    echo "  kitty       kitty config."
-    echo "  wezterm     wezterm config."
-    echo "  alacritty   alacritty config."
     echo "  emacs       doom emacs config."
     echo "  git         git config."
-    echo "  incus       incus config."
     echo "  sway        sway config."
     echo "  hyprland    hyprland config."
     echo "  gnome       gnome config."
@@ -31,7 +25,7 @@ help() {
     echo ""
 }
 
-config() {
+fg_config() {
     while [[ "$#" -gt 0 ]]; do
     if fn_exists "${1}_install"; then
         "${1}_config_install"
@@ -44,7 +38,7 @@ config() {
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        config "$@"
+        fg_config "$@"
         return 0
     fi
 
@@ -53,13 +47,14 @@ main() {
         exit 0
     fi
 
-    SELECTED_INSTALL_OPTIONS=$(igum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
+    SELECTED_OPTIONS=$(igum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
 
-    if [[ -n "$SELECTED_INSTALL_OPTIONS" ]]; then
+    if [[ -n "$SELECTED_OPTIONS" ]]; then
         echo ""
-        echo "Selected: $SELECTED_INSTALL_OPTIONS"
+        slog "Selected: ${SELECTED_OPTIONS}. Configuring..."
         echo ""
-        config $SELECTED_INSTALL_OPTIONS
+        config $SELECTED_OPTIONS
+        slog "Configuration complete."
     else
         slog "No options selected."
         return 1
