@@ -25,7 +25,7 @@
     pkgs.just
     pkgs.lazygit
     pkgs.luarocks
-    pkgs.make
+    pkgs.gnumake
     pkgs.neovim
     pkgs.ripgrep
     pkgs.sd
