@@ -10,25 +10,34 @@
   home.stateVersion = "24.11"; # Please read the comment before changing.
 
   home.packages = [
-    pkgs.git
-    pkgs.zsh
-    pkgs.emacs-nox
-    pkgs.trash-cli
-    pkgs.starship
-    pkgs.gh
-    pkgs.stow
-    pkgs.just
-    pkgs.ripgrep
-    pkgs.zsh
-    pkgs.fzf
+    pkgs.bat
+    pkgs.curl
     pkgs.delta
-    pkgs.lazygit
+    pkgs.emacs-nox
     pkgs.eza
     pkgs.fd
-    pkgs.zoxide
-    pkgs.bat
-    pkgs.tmux
+    pkgs.fzf
+    pkgs.gcc
+    pkgs.gh
+    pkgs.git
+    pkgs.git
+    pkgs.htop
+    pkgs.just
+    pkgs.lazygit
+    pkgs.luarocks
+    pkgs.make
     pkgs.neovim
+    pkgs.ripgrep
+    pkgs.sd
+    pkgs.starship
+    pkgs.stow
+    pkgs.tmux
+    pkgs.trash-cli
+    pkgs.tree
+    pkgs.unzip
+    pkgs.wget
+    pkgs.zoxide
+    pkgs.zsh
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
