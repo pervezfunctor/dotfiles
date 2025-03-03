@@ -4,11 +4,11 @@
 
 export DOT_DIR=$HOME/.ilm
 
-if [ "$(readlink -f "$HOME")" != "$HOME" ]; then
-    REAL_HOME=$(readlink -f "$HOME")
-else
-    REAL_HOME="$HOME"
-fi
+# if [ "$(readlink -f "$HOME")" != "$HOME" ]; then
+#     REAL_HOME=$(readlink -f "$HOME")
+# else
+#     REAL_HOME="$HOME"
+# fi
 
 export REAL_HOME
 
@@ -476,7 +476,7 @@ nix_install() {
 }
 
 hms() {
-    nix run home-manager -- switch --flake $REAL_HOME/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
+    nix run home-manager -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
 }
 
 keep_sudo_running() {
