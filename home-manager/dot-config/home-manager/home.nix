@@ -10,7 +10,9 @@
   home.stateVersion = "24.11"; # Please read the comment before changing.
 
   home.packages = [
+    pkgs.git
     pkgs.zsh
+    pkgs.emacs-nox
     pkgs.trash-cli
     pkgs.starship
     pkgs.gh
@@ -42,27 +44,30 @@
     # '')
   ];
 
-  home.file = {
-    # # Building this configuration will create a copy of 'dotfiles/screenrc' in
-    # # the Nix store. Activating the configuration will then make '~/.screenrc' a
-    # # symlink to the Nix store copy.
-    # ".screenrc".source = dotfiles/screenrc;
+  programs.direnv = {
+      enable = true;
+      enableBashIntegration = true;
+      nix-direnv.enable = true;
+  };
+  programs.bash = {
+    enable = true;
+    initExtra = ''
+      source ~/.ilm/share/bashrc
+    '';
+  };
+  # Let Home Manager install and manage itself.
+  programs.home-manager.enable = true;
+  programs.git.enable = true;
+  programs.zsh.enable = true;
 
+  home.file = {
     ".zshrc" = { source = ~/.ilm/zsh/dot-zshrc; };
     ".config/nvim" = { source = ~/.ilm/nvim/dot-config/nvim; };
-    ".config/tmux" = {
-        source = ~/.ilm/tmux/dot-config/tmux;
-        recursive = true;
-    };
+    ".config/tmux/tmux.conf" = { source = ~/.ilm/tmux/dot-config/tmux/tmux.conf; };
     ".gitconfig" = { source = ~/.ilm/git/dot-gitconfig; };
-
+    ".emacs" = { source = ~/.ilm/emacs-nano/dot-emacs; };
     # ".config/Code/User/settings.json" = {
     #     source = ~/.ilm/extras/vscode/minimal-settings.json;
-    #     copy = true;
-    # };
-    # ".emacs" = {
-    #     source = ~/.ilm/emacs-slim/dot-eamcs;
-    #     copy = true;
     # };
 
     # # You can also set the file content immediately.
@@ -89,11 +94,6 @@
   #  /etc/profiles/per-user/<user-name>/etc/profile.d/hm-session-vars.sh
   #
   home.sessionVariables = {
-    # EDITOR = "emacs";
+    EDITOR = "emacs";
   };
-
-  # Let Home Manager install and manage itself.
-  programs.home-manager.enable = true;
-
-  programs.zsh.enable = true;
 }
