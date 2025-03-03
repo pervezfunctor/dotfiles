@@ -298,6 +298,14 @@ is_apt() {
     is_ubuntu || is_debian
 }
 
+plasma_major_version() {
+    has_cmd plasmashell && plasmashell --version | cut -d' ' -f2 | cut -d'.' -f1
+}
+
+gnome_major_version() {
+    has_cmd gnome-shell && gnome-shell --version | cut -d' ' -f3 | cut -d'.' -f1
+}
+
 is_gnome() {
     [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME" ]] || [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME-Shell" ]] && [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "gnome" ]]
 }
