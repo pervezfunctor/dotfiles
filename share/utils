@@ -4,14 +4,6 @@
 
 export DOT_DIR=$HOME/.ilm
 
-# if [ "$(readlink -f "$HOME")" != "$HOME" ]; then
-#     REAL_HOME=$(readlink -f "$HOME")
-# else
-#     REAL_HOME="$HOME"
-# fi
-
-export REAL_HOME
-
 BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
 
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
