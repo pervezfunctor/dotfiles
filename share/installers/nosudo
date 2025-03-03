@@ -4,24 +4,29 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-nix_distrobox_setup() {
-    has_cmd distrbox || return 0
+distrobox_setup() {
+    has_cmd distrobox || distrobox_install
 
-    toolbox --assumeyes create
+    has_cmd nix || return 0
 
-    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
+    source_curl "$DOT_DIR/share/fns"
+    dbox_nix
 }
 
 toolbox_setup() {
     has_cmd toolbox || return 0
 
-    toolbox --assumeyes create
-
-    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
+    toolbox create --assumeyes
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell
 }
 
 main() {
-    has_cmd git || err_exit "git not installed! Qutting."
+    if ! has_cmd git; then
+        if has_cmd nix; then
+           nix run nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
+        fi
+        has_cmd git || err_exit "git not installed! Qutting."
+    fi
 
     dotfiles_install
 
@@ -47,6 +52,8 @@ main() {
 }
 
 is_linux || err_exit "This script is only for Linux"
+
+export NOSUDO=1
 
 bootstrap "Linux OS"
 
