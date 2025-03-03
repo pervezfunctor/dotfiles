@@ -1274,6 +1274,8 @@ gnome_extensions_install() {
         return 1
     fi
 
+    slog "Installing gnome extensions"
+
     gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
     gext install Vitals@CoreCoding.com
     gext install tailscale@joaophi.github.com
@@ -1283,13 +1285,18 @@ gnome_extensions_install() {
     gext install blur-my-shell@aunetx
     gext install undecorate@sun.wxg@gmail.com
     gext install AlphabeticalAppGrid@stuarthayhurst
+
+    slog "gnome extensions installation done!"
 }
 
 gnome_settings_install() {
+
     if ! has_cmd gsettings; then
         warn "gsettings not found, skipping gnome basic settings"
         return 1
     fi
+
+    slog "gnome settings"
 
     gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
     gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
@@ -1308,6 +1315,8 @@ gnome_settings_install() {
 
     # Set JetBrains Mono as the default monospace font
     gsettings set org.gnome.desktop.interface monospace-font-name 'JetbrainsMono Nerd Font 11'
+
+    slog "gnome settings done!"
 }
 
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
@@ -1317,19 +1326,26 @@ gnome_config_install() {
         return 1
     fi
 
-    si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
+    if is_ubuntu; then
+        slog "WHY ARE YOU HERE"
+        si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
+    elif is_fedora; then
+        si gnome-extensions-app gnome-tweaks
+    fi
+
     pipx install gnome-extensions-cli --system-site-packages
 
     if is_ubuntu; then
+        slog "WHY ARE YOU HERE"
         gnome-extensions disable tiling-assistant@ubuntu.com
         gnome-extensions disable ubuntu-appindicators@ubuntu.com
         gnome-extensions disable ubuntu-dock@ubuntu.com
         gnome-extensions disable ding@rastersoft.com
     fi
 
-    gnome_extensions_install
     gnome_settings_install
     gnome_keybindings_install
+    gnome_extensions_install
 }
 
 sway_waybar_config_install() {

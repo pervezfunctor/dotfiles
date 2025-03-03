@@ -27,7 +27,7 @@ help() {
 
 fg_config() {
     while [[ "$#" -gt 0 ]]; do
-    if fn_exists "${1}_install"; then
+    if fn_exists "${1}_config_install"; then
         "${1}_config_install"
     else
         err_exit "No such config: $1"
@@ -53,7 +53,7 @@ main() {
         echo ""
         slog "Selected: ${SELECTED_OPTIONS}. Configuring..."
         echo ""
-        config $SELECTED_OPTIONS
+        fg-config $SELECTED_OPTIONS
         slog "Configuration complete."
     else
         slog "No options selected."
