@@ -1,0 +1,53 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -sSL https://dub.sh/z3pTnAK)
+
+nix_distrobox_setup() {
+    has_cmd distrbox || return 0
+
+    toolbox --assumeyes create
+
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
+}
+
+toolbox_setup() {
+    has_cmd toolbox || return 0
+
+    toolbox --assumeyes create
+
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
+}
+
+main() {
+    has_cmd git || err_exit "git not installed! Qutting."
+
+    dotfiles_install
+
+    mise_install
+
+    starship_install
+    bash_config_install
+
+    if is_desktop; then
+        jetbrains_nerd_font_install
+
+        has_cmd flatpak || return 0
+
+        flathub_install
+        vscode_flatpak_install
+        fpi app.devsuite.Ptyxis
+        fpi io.github.getnf.embellish
+
+        has_cmd gsettings && gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
+    fi
+
+    toolbox_setup
+}
+
+is_linux || err_exit "This script is only for Linux"
+
+bootstrap "Linux OS"
+
+}
