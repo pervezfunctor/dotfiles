@@ -687,7 +687,7 @@ environs() {
     export LANG=en_US.UTF-8
 }
 
-fg-installer() {
+ilm-installer() {
     while [[ "$#" -gt 0 ]]; do
         if [[ "$1" == @* ]]; then
             if fn_exists "${1:1}_groupstall"; then

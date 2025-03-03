@@ -27,7 +27,7 @@ help() {
     echo ""
 }
 
-installer() {
+ilm-installer() {
     slog "Installing $1 distrobox"
 
     if [[ "$1" == "bluefin" ]]; then
@@ -43,7 +43,7 @@ installer() {
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        installer $1
+        ilm-installer $1
         return 0
     fi
 
