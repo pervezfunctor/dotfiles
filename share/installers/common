@@ -160,13 +160,10 @@ apps_install() {
     fpi io.github.dvlv.boxbuddyrs
     fpi io.github.getnf.embellish
 
-    alias wezterm="flatpak run org.wezfurlong.wezterm"
-
     slog "Flatpak apps installation done!"
 }
 
 more_apps_install() {
-    fpi org.wezfurlong.wezterm
     fpi app.devsuite.Ptyxis
     fpi org.wireshark.Wireshark
     fpi sh.cider.Cider
@@ -175,6 +172,10 @@ more_apps_install() {
     fpi io.dbeaver.DBeaverCommunity
     fpi io.podman_desktop.PodmanDesktop
     fpi io.github.zyedidia.micro
+    fpi org.wezfurlong.wezterm
+
+    alias wezterm="flatpak run org.wezfurlong.wezterm"
+
     # fpi com.jetbrains.CLion
     # fpi com.google.Chrome
 }
@@ -206,6 +207,7 @@ nvim_config_install() {
 starship_install() {
     has_cmd starship && return 0
 
+    smd ~/.local/bin
     curl -sS https://starship.rs/install.sh | sh -s -- -y
 }
 
@@ -758,13 +760,6 @@ brew_shell_slim_install() {
     has_cmd emacs || bis micro
 }
 
-# nix-channel is old, don't use it
-home_manager_install() {
-    nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
-    nix-channel --update
-    nix-shell '<home-manager>' -A install
-}
-
 brew_shell_install() {
     # bi ffmpeg sevenzip poppler imagemagick
     # bis gping ncdu httpie font-symbols-only-nerd-font
@@ -1168,7 +1163,6 @@ base_groupstall() {
 nix_groupstall() {
     base_groupstall
     nix_install
-    home_manager_install
 
     cmd_check home-manager nix
 }
