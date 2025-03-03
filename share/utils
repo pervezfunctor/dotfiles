@@ -655,6 +655,7 @@ environs() {
     smd ~/.local/bin
     smd ~/bin
     smd ~/.bin
+    smd ~/homes
 
     export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
     export PNPM_HOME="$HOME/.local/share/pnpm:$PATH"
@@ -675,8 +676,8 @@ environs() {
     export HOMEBREW_NO_AUTO_UPDATE=1
     eval_brew
 
-    # set locale
-    export LANG=en_US.UTF-8
+    # @TODO: containers sometimes don't have this locale
+    # export LANG=en_US.UTF-8
 }
 
 ilm-installer() {
@@ -701,7 +702,7 @@ bootstrap() {
 
     slog "Removing old logs"
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2> /dev/null
-    keep_sudo_running
+    [ -n "$NOSUDO" ] || keep_sudo_running
 
     INSTALLERS="${BASE_URL}/share/installers"
     source_curl "$INSTALLERS/common"
