@@ -133,9 +133,10 @@ dbox_to_image() {
 }
 
 dbox_from_image() {
+    local distrobox_name=${1:dbox}
     smd ~/homes
-    distrobox create --image $1:latest --name distrobox_name
-    distrobox enter --name distrobox_name
+    distrobox create --image $1:latest --name $distrobox_name
+    distrobox enter --name $distrobox_name
 }
 
 
