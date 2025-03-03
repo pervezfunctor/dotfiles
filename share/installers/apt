@@ -80,13 +80,16 @@ cli_install() {
     # old fzf doesn't support --bash
     # old stow version does not work on dot-* folders;
     sudo apt purge -y stow fzf
+
     si gawk tmux pkg-config urlview zsh git
 
-    # installed using brew
-    # si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
-    # si gh shellcheck just htop shfmt tree-sitter-cli
+    if ! has_cmd brew; then
+        warn "using brew for newer versions"
 
-    # gh extension install github/gh-copilot
+        si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
+        si gh shellcheck just htop shfmt tree-sitter-cli
+        gh extension install github/gh-copilot
+    fi
 }
 
 cpp_install() {
@@ -146,7 +149,13 @@ windsurf_install() {
 }
 
 ui_install() {
-    si kitty chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
+    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
+
+    if has_cmd snap; then
+        snap install ghostty --classic
+    else
+        si kitty
+    fi
 
     vscode_bin_install
     apps_install
