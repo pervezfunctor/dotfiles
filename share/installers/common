@@ -1165,6 +1165,7 @@ base_groupstall() {
 nix_groupstall() {
     base_groupstall
     nix_install
+    home_manager_install
 
     cmd_check home-manager nix
 }
