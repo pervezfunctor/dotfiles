@@ -289,7 +289,6 @@ incus_config_install() {
     fi
     slog "incus config"
 
-    sudo incus admin init --minimal
     sudo usermod -aG incus $USER
     sudo usermod -aG incus-admin $USER
     sudo systemctl enable --now incus.socket
@@ -299,6 +298,9 @@ incus_config_install() {
         sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
         sudo firewall-cmd --reload
     fi
+
+    # should be invoked by user after reboot
+    # sudo incus admin init --minimal
 
     slog "incus config done!"
 }
@@ -1283,7 +1285,7 @@ gnome_extensions_install() {
     gext install AlphabeticalAppGrid@stuarthayhurst
 }
 
-gnome_basic_settings() {
+gnome_settings_install() {
     if ! has_cmd gsettings; then
         warn "gsettings not found, skipping gnome basic settings"
         return 1
@@ -1296,20 +1298,244 @@ gnome_basic_settings() {
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
     gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
     gsettings set org.gnome.desktop.interface accent-color 'purple'
+
+    # Use 4 fixed workspaces instead of dynamic mode
+    gsettings set org.gnome.mutter dynamic-workspaces false
+    gsettings set org.gnome.desktop.wm.preferences num-workspaces 4
+
+    # Center new windows in the middle of the screen
+    gsettings set org.gnome.mutter center-new-windows true
+
+    # Set JetBrains Mono as the default monospace font
+    gsettings set org.gnome.desktop.interface monospace-font-name 'JetbrainsMono Nerd Font 11'
 }
 
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
 gnome_config_install() {
+    if ! is_gnome; then
+        warn "Not running GNOME, skipping GNOME config"
+        return 1
+    fi
+
     si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
     pipx install gnome-extensions-cli --system-site-packages
 
-    gnome-extensions disable tiling-assistant@ubuntu.com
-    gnome-extensions disable ubuntu-appindicators@ubuntu.com
-    gnome-extensions disable ubuntu-dock@ubuntu.com
-    gnome-extensions disable ding@rastersoft.com
-    # xdg-settings set default-web-browser google-chrome.desktop
+    if is_ubuntu; then
+        gnome-extensions disable tiling-assistant@ubuntu.com
+        gnome-extensions disable ubuntu-appindicators@ubuntu.com
+        gnome-extensions disable ubuntu-dock@ubuntu.com
+        gnome-extensions disable ding@rastersoft.com
+    fi
 
-    # Turn off default Ubuntu extensions
+    gnome_extensions_install
+    gnome_settings_install
+    gnome_keybindings_install
+}
+
+sway_waybar_config_install() {
+    slog "waybar config"
+    has_cmd waybar || return 1
+    stowgf waybar
+    slog "waybar config done!"
+}
+
+hypr-waybar_config_install() {
+    has_cmd waybar || return 1
+
+    slog "waybar config"
+    stowgf hypr-waybar
+    slog "waybar config done!"
+}
+
+wlogout_config_install() {
+    slog "wlogout config"
+    has_cmd wlogout || return 1
+    stowgf wlogout
+    slog "wlogout config done!"
+}
+
+sway_config_install() {
+    has_cmd sway || return 1
+    slog "sway config"
+    stowgf sway
+    slog "sway config done!"
+}
+
+rofi_config_install() {
+    has_cmd rofi || return 1
+
+    slog "rofi config"
+    stowgf rofi
+    slog "rofi config done!"
+}
+
+hyprland_config_install() {
+    slog "hypr config install"
+
+    hypr_waybar_config_install
+    wlogout_config_install
+    rofi_config_install
+    kitty_config_install
+
+    slog "hypr config done!"
+}
+
+sway_install() {
+    slog "Installing sway..."
+
+    sway_bin_install
+
+    sway_waybar_config_install
+    kitty_config_install
+    sway_config_install
+    rofi_config_install
+    wlogout_config_install
+
+    slog "Installing sway done!"
+
+    # has_cmd pip || has_cmd python3 && python3 -m ensurepip --user --default-pip
+
+    # if ! has_cmd pip; then
+    #     warn "pip not installed, cannot install autotiling"
+    #     return 1
+    # fi
+
+    # pip install --user --force-reinstall --upgrade i3ipc
+    # pip install --user --force-reinstall --upgrade autotiling
+
+}
+
+hyprland_install() {
+    slog "Installing hyprland..."
+
+    hyprland_bin_install
+
+    hyprland_config_install
+    hypr-waybar_config_install
+    kitty_config_install
+    sway_config_install
+    rofi_config_install
+    wlogout_config_install
+
+    slog "hyprland installation done!"
+}
+
+sway_groupstall() {
+    slog "Installing sway"
+    shell_groupstall
+
+    sway_install
+
+    slog "sway instalation done!"
+}
+
+
+hyprland_groupstall() {
+    slog "Installing hyprland"
+    shell_groupstall
+
+    hyprland_install
+
+    slog "hyprland instalation done!"
+}
+
+github_user_setup() {
+    if ! has_cmd gh; then
+        warn "gh not installed, skipping github user setup"
+        return 1
+    fi
+
+    gh auth login
+}
+
+kwin_script_install() {
+    local SCRIPT="$1"
+
+    if plasmapkg2 -t kwinscript -l | grep -q "krohnkite"; then
+        echo "Upgrading KWin script $SCRIPT ..."
+        plasmapkg2 -t kwinscript -u "$SCRIPT"
+    else
+        echo "Installing KWin script $SCRIPT ..."
+        plasmapkg2 -t kwinscript -i "$SCRIPT"
+    fi
+}
+
+kde_settings() {
+    if ! is_kde; then
+        warn "Not running KDE, skipping KDE settings"
+        return 1
+    fi
+
+    if ! [[ $(plasma_major_version) -eq 6 ]]; then
+        warn "KDE Plasma 6 is required"
+        return 1
+    fi
+
+    kwin_script_install "krohnkite.kwinscript"
+}
+
+
+# https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-hotkeys.sh
+gnome_keybindings_install() {
+    # Make it easy to resize undecorated windows
+    gsettings set org.gnome.desktop.wm.keybindings begin-resize "['<Super>BackSpace']"
+
+    # Alt+F4 is very cumbersome
+    # gsettings set org.gnome.desktop.wm.keybindings close "['<Super>w']"
+
+    # Make it easy to maximize like you can fill left/right
+    # gsettings set org.gnome.desktop.wm.keybindings maximize "['<Super>Up']"
+
+    # For keyboards that only have a start/stop button for music, like Logitech MX Keys Mini
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys next "['<Shift>AudioPlay']"
+
+    # Full-screen with title/navigation bar
+    # gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Shift>F11']"
+
+    # # Use alt for pinned apps
+    # gsettings set org.gnome.shell.keybindings switch-to-application-1 "['<Alt>1']"
+    # gsettings set org.gnome.shell.keybindings switch-to-application-2 "['<Alt>2']"
+    # gsettings set org.gnome.shell.keybindings switch-to-application-3 "['<Alt>3']"
+    # gsettings set org.gnome.shell.keybindings switch-to-application-4 "['<Alt>4']"
+    # gsettings set org.gnome.shell.keybindings switch-to-application-5 "['<Alt>5']"
+    # gsettings set org.gnome.shell.keybindings switch-to-application-6 "['<Alt>6']"
+    # gsettings set org.gnome.shell.keybindings switch-to-application-7 "['<Alt>7']"
+    # gsettings set org.gnome.shell.keybindings switch-to-application-8 "['<Alt>8']"
+    # gsettings set org.gnome.shell.keybindings switch-to-application-9 "['<Alt>9']"
+
+    # # Use super for workspaces
+    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-1 "['<Super>1']"
+    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-2 "['<Super>2']"
+    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-3 "['<Super>3']"
+    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-4 "['<Super>4']"
+    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-5 "['<Super>5']"
+    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-6 "['<Super>6']"
+
+    # # Reserve slots for custom keybindings
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/']"
+
+    # # Set ulauncher to Super+Space
+    # gsettings set org.gnome.desktop.wm.keybindings switch-input-source "@as []"
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name 'ulauncher-toggle'
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 'ulauncher-toggle'
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ binding '<Super>space'
+
+    # # Set flameshot (with the sh fix for starting under Wayland) on alternate print screen key
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ name 'Flameshot'
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ command 'sh -c -- "flameshot gui"'
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ binding '<Control>Print'
+
+    # # Start a new alacritty window (rather than just switch to the already open one)
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ name 'alacritty'
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ command 'alacritty'
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ binding '<Shift><Alt>2'
+
+    # # Start a new Chrome window (rather than just switch to the already open one)
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ name 'new chrome'
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ command 'google-chrome'
+    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ binding '<Shift><Alt>1'
+
+    # xdg-settings set default-web-browser google-chrome.desktop
 
     # Install new extensions
 
@@ -1402,262 +1628,23 @@ gnome_config_install() {
     # app/org.gustavoperedo.FontDownloader
     # runtime/org.gtk.Gtk3theme.adw-gtk3/x86_64/3.22
     # runtime/org.gtk.Gtk3theme.adw-gtk3-dark/x86_64/3.22
+
+#     # Reveal week numbers in the Gnome calendar
+#     gsettings set org.gnome.desktop.calendar show-weekdate true
 }
 
-plasma_major_version() {
-    has_cmd plasmashell && plasmashell --version | cut -d' ' -f2 | cut -d'.' -f1
-}
+# ulauncher_install() {
+#     sudo add-apt-repository universe -y
+#     sudo add-apt-repository ppa:agornostal/ulauncher -y
+#     sudo apt update -y
+#     sudo apt install -y ulauncher
 
-gnome_major_version() {
-    has_cmd gnome-shell && gnome-shell --version | cut -d' ' -f3 | cut -d'.' -f1
-}
-
-kwin_script_install() {
-    local SCRIPT="$1"
-
-    if plasmapkg2 -t kwinscript -l | grep -q "krohnkite"; then
-        echo "Upgrading KWin script $SCRIPT ..."
-        plasmapkg2 -t kwinscript -u "$SCRIPT"
-    else
-        echo "Installing KWin script $SCRIPT ..."
-        plasmapkg2 -t kwinscript -i "$SCRIPT"
-    fi
-}
-
-kde_settings() {
-    if ! is_kde; then
-        warn "Not running KDE, skipping KDE settings"
-        return 1
-    fi
-
-    if ! [[ $(plasma_major_version) -eq 6 ]]; then
-        warn "KDE Plasma 6 is required"
-        return 1
-    fi
-
-    kwin_script_install "krohnkite.kwinscript"
-}
-
-# https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-hotkeys.sh
-gnome_keybindings() {
-    # Alt+F4 is very cumbersome
-    gsettings set org.gnome.desktop.wm.keybindings close "['<Super>w']"
-
-    # Make it easy to maximize like you can fill left/right
-    gsettings set org.gnome.desktop.wm.keybindings maximize "['<Super>Up']"
-
-    # Make it easy to resize undecorated windows
-    gsettings set org.gnome.desktop.wm.keybindings begin-resize "['<Super>BackSpace']"
-
-    # For keyboards that only have a start/stop button for music, like Logitech MX Keys Mini
-    gsettings set org.gnome.settings-daemon.plugins.media-keys next "['<Shift>AudioPlay']"
-
-    # Full-screen with title/navigation bar
-    gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Shift>F11']"
-
-    # Use 6 fixed workspaces instead of dynamic mode
-    gsettings set org.gnome.mutter dynamic-workspaces false
-    gsettings set org.gnome.desktop.wm.preferences num-workspaces 6
-
-    # Use alt for pinned apps
-    gsettings set org.gnome.shell.keybindings switch-to-application-1 "['<Alt>1']"
-    gsettings set org.gnome.shell.keybindings switch-to-application-2 "['<Alt>2']"
-    gsettings set org.gnome.shell.keybindings switch-to-application-3 "['<Alt>3']"
-    gsettings set org.gnome.shell.keybindings switch-to-application-4 "['<Alt>4']"
-    gsettings set org.gnome.shell.keybindings switch-to-application-5 "['<Alt>5']"
-    gsettings set org.gnome.shell.keybindings switch-to-application-6 "['<Alt>6']"
-    gsettings set org.gnome.shell.keybindings switch-to-application-7 "['<Alt>7']"
-    gsettings set org.gnome.shell.keybindings switch-to-application-8 "['<Alt>8']"
-    gsettings set org.gnome.shell.keybindings switch-to-application-9 "['<Alt>9']"
-
-    # Use super for workspaces
-    gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-1 "['<Super>1']"
-    gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-2 "['<Super>2']"
-    gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-3 "['<Super>3']"
-    gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-4 "['<Super>4']"
-    gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-5 "['<Super>5']"
-    gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-6 "['<Super>6']"
-
-    # Reserve slots for custom keybindings
-    gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/']"
-
-    # Set ulauncher to Super+Space
-    gsettings set org.gnome.desktop.wm.keybindings switch-input-source "@as []"
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name 'ulauncher-toggle'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 'ulauncher-toggle'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ binding '<Super>space'
-
-    # Set flameshot (with the sh fix for starting under Wayland) on alternate print screen key
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ name 'Flameshot'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ command 'sh -c -- "flameshot gui"'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ binding '<Control>Print'
-
-    # Start a new alacritty window (rather than just switch to the already open one)
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ name 'alacritty'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ command 'alacritty'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ binding '<Shift><Alt>2'
-
-    # Start a new Chrome window (rather than just switch to the already open one)
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ name 'new chrome'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ command 'google-chrome'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ binding '<Shift><Alt>1'
-}
-
-# https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-settings.sh
-more_gnome_settings() {
-    # Center new windows in the middle of the screen
-    gsettings set org.gnome.mutter center-new-windows true
-
-    # Set Cascadia Mono as the default monospace font
-    gsettings set org.gnome.desktop.interface monospace-font-name 'CaskaydiaMono Nerd Font 10'
-
-    # Reveal week numbers in the Gnome calendar
-    gsettings set org.gnome.desktop.calendar show-weekdate true
-}
-
-ulauncher_install() {
-    sudo add-apt-repository universe -y
-    sudo add-apt-repository ppa:agornostal/ulauncher -y
-    sudo apt update -y
-    sudo apt install -y ulauncher
-
-    # Start ulauncher to have it populate config before we overwrite
-    mkdir -p ~/.config/autostart/
-    cp ~/.local/share/omakub/configs/ulauncher.desktop ~/.config/autostart/ulauncher.desktop
-    gtk-launch ulauncher.desktop >/dev/null 2>&1
-    sleep 2 # ensure enough time for ulauncher to set defaults
-    cp ~/.local/share/omakub/configs/ulauncher.json ~/.config/ulauncher/settings.json
-}
-
-gnome_settings() {
-    if ! is_gnome; then
-        warn "Not running GNOME, skipping GNOME keybindings"
-        return 1
-    fi
-
-    if [[ $(gnome_major_version) -lt 47 ]]; then
-        warn "GNOME 47 or later is required"
-        return 1
-    fi
-
-    gnome_keybindings
-    gnome_config_install
-    more_gnome_settings
-}
-
-sway_waybar_config_install() {
-    slog "waybar config"
-    has_cmd waybar || return 1
-    stowgf waybar
-    slog "waybar config done!"
-}
-
-hypr-waybar_config_install() {
-    has_cmd waybar || return 1
-
-    slog "waybar config"
-    stowgf hypr-waybar
-    slog "waybar config done!"
-}
-
-wlogout_config_install() {
-    slog "wlogout config"
-    has_cmd wlogout || return 1
-    stowgf wlogout
-    slog "wlogout config done!"
-}
-
-sway_config_install() {
-    has_cmd sway || return 1
-    slog "sway config"
-    stowgf sway
-    slog "sway config done!"
-}
-
-rofi_config_install() {
-    has_cmd rofi || return 1
-
-    slog "rofi config"
-    stowgf rofi
-    slog "rofi config done!"
-}
-
-    # has_cmd pip || has_cmd python3 && python3 -m ensurepip --user --default-pip
-
-    # if ! has_cmd pip; then
-    #     warn "pip not installed, cannot install autotiling"
-    #     return 1
-    # fi
-
-    # pip install --user --force-reinstall --upgrade i3ipc
-    # pip install --user --force-reinstall --upgrade autotiling
-
-hyprland_config_install() {
-    slog "hypr config install"
-
-    hypr_waybar_config_install
-    wlogout_config_install
-    rofi_config_install
-    kitty_config_install
-
-    slog "hypr config done!"
-}
-
-sway_install() {
-    slog "Installing sway..."
-
-    sway_bin_install
-
-    sway_waybar_config_install
-    kitty_config_install
-    sway_config_install
-    rofi_config_install
-    wlogout_config_install
-
-    slog "Installing sway done!"
-}
-
-hyprland_install() {
-    slog "Installing hyprland..."
-
-    hyprland_bin_install
-
-    hyprland_config_install
-    hypr-waybar_config_install
-    kitty_config_install
-    sway_config_install
-    rofi_config_install
-    wlogout_config_install
-
-    slog "hyprland installation done!"
-}
-
-sway_groupstall() {
-    slog "Installing sway"
-    shell_groupstall
-
-    sway_install
-
-    slog "sway instalation done!"
-}
-
-
-hyprland_groupstall() {
-    slog "Installing hyprland"
-    shell_groupstall
-
-    hyprland_install
-
-    slog "hyprland instalation done!"
-}
-
-github_user_setup() {
-    if ! has_cmd gh; then
-        warn "gh not installed, skipping github user setup"
-        return 1
-    fi
-
-    gh auth login
-}
+#     # Start ulauncher to have it populate config before we overwrite
+#     mkdir -p ~/.config/autostart/
+#     cp ~/.local/share/omakub/configs/ulauncher.desktop ~/.config/autostart/ulauncher.desktop
+#     gtk-launch ulauncher.desktop >/dev/null 2>&1
+#     sleep 2 # ensure enough time for ulauncher to set defaults
+#     cp ~/.local/share/omakub/configs/ulauncher.json ~/.config/ulauncher/settings.json
+# }
 
 }
