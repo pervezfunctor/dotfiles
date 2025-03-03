@@ -69,6 +69,8 @@
   programs.git.enable = true;
   programs.zsh.enable = true;
 
+  nixpkgs.config.allowUnfree = true;
+
   home.file = {
     ".zshrc" = { source = ~/.ilm/zsh/dot-zshrc; };
     ".config/nvim" = { source = ~/.ilm/nvim/dot-config/nvim; };
