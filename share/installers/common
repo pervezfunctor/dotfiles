@@ -130,10 +130,11 @@ ptyxis_config_install() {
     has_cmd gsettings || return 1
 
     gsettings set org.gnome.Ptyxis use-system-font false
-    gsettings set org.gnome.Ptyxis font-name 'JetBrainsMono Nerd Font Medium 12'
+    gsettings set org.gnome.Ptyxis font-name 'JetBrains Mono Medium 12'
     gsettings set org.gnome.Ptyxis interface-style 'dark'
 
-    local profid=$(gsettings get org.gnome.Ptyxis default-profile-uuid)
+    local profid
+    profid=$(gsettings get org.gnome.Ptyxis default-profile-uuid)
     gsettings set "org.gnome.Ptyxis.Profile:/${profid}/" palette 'Catppuccin Mocha'
 }
 
