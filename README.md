@@ -2,16 +2,15 @@
 
 ## TLDR
 
-Install shell tools
+If your on desktop and want to get started quickly, use the following command.
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- dev
+```
+If within a container, use the following command.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
-```
-
-Reboot your machine and install vscode with the following command.
-
-```bash
-ilm-installer vscode
 ```
 
 ## Recommended Setup
