@@ -1206,7 +1206,6 @@ tbox_default_setup() {
     toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- $group
 }
 
-
 dev_groupstall() {
     slog "Generic OS setup for Development(docker,vscode,kitty,brew,flatpak, distrobox)"
 
@@ -1228,17 +1227,17 @@ dev_groupstall() {
     docker_install
     atomic_distrobox_install
 
-    si kitty
-    has_cmd kitty || kitty_install
     jetbrains_nerd_font_install
 
     if has_cmd flatpak; then
         flathub_install
+        ptyxis_install
         fpi us.zoom.Zoom
         fpi md.obsidian.Obsidian
-    else
-        cursor_install
-        warn "flatpak not installed, skipping apps"
+    elif ! flatpak list | grep -q Ptyxis; then fpi
+            si kitty
+            has_cmd kitty || kitty_install
+        fi
     fi
 }
 
@@ -1252,14 +1251,14 @@ pixi_nosudo_groupstall() {
 
     mise_install
 
-    if is_desktop; then
-        smd ~/.local/share/fonts
-        jetbrains_nerd_font_install
-        kitty_install
-        kitty_config_install
-        vscode_flatpak_install
-    fi
-    toolbox_setup
+    is_desktop || return 0
+
+    smd ~/.local/share/fonts
+    jetbrains_nerd_font_install
+    kitty_install
+    kitty_config_install
+    vscode_flatpak_install
+    tbox_default_setup
 }
 
 nosudo_groupstall() {
@@ -1283,6 +1282,7 @@ nosudo_groupstall() {
     fi
 
     if  has_cmd podman || has_cmd docker; then
+        atomic_distrobox_install
         dbox_nix_setup
         tbox_default_setup
     fi
