@@ -27,12 +27,12 @@ ublue_emacs_setup() {
 }
 
 ublue_cpp_setup() {
-    slog "cpp installation"
+    slog "Installing C++ tools"
 
     bi llvm lld
     bis clang-format cmake
 
-    slog "cpp installation done!"
+    slog "C++ installation done!"
 }
 
 ublue_apps_setup() {
@@ -41,7 +41,9 @@ ublue_apps_setup() {
         return 1
     fi
 
+    slog "Installing apps for ublue"
     apps_slim_install
+    slog "apps installation done!"
 }
 
 ublue_code_setup() {
@@ -94,14 +96,6 @@ bluefin_setup() {
 }
 
 main() {
-    if is_bluefin; then
-        slog "Setup Bluefin CLI"
-        just bluefin-cli
-    else
-        slog "Setup Aurora CLI"
-        just aurora-cli
-    fi
-
     dotfiles_install
     python_install
     ublue_brew_setup
@@ -113,17 +107,15 @@ main() {
     ptyxis_config_install
 
     if [[ "$USER" == "pervez" ]]; then
+        slog "Setting up ublue for myself"
         ublue_cpp_setup
         ublue_emacs_setup
         nvim_config_install
         git_config_install
     fi
-
-    slog "Setup cockpit"
-    just cockpit
 }
 
-if is_ublue && has_cmd git && has_cmd just && has_cmd brew && has_cmd python3 && has_cmd code && has_cmd flatpak && has_cmd distrobox; then
+if is_ublue && has_cmd git && has_cmd brew && has_cmd python3 && has_cmd code && has_cmd flatpak && has_cmd distrobox; then
     export NOSUDO=1
     bootstrap "uBlue OS"
 else
