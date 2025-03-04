@@ -1206,6 +1206,42 @@ tbox_default_setup() {
     toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- $group
 }
 
+
+dev_groupstall() {
+    slog "Generic OS setup for Development(docker,vscode,kitty,brew,flatpak, distrobox)"
+
+    core_install
+
+    brew_install
+    python_install
+
+    has_cmd trash || bi trash-cli
+    has_cmd rg || bi ripgrep
+    has_cmd delta || bi git-delta
+
+    bis gh wget tree tar unzip stow micro make cmake
+    bis zsh starship fzf fd bat zoxide eza htop tmux gum
+    bi bash-preexec
+
+    vscode_install
+
+    docker_install
+    atomic_distrobox_install
+
+    si kitty
+    has_cmd kitty || kitty_install
+    jetbrains_nerd_font_install
+
+    if has_cmd flatpak; then
+        flathub_install
+        fpi us.zoom.Zoom
+        fpi md.obsidian.Obsidian
+    else
+        cursor_install
+        warn "flatpak not installed, skipping apps"
+    fi
+}
+
 pixi_nosudo_groupstall() {
     has_cmd git || err_exit "git not installed! Qutting."
 
