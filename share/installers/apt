@@ -29,7 +29,7 @@ core_install() {
     update_packages
 
     si software-properties-common apt-transport-https ca-certificates gpg
-    si curl wget git-core trash-cli tree command-not-found
+    si curl wget git-core trash-cli tree command-not-found file
     si tar unzip cmake build-essential stow libfuse2 zstd
 }
 

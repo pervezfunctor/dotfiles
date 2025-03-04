@@ -8,7 +8,7 @@ main() {
     has_cmd git || err_exit "Install git before running this script"
 
     if is_linux && has_cmd python3; then
-        atomic_python_install
+        python_install
     fi
 
     if is_mac; then

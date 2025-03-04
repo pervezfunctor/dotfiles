@@ -21,7 +21,7 @@ core_install() {
     update_packages
 
     si curl wget git base-devel trash-cli tree micro tar unzip stow cmake zstd
-    si fuse2
+    si fuse2 file
 }
 
 sys_python_install() {

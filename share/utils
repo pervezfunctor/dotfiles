@@ -497,9 +497,18 @@ set_zsh_as_default() {
     chsh -s $(which zsh)
 }
 
+nix_dotfiles() {
+    nix run nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
+}
+
 dotfiles_install() {
     if ! has_cmd git; then
-        err_exit "git not installed, cannot clone dotfiles"
+        if has_cmd nix; then
+            nix_dotfiles
+        else
+            si git
+            has_cmd git || err_exit "git not installed! Qutting."
+        fi
     fi
 
     slog "Cloning dotfiles to $DOT_DIR"
@@ -637,6 +646,18 @@ fpi() {
     for pkg in "$@"; do
         slog "Installing flatpak package $pkg"
         flatpak install -y --user flathub "$pkg"
+    done
+}
+
+pi() {
+    for p in "$@"; do
+        pixi global add "$p"
+    done
+}
+
+pis() {
+    for p in "$@"; do
+        has_cmd "$p" || pixi global add "$p"
     done
 }
 
