@@ -747,6 +747,17 @@ cmake_install() {
     cmd_check cmake
 }
 
+permissive_selinux() {
+    sed -i 's/^SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
+
+    sudo setenforce 0
+    if [[ "$(getenforce)" == "Permissive" ]]; then
+        slog "Successfully set SELinux to permissive mode."
+    else
+        err_exit "Failed to set SELinux to permissive mode. Quitting."
+    fi
+}
+
 brew_shell_slim_install() {
     bis tree-sitter gh gum stow tmux
     bis lazygit eza fzf fd zoxide starship yazi
@@ -1038,33 +1049,35 @@ atomic_distrobox_install() {
     slog "distrobox installation done!"
 }
 
-atomic_python_install() {
-    slog "python setup"
-
-    python3 -m ensurepip --user --default-pip
-    python3 -m pip install --user --force-reinstall --upgrade pip
-    cmd_check pip
-
-    pip install --upgrade --force-reinstall pipx
-    cmd_check pipx
-
-    pip install --upgrade --force-reinstall uv
-    cmd_check uv
-
-    has_cmd trash || pipx install --force trash-cli
-    cmd_check trash
-
-    slog "python setup done!"
-}
-
 uv_install() {
     has_cmd uv && return 0
 
     if has_cmd pipx; then
-        pipx install uv
+        pip install --upgrade --force-reinstall uv
+        cmd_check uv
     else
         curl -LsSf https://astral.sh/uv/install.sh | sh
     fi
+}
+
+python_install() {
+    slog "Installing python tools"
+
+    if ! has_cmd pipx; then
+        if ! has_cmd pip; then
+            python3 -m ensurepip --user --default-pip
+            python3 -m pip install --user --force-reinstall --upgrade pip
+        fi
+        has_cmd pip || return 1
+
+        pip install --upgrade --force-reinstall pipx
+        cmd_check pipx
+        has_cmd pipx || return 1
+    fi
+
+    uv_install
+
+    slog "Python tools installation done!"
 }
 
 mini_install() {
@@ -1151,6 +1164,89 @@ home_manager_install() {
     fi
 }
 
+pixi_shell_install() {
+    has_cmd trash || pi trash-cli
+    has_cmd || pi stow
+    has_cmd rg || pi ripgrep
+
+    pis lazygit eza fzf zoxide starship bat fd gh
+}
+
+nix_without_init_install() {
+    has_cmd nix && return 0
+
+    slog "Installing nix"
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
+    slog "nix installation done!"
+
+    cmd_check nix
+}
+
+dbox_nix_setup() {
+    if ! has_cmd distrobox; then
+        warn "distrobox not installed, skipping distrobox creation"
+         return 1
+    fi
+
+    source_curl "$DOT_DIR/share/fns"
+    dbox_nix
+}
+
+tbox_default_setup()
+    has_cmd toolbox || return 0
+
+    toolbox --assumeyes create
+
+    local group=${1:-shell}
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- $group
+}
+
+pixi_nosudo_groupstall() {
+    has_cmd git || err_exit "git not installed! Qutting."
+
+    dotfiles_install
+
+    pixi_install
+    has_cmd gh && github_user_setup
+
+    mise_install
+
+    if is_desktop; then
+        smd ~/.local/share/fonts
+        jetbrains_nerd_font_install
+        kitty_install
+        kitty_config_install
+        vscode_flatpak_install
+    fi
+    toolbox_setup
+}
+
+nosudo_groupstall() {
+    dotfiles_install
+
+    mise_install
+
+    starship_install
+    bash_config_install
+
+    if is_desktop; then
+        jetbrains_nerd_font_install
+
+        has_cmd flatpak || return 0
+
+        flathub_install
+        vscode_flatpak_install
+        fpi app.devsuite.Ptyxis
+
+        has_cmd gsettings && gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
+    fi
+
+    if  has_cmd podman || has_cmd docker; then
+        dbox_nix_setup
+        tbox_default_setup
+    fi
+}
+
 base-group_check() {
     cmd_check gcc make curl wget git trash tree tar unzip stow
     dir_check $DOT_DIR
@@ -1169,8 +1265,9 @@ nix_groupstall() {
     base_groupstall
     nix_install
     home_manager_install
+    devbox_install
 
-    cmd_check home-manager nix
+    cmd_check home-manager nix devbox
 }
 
 min-group_check() {
@@ -1256,7 +1353,7 @@ prog_groupstall() {
     rust_install
     pnpm_install
     python_install
-
+    uv_install
     prog-group_check
 }
 

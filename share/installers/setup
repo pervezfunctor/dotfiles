@@ -19,6 +19,10 @@ main() {
     fi
 }
 
+if [ "$1" == "nosudo" ]; then
+    export NOSUDO=1
+fi
+
 bootstrap "$@"
 
 slog "Installation done! Once you reboot you can use 'ilm-group-installer' command to install more packages"

@@ -1,62 +1,60 @@
+#! /usr/bin/env bash
+
+{
+
+source <(curl -sSL https://dub.sh/z3pTnAK)
+
+nvim_brewstall() {
+    has_cmd nvim || bi neovim
+    bis tree-sitter luarocks
+}
+
+emacs_brewstall() {
+  bis emacs clang-format clang-build-analyzer llvm cmake
+}
+
+cpp_brewstall() {
+  slog "Installing C++"
+
+  bis gcc gdb cmake ccache cppcheck pre-commit clang-format
+  bis strace valgrind cppcheck
+  bi llvm boost catch2 clang-build-analyzer lld
+
+  slog "C++ installation done!"
+}
+
 core_install() {
   brew_install
 
-  bis git gcc make curl wget tree tar unzip stow
+  bis git gh gcc make curl wget tree tar unzip stow
   has_cmd trash || bi trash-cli
 }
 
 essential_install() {
   core_install
-  # python_setup
+  atomic_python_setup
 
-    bis zip unar micro cmake
+  bis zip unar micro cmake
 }
 
 cli_install() {
-  bis gh
+  bis zsh starship fzf fd bat zoxide eza htop tmux
 
-  bis zsh starship zsh-syntax-highlighting zsh-autosuggestions fzf fd bat zoxide trash-cli eza htop
-
-  bi bash-preexec
+  bi bash-preexec zsh-syntax-highlighting zsh-autosuggestions
 
   has_cmd trash || bi trash-cli
   has_cmd rg || bi ripgrep
   has_cmd delta || bi git-delta
 }
 
-nvim_brew_install() {
-    has_cmd nvim || bi neovim
-    bis tree-sitter luarocks gcc make
-}
-
-emacs_install() {
-  bis emacs clang-format clang-build-analyzer llvm cmake
-
-  emacs_config_install
-}
-
 shell_install() {
-  shell_required_brew_install
-  nvim_brew_install
-  emacs_brew_install
-}
-
-cpp_install() {
-  slog "Installing C++"
-
-  bi gcc gdb cmake boost catch2 ccache cppcheck pre-commit llvm clang-format clang-build-analyzer lld strace valgrind cppcheck
-
-  slog "C++ installation done!"
-}
-
-distrobox_install() {
-  has_cmd distrobox && return 0
-
-  curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh
+  cli_install
+  nvim_brewstall
+  emacs_brewstall
 }
 
 ct_install() {
-  distrobox_install
+  atomic_distrobox_install
 }
 
 vm_install() {
@@ -87,10 +85,22 @@ ui_install() {
       warn "flatpal not installed, skipping apps"
     fi
 
+    flathub_install
     vscode_install
-    apps_install
+    fpi us.zoom.Zoom
+    fpi md.obsidian.Obsidian
+}
+
+main() {
+  essential_install
+  shell_install
+  ct_install
+  vm_install
+  ui_install
 }
 
 has_cmd git || err_exit "git not installed! Qutting."
 
 bootstrap "generic OS"
+
+}
