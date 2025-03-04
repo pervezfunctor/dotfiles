@@ -72,9 +72,8 @@ config_setup() {
     slog "config setup"
 
     bash_config_install
-    has_cmd zsh && zsh_config_install
-    has_cmd nvim && nvim_config_install
-    has_cmd tmux && tmux_config_install
+    zsh_config_install
+    tmux_config_install
 
     slog "config setup done!"
 }
@@ -111,11 +110,13 @@ main() {
     mise_install
     config_setup
     is_bluefin && bluefin_setup
+    ptyxis_config_install
 
     if [[ "$USER" == "pervez" ]]; then
-        git_config_install
         ublue_cpp_setup
         ublue_emacs_setup
+        nvim_config_install
+        git_config_install
     fi
 
     slog "Setup cockpit"
