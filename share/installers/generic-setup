@@ -32,7 +32,7 @@ core_install() {
 
 essential_install() {
   core_install
-  atomic_python_setup
+  python_install
 
   bis zip unar micro cmake
 }
