@@ -1196,7 +1196,7 @@ dbox_nix_setup() {
     dbox_nix
 }
 
-tbox_default_setup()
+tbox_default_setup() {
     has_cmd toolbox || return 0
 
     toolbox --assumeyes create
