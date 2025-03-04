@@ -2,6 +2,7 @@
   "window.titleBarStyle": "custom",
   "editor.fontFamily": "'JetbrainsMono Nerd Font Mono', 'Source Code Pro', 'Droid Sans Mono', 'monospace', monospace",
   "editor.fontLigatures": true,
+  "editor.fontWeight": "600",
   "editor.fontSize": 15,
   "editor.acceptSuggestionOnEnter": "smart",
   "editor.autoIndent": "advanced",
@@ -41,8 +42,6 @@
   "files.trimTrailingWhitespace": true,
   "git.openRepositoryInParentFolders": "always",
   "terminal.integrated.fontFamily": "JetbrainsMono Nerd Font Mono",
-  "terminal.integrated.fontSize": 14,
-  "terminal.integrated.defaultProfile.linux": "bash",
   "terminal.integrated.profiles.linux": {
     "bash": {
       "path": "host-spawn",
@@ -62,5 +61,6 @@
   "window.commandCenter": true,
   "workbench.commandPalette.preserveInput": true,
   "workbench.editor.highlightModifiedTabs": true,
-  "workbench.colorTheme": "Catppuccin Frappé"
+  "workbench.colorTheme": "Catppuccin Mocha",
+  "workbench.iconTheme": "catppuccin-mocha"
 }

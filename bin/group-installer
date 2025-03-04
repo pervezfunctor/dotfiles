@@ -4,24 +4,29 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-INSTALL_OPTIONS=("min" "shell" "ct" "vm" "prog" "all")
+INSTALL_OPTIONS=("nix" "min" "shell" "ct" "vm" "work" "desktop" "prog" "all" "sway" "hyprland")
 
 help() {
     echo "Usage: $0 [OPTION]"
     echo "Options:"
+    echo "  nix         nix installation"
     echo "  min         essential packages only."
     echo "  shell       min and shell tools and config for zsh, tmux, neovim."
     echo "  ct          shell and container tools - docker, podman, incus, distrobox."
     echo "  vm          ct and vm tools like buildah, libvirt."
+    echo "  work        min and vscode, flatpak apps."
+    echo "  desktop     vm and desktop apps like vscode, zoom, obsidian."
     echo "  prog        vm and programming tools for rust, go, web, c++, python."
     echo "  all         everything(not recommended)."
+    echo "  sway        sway desktop on fedora and tumbleweed."
+    echo "  hyprland    hyprland desktop on fedora and tumbleweed."
     echo "  help        show this help."
     echo ""
 }
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        "${1}-group_install"
+        "${1}_groupstall"
         return 0
     fi
 
@@ -30,13 +35,14 @@ main() {
         exit 0
     fi
 
-    SELECTED_OPTION=$(gum choose "${INSTALL_OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
+    SELECTED_OPTION=$(igum choose "${INSTALL_OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
 
     if [[ -n "$SELECTED_OPTION" ]]; then
         echo ""
-        echo "Selected: $SELECTED_OPTION"
+        slog "Selected: ${SELECTED_OPTION}. Installing.."
         echo ""
-        "${1}-group_install"
+        "${1}_groupstall"
+        slog "Installation complete."
     else
         slog "No option selected."
         return 1

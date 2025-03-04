@@ -4,28 +4,7 @@
 (defconst *is-a-linux* (eq system-type 'gnu/linux))
 (defconst *is-a-windows* (eq system-type 'windows-nt))
 
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name
-        "straight/repos/straight.el/bootstrap.el"
-        (or (bound-and-true-p straight-base-dir)
-            user-emacs-directory)))
-      (bootstrap-version 7))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
-
-(setq straight-use-package-by-default t)
-(straight-use-package 'use-package)
-
-(use-package catppuccin-theme
-  :config
-  (load-theme 'catppuccin t))
+(load-theme 'wombat t)
 
 ;; (require 'use-package)
 ;; (setq use-package-always-ensure t)
@@ -48,11 +27,11 @@
   ;; (load-theme 'wombat t)
 
   (when (display-graphic-p)
-    (if (find-font (font-spec :name "Jetbrains Mono"))
+    (if (find-font (font-spec :name "JetbrainsMono Nerd Font"))
         (set-face-attribute 'default nil
-                            :family "JetBrains Mono"
+                            :family "JetBrainsMono Nerd Font"
                             :weight 'bold
-                            :height 120)))
+                            :height 100)))
   (when *is-a-mac*
     (setq mac-option-modifier 'meta)
     (custom-set-variables '(ns-use-srgb-colorspace nil)))
@@ -160,7 +139,7 @@
   (use-short-answers t))
 
 (use-package mouse
-  :straight nil
+  :ensure nil
   :config
   (setq mouse-drag-and-drop-region t
         mouse-drag-and-drop-region-cut-when-buffers-differ t
@@ -173,28 +152,9 @@
     (global-set-key [mouse-4] (lambda () (interactive) (scroll-down 5)))
     (global-set-key [mouse-5] (lambda () (interactive) (scroll-up 5)))))
 
-(use-package uniquify
-  :straight nil
-  :init
-  (setq uniquify-buffer-name-style 'forward
-        uniquify-separator "/"
-        uniquify-after-kill-buffer-p t
-        uniquify-ignore-buffers-re "^\\*"
-        uniquify-min-dir-content 1))
-
-(use-package blackout
-  :ensure t
-  :config
-  (blackout 'auto-fill-mode)
-  (blackout 'flymake-mode)
-  (blackout 'auto-revert-mode)
-  (blackout 'word-wrap-whitespace-mode)
-  (blackout 'visual-line-mode)
-  (blackout 'hs-minor-mode)
-  (blackout 'auto-revert-mode))
 
 (use-package xdg
-  :ensure t
+  :ensure nil
   :config
   (setq user-emacs-directory (expand-file-name "emacs/" (xdg-config-home)))
   ;;  (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
@@ -216,8 +176,17 @@
   (setq org-directory (expand-file-name "emacs/org/" (xdg-data-home)))
   (setq tramp-persistency-file-name (expand-file-name "emacs/tramp" (xdg-state-home))))
 
+(use-package uniquify
+  :ensure nil
+  :init
+  (setq uniquify-buffer-name-style 'forward
+        uniquify-separator "/"
+        uniquify-after-kill-buffer-p t
+        uniquify-ignore-buffers-re "^\\*"
+        uniquify-min-dir-content 1))
+
 (use-package recentf
-  :straight nil
+  :ensure nil
   :config
   (recentf-mode 1)
   :custom
@@ -229,7 +198,7 @@
   :bind ("C-x C-r" . recentf-open-files))
 
 (use-package savehist
-  :straight nil
+  :ensure nil
   :config
   (savehist-mode 1)
   :custom
@@ -237,20 +206,20 @@
   (savehist-autosave-interval 60))
 
 (use-package server
-  :straight nil
+  :ensure nil
   :config
   (unless (server-running-p)
     (server-start)))
 
 (use-package saveplace
-  :straight nil
+  :ensure nil
   :config
   (save-place-mode 1)
   :custom
   (save-place-file (locate-user-emacs-file "places")))
 
 (use-package savehist
-  :straight nil
+  :ensure nil
   :init
   (setq desktop-save 'if-exists)
   :config
@@ -261,7 +230,7 @@
   (savehist-autosave-interval 60))
 
 (use-package desktop
-  :straight nil
+  :ensure nil
   :config
   (desktop-save-mode 1)
   :custom
@@ -270,174 +239,8 @@
   (desktop-restore-eager 5)
   (desktop-load-locked-desktop t))
 
-(use-package xclip
-  :config
-  (xclip-mode +1))
-
-(use-package sudo-edit
-  :bind (("C-c C-r" . sudo-edit)
-         ("C-c C-f" . sudo-edit-find-file))
-  :config
-  (setq sudo-edit-indicator-mode t
-        sudo-edit-local-method "sudo")
-
-  (defun my/sudo-edit-on-save-error ()
-    "Automatically reopen file with sudo if save fails due to permissions."
-    (interactive)
-    (when (and buffer-file-name
-               (not (file-writable-p buffer-file-name)))
-      (when (y-or-n-p "File not writable. Reopen it as root? ")
-        (sudo-edit))))
-
-  (add-hook 'find-file-hook #'my/sudo-edit-on-save-error))
-
-(use-package ace-window
-  :bind ("C-x o" . ace-window)
-  :init
-  (setq aw-dispatch-always t))
-
-(winner-mode)
-(windmove-default-keybindings)
-
-(use-package buffer-move
-  :bind (("<C-S-up>" . buf-move-up)
-         ("<C-S-down>" . buf-move-down)
-         ("<C-S-left>" . buf-move-left)
-         ("<C-S-right>" . buf-move-right)))
-
-(bind-key [remap just-one-space] 'cycle-spacing)
-(bind-key "RET" 'newline-and-indent)
-
-(use-package move-dup
-  :bind (("M-S-<down>" . move-dup-move-lines-down)
-         ("M-<down>" . move-dup-duplicate-down)
-         ("M-<up>" . move-dup-duplicate-up)
-         ("M-S-<up>" . move-dup-move-lines-up)))
-
-(use-package magit
-  :ensure t
-  :bind (("C-x g" . magit-status))
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
-  (magit-diff-refine-hunk 'all)
-  (magit-save-repository-buffers 'dontask)
-  ;; (magit-repository-directories '(("~/programs" . 2) ("~/.ilm" . 1)))  ;; Define Git repos
-  :config
-  ;; Improve Magit performance on large repositories
-  (setq magit-refresh-status-buffer nil)
-
-  ;; Automatically Refresh Magit Buffers**
-  (add-hook 'after-save-hook #'magit-after-save-refresh-status)
-
-  (with-eval-after-load 'project
-    (define-key project-prefix-map (kbd "m") #'magit-project-status)))
-
-;; (use-package sqlite3) ;; forge needs sqlite3
-
-;; GitHub/GitLab Issues & PRs**
-;; (use-package forge
-;;   :after magit
-;;   :config
-;;   (setq forge-alist nil)
-;;   :custom
-;;   (forge-topic-list-limit '(100 . -10))  ;; Show last 100 issues & PRs
-;;   (auth-sources '("~/.authinfo.gpg")))  ;; Store credentials securely
-
-(use-package which-key
-  :init
-  (which-key-mode))
-
-(use-package wgrep
-  :custom
-  (wgrep-auto-save-buffer t)
-  (wgrep-change-readonly-file t))
-
-(use-package rainbow-mode
-  :blackout rainbow-mode
-  :hook org-mode prog-mode)
-
-(use-package rainbow-delimiters
-  :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
-         (clojure-mode . rainbow-delimiters-mode)))
-
-(use-package treesit
-  :straight nil
-  :config
-  (setq treesit-language-source-alist
-        '((python "https://github.com/tree-sitter/tree-sitter-python")
-          (rust "https://github.com/tree-sitter/tree-sitter-rust")
-          (c "https://github.com/tree-sitter/tree-sitter-c")
-          (ocaml "https://github.com/tree-sitter/tree-sitter-ocaml")
-          (go "https://github.com/tree-sitter/tree-sitter-go")
-          (html "https://github.com/tree-sitter/tree-sitter-html")
-          (css "https://github.com/tree-sitter/tree-sitter-css")
-          (java "https://github.com/tree-sitter/tree-sitter-java")
-          (haskell "https://github.com/tree-sitter/tree-sitter-haskell")
-          (scala "https://github.com/tree-sitter/tree-sitter-scala")
-          (toml "https://github.com/tree-sitter/tree-sitter-toml")
-          (json "https://github.com/tree-sitter/tree-sitter-json")
-          (javascript "https://github.com/tree-sitter/tree-sitter-javascript")
-          (typescript "https://github.com/tree-sitter/tree-sitter-typescript")
-          (bash "https://github.com/tree-sitter/tree-sitter-bash")
-          (cpp "https://github.com/tree-sitter/tree-sitter-cpp")))
-
-  (dolist (lang '(c cpp python json toml bash))
-    (unless (treesit-language-available-p lang)
-      (treesit-install-language-grammar lang)))
-
-  (dolist (lang '(python rust c c++ json toml bash))
-    (add-to-list 'major-mode-remap-alist
-                 (cons (intern (format "%s-mode" lang))
-                       (intern (format "%s-ts-mode" lang))))))
-
-(use-package corfu
-  :ensure t
-  :custom
-  (corfu-cycle t)                ;; Enable cycling for completions
-  (corfu-auto t)                 ;; Enable auto completion
-  (corfu-auto-delay 0.2)
-  (corfu-preselect 'first)       ;; Preselect first candidate
-  (corfu-quit-at-boundary nil)   ;; Keep completion popup at boundary
-  (corfu-quit-no-match 'separator)
-  (corfu-scroll-margin 5)
-  :init
-  (global-corfu-mode)
-  :bind
-  (:map corfu-map
-        ("M-d" . corfu-popupinfo--toggle))
-  :config
-  (corfu-popupinfo-mode 1))
-
-(use-package corfu-terminal
-  :config
-  (unless (display-graphic-p)
-    (corfu-terminal-mode +1)))
-
-(use-package kind-icon
-  :ensure t
-  :config
-  (add-hook 'my-completion-ui-mode-hook
-   	        (lambda ()
-   	          (setq completion-in-region-function
-   		            (kind-icon-enhance-completion
-   		             completion-in-region-function)))))
-
-(use-package cape
-  :ensure t
-  :init
-  ;; Useful completion sources
-  (add-to-list 'completion-at-point-functions #'cape-file)
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-  (add-to-list 'completion-at-point-functions #'cape-keyword))
-
-(use-package orderless
-  :custom
-  (completion-styles '(orderless))
-  (completion-category-defaults nil)
-  (completion-category-overrides '((eglot (styles orderless)))))
-
 (use-package eglot
-  :straight nil
+  :ensure nil
 
   :hook ((c-mode c++-mode c-ts-mode c++-ts-mode python-mode python-ts-mode rust-mode rust-ts-mode) . eglot-ensure)
 
@@ -457,29 +260,8 @@
                                "--header-insertion=never"
                                "--header-insertion-decorators=0")))))
 
-;; Enable LLDB Debugging in Emacs
-(use-package realgud-lldb
-  :ensure t
-  :commands (realgud-lldb)
-  :config
-  (setq realgud:lldb-command-name "lldb"))
-
-(use-package apheleia
-  :ensure t
-  :config
-  (setq apheleia-formatters
-        (append apheleia-formatters
-                '((clang-format . ("clang-format" "-style=file")))))
-
-  (setf (alist-get 'ruff apheleia-formatters)
-        '("ruff" "format" "-"))
-
-  (setf (alist-get 'python-mode apheleia-mode-alist) 'ruff)
-
-  (apheleia-global-mode +1))
-
 (use-package isearch
-  :straight nil
+  :ensure nil
   :custom
   (isearch-allow-scroll t)
   (isearch-lazy-highlight t)
@@ -508,8 +290,7 @@
   (add-hook 'isearch-mode-end-hook #'(lambda () (recenter))))
 
 (use-package eldoc
-  :straight nil
-  :blackout eldoc-mode
+  :ensure nil
   :init
   (add-hook 'eval-expression-minibuffer-setup-hook #'eldoc-mode)
   (add-hook 'ielm-mode-hook #'eldoc-mode)
@@ -518,7 +299,7 @@
   (eldoc-idle-delay 0.2))
 
 (use-package dired
-  :straight nil
+  :ensure nil
   :config
   (setq dired-recursive-copies 'always
         dired-recursive-deletes 'always
@@ -533,14 +314,14 @@
   (dired-recursive-copies 'always))
 
 (use-package ediff
-  :straight nil
+  :ensure nil
   :init
   (setq  ediff-window-setup-function 'ediff-setup-windows-plain
          ediff-split-window-function 'split-window-horizontally
          ediff-merge-split-window-function 'split-window-horizontally))
 
 (use-package grep
-  :straight nil
+  :ensure nil
   :config
   (when (eq system-type 'windows-nt)
     (setq grep-use-null-device t))
@@ -551,11 +332,146 @@
   (grep-scroll-output t))
 
 (use-package json
-  :straight nil
+  :ensure nil
   :mode "\\.json\\'"
   :custom
   (json-reformat:pretty-string? t)
   (json-serialize-pretty t)
   (json-object-type 'plist))
 
-(use-package flycheck :ensure t)
+;; (use-package xclip
+
+;;   :config
+;;   (xclip-mode +1))
+
+;; (use-package sudo-edit
+;;   :bind (("C-c C-r" . sudo-edit)
+;;          ("C-c C-f" . sudo-edit-find-file))
+;;   :config
+;;   (setq sudo-edit-indicator-mode t
+;;         sudo-edit-local-method "sudo")
+
+;;   (defun my/sudo-edit-on-save-error ()
+;;     "Automatically reopen file with sudo if save fails due to permissions."
+;;     (interactive)
+;;     (when (and buffer-file-name
+;;                (not (file-writable-p buffer-file-name)))
+;;       (when (y-or-n-p "File not writable. Reopen it as root? ")
+;;         (sudo-edit))))
+
+;;   (add-hook 'find-file-hook #'my/sudo-edit-on-save-error))
+
+;; (use-package ace-window
+;;   :bind ("C-x o" . ace-window)
+;;   :init
+;;   (setq aw-dispatch-always t))
+
+;; (winner-mode)
+;; (windmove-default-keybindings)
+
+;; (use-package buffer-move
+;;   :bind (("<C-S-up>" . buf-move-up)
+;;          ("<C-S-down>" . buf-move-down)
+;;          ("<C-S-left>" . buf-move-left)
+;;          ("<C-S-right>" . buf-move-right)))
+
+;; (bind-key [remap just-one-space] 'cycle-spacing)
+;; (bind-key "RET" 'newline-and-indent)
+
+;; (use-package move-dup
+;;   :bind (("M-S-<down>" . move-dup-move-lines-down)
+;;          ("M-<down>" . move-dup-duplicate-down)
+;;          ("M-<up>" . move-dup-duplicate-up)
+;;          ("M-S-<up>" . move-dup-move-lines-up)))
+
+;; (use-package which-key
+;;   :init
+;;   (which-key-mode))
+
+;; (use-package company
+;;   :defer 2
+;;   :blackout company-mode
+;;   :custom
+;;   (company-begin-commands '(self-insert-command))
+;;   (company-idle-delay .1)
+;;   (company-minimum-prefix-length 2)
+;;   (company-show-numbers t)
+;;   (company-tooltip-align-annotations 't)
+;;   (global-company-mode t))
+
+;; (use-package company-box
+;;   :after company
+;;   :blackout company-box-mode
+;;   :hook (company-mode . company-box-mode))
+
+;; (use-package magit
+;;   :ensure t
+;;   :bind (("C-x g" . magit-status))
+;;   :custom
+;;   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+;;   (magit-diff-refine-hunk 'all)
+;;   (magit-save-repository-buffers 'dontask)
+;;   ;; (magit-repository-directories '(("~/programs" . 2) ("~/.ilm" . 1)))  ;; Define Git repos
+;;   :config
+;;   ;; Improve Magit performance on large repositories
+;;   (setq magit-refresh-status-buffer nil)
+
+;;   ;; Automatically Refresh Magit Buffers**
+;;   (add-hook 'after-save-hook #'magit-after-save-refresh-status)
+
+;;   (with-eval-after-load 'project
+;;     (define-key project-prefix-map (kbd "m") #'magit-project-status)))
+
+;; (use-package wgrep
+;;   :custom
+;;   (wgrep-auto-save-buffer t)
+;;   (wgrep-change-readonly-file t))
+
+;; (use-package rainbow-mode
+;;   :blackout rainbow-mode
+;;   :hook org-mode prog-mode)
+
+;; (use-package rainbow-delimiters
+;;   :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
+;;          (clojure-mode . rainbow-delimiters-mode)))
+
+;; (use-package blackout
+;;   :ensure t
+;;   :config
+;;   (blackout 'auto-fill-mode)
+;;   (blackout 'flymake-mode)
+;;   (blackout 'auto-revert-mode)
+;;   (blackout 'word-wrap-whitespace-mode)
+;;   (blackout 'visual-line-mode)
+;;   (blackout 'hs-minor-mode)
+;;   (blackout 'auto-revert-mode))
+
+;; (use-package treesit
+;;   :ensure nil
+;;   :config
+;;   (setq treesit-language-source-alist
+;;         '((python "https://github.com/tree-sitter/tree-sitter-python")
+;;           (rust "https://github.com/tree-sitter/tree-sitter-rust")
+;;           (c "https://github.com/tree-sitter/tree-sitter-c")
+;;           (ocaml "https://github.com/tree-sitter/tree-sitter-ocaml")
+;;           (go "https://github.com/tree-sitter/tree-sitter-go")
+;;           (html "https://github.com/tree-sitter/tree-sitter-html")
+;;           (css "https://github.com/tree-sitter/tree-sitter-css")
+;;           (java "https://github.com/tree-sitter/tree-sitter-java")
+;;           (haskell "https://github.com/tree-sitter/tree-sitter-haskell")
+;;           (scala "https://github.com/tree-sitter/tree-sitter-scala")
+;;           (toml "https://github.com/tree-sitter/tree-sitter-toml")
+;;           (json "https://github.com/tree-sitter/tree-sitter-json")
+;;           (javascript "https://github.com/tree-sitter/tree-sitter-javascript")
+;;           (typescript "https://github.com/tree-sitter/tree-sitter-typescript")
+;;           (bash "https://github.com/tree-sitter/tree-sitter-bash")
+;;           (cpp "https://github.com/tree-sitter/tree-sitter-cpp")))
+
+;;   (dolist (lang '(c cpp python json toml bash))
+;;     (unless (treesit-language-available-p lang)
+;;       (treesit-install-language-grammar lang)))
+
+;;   (dolist (lang '(python rust c c++ json toml bash))
+;;     (add-to-list 'major-mode-remap-alist
+;;                  (cons (intern (format "%s-mode" lang))
+;;                        (intern (format "%s-ts-mode" lang))))))

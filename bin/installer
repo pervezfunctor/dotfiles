@@ -4,40 +4,55 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-INSTALL_OPTIONS=("shell" "cpp" "virt" "vm" "ct" "web" "vscode" "ui")
+INSTALL_OPTIONS=("shell" "vscode" "cpp" "ct" "vm" "virt" "ui" "essential" "webi" "kitty" "mise" "appman" "flathub" "cursor" "vscode_flatpak" "ptyxis" "apps" "rust" "miniconda" "pnpm" "web" "brew" "monaspace" "jetbrains_nerd_font" "fonts" "doom" "go" "docker" "code_server" "conan" "cmake" "home_manager" "pyenv" "uv" "devbox" "pixi" "tailscale" "portainer" "cockpit" "podman" "incus" "@nix" "@min" "@shell" "@ct" "@vm" "@work" "@desktop" "@prog" "@all" "@sway" "@hyprland")
+
 DEFAULT_OPTIONS=("shell","ct","vscode")
 
 help() {
     echo "Usage: $0 [OPTION1] [OPTION2] ..."
     echo "Options:"
-    echo "  shell       modern shell tools"
-    echo "  vscode      vscode and extensions."
-    echo "  cpp         Installs gcc, clang, cmake, boost etc"
-    echo "  ct          container tools like docker, podman, incus, distrobox."
-    echo "  vm          vm tools like buildah, distrobox, libvirt."
-    echo "  virt        vm and ct tools."
-    echo "  web         pnpm based web development tools."
-    echo "  ui          desktop apps like vscode, chromium, virt-manager, zoom, obsidian, wezterm."
+    echo "  shell        shell tools like zsh, tmux, nvim."
+    echo "  vscode       vscode and extensions."
+    echo "  ct           container tools like docker, podman, incus, distrobox."
+    echo "  vm           vm tools like buildah, distrobox, libvirt."
+    echo "  web          pnpm based web development tools."
+    echo "  ui           desktop apps like vscode, zoom, obsidian."
+    echo "  essential   only essential tools like git, curl, wget, cmake."
+    echo "  nix          nix installation"
+    echo "  fonts        nerd fonts for jetbrains mono, cascadia code mono."
+    echo "  home-manager home-manager installation"
+    echo "  apps        flatpak apps like firefox, chromium, zoom, obsidian, wezterm."
     echo ""
     echo ""
     echo "More fine grained options available like"
-    echo "  tmux        tmux config, theme and plugins."
-    echo "  zsh         zsh env, base config, starship prompt and common plugins."
-    echo "  neovim      neovim and lazyvim based config and plugins."
+    echo "  cpp         Installs gcc, clang, cmake, boost etc"
     echo "  docker      docker only"
     echo "  podman      podman only"
     echo "  cockpit     cockpit only"
-    echo "  apps        flatpak apps like firefox, chromium, zoom, obsidian, wezterm."
-    echo "  config      config only for git, ssh, gpg, tmux, zsh, neovim."
+    echo "  miniconda   miniconda for python."
     echo "  brew        homebrew for macos and linuxbrew for linux."
-    echo "  essential   only essential tools like git, curl, wget, cmake."
     echo "  help        show this help."
     echo ""
+    echo "Group Options"
+    echo "  @min         essential packages only."
+    echo "  @nix         nix installation"
+    echo "  @work        min and vscode, flatpak apps."
+    echo "  @shell       min and shell tools and config for zsh, tmux, neovim."
+    echo "  @ct          shell and container tools - docker, podman, incus, distrobox."
+    echo "  @vm          ct and vm tools like buildah, libvirt."
+    echo "  @desktop     vm and desktop apps like vscode, zoom, obsidian."
+    echo "  @prog        vm and programming tools for rust, go, web, c++, python."
+    echo "  @all         everything(not recommended)."
+    echo "  @hyprland    hyprland desktop on fedora and tumbleweed."
+    echo "  @sway        sway desktop on fedora and tumbleweed."
+    echo "  help        show this help."
+    echo ""
+
 }
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        fg-installer "$@"
+        ilm-installer "$@"
         return 0
     fi
 
@@ -46,13 +61,14 @@ main() {
         exit 0
     fi
 
-    SELECTED_INSTALL_OPTIONS=$(gum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
+    SELECTED_OPTIONS=$(igum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
 
-    if [[ -n "$SELECTED_INSTALL_OPTIONS" ]]; then
+    if [[ -n "$SELECTED_OPTIONS" ]]; then
         echo ""
-        echo "Selected: $SELECTED_INSTALL_OPTIONS"
+        slog "Selected: ${SELECTED_OPTIONS}. Installing..."
         echo ""
-        fg-installer $SELECTED_INSTALL_OPTIONS
+        ilm-installer $SELECTED_OPTIONS
+        slog "Installation complete."
     else
         slog "No options selected."
         return 1

@@ -29,7 +29,7 @@ core_install() {
     update_packages
 
     si software-properties-common apt-transport-https ca-certificates gpg
-    si curl wget git-core trash-cli tree command-not-found
+    si curl wget git-core trash-cli tree command-not-found file
     si tar unzip cmake build-essential stow libfuse2 zstd
 }
 
@@ -60,10 +60,7 @@ essential_install() {
     slog "Installing essential packages"
 
     core_install
-    # mise_install
     sys_python_install
-    # pacstall_install
-    # is_ubuntu && snap_install
 
     si zip unar micro nala p7zip
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
@@ -83,13 +80,16 @@ cli_install() {
     # old fzf doesn't support --bash
     # old stow version does not work on dot-* folders;
     sudo apt purge -y stow fzf
+
     si gawk tmux pkg-config urlview zsh git
 
-    # installed using brew
-    # si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
-    # si gh shellcheck just htop shfmt tree-sitter-cli
+    if ! has_cmd brew; then
+        warn "using brew for newer versions"
 
-    # gh extension install github/gh-copilot
+        si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
+        si gh shellcheck just htop shfmt tree-sitter-cli
+        gh extension install github/gh-copilot
+    fi
 }
 
 cpp_install() {
@@ -149,7 +149,13 @@ windsurf_install() {
 }
 
 ui_install() {
-    si kitty chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
+    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
+
+    if has_cmd snap; then
+        snap install ghostty --classic
+    else
+        si kitty
+    fi
 
     vscode_bin_install
     apps_install
@@ -160,7 +166,9 @@ cockpit_install() {
 
     slog "Installing cockpit"
 
-    si cockpit cockpit-machines cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged
+    si cockpit cockpit-machines cockpit-networkmanager cockpit-packagekit
+    si cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged
+    si cockpit-system
     sudo systemctl enable --now cockpit.socket
 
     slog "cockpit installation done!"
@@ -168,8 +176,6 @@ cockpit_install() {
 
 podman_install() {
     si podman podman-toolbox podman-compose
-
-    cmd_check podman
 }
 
 vm_install() {

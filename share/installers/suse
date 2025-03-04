@@ -26,7 +26,7 @@ core_install() {
     update_packages
 
     si curl wget git tar tree unzip python313-pipx cmake stow
-    sudo zypper install -y -t pattern devel_basis
+    sudo zypper install -y -t pattern devel_basis file
 
     pipx install trash-cli
 }

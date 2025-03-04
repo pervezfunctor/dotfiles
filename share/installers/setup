@@ -11,16 +11,20 @@ else
 fi
 
 main() {
-    if [[ "$#" -eq 1 ]] && has_cmd "${1}-group_install"; then
-        "${1}-group_install"
+    if [[ "$#" -eq 1 ]] && has_cmd "${1}_groupstall"; then
+        "${1}_groupstall"
     else
-        base-group_install
-        fg-installer "$@"
+        base_groupstall
+        ilm-installer "$@"
     fi
 }
 
+if [ "$1" == "nosudo" ]; then
+    export NOSUDO=1
+fi
+
 bootstrap "$@"
 
-slog "Installation done! Once you reboot you can use 'group-installer' command to install more packages"
+slog "Installation done! Once you reboot you can use 'ilm-group-installer' command to install more packages"
 
 }

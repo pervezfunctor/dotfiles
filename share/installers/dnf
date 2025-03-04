@@ -48,7 +48,7 @@ core_install() {
     base_dev_install
 
     si curl wget git-core trash-cli cmake tree tar unzip stow
-    si util-linux-user which fuse fuse-libs zstd
+    si util-linux-user which fuse fuse-libs zstd file
 }
 
 essential_install() {
@@ -72,9 +72,9 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using dnf"
 
-    si zsh neovim ShellCheck python3-neovim tmux pkg-config urlview htop
+    si zsh neovim ShellCheck python3-neovim tmux pkg-config urlview htop luarocks
     si git-delta procs fzf ripgrep fd-find hyperfine bat zoxide gawk
-    si rust-tree-sitter-cli gh
+    si tree-sitter-cli gh
 
     gh extension install github/gh-copilot
 }
@@ -144,7 +144,7 @@ cockpit_install() {
 
     slog "Installing cockpit"
 
-    si cockpit cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged
+    si cockpit cockpit-machines cockpit-podman cockpit-storaged
     si firewalld # cockpit-file-sharing
     sudo systemctl enable --now cockpit.socket
     sudo systemctl enable --now firewalld

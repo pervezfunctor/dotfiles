@@ -2,16 +2,15 @@
 
 ## TLDR
 
-Install shell tools
+If your on desktop and want to get started quickly, use the following command.
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- dev
+```
+If within a container, use the following command.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
-```
-
-Reboot your machine and install vscode with the following command.
-
-```bash
-installer vscode
 ```
 
 ## Recommended Setup
@@ -88,8 +87,8 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 and then at any point(after reboot), use `group-installer`.
 
 ```bash
-group-installer
-group-installer help
+ilm-group-installer
+ilm-group-installer help
 ```
 
 You could pick from `shell`, `ct`, `vm`, `desktop` and `all` groups. This is the same as above installation commands.
@@ -130,13 +129,13 @@ You could pick from `shell`, `ct`, `vm`, `desktop` and `all` groups. This is the
 In addition to the above group installs, you could also use `installer` to setup various tools like `emacs`.
 
 ```bash
-installer
+ilm-installer
 ```
 
 Pass `help` to get all options and short descriptions, run
 
 ```bash
-installer help
+ilm-installer help
 ```
 
 ## Container Setup
@@ -150,19 +149,19 @@ You could also install necessary tools and libraries for rust, go, c++ developme
 Installer rust tools
 
 ```bash
-installer rust
+ilm-installer rust
 ```
 
 Install go tools
 
 ```bash
-installer go
+ilm-installer go
 ```
 
 Install c++ tools
 
 ```bash
-installer cpp
+ilm-installer cpp
 ```
 
 ## Only dotfiles(Advanced)
