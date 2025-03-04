@@ -2,7 +2,7 @@
 
 {
 
-source <(curl -sSL https://dub.sh/z3pTnAK)
+source <(curl -sSL https://dub.sh/z3pTnAK) || err_exit "Cannot source utils, Quitting"
 
 ublue_brew_setup() {
     if ! has_cmd brew; then
@@ -32,7 +32,7 @@ ublue_cpp_setup() {
     bi llvm lld
     bis clang-format cmake
 
-    slog "cpp isntallation done!"
+    slog "cpp installation done!"
 }
 
 ublue_apps_setup() {
@@ -103,7 +103,7 @@ main() {
     fi
 
     dotfiles_install
-    python_setup
+    python_install
     ublue_brew_setup
     ublue_apps_setup
     ublue_code_setup

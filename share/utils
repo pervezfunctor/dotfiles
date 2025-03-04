@@ -4,7 +4,7 @@
 
 export DOT_DIR=$HOME/.ilm
 
-BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/master"
+BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
@@ -20,11 +20,12 @@ source_if_exists() {
 }
 
 source_curl() {
-    slog "sourcing: $1"
+    slog "Sourcing: $1"
     if has_cmd curl; then
-        source <(curl -sSL "$1")
+        source <(curl -sSL "$1") || warn "Cannot source $1"
+
     elif has_cmd wget; then
-        source <(wget -qO- "$1")
+        source <(wget -qO- "$1") || warn "Cannot source $1"
     else
         warn "curl or wget not found, Cannot source $1"
     fi
