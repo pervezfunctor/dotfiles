@@ -4,7 +4,7 @@
 
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
-brew_setup() {
+ublue_brew_setup() {
     if ! has_cmd brew; then
         warn "brew not installed; skipping shell utilities installation."
         return 1
@@ -13,20 +13,20 @@ brew_setup() {
     brew_shell_slim_install
 }
 
-emacs_setup() {
+ublue_emacs_setup() {
     slog "emacs installation and setup"
 
     bis emacs
     bi emacs-clang-complete-async
     srm ~/.emacs
-    # srm ~/.emacs.d
-    # srm $XDG_CONFIG_HOME/emacs
+    srm ~/.emacs.d
+    srm $XDG_CONFIG_HOME/emacs
     stowdf emacs-slim # or emacs
 
     slog "emacs installation done!"
 }
 
-cpp_setup() {
+ublue_cpp_setup() {
     slog "cpp installation"
 
     bi llvm lld
@@ -35,7 +35,7 @@ cpp_setup() {
     slog "cpp isntallation done!"
 }
 
-apps_setup() {
+ublue_apps_setup() {
     if ! has_cmd flatpak; then
         warn "flatpak not installed; skipping apps installation"
         return 1
@@ -44,7 +44,7 @@ apps_setup() {
     apps_slim_install
 }
 
-code_setup() {
+ublue_code_setup() {
     slog "code setup"
 
     if ! has_cmd code; then
@@ -79,25 +79,7 @@ config_setup() {
     slog "config setup done!"
 }
 
-pipx_setup() {
-    slog "pipx setup"
-
-    if ! has_cmd pipx; then
-        if ! has_cmd pip; then
-            python3 -m ensurepip --user --default-pip
-            python3 -m pip install --user --force-reinstall --upgrade pip
-        fi
-        has_cmd pip || return 1
-        pip install --upgrade --force-reinstall pipx
-        has_cmd pipx || return 1
-    fi
-
-    slog "pipx setup done!"
-}
-
-ublue_gnome_setup() {
-    pipx_setup
-
+bluefin_setup() {
     if ! has_cmd pipx; then
         warn "pipx not installed, skipping gnome settings"
         return 1
@@ -112,18 +94,6 @@ ublue_gnome_setup() {
     slog "gnome setup done!"
 }
 
-distrobox_setup() {
-    if ! has_cmd distrobox; then
-        warn "distrobox not installed, skipping distrobox creation"
-        return 1
-    fi
-
-    slog "Creating multiple distroboxes for testing"
-    source_dotfile fns
-    distrobox_ublue_all
-    slog "distroboxes setup done!"
-}
-
 main() {
     if is_bluefin; then
         slog "Setup Bluefin CLI"
@@ -134,27 +104,29 @@ main() {
     fi
 
     dotfiles_install
-    brew_setup
-    apps_setup
-    code_setup
+    python_setup
+    ublue_brew_setup
+    ublue_apps_setup
+    ublue_code_setup
     mise_install
     config_setup
-    is_bluefin && ublue_gnome_setup
+    is_bluefin && bluefin_setup
 
     if [[ "$USER" == "pervez" ]]; then
         git_config_install
-        cpp_setup
-        emacs_setup
+        ublue_cpp_setup
+        ublue_emacs_setup
     fi
 
     slog "Setup cockpit"
     just cockpit
 }
 
-is_ublue || err_exit "This script is only for Aurora/Bluefin"
-
-has_cmd git || err_exit "git not installed! Qutting."
-
-bootstrap "uBlue OS"
+if is_ublue && has_cmd git && has_cmd just && has_cmd brew && has_cmd python3 && has_cmd code && has_cmd flatpak && has_cmd distrobox; then
+    export NOSUDO=1
+    bootstrap "uBlue OS"
+else
+    err_exit "Prerequisites not met. You need Aurora/Bluefin with git, just, brew, code, flatpak, distrobox and python3 installed."
+fi
 
 }
