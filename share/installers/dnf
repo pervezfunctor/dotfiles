@@ -143,8 +143,8 @@ cockpit_install() {
     has_cmd cockpit && return 1
 
     slog "Installing cockpit"
+    si cockpit cockpit-machines cockpit-podman cockpit-storaged cockpit-bridge cockpit-networkmanager  cockpit-selinux cockpit-system cockpit-packagekit
 
-    si cockpit cockpit-machines cockpit-podman cockpit-storaged
     si firewalld # cockpit-file-sharing
     sudo systemctl enable --now cockpit.socket
     sudo systemctl enable --now firewalld
@@ -213,8 +213,7 @@ more_virt_install() {
     si samba-winbind-modules samba
 
     si cockpit-machines cockpit-networkmanager cockpit-system cockpit-storaged
-    si cockpit-ostree cockpit-pcp cockpit-podman cockpit-selinux
-    si podman-compose podman-tui podmansh powertop qemu-char-spice
+    si cockpit-ostree cockpit-pcp cockpit-podman cockpit-selinux-compose podman-tui podmansh powertop qemu-char-spice
     si qemu-device-display-virtio-gpu qemu-device-display-virtio-vga
     si qemu-device-usb-redirect qemu-img qemu-system-x86-core qemu-user-binfmt
     si qemu-user-static qemu rocm-hip rocm-opencl udica
