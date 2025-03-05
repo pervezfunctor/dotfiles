@@ -2,6 +2,8 @@
 
 {
 
+command -v curl > /dev/null || err_exit "Install curl before running this script"
+
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 main() {
@@ -9,6 +11,7 @@ main() {
 
     if is_linux && has_cmd python3; then
         python_install
+        pipx install trash-cli
     fi
 
     if is_mac; then
@@ -35,15 +38,13 @@ main() {
             jetbrains_nerd_font_install
 
             flathub_install
-            fpi app.devsuite.Ptyxis
-            fpi org.wezfurlong.wezterm
-            alias wezterm="flatpak run org.wezfurlong.wezterm"
+            ptyxis_install
             slog "Shell setup for desktop done!"
         fi
     elif is_mac; then
         slog "Installing shell tools"
 
-        bis tree-sitter just lazygit starship gh xh git-delta sd
+        bis tree-sitter just lazygit starship gh xh git-delta sd trash-cli
 
         if ! has_cmd luarocks; then
             bi luarocks
@@ -51,8 +52,8 @@ main() {
         fi
 
         bis fzf fd eza zoxide bat tmux duf
-        bi bottom ripgrep neovim zsh-syntax-highlighting zsh-autosuggestions
-        bi reattach-to-user-namespace
+        bi bottom ripgrep neovim reattach-to-user-namespace
+        bi
 
         bic wezterm font-jetbrains-mono-nerd-font
 
@@ -64,11 +65,11 @@ main() {
     gh extension install github/gh-copilot
 
     dotfiles_install
-    config_install
+    shell_config_install
 }
 
 is_linux || is_mac || err_exit "This script is only for Linux and Mac"
 
-bootstrap "Seartipy shell setup"
+bootstrap "Shell/Terminal setup"
 
 }

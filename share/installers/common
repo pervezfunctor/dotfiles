@@ -951,7 +951,7 @@ foot_config_install() {
     slog "foot config done!"
 }
 
-config_install() {
+shell_config_install() {
     bash_config_install
     has_cmd code && vscode_config_install
 
@@ -964,6 +964,17 @@ config_install() {
     has_cmd nvim && nvim_config_install
     has_cmd tmux && tmux_config_install
     has_cmd zsh && zsh_config_install
+
+    has_cmd emacs || return 0
+
+    emacs_version=$(emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1)
+    if [ "$emacs_version" -gt 28 ]; then
+        emacs_config_install
+    fi
+}
+
+config_install() {
+    shell_config_install
 
     has_cmd appman && appman_config_install
     has_cmd atuin && atuin_config_install
