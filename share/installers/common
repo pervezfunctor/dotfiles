@@ -1277,6 +1277,11 @@ fedora-atomic_groupstall() {
     toolbox run sudo dnf install -y firefox
 }
 
+pixi_groupstall() {
+    pixi_install
+    pixi_shell_install
+}
+
 pixi-nosudo_groupstall() {
     has_cmd git || err_exit "git not installed! Qutting."
 
