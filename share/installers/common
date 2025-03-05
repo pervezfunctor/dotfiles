@@ -1243,6 +1243,29 @@ dev_groupstall() {
     fi
 }
 
+fedora-atomic_groupstall() {
+    is_std_atomic || err_exit "This script is only for Atomic Host"
+
+    python_install
+    pipx install trash-cli
+
+    starship_install
+    ptyxis_config_install
+    if ! grep -q starship ~/.bashrc; then
+        echo "source ~/.ilm/share/bashrc" >> ~/.bashrc
+    fi
+    jetbrains_nerd_font_install
+
+    apps_slim_install
+    is_gnome && gnome_config_install
+
+    has_cmd toolbox || return 0
+
+    toolbox --assumeyes create
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
+    toolbox run sudo dnf install -y firefox
+}
+
 pixi_nosudo_groupstall() {
     has_cmd git || err_exit "git not installed! Qutting."
 
