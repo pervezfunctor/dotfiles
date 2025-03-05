@@ -652,13 +652,13 @@ fpi() {
 
 pi() {
     for p in "$@"; do
-        pixi global add "$p"
+        pixi global install "$p"
     done
 }
 
 pis() {
     for p in "$@"; do
-        has_cmd "$p" || pixi global add "$p"
+        has_cmd "$p" || pixi global install "$p"
     done
 }
 
@@ -690,6 +690,7 @@ environs() {
     export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="$HOME/.local/opt/brew/bin:$PATH"
     export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
+    export PATH="$HOME/.pixi/bin:$PATH"
 
     has_cmd mise && eval "$(mise activate bash)"
 
