@@ -27,23 +27,20 @@ help() {
     echo ""
 }
 
-ilm-installer() {
-    slog "Installing $1 distrobox"
-
-    if [[ "$1" == "bluefin" ]]; then
-        distrobox_ublue_all
-    elif [[ "$1" == "toolboxes" ]]; then
-        distrobox_toolbox_all
-    elif has_cmd "distrobox_create_$1"; then
-        "distrobox_create_$1"
-    else
-        err_exit "No installer found for $1"
-    fi
-}
-
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        ilm-installer $1
+        slog "Installing $1 distrobox"
+
+        if [[ "$1" == "bluefin" ]]; then
+            distrobox_ublue_all
+        elif [[ "$1" == "toolboxes" ]]; then
+            distrobox_toolbox_all
+        elif has_cmd "distrobox_create_$1"; then
+            "distrobox_create_$1"
+        else
+            err_exit "No installer found for $1"
+        fi
+
         return 0
     fi
 

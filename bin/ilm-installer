@@ -52,7 +52,7 @@ help() {
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        ilm-installer "$@"
+        common-installer "$@"
         return 0
     fi
 
@@ -67,7 +67,7 @@ main() {
         echo ""
         slog "Selected: ${SELECTED_OPTIONS}. Installing..."
         echo ""
-        ilm-installer $SELECTED_OPTIONS
+        common-installer $SELECTED_OPTIONS
         slog "Installation complete."
     else
         slog "No options selected."
