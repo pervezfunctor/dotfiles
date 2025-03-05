@@ -1258,7 +1258,7 @@ fedora-atomic_groupstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
     python_install
-    pipx install --upgrade --user trash-cli
+    pipx install trash-cli
 
     starship_install
     ptyxis_config_install
