@@ -40,16 +40,6 @@ alias emacs-kill="seartipy_kill_emacs"
 
 alias m="mkdir -p"
 
- alias a='fasd -a'        # any
-# alias s='fasd -si'       # show / search / select
-# alias d='fasd -d'        # directory
-# alias f='fasd -f'        # file
-# alias sd='fasd -sid'     # interactive directory selection
-# alias sf='fasd -sif'     # interactive file selection
-# alias z='fasd_cd -d'     # cd, same functionality as j in autojump
-# alias zz='fasd_cd -d -i' # cd with interactive selection
-# alias c="fasd -d -e code"
-
 if has_cmd code; then
     alias c='code'
     alias c.='code .'
@@ -118,31 +108,33 @@ elif is_mac; then
     alias sr="brew uninstall"
 fi
 
-alias g='git'
-alias gs="git stash -u"
-alias gst="git status"
-alias gsu="git status -u"
-alias gcan="git commit --amend --no-edit"
-alias gsa='git stash apply'
-alias gfm='git pull'
-alias gp='git push'
-alias gcm='git commit --message'
-alias gia='git add'
-alias gl='git log --topo-order --pretty=format:"$_git_log_medium_format"'
-alias gco='git checkout'
-alias gb='git branch'
-alias gbc='git checkout -b'
-alias gbc='git checkout -b'
-alias gsl='git stash list'
-alias gpp='safe_push "$@"'
-alias clone='gh repo clone'
-alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
+if has_cmd git; then
+    alias g='git'
+    alias gs="git stash -u"
+    alias gst="git status"
+    alias gsu="git status -u"
+    alias gcan="git commit --amend --no-edit"
+    alias gsa='git stash apply'
+    alias gfm='git pull'
+    alias gp='git push'
+    alias gcm='git commit --message'
+    alias gia='git add'
+    alias gl='git log --topo-order --pretty=format:"$_git_log_medium_format"'
+    alias gco='git checkout'
+    alias gb='git branch'
+    alias gbc='git checkout -b'
+    alias gbc='git checkout -b'
+    alias gsl='git stash list'
+    alias gpp='safe_push "$@"'
+    alias clone='gh repo clone'
+    alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
+fi
 
-alias nm="nmap -sC -sV -oN"
+has_cmd nmap && alias nm="nmap -sC -sV -oN"
 
-alias v="nvim"
-alias c="code"
-alias t="tmux"
+has_cmd nvim && alias v="nvim"
+has_cmd code && alias c="code"
+has_cmd tmux && alias t="tmux"
 
 if has_cmd docker; then
     alias d="docker"
@@ -176,24 +168,20 @@ fi
 
 
 alias la=tree
-
-
-alias l='ls -1A'         # Lists in one column, hidden files.
-alias ll='ls -lh'        # Lists human readable sizes.
-alias lr='ll -R'         # Lists human readable sizes, recursively.
-alias la='ll -A'         # Lists human readable sizes, hidden files.
 alias lm='la | "$PAGER"' # Lists human readable sizes, hidden files through pager.
-alias lk='ll -Sr'        # Lists sorted by size, largest last.
-alias lt='ll -tr'        # Lists sorted by date, most recent last.
+alias lr='ll -R'         # Lists human readable sizes, recursively.
 alias lc='lt -c'         # Lists sorted by date, most recent last, shows change time.
 alias lu='lt -u'         # Lists sorted by date, most recent last, shows access time.
 alias sl='ls'            # Correction for common spelling error.
 
 alias md="mkdir -p"
 alias rd="rmdir"
-
+alias cpr="cp -r"
+alias md="mkdir -p"
+alias rd="rmdir"
+alias del="trash"
 alias ipa="ip -brief a"
-has_cmd batcat && alias cat="batcat"
+has_cmd batcat && alias bat="batcat"
 
 has_cmd gdu || has_cmd gdu-go && alias gdu="gdu-go"
 
@@ -228,11 +216,6 @@ if [[ ! -v CONTAINER_ID ]] && has_cmd flatpak; then
     unset -f alias_if_exists
 fi
 
-alias cpr="cp -r"
-alias md="mkdir -p"
-alias rd="rmdir"
-alias del="trash"
-
 if [[ -d "$HOME/.local/share/pnpm" ]]; then
     alias n='pnpm'
     alias ni='pnpm install'
@@ -266,10 +249,15 @@ if has_cmd eza; then
 
     alias lt='eza --tree --level=2 --long --icons --git'
     alias l.='eza -d .*'
+else
+    alias l='ls -1A'         # Lists in one column, hidden files.
+    alias ll='ls -lh'        # Lists human readable sizes.
+    alias lk='ll -Sr'        # Lists sorted by size, largest last.
+    alias lt='ll -tr'        # Lists sorted by date, most recent last.
 fi
 
 # ugrep for grep
-if has_cmd ug ]; then
+if has_cmd ug; then
     alias grep='ug'
     alias egrep='ug -E'
     alias fgrep='ug -F'
