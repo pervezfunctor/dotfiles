@@ -179,3 +179,37 @@ stow emacs nvim sway # folder names
 ## Tips
 
 1. [Don’t change your login shell, use a modern terminal emulator](https://tim.siosm.fr/blog/2023/12/22/dont-change-defaut-login-shell/)
+
+2. Fix locale issues on Ubuntu with the following command.
+
+  ```bash
+  sudo dpkg-reconfigure locales
+  ```
+
+3. Use `imwheel` to fix mouse-scroll speed on Ubuntu.
+
+  ```bash
+  imwheel -b "4 5" > /dev/null 2>&1
+  ```
+
+4. In `opensuse` you could use the following command to get all the patterns(group for dnf)
+
+  ```bash
+  zypper search --type pattern
+  ```
+
+# OS recommendations
+
+1. If you need Ubuntu, use [kubuntu](https://kubuntu.org/feature-tour)
+
+2. If you want Gnome, use [Bluefin](https://projectbluefin.io) or [Fedora Workstation](https://fedoraproject.org/workstation/)
+
+3. If you want KDE, use [Tumbleweed](https://get.opensuse.org/tumbleweed) or [Aurora](https://getaurora.dev/en)
+
+4. If you want a tiling window manager, use [Fedora Sway](https://fedoraproject.org/spins/sway) or [Suseway](https://get.opensuse.org/tumbleweed)] or [hyprland](https://hyprland.org/)
+
+5. If you want to run linux desktop environment in a virtual machine, then [kubuntu](https://kubuntu.org/feature-tour) is more stable.
+
+6. For containers prefer debian or ubuntu.
+
+7. Give [Nix](https://nixos.org) a try.
