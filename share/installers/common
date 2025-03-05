@@ -219,7 +219,7 @@ starship_install() {
     has_cmd starship && return 0
 
     smd ~/.local/bin
-    curl -sS https://starship.rs/install.sh | sh -s -- -y
+    curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
 }
 
 bash_config_exists() {
@@ -1258,7 +1258,7 @@ fedora-atomic_groupstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
     python_install
-    pipx install trash-cli
+    pipx install --upgrade --user trash-cli
 
     starship_install
     ptyxis_config_install
