@@ -19,7 +19,7 @@ main() {
     fi
 }
 
-if [ "$1" == "nosudo" ]; then
+if [ "$1" == "nosudo" ] || [ "$1" == "fedora-atomic" ] || [ "$1" == "pixi_nosudo" ]; then
     export NOSUDO=1
 fi
 
