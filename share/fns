@@ -1,46 +1,46 @@
 dbox_ubuntu() {
     smd ~/homes
-    distrobox create --image ubuntu:latest --home /home/pervez/homes/ubuntu --name ubuntu
+    distrobox create --yes --image ubuntu:latest --home /home/pervez/homes/ubuntu --name ubuntu
 }
 
 dbox_arch() {
     smd ~/homes
-    distrobox create --image archlinux:latest --home /home/pervez/homes/arch --name arch
+    distrobox create --yes --image archlinux:latest --home /home/pervez/homes/arch --name arch
 }
 
 dbox_fedora() {
     smd ~/homes
-    distrobox create --image fedora:latest --home /home/pervez/homes/fedora --name fedora
+    distrobox create --yes --image fedora:latest --home /home/pervez/homes/fedora --name fedora
 }
 
 dbox_centos() {
     smd ~/homes
-    distrobox create --image centos:latest --home /home/pervez/homes/centos --name centos
+    distrobox create --yes --image centos:latest --home /home/pervez/homes/centos --name centos
 }
 
 dbox_debian() {
     smd ~/homes
-    distrobox create --image debian:latest --home /home/pervez/homes/debian --name debian
+    distrobox create --yes --image debian:latest --home /home/pervez/homes/debian --name debian
 }
 
 dbox_rocky() {
     smd ~/homes
-    distrobox create --image  quay.io/rockylinux/rockylinux:9 --home /home/pervez/homes/rocky --name rocky
+    distrobox create --yes --image  quay.io/rockylinux/rockylinux:9 --home /home/pervez/homes/rocky --name rocky
 }
 
 dbox_tumbleweed() {
     smd ~/homes
-    distrobox create --image opensuse/tumbleweed --home /home/pervez/homes/tw --name tw
+    distrobox create --yes --image opensuse/tumbleweed --home /home/pervez/homes/tw --name tw
 }
 
 dbox_bluefin() {
     smd ~/homes
-    distrobox create --image ghcr.io/ublue-os/bluefin-cli --home /home/pervez/homes/bluefin-cli --name bluefin-cli
+    distrobox create --yes --image ghcr.io/ublue-os/bluefin-cli --home /home/pervez/homes/bluefin-cli --name bluefin-cli
 }
 
 dbox_wolfi() {
     smd ~/homes
-    distrobox create --image ghcr.io/ublue-os/wolfi-toolbox --home /home/pervez/homes/wolfi-ublue --name wolfi-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/wolfi-toolbox --home /home/pervez/homes/wolfi-ublue --name wolfi-ublue
 }
 
 dbox_ublue_all() {
@@ -48,55 +48,55 @@ dbox_ublue_all() {
     dbox_bluefin
     dbox_wolfi
 
-    distrobox create --image ghcr.io/ublue-os/ubuntu-toolbox --home /home/pervez/homes/ubuntu-ublue --name ubuntu-ublue
-    distrobox create --image ghcr.io/ublue-os/fedora-toolbox --home /home/pervez/homes/fedora-ublue --name fedora-ublue
-    distrobox create --image ghcr.io/ublue-os/arch-distrobox --home /home/pervez/homes/arch-ublue --name arch-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/ubuntu-toolbox --home /home/pervez/homes/ubuntu-ublue --name ubuntu-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/fedora-toolbox --home /home/pervez/homes/fedora-ublue --name fedora-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/arch-distrobox --home /home/pervez/homes/arch-ublue --name arch-ublue
 }
 
 dbox_toolbox_all() {
     smd ~/homes
-    distrobox create --image ubuntu-toolbox:latest --home /home/pervez/homes/ubuntu-toolbox --name ubuntu-toolbox
-    distrobox create --image fedora-toolbox:latest --home /home/pervez/homes/fedora-toolbox --name fedora-toolbox
-    distrobox create --image arch-toolbox:latest --home /home/pervez/homes/arch-toolbox --name arch-toolbox
-    distrobox create --image centos-toolbox:latest --home /home/pervez/homes/centos-toolbox --name centos-toolbox
-    distrobox create --image debian-toolbox:latest --home /home/pervez/homes/debian-toolbox --name debian-toolbox
-    distrobox create --image rockylinux-toolbox:9 --home /home/pervez/homes/rockylinux-toolbox --name rockylinux-toolbox
+    distrobox create --yes --image ubuntu-toolbox:latest --home /home/pervez/homes/ubuntu-toolbox --name ubuntu-toolbox
+    distrobox create --yes --image fedora-toolbox:latest --home /home/pervez/homes/fedora-toolbox --name fedora-toolbox
+    distrobox create --yes --image arch-toolbox:latest --home /home/pervez/homes/arch-toolbox --name arch-toolbox
+    distrobox create --yes --image centos-toolbox:latest --home /home/pervez/homes/centos-toolbox --name centos-toolbox
+    distrobox create --yes --image debian-toolbox:latest --home /home/pervez/homes/debian-toolbox --name debian-toolbox
+    distrobox create --yes --image rockylinux-toolbox:9 --home /home/pervez/homes/rockylinux-toolbox --name rockylinux-toolbox
 }
 
 dbox_apline_init() {
     local CONTAINER_NAME=${1:-alpine-init}
     smd ~/homes
-    distrobox create -i alpine:latest --init --additional-packages "openrc" -n $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
+    distrobox create --yes --image alpine:latest --init --additional-packages "openrc" --name $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
 }
 
 dbox_debian_init() {
     local CONTAINER_NAME=${1:-debian-init}
     smd ~/homes
-    distrobox create -i debian:stable --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" -n $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
+    distrobox create --yes --image debian:stable --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
 }
 
 dbox_ubuntu_init() {
     local CONTAINER_NAME=${1:-ubuntu-init}
     smd ~/homes
-    distrobox create -i ubuntu:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" -n $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
+    distrobox create --yes --image ubuntu:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
 }
 
 dbox_arch_init() {
     local CONTAINER_NAME=${1:-arch-init}
     smd ~/homes
-    distrobox create -i archlinux:latest --init --additional-packages "systemd" -n $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
+    distrobox create --yes --image archlinux:latest --init --additional-packages "systemd" --name $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
 }
 
 dbox_tw_init() {
     local CONTAINER_NAME=${1:-tw-init}
     smd ~/homes
-    distrobox create -i registry.opensuse.org/opensuse/tumbleweed:latest --init --additional-packages "systemd" -n $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
+    distrobox create --yes --image registry.opensuse.org/opensuse/tumbleweed:latest --init --additional-packages "systemd" --name $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
 }
 
 dbox_fedora_init() {
     local CONTAINER_NAME=${1:-fedora-init}
     smd ~/homes
-    distrobox create -i registry.fedoraproject.org/fedora:latest --init --additional-packages "systemd" -n $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
+    distrobox create --yes --image registry.fedoraproject.org/fedora:latest --init --additional-packages "systemd" --name $CONTAINER_NAME --home ~/homes/${CONTAINER_NAME}
 }
 
 dbox_with_init() {
@@ -149,9 +149,9 @@ one_shell_tmux() {
 dbox_nvidia_container_toolkit() {
     smd ~/homes
     if has_cmd podman; then
-        distrobox create --name example-nvidia-toolkit --additional-flags "--gpus all" --image docker.io/nvidia/cuda
+        distrobox create --yes --name example-nvidia-toolkit --additional-flags "--gpus all" --image docker.io/nvidia/cuda
     elif has_cmd docker; then
-        distrobox create --name example-nvidia-toolkit --additional-flags "--gpus all --device=nvidia.com/gpu=all" --image docker.io/nvidia/cuda
+        distrobox create --yes --name example-nvidia-toolkit --additional-flags "--gpus all --device=nvidia.com/gpu=all" --image docker.io/nvidia/cuda
     else
         warn "podman or docker not found"
     fi
@@ -171,7 +171,7 @@ dbox_to_image() {
 dbox_from_image() {
     local dbox_name=${1:dbox}
     smd ~/homes
-    distrobox create --image $1:latest --name $dbox_name
+    distrobox create --yes --image $1:latest --name $dbox_name
     distrobox enter --name $dbox_name
 }
 
@@ -180,7 +180,7 @@ dbox_nix() {
     local CONTAINER_NAME=${1:-deb-nix}
     srm ~/homes/${CONTAINER_NAME}
 
-    distrobox create -n ${CONTAINER_NAME} -i debian:stable --init --additional-packages "systemd libpam-systemd" --home ~/homes/${CONTAINER_NAME}
+    distrobox create --yes --name ${CONTAINER_NAME} -i debian:stable --init --additional-packages "systemd libpam-systemd" --home ~/homes/${CONTAINER_NAME}
 
     distrobox enter ${CONTAINER_NAME} -- curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | -s -- install --no-confirm
 }
