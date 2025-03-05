@@ -133,10 +133,13 @@ ptyxis_install() {
     fi
 
     if ! flatpak list | grep -q Ptyxis >/dev/null; then
+        slog "Installing Ptyxis"
         fpi app.devsuite.Ptyxis
     fi
 
     has_cmd gsettings || return 1
+
+    slog "Configuring Ptyxis"
 
     gsettings set org.gnome.Ptyxis use-system-font false
     gsettings set org.gnome.Ptyxis font-name 'JetBrains Mono Medium 12'
@@ -145,6 +148,8 @@ ptyxis_install() {
     local profid
     profid=$(gsettings get org.gnome.Ptyxis default-profile-uuid)
     gsettings set "org.gnome.Ptyxis.Profile:/${profid}/" palette 'Catppuccin Mocha'
+
+    slog "Ptyxis installation and configuration done!"
 }
 
 apps_slim_install() {
@@ -503,12 +508,14 @@ monaspace_nerd_font_install() {
 
 jetbrains_nerd_font_install() {
     if ! file_exists ~/.local/share/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf; then
+        slog "Installing JetBrains Mono Nerd Font"
         smd ~/.local/share/fonts
         frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
         wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
         unzip -qq -d /tmp/jetbrains-mono -o /tmp/jetbrains-mono.zip
         cp /tmp/jetbrains-mono/*.ttf ~/.local/share/fonts
         frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
+        slog "JetBrains Mono Nerd Font installation done!"
     fi
 }
 
@@ -1254,31 +1261,66 @@ dev_groupstall() {
     fi
 }
 
-fedora-atomic_groupstall() {
-    is_std_atomic || err_exit "This script is only for Atomic Host"
-
-    python_install
-    pipx install trash-cli
-
-    starship_install
-    ptyxis_config_install
-    if ! grep -q starship ~/.bashrc; then
-        echo "source ~/.ilm/share/bashrc" >> ~/.bashrc
-    fi
-    jetbrains_nerd_font_install
-
-    apps_slim_install
-    is_gnome && gnome_config_install
-
-    has_cmd toolbox || return 0
+toolbox_default() {
+    has_cmd toolbox || return
 
     toolbox --assumeyes create
     toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
-    toolbox run sudo dnf install -y firefox
+    toolbox run si firefox
+    toolbox run gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+}
+
+distrobox_default() {
+    has_cmd distrobox || return
+
+    slog "Creating default distrobox"
+    distrobox create --yes
+    distrobox enter -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
+    distrobox enter -- si firefox
+    distrobox enter -- gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+    slog "Default distrobox created!"
+}
+
+fedora-atomic_groupstall() {
+    is_std_atomic || err_exit "This script is only for Atomic Host"
+
+    slog "Fedora Atomic Host setup"
+
+    slog "Setting up python, pip, pipx"
+    python_install
+
+    slog "Installing trash-cli"
+    pipx install trash-cli
+
+    slog "Installing starship"
+    starship_install
+
+    if ! grep -q starship ~/.bashrc; then
+        slog "Adding starship to bashrc"
+        echo "source ~/.ilm/share/bashrc" >> ~/.bashrc
+    fi
+
+    jetbrains_nerd_font_install
+    ptyxis_install
+
+    slog "Installing apps"
+    apps_slim_install
+
+    is_gnome && gnome_config_install
+    is_sway && sway_config_install
+
+    slog "Installing distrobox"
+    atomic_distrobox_install
+
+    slog "Setting up default distrobox for development"
+    distrobox_default
+
+    slog "Fedora Atomic Host setup done!"
 }
 
 pixi_groupstall() {
     pixi_install
+    export PATH="$HOME/.pixi/bin:$PATH"
     pixi_shell_install
 }
 
@@ -1450,7 +1492,6 @@ all_groupstall() {
 
     all-group_check
 }
-
 gnome_extensions_install() {
     if ! has_cmd gext; then
         warn "gext not installed, skipping gnome extensions"
@@ -1509,17 +1550,17 @@ gnome_config_install() {
         return 1
     fi
 
+    slog "gnome config"
+
     if is_ubuntu; then
-        slog "WHY ARE YOU HERE"
         si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
-    elif is_fedora; then
+    elif is_fedora && ! is_atomic; then
         si gnome-extensions-app gnome-tweaks
     fi
 
     pipx install gnome-extensions-cli --system-site-packages
 
     if is_ubuntu; then
-        slog "WHY ARE YOU HERE"
         gnome-extensions disable tiling-assistant@ubuntu.com
         gnome-extensions disable ubuntu-appindicators@ubuntu.com
         gnome-extensions disable ubuntu-dock@ubuntu.com
@@ -1528,7 +1569,10 @@ gnome_config_install() {
 
     gnome_settings_install
     gnome_keybindings_install
+
     gnome_extensions_install
+
+    slog "gnome config done!"
 }
 
 sway_waybar_config_install() {
