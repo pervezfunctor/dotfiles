@@ -1333,7 +1333,14 @@ dbox_base() {
     srm ~/.emacs
     srm ~/.config/tmux/tmux.conf
     smd ~/.config
-    stowdf zsh tmux emacs-slim
+    stowdf zsh emacs-slim
+
+    if is_ubuntu; then
+        srm ~/.config/tmux.conf
+        ln -s ~/.ilm/tmux/dot-config/tmux/tmux.conf ~/.config/tmux.conf
+    else
+        stowdf tmux
+    fi
 }
 
 tw-dbox_groupstall() {
