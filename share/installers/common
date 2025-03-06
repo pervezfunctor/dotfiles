@@ -1307,6 +1307,17 @@ tw_packages() {
         tree bat eza fzf ripgrep zoxide fd htop sd yazi
 }
 
+ubuntu_packages() {
+    si  git gh git-delta unzip wget curl trash-cli tar stow \
+        gcc make file just tree-sitter-cli zsh tmux \
+        tree bat eza fzf ripgrep zoxide fd-find htop sd golang-go
+    si --no-install-recommends emacs-nox
+
+
+    starship_install
+    go install github.com/charmbracelet/gum@latest
+}
+
 dbox_base() {
     is_inside_distrobox || err_exit "This script is only for distrobox containers"
     [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
@@ -1343,6 +1354,12 @@ pixi-dbox_groupstall() {
 
 brew-dbox_groupstall() {
     dbox_base brew_packages
+}
+
+ubuntu-dbox_groupstall() {
+    is_ubuntu || err_exit "This script is only for Ubuntu"
+
+    dbox_base ubuntu_packages
 }
 
 fedora-atomic_groupstall() {
