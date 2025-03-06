@@ -1281,15 +1281,25 @@ distrobox_default() {
     slog "Default distrobox created!"
 }
 
-tw-dbox_groupstall() {
-    is_tw || err_exit "This script is only for Tumbleweed"
-    is_inside_distrobox || err_exit "This script is only for distrobox containers"
-    [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
+fedora_packages() {
+    si  git gh git-delta unzip wget curl trash-cli tar stow \
+    gcc make file just emacs-nox tree-sitter zsh tmux gum \
+    tree bat eza fzf ripgrep zoxide fd htop sd
 
+    starship_install
+}
+
+tw_packages() {
     si  git gh lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi
+}
 
+dbox_base() {
+    is_inside_distrobox || err_exit "This script is only for distrobox containers"
+    [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
+
+    "$1_packages"
     gh extension install github/gh-copilot
 
     dotfiles_install
@@ -1301,6 +1311,18 @@ tw-dbox_groupstall() {
     srm ~/.config/tmux/tmux.conf
     smd ~/.config
     stowdf zsh tmux emacs-slim
+}
+
+tw-dbox_groupstall() {
+    is_tw || err_exit "This script is only for openSUSE Tumbleweed"
+
+    dbox_base tw_packages
+}
+
+fedora-dbox_groupstall() {
+    is_fedora || err_exit "This script is only for Fedora"
+
+    dbox_base fedora_packages
 }
 
 fedora-atomic_groupstall() {
