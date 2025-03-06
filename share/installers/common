@@ -1281,6 +1281,27 @@ distrobox_default() {
     slog "Default distrobox created!"
 }
 
+tw-dbox_groupstall() {
+    is_tw || err_exit "This script is only for Tumbleweed"
+    is_inside_distrobox || err_exit "This script is only for distrobox containers"
+
+    si git gh lazygit delta unzip wget curl trash-cli tar stow
+    si gcc make file just emacs-nox tree-sitter zsh starship tmux gum
+    si tree bat eza fzf ripgrep zoxide fd htop sd yazi
+
+    gh extension install github/gh-copilot
+
+    dotfiles_install
+
+    dir_exists $DOT_DIR || err_exit "$DOT_DIR doesn't exist, Qutting"
+
+    srm ~/.zshrc
+    srm ~/.emacs
+    srm ~/.config/tmux/tmux.conf
+    smd ~/.config
+    stowdf zsh tmux emacs-slim
+}
+
 fedora-atomic_groupstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
