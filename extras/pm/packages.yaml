@@ -1,53 +1,77 @@
 apt:
-  - git
-  - curl
-  - wget
+  pre:
+    - "curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -"
+    - "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -"
+  packages:
+    - vim
+    - nodejs
+    - docker-ce
+  post:
+    - "sudo usermod -aG docker $USER"
+    - "sudo systemctl enable docker"
 
 brew:
-  - ripgrep
-  - fd
-  - bat
+  packages:
+    - git
+    - node
+    - python@3.11
+  post:
+    - "npm install -g typescript"
+    - "pip3 install --user pipx"
 
 pixi:
-  - python
-  - rust
+  packages:
+    - python
+    - rust
 
 dnf:
-  - gcc
-  - make
+  packages:
+    - gcc
+    - make
 
 zypper:
-  - gcc
-  - make
+  packages:
+    - gcc
+    - make
 
 stow:
-  - bash
-  - zsh
+  packages:
+    - bash
+    - zsh
 
 pacman:
-  - base-devel
-  - git
+  packages:
+    - base-devel
+    - git
 
 flatpak:
-  - org.mozilla.firefox
-  - com.visualstudio.code
+  packages:
+    - org.mozilla.firefox
+    - com.visualstudio.code
 
 cargo:
-  - exa
-  - bat
+  packages:
+    - ripgrep
+    - bat
+  post:
+    - "bat cache --build"
 
 pip:
-  - requests
-  - pandas
+  packages:
+    - requests
+    - pandas
 
 npm:
-  - typescript
-  - yarn
+  packages:
+    - typescript
+    - yarn
 
 pnpm:
-  - vite
-  - degit
+  packages:
+    - vite
+    - degit
 
 go:
-  - golang.org/x/tools/cmd/goimports@latest
-  - github.com/junegunn/fzf@latest
+  packages:
+    - golang.org/x/tools/cmd/goimports@latest
+    - github.com/junegunn/fzf@latest
