@@ -1289,6 +1289,18 @@ fedora_packages() {
     starship_install
 }
 
+pixi_packages() {
+    pi  git gh lazygit git-delta unzip wget curl trash-cli tar stow \
+        gcc make file just emacs tree-sitter-cli zsh starship tmux go-gum \
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi
+}
+
+brew_packages() {
+    si  git gh lazygit git-delta unzip wget curl trash-cli stow \
+        gcc make file just emacs tree-sitter zsh starship tmux gum \
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi
+}
+
 tw_packages() {
     si  git gh lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
@@ -1323,6 +1335,14 @@ fedora-dbox_groupstall() {
     is_fedora || err_exit "This script is only for Fedora"
 
     dbox_base fedora_packages
+}
+
+pixi-dbox_groupstall() {
+    dbox_base pixi_packages
+}
+
+brew-dbox_groupstall() {
+    dbox_base brew_packages
 }
 
 fedora-atomic_groupstall() {
