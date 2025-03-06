@@ -1,0 +1,53 @@
+apt:
+  - git
+  - curl
+  - wget
+
+brew:
+  - ripgrep
+  - fd
+  - bat
+
+pixi:
+  - python
+  - rust
+
+dnf:
+  - gcc
+  - make
+
+zypper:
+  - gcc
+  - make
+
+stow:
+  - bash
+  - zsh
+
+pacman:
+  - base-devel
+  - git
+
+flatpak:
+  - org.mozilla.firefox
+  - com.visualstudio.code
+
+cargo:
+  - exa
+  - bat
+
+pip:
+  - requests
+  - pandas
+
+npm:
+  - typescript
+  - yarn
+
+pnpm:
+  - vite
+  - degit
+
+go:
+  - golang.org/x/tools/cmd/goimports@latest
+  - github.com/junegunn/fzf@latest
