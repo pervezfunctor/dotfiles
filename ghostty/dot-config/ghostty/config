@@ -1,4 +1,7 @@
-theme = catppuccin-mocha
+theme = Everforest Dark - Hard
+# theme = rose-pine-moon
+# theme = catppuccin-mocha
+# theme = GitHub-Dark-Default
 font-size = 12
 background-blur-radius = 20
 mouse-hide-while-typing = true

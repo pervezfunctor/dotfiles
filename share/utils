@@ -267,6 +267,12 @@ is_suse() {
     [[ "$ID" == *"opensuse"* ]]
 }
 
+is_tw() {
+    local ID
+    ID=$(get_os)
+    [[ "$ID" == *"tumbleweed"* ]]
+}
+
 is_arch() {
     local ID
     ID=$(get_os)
