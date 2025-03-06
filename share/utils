@@ -677,7 +677,7 @@ environs() {
     smd ~/.local/bin
     smd ~/bin
     smd ~/.bin
-    smd ~/homes
+    smd ~/boxes
 
     export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
     export PNPM_HOME="$HOME/.local/share/pnpm:$PATH"
