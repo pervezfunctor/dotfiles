@@ -1339,27 +1339,27 @@ dbox_base() {
 tw-dbox_groupstall() {
     is_tw || err_exit "This script is only for openSUSE Tumbleweed"
 
-    dbox_base tw_packages
+    dbox_base tw
 }
 
 fedora-dbox_groupstall() {
     is_fedora || err_exit "This script is only for Fedora"
 
-    dbox_base fedora_packages
+    dbox_base fedora
 }
 
 pixi-dbox_groupstall() {
-    dbox_base pixi_packages
+    dbox_base pixi
 }
 
 brew-dbox_groupstall() {
-    dbox_base brew_packages
+    dbox_base brew
 }
 
 ubuntu-dbox_groupstall() {
     is_ubuntu || err_exit "This script is only for Ubuntu"
 
-    dbox_base ubuntu_packages
+    dbox_base ubuntu
 }
 
 fedora-atomic_groupstall() {
