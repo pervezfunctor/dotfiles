@@ -1,0 +1,41 @@
+#! /usr/bin/env bash
+
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+source $DOT_DIR/share/utils
+
+cat /tmp/dotfiles-output.log | grep -i fail
+press_enter
+
+cat /tmp/dotfiles-output.log | grep -i warn
+press_enter
+
+cat /tmp/dotfiles-output.log | grep -i error
+press_enter
+
+cat /tmp/dotfiles-output.log | grep -i not
+press_enter
+
+cat /tmp/dotfiles-output.log | grep -i unable
+press_enter
+
+cat /tmp/dotfiles-output.log | grep -i fatal
+press_enter
+
+
+cat /tmp/dotfiles-error.log | grep -i fail
+press_enter
+
+cat /tmp/dotfiles-error.log | grep -i warn
+press_enter
+
+cat /tmp/dotfiles-error.log | grep -i error
+press_enter
+
+cat /tmp/dotfiles-error.log | grep -i not
+press_enter
+
+cat /tmp/dotfiles-error.log | grep -i unable
+press_enter
+
+cat /tmp/dotfiles-error.log | grep -i fatal
+press_enter

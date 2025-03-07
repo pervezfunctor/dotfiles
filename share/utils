@@ -736,4 +736,9 @@ bootstrap() {
     cd "$curdir"
 }
 
+press_enter() {
+    echo "Press Enter to continue..."
+    read -r
+}
+
 }
