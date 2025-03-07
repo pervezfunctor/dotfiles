@@ -2,6 +2,25 @@
 
 {
 
+brew_install() {
+    has_cmd brew && return 0
+
+    slog "Installing homebrew"
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    if ! eval_brew; then
+        warn "homebrew not installed, trying again"
+        /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        if eval_brew; then
+            slog "homebrew installation done!"
+        else
+            warn "homebrew installation failed"
+        fi
+    fi
+
+    cmd_check brew
+}
+
 webi_install() {
     has_cmd webi && return 0
     has_cmd ~/.local/bin/webi && return 0
@@ -30,18 +49,6 @@ mise_install() {
     cmd_check mise
 }
 
-uv_install() {
-    has_cmd uv && return 0
-
-    if has_cmd pipx; then
-        pip install --upgrade --force-reinstall uv
-        cmd_check uv
-    else
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-    fi
-}
-
-
 pixi_install() {
     has_cmd pixi && return 0
 
@@ -57,6 +64,18 @@ devbox_install() {
     curl -fsSL https://get.jetify.com/devbox | bash
 
     slog "devbox installation done!"
+}
+
+
+uv_install() {
+    has_cmd uv && return 0
+
+    if has_cmd pipx; then
+        pip install --upgrade --force-reinstall uv
+        cmd_check uv
+    else
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    fi
 }
 
 python_install() {
@@ -77,23 +96,6 @@ python_install() {
     uv_install
 
     slog "Python tools installation done!"
-}
-
-pnpm_install() {
-    has_cmd pnpm && return 0
-
-    slog "Installing pnpm"
-    curl -sSL https://get.pnpm.io/install.sh | sh -
-
-    slog "Installing node"
-    pnpm env use --global latest
-
-    has_cmd bash && pnpm install-completion bash
-    has_cmd zsh && pnpm install-completion zsh
-
-    slog "pnpm/node installation done!"
-
-    cmd_check pnpm
 }
 
 nix_install() {
@@ -130,6 +132,22 @@ flathub_install() {
     fi
 }
 
+pnpm_install() {
+    has_cmd pnpm && return 0
+
+    slog "Installing pnpm"
+    curl -sSL https://get.pnpm.io/install.sh | sh -
+
+    slog "Installing node"
+    pnpm env use --global latest
+
+    has_cmd bash && pnpm install-completion bash
+    has_cmd zsh && pnpm install-completion zsh
+
+    slog "pnpm/node installation done!"
+
+    cmd_check pnpm
+}
 kitty_install() {
     is_linux || return 1
 
@@ -168,12 +186,146 @@ mise_shell_install() {
     slog "shell tools with mise done!"
 }
 
+brew_shell_slim_install() {
+    bis tree-sitter gh gum stow tmux
+    bis lazygit eza fzf fd zoxide starship yazi
+
+    if ! has_cmd luarocks; then
+        bi luarocks
+        brew link luarocks # unfortunately, this is needed currently.
+    fi
+    bi bash-preexec
+    has_cmd trash || bi trash-cli
+    has_cmd delta || bi git-delta
+    has_cmd nvim || bi neovim
+    has_cmd rg || bi ripgrep
+    has_cmd batcat || has_cmd bat || bi bat
+    has_cmd ug || bi ugrep
+    has_cmd emacs || bis micro
+}
+
+brew_shell_install() {
+    # bi ffmpeg sevenzip poppler imagemagick
+    # bis gping ncdu httpie font-symbols-only-nerd-font
+    # bi glab
+    # bi -q glances
+
+    slog "shell tools with brew"
+
+    brew_shell_slim_install
+
+    bis jq just lsd shfmt shellcheck lazydocker
+    bis cheat curlie duf sd xh doggo atuin direnv dust
+    bis procs hyperfine pixi yq yazi htop dysk
+    has_cmd tv || bi
+
+    has_cmd spf || bi superfile
+    has_cmd gdu || has_cmd gdu-go || bi gdu
+    has_cmd tldr || bi tealdeer
+    has_cmd delta || bi git-delta
+    has_cmd choose || bi choose-rust
+    has_cmd btm || bi bottom
+    has_cmd nu || bi nushell
+
+    alias gdu=gdu-go
+
+    slog "shell tools with brew done!"
+}
+
+pixi_shell_install() {
+    has_cmd trash || pi trash-cli
+    has_cmd || pi stow
+    has_cmd rg || pi ripgrep
+
+    pis lazygit eza fzf zoxide starship bat fd gh
+}
+
+go_shell_install() {
+    has_cmd go || return 1
+
+    slog "shell tools with go"
+
+    has_cmd cheat || go install github.com/cheat/cheat/cmd/cheat@latest
+    has_cmd curlie || go install github.com/rs/curlie@latest
+    has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
+    has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
+    has_cmd duf || go install github.com/muesli/duf@latest
+
+    slog "shell tools with go done!"
+
+    cmd_check cheat curlie lazygit gdu duf
+}
+
+rust_shell_install() {
+    has_cmd rustup || return 1
+
+    rustup update stable
+
+    slog "shell tools with rust"
+
+    has_cmd starship || cargoi starship
+    has_cmd delta || cargoi git-delta
+    has_cmd dust || cargoi du-dust
+    has_cmd choose || cargoi choose
+    has_cmd sd || cargoi sd
+    has_cmd procs || cargoi procs
+    has_cmd btm || cargoi bottom
+    has_cmd xh || cargoi xh
+    has_cmd lsd || cargoi lsd
+
+    slog "shell tools with rust done!"
+
+    cmd_check starship delta dust choose sd procs btm xh lsd
+}
+
+pnpm_shell_install() {
+    has_cmd pnpm || return 1
+
+    slog "shell tools with pnpm"
+    pnpm install -g degit neovim
+    has_cmd tldr || pnpm install -g tldr
+    has_cmd gtop || pnpm install -g gtop
+    cmd_check degit tldr gtop
+}
+
+starship_install() {
+    has_cmd starship && return 0
+
+    smd ~/.local/bin
+    curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
+}
+
+webi-shell_install() {
+    webi node golang go-essentials shellcheck shfmt pathman
+    webi bat curlie delta jq lsd rg gh fd sd
+    # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing k9s kubectx kubens
+    # webi pyenv
+    # webi fd git watchexec rustlang
+    # sudo apt install -y libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
+}
+
+shell_install() {
+    brew_install
+    webi_install
+    mise_install
+
+    cli_install
+
+    webi_shell_install
+    brew_shell_install
+    # mise_shell_install
+
+    starship_install
+
+    gh extension install github/gh-copilot
+}
+
 vscode_flatpak_install() {
     fpi com.visualstudio.code
     flatpak install com.visualstudio.code.tool.podman
     alias code="flatpak run com.visualstudio.code"
     cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 flatpak run com.visualstudio.code --install-extension
-    vscode_flatpak_config_install
+    vscode-flatpak_config_install
 }
 
 ptyxis_install() {
@@ -244,106 +396,6 @@ more_apps_install() {
 
     # fpi com.jetbrains.CLion
     # fpi com.google.Chrome
-}
-
-webi-shell_install() {
-    webi node golang go-essentials shellcheck shfmt pathman
-    webi bat curlie delta jq lsd rg gh fd sd
-    # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing k9s kubectx kubens
-    # webi pyenv
-    # webi fd git watchexec rustlang
-    # sudo apt install -y libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
-}
-
-nvim_config_install() {
-    slog "nvim config"
-
-    frm $XDG_CONFIG_HOME/nvim.bak
-    omv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
-    frm ~/.local/share/nvim
-    frm ~/.local/state/nvim
-    frm ~/.cache/nvim
-
-    stowgf nvim
-    # nvim --headless "+Lazy! sync" +qa
-
-    slog "nvim config done!"
-}
-
-starship_install() {
-    has_cmd starship && return 0
-
-    smd ~/.local/bin
-    curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
-}
-
-bash_config_exists() {
-    grep -q .ilm/share/bashrc ~/.bashrc
-}
-
-bash_config_check() {
-    bash_config_exists || warn "bash config is not setup correctly"
-}
-
-bash_config_install() {
-    slog "Configuring bash"
-
-    if ! bash_config_exists; then
-        echo "source ~/.ilm/share/bashrc" >> ~/.bashrc
-    fi
-
-    slog "bash config done!"
-}
-
-vscode_extensions_install() {
-    slog "Installing vscode extensions"
-    cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 code --install-extension
-    slog "vscode extensions installation done!"
-}
-
-vscode_flatpak_config_install() {
-    slog "vscode config"
-
-    smd ~/.var/app/com.visualstudio.code/config/Code/User
-    safe-cp $DOT_DIR/extras/vscode/flatpak-settings.json ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
-
-    slog "vscode config done!"
-}
-
-vscode_config_install() {
-    slog "vscode config"
-
-    if is_mac; then
-        safe-cp $DOT_DIR/extras/vscode/minimal-settings.json "$HOME/Library/Application Support/Code/User/settings.json"
-    else
-        smd $XDG_CONFIG_HOME/Code/User
-        fmv $XDG_CONFIG_HOME/Code/User/settings.json $XDG_CONFIG_HOME/Code/User/settings.json.bak
-        safe-cp $DOT_DIR/extras/vscode/minimal-settings.json $XDG_CONFIG_HOME/Code/User/settings.json
-    fi
-
-    slog "vscode config done!"
-}
-
-zsh_config_install() {
-    slog "zsh config"
-
-    srm $HOME/.zshrc
-    smd $HOME/.zsh
-    sclone --depth=1 https://github.com/sindresorhus/pure.git $HOME/.zsh/pure
-    sclone --depth=1 https://github.com/djui/alias-tips.git $HOME/.zsh/alias-tips
-    stowdf zsh
-
-    slog "zsh config done!"
-}
-
-tmux_config_install() {
-    slog "tmux config"
-
-    srm $XDG_CONFIG_HOME/tmux
-    smd $XDG_CONFIG_HOME/tmux
-    stownf tmux
-
-    slog "tmux config done!"
 }
 
 incus_config_install() {
@@ -482,143 +534,6 @@ web_install() {
     fi
 }
 
-brew_install() {
-    has_cmd brew && return 0
-
-    slog "Installing homebrew"
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-    if ! eval_brew; then
-        warn "homebrew not installed, trying again"
-        /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        if eval_brew; then
-            slog "homebrew installation done!"
-        else
-            warn "homebrew installation failed"
-        fi
-    fi
-
-    cmd_check brew
-}
-
-monaspace_install() {
-    file_exists ~/.local/share/fonts/MonaspaceRadon-Regular.otf && return 0
-
-    smd ~/.local/share/fonts
-
-    frm /tmp/monaspace /tmp/monaspace.zip
-    wget -nv https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip -O /tmp/monaspace.zip
-    unzip -qq -d /tmp/monaspace -o /tmp/monaspace.zip
-
-    cp /tmp/monaspace/monaspace-*/fonts/otf/* ~/.local/share/fonts
-    cp /tmp/monaspace/monaspace-*/fonts/variable/* ~/.local/share/fonts
-
-    frm /tmp/monaspace /tmp/monaspace.zip
-}
-
-cascadia_nerd_font_install() {
-    if ! file_exists ~/.local/share/fonts/CaskaydiaMonoNerdFont-Regular.ttf; then
-        smd ~/.local/share/fonts
-        frm /tmp/cascadia /tmp/CascadiaMono.zip
-        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip -O /tmp/CascadiaMono.zip
-        unzip -qq -d /tmp/cascadia -o /tmp/CascadiaMono.zip
-        cp /tmp/cascadia/*.ttf ~/.local/share/fonts
-        frm /tmp/cascadia /tmp/CascadiaMono.zip
-    fi
-}
-
-monaspace_nerd_font_install() {
-    if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
-        smd ~/.local/share/fonts
-        frm /tmp/monaspace /tmp/Monaspace.zip
-        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip -O /tmp/Monaspace.zip
-        unzip -qq -d /tmp/monaspace -o /tmp/Monaspace.zip
-        cp /tmp/monaspace/*.otf ~/.local/share/fonts
-        frm /tmp/monaspace /tmp/Monaspace.zip
-    fi
-
-}
-
-jetbrains_nerd_font_install() {
-    if ! file_exists ~/.local/share/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf; then
-        slog "Installing JetBrains Mono Nerd Font"
-        smd ~/.local/share/fonts
-        frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
-        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
-        unzip -qq -d /tmp/jetbrains-mono -o /tmp/jetbrains-mono.zip
-        cp /tmp/jetbrains-mono/*.ttf ~/.local/share/fonts
-        frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
-        slog "JetBrains Mono Nerd Font installation done!"
-    fi
-}
-
-nerd_font_install() {
-    smd ~/.local/share/fonts
-
-    cascadia_nerd_font_install
-    jetbrains_nerd_font_install
-    monaspace_nerd_font_install
-}
-
-fonts_install() {
-    if ! has_cmd wget || ! has_cmd unzip; then
-        warn "wget and unzip not installed, skipping fonts"
-        return 1
-    fi
-
-    slog "Installing fonts"
-
-    monaspace_install
-    nerd_font_install
-
-    if is_apt; then
-        si fonts-cascadia-code fonts-jetbrains-mono
-    elif is_rh; then
-        is_fedora || si cascadia-fonts-all jetbrains-mono-fonts-all
-    fi
-
-    slog "Fonts installation done!"
-}
-
-doom_install() {
-    dir_exists $XDG_CONFIG_HOME/doom && return 0
-
-    slog "Installing doom"
-
-    sclone --depth=1 https://github.com/doomemacs/doomemacs $XDG_CONFIG_HOME/emacs
-    omv $XDG_CONFIG_HOME/doom $XDG_CONFIG_HOME/doom.backup
-    sclone https://github.com/pervezfunctor/doomemacs-config $XDG_CONFIG_HOME/doom
-
-    slog "Configure doom"
-    doom sync
-    doom env
-
-    slog "doom installation done!"
-
-    has_cmd update-locale && sudo update-locale LANG=en_US.UTF8
-}
-
-emacs_config_install() {
-    slog "emacs config"
-
-    # srm $XDG_CONFIG_HOME/.emacs
-    # srm $XDG_CONFIG_HOME/.emacs.d
-    srm $XDG_CONFIG_HOME/emacs
-    smd $XDG_CONFIG_HOME/emacs
-    stowdf emacs
-
-    slog "emacs config done!"
-}
-
-emacs_slim_install() {
-    slog "Installing slim emacs"
-
-    srm ~/.emacs
-    stowdf emacs-slim
-
-    slog "emacs slim installation done!"
-}
-
 emacs_install() {
     slog "Installing emacs"
 
@@ -636,35 +551,6 @@ emacs_install() {
     slog "emacs installation done!"
 
     cmd_check emacs
-}
-
-git_conf() {
-    git config --global "$@"
-}
-
-git_config_install() {
-    slog "Configuring git"
-
-    is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
-
-    # stowdf git
-
-    git_conf init.defaultBranch main
-    git_conf pull.ff only
-    git_conf delta.navigate true
-    git_conf delta.line-numbers true
-    git_conf delta.syntax-theme "Monokai Extended"
-    git_conf delta.side-by-side true
-    git_conf merge.conflictStyle diff3
-    git_conf interactive.diffFilter "delta --color-only"
-    git_conf fetch.prune true
-
-    if [[ "$USER" == "pervez" ]]; then
-        git_conf user.name "Pervez Iqbal"
-        git_conf user.email "pervefunctor@gmail.com"
-    fi
-
-    slog "git configuration done!"
 }
 
 go_install() {
@@ -806,114 +692,235 @@ permissive_selinux() {
     fi
 }
 
-brew_shell_slim_install() {
-    bis tree-sitter gh gum stow tmux
-    bis lazygit eza fzf fd zoxide starship yazi
+monaspace_install() {
+    file_exists ~/.local/share/fonts/MonaspaceRadon-Regular.otf && return 0
 
-    if ! has_cmd luarocks; then
-        bi luarocks
-        brew link luarocks # unfortunately, this is needed currently.
+    smd ~/.local/share/fonts
+
+    frm /tmp/monaspace /tmp/monaspace.zip
+    wget -nv https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip -O /tmp/monaspace.zip
+    unzip -qq -d /tmp/monaspace -o /tmp/monaspace.zip
+
+    cp /tmp/monaspace/monaspace-*/fonts/otf/* ~/.local/share/fonts
+    cp /tmp/monaspace/monaspace-*/fonts/variable/* ~/.local/share/fonts
+
+    frm /tmp/monaspace /tmp/monaspace.zip
+}
+
+cascadia_nerd_font_install() {
+    if ! file_exists ~/.local/share/fonts/CaskaydiaMonoNerdFont-Regular.ttf; then
+        smd ~/.local/share/fonts
+        frm /tmp/cascadia /tmp/CascadiaMono.zip
+        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip -O /tmp/CascadiaMono.zip
+        unzip -qq -d /tmp/cascadia -o /tmp/CascadiaMono.zip
+        cp /tmp/cascadia/*.ttf ~/.local/share/fonts
+        frm /tmp/cascadia /tmp/CascadiaMono.zip
     fi
-    bi bash-preexec
-    has_cmd trash || bi trash-cli
-    has_cmd delta || bi git-delta
-    has_cmd nvim || bi neovim
-    has_cmd rg || bi ripgrep
-    has_cmd batcat || has_cmd bat || bi bat
-    has_cmd ug || bi ugrep
-    has_cmd emacs || bis micro
 }
 
-brew_shell_install() {
-    # bi ffmpeg sevenzip poppler imagemagick
-    # bis gping ncdu httpie font-symbols-only-nerd-font
-    # bi glab
-    # bi -q glances
+monaspace_nerd_font_install() {
+    if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
+        smd ~/.local/share/fonts
+        frm /tmp/monaspace /tmp/Monaspace.zip
+        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip -O /tmp/Monaspace.zip
+        unzip -qq -d /tmp/monaspace -o /tmp/Monaspace.zip
+        cp /tmp/monaspace/*.otf ~/.local/share/fonts
+        frm /tmp/monaspace /tmp/Monaspace.zip
+    fi
 
-    slog "shell tools with brew"
-
-    brew_shell_slim_install
-
-    bis jq just lsd shfmt shellcheck lazydocker
-    bis cheat curlie duf sd xh doggo atuin direnv dust
-    bis procs hyperfine pixi yq yazi htop dysk
-    has_cmd tv || bi
-
-    has_cmd spf || bi superfile
-    has_cmd gdu || has_cmd gdu-go || bi gdu
-    has_cmd tldr || bi tealdeer
-    has_cmd delta || bi git-delta
-    has_cmd choose || bi choose-rust
-    has_cmd btm || bi bottom
-    has_cmd nu || bi nushell
-
-    alias gdu=gdu-go
-
-    slog "shell tools with brew done!"
 }
 
-go_shell_install() {
-    has_cmd go || return 1
-
-    slog "shell tools with go"
-
-    has_cmd cheat || go install github.com/cheat/cheat/cmd/cheat@latest
-    has_cmd curlie || go install github.com/rs/curlie@latest
-    has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
-    has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
-    has_cmd duf || go install github.com/muesli/duf@latest
-
-    slog "shell tools with go done!"
-
-    cmd_check cheat curlie lazygit gdu duf
+jetbrains_nerd_font_install() {
+    if ! file_exists ~/.local/share/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf; then
+        slog "Installing JetBrains Mono Nerd Font"
+        smd ~/.local/share/fonts
+        frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
+        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
+        unzip -qq -d /tmp/jetbrains-mono -o /tmp/jetbrains-mono.zip
+        cp /tmp/jetbrains-mono/*.ttf ~/.local/share/fonts
+        frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
+        slog "JetBrains Mono Nerd Font installation done!"
+    fi
 }
 
-rust_shell_install() {
-    has_cmd rustup || return 1
+nerd_font_install() {
+    smd ~/.local/share/fonts
 
-    rustup update stable
-
-    slog "shell tools with rust"
-
-    has_cmd starship || cargoi starship
-    has_cmd delta || cargoi git-delta
-    has_cmd dust || cargoi du-dust
-    has_cmd choose || cargoi choose
-    has_cmd sd || cargoi sd
-    has_cmd procs || cargoi procs
-    has_cmd btm || cargoi bottom
-    has_cmd xh || cargoi xh
-    has_cmd lsd || cargoi lsd
-
-    slog "shell tools with rust done!"
-
-    cmd_check starship delta dust choose sd procs btm xh lsd
+    cascadia_nerd_font_install
+    jetbrains_nerd_font_install
+    monaspace_nerd_font_install
 }
 
-pnpm_shell_install() {
-    has_cmd pnpm || return 1
+fonts_install() {
+    if ! has_cmd wget || ! has_cmd unzip; then
+        warn "wget and unzip not installed, skipping fonts"
+        return 1
+    fi
 
-    slog "shell tools with pnpm"
-    pnpm install -g degit neovim
-    has_cmd tldr || pnpm install -g tldr
-    has_cmd gtop || pnpm install -g gtop
-    cmd_check degit tldr gtop
+    slog "Installing fonts"
+
+    monaspace_install
+    nerd_font_install
+
+    if is_apt; then
+        si fonts-cascadia-code fonts-jetbrains-mono
+    elif is_rh; then
+        is_fedora || si cascadia-fonts-all jetbrains-mono-fonts-all
+    fi
+
+    slog "Fonts installation done!"
 }
 
-shell_install() {
-    brew_install
-    webi_install
-    mise_install
+nvim_config_install() {
+    slog "nvim config"
 
-    cli_install
+    frm $XDG_CONFIG_HOME/nvim.bak
+    omv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
+    frm ~/.local/share/nvim
+    frm ~/.local/state/nvim
+    frm ~/.cache/nvim
 
-    webi_shell_install
-    brew_shell_install
-    # mise_shell_install
+    stowgf nvim
+    # nvim --headless "+Lazy! sync" +qa
 
-    starship_install
+    slog "nvim config done!"
+}
 
-    gh extension install github/gh-copilot
+bash_config_exists() {
+    grep -q .ilm/share/bashrc ~/.bashrc
+}
+
+bash_config_check() {
+    bash_config_exists || warn "bash config is not setup correctly"
+}
+
+bash_config_install() {
+    slog "Configuring bash"
+
+    if ! bash_config_exists; then
+        echo "source ~/.ilm/share/bashrc" >> ~/.bashrc
+    fi
+
+    slog "bash config done!"
+}
+
+vscode_extensions_install() {
+    slog "Installing vscode extensions"
+    cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 code --install-extension
+    slog "vscode extensions installation done!"
+}
+
+vscode-flatpak_config_install() {
+    slog "vscode config"
+
+    smd ~/.var/app/com.visualstudio.code/config/Code/User
+    safe-cp $DOT_DIR/extras/vscode/flatpak-settings.json ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
+
+    slog "vscode config done!"
+}
+
+zsh_config_install() {
+    slog "zsh config"
+
+    srm $HOME/.zshrc
+    smd $HOME/.zsh
+    sclone --depth=1 https://github.com/sindresorhus/pure.git $HOME/.zsh/pure
+    sclone --depth=1 https://github.com/djui/alias-tips.git $HOME/.zsh/alias-tips
+    stowdf zsh
+
+    slog "zsh config done!"
+}
+
+tmux_config_install() {
+    slog "tmux config"
+
+    srm $XDG_CONFIG_HOME/tmux
+    smd $XDG_CONFIG_HOME/tmux
+    stownf tmux
+
+    slog "tmux config done!"
+}
+
+doom_install() {
+    dir_exists $XDG_CONFIG_HOME/doom && return 0
+
+    slog "Installing doom"
+
+    sclone --depth=1 https://github.com/doomemacs/doomemacs $XDG_CONFIG_HOME/emacs
+    omv $XDG_CONFIG_HOME/doom $XDG_CONFIG_HOME/doom.backup
+    sclone https://github.com/pervezfunctor/doomemacs-config $XDG_CONFIG_HOME/doom
+
+    slog "Configure doom"
+    doom sync
+    doom env
+
+    slog "doom installation done!"
+
+    has_cmd update-locale && sudo update-locale LANG=en_US.UTF8
+}
+
+emacs_config_install() {
+    slog "emacs config"
+
+    # srm $XDG_CONFIG_HOME/.emacs
+    # srm $XDG_CONFIG_HOME/.emacs.d
+    srm $XDG_CONFIG_HOME/emacs
+    smd $XDG_CONFIG_HOME/emacs
+    stowdf emacs
+
+    slog "emacs config done!"
+}
+
+emacs_slim_install() {
+    slog "Installing slim emacs"
+
+    srm ~/.emacs
+    stowdf emacs-slim
+
+    slog "emacs slim installation done!"
+}
+
+git_conf() {
+    git config --global "$@"
+}
+
+git_config_install() {
+    slog "Configuring git"
+
+    is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
+
+    # stowdf git
+
+    git_conf init.defaultBranch main
+    git_conf pull.ff only
+    git_conf delta.navigate true
+    git_conf delta.line-numbers true
+    git_conf delta.syntax-theme "Monokai Extended"
+    git_conf delta.side-by-side true
+    git_conf merge.conflictStyle diff3
+    git_conf interactive.diffFilter "delta --color-only"
+    git_conf fetch.prune true
+
+    if [[ "$USER" == "pervez" ]]; then
+        git_conf user.name "Pervez Iqbal"
+        git_conf user.email "pervefunctor@gmail.com"
+    fi
+
+    slog "git configuration done!"
+}
+
+vscode_config_install() {
+    slog "vscode config"
+
+    if is_mac; then
+        safe-cp $DOT_DIR/extras/vscode/minimal-settings.json "$HOME/Library/Application Support/Code/User/settings.json"
+    else
+        smd $XDG_CONFIG_HOME/Code/User
+        fmv $XDG_CONFIG_HOME/Code/User/settings.json $XDG_CONFIG_HOME/Code/User/settings.json.bak
+        safe-cp $DOT_DIR/extras/vscode/minimal-settings.json $XDG_CONFIG_HOME/Code/User/settings.json
+    fi
+
+    slog "vscode config done!"
 }
 
 alacritty_config_install() {
@@ -1143,6 +1150,43 @@ portainer_install() {
     fi
 }
 
+sway_install() {
+    slog "Installing sway..."
+
+    sway_bin_install
+
+    sway-waybar_config_install
+    kitty_config_install
+    sway_config_install
+    rofi_config_install
+    wlogout_config_install
+
+    if ! has_cmd pip; then
+        warn "pip not installed, cannot install autotiling"
+        return 1
+    fi
+
+    pip install --user --force-reinstall --upgrade i3ipc
+    pip install --user --force-reinstall --upgrade autotiling
+
+    slog "Installing sway done!"
+}
+
+hyprland_install() {
+    slog "Installing hyprland..."
+
+    hyprland_bin_install
+
+    hyprland_config_install
+    hypr-waybar_config_install
+    kitty_config_install
+    sway_config_install
+    rofi_config_install
+    wlogout_config_install
+
+    slog "hyprland installation done!"
+}
+
 vscode_install() {
     vscode_bin_install
     vscode_extensions_install
@@ -1172,12 +1216,144 @@ home_manager_install() {
     fi
 }
 
-pixi_shell_install() {
-    has_cmd trash || pi trash-cli
-    has_cmd || pi stow
-    has_cmd rg || pi ripgrep
+gnome_extensions_install() {
+    if ! has_cmd gext; then
+        warn "gext not installed, skipping gnome extensions"
+        return 1
+    fi
 
-    pis lazygit eza fzf zoxide starship bat fd gh
+    slog "Installing gnome extensions"
+
+    gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
+    gext install Vitals@CoreCoding.com
+    gext install tailscale@joaophi.github.com
+    gext install tilingshell@ferrarodomenico.com
+    gext install CoverflowAltTab@palatis.blogspot.com
+    gext install just-perfection-desktop@just-perfection
+    gext install blur-my-shell@aunetx
+    gext install undecorate@sun.wxg@gmail.com
+    gext install AlphabeticalAppGrid@stuarthayhurst
+
+    slog "gnome extensions installation done!"
+}
+
+gnome_settings_install() {
+
+    if ! has_cmd gsettings; then
+        warn "gsettings not found, skipping gnome basic settings"
+        return 1
+    fi
+
+    slog "gnome settings"
+
+    gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+    gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
+    gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+    gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
+    gsettings set org.gnome.desktop.interface accent-color 'purple'
+
+    # Use 4 fixed workspaces instead of dynamic mode
+    gsettings set org.gnome.mutter dynamic-workspaces false
+    gsettings set org.gnome.desktop.wm.preferences num-workspaces 4
+
+    # Center new windows in the middle of the screen
+    gsettings set org.gnome.mutter center-new-windows true
+
+    # Set JetBrains Mono as the default monospace font
+    gsettings set org.gnome.desktop.interface monospace-font-name 'JetbrainsMono Nerd Font 11'
+
+    slog "gnome settings done!"
+}
+
+# https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
+gnome_config_install() {
+    if ! is_gnome; then
+        warn "Not running GNOME, skipping GNOME config"
+        return 1
+    fi
+
+    slog "gnome config"
+
+    if is_ubuntu; then
+        si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
+    elif is_fedora && ! is_atomic; then
+        si gnome-extensions-app gnome-tweaks
+    fi
+
+    pipx install gnome-extensions-cli --system-site-packages
+
+    if is_ubuntu; then
+        gnome-extensions disable tiling-assistant@ubuntu.com
+        gnome-extensions disable ubuntu-appindicators@ubuntu.com
+        gnome-extensions disable ubuntu-dock@ubuntu.com
+        gnome-extensions disable ding@rastersoft.com
+    fi
+
+    gnome_settings_install
+    gnome_keybindings_install
+
+    gnome_extensions_install
+
+    slog "gnome config done!"
+}
+
+sway-waybar_config_install() {
+    slog "waybar config"
+    has_cmd waybar || return 1
+    stowgf waybar
+    slog "waybar config done!"
+}
+
+hypr-waybar_config_install() {
+    has_cmd waybar || return 1
+
+    slog "waybar config"
+    stowgf hypr-waybar
+    slog "waybar config done!"
+}
+
+wlogout_config_install() {
+    slog "wlogout config"
+    has_cmd wlogout || return 1
+    stowgf wlogout
+    slog "wlogout config done!"
+}
+
+sway_config_install() {
+    has_cmd sway || return 1
+    slog "sway config"
+    stowgf sway
+    slog "sway config done!"
+}
+
+rofi_config_install() {
+    has_cmd rofi || return 1
+
+    slog "rofi config"
+    stowgf rofi
+    slog "rofi config done!"
+}
+
+hyprland_config_install() {
+    slog "hypr config install"
+
+    hypr-waybar_config_install
+    wlogout_config_install
+    rofi_config_install
+    kitty_config_install
+
+    slog "hypr config done!"
+}
+
+github_user_setup() {
+    if ! has_cmd gh; then
+        warn "gh not installed, skipping github user setup"
+        return 1
+    fi
+
+    gh auth login
 }
 
 dbox_nix_setup() {
@@ -1199,41 +1375,7 @@ tbox_default_setup() {
     toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- $group
 }
 
-dev_groupstall() {
-    slog "Generic OS setup for Development(docker,vscode,kitty,brew,flatpak, distrobox)"
-
-    core_install
-
-    brew_install
-    python_install
-
-    has_cmd trash || bi trash-cli
-    has_cmd rg || bi ripgrep
-    has_cmd delta || bi git-delta
-
-    bis gh wget tree tar unzip stow micro make cmake
-    bis zsh starship fzf fd bat zoxide eza htop tmux gum
-    bi bash-preexec
-
-    vscode_install
-
-    docker_install
-    atomic_distrobox_install
-
-    jetbrains_nerd_font_install
-
-    if has_cmd flatpak; then
-        flathub_install
-        ptyxis_install
-        fpi us.zoom.Zoom
-        fpi md.obsidian.Obsidian
-    else
-        si kitty
-        has_cmd kitty || kitty_install
-    fi
-}
-
-toolbox_default() {
+tbox_default() {
     has_cmd toolbox || return
 
     toolbox --assumeyes create
@@ -1242,7 +1384,7 @@ toolbox_default() {
     toolbox run gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
 }
 
-distrobox_default() {
+dbox_default() {
     has_cmd distrobox || return
 
     slog "Creating default distrobox"
@@ -1341,6 +1483,40 @@ ubuntu-dbox_groupstall() {
     dbox_base ubuntu
 }
 
+dev_groupstall() {
+    slog "Generic OS setup for Development(docker,vscode,kitty,brew,flatpak, distrobox)"
+
+    core_install
+
+    brew_install
+    python_install
+
+    has_cmd trash || bi trash-cli
+    has_cmd rg || bi ripgrep
+    has_cmd delta || bi git-delta
+
+    bis gh wget tree tar unzip stow micro make cmake
+    bis zsh starship fzf fd bat zoxide eza htop tmux gum
+    bi bash-preexec
+
+    vscode_install
+
+    docker_install
+    atomic_distrobox_install
+
+    jetbrains_nerd_font_install
+
+    if has_cmd flatpak; then
+        flathub_install
+        ptyxis_install
+        fpi us.zoom.Zoom
+        fpi md.obsidian.Obsidian
+    else
+        si kitty
+        has_cmd kitty || kitty_install
+    fi
+}
+
 fedora-atomic_groupstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
@@ -1373,7 +1549,7 @@ fedora-atomic_groupstall() {
     atomic_distrobox_install
 
     slog "Setting up default distrobox for development"
-    distrobox_default
+    dbox_default
 
     slog "Fedora Atomic Host setup done!"
 }
@@ -1553,174 +1729,6 @@ all_groupstall() {
     all-group_check
 }
 
-gnome_extensions_install() {
-    if ! has_cmd gext; then
-        warn "gext not installed, skipping gnome extensions"
-        return 1
-    fi
-
-    slog "Installing gnome extensions"
-
-    gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
-    gext install Vitals@CoreCoding.com
-    gext install tailscale@joaophi.github.com
-    gext install tilingshell@ferrarodomenico.com
-    gext install CoverflowAltTab@palatis.blogspot.com
-    gext install just-perfection-desktop@just-perfection
-    gext install blur-my-shell@aunetx
-    gext install undecorate@sun.wxg@gmail.com
-    gext install AlphabeticalAppGrid@stuarthayhurst
-
-    slog "gnome extensions installation done!"
-}
-
-gnome_settings_install() {
-
-    if ! has_cmd gsettings; then
-        warn "gsettings not found, skipping gnome basic settings"
-        return 1
-    fi
-
-    slog "gnome settings"
-
-    gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
-    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
-    gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
-    gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
-    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-    gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
-    gsettings set org.gnome.desktop.interface accent-color 'purple'
-
-    # Use 4 fixed workspaces instead of dynamic mode
-    gsettings set org.gnome.mutter dynamic-workspaces false
-    gsettings set org.gnome.desktop.wm.preferences num-workspaces 4
-
-    # Center new windows in the middle of the screen
-    gsettings set org.gnome.mutter center-new-windows true
-
-    # Set JetBrains Mono as the default monospace font
-    gsettings set org.gnome.desktop.interface monospace-font-name 'JetbrainsMono Nerd Font 11'
-
-    slog "gnome settings done!"
-}
-
-# https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
-gnome_config_install() {
-    if ! is_gnome; then
-        warn "Not running GNOME, skipping GNOME config"
-        return 1
-    fi
-
-    slog "gnome config"
-
-    if is_ubuntu; then
-        si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
-    elif is_fedora && ! is_atomic; then
-        si gnome-extensions-app gnome-tweaks
-    fi
-
-    pipx install gnome-extensions-cli --system-site-packages
-
-    if is_ubuntu; then
-        gnome-extensions disable tiling-assistant@ubuntu.com
-        gnome-extensions disable ubuntu-appindicators@ubuntu.com
-        gnome-extensions disable ubuntu-dock@ubuntu.com
-        gnome-extensions disable ding@rastersoft.com
-    fi
-
-    gnome_settings_install
-    gnome_keybindings_install
-
-    gnome_extensions_install
-
-    slog "gnome config done!"
-}
-
-sway_waybar_config_install() {
-    slog "waybar config"
-    has_cmd waybar || return 1
-    stowgf waybar
-    slog "waybar config done!"
-}
-
-hypr-waybar_config_install() {
-    has_cmd waybar || return 1
-
-    slog "waybar config"
-    stowgf hypr-waybar
-    slog "waybar config done!"
-}
-
-wlogout_config_install() {
-    slog "wlogout config"
-    has_cmd wlogout || return 1
-    stowgf wlogout
-    slog "wlogout config done!"
-}
-
-sway_config_install() {
-    has_cmd sway || return 1
-    slog "sway config"
-    stowgf sway
-    slog "sway config done!"
-}
-
-rofi_config_install() {
-    has_cmd rofi || return 1
-
-    slog "rofi config"
-    stowgf rofi
-    slog "rofi config done!"
-}
-
-hyprland_config_install() {
-    slog "hypr config install"
-
-    hypr_waybar_config_install
-    wlogout_config_install
-    rofi_config_install
-    kitty_config_install
-
-    slog "hypr config done!"
-}
-
-sway_install() {
-    slog "Installing sway..."
-
-    sway_bin_install
-
-    sway_waybar_config_install
-    kitty_config_install
-    sway_config_install
-    rofi_config_install
-    wlogout_config_install
-
-    if ! has_cmd pip; then
-        warn "pip not installed, cannot install autotiling"
-        return 1
-    fi
-
-    pip install --user --force-reinstall --upgrade i3ipc
-    pip install --user --force-reinstall --upgrade autotiling
-
-    slog "Installing sway done!"
-}
-
-hyprland_install() {
-    slog "Installing hyprland..."
-
-    hyprland_bin_install
-
-    hyprland_config_install
-    hypr-waybar_config_install
-    kitty_config_install
-    sway_config_install
-    rofi_config_install
-    wlogout_config_install
-
-    slog "hyprland installation done!"
-}
-
 sway_groupstall() {
     slog "Installing sway"
     shell_groupstall
@@ -1738,15 +1746,6 @@ hyprland_groupstall() {
     hyprland_install
 
     slog "hyprland instalation done!"
-}
-
-github_user_setup() {
-    if ! has_cmd gh; then
-        warn "gh not installed, skipping github user setup"
-        return 1
-    fi
-
-    gh auth login
 }
 
 kwin_script_install() {
