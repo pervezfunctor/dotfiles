@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-DOT_DIR=~/.ilm
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 set -e
 
 {
@@ -16,27 +16,27 @@ proxmox_update_templates() {
 
 proxmox_download_templates() {
     ubuntu_latest_tmpl=$(pveam available | grep ubuntu | sort -r | head -n 1 | awk '{print $2}')
-    pveam download local $ubuntu_latest_tmpl
+    pveam download local "$ubuntu_latest_tmpl"
 
     debian_latest_tmpl=$(pveam available | grep 'debian-12-standard' | sort -r | head -n 1 | awk '{print $2}')
-    pveam download local $debian_latest_tmpl
+    pveam download local "$debian_latest_tmpl"
 
     rocky_latest_tmpl=$(pveam available | grep rockylinux | sort -r | head -n 1 | awk '{print $2}')
-    pveam download local $rocky_latest_tmpl
+    pveam download local "$rocky_latest_tmpl"
 
     fedora_latest_tmpl=$(pveam available | grep fedora | sort -r | head -n 1 | awk '{print $2}')
-    pveam download local $fedora_latest_tmpl
+    pveam download local "$fedora_latest_tmpl"
 
     arch_latest_tmpl=$(pveam available | grep archlinux | sort -r | head -n 1 | awk '{print $2}')
-    pveam download local $arch_latest_tmpl
+    pveam download local "$arch_latest_tmpl"
 
     centos_latest_tmpl=$(pveam available | grep centos | sort -r | head -n 1 | awk '{print $2}')
-    pveam download local $centos_latest_tmpl
+    pveam download local "$centos_latest_tmpl"
 }
 
 proxmox_cloud_init_vms_install() {
-    git clone --depth=1 https://github.com/pervezfunctor/dotfiles.git $DOT_DIR
-    pushd $DOT_DIR/extras/proxmox
+    git clone --depth=1 https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR"
+    pushd "$DOT_DIR/extras/proxmox"
     ./debian-vm-template.sh
     # clone vm from template debian-template
     qm clone 9100 101 --name debian-vm

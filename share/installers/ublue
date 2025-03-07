@@ -54,7 +54,7 @@ ublue_code_setup() {
         return 1
     fi
 
-    vscode_extensions_install
+    vscode-extensions_install
     vscode_config_install
 
     slog "code setup done!"

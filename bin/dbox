@@ -2,7 +2,7 @@
 
 {
 
-DOT_DIR={DOT_DIR:-$HOME/.ilm}
+export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
 [[ -d $DOT_DIR ]] || err_exit "Please clone dotfiles to $DOT_DIR"
 

@@ -66,7 +66,6 @@ devbox_install() {
     slog "devbox installation done!"
 }
 
-
 uv_install() {
     has_cmd uv && return 0
 
@@ -111,7 +110,7 @@ nix_install() {
     slog "nix installation done!"
 }
 
-nix_without_init_install() {
+nix-no-init_install() {
     has_cmd nix && return 0
 
     slog "Installing nix"
@@ -148,6 +147,7 @@ pnpm_install() {
 
     cmd_check pnpm
 }
+
 kitty_install() {
     is_linux || return 1
 
@@ -295,7 +295,7 @@ starship_install() {
     curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
 }
 
-webi-shell_install() {
+webi_shell_install() {
     webi node golang go-essentials shellcheck shfmt pathman
     webi bat curlie delta jq lsd rg gh fd sd
     # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing k9s kubectx kubens
@@ -771,21 +771,6 @@ fonts_install() {
     slog "Fonts installation done!"
 }
 
-nvim_config_install() {
-    slog "nvim config"
-
-    frm $XDG_CONFIG_HOME/nvim.bak
-    omv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
-    frm ~/.local/share/nvim
-    frm ~/.local/state/nvim
-    frm ~/.cache/nvim
-
-    stowgf nvim
-    # nvim --headless "+Lazy! sync" +qa
-
-    slog "nvim config done!"
-}
-
 bash_config_exists() {
     grep -q .ilm/share/bashrc ~/.bashrc
 }
@@ -802,21 +787,6 @@ bash_config_install() {
     fi
 
     slog "bash config done!"
-}
-
-vscode_extensions_install() {
-    slog "Installing vscode extensions"
-    cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 code --install-extension
-    slog "vscode extensions installation done!"
-}
-
-vscode-flatpak_config_install() {
-    slog "vscode config"
-
-    smd ~/.var/app/com.visualstudio.code/config/Code/User
-    safe-cp $DOT_DIR/extras/vscode/flatpak-settings.json ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
-
-    slog "vscode config done!"
 }
 
 zsh_config_install() {
@@ -841,7 +811,22 @@ tmux_config_install() {
     slog "tmux config done!"
 }
 
-doom_install() {
+vscode-extensions_install() {
+    slog "Installing vscode extensions"
+    cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 code --install-extension
+    slog "vscode extensions installation done!"
+}
+
+vscode-flatpak_config_install() {
+    slog "vscode config"
+
+    smd ~/.var/app/com.visualstudio.code/config/Code/User
+    safe-cp $DOT_DIR/extras/vscode/flatpak-settings.json ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
+
+    slog "vscode config done!"
+}
+
+emacs-doom_config_install() {
     dir_exists $XDG_CONFIG_HOME/doom && return 0
 
     slog "Installing doom"
@@ -871,13 +856,28 @@ emacs_config_install() {
     slog "emacs config done!"
 }
 
-emacs_slim_install() {
+emacs-slim_config_install() {
     slog "Installing slim emacs"
 
     srm ~/.emacs
     stowdf emacs-slim
 
     slog "emacs slim installation done!"
+}
+
+nvim_config_install() {
+    slog "nvim config"
+
+    frm $XDG_CONFIG_HOME/nvim.bak
+    omv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
+    frm ~/.local/share/nvim
+    frm ~/.local/state/nvim
+    frm ~/.cache/nvim
+
+    stowgf nvim
+    # nvim --headless "+Lazy! sync" +qa
+
+    slog "nvim config done!"
 }
 
 git_conf() {
@@ -1189,7 +1189,7 @@ hyprland_install() {
 
 vscode_install() {
     vscode_bin_install
-    vscode_extensions_install
+    vscode-extensions_install
     vscode_config_install
 }
 
@@ -1486,10 +1486,9 @@ ubuntu-dbox_groupstall() {
 dev_groupstall() {
     slog "Generic OS setup for Development(docker,vscode,kitty,brew,flatpak, distrobox)"
 
-    core_install
+    essential_install
 
     brew_install
-    python_install
 
     has_cmd trash || bi trash-cli
     has_cmd rg || bi ripgrep
@@ -1695,7 +1694,7 @@ desktop_groupstall() {
     # tailscale_install
     # @TODO: flatpak aliases?
 
-    has_cmd code && vscode_extensions_install
+    has_cmd code && vscode-extensions_install
     has_cmd code && vscode_config_install
     has_cmd foot && foot_config_install
     has_cmd ghostty && ghostty_config_install
@@ -1726,6 +1725,8 @@ all_groupstall() {
     pixi_install
     emacs_install
 
+    emacs_config_install
+
     all-group_check
 }
 
@@ -1737,7 +1738,6 @@ sway_groupstall() {
 
     slog "sway instalation done!"
 }
-
 
 hyprland_groupstall() {
     slog "Installing hyprland"

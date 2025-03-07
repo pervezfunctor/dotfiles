@@ -76,8 +76,6 @@ cpp_install() {
 vscode_bin_install() {
     yay -Sy --noconfirm visual-studio-code-bin
 
-    vscode_extensions_install
-
     cmd_check code
 }
 

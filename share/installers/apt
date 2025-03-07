@@ -126,8 +126,6 @@ vscode_bin_install() {
     sudo apt-get -qq update
     si code
 
-    vscode_extensions_install
-
     cmd_check code
 }
 

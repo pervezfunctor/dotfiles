@@ -2,7 +2,7 @@
 
 {
 
-export DOT_DIR=$HOME/.ilm
+export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
 BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 

@@ -119,8 +119,6 @@ vscode_bin_install() {
     dnf check-update
     si code code-insiders
 
-    vscode_extensions_install
-
     cmd_check code
 }
 
