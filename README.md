@@ -7,6 +7,8 @@ If your on desktop and want to get started quickly, use the following command.
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- dev
 ```
+
+
 If within a container, use the following command.
 
 ```bash
@@ -15,16 +17,23 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 
 ## Recommended Setup
 
+
 ### ublue
 
 If you are an experienced linux user and and an experienced developer, then [Aurora](https://getaurora.dev/en) or [Bluefin](https://projectbluefin.io) would be perfect. Bluefin and Aurora are based on Fedora Atomic.
 
   - Install shell tools using [homebrew](https://brew.sh), which is comparable to `nix` or `aur` in package selection. You also get the latest versions of packages.
+
   - Install desktop apps using [flatpak](https://flathub.org), most modern apps on linux are available.
+
   - [Visual studio code](https://code.visualstudio.com) is installed and configured properly.
+
   - Use [docker](https://docker.com) or [podman](https://podman.io)(open source) for containers.
+
   - Use [distrobox](https://distrobox.it) for software development. You could use scripts from [Alternate setup](#alternate-setup) to setup the container.
+
   - [libvirt](https://libvirt.org)/[virt-manager](https://virt-manager.org) for virtual machines.
+
   - [incus](https://linuxcontainers.org/incus) for virtual machines and [lxc(stateful)](https://linuxcontainers.org/lxc) containers.
 
 Install and configure shell tools and desktop apps using the following command. Works only on bluefin and aurora.
@@ -42,36 +51,33 @@ If you prefer Fedora Atomic([Kinoite](https://fedoraproject.org/atomic-desktops/
 bash -c "$(curl -sSL https://dub.sh/RCrpnUm || wget -qO- https://dub.sh/RCrpnUm)"
 ```
 
-  - You might be missing some packages as `rpm-ostree` is NOT used for installing any packages.
-  - `mise` is used instead of `homebrew` for this setup.
-  - `flatpak` version of vscode is installed.
-  - Don't install everything on the host. Use [toolbox](https://docs.fedoraproject.org/en-US/fedora-silverblue/toolbox) for almost everything.
-  - You can even `visual studio code` inside a `toolbox` container, if you need to.
-  - [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal has great support for toolbox.
+  - Use [distrobox](https://distrobox.it) for everything. Default distrobox is setup with zsh and shell utilies, gnome-keyring, visual studio code and firefox(needed for authentication).
 
-### Vanilla OS
+  - You can also install visual studio code using flatpak.
 
-I have not looked at `Vanilla OS` yet, as it's not stable in a virtual machine for me.
+  - Use [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal, as it has great support for toolbox.
 
 
 ## Alternate setup
 
-**Note**: All of the following scripts should work fine on most flavors of `Ubuntu`, `Fedora`(Not Atomic), `Debian`, `Rocky`, `Arch` and `Opensuse Tumbleweed`.
+**Note**: All of the following scripts should work fine on most flavors of `Ubuntu`, `Fedora`(except Atomic), `Debian`, `Rocky`, `Arch` and `Opensuse Tumbleweed`.
 
-If you are a beginner linux developer, look at [Rhino Linux](https://rhinolinux.org), an ubuntu based rolling release. Make sure you select container and virtualization tools in the post install dialog. Note that this uses xfce, perfect for low end laptops.
+If you are a beginner linux developer, use Fedora Workstation, it's awesome! If you need Ubuntu, take a look at [Rhino Linux](https://rhinolinux.org). Make sure you select container and virtualization tools in the post install dialog. Rhinos uses xfce, perfect for low end laptops.
 
-If you are an experienced linux developer, but don't want to use immutable distributions, I would recommend Opensuse Tumbleweed, a rolling release distribution similar to Arch Linux, but simpler and a bit more stable. You could always use Arch Linux, but do note that it's not for the faint hearted.
+If you are an experienced linux developer, but don't want to use immutable distributions, I would recommend Opensuse Tumbleweed, a rolling release distribution similar to Arch Linux, but simpler and a bit more stable.
 
 Install and configure shell tools with the following command.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
+
 Install container and virtualization tools(in addition to above shell tools and configuration), with following command.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- vm
 ```
+
 Install desktop apps including vscode(in addition to above), with the following command.
 
 ```bash
@@ -84,14 +90,14 @@ You could also, first install the base setup
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)"
 ```
 
-and then at any point(after reboot), use `group-installer`.
+and then at any point(after reboot), use `ilm-group-installer`.
 
 ```bash
 ilm-group-installer
 ilm-group-installer help
 ```
 
-You could pick from `shell`, `ct`, `vm`, `desktop` and `all` groups. This is the same as above installation commands.
+You could pick from `shell`, `ct`, `vm`, `desktop` and `dev` groups.
 
 `shell` will install and configure zsh and bash(with [starship](https://starship.rs) prompt), neovim(with lazyvim](http://www.lazyvim.org)) and [tmux](https://github.com/tmux/tmux/wiki). Installs modern shell tools like
 
@@ -103,28 +109,31 @@ You could pick from `shell`, `ct`, `vm`, `desktop` and `all` groups. This is the
 - [eza - modern ls](https://github.com/eza-community/eza)
 - [bat - modern cat](https://github.com/sharkdp/bat)
 - [delta - git diff](https://github.com/dandavison/delta)
+
+Following optional utilities might also be installed
+
+- [lazygit - git ui](https://github.com/jesseduffield/lazygit)
 - [procs - modern ps](https://github.com/dalance/procs)
 - [sd - modern sed](https://github.com/chmln/sd)
 - [xh - modern httpie](https://github.com/ducaale/xh)
 - [bottom - modern top](https://github.com/ClementTsang/bottom)
 - [duf - modern df](https://github.com/muesli/duf)
 - [cheat - cheat sheet](https://github.com/cheat/cheat)
-- [lazygit - git ui](https://github.com/jesseduffield/lazygit)
 
 `ct` will install the following, along with `shell` packages above.
 
+- [podman](https://podman.io)
+- [incus](https://linuxcontainers.org/incus)
 - [docker](https://docker.com)
 - [portainer](https://portainer.io)
 - [lazydocker](https://github.com/jesseduffield/lazydocker)
-- [podman](https://podman.io)
-- [incus](https://linuxcontainers.org/incus)
 
 `desktop` will install the following, along with `shell` packages above.
 
-- [ghostty terminal](https://github.com/pgdev92/ghostty) or [wezterm](https://wezfurlong.org/wezterm)
+- [Ptyxis terminal](https://gitlab.gnome.org/chergert/ptyxis) or [ghostty terminal](https://github.com/pgdev92/ghostty)
 - [vscode editor](https://code.visualstudio.com)
-- [nerd fonts for jetbrains mono, cascadia code mono](https://github.com/ryanoasis/nerd-fonts)
-- apps(telegram, [zoom](https://zoom.us), [obsidian](https://obsidian.md), chromium etc)
+- [jetbrains mono nerd font](https://github.com/ryanoasis/nerd-fonts)
+- apps(like [zoom](https://zoom.us), [obsidian](https://obsidian.md), chromium etc)
 
 In addition to the above group installs, you could also use `installer` to setup various tools like `emacs`.
 
@@ -144,7 +153,7 @@ Most development should happen in a container, either in a [devcontainer](https:
 
 For most development tools, use could use [mise](https://mise.dev). For python just use `uv`.
 
-You could also install necessary tools and libraries for rust, go, c++ development using `installer`.
+You could also install necessary tools and libraries for rust, go, c++ development using `installer`. I don't recommend this option.
 
 Installer rust tools
 
@@ -176,6 +185,9 @@ stow zsh
 stow emacs nvim sway # folder names
 ```
 
+**NOte**: Ubuntu has older version of stow and might not work properly. Use stow version >= 2.4.x.
+
+
 ## Tips
 
 1. [Don’t change your login shell, use a modern terminal emulator](https://tim.siosm.fr/blog/2023/12/22/dont-change-defaut-login-shell/)
@@ -186,7 +198,7 @@ stow emacs nvim sway # folder names
   sudo dpkg-reconfigure locales
   ```
 
-3. Use `imwheel` to fix mouse-scroll speed on Ubuntu.
+3. Use `imwheel` to fix mouse-scroll speed on Ubuntu in VMware.
 
   ```bash
   imwheel -b "4 5" > /dev/null 2>&1
@@ -197,6 +209,7 @@ stow emacs nvim sway # folder names
   ```bash
   zypper search --type pattern
   ```
+
 
 # OS recommendations
 
@@ -211,5 +224,7 @@ stow emacs nvim sway # folder names
 5. If you want to run linux desktop environment in a virtual machine, then [kubuntu](https://kubuntu.org/feature-tour) is more stable.
 
 6. For containers prefer debian or ubuntu.
+
+7. For development only containers, you could use fedora and tumbleweed, especially if you don't want to use `brew` or `nix`.
 
 7. Give [Nix](https://nixos.org) a try.
