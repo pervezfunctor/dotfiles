@@ -461,19 +461,6 @@ select-one() {
     echo $result
 }
 
-nix_install() {
-    has_cmd nix && return 0
-    slog "Installing nix"
-
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
-    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-
-    nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
-    nix-channel --update
-
-    slog "nix installation done!"
-}
-
 hms() {
     nix run home-manager -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
 }
@@ -512,7 +499,7 @@ dotfiles_install() {
     if ! has_cmd git; then
         if has_cmd nix; then
             nix_dotfiles
-        else
+        elif ! is_atomic; then
             si git
             has_cmd git || err_exit "git not installed! Qutting."
         fi
@@ -629,18 +616,6 @@ wis() {
     for p in "$@"; do
         slog "Installing webi package $p"
         has_cmd $p || webi $p
-    done
-}
-
-ami() {
-    if ! has_cmd appman; then
-        warn "appman not installed, skipping appman packages"
-        return 1
-    fi
-
-    for pkg in "$@"; do
-        slog "Installing appImage package $pkg"
-        appman install "$pkg"
     done
 }
 

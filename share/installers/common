@@ -13,24 +13,6 @@ webi_install() {
     cmd_check webi
 }
 
-kitty_install() {
-    is_linux || return 1
-
-    has_cmd kitty && return 1
-    has_cmd ~.local/kitty.app/bin/kitty && return 1
-
-    curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
-
-    # force link
-    ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
-
-    smd ~/.local/share/applications
-    cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
-    cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
-
-    echo 'kitty.desktop' > ~/.config/xdg-terminals.list
-}
-
 mise_install() {
     if has_cmd mise || has_cmd ~/.local/bin/mise; then
         eval "$($HOME/.local/bin/mise activate bash)"
@@ -48,30 +30,122 @@ mise_install() {
     cmd_check mise
 }
 
-appman_install() {
-    is_mac && return 0
-    has_cmd appman && return 0
+uv_install() {
+    has_cmd uv && return 0
 
-    slog "Installing appman"
-
-    cd
-    rm -f ./AM-INSTALLER
-    wget -q https://raw.githubusercontent.com/ivan-hc/AM/main/AM-INSTALLER
-    chmod a+x ./AM-INSTALLER
-    echo 2 | ./AM-INSTALLER
-    rm -f ./AM-INSTALLER
-
-    slog "appman installation done!"
-
-    cmd_check appman
+    if has_cmd pipx; then
+        pip install --upgrade --force-reinstall uv
+        cmd_check uv
+    else
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    fi
 }
 
-appman_shell_install() {
-    slog "shell tools with appman"
 
-    ami tmux doggo gping procs nvim atuin gh
+pixi_install() {
+    has_cmd pixi && return 0
 
-    slog "shell tools with appman done!"
+    slog "Installing pixi"
+    curl -fsSL https://pixi.sh/install.sh | bash
+    slog "pixi installation done!"
+}
+
+devbox_install() {
+    has_cmd devbox && return 0
+
+    slog "Installing devbox"
+    curl -fsSL https://get.jetify.com/devbox | bash
+
+    slog "devbox installation done!"
+}
+
+python_install() {
+    slog "Installing python tools"
+
+    if ! has_cmd pipx; then
+        if ! has_cmd pip; then
+            python3 -m ensurepip --user --default-pip
+            python3 -m pip install --user --force-reinstall --upgrade pip
+        fi
+        has_cmd pip || return 1
+
+        pip install --upgrade --force-reinstall pipx
+        cmd_check pipx
+        has_cmd pipx || return 1
+    fi
+
+    uv_install
+
+    slog "Python tools installation done!"
+}
+
+pnpm_install() {
+    has_cmd pnpm && return 0
+
+    slog "Installing pnpm"
+    curl -sSL https://get.pnpm.io/install.sh | sh -
+
+    slog "Installing node"
+    pnpm env use --global latest
+
+    has_cmd bash && pnpm install-completion bash
+    has_cmd zsh && pnpm install-completion zsh
+
+    slog "pnpm/node installation done!"
+
+    cmd_check pnpm
+}
+
+nix_install() {
+    has_cmd nix && return 0
+    slog "Installing nix"
+
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
+    nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+    nix-channel --update
+
+    slog "nix installation done!"
+}
+
+nix_without_init_install() {
+    has_cmd nix && return 0
+
+    slog "Installing nix"
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
+    slog "nix installation done!"
+
+    cmd_check nix
+}
+
+flathub_install() {
+    has_cmd flatpak || si flatpak
+
+    if has_cmd flatpak; then
+        slog "Adding flathub remote"
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+    else
+        warn "flatpak not installed! Ignoring flathub config."
+    fi
+}
+
+kitty_install() {
+    is_linux || return 1
+
+    has_cmd kitty && return 1
+    has_cmd ~.local/kitty.app/bin/kitty && return 1
+
+    curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+
+    # force link
+    ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
+
+    smd ~/.local/share/applications
+    cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
+    cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
+
+    echo 'kitty.desktop' > ~/.config/xdg-terminals.list
 }
 
 webi_shell_install() {
@@ -92,30 +166,6 @@ mise_shell_install() {
     has_cmd nu || mise use -g cargo:nu
 
     slog "shell tools with mise done!"
-}
-
-flathub_install() {
-    has_cmd flatpak || si flatpak
-
-    if has_cmd flatpak; then
-        slog "Adding flathub remote"
-        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
-    else
-        warn "flatpak not installed! Ignoring flathub config."
-    fi
-}
-
-cursor_install() {
-    has_cmd cursor && return 0
-
-    if ! has_cmd appman; then
-        warn "appman not installed, skipping cursor"
-        return 1
-    fi
-
-    slog "Installing cursor"
-    ami cursor
-    slog "cursor installation done!"
 }
 
 vscode_flatpak_install() {
@@ -415,23 +465,6 @@ miniconda_install() {
     slog "miniconda installation done!"
 
     cmd_check conda
-}
-
-pnpm_install() {
-    has_cmd pnpm && return 0
-
-    slog "Installing pnpm"
-    curl -sSL https://get.pnpm.io/install.sh | sh -
-
-    slog "Installing node"
-    pnpm env use --global latest
-
-    has_cmd bash && pnpm install-completion bash
-    has_cmd zsh && pnpm install-completion zsh
-
-    slog "pnpm/node installation done!"
-
-    cmd_check pnpm
 }
 
 web_install() {
@@ -871,13 +904,11 @@ shell_install() {
     brew_install
     webi_install
     mise_install
-    appman_install
 
     cli_install
 
     webi_shell_install
     brew_shell_install
-    # appman_shell_install
     # mise_shell_install
 
     starship_install
@@ -983,7 +1014,6 @@ shell_config_install() {
 config_install() {
     shell_config_install
 
-    has_cmd appman && appman_config_install
     has_cmd atuin && atuin_config_install
     has_cmd yazi && yazi_config_install
 
@@ -1075,37 +1105,6 @@ atomic_distrobox_install() {
     slog "distrobox installation done!"
 }
 
-uv_install() {
-    has_cmd uv && return 0
-
-    if has_cmd pipx; then
-        pip install --upgrade --force-reinstall uv
-        cmd_check uv
-    else
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-    fi
-}
-
-python_install() {
-    slog "Installing python tools"
-
-    if ! has_cmd pipx; then
-        if ! has_cmd pip; then
-            python3 -m ensurepip --user --default-pip
-            python3 -m pip install --user --force-reinstall --upgrade pip
-        fi
-        has_cmd pip || return 1
-
-        pip install --upgrade --force-reinstall pipx
-        cmd_check pipx
-        has_cmd pipx || return 1
-    fi
-
-    uv_install
-
-    slog "Python tools installation done!"
-}
-
 mini_install() {
     pyenv_install
     pyenv_miniconda_install
@@ -1114,23 +1113,6 @@ mini_install() {
 anaconda_install() {
     pyenv_install
     pyenv_anaconda_install
-}
-
-devbox_install() {
-    has_cmd devbox && return 0
-
-    slog "Installing devbox"
-    curl -fsSL https://get.jetify.com/devbox | bash
-
-    slog "devbox installation done!"
-}
-
-pixi_install() {
-    has_cmd pixi && return 0
-
-    slog "Installing pixi"
-    curl -fsSL https://pixi.sh/install.sh | bash
-    slog "pixi installation done!"
 }
 
 tailscale_install() {
@@ -1196,16 +1178,6 @@ pixi_shell_install() {
     has_cmd rg || pi ripgrep
 
     pis lazygit eza fzf zoxide starship bat fd gh
-}
-
-nix_without_init_install() {
-    has_cmd nix && return 0
-
-    slog "Installing nix"
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
-    slog "nix installation done!"
-
-    cmd_check nix
 }
 
 dbox_nix_setup() {
@@ -1580,6 +1552,7 @@ all_groupstall() {
 
     all-group_check
 }
+
 gnome_extensions_install() {
     if ! has_cmd gext; then
         warn "gext not installed, skipping gnome extensions"
@@ -1722,18 +1695,15 @@ sway_install() {
     rofi_config_install
     wlogout_config_install
 
+    if ! has_cmd pip; then
+        warn "pip not installed, cannot install autotiling"
+        return 1
+    fi
+
+    pip install --user --force-reinstall --upgrade i3ipc
+    pip install --user --force-reinstall --upgrade autotiling
+
     slog "Installing sway done!"
-
-    # has_cmd pip || has_cmd python3 && python3 -m ensurepip --user --default-pip
-
-    # if ! has_cmd pip; then
-    #     warn "pip not installed, cannot install autotiling"
-    #     return 1
-    # fi
-
-    # pip install --user --force-reinstall --upgrade i3ipc
-    # pip install --user --force-reinstall --upgrade autotiling
-
 }
 
 hyprland_install() {
