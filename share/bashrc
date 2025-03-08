@@ -10,6 +10,9 @@ source $DOT_DIR/share/shellrc
 
 [[ $- == *i* ]] || return
 
+export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
+has_cmd carapace && source <(carapace _carapace)
+
 has_cmd mise && eval "$(mise activate bash)"
 has_cmd pixi && eval "$(pixi completion --shell bash)"
 

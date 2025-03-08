@@ -187,7 +187,7 @@ mise_shell_install() {
 }
 
 brew_shell_slim_install() {
-    bis tree-sitter gh gum stow tmux
+    bis tree-sitter gh gum stow tmux carapace
     bis lazygit eza fzf fd zoxide starship yazi
 
     if ! has_cmd luarocks; then
@@ -237,7 +237,7 @@ pixi_shell_install() {
     has_cmd || pi stow
     has_cmd rg || pi ripgrep
 
-    pis lazygit eza fzf zoxide starship bat fd gh
+    pis lazygit eza fzf zoxide starship bat fd gh carapace
 }
 
 go_shell_install() {
