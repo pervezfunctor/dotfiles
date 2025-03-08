@@ -29,7 +29,9 @@ autoload bashcompinit && bashcompinit
 autoload -Uz compinit
 compinit
 
+export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
 zstyle ':completion:::::default' menu select
+zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
 
 if has_cmd starship; then
     eval "$(starship init zsh)"
@@ -51,6 +53,7 @@ fi
 autoload -Uz compinit && compinit
 
 # has_cmd direnv && eval "$(direnv hook zsh)"
+has_cmd carapace && source <(carapace _carapace)
 has_cmd mise && eval "$(mise activate zsh)"
 has_cmd zoxide && eval "$(zoxide init zsh)"
 has_cmd fzf && source <(fzf --zsh)
