@@ -48,10 +48,9 @@
   ;; (load-theme 'wombat t)
 
   (when (display-graphic-p)
-    (if (find-font (font-spec :name "Jetbrains Mono"))
+    (if (find-font (font-spec :name "JetbrainsMono Nerd Font"))
         (set-face-attribute 'default nil
-                            :family "JetBrains Mono"
-                            :weight 'medium
+                            :family "JetBrainsMono Nerd Font"
                             :height 120)))
   (when *is-a-mac*
     (setq mac-option-modifier 'meta)
