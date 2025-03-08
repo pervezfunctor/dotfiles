@@ -239,7 +239,7 @@ if [[ -d "$HOME/.local/share/pnpm" ]]; then
 fi
 
 if has_cmd eza; then
-    alias ls="eza --icons=auto --group-directories-first"
+    alias ls="eza -a --icons=auto --group-directories-first"
     alias ll='eza -l --icons=auto --group-directories-first'
     alias l1='eza -1'
     alias l="eza -l --icons --git -a"
