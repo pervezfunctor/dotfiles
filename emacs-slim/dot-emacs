@@ -51,7 +51,7 @@
     (if (find-font (font-spec :name "Jetbrains Mono"))
         (set-face-attribute 'default nil
                             :family "JetBrains Mono"
-                            :weight 'bold
+                            :weight 'medium
                             :height 120)))
   (when *is-a-mac*
     (setq mac-option-modifier 'meta)
