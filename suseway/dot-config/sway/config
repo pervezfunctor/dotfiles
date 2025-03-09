@@ -5,7 +5,7 @@ input "type:keyboard" {
 }
 
 # output * bg /usr/share/wallpapers/openSUSEdefault/contents/images/default-dark.png fill
-output HDMI-A-1 resolution 3840x2160 position 0,0 scale 1.75
+output HDMI-A-1 resolution 3840x2160 position 0,0 scale 1.5
 
 # set mod to Super/Windows
 set $mod Mod4
@@ -15,6 +15,8 @@ set $left h
 set $down j
 set $up k
 set $right l
+
+exec command -v autotiling && autotiling
 
 set $term alacritty --config-file ~/.config/alacritty/alacritty.toml
 exec "command -v kitty && swaymsg 'set $term kitty'"
@@ -29,12 +31,6 @@ exec nm-applet
 exec wl-paste -t text --watch clipman store --no-persist
 
 exec_always swaybg -i ~/.config/wallpapers/wallpaper.png -m fill
-
-exec swayidle -w \
-    timeout 60 'swaymsg "output * power off"' \
-    resume 'swaymsg "output * power on"' \
-    before-sleep '$screenlock' \
-    timeout 600 'systemctl suspend'
 
 exec_always {
     systemctl --user import-environment
@@ -52,12 +48,19 @@ exec [ -x /usr/libexec/polkit-gnome-authentication-agent-1 ] && /usr/libexec/pol
 # exec /usr/libexec/polkit-gnome-authentication-agent-1
 #exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
 
+exec killall swayidle
+exec_always swayidle -w \
+    timeout 60 'swaymsg "output * power off"' \
+    resume 'swaymsg "output * power on"' \
+    before-sleep '$screenlock' \
+    timeout 600 'systemctl suspend'
+
 seat * xcursor_theme Adwaita 32
 
 default_border pixel 4
 default_floating_border pixel 4
 
-gaps outer 10
+gaps outer 5
 gaps inner 10
 
 # Format: client.<class> <border> <background> <text> <indicator> [<child_border>]
@@ -161,11 +164,11 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-input "type:touchpad" {
-  tap enabled
-  natural_scroll enabled
-  middle_emulation enabled
-}
+# input "type:touchpad" {
+#   tap enabled
+#   natural_scroll enabled
+#   middle_emulation enabled
+# }
 
 bindsym $mod+tab workspace next_on_output
 bindsym $mod+Shift+tab workspace prev_on_output

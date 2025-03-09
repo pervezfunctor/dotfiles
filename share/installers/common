@@ -1171,13 +1171,13 @@ sway_install() {
     rofi_config_install
     wlogout_config_install
 
-    if ! has_cmd pip; then
-        warn "pip not installed, cannot install autotiling"
+    if ! has_cmd pipx; then
+        warn "pipx not installed, cannot install autotiling"
         return 1
     fi
 
-    pip install --user --force-reinstall --upgrade i3ipc
-    pip install --user --force-reinstall --upgrade autotiling
+    pipx install i3ipc
+    pipx install autotiling
 
     slog "Installing sway done!"
 }
