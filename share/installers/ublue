@@ -104,7 +104,7 @@ main() {
     mise_install
     config_setup
     is_bluefin && bluefin_setup
-    ptyxis_config_install
+    ptyxis_install
 
     if [[ "$USER" == "pervez" ]]; then
         slog "Setting up ublue for myself"
