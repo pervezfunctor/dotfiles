@@ -232,7 +232,7 @@ sln() {
 }
 
 spath_export() {
-    dir_exists "$1" && export PATH="$1:$PATH"
+    ts "$1" && export PATH="$1:$PATH"
 }
 
 is_mac() {
@@ -660,18 +660,21 @@ environs() {
     smd ~/.bin
     smd ~/boxes
 
-    export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
-    export PNPM_HOME="$HOME/.local/share/pnpm:$PATH"
-    export PATH="$HOME/.local/bin:$PATH"
-    export PATH="$HOME/.bin:$PATH"
-    export PATH="$HOME/bin:$PATH"
-    export PATH="$HOME/.ilm/bin:$PATH"
-    export PATH="$HOME/Applications:$PATH"
-    export PATH="$PNPM_HOME:$PATH"
-    export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-    export PATH="$HOME/.local/opt/brew/bin:$PATH"
-    export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
-    export PATH="$HOME/.pixi/bin:$PATH"
+    export GOPATH="$HOME/go"
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+
+    spath_export "$GOPATH/bin"
+    spath_export "/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin"
+    spath_export "$HOME/.local/bin"
+    spath_export "$HOME/.bin"
+    spath_export "$HOME/bin"
+    spath_export "$HOME/.ilm/bin"
+    spath_export "$HOME/Applications"
+    spath_export "$PNPM_HOME"
+    spath_export "/home/linuxbrew/.linuxbrew/bin"
+    spath_export "$HOME/.local/opt/brew/bin"
+    spath_export "$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry"
+    spath_export "$HOME/.pixi/bin"
 
     has_cmd mise && eval "$(mise activate bash)"
 
