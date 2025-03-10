@@ -1228,8 +1228,13 @@ home_manager_install() {
 
 gnome_extensions_install() {
     if ! has_cmd gext; then
-        warn "gext not installed, skipping gnome extensions"
-        return 1
+        if ! has_cmd pipx; then
+            warn "pipx not installed, skipping gnome extensions"
+            return 1
+        fi
+
+        pipx install gnome-extensions-cli --system-site-packages
+        cmd_check gext
     fi
 
     slog "Installing gnome extensions"
@@ -1291,8 +1296,6 @@ gnome_config_install() {
     elif is_fedora && ! is_atomic; then
         si gnome-extensions-app gnome-tweaks
     fi
-
-    pipx install gnome-extensions-cli --system-site-packages
 
     if is_ubuntu; then
         gnome-extensions disable tiling-assistant@ubuntu.com

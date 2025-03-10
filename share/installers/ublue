@@ -81,16 +81,11 @@ config_setup() {
 }
 
 bluefin_setup() {
-    if ! has_cmd pipx; then
-        warn "pipx not installed, skipping gnome settings"
-        return 1
-    fi
-
     slog "gnome setup"
 
-    pipx install gnome-extensions-cli --system-site-packages
+    gnome_settings_install
+    gnome_keybindings_install
     gnome_extensions_install
-    gnome_basic_settings
 
     slog "gnome setup done!"
 }
