@@ -1375,7 +1375,7 @@ dbox_nix_setup() {
          return 1
     fi
 
-    source_curl "$DOT_DIR/share/fns"
+    source_dotfile "share/fns"
     dbox_nix
 }
 

@@ -709,19 +709,19 @@ bootstrap() {
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2> /dev/null
     [ -n "$NOSUDO" ] || keep_sudo_running
 
-    INSTALLERS="${BASE_URL}/share/installers"
-    source_curl "$INSTALLERS/common"
+    INSTALLERS="share/installers"
+    source_dotfile "$INSTALLERS/common"
 
     if is_apt; then
-        source_curl "$INSTALLERS/apt"
-    elif is_rh; then
-        source_curl "$INSTALLERS/dnf"
+        source_dotfile "$INSTALLERS/apt"
+    elif is_rh && ! is_atomic; then
+        source_dotfile "$INSTALLERS/dnf"
     elif is_suse; then
-        source_curl "$INSTALLERS/suse"
+        source_dotfile "$INSTALLERS/suse"
     elif is_arch; then
-        source_curl "$INSTALLERS/arch"
+        source_dotfile "$INSTALLERS/arch"
     elif is_mac; then
-        source_curl "$INSTALLERS/mac"
+        source_dotfile "$INSTALLERS/mac"
     else
         err_exit "unknown OS; skipping installation"
     fi
