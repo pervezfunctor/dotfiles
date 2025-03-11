@@ -823,7 +823,23 @@ tmux_config_install() {
 
 vscode-extensions_install() {
     slog "Installing vscode extensions"
-    cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 code --install-extension
+    if [[ "$USER" == "pervez" ]]; then
+        cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 code --install-extension
+    else
+        cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 code --install-extension
+    fi
+    slog "vscode extensions installation done!"
+}
+
+vscode-all-extensions_install() {
+    slog "Installing vscode extensions"
+
+    cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 code --install-extension
+    cat $DOT_DIR/extras/vscode/extensions/cpp | xargs -L 1 code --install-extension
+    cat $DOT_DIR/extras/vscode/extensions/prog | xargs -L 1 code --install-extension
+    cat $DOT_DIR/extras/vscode/extensions/python | xargs -L 1 code --install-extension
+    cat $DOT_DIR/extras/vscode/extensions/web | xargs -L 1 code --install-extension
+
     slog "vscode extensions installation done!"
 }
 
