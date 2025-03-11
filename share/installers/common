@@ -1496,6 +1496,22 @@ ubuntu-dbox_groupstall() {
     dbox_base ubuntu
 }
 
+dbox_groupstall() {
+    if is_suse; then
+        tw-dbox_groupstall
+    elif is_fedora; then
+        fedora-dbox_groupstall
+    elif is_ubuntu; then
+        ubuntu-dbox_groupstall
+    elif is_ublue;
+        brew-dbox_groupstall
+    elif is_atomic; then
+        pixi-dbox_groupstall
+    else
+        brew-dbox_groupstall
+    fi
+}
+
 dev_groupstall() {
     slog "Generic OS setup for Development(docker,vscode,kitty,brew,flatpak, distrobox)"
 
