@@ -14,7 +14,7 @@ export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
 # shellcheck disable=SC1090
 has_cmd carapace && source <(carapace _carapace)
 
-has_cmd mise && eval "$(mise activate bash)"
+has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 has_cmd pixi && eval "$(pixi completion --shell bash)"
 
 source_if_exists "$DOT_DIR/share/fns"

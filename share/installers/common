@@ -1457,6 +1457,8 @@ dbox_base() {
     is_inside_distrobox || err_exit "This script is only for distrobox containers"
     [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
 
+    cd "$HOME" || warn "could not cd to $HOME"
+
     "$1_packages"
     gh extension install github/gh-copilot
 
@@ -1476,6 +1478,8 @@ dbox_base() {
     else
         stowdf tmux
     fi
+
+    chsh -s "$(command -v zsh)"
 }
 
 tw-dbox_groupstall() {

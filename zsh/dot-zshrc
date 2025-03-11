@@ -58,7 +58,7 @@ autoload -Uz compinit && compinit
 # has_cmd direnv && eval "$(direnv hook zsh)"
 # shellcheck disable=SC1090
 has_cmd carapace && source <(carapace _carapace)
-has_cmd mise && eval "$(mise activate zsh)"
+has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate zsh)"
 has_cmd zoxide && eval "$(zoxide init zsh)"
 # shellcheck disable=SC1090
 has_cmd fzf && source <(fzf --zsh)
