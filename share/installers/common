@@ -26,7 +26,7 @@ webi_install() {
     has_cmd ~/.local/bin/webi && return 0
 
     curl -sS https://webi.sh/webi | sh
-    source "$XDG_CONFIG_HOME/envman/PATH.env"
+    source_if_exists "$XDG_CONFIG_HOME/envman/PATH.env"
     webi pathman
 
     cmd_check webi
@@ -34,13 +34,13 @@ webi_install() {
 
 mise_install() {
     if has_cmd mise || has_cmd ~/.local/bin/mise; then
-        eval "$($HOME/.local/bin/mise activate bash)"
+        eval "$(~/.local/bin/mise activate bash)"
         return 0
     fi
 
     slog "Installing mise"
     curl https://mise.run | MISE_QUIET=1 sh
-    eval "$($HOME/.local/bin/mise activate bash)"
+    eval "$(~/.local/bin/mise activate bash)"
 
     mise use -g usage
     mise settings experimental=true
@@ -112,7 +112,7 @@ nix_install() {
     slog "Installing nix"
 
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
-    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    source_if_exists /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 
     nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
     nix-channel --update
@@ -174,14 +174,6 @@ kitty_install() {
     cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
 
     echo 'kitty.desktop' > ~/.config/xdg-terminals.list
-}
-
-webi_shell_install() {
-    slog "shell tools with webi"
-
-    wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq rg arc
-
-    slog "shell tools with webi done!"
 }
 
 mise_shell_install() {
@@ -306,8 +298,10 @@ starship_install() {
 }
 
 webi_shell_install() {
-    webi node golang go-essentials shellcheck shfmt pathman
-    webi bat curlie delta jq lsd rg gh fd sd
+    # webi node golang go-essentials shellcheck shfmt pathman
+    # webi bat curlie delta jq lsd rg gh fd sd
+    wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq rg arc
+
     # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing k9s kubectx kubens
     # webi pyenv
     # webi fd git watchexec rustlang
@@ -334,7 +328,7 @@ vscode_flatpak_install() {
     fpi com.visualstudio.code
     flatpak install com.visualstudio.code.tool.podman
     alias code="flatpak run com.visualstudio.code"
-    cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 flatpak run com.visualstudio.code --install-extension
+    xargs -L 1 flatpak run com.visualstudio.code --install-extension < "$DOT_DIR/extras/vscode/extensions/default"
     vscode-flatpak_config_install
 }
 
@@ -417,8 +411,8 @@ incus_config_install() {
     fi
     slog "incus config"
 
-    sudo usermod -aG incus $USER
-    sudo usermod -aG incus-admin $USER
+    sudo usermod -aG incus "$USER"
+    sudo usermod -aG incus-admin "$USER"
     sudo systemctl enable --now incus.socket
     sudo systemctl enable --now incus.service
 
@@ -490,7 +484,7 @@ micro_install() {
     slog "Installing micro"
 
     curl https://getmic.ro | bash
-    mv micro $HOME/.local/bin/
+    mv micro "$HOME/.local/bin/"
 
     slog "micro installation done!"
 
@@ -498,13 +492,13 @@ micro_install() {
 }
 
 rust_install() {
-    file_exists "$HOME/.cargo/env" && source "$HOME/.cargo/env"
+    source_if_exists "$HOME/.cargo/env"
 
     has_cmd rustup && return 0
 
     slog "Installing rust"
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source "$HOME/.cargo/env"
+    source_if_exists "$HOME/.cargo/env"
 
     slog "rust installation done!"
 
@@ -569,11 +563,11 @@ go_install() {
 
         sudo rm -rf /usr/local/go
         VERSION=$(curl -sSL "https://go.dev/VERSION?m=text" | head -n 1)
-        frm /tmp/${VERSION}.linux-amd64.tar.gz
+        frm "/tmp/${VERSION}.linux-amd64.tar.gz"
         wget -nv "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz" -O /tmp/"${VERSION}.linux-amd64.tar.gz"
         slog "Untar ${VERSION}.linux-amd64.tar.gz"
         sudo tar -C /usr/local -xzf /tmp/"${VERSION}.linux-amd64.tar.gz"
-        frm /tmp/${VERSION}.linux-amd64.tar.gz
+        frm "/tmp/${VERSION}.linux-amd64.tar.gz"
         export PATH=$PATH:/usr/local/go/bin
 
         slog "go installation done!"
@@ -621,7 +615,7 @@ docker_common_install() {
     fi
 
     sudo groupadd docker
-    sudo usermod -aG docker ${USER}
+    sudo usermod -aG docker "$USER"
 
     sudo systemctl --now enable docker
     sudo systemctl --now enable containerd
@@ -674,18 +668,18 @@ cmake_install() {
 
     slog "Installing latest cmake"
     TMP_DIR=$(mktemp -d -t cmake-XXXXXXXXXX)
-    cd "${TMP_DIR}"
-    curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_BINARY_NAME}" -O
-    curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_CHECKSUM_NAME}" -O
+    if cd "${TMP_DIR}"; then
+        curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_BINARY_NAME}" -O
+        curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_CHECKSUM_NAME}" -O
 
-    sha256sum -c --ignore-missing "${CMAKE_CHECKSUM_NAME}"
-    sudo mkdir /opt/cmake
-    sudo sh "${TMP_DIR}/${CMAKE_BINARY_NAME}" --prefix=/opt/cmake --skip-license
+        sha256sum -c --ignore-missing "${CMAKE_CHECKSUM_NAME}"
+        sudo mkdir /opt/cmake
+        sudo sh "${TMP_DIR}/${CMAKE_BINARY_NAME}" --prefix=/opt/cmake --skip-license
 
-    sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-    sudo ln -s /opt/cmake/bin/ctest /usr/local/bin/ctest
-    frm "${TMP_DIR}"
-
+        sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+        sudo ln -s /opt/cmake/bin/ctest /usr/local/bin/ctest
+        frm "${TMP_DIR}"
+    fi
     slog "cmake installation done!"
 
     cmd_check cmake
@@ -802,10 +796,13 @@ bash_config_install() {
 zsh_config_install() {
     slog "zsh config"
 
-    srm $HOME/.zshrc
-    smd $HOME/.zsh
-    sclone --depth=1 https://github.com/sindresorhus/pure.git $HOME/.zsh/pure
-    sclone --depth=1 https://github.com/djui/alias-tips.git $HOME/.zsh/alias-tips
+    srm "$HOME/.zshrc"
+    smd "$HOME/.zsh"
+    sclone --depth=1 https://github.com/sindresorhus/pure.git "$HOME/.zsh/pure"
+    sclone --depth=1 https://github.com/djui/alias-tips.git "$HOME/.zsh/alias-tips"
+    sclone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$HOME/.zsh/zsh-autosuggestions"
+    sclone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.zsh/zsh-syntax-highlighting"
+
     stowdf zsh
 
     slog "zsh config done!"
@@ -814,8 +811,8 @@ zsh_config_install() {
 tmux_config_install() {
     slog "tmux config"
 
-    srm $XDG_CONFIG_HOME/tmux
-    smd $XDG_CONFIG_HOME/tmux
+    srm "$XDG_CONFIG_HOME/tmux"
+
     stownf tmux
 
     slog "tmux config done!"
@@ -824,9 +821,9 @@ tmux_config_install() {
 vscode-extensions_install() {
     slog "Installing vscode extensions"
     if [[ "$USER" == "pervez" ]]; then
-        cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 code --install-extension
+        xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/common"
     else
-        cat $DOT_DIR/extras/vscode/extensions/default | xargs -L 1 code --install-extension
+        xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/default"
     fi
     slog "vscode extensions installation done!"
 }
@@ -834,11 +831,11 @@ vscode-extensions_install() {
 vscode-all-extensions_install() {
     slog "Installing vscode extensions"
 
-    cat $DOT_DIR/extras/vscode/extensions/common | xargs -L 1 code --install-extension
-    cat $DOT_DIR/extras/vscode/extensions/cpp | xargs -L 1 code --install-extension
-    cat $DOT_DIR/extras/vscode/extensions/prog | xargs -L 1 code --install-extension
-    cat $DOT_DIR/extras/vscode/extensions/python | xargs -L 1 code --install-extension
-    cat $DOT_DIR/extras/vscode/extensions/web | xargs -L 1 code --install-extension
+    xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/common"
+    xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/cpp"
+    xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/prog"
+    xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/python"
+    xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/web"
 
     slog "vscode extensions installation done!"
 }
@@ -847,19 +844,19 @@ vscode-flatpak_config_install() {
     slog "vscode config"
 
     smd ~/.var/app/com.visualstudio.code/config/Code/User
-    safe-cp $DOT_DIR/extras/vscode/flatpak-settings.json ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
+    safe-cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
 
     slog "vscode config done!"
 }
 
 emacs-doom_config_install() {
-    dir_exists $XDG_CONFIG_HOME/doom && return 0
+    dir_exists "$XDG_CONFIG_HOME/doom" && return 0
 
     slog "Installing doom"
 
-    sclone --depth=1 https://github.com/doomemacs/doomemacs $XDG_CONFIG_HOME/emacs
-    omv $XDG_CONFIG_HOME/doom $XDG_CONFIG_HOME/doom.backup
-    sclone https://github.com/pervezfunctor/doomemacs-config $XDG_CONFIG_HOME/doom
+    sclone --depth=1 https://github.com/doomemacs/doomemacs "$XDG_CONFIG_HOME/emacs"
+    omv "$XDG_CONFIG_HOME/doom" "$XDG_CONFIG_HOME/doom.backup"
+    sclone https://github.com/pervezfunctor/doomemacs-config "$XDG_CONFIG_HOME/doom"
 
     slog "Configure doom"
     doom sync
@@ -875,8 +872,8 @@ emacs_config_install() {
 
     # srm $XDG_CONFIG_HOME/.emacs
     # srm $XDG_CONFIG_HOME/.emacs.d
-    srm $XDG_CONFIG_HOME/emacs
-    smd $XDG_CONFIG_HOME/emacs
+    srm "$XDG_CONFIG_HOME/emacs"
+    smd "$XDG_CONFIG_HOME/emacs"
     stowdf emacs
 
     slog "emacs config done!"
@@ -894,11 +891,11 @@ emacs-slim_config_install() {
 nvim_config_install() {
     slog "nvim config"
 
-    frm $XDG_CONFIG_HOME/nvim.bak
-    omv $XDG_CONFIG_HOME/nvim $XDG_CONFIG_HOME/nvim.bak
-    frm ~/.local/share/nvim
-    frm ~/.local/state/nvim
-    frm ~/.cache/nvim
+    frm "$XDG_CONFIG_HOME/nvim.bak"
+    omv "$XDG_CONFIG_HOME/nvim" "$XDG_CONFIG_HOME/nvim.bak"
+    frm "$HOME/.local/share/nvim"
+    frm "$HOME/.local/state/nvim"
+    frm "$HOME/.cache/nvim"
 
     stowgf nvim
     # nvim --headless "+Lazy! sync" +qa
@@ -939,11 +936,11 @@ vscode_config_install() {
     slog "vscode config"
 
     if is_mac; then
-        safe-cp $DOT_DIR/extras/vscode/minimal-settings.json "$HOME/Library/Application Support/Code/User/settings.json"
+        safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$HOME/Library/Application Support/Code/User/settings.json"
     else
-        smd $XDG_CONFIG_HOME/Code/User
-        fmv $XDG_CONFIG_HOME/Code/User/settings.json $XDG_CONFIG_HOME/Code/User/settings.json.bak
-        safe-cp $DOT_DIR/extras/vscode/minimal-settings.json $XDG_CONFIG_HOME/Code/User/settings.json
+        smd "$XDG_CONFIG_HOME/Code/User"
+        fmv "$XDG_CONFIG_HOME/Code/User/settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json.bak"
+        safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json"
     fi
 
     slog "vscode config done!"
@@ -979,13 +976,6 @@ atuin_config_install() {
     slog "atuin config done!"
 }
 
-rofi_config_install() {
-    slog "rofi config"
-    stowgf rofi
-
-    slog "rofi config done!"
-}
-
 amethyst_config_install() {
     slog "amethyst config"
     stowdf amethyst
@@ -1001,8 +991,8 @@ aerospace_config_install() {
 yazi_config_install() {
     slog "yazi config"
 
-    srm $XDG_CONFIG_HOME/yazi
-    smd $XDG_CONFIG_HOME/yazi
+    srm "$XDG_CONFIG_HOME/yazi"
+    smd "$XDG_CONFIG_HOME/yazi"
     stownf yazi
 
     # @TODO: use package.toml file to install flavors
@@ -1095,15 +1085,17 @@ pyenv_anaconda_install() {
     if has_cmd pyenv; then
         if ! pyenv versions | grep anaconda > /dev/null; then
             slog "Installing anaconda"
-            local anacondaversion=`pyenv install --list | grep anaconda | tail -1`
-            pyenv install $anacondaversion
+            local anacondaversion
+            anacondaversion=$(pyenv install --list | grep anaconda | tail -1)
+
+            pyenv install "$anacondaversion"
             smd ~/py
             if cd ~/py; then
-                pyenv global $anacondaversion
+                pyenv global "$anacondaversion"
                 python -m pip install --user pipx neovim
                 poetry_install
             else
-                warn "~/py doesn't exist, skipping part of python install"
+                warn "$HOME/py doesn't exist, skipping part of python install"
             fi
         fi
     else
@@ -1117,8 +1109,10 @@ pyenv_miniconda_install() {
     if has_cmd pyenv; then
         if ! pyenv versions | grep miniconda > /dev/null; then
             slog "Installing miniconda"
-            local minicondaversion=`pyenv install --list | grep miniconda | tail -1`
-            pyenv install $minicondaversion
+            local minicondaversion
+            minicondaversion=$(pyenv install --list | grep miniconda | tail -1)
+
+            pyenv install "$minicondaversion"
             slog "miniconda installation done!"
         fi
     else
@@ -1395,13 +1389,14 @@ dbox_nix_setup() {
     dbox_nix
 }
 
+# shellcheck disable=SC2120
 tbox_default_setup() {
     has_cmd toolbox || return 0
 
     toolbox --assumeyes create
 
     local group=${1:-shell}
-    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- $group
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- "$group"
 }
 
 tbox_default() {
@@ -1470,7 +1465,7 @@ dbox_base() {
 
     dotfiles_install
 
-    dir_exists $DOT_DIR || err_exit "$DOT_DIR doesn't exist, Qutting"
+    dir_exists "$DOT_DIR" || err_exit "$DOT_DIR doesn't exist, Qutting"
 
     srm ~/.zshrc
     srm ~/.emacs
@@ -1653,7 +1648,7 @@ nosudo_groupstall() {
 
 base-group_check() {
     cmd_check gcc make curl wget git trash tree tar unzip stow
-    dir_check $DOT_DIR
+    dir_check "$DOT_DIR"
     bash_config_check
 }
 
