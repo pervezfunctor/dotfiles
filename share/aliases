@@ -60,18 +60,29 @@ if is_ubuntu; then
     alias si="sudo apt-get -qq -y install"
     alias ss="apt-cache search"
     alias sr="sudo apt-get purge"
+    alias sup="sudo apt-get -qq -y upgrade"
+elif is_atomic; then
+    alias sup="sudo rpm-ostree upgrade"
 elif is_rh; then
     alias si="sudo dnf -q -y install"
     alias ss="dnf search"
     alias sr="sudo dnf remove"
+    alias sup="sudo dnf update -q -y && sudo dnf upgrade -q -y"
 elif is_suse; then
     alias si="sudo zypper --non-interactive --quiet install --auto-agree-with-licenses"
     alias ss="zypper search"
     alias sr="sudo zypper remove"
+    alias sup="sudo zypper refresh && sudo zypper --non-interactive --quiet dup"
 elif is_mac; then
     alias si="brew install -q"
     alias ss="brew search"
     alias sr="brew uninstall"
+    alias sup="brew upgrade"
+elif is_arch; then
+    alias si="sudo pacman -S --needed --quiet --noconfirm"
+    alias ss="pacman -Ss"
+    alias sr="sudo pacman -R"
+    alias sup="sudo pacman -Syu --noconfirm --quiet"
 fi
 
 if has_cmd git; then

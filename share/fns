@@ -198,3 +198,24 @@ incus_vms() {
   incus launch images:opensuse/tumbleweed-vm tw --vm
   incus launch images:archlinux/current archlinux-vm --vm
 }
+
+system-update() {
+    if has_cmd sup; then
+        sup
+    fi
+
+    if has_cmd flatpak; then
+        flatpak update --user -y
+        flatpak update -y
+    fi
+
+    has_cmd snap && snap refresh
+    has_cmd brew && brew upgrade
+    has_cmd mise && mise self-update && mise upgrade --bump
+    has_cmd pixi && pixi global update
+
+
+    # cd ~/.ilm && git-up
+    #has_cmd devbox && devbox update
+    # has_cmd hms && hms update?
+}
