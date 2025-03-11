@@ -1,11 +1,9 @@
 #! /usr/bin/env bash
 
-{
-
-if command -v curl > /dev/null; then
+if command -v curl >/dev/null; then
     # shellcheck disable=SC1090
     source <(curl -sSL https://dub.sh/z3pTnAK)
-elif command -v wget > /dev/null; then
+elif command -v wget >/dev/null; then
     # shellcheck disable=SC1090
     source <(wget -qO- https://dub.sh/z3pTnAK)
 else
@@ -28,7 +26,7 @@ else
 fi
 
 # Check if SSH server is installed
-if ! command -v sshd &> /dev/null; then
+if ! command -v sshd &>/dev/null; then
     slog "SSH server is not installed. Installing now..."
     $pkg_manager install -y openssh-server
 fi
@@ -37,5 +35,3 @@ fi
 systemctl enable --now "$ssh_service"
 
 slog "SSH server is now running."
-
-}

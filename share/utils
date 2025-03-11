@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-{
-
 export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
 BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
@@ -9,7 +7,7 @@ BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
 safe_append() {
-    if ! grep -q "$1" "$2" 2> /dev/null; then
+    if ! grep -q "$1" "$2" 2>/dev/null; then
         slog "Adding $1 to $2"
         echo "$1" >>"$2"
     fi
@@ -75,7 +73,7 @@ err_exit() {
 
 igum() {
     local output
-    output=$(TERM=screen gum "$@" < /dev/tty 2>/dev/tty)
+    output=$(TERM=screen gum "$@" </dev/tty 2>/dev/tty)
     echo "$output"
 }
 
@@ -92,7 +90,7 @@ exists() {
 }
 
 has_cmd() {
-    command -v "$1" > /dev/null 2>&1
+    command -v "$1" >/dev/null 2>&1
 }
 
 sclone() {
@@ -115,7 +113,7 @@ fclone() {
 }
 
 smv() {
-    if mv "$1" "$2" 2> /dev/null; then
+    if mv "$1" "$2" 2>/dev/null; then
         slog "Moved $1 to $2"
         return 0
     fi
@@ -126,7 +124,7 @@ smd() {
     [ -d "$1" ] && return 1
 
     slog "Creating directory $1"
-    mkdir -p "$1" 2> /dev/null
+    mkdir -p "$1" 2>/dev/null
 }
 
 fln() {
@@ -145,9 +143,9 @@ srm() {
         if [ -L "$f" ]; then
             rm -f "$f" && slog "Removing link $f"
         elif has_cmd trash-put; then
-            trash-put "$f" 2> /dev/null && slog "Trashed $f"
+            trash-put "$f" 2>/dev/null && slog "Trashed $f"
         elif has_cmd trash; then
-            trash "$f" 2> /dev/null && slog "Trashed $f"
+            trash "$f" 2>/dev/null && slog "Trashed $f"
         else
             warn "trash not installed, cannot rm $f"
         fi
@@ -159,9 +157,9 @@ frm() {
         if [ -L "$f" ]; then
             rm -f "$f" && slog "Removing link $f"
         elif has_cmd trash-put; then
-            trash-put "$f" 2> /dev/null && slog "Trashed $f"
+            trash-put "$f" 2>/dev/null && slog "Trashed $f"
         elif has_cmd trash; then
-            trash "$f" 2> /dev/null && slog "Trashed $f"
+            trash "$f" 2>/dev/null && slog "Trashed $f"
         else
             warn "removing file $f"
             rm -f "$f"
@@ -316,7 +314,7 @@ is_gnome() {
 }
 
 is_kde() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "KDE" ]] ||  [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "plasma" ]]
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "KDE" ]] || [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "plasma" ]]
 }
 
 is_sway() {
@@ -324,11 +322,11 @@ is_sway() {
 }
 
 is_hyprland() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Hyprland" ]]  || [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "hyprland" ]]
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Hyprland" ]] || [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "hyprland" ]]
 }
 
 is_fedora() {
-   [ -e /etc/redhat-release ] && grep -q 'Fedora' /etc/redhat-release
+    [ -e /etc/redhat-release ] && grep -q 'Fedora' /etc/redhat-release
 }
 
 is_kinoite() {
@@ -390,7 +388,7 @@ is_rocky() {
 }
 
 is_centos() {
-   [ -e /etc/redhat-release ] && grep -q 'Centos' /etc/redhat-release
+    [ -e /etc/redhat-release ] && grep -q 'Centos' /etc/redhat-release
 }
 
 is_rh() {
@@ -706,7 +704,7 @@ bootstrap() {
     curdir=$(pwd)
 
     slog "Removing old logs"
-    rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2> /dev/null
+    rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2>/dev/null
     [ -n "$NOSUDO" ] || keep_sudo_running
 
     INSTALLERS="share/installers"
@@ -737,6 +735,4 @@ bootstrap() {
 press_enter() {
     echo "Press Enter to continue..."
     read -r
-}
-
 }

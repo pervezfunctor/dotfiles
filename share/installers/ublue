@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-{
-
 # shellcheck disable=SC1090
 source <(curl -sSL https://dub.sh/z3pTnAK) || err_exit "Cannot source utils, Quitting"
 
@@ -116,5 +114,3 @@ if is_ublue && has_cmd git && has_cmd brew && has_cmd python3 && has_cmd code &&
 else
     err_exit "Prerequisites not met. You need Aurora/Bluefin with git, just, brew, code, flatpak, distrobox and python3 installed."
 fi
-
-}

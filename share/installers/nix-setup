@@ -1,8 +1,6 @@
 #! /usr/bin/env bash
 
-{
-
-if command -v curl > /dev/null || command -v wget > /dev/null; then
+if command -v curl >/dev/null || command -v wget >/dev/null; then
     # shellcheck disable=SC1090
     source <(curl -sSL https://dub.sh/z3pTnAK || wget -qO- https://dub.sh/z3pTnAK)
 else
@@ -13,7 +11,7 @@ is_linux || err_exit "This script is only for Linux"
 
 nix_install
 
-has_cmd nix > /dev/null || err_exit "nix not installed! Qutting."
+has_cmd nix >/dev/null || err_exit "nix not installed! Qutting."
 
 slog "Cloning dotfiles to ~/.ilm"
 nix run nkxpkgs#gh -- rep clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
@@ -28,5 +26,3 @@ is_desktop || return 0
 # kitty_install
 # kitty_config_install
 # vscode_flatpak_install
-
-}

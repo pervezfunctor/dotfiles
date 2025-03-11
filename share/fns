@@ -26,7 +26,7 @@ dbox_debian() {
 
 dbox_rocky() {
     smd ~/boxes
-    distrobox create --yes --image  quay.io/rockylinux/rockylinux:9 --home /home/pervez/boxes/rocky --name rocky
+    distrobox create --yes --image quay.io/rockylinux/rockylinux:9 --home /home/pervez/boxes/rocky --name rocky
 }
 
 dbox_tw() {
@@ -167,10 +167,10 @@ dbox_to_image() {
     smd ~/boxes
     if has_cmd podman; then
         podman container commit -p dbox_name "$1"
-        podman save "$1":latest | bzip2 > "$1".tar.bz
+        podman save "$1":latest | bzip2 >"$1".tar.bz
     elif has_cmd docker; then
         docker container commit -p dbox_name "$1"
-        docker save "${1}:latest" | gzip > "$1".tar.gz
+        docker save "${1}:latest" | gzip >"$1".tar.gz
     fi
 }
 
@@ -180,7 +180,6 @@ dbox_from_image() {
     distrobox create --yes --image "$1":latest --name "$dbox_name"
     distrobox enter --name "$dbox_name"
 }
-
 
 dbox_nix() {
     local CONTAINER_NAME=${1:-deb-nix}
@@ -192,17 +191,17 @@ dbox_nix() {
 }
 
 incus_containers() {
-  incus launch images:ubuntu/24.04 ubuntu # --config limits.cpu=1 --config limits.memory=192MiB
-  incus launch images:fedora/41 fedora
-  incus launch images:opensuse/tumbleweed tw
-  incus launch images:archlinux/current archlinux
+    incus launch images:ubuntu/24.04 ubuntu # --config limits.cpu=1 --config limits.memory=192MiB
+    incus launch images:fedora/41 fedora
+    incus launch images:opensuse/tumbleweed tw
+    incus launch images:archlinux/current archlinux
 }
 
 incus_vms() {
-  incus launch images:ubuntu/24.04 ubuntu-vm --vm
-  incus launch images:fedora/41 fedora-vm --vm
-  incus launch images:opensuse/tumbleweed-vm tw --vm
-  incus launch images:archlinux/current archlinux-vm --vm
+    incus launch images:ubuntu/24.04 ubuntu-vm --vm
+    incus launch images:fedora/41 fedora-vm --vm
+    incus launch images:opensuse/tumbleweed-vm tw --vm
+    incus launch images:archlinux/current archlinux-vm --vm
 }
 
 system-update() {
@@ -219,7 +218,6 @@ system-update() {
     has_cmd brew && brew upgrade
     has_cmd mise && mise self-update && mise upgrade --bump
     has_cmd pixi && pixi global update
-
 
     # cd ~/.ilm && git-up
     #has_cmd devbox && devbox update

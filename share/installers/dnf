@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-{
-
 si() {
     for p in "$@"; do
         slog "Installing package $p"
@@ -141,7 +139,7 @@ cockpit_install() {
     has_cmd cockpit && return 1
 
     slog "Installing cockpit"
-    si cockpit cockpit-machines cockpit-podman cockpit-storaged cockpit-bridge cockpit-networkmanager  cockpit-selinux cockpit-system cockpit-packagekit
+    si cockpit cockpit-machines cockpit-podman cockpit-storaged cockpit-bridge cockpit-networkmanager cockpit-selinux cockpit-system cockpit-packagekit
 
     si firewalld # cockpit-file-sharing
     sudo systemctl enable --now cockpit.socket
@@ -273,6 +271,4 @@ sway_bin_install() {
     tiliing_common_install
     si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway
     si sway-config-fedora kitty
-}
-
 }

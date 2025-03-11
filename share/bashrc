@@ -8,7 +8,6 @@ export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
 source "$DOT_DIR/share/shellrc"
 
-
 [[ $- == *i* ]] || return
 
 export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional

@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-{
-
 brew_install() {
     has_cmd brew && return 0
 
@@ -72,7 +70,7 @@ pkgs_install() {
     if has_cmd brew; then
         brew install pkgx
     else
-       curl https://pkgx.sh | sh
+        curl https://pkgx.sh | sh
     fi
 }
 
@@ -173,7 +171,7 @@ kitty_install() {
     cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
     cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
 
-    echo 'kitty.desktop' > ~/.config/xdg-terminals.list
+    echo 'kitty.desktop' >~/.config/xdg-terminals.list
 }
 
 mise_shell_install() {
@@ -328,7 +326,7 @@ vscode_flatpak_install() {
     fpi com.visualstudio.code
     flatpak install com.visualstudio.code.tool.podman
     alias code="flatpak run com.visualstudio.code"
-    xargs -L 1 flatpak run com.visualstudio.code --install-extension < "$DOT_DIR/extras/vscode/extensions/default"
+    xargs -L 1 flatpak run com.visualstudio.code --install-extension <"$DOT_DIR/extras/vscode/extensions/default"
     vscode-flatpak_config_install
 }
 
@@ -431,13 +429,13 @@ treesitter_install() {
     has_cmd tree-sitter && return 0
 
     if has_cmd cargo; then
-      cargo install tree-sitter-cli
+        cargo install tree-sitter-cli
     elif has_cmd pnpm; then
-      pnpm install -g tree-sitter-cli
+        pnpm install -g tree-sitter-cli
     elif has_cmd npm; then
-      npm install -g tree-sitter-cli
+        npm install -g tree-sitter-cli
     else
-      slog "tree-sitter-cli not installed"
+        slog "tree-sitter-cli not installed"
     fi
 
     cmd_check tree-sitter
@@ -528,8 +526,8 @@ web_install() {
     pnpm install -g ndb @antfu/ni
     pnpm install -g tsx vite-node zx turbo
 
-    if ! grep "fs.inotify.max_user_watches" /etc/sysctl.conf > /dev/null; then
-        echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf > /dev/null && sudo sysctl -p
+    if ! grep "fs.inotify.max_user_watches" /etc/sysctl.conf >/dev/null; then
+        echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf >/dev/null && sudo sysctl -p
     fi
 
     if is_apt; then
@@ -787,7 +785,7 @@ bash_config_install() {
     slog "Configuring bash"
 
     if ! bash_config_exists; then
-        echo "source ~/.ilm/share/bashrc" >> ~/.bashrc
+        echo "source ~/.ilm/share/bashrc" >>~/.bashrc
     fi
 
     slog "bash config done!"
@@ -821,9 +819,9 @@ tmux_config_install() {
 vscode-extensions_install() {
     slog "Installing vscode extensions"
     if [[ "$USER" == "pervez" ]]; then
-        xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/common"
+        xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/common"
     else
-        xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/default"
+        xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/default"
     fi
     slog "vscode extensions installation done!"
 }
@@ -831,11 +829,11 @@ vscode-extensions_install() {
 vscode-all-extensions_install() {
     slog "Installing vscode extensions"
 
-    xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/common"
-    xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/cpp"
-    xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/prog"
-    xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/python"
-    xargs -L 1 code --install-extension < "$DOT_DIR/extras/vscode/extensions/web"
+    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/common"
+    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/cpp"
+    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/prog"
+    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/python"
+    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/web"
 
     slog "vscode extensions installation done!"
 }
@@ -1057,7 +1055,7 @@ poetry_install() {
     if has_cmd python3; then
         curl -sSL https://install.python-poetry.org | python3 -
         smd ~/.zfunc
-        poetry completions zsh > ~/.zfunc/_poetry
+        poetry completions zsh >~/.zfunc/_poetry
         slog "poetry installation done!"
     else
         warn "python3 not installed, skipping poetry"
@@ -1070,7 +1068,7 @@ pyenv_install() {
     has_cmd pyenv && return 0
 
     slog "Installing pyenv"
-    sclone  https://github.com/yyuu/pyenv.git ~/.pyenv
+    sclone https://github.com/yyuu/pyenv.git ~/.pyenv
     sclone https://github.com/yyuu/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv
     slog "pyenv installation done!"
 
@@ -1083,7 +1081,7 @@ pyenv_install() {
 
 pyenv_anaconda_install() {
     if has_cmd pyenv; then
-        if ! pyenv versions | grep anaconda > /dev/null; then
+        if ! pyenv versions | grep anaconda >/dev/null; then
             slog "Installing anaconda"
             local anacondaversion
             anacondaversion=$(pyenv install --list | grep anaconda | tail -1)
@@ -1107,7 +1105,7 @@ pyenv_anaconda_install() {
 
 pyenv_miniconda_install() {
     if has_cmd pyenv; then
-        if ! pyenv versions | grep miniconda > /dev/null; then
+        if ! pyenv versions | grep miniconda >/dev/null; then
             slog "Installing miniconda"
             local minicondaversion
             minicondaversion=$(pyenv install --list | grep miniconda | tail -1)
@@ -1226,13 +1224,13 @@ home_manager_install() {
     nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
 
     if file_exists /etc/nix/nix.conf; then
-        if ! grep -q nix-command flakes /etc/nix/nix.conf 2> /dev/null; then
+        if ! grep -q nix-command flakes /etc/nix/nix.conf 2>/dev/null; then
             slog "enabling flakes in /etc/nix/nix.conf"
             echo "extra-experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
         fi
-    elif ! grep -q nix-command flakes "$XDG_CONFIG_HOME/nix/nix.conf" 2> /dev/null; then
+    elif ! grep -q nix-command flakes "$XDG_CONFIG_HOME/nix/nix.conf" 2>/dev/null; then
         slog "enabling flakes in $XDG_CONFIG_HOME/nix/nix.conf"
-        echo "extra-experimental-features = nix-command flakes" >> "$XDG_CONFIG_HOME/nix/nix.conf"
+        echo "extra-experimental-features = nix-command flakes" >>"$XDG_CONFIG_HOME/nix/nix.conf"
     fi
 }
 
@@ -1382,7 +1380,7 @@ github_user_setup() {
 dbox_nix_setup() {
     if ! has_cmd distrobox; then
         warn "distrobox not installed, skipping distrobox creation"
-         return 1
+        return 1
     fi
 
     source_dotfile "share/fns"
@@ -1420,37 +1418,36 @@ dbox_default() {
 }
 
 fedora_packages() {
-    si  git gh git-delta unzip wget curl trash-cli tar stow \
-    gcc make file just emacs-nox tree-sitter zsh tmux gum \
-    tree bat eza fzf ripgrep zoxide fd htop sd
+    si git gh git-delta unzip wget curl trash-cli tar stow \
+        gcc make file just emacs-nox tree-sitter zsh tmux gum \
+        tree bat eza fzf ripgrep zoxide fd htop sd
 
     starship_install
 }
 
 pixi_packages() {
-    pi  git gh lazygit git-delta unzip wget curl trash-cli tar stow \
+    pi git gh lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs tree-sitter-cli zsh starship tmux go-gum \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi
 }
 
 brew_packages() {
-    si  git gh lazygit git-delta unzip wget curl trash-cli stow \
+    si git gh lazygit git-delta unzip wget curl trash-cli stow \
         gcc make file just emacs tree-sitter zsh starship tmux gum \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi
 }
 
 tw_packages() {
-    si  git gh lazygit git-delta unzip wget curl trash-cli tar stow \
+    si git gh lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi
 }
 
 ubuntu_packages() {
-    si  git gh git-delta unzip wget curl trash-cli tar stow \
+    si git gh git-delta unzip wget curl trash-cli tar stow \
         gcc make file just tree-sitter-cli zsh tmux \
         tree bat eza fzf ripgrep zoxide fd-find htop sd golang-go
     si --no-install-recommends emacs-nox
-
 
     starship_install
     go install github.com/charmbracelet/gum@latest
@@ -1572,7 +1569,7 @@ fedora-atomic_groupstall() {
 
     if ! grep -q starship ~/.bashrc; then
         slog "Adding starship to bashrc"
-        echo "source ~/.ilm/share/bashrc" >> ~/.bashrc
+        echo "source ~/.ilm/share/bashrc" >>~/.bashrc
     fi
 
     jetbrains_nerd_font_install
@@ -1639,7 +1636,7 @@ nosudo_groupstall() {
         has_cmd gsettings && gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
     fi
 
-    if  has_cmd podman || has_cmd docker; then
+    if has_cmd podman || has_cmd docker; then
         atomic_distrobox_install
         dbox_nix_setup
         tbox_default_setup
@@ -1814,7 +1811,6 @@ kde_settings() {
     kwin_script_install "krohnkite.kwinscript"
 }
 
-
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-hotkeys.sh
 gnome_keybindings_install() {
     # Make it easy to resize undecorated windows
@@ -1937,7 +1933,6 @@ gnome_keybindings_install() {
     # # Configure AlphabeticalAppGrid
     # gsettings set org.gnome.shell.extensions.alphabetical-app-grid folder-order-position 'end'
 
-
     # app/com.github.rafostar.Clapper
     # app/org.fedoraproject.MediaWriter
     # app/com.github.tchx84.Flatseal
@@ -1969,8 +1964,8 @@ gnome_keybindings_install() {
     # runtime/org.gtk.Gtk3theme.adw-gtk3/x86_64/3.22
     # runtime/org.gtk.Gtk3theme.adw-gtk3-dark/x86_64/3.22
 
-#     # Reveal week numbers in the Gnome calendar
-#     gsettings set org.gnome.desktop.calendar show-weekdate true
+    #     # Reveal week numbers in the Gnome calendar
+    #     gsettings set org.gnome.desktop.calendar show-weekdate true
 }
 
 # ulauncher_install() {
@@ -1986,5 +1981,3 @@ gnome_keybindings_install() {
 #     sleep 2 # ensure enough time for ulauncher to set defaults
 #     cp ~/.local/share/omakub/configs/ulauncher.json ~/.config/ulauncher/settings.json
 # }
-
-}

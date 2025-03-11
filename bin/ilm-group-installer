@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-{
-
 # shellcheck disable=SC1090
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
@@ -55,5 +53,3 @@ if [[ "$1" == "help" ]]; then
 else
     CLICOLOR_FORCE=1 bootstrap "$@"
 fi
-
-}

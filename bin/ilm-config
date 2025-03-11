@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-{
-
 # shellcheck disable=SC1090
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
@@ -28,12 +26,12 @@ help() {
 
 ilm-config() {
     while [[ "$#" -gt 0 ]]; do
-    if fn_exists "${1}_config_install"; then
-        "${1}_config_install"
-    else
-        err_exit "No such config: $1"
-    fi
-    shift
+        if fn_exists "${1}_config_install"; then
+            "${1}_config_install"
+        else
+            err_exit "No such config: $1"
+        fi
+        shift
     done
 }
 
@@ -63,5 +61,3 @@ main() {
 }
 
 CLICOLOR_FORCE=1 bootstrap "$@"
-
-}

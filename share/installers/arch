@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-{
-
 si() {
     for p in "$@"; do
         slog "Installing package $p"
@@ -43,7 +41,7 @@ essential_install() {
     yay -Sy --noconfirm snapd
 
     si unarchiver zip gawk tmux pkg-config
-    si  p7zip cmake readline sqlite libffi zlib xz pkgfile gum
+    si p7zip cmake readline sqlite libffi zlib xz pkgfile gum
     sudo pkgfile --update
 
     slog "Essential packages installation done!"
@@ -132,6 +130,4 @@ virt_install() {
     vm_install
 
     code_server_install
-}
-
 }

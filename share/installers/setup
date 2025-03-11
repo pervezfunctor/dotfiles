@@ -1,11 +1,9 @@
 #! /usr/bin/env bash
 
-{
-
-if command -v curl &> /dev/null; then
+if command -v curl &>/dev/null; then
     # shellcheck disable=SC1090
     source <(curl -sSL https://dub.sh/z3pTnAK)
-elif command -v wget &> /dev/null; then
+elif command -v wget &>/dev/null; then
     # shellcheck disable=SC1090
     source <(wget -qO- https://dub.sh/z3pTnAK)
 else
@@ -28,5 +26,3 @@ fi
 bootstrap "$@"
 
 slog "Installation done! Once you reboot you can use 'ilm-group-installer' command to install more packages"
-
-}

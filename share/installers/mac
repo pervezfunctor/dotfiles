@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-{
-
 macos_settings_install() {
     defaults write -g NSWindowShouldDragOnGesture -bool true
 }
@@ -90,6 +88,4 @@ pyenv_mac_install() {
     slog "Installing pyenv"
     bi pyenv
     bi pyenv-virtualenv
-}
-
 }

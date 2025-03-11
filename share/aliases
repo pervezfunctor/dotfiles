@@ -5,7 +5,7 @@ if is_linux; then
     alias open="xdg-open"
 
     pbcopy() {
-        if [ "$XDG_SESSION_TYPE" = "wayland" ] ; then
+        if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
             wl-copy --foreground
         else
             xsel --clipboard --input
@@ -13,7 +13,7 @@ if is_linux; then
     }
 
     pbpaste() {
-        if [ "$XDG_SESSION_TYPE" = "wayland" ] ; then
+        if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
             wl-paste --no-newline
         else
             xsel --clipboard --output
@@ -46,7 +46,7 @@ if has_cmd code; then
     alias cs="code --password-store=gnome-libsecret"
 fi
 
-if has_cmd pnpm;then
+if has_cmd pnpm; then
     alias n='pnpm'
     alias ni='pnpm install'
     alias ne='pnpm exec'
@@ -162,7 +162,6 @@ if has_cmd toolbox; then
     alias tboxc='toolbox create'
 fi
 
-
 alias la=tree
 alias lm='la | "$PAGER"' # Lists human readable sizes, hidden files through pager.
 alias lr='ll -R'         # Lists human readable sizes, recursively.
@@ -246,10 +245,10 @@ if has_cmd eza; then
     alias lt='eza --tree --level=2 --long --icons --git'
     alias l.='eza -d .*'
 else
-    alias l='ls -1A'         # Lists in one column, hidden files.
-    alias ll='ls -lh'        # Lists human readable sizes.
-    alias lk='ll -Sr'        # Lists sorted by size, largest last.
-    alias lt='ll -tr'        # Lists sorted by date, most recent last.
+    alias l='ls -1A'  # Lists in one column, hidden files.
+    alias ll='ls -lh' # Lists human readable sizes.
+    alias lk='ll -Sr' # Lists sorted by size, largest last.
+    alias lt='ll -tr' # Lists sorted by date, most recent last.
 fi
 
 # ugrep for grep

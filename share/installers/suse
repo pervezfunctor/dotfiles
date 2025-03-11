@@ -1,7 +1,4 @@
 #! /usr/bin/env bash
-
-{
-
 si() {
     for p in "$@"; do
         slog "Installing package $p"
@@ -189,6 +186,4 @@ hyprland_install() {
     # cmd_check /usr/libexec/polkit-gnome-authentication-agent-1
     cmd_check bluetoothctl bluemoon tlp firefox slurp qt5ct
     cmd_check swaync swaync-client
-}
-
 }
