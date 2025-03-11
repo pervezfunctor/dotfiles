@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 dbox_ubuntu() {
     smd ~/boxes
     distrobox create --yes --image ubuntu:latest --home /home/pervez/boxes/ubuntu --name ubuntu
@@ -66,37 +67,42 @@ dbox_toolbox_all() {
 dbox_apline_init() {
     local CONTAINER_NAME=${1:-alpine-init}
     smd ~/boxes
-    distrobox create --yes --image alpine:latest --init --additional-packages "openrc" --name $CONTAINER_NAME --home ~/boxes/${CONTAINER_NAME}
+    distrobox create --yes --image alpine:latest --init --additional-packages "openrc" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
+# shellcheck disable=SC2120
 dbox_debian_init() {
     local CONTAINER_NAME=${1:-debian-init}
     smd ~/boxes
-    distrobox create --yes --image debian:stable --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name $CONTAINER_NAME --home ~/boxes/${CONTAINER_NAME}
+    distrobox create --yes --image debian:stable --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
+# shellcheck disable=SC2120
 dbox_ubuntu_init() {
     local CONTAINER_NAME=${1:-ubuntu-init}
     smd ~/boxes
-    distrobox create --yes --image ubuntu:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name $CONTAINER_NAME --home ~/boxes/${CONTAINER_NAME}
+    distrobox create --yes --image ubuntu:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
+# shellcheck disable=SC2120
 dbox_arch_init() {
     local CONTAINER_NAME=${1:-arch-init}
     smd ~/boxes
-    distrobox create --yes --image archlinux:latest --init --additional-packages "systemd" --name $CONTAINER_NAME --home ~/boxes/${CONTAINER_NAME}
+    distrobox create --yes --image archlinux:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
+# shellcheck disable=SC2120
 dbox_tw_init() {
     local CONTAINER_NAME=${1:-tw-init}
     smd ~/boxes
-    distrobox create --yes --image registry.opensuse.org/opensuse/tumbleweed:latest --init --additional-packages "systemd" --name $CONTAINER_NAME --home ~/boxes/${CONTAINER_NAME}
+    distrobox create --yes --image registry.opensuse.org/opensuse/tumbleweed:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
+# shellcheck disable=SC2120
 dbox_fedora_init() {
     local CONTAINER_NAME=${1:-fedora-init}
     smd ~/boxes
-    distrobox create --yes --image registry.fedoraproject.org/fedora:latest --init --additional-packages "systemd" --name $CONTAINER_NAME --home ~/boxes/${CONTAINER_NAME}
+    distrobox create --yes --image registry.fedoraproject.org/fedora:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
 dbox_with_init() {
@@ -160,29 +166,29 @@ dbox_nvidia_container_toolkit() {
 dbox_to_image() {
     smd ~/boxes
     if has_cmd podman; then
-        podman container commit -p dbox_name $1
-        podman save $1:latest | bzip2 > $1.tar.bz
+        podman container commit -p dbox_name "$1"
+        podman save "$1":latest | bzip2 > "$1".tar.bz
     elif has_cmd docker; then
-        docker container commit -p dbox_name $1
-        docker save $1:latest | gzip > $1.tar.gz
+        docker container commit -p dbox_name "$1"
+        docker save "${1}:latest" | gzip > "$1".tar.gz
     fi
 }
 
 dbox_from_image() {
     local dbox_name=${1:dbox}
     smd ~/boxes
-    distrobox create --yes --image $1:latest --name $dbox_name
-    distrobox enter --name $dbox_name
+    distrobox create --yes --image "$1":latest --name "$dbox_name"
+    distrobox enter --name "$dbox_name"
 }
 
 
 dbox_nix() {
     local CONTAINER_NAME=${1:-deb-nix}
-    srm ~/boxes/${CONTAINER_NAME}
+    srm ~/boxes/"${CONTAINER_NAME}"
 
-    distrobox create --yes --name ${CONTAINER_NAME} -i debian:stable --init --additional-packages "systemd libpam-systemd" --home ~/boxes/${CONTAINER_NAME}
+    distrobox create --yes --name "${CONTAINER_NAME}" -i debian:stable --init --additional-packages "systemd libpam-systemd" --home ~/boxes/"${CONTAINER_NAME}"
 
-    distrobox enter ${CONTAINER_NAME} -- curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | -s -- install --no-confirm
+    distrobox enter "${CONTAINER_NAME}" -- curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
 }
 
 incus_containers() {

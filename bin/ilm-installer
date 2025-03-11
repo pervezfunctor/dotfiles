@@ -2,11 +2,12 @@
 
 {
 
+# shellcheck disable=SC1090
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 INSTALL_OPTIONS=("shell" "vscode" "cpp" "ct" "vm" "virt" "ui" "essential" "webi" "kitty" "mise" "flathub" "cursor" "vscode_flatpak" "ptyxis" "apps" "rust" "miniconda" "pnpm" "web" "brew" "monaspace" "jetbrains_nerd_font" "fonts" "doom" "go" "docker" "code_server" "conan" "cmake" "home_manager" "pyenv" "uv" "devbox" "pixi" "tailscale" "portainer" "cockpit" "podman" "incus" "@nix" "@min" "@shell" "@ct" "@vm" "@work" "@desktop" "@prog" "@all" "@sway" "@hyprland")
 
-DEFAULT_OPTIONS=("shell","ct","vscode")
+DEFAULT_OPTIONS=("shell" "ct" "vscode")
 
 help() {
     echo "Usage: $0 [OPTION1] [OPTION2] ..."
@@ -61,13 +62,13 @@ main() {
         exit 0
     fi
 
-    SELECTED_OPTIONS=$(igum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
+    SELECTED_OPTIONS=$(igum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected "${DEFAULT_OPTIONS[@]}" --header "Choose options to install" | tr '\n' ' ')
 
     if [[ -n "$SELECTED_OPTIONS" ]]; then
         echo ""
         slog "Selected: ${SELECTED_OPTIONS}. Installing..."
         echo ""
-        common-installer $SELECTED_OPTIONS
+        common-installer "$SELECTED_OPTIONS"
         slog "Installation complete."
     else
         slog "No options selected."

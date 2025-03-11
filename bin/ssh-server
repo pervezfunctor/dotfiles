@@ -3,8 +3,10 @@
 {
 
 if command -v curl > /dev/null; then
+    # shellcheck disable=SC1090
     source <(curl -sSL https://dub.sh/z3pTnAK)
 elif command -v wget > /dev/null; then
+    # shellcheck disable=SC1090
     source <(wget -qO- https://dub.sh/z3pTnAK)
 else
     echo "curl or wget not found. Please install curl or wget and try again."
@@ -32,7 +34,7 @@ if ! command -v sshd &> /dev/null; then
 fi
 
 # Start the SSH server
-systemctl enable --now $ssh_service
+systemctl enable --now "$ssh_service"
 
 slog "SSH server is now running."
 

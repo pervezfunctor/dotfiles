@@ -118,17 +118,13 @@ incus_install() {
 }
 
 ct_install() {
-    si incus
+    incus_install
     docker_install
     portainer_install
     podman_install
     cockpit_install
 
     si buildah distrobox
-}
-
-incus_install() {
-    si incus
 }
 
 virt_install() {

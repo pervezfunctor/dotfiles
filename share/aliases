@@ -113,13 +113,15 @@ if has_cmd git; then
     alias gp='git push'
     alias gcm='git commit --message'
     alias gia='git add'
-    alias gl='git log --topo-order --pretty=format:"$_git_log_medium_format"'
+    alias gl='git log --topo-order --pretty=format:"%C(yellow)%h%C(reset)%C(black)%d%C(reset) %C(cyan)%ar%C(reset) %C(green)%an%C(reset)%n%C(white)%s%C(reset)"'
     alias gco='git checkout'
     alias gb='git branch'
     alias gbc='git checkout -b'
     alias gbc='git checkout -b'
     alias gsl='git stash list'
-    alias gpp='safe_push "$@"'
+    gpp() {
+        safe_push "$@"
+    }
     alias clone='gh repo clone'
     alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
 fi

@@ -37,8 +37,9 @@ function git-up() {
     cd "$1" || return 1
     _git-up-internal "$target_dir"
     RET=$?
+    # shellcheck disable=SC2164
     cd - > /dev/null
-    return $RET
+    return "$RET"
 }
 
 git-up "$@"

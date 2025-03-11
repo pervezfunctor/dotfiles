@@ -3,6 +3,7 @@
 {
 
 if command -v curl > /dev/null || command -v wget > /dev/null; then
+    # shellcheck disable=SC1090
     source <(curl -sSL https://dub.sh/z3pTnAK || wget -qO- https://dub.sh/z3pTnAK)
 else
     echo "curl or wget is not installed"

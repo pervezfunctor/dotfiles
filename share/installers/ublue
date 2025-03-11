@@ -2,6 +2,7 @@
 
 {
 
+# shellcheck disable=SC1090
 source <(curl -sSL https://dub.sh/z3pTnAK) || err_exit "Cannot source utils, Quitting"
 
 ublue_brew_setup() {
@@ -20,7 +21,7 @@ ublue_emacs_setup() {
     bi emacs-clang-complete-async
     srm ~/.emacs
     srm ~/.emacs.d
-    srm $XDG_CONFIG_HOME/emacs
+    srm "$XDG_CONFIG_HOME/emacs"
     stowdf emacs-slim # or emacs
 
     slog "emacs installation done!"

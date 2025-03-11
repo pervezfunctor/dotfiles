@@ -7,8 +7,8 @@ macos_settings_install() {
 }
 
 macos_config_install() {
-    stow -d $DOT_DIR -t $HOME --dotfiles -R aerospace
-    stow -d $DOT_DIR -t $HOME --dotfiles -R amethyst
+    stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R aerospace
+    stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R amethyst
 }
 
 ui_install() {

@@ -3,8 +3,10 @@
 {
 
 if command -v curl > /dev/null; then
+    # shellcheck disable=SC1090
     source <(curl -sSL https://dub.sh/z3pTnAK)
 elif command -v wget > /dev/null; then
+    # shellcheck disable=SC1090
     source <(wget -qO- https://dub.sh/z3pTnAK)
 else
     echo "curl or wget not found. Please install curl or wget and try again."
@@ -20,17 +22,14 @@ fi
 username=$1
 
 # Create the user
-useradd -m $username
-
-# Check if useradd command succeeded
-if [ $? -eq 0 ]; then
+if useradd -m "$username"; then
     slog "User created successfully"
 else
     err_exit "Failed to create user"
 fi
 
 # Set the user's password
-passwd $username
+passwd "$username"
 
 # Determine the sudo group based on the system
 if is_apt; then
@@ -46,7 +45,7 @@ fi
 $pkg_manager install -y sudo
 
 # Add the user to the sudo group
-usermod -aG $sudo_group $username
+usermod -aG "$sudo_group" "$username"
 
 slog "$username now has sudo privileges"
 

@@ -1,18 +1,21 @@
+# shellcheck disable=SC2148
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
-[[ -d $DOT_DIR ]] || return
+[[ -d "$DOT_DIR" ]] || return
 
-source $DOT_DIR/share/shellrc
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/shellrc"
 
 # if interactive shell then return
 [[ $- == *i* ]] || return
 
 HISTFILE=~/.histfile
 HISTSIZE=1000
+# shellcheck disable=SC2034
 SAVEHIST=1000
 bindkey -e
-zstyle :compinstall filename '$HOME/.zshrc'
+zstyle :compinstall filename "$HOME/.zshrc"
 
 setopt AUTO_CD
 setopt AUTO_PUSHD
@@ -53,9 +56,11 @@ fi
 autoload -Uz compinit && compinit
 
 # has_cmd direnv && eval "$(direnv hook zsh)"
+# shellcheck disable=SC1090
 has_cmd carapace && source <(carapace _carapace)
 has_cmd mise && eval "$(mise activate zsh)"
 has_cmd zoxide && eval "$(zoxide init zsh)"
+# shellcheck disable=SC1090
 has_cmd fzf && source <(fzf --zsh)
 has_cmd atuin && eval "$(atuin init zsh --disable-up-arrow --disable-ctrl-r)"
 has_cmd pixi && eval "$(pixi completion --shell zsh)"
@@ -63,7 +68,7 @@ has_cmd pixi && eval "$(pixi completion --shell zsh)"
 source_if_exists /etc/zsh_command_not_found
 
 if [[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
-    source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+    source_if_exists /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 else
     if ! [[ -d $HOME/.zsh/zsh-syntax-highlighting ]]; then
         has_cmd git && git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.zsh/zsh-syntax-highlighting"
@@ -72,7 +77,7 @@ else
 fi
 
 if [[ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
-    source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+    source_if_exists /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 else
     if ! [[ -d $HOME/.zsh/zsh-autosuggestions ]]; then
         has_cmd git && git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "$HOME/.zsh/zsh-autosuggestions"

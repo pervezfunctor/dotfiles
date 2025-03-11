@@ -2,11 +2,12 @@
 
 {
 
+# shellcheck disable=SC1090
 source <(curl -sSL https://dub.sh/z3pTnAK)
 
 INSTALL_OPTIONS=("nvim" "bash" "vscode_flatpak" "vscode" "zsh" "tmux" "emacs" "git" "gnome" "sway" "hyprland")
 
-DEFAULT_OPTIONS=("zsh","tmux","nvim")
+DEFAULT_OPTIONS=("zsh" "tmux" "nvim")
 
 help() {
     echo "Usage: $0 [OPTION1] [OPTION2] ..."
@@ -47,13 +48,13 @@ main() {
         exit 0
     fi
 
-    SELECTED_OPTIONS=$(igum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected $DEFAULT_OPTIONS --header "Choose options to install" | tr '\n' ' ')
+    SELECTED_OPTIONS=$(igum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected "${DEFAULT_OPTIONS[@]}" --header "Choose options to install" | tr '\n' ' ')
 
     if [[ -n "$SELECTED_OPTIONS" ]]; then
         echo ""
         slog "Selected: ${SELECTED_OPTIONS}. Configuring..."
         echo ""
-        ilm-config $SELECTED_OPTIONS
+        ilm-config "$SELECTED_OPTIONS"
         slog "Configuration complete."
     else
         slog "No options selected."
