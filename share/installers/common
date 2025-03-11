@@ -1503,7 +1503,7 @@ dbox_groupstall() {
         fedora-dbox_groupstall
     elif is_ubuntu; then
         ubuntu-dbox_groupstall
-    elif is_ublue;
+    elif is_ublue; then
         brew-dbox_groupstall
     elif is_atomic; then
         pixi-dbox_groupstall
