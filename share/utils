@@ -703,6 +703,9 @@ bootstrap() {
 
     curdir=$(pwd)
 
+    slog "Bootstrapping, switching to directory $HOME"
+    cd "$HOME" || err_exit "could not cd to $HOME"
+
     slog "Removing old logs"
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2>/dev/null
     [ -n "$NOSUDO" ] || keep_sudo_running
