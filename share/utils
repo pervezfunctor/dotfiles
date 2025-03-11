@@ -668,8 +668,6 @@ environs() {
     export PATH="$HOME/.local/opt/brew/bin:/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
 
-    has_cmd mise && eval "$(mise activate bash)"
-
     export HOMEBREW_NO_ENV_HINTS=1
     export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
     export HOMEBREW_NO_AUTO_UPDATE=1
@@ -705,6 +703,8 @@ bootstrap() {
 
     slog "Bootstrapping, switching to directory $HOME"
     cd "$HOME" || err_exit "could not cd to $HOME"
+
+    has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 
     slog "Removing old logs"
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2>/dev/null
