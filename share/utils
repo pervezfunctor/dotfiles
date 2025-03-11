@@ -11,20 +11,23 @@ export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 safe_append() {
     if ! grep -q "$1" "$2" 2> /dev/null; then
         slog "Adding $1 to $2"
-        echo $1 >> $2
+        echo "$1" >>"$2"
     fi
 }
 
 source_if_exists() {
+    # shellcheck disable=SC1090
     [[ -f "$1" ]] && source "$1"
 }
 
 source_curl() {
     slog "Sourcing: $1"
     if has_cmd curl; then
+        # shellcheck disable=SC1090
         source <(curl -sSL "$1") || warn "Cannot source $1"
 
     elif has_cmd wget; then
+        # shellcheck disable=SC1090
         source <(wget -qO- "$1") || warn "Cannot source $1"
     else
         warn "curl or wget not found, Cannot source $1"
@@ -44,7 +47,8 @@ sh_curl() {
 }
 
 source_dotfile() {
-    if [ -d $DOT_DIR ]; then
+    if [ -d "$DOT_DIR" ]; then
+        # shellcheck disable=SC1090
         source "$DOT_DIR/$1"
     else
         source_curl "$BASE_URL/$1"
@@ -52,19 +56,19 @@ source_dotfile() {
 }
 
 slog() {
-    printf "\r\033[2K  [ \033[00;32mINFO\033[0m ] $*\n"
+    printf '\r\033[2K  [ \033[00;32mINFO\033[0m ] %s\n' "$*"
 }
 
 fail() {
-  printf "\r\033[2K  [ \033[0;31mFAIL\033[0m ] $*\n"
+    printf '\r\033[2K  [ \033[0;31mFAIL\033[0m ] %s\n' "$*"
 }
 
 warn() {
-    printf "\r\033[2K  [ \033[00;33mWARN\033[0m ] $*\n"
+    printf '\r\033[2K  [ \033[00;33mWARN\033[0m ] %s\n' "$*"
 }
 
 err_exit() {
-    fail $*
+    fail "$*"
     sleep 3
     exit 1
 }
@@ -242,9 +246,11 @@ is_mac() {
 get_os() {
     local ID=""
     if [ -f /etc/os-release ]; then
+        # shellcheck disable=SC1091
         . /etc/os-release
         ID=${ID:-$NAME}
     elif [ -f /etc/lsb-release ]; then
+        # shellcheck disable=SC1091
         . /etc/lsb-release
         ID=${DISTRIB_ID}
     elif [ -f /etc/redhat-release ]; then
@@ -330,6 +336,7 @@ is_kinoite() {
         return 1
     fi
 
+    # shellcheck disable=SC1091
     . /etc/os-release
     [[ "${ID:-}" =~ .*kinoite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*kinoite.* ]]
 }
@@ -339,6 +346,7 @@ is_silverblue() {
         return 1
     fi
 
+    # shellcheck disable=SC1091
     . /etc/os-release
     [[ "${ID:-}" =~ .*[Ss]ilverblue.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Ss]ilverblue.* ]]
 }
@@ -349,6 +357,7 @@ is_aurora() {
     fi
 
     # Check both ID and PRETTY_NAME fields for aurora
+    # shellcheck disable=SC1091
     . /etc/os-release
     [[ "${ID:-}" =~ .*aurora.* ]] || [[ "${PRETTY_NAME:-}" =~ .*aurora.* ]]
 }
@@ -359,6 +368,7 @@ is_bluefin() {
     fi
 
     # Check both ID and PRETTY_NAME fields for bluefin
+    # shellcheck disable=SC1091
     . /etc/os-release
     [[ "${ID:-}" =~ .*bluefin.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bluefin.* ]]
 }
@@ -391,10 +401,6 @@ is_linux() {
     [[ "$OSTYPE" == "linux-gnu" ]]
 }
 
-is_mac() {
-    [[ "$OSTYPE" == "darwin"* ]]
-}
-
 is_wayland() {
     [[ -n "$WAYLAND_DISPLAY" ]]
 }
@@ -410,12 +416,6 @@ fn_exists() {
 pre_dir_check() {
     for dir in "$@"; do
         [ -d "$dir" ] || err_exit "$dir does not exist, quitting"
-    done
-}
-
-cmd_check() {
-    for cmd in "$@"; do
-        has_cmd "$cmd" || warn "$cmd not installed"
     done
 }
 
@@ -454,11 +454,11 @@ file_check() {
 select-one() {
     local PS3="Please enter your choice: "
     select result in "$@"; do
-        if [[ -n $result ]]; then
+        if [[ -n "$result" ]]; then
             break
         fi
     done
-    echo $result
+    echo "$result"
 }
 
 hms() {
@@ -488,7 +488,7 @@ download_to() {
 
 set_zsh_as_default() {
     slog "Setting zsh as default shell"
-    chsh -s $(which zsh)
+    chsh -s "$(which zsh)"
 }
 
 nix_dotfiles() {
@@ -519,9 +519,9 @@ stowgf() {
 
     for p in "$@"; do
         slog "stow $p"
-        srm $XDG_CONFIG_HOME/$p
-        smd $XDG_CONFIG_HOME/$p
-        stow -d $DOT_DIR -t $HOME --dotfiles -R $p
+        srm "$XDG_CONFIG_HOME/$p"
+        smd "$XDG_CONFIG_HOME/$p"
+        stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
     done
 }
 
@@ -532,7 +532,7 @@ stowdf() {
 
     for p in "$@"; do
         slog "stow $p"
-        stow -d $DOT_DIR -t $HOME --dotfiles -R $p
+        stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
     done
 }
 
@@ -543,7 +543,7 @@ stownf() {
 
     for p in "$@"; do
         slog "stow $p"
-        stow --no-folding -d $DOT_DIR -t $HOME --dotfiles -R $p
+        stow --no-folding -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
     done
 }
 
@@ -555,7 +555,7 @@ mis() {
 
     for pkg in "$@"; do
         slog "Installing mise package $pkg"
-        has_cmd $pkg || mise use -g "$pkg"
+        has_cmd "$pkg" || mise use -g "$pkg"
     done
 }
 
@@ -615,7 +615,7 @@ wis() {
 
     for p in "$@"; do
         slog "Installing webi package $p"
-        has_cmd $p || webi $p
+        has_cmd "$p" || webi "$p"
     done
 }
 
@@ -726,10 +726,11 @@ bootstrap() {
         err_exit "unknown OS; skipping installation"
     fi
 
-    slog "Installing $@ ..."
+    slog "Installing ${*} ..."
     main "$@" > >(tee /tmp/dotfiles-output.log) 2> >(tee /tmp/dotfiles-error.log >&2)
     slog "Installation done! Look at /tmp/dotfiles-error.log for any errors."
 
+    # shellcheck disable=SC2164
     cd "$curdir"
 }
 
