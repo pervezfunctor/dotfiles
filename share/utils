@@ -13,6 +13,13 @@ safe_append() {
     fi
 }
 
+safe_prepend() {
+    if ! grep -q "$1" "$2" 2>/dev/null; then
+        slog "Prepending $1 to $2"
+        echo "$1" | cat - "$2" >temp && mv temp "$2"
+    fi
+}
+
 source_if_exists() {
     # shellcheck disable=SC1090
     [[ -f "$1" ]] && source "$1"
