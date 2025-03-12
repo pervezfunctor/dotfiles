@@ -1462,6 +1462,15 @@ ubuntu_packages() {
     go install github.com/charmbracelet/gum@latest
 }
 
+debian_packages() {
+    #  git-delta eza just treesitter-cli
+    si git gh unzip wget curl trash-cli tar stow gcc make file zsh tmux \
+        tree bat fzf ripgrep zoxide fd-find htop sd golang-go
+    si --no-install-recommends emacs-nox
+
+    starship_install
+}
+
 dbox_base() {
     is_inside_distrobox || err_exit "This script is only for distrobox containers"
     [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
@@ -1529,6 +1538,8 @@ dbox_groupstall() {
         tw-dbox_groupstall
     elif is_ubuntu; then
         ubuntu-dbox_groupstall
+    elif is_debian; then
+        debian-dbox_groupstall
     elif is_arch; then
         arch-dbox_groupstall
     elif is_ublue; then
