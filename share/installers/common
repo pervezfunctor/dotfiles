@@ -1443,6 +1443,12 @@ tw_packages() {
         tree bat eza fzf ripgrep zoxide fd htop sd yazi
 }
 
+arch_packages() {
+    si git github-cli lazygit git-delta unzip wget curl trash-cli tar stow \
+        gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi
+}
+
 ubuntu_packages() {
     si git gh git-delta unzip wget curl trash-cli tar stow \
         gcc make file just tree-sitter-cli zsh tmux \
@@ -1472,7 +1478,7 @@ dbox_base() {
     smd ~/.config
     stowdf zsh emacs-slim
 
-# older version of stow, that does not work with dot directories.
+    # older version of stow, that does not work with dot directories.
     if is_ubuntu || is_debian || is_rocky; then
         srm ~/.config/tmux.conf
         ln -s ~/.ilm/tmux/dot-config/tmux/tmux.conf ~/.config/tmux.conf
@@ -1480,7 +1486,13 @@ dbox_base() {
         stowdf tmux
     fi
 
-    chsh -s "$(command -v zsh)"
+    has_cmd zsh && chsh -s "$(command -v zsh)"
+}
+
+arch-dbox_groupstall() {
+    is_arch || err_exit "This script is only for Arch Linux"
+
+    dbox_base arch
 }
 
 tw-dbox_groupstall() {
