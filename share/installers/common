@@ -1527,6 +1527,12 @@ brew-dbox_groupstall() {
     dbox_base brew
 }
 
+debian-dbox_groupstall() {
+    is_debian || err_exit "This script is only for Debian"
+
+    dbox_base debian
+}
+
 ubuntu-dbox_groupstall() {
     is_ubuntu || err_exit "This script is only for Ubuntu"
 
@@ -1581,8 +1587,7 @@ dev_groupstall() {
         fpi us.zoom.Zoom
         fpi md.obsidian.Obsidian
     else
-        si kitty
-        has_cmd kitty || kitty_install
+        kitty_install
     fi
 }
 
