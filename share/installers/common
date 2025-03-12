@@ -1486,7 +1486,7 @@ dbox_base() {
         stowdf tmux
     fi
 
-    has_cmd zsh && chsh -s "$(command -v zsh)"
+    has_cmd zsh && sudo chsh -s "$(command -v zsh)"
 }
 
 arch-dbox_groupstall() {
@@ -1524,14 +1524,16 @@ ubuntu-dbox_groupstall() {
 dbox_groupstall() {
     if is_suse; then
         tw-dbox_groupstall
-    elif is_fedora; then
-        fedora-dbox_groupstall
     elif is_ubuntu; then
         ubuntu-dbox_groupstall
+    elif is_arch; then
+        arch-dbox_groupstall
     elif is_ublue; then
         brew-dbox_groupstall
     elif is_atomic; then
         pixi-dbox_groupstall
+    elif is_fedora; then
+        fedora-dbox_groupstall
     else
         brew-dbox_groupstall
     fi
