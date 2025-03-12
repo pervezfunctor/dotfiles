@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+export DOT_DIR=${USE_DOT_DIR:-$HOME/.ilm}
 
 BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 
@@ -546,26 +546,26 @@ stownf() {
 }
 
 mis() {
-    if ! has_cmd mise; then
+    if ! has_cmd ~/.local/bin/mise; then
         warn "mise not installed, skipping mise packages"
         return 1
     fi
 
     for pkg in "$@"; do
         slog "Installing mise package $pkg"
-        has_cmd "$pkg" || mise use -g "$pkg"
+        has_cmd "$pkg" || ~/.local/bin/mise use -g "$pkg"
     done
 }
 
 mi() {
-    if ! has_cmd mise; then
+    if ! has_cmd ~/.local/bin/mise; then
         warn "mise not installed, skipping mise packages"
         return 1
     fi
 
     for pkg in "$@"; do
         slog "Installing mise package $pkg"
-        mise use -g "$pkg"
+        ~/.local/bin/mise use -g "$pkg"
     done
 }
 
