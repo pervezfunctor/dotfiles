@@ -146,7 +146,7 @@ fi
 
 if has_cmd distrobox; then
     alias dbox='distrobox'
-    alias dboxe='distrobox enter'
+    alias dboxe='distrobox enter -nw --clean-path'
     alias dboxl='distrobox list'
     alias dboxr='distrobox run'
     alias dboxc='distrobox create'
