@@ -31,7 +31,7 @@ webi_install() {
 }
 
 mise_install() {
-    if has_cmd mise || has_cmd ~/.local/bin/mise; then
+    if has_cmd ~/.local/bin/mise; then
         eval "$(~/.local/bin/mise activate bash)"
         return 0
     fi
@@ -48,7 +48,7 @@ mise_install() {
 }
 
 pixi_install() {
-    has_cmd pixi && return 0
+    has_cmd ~/.pixi/bin/pixi && return 0
 
     slog "Installing pixi"
     curl -fsSL https://pixi.sh/install.sh | bash
