@@ -1472,7 +1472,8 @@ dbox_base() {
     smd ~/.config
     stowdf zsh emacs-slim
 
-    if is_ubuntu; then
+# older version of stow, that does not work with dot directories.
+    if is_ubuntu || is_debian || is_rocky; then
         srm ~/.config/tmux.conf
         ln -s ~/.ilm/tmux/dot-config/tmux/tmux.conf ~/.config/tmux.conf
     else
