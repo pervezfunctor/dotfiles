@@ -1498,7 +1498,7 @@ dbox_base() {
         stowdf tmux
     fi
 
-    has_cmd zsh && sudo chsh -s "$(command -v zsh)"
+    has_cmd zsh && chsh -s "$(command -v zsh)" "$USER"
 }
 
 arch-dbox_groupstall() {
