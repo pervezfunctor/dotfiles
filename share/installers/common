@@ -1463,9 +1463,9 @@ ubuntu_packages() {
 }
 
 debian_packages() {
-    #  git-delta eza just treesitter-cli
+    #  git-delta eza just treesitter-cli fzf
     si git gh unzip wget curl trash-cli tar stow gcc make file zsh tmux \
-        tree bat fzf ripgrep zoxide fd-find htop sd golang-go
+        tree bat ripgrep zoxide fd-find htop sd golang-go
     si --no-install-recommends emacs-nox
 
     starship_install
