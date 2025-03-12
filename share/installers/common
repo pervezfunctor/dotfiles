@@ -785,6 +785,7 @@ bash_config_install() {
     slog "Configuring bash"
 
     if ! bash_config_exists; then
+        echo "export DOT_DIR=$DOT_DIR" >>~/.bashrc
         echo "source ~/.ilm/share/bashrc" >>~/.bashrc
     fi
 
@@ -793,6 +794,8 @@ bash_config_install() {
 
 zsh_config_install() {
     slog "zsh config"
+
+    # @TODO: prepend DOT_DIR
 
     srm "$HOME/.zshrc"
     smd "$HOME/.zsh"
