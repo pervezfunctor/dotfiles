@@ -1426,7 +1426,7 @@ dbox_default() {
 fedora_packages() {
     si git gh git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd
+        tree bat eza fzf ripgrep zoxide fd htop sd bat
 
     starship_install
 }
@@ -1434,31 +1434,31 @@ fedora_packages() {
 pixi_packages() {
     pi git gh lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs tree-sitter-cli zsh starship tmux go-gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat
 }
 
 brew_packages() {
     si git gh lazygit git-delta unzip wget curl trash-cli stow \
         gcc make file just emacs tree-sitter zsh starship tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat
 }
 
 tw_packages() {
     si git gh lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat
 }
 
 arch_packages() {
     si git github-cli lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat
 }
 
 ubuntu_packages() {
     DEBIAN_FRONTEND=noninteractive si git gh git-delta unzip wget curl \
         trash-cli tar stow gcc make file just tree-sitter-cli zsh tmux \
-        tree bat eza fzf ripgrep zoxide fd-find htop sd emacs-nox
+        tree bat eza fzf ripgrep zoxide fd-find htop sd bat emacs-nox
 
     starship_install
 
