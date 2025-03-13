@@ -40,6 +40,7 @@ spath_export "$HOME/Applications"
 spath_export "$HOME/.local/share/pypoetry"
 spath_export "$XDG_CONFIG_HOME/Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin"
 spath_export "$HOME/.console-ninja/.bin"
+spath_export "$HOME/.pixi/bin"
 
 if [ -z "$XDG_DATA_HOME" ]; then
     export XDG_DATA_HOME="$HOME/.local/share"
