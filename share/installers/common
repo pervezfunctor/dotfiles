@@ -6,7 +6,9 @@ brew_install() {
     slog "Installing homebrew"
     NONINTERACTIVE=1 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-    if ! eval_brew; then
+    eval_brew
+
+    if ! has_cmd brew; then
         warn "homebrew not installed, trying again"
         /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         if eval_brew; then
@@ -16,6 +18,7 @@ brew_install() {
         fi
     fi
 
+    dir_check /home/linuxbrew/.linuxbrew
     cmd_check brew
 }
 
@@ -1453,32 +1456,30 @@ arch_packages() {
 }
 
 ubuntu_packages() {
-    si git gh git-delta unzip wget curl trash-cli tar stow \
-        gcc make file just tree-sitter-cli zsh tmux \
-        tree bat eza fzf ripgrep zoxide fd-find htop sd golang-go
-    si --no-install-recommends emacs-nox
+    DEBIAN_FRONTEND=noninteractive si git gh git-delta unzip wget curl \
+        trash-cli tar stow gcc make file just tree-sitter-cli zsh tmux \
+        tree bat eza fzf ripgrep zoxide fd-find htop sd emacs-nox
 
     starship_install
-    go install github.com/charmbracelet/gum@latest
+
+    # si golang-go
+    # go install github.com/charmbracelet/gum@latest
 }
 
 debian_packages() {
     #  git-delta eza just treesitter-cli fzf
     si git gh unzip wget curl trash-cli tar stow gcc make file zsh tmux \
-        tree bat ripgrep zoxide fd-find htop sd golang-go
-    si --no-install-recommends emacs-nox
+        tree bat ripgrep zoxide fd-find htop sd
 
     starship_install
 }
 
-dbox_base() {
-    is_inside_distrobox || err_exit "This script is only for distrobox containers"
-    [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
-
+box_base() {
     cd "$HOME" || warn "could not cd to $HOME"
 
     "$1_packages"
-    gh extension install github/gh-copilot
+
+    has_cmd gh && gh extension install github/gh-copilot
 
     dotfiles_install
 
@@ -1499,6 +1500,13 @@ dbox_base() {
     fi
 
     has_cmd zsh && chsh -s "$(command -v zsh)" "$USER"
+}
+
+dbox_base() {
+    is_inside_distrobox || err_exit "This script is only for distrobox containers"
+    [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
+
+    box_base ubuntu
 }
 
 arch-dbox_groupstall() {
@@ -1537,6 +1545,11 @@ ubuntu-dbox_groupstall() {
     is_ubuntu || err_exit "This script is only for Ubuntu"
 
     dbox_base ubuntu
+}
+
+wsl_groupstall() {
+    is_wsl || err_exit "This script is only for WSL"
+    box_base ubuntu
 }
 
 dbox_groupstall() {
