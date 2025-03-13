@@ -1718,7 +1718,7 @@ nix_groupstall() {
 }
 
 min-group_check() {
-    cmd_check micro webi zip unar gum
+    cmd_check micro zip unar
 }
 
 min_groupstall() {
