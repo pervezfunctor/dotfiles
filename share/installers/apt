@@ -60,7 +60,7 @@ essential_install() {
     core_install
     sys_python_install
 
-    si zip unar micro nala p7zip
+    si zip unar micro nala p7zip gawk
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 
     slog "Essential packages installation done!"
@@ -79,7 +79,8 @@ cli_install() {
     # old stow version does not work on dot-* folders;
     sudo apt purge -y stow fzf
 
-    si gawk tmux pkg-config urlview zsh git
+    # ugrep tealdeer
+    si tmux pkg-config urlview zsh git plocate
 
     if ! has_cmd brew; then
         warn "using brew for newer versions"

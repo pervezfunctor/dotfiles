@@ -220,7 +220,7 @@ brew_shell_install() {
     bis jq just lsd shfmt shellcheck lazydocker
     bis cheat curlie duf sd xh doggo atuin direnv dust
     bis procs hyperfine pixi yq yazi htop dysk
-    has_cmd tv || bi
+    has_cmd tv || bi television
 
     has_cmd spf || bi superfile
     has_cmd gdu || has_cmd gdu-go || bi gdu
@@ -1426,33 +1426,43 @@ dbox_default() {
 fedora_packages() {
     si git gh git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd bat
+        tree bat eza fzf ripgrep zoxide fd htop sd bat tealdeer plocate cheat
 
     starship_install
+}
+
+multipass_install() {
+    has_cmd snap || snap_install
+
+    if has_cmd snap; then
+        sudo snap install multipass
+    else
+        warn "snap not installed, skipping multipass installation"
+    fi
 }
 
 pixi_packages() {
     pi git gh lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs tree-sitter-cli zsh starship tmux go-gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer navi
 }
 
 brew_packages() {
     si git gh lazygit git-delta unzip wget curl trash-cli stow \
         gcc make file just emacs tree-sitter zsh starship tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer cheat navi
 }
 
 tw_packages() {
     si git gh lazygit git-delta unzip wget curl trash-cli tar stow \
-        gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat
+        gcc make file just emacs-nox tree-sitter zsh starship tmux gum cheat \
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer plocate
 }
 
 arch_packages() {
     si git github-cli lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat plocate tealdeer
 }
 
 ubuntu_packages() {
@@ -1491,7 +1501,7 @@ box_base() {
     smd ~/.config
     stowdf zsh emacs-slim
 
-    # older version of stow, that does not work with dot directories.
+    # older version of stow don't work with dot directories.
     if is_ubuntu || is_debian || is_rocky; then
         srm ~/.config/tmux.conf
         ln -s ~/.ilm/tmux/dot-config/tmux/tmux.conf ~/.config/tmux.conf
@@ -1732,7 +1742,7 @@ shell-group_check() {
     cmd_check gh nvim zsh tree-sitter tmux lazygit sd lsd bat fd
     cmd_check fzf zoxide gum bat brew btm htop btm rg starship
     cmd_check eza fd fzf atuin delta
-    # cmd_check cheat choose curlie direnv doggo dotenv  procs
+    # cmd_check cheat choose curlie direnv doggo dotenv procs
     # cmd_check duf dust gawk gdu hyperfine jq just shellcheck shfmt yq
 
     has_cmd zsh && zsh_config_install

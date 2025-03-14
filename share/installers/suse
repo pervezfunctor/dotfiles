@@ -47,7 +47,7 @@ essential_install() {
     sys_python_install
     # snap_install
 
-    si unar zip micro-editor 7zip
+    si unar zip micro-editor 7zip gawk
     si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel gum
 
     slog "Essential packages installation done!"
@@ -56,10 +56,10 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using zypper"
 
-    si gh neovim zsh tree-sitter tmux sd bat fd fzf ripgrep zoxide
-    si lazygit bottom lsd git-delta htop xh
-    si lua54-luarocks python3-neovim ImageMagick
-    si hyperfine cheat curlie jq ShellCheck shfmt urlview gawk gdu duf
+    si gh neovim zsh tree-sitter tmux sd bat fd fzf ripgrep zoxide just procs
+    si lazygit bottom lsd git-delta htop xh plocate tealdeer urlview nushell
+    si lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk shfmt
+    si hyperfine cheat curlie jq ShellCheck
 
     gh extension install github/gh-copilot
 }
