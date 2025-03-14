@@ -2,7 +2,11 @@ alias git-unstage = git reset HEAD
 alias git-discard = git checkout --
 alias gst = git status
 alias gsu = git status -u
-alias tsgfm = git stash; (if ((git pull --rebase) or (git pull)) { git stash pop })
+def tsgfm [] {
+    git stash
+    do { git pull --rebase } catch { git pull }
+    git stash pop
+}
 
 alias gun = git-unstage
 alias gur = git-discard

@@ -1,6 +1,5 @@
 # Nushell Environment Config File
 
-
 # Directories to search for scripts when calling source or use
 # The default for this is $nu.default-config-dir/scripts
 $env.NU_LIB_DIRS = [
@@ -13,6 +12,8 @@ $env.NU_LIB_DIRS = [
 $env.NU_PLUGIN_DIRS = [
     ($nu.default-config-dir | path join 'plugins') # add <nushell-config-dir>/plugins
 ]
+
+$env.config.show_banner = false
 
 # To add entries to PATH (on Windows you might use Path), you can use the following pattern:
 # $env.PATH = ($env.PATH | split row (char esep) | prepend '/some/path')
@@ -59,15 +60,7 @@ $env.LANG = "en_US.UTF-8"
 $env.HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK = "1"
 $env.ELECTRON_OZONE_PLATFORM_HINT = "auto"
 
-let homebrew_mac = "/opt/homebrew/bin/brew"
-let homebrew_linux = "/home/linuxbrew/.linuxbrew/bin/brew"
-
-if ($homebrew_mac | path exists) {
-    ^$homebrew_mac shellenv | lines | parse "export {name}={value}" | each { |it|
-        load-env { $it.name: ($it.value | str replace -a '"' '') }
-    }
-} else if ($homebrew_linux | path exists) {
-    ^$homebrew_linux shellenv | lines | parse "export {name}={value}" | each { |it|
-        load-env { $it.name: ($it.value | str replace -a '"' '') }
-    }
-}
+$env.PATH = ($env.PATH | prepend [
+    "/opt/homebrew/bin"
+    "/home/linuxbrew/.linuxbrew/bin"
+])
