@@ -180,10 +180,11 @@ kitty_install() {
 mise_shell_install() {
     slog "shell tools with mise"
 
-    mis tree-sitter just lazygit lazydocker starship ripgrep
-    mis shellcheck gum xh bottom fzf hyperfine
-    mis cheat duf eza dust zoxide gdu choose yazi
+    mis tree-sitter just lazygit lazydocker starship ripgrep gdu choose yazi
+    mis shellcheck gum xh bottom fzf hyperfine cheat duf eza dust zoxide
+
     mi superfile
+
     has_cmd nu || mise use -g cargo:nu
 
     slog "shell tools with mise done!"
@@ -217,7 +218,7 @@ brew_shell_install() {
 
     brew_shell_slim_install
 
-    bis jq just lsd shfmt shellcheck lazydocker
+    bis jq just shfmt shellcheck lazydocker broot
     bis cheat curlie duf sd xh doggo atuin direnv dust
     bis procs hyperfine pixi yq yazi htop dysk
     has_cmd tv || bi television
@@ -235,12 +236,29 @@ brew_shell_install() {
     slog "shell tools with brew done!"
 }
 
-pixi_shell_install() {
+pixi_shell_slim_install() {
     has_cmd trash || pi trash-cli
     has_cmd || pi stow
     has_cmd rg || pi ripgrep
+    has_cmd gum || pi go-gum
+    has_cmd ug || pi ugrep
 
-    pis lazygit eza fzf zoxide starship bat fd gh carapace
+    pis lazygit eza fzf zoxide starship bat fd gh carapace git-delta
+}
+
+pixi_shell_install() {
+    pixi_shell_slim_install
+
+    pis broot just shellcheck lazydocker broot gdu nvim luarocks micro glances
+    pis cheat curlie duf sd xh atuin direnv dust procs hyperfine yq yazi htop jq
+
+    has_cmd tree-sitter || pi tree-sitter-cli
+    has_cmd tv || pi television
+    has_cmd spf || pi superfile
+    has_cmd tldr || pi tealdeer
+    has_cmd choose || pi choose-rust
+    has_cmd btm || pi bottom
+    has_cmd nu || pi nushell
 }
 
 go_shell_install() {
@@ -274,7 +292,6 @@ rust_shell_install() {
     has_cmd procs || cargoi procs
     has_cmd btm || cargoi bottom
     has_cmd xh || cargoi xh
-    has_cmd lsd || cargoi lsd
 
     slog "shell tools with rust done!"
 
@@ -1723,6 +1740,8 @@ nix_groupstall() {
     nix_install
     home_manager_install
     devbox_install
+
+    hms
 
     cmd_check home-manager nix devbox
 }

@@ -51,7 +51,7 @@ cli_install() {
     slog "Installing cli tools using pacman"
 
     si neovim github-cli shellcheck shfmt python-pynvim tree-sitter-cli zsh zsh-completions luarocks duf lazygit starship eza ugrep git-delta navi
-    si sd lsd gdu bat hyperfine fd fzf ripgrep zoxide htop nushell bottom
+    si sd gdu bat hyperfine fd fzf ripgrep zoxide htop nushell bottom
     si plocate tealdeer television dysk yazi pixi procs dust direnv atuin
 
     gh extension install github/gh-copilot

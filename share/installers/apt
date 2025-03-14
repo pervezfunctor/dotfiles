@@ -85,7 +85,7 @@ cli_install() {
     if ! has_cmd brew; then
         warn "using brew for newer versions"
 
-        si sd lsd gdu bat hyperfine fd-find fzf ripgrep zoxide
+        si sd gdu bat hyperfine fd-find fzf ripgrep zoxide
         si gh shellcheck just htop shfmt tree-sitter-cli
         gh extension install github/gh-copilot
     fi

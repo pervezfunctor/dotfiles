@@ -57,7 +57,7 @@ cli_install() {
     slog "Installing cli tools using zypper"
 
     si gh neovim zsh tree-sitter tmux sd bat fd fzf ripgrep zoxide just procs
-    si lazygit bottom lsd git-delta htop xh plocate tealdeer urlview nushell
+    si lazygit bottom git-delta htop xh plocate tealdeer urlview nushell
     si lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk shfmt
     si hyperfine cheat curlie jq ShellCheck
 
