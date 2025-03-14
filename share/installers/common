@@ -9,21 +9,24 @@ brew_install() {
     eval_brew
 
     if ! has_cmd brew; then
-        warn "homebrew not installed, trying again"
+        warn "homebrew not installed, trying again, might require sudo password"
         /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        if eval_brew; then
+
+        eval_brew
+        if has_cmd brew; then
             slog "homebrew installation done!"
         else
             warn "homebrew installation failed"
         fi
     fi
 
-    dir_check /home/linuxbrew/.linuxbrew
+    is_linux && dir_check /home/linuxbrew/.linuxbrew
+    is_mac && dir_check /opt/homebrew
+
     cmd_check brew
 }
 
 webi_install() {
-    has_cmd webi && return 0
     has_cmd ~/.local/bin/webi && return 0
 
     curl -sS https://webi.sh/webi | sh
@@ -43,11 +46,13 @@ mise_install() {
     curl https://mise.run | MISE_QUIET=1 sh
     eval "$(~/.local/bin/mise activate bash)"
 
-    mise use -g usage
-    mise settings experimental=true
-    mise use -g cargo-binstall
-
-    cmd_check mise
+    if has_cmd mise; then
+        mise use -g usage
+        mise settings experimental=true
+        mise use -g cargo-binstall
+    else
+        warn "mise installation failed"
+    fi
 }
 
 pixi_install() {
@@ -55,7 +60,10 @@ pixi_install() {
 
     slog "Installing pixi"
     curl -fsSL https://pixi.sh/install.sh | bash
+
     slog "pixi installation done!"
+
+    cmd_check ~/.pixi/bin/pixi
 }
 
 devbox_install() {
@@ -65,6 +73,8 @@ devbox_install() {
     curl -fsSL https://get.jetify.com/devbox | bash
 
     slog "devbox installation done!"
+
+    cmd_check devbox
 }
 
 pkgs_install() {
@@ -75,17 +85,20 @@ pkgs_install() {
     else
         curl https://pkgx.sh | sh
     fi
+
+    cmd_check pkgx
 }
 
 uv_install() {
     has_cmd uv && return 0
 
     if has_cmd pipx; then
-        pip install --upgrade --force-reinstall uv
-        cmd_check uv
+        pipx install uv
     else
         curl -LsSf https://astral.sh/uv/install.sh | sh
     fi
+
+    cmd_check uv
 }
 
 python_install() {
@@ -115,10 +128,14 @@ nix_install() {
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
     source_if_exists /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 
-    nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
-    nix-channel --update
+    # if has_cmd nix-channel; then
+    #     nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+    #     nix-channel --update
+    # fi
 
     slog "nix installation done!"
+
+    cmd_check nix nix-shell nix-env
 }
 
 nix-no-init_install() {
@@ -128,7 +145,7 @@ nix-no-init_install() {
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
     slog "nix installation done!"
 
-    cmd_check nix
+    cmd_check nix nix-shell nix-env
 }
 
 flathub_install() {
@@ -165,7 +182,7 @@ kitty_install() {
     has_cmd kitty && return 1
     has_cmd ~.local/kitty.app/bin/kitty && return 1
 
-    curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+    curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin
 
     # force link
     ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
@@ -175,6 +192,8 @@ kitty_install() {
     cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
 
     echo 'kitty.desktop' >~/.config/xdg-terminals.list
+
+    cmd_check kitty
 }
 
 mise_shell_install() {
@@ -303,9 +322,7 @@ pnpm_shell_install() {
 
     slog "shell tools with pnpm"
     pnpm install -g degit neovim
-    has_cmd tldr || pnpm install -g tldr
-    has_cmd gtop || pnpm install -g gtop
-    cmd_check degit tldr gtop
+    cmd_check degit
 }
 
 starship_install() {
@@ -316,9 +333,10 @@ starship_install() {
 }
 
 webi_shell_install() {
+    wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq rg arc
+
     # webi node golang go-essentials shellcheck shfmt pathman
     # webi bat curlie delta jq lsd rg gh fd sd
-    wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq rg arc
 
     # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing k9s kubectx kubens
     # webi pyenv
@@ -330,12 +348,14 @@ shell_install() {
     brew_install
     webi_install
     mise_install
+    # pixi_install
 
     cli_install
 
     webi_shell_install
     brew_shell_install
     # mise_shell_install
+    # pixi_shell_install
 
     starship_install
 
@@ -396,26 +416,25 @@ apps_install() {
 
     apps_slim_install
 
+    fpi org.wezfurlong.wezterm
     fpi io.github.shiftey.Desktop
     fpi io.github.dvlv.boxbuddyrs
     fpi io.github.getnf.embellish
+
+    alias wezterm="flatpak run org.wezfurlong.wezterm"
 
     slog "Flatpak apps installation done!"
 }
 
 more_apps_install() {
-    fpi app.devsuite.Ptyxis
     fpi org.wireshark.Wireshark
     fpi sh.cider.Cider
     fpi com.bitwarden.desktop
-    fpi dev.neovide.neovide
-    fpi io.dbeaver.DBeaverCommunity
     fpi io.podman_desktop.PodmanDesktop
-    fpi io.github.zyedidia.micro
-    fpi org.wezfurlong.wezterm
 
-    alias wezterm="flatpak run org.wezfurlong.wezterm"
-
+    # fpi io.dbeaver.DBeaverCommunity
+    # fpi dev.neovide.neovide
+    # fpi io.github.zyedidia.micro
     # fpi com.jetbrains.CLion
     # fpi com.google.Chrome
 }
@@ -443,22 +462,6 @@ incus_config_install() {
     # sudo incus admin init --minimal
 
     slog "incus config done!"
-}
-
-treesitter_install() {
-    has_cmd tree-sitter && return 0
-
-    if has_cmd cargo; then
-        cargo install tree-sitter-cli
-    elif has_cmd pnpm; then
-        pnpm install -g tree-sitter-cli
-    elif has_cmd npm; then
-        npm install -g tree-sitter-cli
-    else
-        slog "tree-sitter-cli not installed"
-    fi
-
-    cmd_check tree-sitter
 }
 
 neovim_install() {
@@ -590,7 +593,11 @@ go_install() {
 
         slog "go installation done!"
 
-        cmd_check go
+    fi
+
+    if ! has_cmd go; then
+        warn "go not installed, skipping go dev tools"
+        return 1
     fi
 
     slog "Installing go dev tools..."
@@ -661,6 +668,8 @@ code_server_install() {
     curl -sSL https://code-server.dev/install.sh | sh
     slog "code-server installation done!"
 
+    cmd_check code-server
+
     # slog "Installing coder"
     # curl -L https://coder.com/install.sh | sh
     # slog "coder installation done!"
@@ -701,6 +710,26 @@ cmake_install() {
     slog "cmake installation done!"
 
     cmd_check cmake
+}
+
+atomic_distrobox_install() {
+    has_cmd distrobox && return 0
+
+    slog "Installing distrobox"
+
+    curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
+
+    slog "distrobox installation done!"
+}
+
+multipass_install() {
+    has_cmd snap || snap_install
+
+    if has_cmd snap; then
+        sudo snap install multipass
+    else
+        warn "snap not installed, skipping multipass installation"
+    fi
 }
 
 permissive_selinux() {
@@ -1143,16 +1172,6 @@ pyenv_miniconda_install() {
     cmd_check conda
 }
 
-atomic_distrobox_install() {
-    has_cmd distrobox && return 0
-
-    slog "Installing distrobox"
-
-    curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
-
-    slog "distrobox installation done!"
-}
-
 mini_install() {
     pyenv_install
     pyenv_miniconda_install
@@ -1446,16 +1465,6 @@ fedora_packages() {
         tree bat eza fzf ripgrep zoxide fd htop sd bat tealdeer plocate cheat
 
     starship_install
-}
-
-multipass_install() {
-    has_cmd snap || snap_install
-
-    if has_cmd snap; then
-        sudo snap install multipass
-    else
-        warn "snap not installed, skipping multipass installation"
-    fi
 }
 
 pixi_packages() {
