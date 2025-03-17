@@ -24,3 +24,4 @@ foo.*
 data
 yazi/dot-config/yazi/package.toml
 *.bak
+vim/*.un~
