@@ -1,0 +1,127 @@
+" Core settings
+set nocompatible
+syntax on
+filetype plugin indent on
+
+" Backup and swap files
+set nobackup
+set noswapfile
+set undofile
+" set undodir=~/.vim/undodir
+
+" UI and usability
+set number
+set relativenumber
+set cursorline
+set signcolumn=yes
+set scrolloff=8
+set sidescrolloff=8
+" set colorcolumn=80
+set noerrorbells
+set title
+set showmode
+set showcmd
+set wildmenu
+set wildmode=longest:full,full
+set mouse=a
+set laststatus=2
+
+" Search
+set ignorecase
+set smartcase
+set hlsearch
+set incsearch
+set showmatch
+
+" Indentation
+set tabstop=4
+set softtabstop=4
+set shiftwidth=4
+set expandtab
+set autoindent
+set smartindent
+set breakindent
+
+" Text rendering
+set encoding=utf-8
+set fileencoding=utf-8
+set fileencodings=utf-8,latin1
+set wrap
+set linebreak
+
+" Performance
+set lazyredraw
+set ttyfast
+set timeoutlen=500
+set ttimeoutlen=50
+set updatetime=300
+
+" Clipboard
+set clipboard=unnamedplus
+
+" Split behavior
+set splitbelow
+set splitright
+
+" Key mappings
+let mapleader = " "
+nnoremap <leader><space> :nohlsearch<CR>
+nnoremap <C-s> :w<CR>
+nnoremap <C-q> :q<CR>
+nnoremap <C-a> ggVG
+nnoremap <C-n> :set number! relativenumber!<CR>
+
+" Window navigation
+nnoremap <C-h> <C-w>h
+nnoremap <C-l> <C-w>l
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+
+" Terminal
+tnoremap <Esc> <C-\><C-n>
+
+" Auto commands
+augroup vimrc
+  autocmd!
+  " Highlight trailing whitespace
+  autocmd BufWinEnter * match ErrorMsg /\s\+$/
+  " Auto reload file when changed outside vim
+  autocmd FocusGained,BufEnter * checktime
+  " Return to last edit position when opening files
+  autocmd BufReadPost *
+    \ if line("'\"") > 0 && line("'\"") <= line("$") |
+    \   exe "normal! g`\"" |
+    \ endif
+augroup END
+
+" Completion
+set path+=**
+set complete-=i
+set completeopt=menu,menuone,noselect
+
+" File type specific
+autocmd FileType markdown,text setlocal spell
+
+" Theme settings
+syntax enable
+set termguicolors  " Use GUI colors in terminal (if supported)
+set background=dark
+colorscheme desert  " A good default dark theme
+
+" Maintain terminal transparency
+highlight Normal ctermbg=NONE guibg=NONE
+highlight NonText ctermbg=NONE guibg=NONE
+highlight LineNr ctermbg=NONE guibg=NONE
+highlight SignColumn ctermbg=NONE guibg=NONE
+highlight EndOfBuffer ctermbg=NONE guibg=NONE
+
+" Ensure transparency persists after colorscheme changes
+augroup TransparentBG
+  autocmd!
+  autocmd ColorScheme * highlight Normal ctermbg=NONE guibg=NONE
+  autocmd ColorScheme * highlight NonText ctermbg=NONE guibg=NONE
+  autocmd ColorScheme * highlight LineNr ctermbg=NONE guibg=NONE
+  autocmd ColorScheme * highlight SignColumn ctermbg=NONE guibg=NONE
+  autocmd ColorScheme * highlight EndOfBuffer ctermbg=NONE guibg=NONE
+augroup END
+
