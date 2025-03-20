@@ -14,11 +14,21 @@ return {
   -- add everforest
   { "neanias/everforest-nvim" },
 
+  -- add catppuccin
+  {
+    "catppuccin/nvim",
+    name = "catppuccin",
+    priority = 1000,
+    opts = {
+      transparent_background = false
+    }
+  },
+
   -- Configure LazyVim to load everforest
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "everforest",
+      colorscheme = "catppuccin",
     },
   },
 
