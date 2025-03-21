@@ -153,6 +153,47 @@ Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
     Write-Host "PSReadLine configured for autosuggestions and syntax highlighting!" -ForegroundColor Green
 }
 
+
+# Function to create symbolic links (similar to GNU stow)
+function Create-ConfigLink {
+    param (
+        [string]$sourcePath,
+        [string]$targetPath
+    )
+
+    if (!(Test-Path $sourcePath)) {
+        Write-Host "Source path $sourcePath does not exist. Skipping." -ForegroundColor Yellow
+        return
+    }
+
+    # Create target directory if it doesn't exist
+    $targetDir = Split-Path -Parent $targetPath
+    if (!(Test-Path $targetDir)) {
+        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+    }
+
+    # Remove existing target if it exists
+    if (Test-Path $targetPath) {
+        $backupPath = "$targetPath.bak"
+        if (Test-Path $backupPath) {
+            Remove-Item $backupPath -Recurse -Force
+        }
+        Write-Host "Backing up existing $targetPath to $backupPath" -ForegroundColor Yellow
+        Move-Item $targetPath $backupPath -Force
+    }
+
+    # Create symbolic link
+    try {
+        New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -Force | Out-Null
+        Write-Host "Created symbolic link: $targetPath -> $sourcePath" -ForegroundColor Green
+    } catch {
+        Write-Host "Failed to create symbolic link. Falling back to copy." -ForegroundColor Red
+        Write-Host "Note: Run PowerShell as Administrator to create symbolic links." -ForegroundColor Yellow
+        Copy-Item $sourcePath $targetPath -Recurse -Force
+        Write-Host "Copied $sourcePath to $targetPath" -ForegroundColor Yellow
+    }
+}
+
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
@@ -235,6 +276,138 @@ function Install-DevTools {
     } else {
         Write-Host "zoom is already installed." -ForegroundColor Yellow
     }
+
+    # Install ripgrep
+    if (!(Get-Command rg -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing ripgrep..." -ForegroundColor Cyan
+        winget install BurntSushi.ripgrep
+        Write-Host "ripgrep installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "ripgrep is already installed." -ForegroundColor Yellow
+    }
+
+    # Install fzf
+    if (!(Get-Command fzf -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing fzf..." -ForegroundColor Cyan
+        winget install junegunn.fzf
+        Write-Host "fzf installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "fzf is already installed." -ForegroundColor Yellow
+    }
+
+    # Install fd
+    if (!(Get-Command fd -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing fd..." -ForegroundColor Cyan
+        winget install sharkdp.fd
+        Write-Host "fd installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "fd is already installed." -ForegroundColor Yellow
+    }
+
+    # Install bat
+    if (!(Get-Command bat -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing bat..." -ForegroundColor Cyan
+        winget install sharkdp.bat
+        Write-Host "bat installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "bat is already installed." -ForegroundColor Yellow
+    }
+
+    # Install gh
+    if (!(Get-Command gh -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing gh..." -ForegroundColor Cyan
+        winget install GitHub.cli
+        Write-Host "gh installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "gh is already installed." -ForegroundColor Yellow
+    }
+
+
+    # Install delta
+    if (!(Get-Command delta -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing delta..." -ForegroundColor Cyan
+        winget install dandavison.delta
+        Write-Host "delta installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "delta is already installed." -ForegroundColor Yellow
+    }
+
+    # Install uv
+    if (!(Get-Command uv -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing uv..." -ForegroundColor Cyan
+        winget install astral-sh.uv
+        Write-Host "uv installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "uv is already installed." -ForegroundColor Yellow
+    }
+
+    # Install lazygit
+    if (!(Get-Command lazygit -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing lazygit..." -ForegroundColor Cyan
+        winget install jesseduffield.lazygit
+        Write-Host "lazygit installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "lazygit is already installed." -ForegroundColor Yellow
+    }
+
+    # Install lazydocker
+    if (!(Get-Command lazydocker -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing lazydocker..." -ForegroundColor Cyan
+        winget install jesseduffield.lazydocker
+        Write-Host "lazydocker installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "lazydocker is already installed." -ForegroundColor Yellow
+    }
+
+    # Install neovim
+    if (!(Get-Command nvim -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing neovim..." -ForegroundColor Cyan
+        winget install Neovim.Neovim
+        Write-Host "neovim installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "neovim is already installed." -ForegroundColor Yellow
+    }
+
+    # Install emacs
+    if (!(Get-Command emacs -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing emacs..." -ForegroundColor Cyan
+        winget install GNU.Emacs
+        Write-Host "emacs installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "emacs is already installed." -ForegroundColor Yellow
+    }
+
+    Write-Host "Development tools installed!" -ForegroundColor Green
+}
+
+Setup-Dotfiles {
+    # Clone dotfiles if not already present, else update
+    if (Test-Path "$env:USERPROFILE\.ilm") {
+        Write-Host "Dotfiles already present. Updating..." -ForegroundColor Cyan
+        Set-Location "$env:USERPROFILE\.ilm"
+        # pull only if git repo is clean
+        if ((git status --porcelain) -eq $null) {
+            git pull --rebase
+        }
+        Write-Host "Dotfiles updated successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "Cloning dotfiles..." -ForegroundColor Cyan
+        git clone https://github.com/pervezfunctor/dotfiles.git "$env:USERPROFILE\.ilm"
+        Write-Host "Dotfiles cloned successfully!" -ForegroundColor Green
+    }
+
+    # Setup WezTerm config
+    Write-Host "Setting up WezTerm config..." -ForegroundColor Cyan
+    Create-ConfigLink -sourcePath "$env:USERPROFILE\.ilm\wezterm\dot-config\wezterm.lua" -targetPath "$env:USERPROFILE\.config\wezterm"
+
+    # Setup Neovim config
+    Write-Host "Setting up Neovim config..." -ForegroundColor Cyan
+    Create-ConfigLink -sourcePath "$env:USERPROFILE\.ilm\nvim\dot-config\nvim" -targetPath "$env:LOCALAPPDATA\nvim"
+
+    # Setup Emacs config
+    Write-Host "Setting up Emacs config..." -ForegroundColor Cyan
+    Create-ConfigLink -sourcePath "$env:USERPROFILE\.ilm\emacs-slim\dot-emacs" -targetPath "$env:APPDATA\.emacs"
+
 }
 
 function Install-Multipass {
