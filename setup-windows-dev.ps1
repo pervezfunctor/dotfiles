@@ -1,65 +1,69 @@
 #Requires -RunAsAdministrator
 
 function Install-Chocolatey {
-    Write-Host "Installing Chocolatey..." -ForegroundColor Cyan
+
     if (Get-Command choco -ErrorAction SilentlyContinue) {
         Write-Host "Chocolatey is already installed." -ForegroundColor Yellow
         return
     }
+
+    Write-Host "Installing Chocolatey..." -ForegroundColor Cyan
 
     Set-ExecutionPolicy Bypass -Scope Process -Force
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
     Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
     # refreshenv is not available until after installation and shell restart, so we manually update the path
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
     Write-Host "Chocolatey installed successfully!" -ForegroundColor Green
 }
 
 function Install-Scoop {
-    Write-Host "Installing Scoop..." -ForegroundColor Cyan
     if (Get-Command scoop -ErrorAction SilentlyContinue) {
         Write-Host "Scoop is already installed." -ForegroundColor Yellow
         return
     }
 
+    Write-Host "Installing Scoop..." -ForegroundColor Cyan
+
     Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
     Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+
     Write-Host "Scoop installed successfully!" -ForegroundColor Green
 }
 
-function Install-Ubuntu24 {
-    Write-Host "Installing Ubuntu 24.04 LTS..." -ForegroundColor Cyan
-
-    # Check if WSL is installed
-    if (!(Get-Command wsl -ErrorAction SilentlyContinue)) {
-        Write-Host "WSL is not installed. Installing WSL first..." -ForegroundColor Yellow
-        wsl --install
-        return $true  # Restart needed after WSL installation
-    }
-
-    # Check if Ubuntu 24.04 is already installed
-    # Use Out-String to convert the output to a string for better pattern matching
-    $installedDistros = wsl --list | Out-String
-    if ($installedDistros -match "Ubuntu-24.04" -or $installedDistros -match "Ubuntu 24.04") {
-        Write-Host "Ubuntu 24.04 is already installed." -ForegroundColor Yellow
+function Install-WSL {
+    if (Get-Command wsl -ErrorAction SilentlyContinue)) {
         return $false
     }
 
-    # Check available distributions
-    $availableDistros = wsl --list --online | Out-String
+    Write-Host "WSL is not installed. Installing WSL first..." -ForegroundColor Yellow
+    wsl --install
+    return $true  # Restart needed after WSL installation
+}
 
-    # Look for Ubuntu 24.04 with flexible matching
-    if ($availableDistros -match "Ubuntu-24.04" -or $availableDistros -match "Ubuntu 24.04") {
+function Install-Ubuntu24 {
+    if (!(Get-Command wsl -ErrorAction SilentlyContinue)) {
+        Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
+        return
+    }
+
+    $installedDistros = wsl --list --quiet
+    if ($installedDistros -contains "Ubuntu-24.04" -or $installedDistros -contains "Ubuntu 24.04") {
+        Write-Host "Ubuntu 24.04 is already installed." -ForegroundColor Yellow
+        return
+    }
+
+    $availableDistros = wsl --list --online --quiet
+
+    if ($availableDistros -contains "Ubuntu-24.04" -or $availableDistros -contains "Ubuntu 24.04") {
         Write-Host "Installing Ubuntu 24.04..." -ForegroundColor Cyan
         wsl --install -d Ubuntu-24.04
         Write-Host "Ubuntu 24.04 installed successfully!" -ForegroundColor Green
-        return $false
+        return
     } else {
-        # Fallback to latest Ubuntu if 24.04 is not available
-        Write-Host "Ubuntu 24.04 not found in available distributions. Installing latest Ubuntu instead..." -ForegroundColor Yellow
-        wsl --install -d Ubuntu
-        Write-Host "Latest Ubuntu installed successfully!" -ForegroundColor Green
-        return $false
+        Write-Host "Ubuntu 24.04 not found in available distributions. Skipping..." -ForegroundColor Yellow
+        return
     }
 }
 
@@ -221,14 +225,16 @@ function Install-Multipass {
 
         Remove-Item $installerPath -Force
 
-        Write-Host "Multipass installed successfully!" -ForegroundColor Green
-    }
-
+        Write-Host "Multipass installed successfully!" -ForegroundColor
     # Verify installation
     if (Get-Command multipass -ErrorAction SilentlyContinue) {
-        Write-Host "Multipass is ready to use. Try 'multipass launch' to create your first instance." -ForegroundColor Cyan
+    Write-Host
+        "Multipass is ready to use. Try 'multipass launch' to create your first instance." -ForegroundColor Cyan
     } else {
-        Write-Host "Multipass installation may have failed. Please try installing manually." -ForegroundColor Yellow
+        Write-Host "Multipass installation may have failed. Please try iGreen
+    }
+
+    nstalling manually." -ForegroundColor Yellow
     }
 }
 
@@ -286,21 +292,19 @@ function Main {
 
     Install-Chocolatey
     Install-Scoop
-    $restartNeeded = Install-Ubuntu24
+
+
     Install-Starship
     Configure-PSReadLine
+
     Install-DevTools
+
+    $restartNeeded = Install-WSL
+    Install-Ubuntu24
+
     Install-Multipass
 
-    # Only offer to setup Multipass if no restart is needed
-    if (!$restartNeeded) {
-        $setupVM = Read-Host "Would you like to set up an Ubuntu 24.10 VM with your shell configuration? (y/n)"
-        if ($setupVM -eq 'y') {
-            Setup-MultipassUbuntu
-        }
-    }
-
-    Write-Host "Setup complete!" -ForegroundColor Green
+    Setup-MultipassUbuntu
 
     if ($restartNeeded) {
         Write-Host "A system restart is required to complete WSL setup." -ForegroundColor Yellow
