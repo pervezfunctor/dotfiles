@@ -198,6 +198,16 @@ function Install-DevTools {
     } else {
         Write-Host "WezTerm is already installed." -ForegroundColor Yellow
     }
+
+    # Install Docker Desktop
+    if (!(Test-Path "C:\Program Files\Docker\Docker\Docker Desktop.exe")) {
+        Write-Host "Installing Docker Desktop..." -ForegroundColor Cyan
+        winget install Docker.DockerDesktop
+        Write-Host "Docker Desktop installed successfully!" -ForegroundColor Green
+        Write-Host "Make sure to enable the required WSL distro in Docker Desktop settings." -ForegroundColor Yellow
+    } else {
+        Write-Host "Docker Desktop is already installed." -ForegroundColor Yellow
+    }
 }
 
 function Install-Multipass {
@@ -305,6 +315,8 @@ function Main {
     Install-Multipass
 
     Setup-MultipassUbuntu
+
+    Install-DockerDesktop
 
     if ($restartNeeded) {
         Write-Host "A system restart is required to complete WSL setup." -ForegroundColor Yellow
