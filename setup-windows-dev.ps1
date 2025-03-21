@@ -208,6 +208,33 @@ function Install-DevTools {
     } else {
         Write-Host "Docker Desktop is already installed." -ForegroundColor Yellow
     }
+
+    # Install glazewm
+    if (!(Get-Command glaze -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing glazewm..." -ForegroundColor Cyan
+        winget install glazewm.glazewm
+        Write-Host "glazewm installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "glazewm is already installed." -ForegroundColor Yellow
+    }
+
+    # Install telegram
+    if (!(Get-Command telegram -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing telegram..." -ForegroundColor Cyan
+        winget install Telegram.TelegramDesktop
+        Write-Host "telegram installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "telegram is already installed." -ForegroundColor Yellow
+    }
+
+    # Install zoom
+    if (!(Get-Command zoom -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing zoom..." -ForegroundColor Cyan
+        winget install Zoom.Zoom
+        Write-Host "zoom installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "zoom is already installed." -ForegroundColor Yellow
+    }
 }
 
 function Install-Multipass {
