@@ -2,151 +2,99 @@
 
 function Install-Chocolatey {
     Write-Host "Installing Chocolatey..." -ForegroundColor Cyan
-    if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
-        Set-ExecutionPolicy Bypass -Scope Process -Force
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-        refreshenv
-        Write-Host "Chocolatey installed successfully!" -ForegroundColor Green
-    } else {
+    if (Get-Command choco -ErrorAction SilentlyContinue) {
         Write-Host "Chocolatey is already installed." -ForegroundColor Yellow
+        return
     }
+
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    # refreshenv is not available until after installation and shell restart, so we manually update the path
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    Write-Host "Chocolatey installed successfully!" -ForegroundColor Green
 }
 
 function Install-Scoop {
     Write-Host "Installing Scoop..." -ForegroundColor Cyan
-    if (!(Get-Command scoop -ErrorAction SilentlyContinue)) {
-        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
-        Write-Host "Scoop installed successfully!" -ForegroundColor Green
-    } else {
+    if (Get-Command scoop -ErrorAction SilentlyContinue) {
         Write-Host "Scoop is already installed." -ForegroundColor Yellow
+        return
     }
-}
 
-function Enable-WSL {
-    Write-Host "Enabling WSL..." -ForegroundColor Cyan
-    if (!(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State -eq 'Enabled') {
-        dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-        dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
-        Write-Host "WSL features enabled. A system restart may be required." -ForegroundColor Yellow
-        return $true
-    } else {
-        Write-Host "WSL is already enabled." -ForegroundColor Yellow
-        return $false
-    }
-}
-
-function Install-WSL2Kernel {
-    Write-Host "Installing WSL2 kernel update..." -ForegroundColor Cyan
-    $wslUpdateInstallerUrl = "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
-    $wslUpdateInstallerPath = "$env:TEMP\wsl_update_x64.msi"
-    Invoke-WebRequest -Uri $wslUpdateInstallerUrl -OutFile $wslUpdateInstallerPath
-    Start-Process -FilePath "msiexec.exe" -ArgumentList "/i", $wslUpdateInstallerPath, "/quiet" -Wait
-    Remove-Item -Path $wslUpdateInstallerPath
-
-    # Set WSL2 as default
-    Write-Host "Setting WSL2 as default..." -ForegroundColor Cyan
-    wsl --set-default-version 2
+    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+    Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+    Write-Host "Scoop installed successfully!" -ForegroundColor Green
 }
 
 function Install-Ubuntu24 {
-    Write-Host "Installing Ubuntu 24.04..." -ForegroundColor Cyan
-    if (!(wsl -l | Select-String -Pattern "Ubuntu-24.04")) {
-        # Check if Ubuntu 24.04 is available in the store
-        $ubuntuAvailable = wsl --list --online | Select-String -Pattern "Ubuntu-24.04"
+    Write-Host "Installing Ubuntu 24.04 LTS..." -ForegroundColor Cyan
 
-        if ($ubuntuAvailable) {
-            wsl --install -d Ubuntu-24.04
-        } else {
-            # Fallback to manual download if not available in store
-            Write-Host "Ubuntu 24.04 not found in WSL store. Downloading manually..." -ForegroundColor Yellow
-
-            $ubuntuUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz"
-            $ubuntuPath = "$env:TEMP\ubuntu-24.04.tar.gz"
-
-            Invoke-WebRequest -Uri $ubuntuUrl -OutFile $ubuntuPath
-
-            # Create directory for Ubuntu 24.04
-            $ubuntuDir = "$env:LOCALAPPDATA\Ubuntu-24.04"
-            if (!(Test-Path $ubuntuDir)) {
-                New-Item -Path $ubuntuDir -ItemType Directory
-            }
-
-            # Import the distro
-            wsl --import Ubuntu-24.04 $ubuntuDir $ubuntuPath
-
-            # Clean up
-            Remove-Item -Path $ubuntuPath
-        }
-
-        Write-Host "Ubuntu 24.04 installed successfully!" -ForegroundColor Green
-    } else {
-        Write-Host "Ubuntu 24.04 is already installed." -ForegroundColor Yellow
+    # Check if WSL is installed
+    if (!(Get-Command wsl -ErrorAction SilentlyContinue)) {
+        Write-Host "WSL is not installed. Installing WSL first..." -ForegroundColor Yellow
+        wsl --install
+        return $true  # Restart needed after WSL installation
     }
-}
 
-function Install-WindowsSudo {
-    Write-Host "Setting up Windows sudo..." -ForegroundColor Cyan
+    # Check if Ubuntu 24.04 is already installed
+    # Use Out-String to convert the output to a string for better pattern matching
+    $installedDistros = wsl --list | Out-String
+    if ($installedDistros -match "Ubuntu-24.04" -or $installedDistros -match "Ubuntu 24.04") {
+        Write-Host "Ubuntu 24.04 is already installed." -ForegroundColor Yellow
+        return $false
+    }
 
-    # Check Windows version - sudo is only available on Windows 11 23H2 or newer
-    $osInfo = Get-CimInstance -ClassName Win32_OperatingSystem
-    $windowsVersion = [System.Version]($osInfo.Version)
-    $isWindows11 = $windowsVersion.Major -ge 10 -and $osInfo.BuildNumber -ge 22000
-    $isRecentEnough = $isWindows11 -and $osInfo.BuildNumber -ge 22621
+    # Check available distributions
+    $availableDistros = wsl --list --online | Out-String
 
-    if ($isRecentEnough) {
-        # Check if sudo is already available
-        $sudoAvailable = Get-Command sudo -ErrorAction SilentlyContinue
-
-        if ($sudoAvailable) {
-            Write-Host "Windows sudo is already available." -ForegroundColor Yellow
-        } else {
-            # Install sudo via winget
-            Write-Host "Installing sudo via winget..." -ForegroundColor Cyan
-            winget install Microsoft.PowerShell.Sudo
-
-            # Configure sudo to use gsudo as the implementation
-            if (!(Get-Command gsudo -ErrorAction SilentlyContinue)) {
-                Write-Host "Installing gsudo..." -ForegroundColor Cyan
-                choco install gsudo -y
-            }
-
-            Write-Host "Windows sudo setup complete!" -ForegroundColor Green
-        }
+    # Look for Ubuntu 24.04 with flexible matching
+    if ($availableDistros -match "Ubuntu-24.04" -or $availableDistros -match "Ubuntu 24.04") {
+        Write-Host "Installing Ubuntu 24.04..." -ForegroundColor Cyan
+        wsl --install -d Ubuntu-24.04
+        Write-Host "Ubuntu 24.04 installed successfully!" -ForegroundColor Green
+        return $false
     } else {
-        Write-Host "Windows sudo is only available on Windows 11 23H2 or newer." -ForegroundColor Yellow
-        Write-Host "Installing gsudo as an alternative..." -ForegroundColor Cyan
-        choco install gsudo -y
-        Write-Host "You can use 'gsudo' instead of 'sudo' for elevated commands." -ForegroundColor Green
+        # Fallback to latest Ubuntu if 24.04 is not available
+        Write-Host "Ubuntu 24.04 not found in available distributions. Installing latest Ubuntu instead..." -ForegroundColor Yellow
+        wsl --install -d Ubuntu
+        Write-Host "Latest Ubuntu installed successfully!" -ForegroundColor Green
+        return $false
     }
 }
 
 function Install-Starship {
     Write-Host "Setting up Starship prompt..." -ForegroundColor Cyan
 
-    if (!(Get-Command starship -ErrorAction SilentlyContinue)) {
-        if (Get-Command winget -ErrorAction SilentlyContinue) {
-            winget install --id Starship.Starship
-        } else {
-            Invoke-RestMethod -Uri https://starship.rs/install.ps1 | Invoke-Expression
-        }
+    if (Get-Command starship -ErrorAction SilentlyContinue) {
+        Write-Host "Starship is already installed." -ForegroundColor Yellow
+        return
+    }
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        winget install --id Starship.Starship
+    } else {
+        Invoke-RestMethod -Uri https://starship.rs/install.ps1 | Invoke-Expression
+    }
 
-        $profileContent = @"
+    $profileContent = @"
 # Initialize Starship prompt
 Invoke-Expression (&starship init powershell)
 "@
 
-        if (!(Test-Path $PROFILE)) {
-            New-Item -Path $PROFILE -Type File -Force
-        }
-
-        Add-Content -Path $PROFILE -Value $profileContent
-
-        Write-Host "Starship prompt installed and configured!" -ForegroundColor Green
-    } else {
-        Write-Host "Starship is already installed." -ForegroundColor Yellow
+    if (!(Test-Path $PROFILE)) {
+        New-Item -Path $PROFILE -Type File -Force
     }
+
+    # Check if Starship initialization is already in the profile
+    $currentProfile = Get-Content -Path $PROFILE -ErrorAction SilentlyContinue
+    if ($currentProfile -notmatch "starship init") {
+        Add-Content -Path $PROFILE -Value $profileContent
+        Write-Host "Added Starship initialization to PowerShell profile." -ForegroundColor Green
+    } else {
+        Write-Host "Starship initialization already exists in PowerShell profile." -ForegroundColor Yellow
+    }
+
+    Write-Host "Starship prompt installed and configured!" -ForegroundColor Green
 }
 
 function Configure-PSReadLine {
@@ -189,13 +137,26 @@ Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
         New-Item -Path $PROFILE -Type File -Force
     }
 
-    Add-Content -Path $PROFILE -Value $psReadLineConfig
+    # Check if PSReadLine configuration already exists in the profile
+    $currentProfile = Get-Content -Path $PROFILE -ErrorAction SilentlyContinue
+    if ($currentProfile -notmatch "PSReadLine configuration") {
+        Add-Content -Path $PROFILE -Value $psReadLineConfig
+        Write-Host "Added PSReadLine configuration to PowerShell profile." -ForegroundColor Green
+    } else {
+        Write-Host "PSReadLine configuration already exists in PowerShell profile." -ForegroundColor Yellow
+    }
 
     Write-Host "PSReadLine configured for autosuggestions and syntax highlighting!" -ForegroundColor Green
 }
 
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
+
+    # Check if winget is available
+    if (!(Get-Command winget -ErrorAction SilentlyContinue)) {
+        Write-Host "Winget not found. Please install winget first to continue with dev tools installation." -ForegroundColor Yellow
+        return
+    }
 
     # Install Visual Studio Code
     Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
@@ -208,7 +169,8 @@ function Install-DevTools {
 
     # Install Firefox
     Write-Host "Installing Firefox..." -ForegroundColor Cyan
-    if (!(Test-Path "C:\Program Files\Mozilla Firefox\firefox.exe")) {
+    if (!(Test-Path "C:\Program Files\Mozilla Firefox\firefox.exe") -and
+        !(Test-Path "${env:ProgramFiles(x86)}\Mozilla Firefox\firefox.exe")) {
         winget install Mozilla.Firefox
         Write-Host "Firefox installed successfully!" -ForegroundColor Green
     } else {
@@ -295,9 +257,8 @@ function Setup-MultipassUbuntu {
         }
     }
 
-    # Create Ubuntu 24.10 VM with 4GB RAM and 20GB disk
-    Write-Host "Creating Ubuntu 24.10 VM with 4GB RAM and 20GB disk..." -ForegroundColor Cyan
-    multipass launch noble --name ubuntu-dev --memory 4G --disk 20G
+    Write-Host "Creating Ubuntu 24.10 VM with 16GB RAM and 40GB disk..." -ForegroundColor Cyan
+    multipass launch noble --name ubuntu-dev --memory 16G --disk 40G
 
     # Wait for VM to be ready
     Start-Sleep -Seconds 5
@@ -325,27 +286,31 @@ function Main {
 
     Install-Chocolatey
     Install-Scoop
-    # $restartNeeded = Enable-WSL
-    # Install-WSL2Kernel
-    # Install-Ubuntu24
-    # Install-WindowsSudo
-    # Install-Starship
-    # Configure-PSReadLine
-    # Install-DevTools
-    # Install-Multipass
-    # Setup-MultipassUbuntu
+    $restartNeeded = Install-Ubuntu24
+    Install-Starship
+    Configure-PSReadLine
+    Install-DevTools
+    Install-Multipass
 
-    # Write-Host "Setup complete!" -ForegroundColor Green
+    # Only offer to setup Multipass if no restart is needed
+    if (!$restartNeeded) {
+        $setupVM = Read-Host "Would you like to set up an Ubuntu 24.10 VM with your shell configuration? (y/n)"
+        if ($setupVM -eq 'y') {
+            Setup-MultipassUbuntu
+        }
+    }
 
-    # if ($restartNeeded) {
-    #     Write-Host "A system restart is required to complete WSL setup." -ForegroundColor Yellow
-    #     $restart = Read-Host "Would you like to restart now? (y/n)"
-    #     if ($restart -eq 'y') {
-    #         Restart-Computer
-    #     }
-    # } else {
-    #     Write-Host "To start Ubuntu, open a terminal and type: wsl -d Ubuntu-24.04" -ForegroundColor Cyan
-    # }
+    Write-Host "Setup complete!" -ForegroundColor Green
+
+    if ($restartNeeded) {
+        Write-Host "A system restart is required to complete WSL setup." -ForegroundColor Yellow
+        $restart = Read-Host "Would you like to restart now? (y/n)"
+        if ($restart -eq 'y') {
+            Restart-Computer
+        }
+    } else {
+        Write-Host "To start Ubuntu in WSL, open a terminal and type: wsl" -ForegroundColor Cyan
+    }
 }
 
 Main
