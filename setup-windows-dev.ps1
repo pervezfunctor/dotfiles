@@ -203,10 +203,20 @@ Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
+    # Install 7-Zip
+    if (!(Test-CommandExists 7z)) {
+        Write-Host "Installing 7-Zip..." -ForegroundColor Cyan
+        winget install --id 7zip.7zip -e
+        Write-Host "7-Zip installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "7-Zip is already installed." -ForegroundColor Yellow
+    }
+
     # Install Visual Studio Code
     if (!(Test-CommandExists code)) {
         Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
-        winget install Microsoft.VisualStudioCode
+        winget install --id Microsoft.VisualStudioCode -e
         Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
     }
     else {
@@ -217,7 +227,7 @@ function Install-DevTools {
     if (!(Test-Path "C:\Program Files\Mozilla Firefox\firefox.exe") -and
         !(Test-Path "${env:ProgramFiles(x86)}\Mozilla Firefox\firefox.exe")) {
         Write-Host "Installing Firefox..." -ForegroundColor Cyan
-        winget install Mozilla.Firefox
+        winget install --id Mozilla.Firefox -e
         Write-Host "Firefox installed successfully!" -ForegroundColor Green
     }
     else {
@@ -227,7 +237,7 @@ function Install-DevTools {
     # Install Git
     if (!(Test-CommandExists git)) {
         Write-Host "Installing Git..." -ForegroundColor Cyan
-        winget install Git.Git
+        winget install --id Git.Git -e
         Write-Host "Git installed successfully!" -ForegroundColor Green
     }
     else {
@@ -237,7 +247,7 @@ function Install-DevTools {
     # Install WezTerm
     if (!(Test-CommandExists wezterm)) {
         Write-Host "Installing WezTerm..." -ForegroundColor Cyan
-        winget install wez.wezterm
+        winget install --id wez.wezterm -e
         Write-Host "WezTerm installed successfully!" -ForegroundColor Green
     }
     else {
@@ -247,7 +257,7 @@ function Install-DevTools {
     # Install Docker Desktop
     if (!(Test-Path "C:\Program Files\Docker\Docker\Docker Desktop.exe")) {
         Write-Host "Installing Docker Desktop..." -ForegroundColor Cyan
-        winget install Docker.DockerDesktop
+        winget install --id Docker.DockerDesktop -e
         Write-Host "Docker Desktop installed successfully!" -ForegroundColor Green
         Write-Host "Make sure to enable the required WSL distro in Docker Desktop settings." -ForegroundColor Yellow
     }
@@ -258,7 +268,7 @@ function Install-DevTools {
     # Install glazewm
     if (!(Test-CommandExists glaze)) {
         Write-Host "Installing glazewm..." -ForegroundColor Cyan
-        winget install glazewm.glazewm
+        winget install --id glazewm.glazewm -e
         Write-Host "glazewm installed successfully!" -ForegroundColor Green
     }
     else {
@@ -268,7 +278,7 @@ function Install-DevTools {
     # Install telegram
     if (!(Test-CommandExists telegram)) {
         Write-Host "Installing telegram..." -ForegroundColor Cyan
-        winget install Telegram.TelegramDesktop
+        winget install --id Telegram.TelegramDesktop -e
         Write-Host "telegram installed successfully!" -ForegroundColor Green
     }
     else {
@@ -278,7 +288,7 @@ function Install-DevTools {
     # Install zoom
     if (!(Test-CommandExists zoom)) {
         Write-Host "Installing zoom..." -ForegroundColor Cyan
-        winget install Zoom.Zoom
+        winget install --id Zoom.Zoom -e
         Write-Host "zoom installed successfully!" -ForegroundColor Green
     }
     else {
@@ -288,7 +298,7 @@ function Install-DevTools {
     # Install ripgrep
     if (!(Test-CommandExists rg)) {
         Write-Host "Installing ripgrep..." -ForegroundColor Cyan
-        winget install BurntSushi.ripgrep
+        winget install --id BurntSushi.ripgrep -e
         Write-Host "ripgrep installed successfully!" -ForegroundColor Green
     }
     else {
@@ -298,7 +308,7 @@ function Install-DevTools {
     # Install fzf
     if (!(Test-CommandExists fzf)) {
         Write-Host "Installing fzf..." -ForegroundColor Cyan
-        winget install junegunn.fzf
+        winget install --id junegunn.fzf -e
         Write-Host "fzf installed successfully!" -ForegroundColor Green
     }
     else {
@@ -308,7 +318,7 @@ function Install-DevTools {
     # Install fd
     if (!(Test-CommandExists fd)) {
         Write-Host "Installing fd..." -ForegroundColor Cyan
-        winget install sharkdp.fd
+        winget install --id sharkdp.fd -e
         Write-Host "fd installed successfully!" -ForegroundColor Green
     }
     else {
@@ -318,7 +328,7 @@ function Install-DevTools {
     # Install bat
     if (!(Test-CommandExists bat)) {
         Write-Host "Installing bat..." -ForegroundColor Cyan
-        winget install sharkdp.bat
+        winget install --id sharkdp.bat -e
         Write-Host "bat installed successfully!" -ForegroundColor Green
     }
     else {
@@ -328,7 +338,7 @@ function Install-DevTools {
     # Install gh
     if (!(Test-CommandExists gh)) {
         Write-Host "Installing gh..." -ForegroundColor Cyan
-        winget install GitHub.cli
+        winget install --id GitHub.cli -e
         Write-Host "gh installed successfully!" -ForegroundColor Green
     }
     else {
@@ -338,7 +348,7 @@ function Install-DevTools {
     # Install delta
     if (!(Test-CommandExists delta)) {
         Write-Host "Installing delta..." -ForegroundColor Cyan
-        winget install dandavison.delta
+        winget install --id dandavison.delta -e
         Write-Host "delta installed successfully!" -ForegroundColor Green
     }
     else {
@@ -348,7 +358,7 @@ function Install-DevTools {
     # Install uv
     if (!(Test-CommandExists uv)) {
         Write-Host "Installing uv..." -ForegroundColor Cyan
-        winget install astral-sh.uv
+        winget install --id astral-sh.uv -e
         Write-Host "uv installed successfully!" -ForegroundColor Green
     }
     else {
@@ -358,7 +368,7 @@ function Install-DevTools {
     # Install lazygit
     if (!(Test-CommandExists lazygit)) {
         Write-Host "Installing lazygit..." -ForegroundColor Cyan
-        winget install jesseduffield.lazygit
+        winget install --id jesseduffield.lazygit -e
         Write-Host "lazygit installed successfully!" -ForegroundColor Green
     }
     else {
@@ -368,7 +378,7 @@ function Install-DevTools {
     # Install lazydocker
     if (!(Test-CommandExists lazydocker)) {
         Write-Host "Installing lazydocker..." -ForegroundColor Cyan
-        winget install jesseduffield.lazydocker
+        winget install --id jesseduffield.lazydocker -e
         Write-Host "lazydocker installed successfully!" -ForegroundColor Green
     }
     else {
@@ -378,7 +388,7 @@ function Install-DevTools {
     # Install neovim
     if (!(Test-CommandExists nvim)) {
         Write-Host "Installing neovim..." -ForegroundColor Cyan
-        winget install Neovim.Neovim
+        winget install --id Neovim.Neovim -e
         Write-Host "neovim installed successfully!" -ForegroundColor Green
     }
     else {
@@ -641,8 +651,154 @@ Set-Alias -Name path -Value Show-Path
     Write-Host "Note: Restart your PowerShell session or run '. `$PROFILE' to apply changes." -ForegroundColor Cyan
 }
 
+function Install-Nushell {
+    Write-Host "Installing Nushell..." -ForegroundColor Cyan
+
+    # Check if Nushell is already installed
+    if (Test-CommandExists nu) {
+        Write-Host "Nushell is already installed." -ForegroundColor Yellow
+    }
+    else {
+        # Install Nushell using winget
+        Write-Host "Installing Nushell via winget..." -ForegroundColor Cyan
+        winget install --id Nushell.Nushell -e
+
+        # Verify installation
+        if (Test-CommandExists nu) {
+            Write-Host "Nushell installed successfully!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "Failed to install Nushell. Please check your installation." -ForegroundColor Red
+            return
+        }
+    }
+
+    # Set up Nushell configuration using New-ConfigLink
+    Write-Host "Setting up Nushell config..." -ForegroundColor Cyan
+    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\nushell\dot-config\nushell" -targetPath "$env:USERPROFILE\.config\nushell"
+
+    # Add Nushell to Windows Terminal profiles
+    $wtConfigPath = "$env:LOCALAPPDATA\Microsoft\Windows Terminal\settings.json"
+    if (Test-Path $wtConfigPath) {
+        Write-Host "Adding Nushell to Windows Terminal profiles..." -ForegroundColor Cyan
+
+        $wtConfig = Get-Content -Path $wtConfigPath -Raw | ConvertFrom-Json
+
+        # Check if Nushell profile already exists
+        $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
+
+        if ($null -eq $nuProfile) {
+            # Create new Nushell profile
+            $nuProfileObj = [PSCustomObject]@{
+                name              = "Nushell"
+                commandline       = "nu.exe"
+                icon              = "$env:USERPROFILE\AppData\Local\Programs\Nushell\nu.ico"
+                startingDirectory = "%USERPROFILE%"
+            }
+
+            # Add to profiles list
+            $wtConfig.profiles.list += $nuProfileObj
+
+            # Save updated config
+            $wtConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $wtConfigPath
+            Write-Host "Nushell profile added to Windows Terminal!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "Nushell profile already exists in Windows Terminal." -ForegroundColor Yellow
+        }
+    }
+
+    # # Add option to set as default shell
+    # $setAsDefault = Read-Host "Would you like to set Nushell as your default shell in Windows Terminal? (y/n)"
+    # if ($setAsDefault -eq 'y') {
+    #     if (Test-Path $wtConfigPath) {
+    #         $wtConfig = Get-Content -Path $wtConfigPath -Raw | ConvertFrom-Json
+    #         $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
+
+    #         if ($null -ne $nuProfile) {
+    #             $nuGuid = $nuProfile.guid
+    #             $wtConfig.defaultProfile = $nuGuid
+    #             $wtConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $wtConfigPath
+    #             Write-Host "Nushell set as default shell in Windows Terminal!" -ForegroundColor Green
+    #         }
+    #     }
+    # }
+
+    Write-Host "Nushell installation and configuration complete!" -ForegroundColor Green
+    Write-Host "To start Nushell, open a terminal and type: nu" -ForegroundColor Cyan
+}
+
+function Update-Windows {
+    Write-Host "Checking for Windows updates..." -ForegroundColor Cyan
+
+    # Check if PSWindowsUpdate module is installed
+    if (!(Get-Module -ListAvailable -Name PSWindowsUpdate)) {
+        Write-Host "Installing PSWindowsUpdate module..." -ForegroundColor Cyan
+        Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser
+        Write-Host "PSWindowsUpdate module installed successfully!" -ForegroundColor Green
+    }
+
+    # Import the module
+    Import-Module PSWindowsUpdate
+
+    # Get available updates
+    $updates = Get-WindowsUpdate
+
+    if ($updates.Count -eq 0) {
+        Write-Host "No Windows updates available. System is up to date." -ForegroundColor Green
+        return
+    }
+
+    Write-Host "Found $($updates.Count) Windows updates available." -ForegroundColor Yellow
+
+    # Check if any updates require a reboot
+    $rebootRequired = $updates | Where-Object { $_.RebootRequired -eq $true }
+
+    if (!$rebootRequired) {
+        # No reboot required, install all updates
+        Write-Host "Installing Windows updates. This may take some time..." -ForegroundColor Cyan
+        Install-WindowsUpdate -AcceptAll -AutoReboot:$false
+        Write-Host "Windows updates installed successfully!" -ForegroundColor Green
+        return
+    }
+
+    Write-Host "Some updates require a system reboot." -ForegroundColor Yellow
+    $rebootChoice = Read-Host "Would you like to: (1) Install updates and reboot now, (2) Install updates that don't require reboot, or (3) Skip updates?"
+
+    switch ($rebootChoice) {
+        "1" {
+            # Save script path to run after reboot
+            $scriptPath = $MyInvocation.MyCommand.Path
+            if ($scriptPath) {
+                # Create a scheduled task to resume script after reboot
+                $action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass -File `"$scriptPath`""
+                $trigger = New-ScheduledTaskTrigger -AtLogOn
+                Register-ScheduledTask -TaskName "ResumeSetupScript" -Action $action -Trigger $trigger -RunLevel Highest -Force
+
+                Write-Host "Setup will continue automatically after reboot." -ForegroundColor Green
+                Install-WindowsUpdate -AcceptAll -AutoReboot
+                # Script will end here as system reboots
+            }
+            else {
+                Write-Host "Cannot determine script path. Installing updates with auto-reboot, but you'll need to restart the script manually." -ForegroundColor Yellow
+                Install-WindowsUpdate -AcceptAll -AutoReboot
+            }
+        }
+        "2" {
+            Write-Host "Installing updates that don't require reboot..." -ForegroundColor Cyan
+            Install-WindowsUpdate -AcceptAll -AutoReboot:$false -IgnoreReboot
+            Write-Host "Non-reboot updates installed. Some updates were skipped." -ForegroundColor Yellow
+        }
+        default {
+            Write-Host "Skipping Windows updates installation." -ForegroundColor Yellow
+        }
+    }
+}
+
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
+
+    Update-Windows
 
     Install-Chocolatey
     Install-Scoop
@@ -672,6 +828,8 @@ function Main {
     }
 
     Install-Ubuntu24
+
+    Install-Nushell
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
