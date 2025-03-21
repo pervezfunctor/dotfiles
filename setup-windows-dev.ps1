@@ -652,6 +652,7 @@ function Main {
     Install-DevTools
     Install-CppTools
     Initialize-Dotfiles
+    Set-PowerShellAliases
 
     $restartNeeded = Install-WSL
 

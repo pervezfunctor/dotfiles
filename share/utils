@@ -294,6 +294,22 @@ is_wsl() {
     [ -e /proc/version ] && grep -qi microsoft /proc/version
 }
 
+is_multipass() {
+    [ -e /etc/multipass.conf ]
+}
+
+is_hyperv() {
+    if [ -e /sys/hypervisor/type ] && grep -qi "hyperv" /sys/hypervisor/type; then
+        return 0
+    elif [ -e /sys/class/dmi/id/product_name ] && grep -qi "virtual machine" /sys/class/dmi/id/product_name; then
+        return 0
+    elif [ -e /proc/cpuinfo ] && grep -qi "hypervisor" /proc/cpuinfo; then
+        return 0
+    fi
+
+    return 1
+}
+
 is_ubuntu() {
     local ID
     ID=$(get_os)
