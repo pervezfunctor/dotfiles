@@ -1,8 +1,53 @@
 #Requires -RunAsAdministrator
 
-function Install-Chocolatey {
+function Test-CommandExists {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Command
+    )
 
-    if (Get-Command choco -ErrorAction SilentlyContinue) {
+    return [bool](Get-Command -Name $Command -ErrorAction SilentlyContinue)
+}
+
+function New-ConfigLink {
+    param (
+        [string]$sourcePath,
+        [string]$targetPath
+    )
+
+    if (!(Test-Path $sourcePath)) {
+        Write-Host "Source path $sourcePath does not exist. Skipping." -ForegroundColor Yellow
+        return
+    }
+
+    $targetDir = Split-Path -Parent $targetPath
+    if (!(Test-Path $targetDir)) {
+        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+    }
+
+    if (Test-Path $targetPath) {
+        $backupPath = "$targetPath.bak"
+        if (Test-Path $backupPath) {
+            Remove-Item $backupPath -Recurse -Force
+        }
+        Write-Host "Backing up existing $targetPath to $backupPath" -ForegroundColor Yellow
+        Move-Item $targetPath $backupPath -Force
+    }
+
+    try {
+        New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -Force | Out-Null
+        Write-Host "Created symbolic link: $targetPath -> $sourcePath" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Failed to create symbolic link. Falling back to copy." -ForegroundColor Red
+        Write-Host "Note: Run PowerShell as Administrator to create symbolic links." -ForegroundColor Yellow
+        Copy-Item $sourcePath $targetPath -Recurse -Force
+        Write-Host "Copied $sourcePath to $targetPath" -ForegroundColor Yellow
+    }
+}
+
+function Install-Chocolatey {
+    if (Test-CommandExists choco) {
         Write-Host "Chocolatey is already installed." -ForegroundColor Yellow
         return
     }
@@ -13,13 +58,13 @@ function Install-Chocolatey {
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
     Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
     # refreshenv is not available until after installation and shell restart, so we manually update the path
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
     Write-Host "Chocolatey installed successfully!" -ForegroundColor Green
 }
 
 function Install-Scoop {
-    if (Get-Command scoop -ErrorAction SilentlyContinue) {
+    if (Test-CommandExists scoop) {
         Write-Host "Scoop is already installed." -ForegroundColor Yellow
         return
     }
@@ -33,52 +78,51 @@ function Install-Scoop {
 }
 
 function Install-WSL {
-    if (Get-Command wsl -ErrorAction SilentlyContinue)) {
+    if (Test-CommandExists wsl) {
+        Write-Host "WSL is already installed." -ForegroundColor Yellow
         return $false
     }
 
-    Write-Host "WSL is not installed. Installing WSL first..." -ForegroundColor Yellow
+    Write-Host "Installing WSL..." -ForegroundColor Yellow
     wsl --install
-    return $true  # Restart needed after WSL installation
+    return $true # Restart needed after WSL installation
 }
 
 function Install-Ubuntu24 {
-    if (!(Get-Command wsl -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists wsl)) {
         Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
         return
     }
 
     $installedDistros = wsl --list --quiet
-    if ($installedDistros -contains "Ubuntu-24.04" -or $installedDistros -contains "Ubuntu 24.04") {
+    if ($installedDistros -contains "Ubuntu-24.04") {
         Write-Host "Ubuntu 24.04 is already installed." -ForegroundColor Yellow
         return
     }
 
     $availableDistros = wsl --list --online --quiet
 
-    if ($availableDistros -contains "Ubuntu-24.04" -or $availableDistros -contains "Ubuntu 24.04") {
+    if ($availableDistros -contains "Ubuntu-24.04") {
         Write-Host "Installing Ubuntu 24.04..." -ForegroundColor Cyan
         wsl --install -d Ubuntu-24.04
         Write-Host "Ubuntu 24.04 installed successfully!" -ForegroundColor Green
         return
-    } else {
+    }
+    else {
         Write-Host "Ubuntu 24.04 not found in available distributions. Skipping..." -ForegroundColor Yellow
         return
     }
 }
 
 function Install-Starship {
-    Write-Host "Setting up Starship prompt..." -ForegroundColor Cyan
-
-    if (Get-Command starship -ErrorAction SilentlyContinue) {
+    if (Test-CommandExists starship) {
         Write-Host "Starship is already installed." -ForegroundColor Yellow
         return
     }
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        winget install --id Starship.Starship
-    } else {
-        Invoke-RestMethod -Uri https://starship.rs/install.ps1 | Invoke-Expression
-    }
+
+    Write-Host "Setting up Starship prompt..." -ForegroundColor Cyan
+    winget install --id Starship.Starship
+    Write-Host "Starship prompt installed successfully!" -ForegroundColor Green
 
     $profileContent = @"
 # Initialize Starship prompt
@@ -94,21 +138,23 @@ Invoke-Expression (&starship init powershell)
     if ($currentProfile -notmatch "starship init") {
         Add-Content -Path $PROFILE -Value $profileContent
         Write-Host "Added Starship initialization to PowerShell profile." -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "Starship initialization already exists in PowerShell profile." -ForegroundColor Yellow
     }
 
     Write-Host "Starship prompt installed and configured!" -ForegroundColor Green
 }
 
-function Configure-PSReadLine {
+function Set-PSReadLine {
     Write-Host "Setting up PSReadLine for autosuggestions and syntax highlighting..." -ForegroundColor Cyan
 
     # Install or update PSReadLine module
     if (Get-Module -ListAvailable -Name PSReadLine) {
         Write-Host "Updating PSReadLine module..." -ForegroundColor Cyan
         Install-Module -Name PSReadLine -Force -SkipPublisherCheck
-    } else {
+    }
+    else {
         Write-Host "Installing PSReadLine module..." -ForegroundColor Cyan
         Install-Module -Name PSReadLine -Force -SkipPublisherCheck
     }
@@ -146,97 +192,55 @@ Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
     if ($currentProfile -notmatch "PSReadLine configuration") {
         Add-Content -Path $PROFILE -Value $psReadLineConfig
         Write-Host "Added PSReadLine configuration to PowerShell profile." -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "PSReadLine configuration already exists in PowerShell profile." -ForegroundColor Yellow
     }
 
     Write-Host "PSReadLine configured for autosuggestions and syntax highlighting!" -ForegroundColor Green
 }
 
-
-# Function to create symbolic links (similar to GNU stow)
-function Create-ConfigLink {
-    param (
-        [string]$sourcePath,
-        [string]$targetPath
-    )
-
-    if (!(Test-Path $sourcePath)) {
-        Write-Host "Source path $sourcePath does not exist. Skipping." -ForegroundColor Yellow
-        return
-    }
-
-    # Create target directory if it doesn't exist
-    $targetDir = Split-Path -Parent $targetPath
-    if (!(Test-Path $targetDir)) {
-        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
-    }
-
-    # Remove existing target if it exists
-    if (Test-Path $targetPath) {
-        $backupPath = "$targetPath.bak"
-        if (Test-Path $backupPath) {
-            Remove-Item $backupPath -Recurse -Force
-        }
-        Write-Host "Backing up existing $targetPath to $backupPath" -ForegroundColor Yellow
-        Move-Item $targetPath $backupPath -Force
-    }
-
-    # Create symbolic link
-    try {
-        New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -Force | Out-Null
-        Write-Host "Created symbolic link: $targetPath -> $sourcePath" -ForegroundColor Green
-    } catch {
-        Write-Host "Failed to create symbolic link. Falling back to copy." -ForegroundColor Red
-        Write-Host "Note: Run PowerShell as Administrator to create symbolic links." -ForegroundColor Yellow
-        Copy-Item $sourcePath $targetPath -Recurse -Force
-        Write-Host "Copied $sourcePath to $targetPath" -ForegroundColor Yellow
-    }
-}
-
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
-    # Check if winget is available
-    if (!(Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Host "Winget not found. Please install winget first to continue with dev tools installation." -ForegroundColor Yellow
-        return
-    }
-
     # Install Visual Studio Code
-    Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
-    if (!(Get-Command code -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists code)) {
+        Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
         winget install Microsoft.VisualStudioCode
         Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "Visual Studio Code is already installed." -ForegroundColor Yellow
     }
 
     # Install Firefox
-    Write-Host "Installing Firefox..." -ForegroundColor Cyan
     if (!(Test-Path "C:\Program Files\Mozilla Firefox\firefox.exe") -and
         !(Test-Path "${env:ProgramFiles(x86)}\Mozilla Firefox\firefox.exe")) {
+        Write-Host "Installing Firefox..." -ForegroundColor Cyan
         winget install Mozilla.Firefox
         Write-Host "Firefox installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "Firefox is already installed." -ForegroundColor Yellow
     }
 
     # Install Git
-    Write-Host "Installing Git..." -ForegroundColor Cyan
-    if (!(Get-Command git -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists git)) {
+        Write-Host "Installing Git..." -ForegroundColor Cyan
         winget install Git.Git
         Write-Host "Git installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "Git is already installed." -ForegroundColor Yellow
     }
 
     # Install WezTerm
-    Write-Host "Installing WezTerm..." -ForegroundColor Cyan
-    if (!(Get-Command wezterm -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists wezterm)) {
+        Write-Host "Installing WezTerm..." -ForegroundColor Cyan
         winget install wez.wezterm
         Write-Host "WezTerm installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "WezTerm is already installed." -ForegroundColor Yellow
     }
 
@@ -246,255 +250,395 @@ function Install-DevTools {
         winget install Docker.DockerDesktop
         Write-Host "Docker Desktop installed successfully!" -ForegroundColor Green
         Write-Host "Make sure to enable the required WSL distro in Docker Desktop settings." -ForegroundColor Yellow
-    } else {
+    }
+    else {
         Write-Host "Docker Desktop is already installed." -ForegroundColor Yellow
     }
 
     # Install glazewm
-    if (!(Get-Command glaze -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists glaze)) {
         Write-Host "Installing glazewm..." -ForegroundColor Cyan
         winget install glazewm.glazewm
         Write-Host "glazewm installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "glazewm is already installed." -ForegroundColor Yellow
     }
 
     # Install telegram
-    if (!(Get-Command telegram -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists telegram)) {
         Write-Host "Installing telegram..." -ForegroundColor Cyan
         winget install Telegram.TelegramDesktop
         Write-Host "telegram installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "telegram is already installed." -ForegroundColor Yellow
     }
 
     # Install zoom
-    if (!(Get-Command zoom -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists zoom)) {
         Write-Host "Installing zoom..." -ForegroundColor Cyan
         winget install Zoom.Zoom
         Write-Host "zoom installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "zoom is already installed." -ForegroundColor Yellow
     }
 
     # Install ripgrep
-    if (!(Get-Command rg -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists rg)) {
         Write-Host "Installing ripgrep..." -ForegroundColor Cyan
         winget install BurntSushi.ripgrep
         Write-Host "ripgrep installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "ripgrep is already installed." -ForegroundColor Yellow
     }
 
     # Install fzf
-    if (!(Get-Command fzf -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists fzf)) {
         Write-Host "Installing fzf..." -ForegroundColor Cyan
         winget install junegunn.fzf
         Write-Host "fzf installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "fzf is already installed." -ForegroundColor Yellow
     }
 
     # Install fd
-    if (!(Get-Command fd -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists fd)) {
         Write-Host "Installing fd..." -ForegroundColor Cyan
         winget install sharkdp.fd
         Write-Host "fd installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "fd is already installed." -ForegroundColor Yellow
     }
 
     # Install bat
-    if (!(Get-Command bat -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists bat)) {
         Write-Host "Installing bat..." -ForegroundColor Cyan
         winget install sharkdp.bat
         Write-Host "bat installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "bat is already installed." -ForegroundColor Yellow
     }
 
     # Install gh
-    if (!(Get-Command gh -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists gh)) {
         Write-Host "Installing gh..." -ForegroundColor Cyan
         winget install GitHub.cli
         Write-Host "gh installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "gh is already installed." -ForegroundColor Yellow
     }
 
-
     # Install delta
-    if (!(Get-Command delta -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists delta)) {
         Write-Host "Installing delta..." -ForegroundColor Cyan
         winget install dandavison.delta
         Write-Host "delta installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "delta is already installed." -ForegroundColor Yellow
     }
 
     # Install uv
-    if (!(Get-Command uv -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists uv)) {
         Write-Host "Installing uv..." -ForegroundColor Cyan
         winget install astral-sh.uv
         Write-Host "uv installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "uv is already installed." -ForegroundColor Yellow
     }
 
     # Install lazygit
-    if (!(Get-Command lazygit -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists lazygit)) {
         Write-Host "Installing lazygit..." -ForegroundColor Cyan
         winget install jesseduffield.lazygit
         Write-Host "lazygit installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "lazygit is already installed." -ForegroundColor Yellow
     }
 
     # Install lazydocker
-    if (!(Get-Command lazydocker -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists lazydocker)) {
         Write-Host "Installing lazydocker..." -ForegroundColor Cyan
         winget install jesseduffield.lazydocker
         Write-Host "lazydocker installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "lazydocker is already installed." -ForegroundColor Yellow
     }
 
     # Install neovim
-    if (!(Get-Command nvim -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists nvim)) {
         Write-Host "Installing neovim..." -ForegroundColor Cyan
         winget install Neovim.Neovim
         Write-Host "neovim installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "neovim is already installed." -ForegroundColor Yellow
     }
 
     # Install emacs
-    if (!(Get-Command emacs -ErrorAction SilentlyContinue)) {
+    if (!(Test-CommandExists emacs)) {
         Write-Host "Installing emacs..." -ForegroundColor Cyan
         winget install GNU.Emacs
         Write-Host "emacs installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "emacs is already installed." -ForegroundColor Yellow
     }
 
     Write-Host "Development tools installed!" -ForegroundColor Green
 }
 
-Setup-Dotfiles {
+function Initialize-Dotfiles {
     # Clone dotfiles if not already present, else update
-    if (Test-Path "$env:USERPROFILE\.ilm") {
+    if (Test-Path "$env:USERPROFILE\ilm") {
         Write-Host "Dotfiles already present. Updating..." -ForegroundColor Cyan
-        Set-Location "$env:USERPROFILE\.ilm"
+
         # pull only if git repo is clean
-        if ((git status --porcelain) -eq $null) {
+        if ($null -eq (git status --porcelain)) {
+            Set-Location "$env:USERPROFILE\ilm"
             git pull --rebase
         }
+
         Write-Host "Dotfiles updated successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "Cloning dotfiles..." -ForegroundColor Cyan
-        git clone https://github.com/pervezfunctor/dotfiles.git "$env:USERPROFILE\.ilm"
+        git clone https://github.com/pervezfunctor/dotfiles.git "$env:USERPROFILE\ilm"
         Write-Host "Dotfiles cloned successfully!" -ForegroundColor Green
     }
 
-    # Setup WezTerm config
     Write-Host "Setting up WezTerm config..." -ForegroundColor Cyan
-    Create-ConfigLink -sourcePath "$env:USERPROFILE\.ilm\wezterm\dot-config\wezterm.lua" -targetPath "$env:USERPROFILE\.config\wezterm"
+    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\wezterm\dot-config\wezterm" -targetPath "$env:USERPROFILE\.config\wezterm"
 
-    # Setup Neovim config
     Write-Host "Setting up Neovim config..." -ForegroundColor Cyan
-    Create-ConfigLink -sourcePath "$env:USERPROFILE\.ilm\nvim\dot-config\nvim" -targetPath "$env:LOCALAPPDATA\nvim"
+    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\nvim\dot-config\nvim" -targetPath "$env:LOCALAPPDATA\nvim"
 
-    # Setup Emacs config
     Write-Host "Setting up Emacs config..." -ForegroundColor Cyan
-    Create-ConfigLink -sourcePath "$env:USERPROFILE\.ilm\emacs-slim\dot-emacs" -targetPath "$env:APPDATA\.emacs"
+    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\emacs-slim\dot-emacs" -targetPath "$env:APPDATA\.emacs"
+}
 
+function Install-MultipassVM {
+    Write-Host "Setting up Ubuntu 24.10 VM in Multipass..." -ForegroundColor Cyan
+
+    $vmExists = multipass list | Select-String "ubuntu-ilm"
+    if ($vmExists) {
+        Write-Host "Ubuntu VM 'ubuntu-ilm' already exists. Skipping..." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Creating Ubuntu 24.10 VM with 16GB RAM and 20GB disk..." -ForegroundColor Cyan
+    multipass launch oracular --name ubuntu-ilm --memory 16G --disk 20G
+
+    Start-Sleep -Seconds 5
+
+    Write-Host "Running shell installer script..." -ForegroundColor Cyan
+    multipass exec ubuntu-ilm -- bash -c "curl -sSL https://dub.sh/aPKPT8V | bash -s -- shell"
+
+    Write-Host "Ubuntu 24.10 VM setup complete!" -ForegroundColor Green
+    multipass info ubuntu-ilm
+
+    Write-Host "To access your VM, use: multipass shell ubuntu-ilm" -ForegroundColor Cyan
+    Write-Host "To stop your VM, use: multipass stop ubuntu-ilm" -ForegroundColor Cyan
+    Write-Host "To start your VM again, use: multipass start ubuntu-ilm" -ForegroundColor Cyan
 }
 
 function Install-Multipass {
     Write-Host "Installing Multipass..." -ForegroundColor Cyan
 
-    # Check if Multipass is already installed
-    if (Get-Command multipass -ErrorAction SilentlyContinue) {
+    if (Test-CommandExists multipass) {
         Write-Host "Multipass is already installed." -ForegroundColor Yellow
-        return
     }
-
-    # Install Multipass using winget
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
+    else {
         Write-Host "Installing Multipass via winget..." -ForegroundColor Cyan
         winget install Canonical.Multipass
         Write-Host "Multipass installed successfully!" -ForegroundColor Green
-    } else {
-        # Fallback to direct download if winget is not available
-        Write-Host "Installing Multipass via direct download..." -ForegroundColor Cyan
-        $multipassUrl = "https://github.com/canonical/multipass/releases/latest/download/multipass-windows-installer.exe"
-        $installerPath = "$env:TEMP\multipass-installer.exe"
 
-        Invoke-WebRequest -Uri $multipassUrl -OutFile $installerPath
-        Start-Process -FilePath $installerPath -Wait
-
-        Remove-Item $installerPath -Force
-
-        Write-Host "Multipass installed successfully!" -ForegroundColor
-    # Verify installation
-    if (Get-Command multipass -ErrorAction SilentlyContinue) {
-    Write-Host
-        "Multipass is ready to use. Try 'multipass launch' to create your first instance." -ForegroundColor Cyan
-    } else {
-        Write-Host "Multipass installation may have failed. Please try iGreen
+        # Refresh PATH to ensure multipass command is available
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
     }
 
-    nstalling manually." -ForegroundColor Yellow
-    }
-}
-
-function Setup-MultipassUbuntu {
-    Write-Host "Setting up Ubuntu 24.10 VM in Multipass..." -ForegroundColor Cyan
-
-    # Check if Multipass is installed
-    if (!(Get-Command multipass -ErrorAction SilentlyContinue)) {
-        Write-Host "Multipass is not installed. Please run Install-Multipass first." -ForegroundColor Red
+    if (!(Test-CommandExists multipass)) {
+        Write-Host "Multipass is not available in PATH. Please restart PowerShell or your computer and run this script again." -ForegroundColor Yellow
         return
     }
 
-    # Check if VM already exists
-    $vmExists = multipass list | Select-String "ubuntu-dev"
-    if ($vmExists) {
-        Write-Host "Ubuntu VM 'ubuntu-dev' already exists." -ForegroundColor Yellow
-        $recreate = Read-Host "Would you like to delete and recreate it? (y/n)"
-        if ($recreate -eq 'y') {
-            Write-Host "Deleting existing VM..." -ForegroundColor Cyan
-            multipass stop ubuntu-dev
-            multipass delete ubuntu-dev
-            multipass purge
-        } else {
-            Write-Host "Using existing VM." -ForegroundColor Cyan
-            return
-        }
+    Install-MultipassVM
+}
+
+function Set-MultipassSSH {
+    param (
+        [string]$VMName = "ubuntu-ilm"
+    )
+
+    Write-Host "Setting up SSH access to Multipass VM '$VMName'..." -ForegroundColor Cyan
+
+    multipass info $VMName 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "VM '$VMName' does not exist. Please create it first." -ForegroundColor Red
+        return
     }
 
-    Write-Host "Creating Ubuntu 24.10 VM with 16GB RAM and 40GB disk..." -ForegroundColor Cyan
-    multipass launch noble --name ubuntu-dev --memory 16G --disk 40G
+    # Get VM IP address
+    $vmIP = (multipass info $VMName | Select-String "IPv4").ToString().Split(":")[1].Trim()
+    if (-not $vmIP) {
+        Write-Host "Could not determine IP address for VM '$VMName'." -ForegroundColor Red
+        return
+    }
 
-    # Wait for VM to be ready
-    Start-Sleep -Seconds 5
+    # Ensure SSH server is installed and configured in the VM
+    multipass exec $VMName -- bash -c "sudo apt update && sudo apt install -y openssh-server"
+    multipass exec $VMName -- bash -c "sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config"
+    multipass exec $VMName -- bash -c "sudo systemctl restart ssh"
 
-    # Clone your dotfiles repository
-    Write-Host "Cloning dotfiles repository..." -ForegroundColor Cyan
-    multipass exec ubuntu-dev -- bash -c "sudo apt update && sudo apt install -y git curl"
-    multipass exec ubuntu-dev -- bash -c "git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm"
+    # Generate SSH key if it doesn't exist
+    if (-not (Test-Path "$env:USERPROFILE\.ssh\id_rsa")) {
+        Write-Host "Generating SSH key..." -ForegroundColor Cyan
+        ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
+    }
 
-    # Run shell installer script
-    Write-Host "Running shell installer script..." -ForegroundColor Cyan
-    multipass exec ubuntu-dev -- bash -c "cd ~/.ilm && bash -c '$(curl -sSL https://dub.sh/aPKPT8V)' -- shell"
+    # Copy SSH key to VM
+    $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_rsa.pub"
+    multipass exec $VMName -- bash -c "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
+    multipass exec $VMName -- bash -c "echo '$pubKey' >> ~/.ssh/authorized_keys"
+    multipass exec $VMName -- bash -c "chmod 600 ~/.ssh/authorized_keys"
 
-    # Show information about the VM
-    Write-Host "Ubuntu 24.10 VM setup complete!" -ForegroundColor Green
-    multipass info ubuntu-dev
+    # Add VM to SSH config
+    $sshConfig = @"
+Host $VMName
+    HostName $vmIP
+    User ubuntu
+    IdentityFile ~/.ssh/id_rsa
+    StrictHostKeyChecking no
+"@
 
-    Write-Host "To access your VM, use: multipass shell ubuntu-dev" -ForegroundColor Cyan
-    Write-Host "To stop your VM, use: multipass stop ubuntu-dev" -ForegroundColor Cyan
-    Write-Host "To start your VM again, use: multipass start ubuntu-dev" -ForegroundColor Cyan
+    if (-not (Test-Path "$env:USERPROFILE\.ssh\config")) {
+        New-Item -Path "$env:USERPROFILE\.ssh\config" -ItemType File -Force | Out-Null
+    }
+
+    if (-not (Select-String -Path "$env:USERPROFILE\.ssh\config" -Pattern "Host $VMName" -Quiet)) {
+        Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfig
+    }
+
+    Write-Host "SSH access to Multipass VM '$VMName' has been set up." -ForegroundColor Green
+    Write-Host "You can now connect using: ssh $VMName" -ForegroundColor Cyan
+}
+
+function Install-CppTools {
+    Write-Host "Installing C++ development tools..." -ForegroundColor Cyan
+
+    # Install Visual Studio Build Tools (minimal C++ toolchain)
+    if (!(Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\2022")) {
+        Write-Host "Installing Visual Studio Build Tools..." -ForegroundColor Cyan
+        winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+        Write-Host "Visual Studio Build Tools installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Visual Studio Build Tools already installed." -ForegroundColor Yellow
+    }
+
+    # Install CMake
+    if (!(Test-CommandExists cmake)) {
+        Write-Host "Installing CMake..." -ForegroundColor Cyan
+        winget install Kitware.CMake
+        Write-Host "CMake installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "CMake is already installed." -ForegroundColor Yellow
+    }
+
+    # Install Clang/LLVM
+    if (!(Test-CommandExists clang)) {
+        Write-Host "Installing LLVM/Clang..." -ForegroundColor Cyan
+        winget install LLVM.LLVM
+        Write-Host "LLVM/Clang installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "LLVM/Clang is already installed." -ForegroundColor Yellow
+    }
+
+    # Install Ninja build system
+    if (!(Test-CommandExists ninja)) {
+        Write-Host "Installing Ninja build system..." -ForegroundColor Cyan
+        winget install Ninja-build.Ninja
+        Write-Host "Ninja build system installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Ninja build system is already installed." -ForegroundColor Yellow
+    }
+
+    Write-Host "C++ development tools installed!" -ForegroundColor Green
+}
+
+function Set-PowerShellAliases {
+    Write-Host "Setting up PowerShell aliases..." -ForegroundColor Cyan
+
+    # Create PowerShell profile directory if it doesn't exist
+    $profileDir = Split-Path -Parent $PROFILE
+    if (!(Test-Path $profileDir)) {
+        New-Item -Path $profileDir -ItemType Directory -Force | Out-Null
+    }
+
+    # Create or append to PowerShell profile
+    $aliasesContent = @"
+
+# Git aliases
+function Git-Status { git status }
+Set-Alias -Name gst -Value Git-Status
+function Git-Add { git add $args }
+Set-Alias -Name gia -Value Git-Add
+function Git-Commit { git commit -m $args }
+Set-Alias -Name gcm -Value Git-Commit
+function Git-Pull { git pull }
+Set-Alias -Name gfm -Value Git-Pull
+function Git-Push { git push }
+Set-Alias -Name gp -Value Git-Push
+function Git-Log { git log --topo-order --pretty=format:"%C(yellow)%h%C(reset) %C(cyan)%ar%C(reset) %C(green)%an%C(reset)%n%C(white)%s%C(reset)" }
+Set-Alias -Name gl -Value Git-Log
+
+# Navigation aliases
+function Go-Up { Set-Location .. }
+Set-Alias -Name .. -Value Go-Up
+function Go-Home { Set-Location ~ }
+Set-Alias -Name ~ -Value Go-Home
+function List-All { Get-ChildItem -Force }
+Set-Alias -Name la -Value List-All
+
+# Development aliases
+function Edit-VSCode { code $args }
+Set-Alias -Name c -Value Edit-VSCode
+function Edit-VSCodeHere { code . }
+Set-Alias -Name c. -Value Edit-VSCodeHere
+
+# WSL aliases
+function Start-Ubuntu { wsl -d Ubuntu }
+Set-Alias -Name ubuntu -Value Start-Ubuntu
+
+# Utility aliases
+function Show-Path { $env:Path -split ';' }
+Set-Alias -Name path -Value Show-Path
+"@
+
+    # Add aliases to profile if they don't already exist
+    if (!(Test-Path $PROFILE) -or !(Select-String -Path $PROFILE -Pattern "Git-Status" -Quiet)) {
+        Add-Content -Path $PROFILE -Value $aliasesContent
+        Write-Host "PowerShell aliases added to profile at: $PROFILE" -ForegroundColor Green
+    }
+    else {
+        Write-Host "PowerShell aliases already exist in profile." -ForegroundColor Yellow
+    }
+
+    Write-Host "PowerShell aliases setup complete!" -ForegroundColor Green
+    Write-Host "Note: Restart your PowerShell session or run '. `$PROFILE' to apply changes." -ForegroundColor Cyan
 }
 
 function Main {
@@ -503,20 +647,17 @@ function Main {
     Install-Chocolatey
     Install-Scoop
 
-
     Install-Starship
-    Configure-PSReadLine
-
+    Set-PSReadLine
     Install-DevTools
+    Install-CppTools
+    Initialize-Dotfiles
 
     $restartNeeded = Install-WSL
-    Install-Ubuntu24
 
     Install-Multipass
 
-    Setup-MultipassUbuntu
-
-    Install-DockerDesktop
+    Set-MultipassSSH
 
     if ($restartNeeded) {
         Write-Host "A system restart is required to complete WSL setup." -ForegroundColor Yellow
@@ -524,9 +665,14 @@ function Main {
         if ($restart -eq 'y') {
             Restart-Computer
         }
-    } else {
+    }
+    else {
         Write-Host "To start Ubuntu in WSL, open a terminal and type: wsl" -ForegroundColor Cyan
     }
+
+    Install-Ubuntu24
+
+    Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
 
 Main
