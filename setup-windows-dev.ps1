@@ -820,44 +820,140 @@ function Install-Signal {
     }
 }
 
+function Setup-CentOSStream10 {
+    Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
+
+    # Prompt for username and password
+    $username = Read-Host "Enter username for CentOS"
+    $password = Read-Host "Enter password for $username" -AsSecureString
+    $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
+        [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
+
+    # Copy the existing setup-centos.sh script to the CentOS environment
+    $scriptPath = Join-Path -Path $PSScriptRoot -ChildPath "setup-centos.sh"
+
+    if (Test-Path $scriptPath) {
+        Write-Host "Copying setup script to CentOS Stream 10..." -ForegroundColor Cyan
+
+        # Read the script content and convert Windows line endings (CRLF) to Unix (LF)
+        $scriptContent = Get-Content -Path $scriptPath -Raw
+        # Replace all CR and CRLF with just LF to ensure proper Unix format
+        $scriptContent = $scriptContent -replace "`r`n", "`n" -replace "`r", ""
+
+        # Write the script with Unix line endings to the CentOS environment
+        $scriptContent | wsl -d CentOS-Stream-10 -u root bash -c "cat > /tmp/setup-centos.sh && chmod +x /tmp/setup-centos.sh"
+
+        # Fix any remaining line ending issues directly in the WSL environment
+        wsl -d CentOS-Stream-10 -u root bash -c "sed -i 's/\r$//' /tmp/setup-centos.sh"
+
+        # Execute the script with the username and password
+        Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
+        wsl -d CentOS-Stream-10 -u root /tmp/setup-centos.sh "$username" "$passwordText"
+
+        # Clean up the password from memory
+        $passwordText = $null
+        [System.GC]::Collect()
+
+        Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
+        Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
+
+        # Get IP address to display in PowerShell
+        $ipAddress = wsl -d CentOS-Stream-10 -u root hostname -I
+        Write-Host "You can also connect via SSH: ssh $username@$ipAddress" -ForegroundColor Cyan
+    }
+    else {
+        Write-Host "Error: setup-centos.sh script not found at $scriptPath" -ForegroundColor Red
+        Write-Host "Please ensure the script exists in the same directory as this PowerShell script." -ForegroundColor Yellow
+    }
+}
+
+function Install-CentOSStream10 {
+    if (!(Test-CommandExists wsl)) {
+        Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
+        return
+    }
+
+    $installedDistros = wsl --list --quiet
+    if ($installedDistros -contains "CentOS-Stream-10") {
+        Write-Host "CentOS Stream 10 is already installed." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
+
+    # Create installation directory
+    $wslDir = "$env:LOCALAPPDATA\WSL\CentOS-Stream-10"
+    New-Item -Path $wslDir -ItemType Directory -Force | Out-Null
+
+    # Create a temporary directory for the download
+    $tempDir = "$env:TEMP"
+    $archivePath = "$tempDir\CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
+
+    # Download official CentOS Stream 10 WSL image
+    $downloadUrl = "https://mirror.stream.centos.org/SIGs/10-stream/altimages/images/wsl/x86_64/CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
+
+    Write-Host "Downloading CentOS Stream 10 WSL image (this may take time)..." -ForegroundColor Cyan
+
+    # Disable progress bar for faster downloads
+    $ProgressPreference = 'SilentlyContinue'
+    try {
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
+        Write-Host "Download completed successfully!" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Download failed: $_" -ForegroundColor Red
+        Write-Host "You can try downloading the file manually from:" -ForegroundColor Yellow
+        Write-Host $downloadUrl -ForegroundColor Yellow
+        Write-Host "Then place it at: $archivePath" -ForegroundColor Yellow
+        return
+    }
+    $ProgressPreference = 'Continue'
+
+    # Import the distro directly from the .tar.xz file (WSL can handle this format)
+    Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
+    wsl --import --version=2 CentOS-Stream-10 $wslDir $archivePath
+
+    # Clean up
+    Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
+    Remove-Item -Path $archivePath -Force
+
+    Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
+    Write-Host "To start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
+}
+
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
     # Update-Windows
+    # Install-Chocolatey
+    # Install-Scoop
+    # Install-Starship
+    # Set-PSReadLine
+    # Install-Nushell
+    # Install-DevTools
+    # Install-CppTools
+    # Install-Signal
+    # Initialize-Dotfiles
+    # Set-PowerShellAliases
+    # Install-Multipass
 
-    Install-Chocolatey
-    Install-Scoop
+    # $restartNeeded = Install-WSL
 
-    Install-Starship
-    Set-PSReadLine
+    # if ($restartNeeded) {
+    #     Write-Host "A system restart is required to complete WSL setup." -ForegroundColor Yellow
+    #     $restart = Read-Host "Would you like to restart now? (y/n)"
+    #     if ($restart -eq 'y') {
+    #         Restart-Computer
+    #     }
+    # }
+    # else {
+    #     Write-Host "To start Ubuntu in WSL, open a terminal and type: wsl" -ForegroundColor Cyan
+    # }
 
-    Install-Nushell
-
-    Install-DevTools
-    Install-CppTools
-    Install-Signal
-
-    Initialize-Dotfiles
-    Set-PowerShellAliases
-
-    Install-Multipass
-
-    $restartNeeded = Install-WSL
-
-    if ($restartNeeded) {
-        Write-Host "A system restart is required to complete WSL setup." -ForegroundColor Yellow
-        $restart = Read-Host "Would you like to restart now? (y/n)"
-        if ($restart -eq 'y') {
-            Restart-Computer
-        }
-    }
-    else {
-        Write-Host "To start Ubuntu in WSL, open a terminal and type: wsl" -ForegroundColor Cyan
-    }
-
-    Install-Ubuntu24
-
-    Set-MultipassSSH
+    # Install-Ubuntu24
+    # Install-CentOSStream10
+    Setup-CentOSStream10
+    # Set-MultipassSSH
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
