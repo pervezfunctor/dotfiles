@@ -23,58 +23,21 @@ function Install-WSL {
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
-
-    # Install Visual Studio Code
-    if (!(Test-CommandExists code)) {
-        Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
-        winget install --id Microsoft.VisualStudioCode -e
-        Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Visual Studio Code is already installed." -ForegroundColor Yellow
-    }
-
-    # Install Git
-    if (!(Test-CommandExists git)) {
-        Write-Host "Installing Git..." -ForegroundColor Cyan
-        winget install --id Git.Git -e
-        Write-Host "Git installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Git is already installed." -ForegroundColor Yellow
-    }
-
-    # Install WezTerm
-    if (!(Test-CommandExists wezterm)) {
-        Write-Host "Installing WezTerm..." -ForegroundColor Cyan
-        winget install --id wez.wezterm -e
-        Write-Host "WezTerm installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "WezTerm is already installed." -ForegroundColor Yellow
-    }
-
-    # Install Docker Desktop
-    if (!(Test-Path "C:\Program Files\Docker\Docker\Docker Desktop.exe")) {
-        Write-Host "Installing Docker Desktop..." -ForegroundColor Cyan
-        winget install --id Docker.DockerDesktop -e
-        Write-Host "Docker Desktop installed successfully!" -ForegroundColor Green
-        Write-Host "Make sure to enable the required WSL distro in Docker Desktop settings." -ForegroundColor Yellow
-    }
-    else {
-        Write-Host "Docker Desktop is already installed." -ForegroundColor Yellow
-    }
-
-    Write-Host "Installing command line tools..." -ForegroundColor Cyan
-    winget install --id BurntSushi.ripgrep -e
+    winget install --id Microsoft.VisualStudioCode -e
+    winget install --id Git.Git -e
+    winget install --id wez.wezterm -e
+    winget install --id Docker.DockerDesktop -e
+    winget install --id BurntSushi.ripgrep.MSVC -e
     winget install --id junegunn.fzf -e
     winget install --id sharkdp.fd -e
     winget install --id sharkdp.bat -e
     winget install --id GitHub.cli -e
     winget install --id dandavison.delta -e
     winget install --id astral-sh.uv -e
-    winget install --id jesseduffield.lazygit -e
-    winget install --id jesseduffield.lazydocker -e
+    winget install --id JesseDuffield.lazygit -e
+    winget install --id JesseDuffield.lazydocker -e
+
+    Write-Host "Development tools installed successfully!" -ForegroundColor Green
 }
 
 function Set-CentOSStream10 {

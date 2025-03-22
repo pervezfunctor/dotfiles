@@ -58,5 +58,5 @@ echo "Setup complete!"
 echo "You can connect to this instance via SSH:"
 echo " ssh $username@$(hostname -I)"
 
-su - $username
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
+# su - $username
+# bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
