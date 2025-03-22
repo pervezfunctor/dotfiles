@@ -1,0 +1,225 @@
+#Requires -RunAsAdministrator
+
+function Test-CommandExists {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Command
+    )
+
+    return [bool](Get-Command -Name $Command -ErrorAction SilentlyContinue)
+}
+
+function Install-WSL {
+    if (Test-CommandExists wsl) {
+        Write-Host "WSL is already installed." -ForegroundColor Yellow
+        return $false
+    }
+
+    Write-Host "Installing WSL..." -ForegroundColor Yellow
+    wsl --install
+    return $true # Restart needed after WSL installation
+}
+
+function Install-DevTools {
+    Write-Host "Installing development tools..." -ForegroundColor Cyan
+
+
+    # Install Visual Studio Code
+    if (!(Test-CommandExists code)) {
+        Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
+        winget install --id Microsoft.VisualStudioCode -e
+        Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Visual Studio Code is already installed." -ForegroundColor Yellow
+    }
+
+    # Install Git
+    if (!(Test-CommandExists git)) {
+        Write-Host "Installing Git..." -ForegroundColor Cyan
+        winget install --id Git.Git -e
+        Write-Host "Git installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Git is already installed." -ForegroundColor Yellow
+    }
+
+    # Install WezTerm
+    if (!(Test-CommandExists wezterm)) {
+        Write-Host "Installing WezTerm..." -ForegroundColor Cyan
+        winget install --id wez.wezterm -e
+        Write-Host "WezTerm installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "WezTerm is already installed." -ForegroundColor Yellow
+    }
+
+    # Install Docker Desktop
+    if (!(Test-Path "C:\Program Files\Docker\Docker\Docker Desktop.exe")) {
+        Write-Host "Installing Docker Desktop..." -ForegroundColor Cyan
+        winget install --id Docker.DockerDesktop -e
+        Write-Host "Docker Desktop installed successfully!" -ForegroundColor Green
+        Write-Host "Make sure to enable the required WSL distro in Docker Desktop settings." -ForegroundColor Yellow
+    }
+    else {
+        Write-Host "Docker Desktop is already installed." -ForegroundColor Yellow
+    }
+
+    Write-Host "Installing command line tools..." -ForegroundColor Cyan
+    winget install --id BurntSushi.ripgrep -e
+    winget install --id junegunn.fzf -e
+    winget install --id sharkdp.fd -e
+    winget install --id sharkdp.bat -e
+    winget install --id GitHub.cli -e
+    winget install --id dandavison.delta -e
+    winget install --id astral-sh.uv -e
+    winget install --id jesseduffield.lazygit -e
+    winget install --id jesseduffield.lazydocker -e
+}
+
+function Set-CentOSStream10 {
+    Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
+
+    # Prompt for username and password
+    $username = Read-Host "Enter username for CentOS"
+    $password = Read-Host "Enter password for $username" -AsSecureString
+    $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
+        [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
+
+    # Download the setup-centos.sh script from GitHub
+    $scriptUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/installers/windows/setup-centos.sh"
+    $scriptContent = $null
+
+    Write-Host "Downloading setup script from GitHub..." -ForegroundColor Cyan
+    try {
+        $scriptContent = Invoke-WebRequest -Uri $scriptUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+    }
+    catch {
+        Write-Host "Failed to download setup script: $_" -ForegroundColor Red
+        return
+    }
+
+    # Write the script content to a temporary file
+    $tempScriptPath = "$env:TEMP\setup-centos.sh"
+    Set-Content -Path $tempScriptPath -Value $scriptContent -Encoding UTF8
+
+    # Set the correct permissions for the script
+    wsl -d CentOS-Stream-10 -u root bash -c "chmod +x /tmp/setup-centos.sh"
+
+    # Execute the script with the username and password
+    Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
+    wsl -d CentOS-Stream-10 -u root /tmp/setup-centos.sh "$username" "$passwordText"
+
+    # Clean up the password from memory
+    $passwordText = $null
+    [System.GC]::Collect()
+
+    # Get IP address to display in PowerShell
+    $vmIP = wsl -d CentOS-Stream-10 -u root hostname -I
+    $vmIP = $vmIP.Trim()
+
+    # Setup SSH keys
+    Write-Host "Setting up SSH key authentication..." -ForegroundColor Cyan
+
+    # Generate SSH key if it doesn't exist
+    if (-not (Test-Path "$env:USERPROFILE\.ssh\id_rsa")) {
+        Write-Host "Generating SSH key..." -ForegroundColor Cyan
+        ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
+    }
+
+    # Copy SSH key to VM
+    $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_rsa.pub"
+    wsl -d CentOS-Stream-10 -u root bash -c "mkdir -p /home/$username/.ssh && chmod 700 /home/$username/.ssh"
+    wsl -d CentOS-Stream-10 -u root bash -c "echo '$pubKey' >> /home/$username/.ssh/authorized_keys"
+    wsl -d CentOS-Stream-10 -u root bash -c "chmod 600 /home/$username/.ssh/authorized_keys"
+    wsl -d CentOS-Stream-10 -u root bash -c "chown -R ${username}:${username} /home/$username/.ssh"
+
+    # Add VM to SSH config
+    $sshConfig = @"
+Host centos-wsl
+    HostName $vmIP
+    User $username
+    IdentityFile ~/.ssh/id_rsa
+    StrictHostKeyChecking no
+"@
+
+    if (-not (Test-Path "$env:USERPROFILE\.ssh\config")) {
+        New-Item -Path "$env:USERPROFILE\.ssh\config" -ItemType File -Force | Out-Null
+    }
+
+    if (-not (Select-String -Path "$env:USERPROFILE\.ssh\config" -Pattern "Host centos-wsl" -Quiet)) {
+        Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfig
+    }
+
+    Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
+    Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
+    Write-Host "You can also connect via SSH: ssh centos-wsl" -ForegroundColor Cyan
+}
+
+function Install-CentOSStream10 {
+    if (!(Test-CommandExists wsl)) {
+        Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
+        return
+    }
+
+    $installedDistros = wsl --list --quiet
+    if ($installedDistros -contains "CentOS-Stream-10") {
+        Write-Host "CentOS Stream 10 is already installed." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
+
+    # Create installation directory
+    $wslDir = "$env:LOCALAPPDATA\WSL\CentOS-Stream-10"
+    New-Item -Path $wslDir -ItemType Directory -Force | Out-Null
+
+    # Create a temporary directory for the download
+    $tempDir = "$env:TEMP"
+    $archivePath = "$tempDir\CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
+
+    # Download official CentOS Stream 10 WSL image
+    $downloadUrl = "https://mirror.stream.centos.org/SIGs/10-stream/altimages/images/wsl/x86_64/CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
+
+    Write-Host "Downloading CentOS Stream 10 WSL image (this may take time)..." -ForegroundColor Cyan
+
+    # Disable progress bar for faster downloads
+    $ProgressPreference = 'SilentlyContinue'
+    try {
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
+        Write-Host "Download completed successfully!" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Download failed: $_" -ForegroundColor Red
+        Write-Host "You can try downloading the file manually from:" -ForegroundColor Yellow
+        Write-Host $downloadUrl -ForegroundColor Yellow
+        Write-Host "Then place it at: $archivePath" -ForegroundColor Yellow
+        return
+    }
+    $ProgressPreference = 'Continue'
+
+    # Import the distro directly from the .tar.xz file (WSL can handle this format)
+    Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
+    wsl --import --version=2 CentOS-Stream-10 $wslDir $archivePath
+
+    # Clean up
+    Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
+    Remove-Item -Path $archivePath -Force
+
+    Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
+    Write-Host "To start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
+}
+
+function Main {
+    Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
+
+    Install-WSL
+    Install-Ubuntu24
+
+    Install-CentOSStream10
+    Setup-CentOSStream10
+
+    Write-Host "Windows development environment setup complete!" -ForegroundColor Green
+}
+
+Main

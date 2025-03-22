@@ -820,7 +820,7 @@ function Install-Signal {
     }
 }
 
-function Setup-CentOSStream10 {
+function Set-CentOSStream10 {
     Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
 
     # Prompt for username and password
@@ -829,42 +829,74 @@ function Setup-CentOSStream10 {
     $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
         [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
 
-    # Copy the existing setup-centos.sh script to the CentOS environment
-    $scriptPath = Join-Path -Path $PSScriptRoot -ChildPath "setup-centos.sh"
+    # Download the setup-centos.sh script from GitHub
+    $scriptUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/installers/windows/setup-centos.sh"
+    $scriptContent = $null
 
-    if (Test-Path $scriptPath) {
-        Write-Host "Copying setup script to CentOS Stream 10..." -ForegroundColor Cyan
-
-        # Read the script content and convert Windows line endings (CRLF) to Unix (LF)
-        $scriptContent = Get-Content -Path $scriptPath -Raw
-        # Replace all CR and CRLF with just LF to ensure proper Unix format
-        $scriptContent = $scriptContent -replace "`r`n", "`n" -replace "`r", ""
-
-        # Write the script with Unix line endings to the CentOS environment
-        $scriptContent | wsl -d CentOS-Stream-10 -u root bash -c "cat > /tmp/setup-centos.sh && chmod +x /tmp/setup-centos.sh"
-
-        # Fix any remaining line ending issues directly in the WSL environment
-        wsl -d CentOS-Stream-10 -u root bash -c "sed -i 's/\r$//' /tmp/setup-centos.sh"
-
-        # Execute the script with the username and password
-        Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
-        wsl -d CentOS-Stream-10 -u root /tmp/setup-centos.sh "$username" "$passwordText"
-
-        # Clean up the password from memory
-        $passwordText = $null
-        [System.GC]::Collect()
-
-        Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
-        Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
-
-        # Get IP address to display in PowerShell
-        $ipAddress = wsl -d CentOS-Stream-10 -u root hostname -I
-        Write-Host "You can also connect via SSH: ssh $username@$ipAddress" -ForegroundColor Cyan
+    Write-Host "Downloading setup script from GitHub..." -ForegroundColor Cyan
+    try {
+        $scriptContent = Invoke-WebRequest -Uri $scriptUrl -UseBasicParsing | Select-Object -ExpandProperty Content
     }
-    else {
-        Write-Host "Error: setup-centos.sh script not found at $scriptPath" -ForegroundColor Red
-        Write-Host "Please ensure the script exists in the same directory as this PowerShell script." -ForegroundColor Yellow
+    catch {
+        Write-Host "Failed to download setup script: $_" -ForegroundColor Red
+        return
     }
+
+    # Write the script content to a temporary file
+    $tempScriptPath = "$env:TEMP\setup-centos.sh"
+    Set-Content -Path $tempScriptPath -Value $scriptContent -Encoding UTF8
+
+    # Set the correct permissions for the script
+    wsl -d CentOS-Stream-10 -u root bash -c "chmod +x /tmp/setup-centos.sh"
+
+    # Execute the script with the username and password
+    Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
+    wsl -d CentOS-Stream-10 -u root /tmp/setup-centos.sh "$username" "$passwordText"
+
+    # Clean up the password from memory
+    $passwordText = $null
+    [System.GC]::Collect()
+
+    # Get IP address to display in PowerShell
+    $vmIP = wsl -d CentOS-Stream-10 -u root hostname -I
+    $vmIP = $vmIP.Trim()
+
+    # Setup SSH keys
+    Write-Host "Setting up SSH key authentication..." -ForegroundColor Cyan
+
+    # Generate SSH key if it doesn't exist
+    if (-not (Test-Path "$env:USERPROFILE\.ssh\id_rsa")) {
+        Write-Host "Generating SSH key..." -ForegroundColor Cyan
+        ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
+    }
+
+    # Copy SSH key to VM
+    $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_rsa.pub"
+    wsl -d CentOS-Stream-10 -u root bash -c "mkdir -p /home/$username/.ssh && chmod 700 /home/$username/.ssh"
+    wsl -d CentOS-Stream-10 -u root bash -c "echo '$pubKey' >> /home/$username/.ssh/authorized_keys"
+    wsl -d CentOS-Stream-10 -u root bash -c "chmod 600 /home/$username/.ssh/authorized_keys"
+    wsl -d CentOS-Stream-10 -u root bash -c "chown -R ${username}:${username} /home/$username/.ssh"
+
+    # Add VM to SSH config
+    $sshConfig = @"
+Host centos-wsl
+    HostName $vmIP
+    User $username
+    IdentityFile ~/.ssh/id_rsa
+    StrictHostKeyChecking no
+"@
+
+    if (-not (Test-Path "$env:USERPROFILE\.ssh\config")) {
+        New-Item -Path "$env:USERPROFILE\.ssh\config" -ItemType File -Force | Out-Null
+    }
+
+    if (-not (Select-String -Path "$env:USERPROFILE\.ssh\config" -Pattern "Host centos-wsl" -Quiet)) {
+        Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfig
+    }
+
+    Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
+    Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
+    Write-Host "You can also connect via SSH: ssh centos-wsl" -ForegroundColor Cyan
 }
 
 function Install-CentOSStream10 {
@@ -921,6 +953,61 @@ function Install-CentOSStream10 {
     Write-Host "To start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
 }
 
+function Install-JetBrainsMonoNerdFont {
+    Write-Host "Installing JetBrains Mono Nerd Font..." -ForegroundColor Cyan
+
+    # Check if font is already installed
+    $fontsFolderPath = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
+    if (Test-Path "$fontsFolderPath\JetBrainsMonoNerdFont-Regular.ttf") {
+        Write-Host "JetBrains Mono Nerd Font is already installed." -ForegroundColor Yellow
+        return
+    }
+
+    # Create temporary directory for download
+    $tempDir = "$env:TEMP\nerd-fonts"
+    New-Item -Path $tempDir -ItemType Directory -Force | Out-Null
+
+    # Download JetBrains Mono Nerd Font
+    $downloadUrl = "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip"
+    $zipPath = "$tempDir\JetBrainsMono.zip"
+
+    Write-Host "Downloading JetBrains Mono Nerd Font (this may take time)..." -ForegroundColor Cyan
+    $ProgressPreference = 'SilentlyContinue'
+    try {
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath -UseBasicParsing
+        Write-Host "Download completed successfully!" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Download failed: $_" -ForegroundColor Red
+        return
+    }
+    $ProgressPreference = 'Continue'
+
+    # Extract the zip file
+    Write-Host "Extracting font files..." -ForegroundColor Cyan
+    Expand-Archive -Path $zipPath -DestinationPath $tempDir -Force
+
+    # Install fonts
+    Write-Host "Installing fonts..." -ForegroundColor Cyan
+    $fontFiles = Get-ChildItem -Path $tempDir -Filter "*.ttf"
+
+    foreach ($fontFile in $fontFiles) {
+        $fontDestination = "$fontsFolderPath\$($fontFile.Name)"
+        Copy-Item -Path $fontFile.FullName -Destination $fontDestination -Force
+
+        # Register the font
+        $fontRegistryPath = "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
+        $fontName = $fontFile.BaseName + " (TrueType)"
+        New-ItemProperty -Path $fontRegistryPath -Name $fontName -Value $fontDestination -Force | Out-Null
+    }
+
+    # Clean up
+    Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
+    Remove-Item -Path $tempDir -Recurse -Force
+
+    Write-Host "JetBrains Mono Nerd Font installed successfully!" -ForegroundColor Green
+}
+
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
@@ -932,6 +1019,7 @@ function Main {
     # Install-Nushell
     # Install-DevTools
     # Install-CppTools
+    Install-JetBrainsMonoNerdFont
     # Install-Signal
     # Initialize-Dotfiles
     # Set-PowerShellAliases

