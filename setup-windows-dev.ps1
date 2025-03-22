@@ -204,7 +204,7 @@ function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
     # Install 7-Zip
-    if (!(Test-CommandExists 7z)) {
+    if (!(Test-Path "C:\Program Files\7-Zip\7z.exe")) {
         Write-Host "Installing 7-Zip..." -ForegroundColor Cyan
         winget install --id 7zip.7zip -e
         Write-Host "7-Zip installed successfully!" -ForegroundColor Green
@@ -266,7 +266,7 @@ function Install-DevTools {
     }
 
     # Install glazewm
-    if (!(Test-CommandExists glaze)) {
+    if (!(Test-CommandExists glazewm)) {
         Write-Host "Installing glazewm..." -ForegroundColor Cyan
         winget install --id glazewm.glazewm -e
         Write-Host "glazewm installed successfully!" -ForegroundColor Green
@@ -276,7 +276,7 @@ function Install-DevTools {
     }
 
     # Install telegram
-    if (!(Test-CommandExists telegram)) {
+    if (!(Test-Path "C:\Users\Pervez Iqbal\AppData\Roaming\Telegram Desktop")) {
         Write-Host "Installing telegram..." -ForegroundColor Cyan
         winget install --id Telegram.TelegramDesktop -e
         Write-Host "telegram installed successfully!" -ForegroundColor Green
@@ -286,7 +286,7 @@ function Install-DevTools {
     }
 
     # Install zoom
-    if (!(Test-CommandExists zoom)) {
+    if (!(Test-Path "C:\Program Files\Zoom\bin\Zoom.exe")) {
         Write-Host "Installing zoom..." -ForegroundColor Cyan
         winget install --id Zoom.Zoom -e
         Write-Host "zoom installed successfully!" -ForegroundColor Green
@@ -396,7 +396,7 @@ function Install-DevTools {
     }
 
     # Install emacs
-    if (!(Test-CommandExists emacs)) {
+    if (!(Test-Path "C:\Program Files\GNU Emacs")) {
         Write-Host "Installing emacs..." -ForegroundColor Cyan
         winget install GNU.Emacs
         Write-Host "emacs installed successfully!" -ForegroundColor Green
@@ -434,7 +434,7 @@ function Initialize-Dotfiles {
     New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\nvim\dot-config\nvim" -targetPath "$env:LOCALAPPDATA\nvim"
 
     Write-Host "Setting up Emacs config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\emacs-slim\dot-emacs" -targetPath "$env:APPDATA\.emacs"
+    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\emacs-slim\dot-emacs" -targetPath "$env:USERPROFILE\.emacs"
 }
 
 function Install-MultipassVM {
@@ -607,13 +607,13 @@ Set-Alias -Name gst -Value Git-Status
 function Git-Add { git add $args }
 Set-Alias -Name gia -Value Git-Add
 function Git-Commit { git commit -m $args }
-Set-Alias -Name gcm -Value Git-Commit
+Set-Alias -Name gitcm -Value Git-Commit  # Changed from gcm to gitcm
 function Git-Pull { git pull }
 Set-Alias -Name gfm -Value Git-Pull
 function Git-Push { git push }
-Set-Alias -Name gp -Value Git-Push
+Set-Alias -Name gitps -Value Git-Push    # Changed from gp to gitps
 function Git-Log { git log --topo-order --pretty=format:"%C(yellow)%h%C(reset) %C(cyan)%ar%C(reset) %C(green)%an%C(reset)%n%C(white)%s%C(reset)" }
-Set-Alias -Name gl -Value Git-Log
+Set-Alias -Name gitlog -Value Git-Log    # Changed from gl to gitlog
 
 # Navigation aliases
 function Go-Up { Set-Location .. }
@@ -663,6 +663,9 @@ function Install-Nushell {
         Write-Host "Installing Nushell via winget..." -ForegroundColor Cyan
         winget install --id Nushell.Nushell -e
 
+        # Update PATH to ensure nu command is available
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
         # Verify installation
         if (Test-CommandExists nu) {
             Write-Host "Nushell installed successfully!" -ForegroundColor Green
@@ -675,7 +678,7 @@ function Install-Nushell {
 
     # Set up Nushell configuration using New-ConfigLink
     Write-Host "Setting up Nushell config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\nushell\dot-config\nushell" -targetPath "$env:USERPROFILE\.config\nushell"
+    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\nushell\dot-config\nushell" -targetPath "$env:APPDATA\nushell"
 
     # Add Nushell to Windows Terminal profiles
     $wtConfigPath = "$env:LOCALAPPDATA\Microsoft\Windows Terminal\settings.json"
@@ -795,26 +798,51 @@ function Update-Windows {
     }
 }
 
+function Install-Signal {
+    Write-Host "Installing Signal messaging app..." -ForegroundColor Cyan
+
+    # Check if Signal is already installed
+    if (Test-Path "$env:LOCALAPPDATA\Programs\signal-desktop\Signal.exe") {
+        Write-Host "Signal is already installed." -ForegroundColor Yellow
+        return
+    }
+
+    # Install Signal using winget
+    Write-Host "Installing Signal via winget..." -ForegroundColor Cyan
+    winget install --id OpenWhisperSystems.Signal -e
+
+    # Verify installation
+    if (Test-Path "$env:LOCALAPPDATA\Programs\signal-desktop\Signal.exe") {
+        Write-Host "Signal installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Failed to install Signal. Please check your installation." -ForegroundColor Red
+    }
+}
+
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
-    Update-Windows
+    # Update-Windows
 
     Install-Chocolatey
     Install-Scoop
 
     Install-Starship
     Set-PSReadLine
+
+    Install-Nushell
+
     Install-DevTools
     Install-CppTools
+    Install-Signal
+
     Initialize-Dotfiles
     Set-PowerShellAliases
 
-    $restartNeeded = Install-WSL
-
     Install-Multipass
 
-    Set-MultipassSSH
+    $restartNeeded = Install-WSL
 
     if ($restartNeeded) {
         Write-Host "A system restart is required to complete WSL setup." -ForegroundColor Yellow
@@ -829,7 +857,7 @@ function Main {
 
     Install-Ubuntu24
 
-    Install-Nushell
+    Set-MultipassSSH
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
