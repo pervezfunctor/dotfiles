@@ -10,5 +10,5 @@
 - Windows setup
 
 ```powershell
-iwr -useb https://dub.sh/yourwindowssetup | iex
+iwr -useb https://dub.sh/kIv4BnI | iex
 ```
