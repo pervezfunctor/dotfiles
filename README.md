@@ -15,6 +15,22 @@ If within a container, use the following command.
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
 
+## Windows Setup
+
+I am working on a windows setup. It should install essential tools like wsl, vscode, docker, multipass etc. It should setup default wsl distribution and multipass vm. Unfortunately, I am unable to test this, right now. It might or might not work.
+
+Open powershell as administrator and run the following command.
+
+```bash
+iwr -useb https://dub.sh/kIv4BnI | iex
+```
+
+Currently I am setting up a CentOS Stream 10 VM. To access it, use the following command. Use the username and password you provided during setup, if needed.
+
+```bash
+wsl -d CentOS-Stream-10
+```
+
 ## Recommended Setup
 
 
