@@ -176,7 +176,6 @@ function Main {
     Install-DevTools
 
     Install-WSL
-    Install-Ubuntu24
 
     Install-CentOSStream10
     Setup-CentOSStream10
