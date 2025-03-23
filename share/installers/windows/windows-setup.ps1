@@ -10,11 +10,6 @@ function Test-CommandExists {
 }
 
 function Install-WSL {
-    if (Test-CommandExists wsl) {
-        Write-Host "WSL is already installed." -ForegroundColor Yellow
-        return
-    }
-
     Write-Host "Installing WSL..." -ForegroundColor Yellow
     wsl --install
 }
