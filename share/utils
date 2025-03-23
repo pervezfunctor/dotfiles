@@ -747,7 +747,7 @@ bootstrap() {
     elif is_mac; then
         source_dotfile "$INSTALLERS/mac"
     else
-        err_exit "unknown OS; skipping installation"
+        warn "unknown OS; installation might fail, continuing..."
     fi
 
     slog "Installing ${*} ..."

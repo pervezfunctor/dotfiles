@@ -9,11 +9,6 @@ function Test-CommandExists {
     return [bool](Get-Command -Name $Command -ErrorAction SilentlyContinue)
 }
 
-function Install-WSL {
-    Write-Host "Installing WSL..." -ForegroundColor Yellow
-    wsl --install
-}
-
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
@@ -46,38 +41,18 @@ function Install-DevTools {
 function Set-CentOSStream10 {
     Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
 
-    $username = Read-Host "Enter username for CentOS"
-    $password = Read-Host "Enter password for $username" -AsSecureString
-    $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
-        [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
-
-    $scriptUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/installers/windows/setup-centos.sh"
-    $scriptContent = $null
-
-    Write-Host "Downloading setup script from GitHub..." -ForegroundColor Cyan
-    try {
-        $scriptContent = Invoke-WebRequest -Uri $scriptUrl -UseBasicParsing | Select-Object -ExpandProperty Content
-    }
-    catch {
-        Write-Host "Failed to download setup script: $_" -ForegroundColor Red
-        return
-    }
-
-    $tempScriptPath = "$env:TEMP\setup-centos.sh"
-    Set-Content -Path $tempScriptPath -Value $scriptContent -Encoding UTF8
-
-    wsl -d CentOS-Stream-10 -u root bash -c "chmod +x /tmp/setup-centos.sh"
-
+    # Download and run the setup script directly in CentOS
     Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
-    wsl -d CentOS-Stream-10 -u root /tmp/setup-centos.sh "$username" "$passwordText"
 
-    # Clean up the password from memory
-    $passwordText = $null
-    [System.GC]::Collect()
+    wsl -d CentOS-Stream-10 -u root bash -c "curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/share/installers/windows/setup-centos.sh | bash"
 
     # Get IP address to display in PowerShell
     $vmIP = wsl -d CentOS-Stream-10 -u root hostname -I
     $vmIP = $vmIP.Trim()
+
+    # Get the username that was created
+    $username = wsl -d CentOS-Stream-10 -u root bash -c "grep default /etc/wsl.conf | cut -d= -f2"
+    $username = $username.Trim()
 
     # Setup SSH keys
     Write-Host "Setting up SSH key authentication..." -ForegroundColor Cyan
@@ -168,9 +143,7 @@ function Install-CentOSStream10 {
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
-    Install-DevTools
-
-    Install-WSL
+    # Install-DevTools
 
     Install-CentOSStream10
     Set-CentOSStream10

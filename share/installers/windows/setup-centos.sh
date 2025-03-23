@@ -1,17 +1,12 @@
 #!/usr/bin/env bash
 
-# Check if username and password were provided
-if [ $# -ne 2 ]; then
-    echo "Usage: $0 <username> <password>"
-    exit 1
-fi
-
-username=$1
-password=$2
-echo "Setting up user $username..."
+# Prompt for username and password
+read -p "Enter username for CentOS: " username
+read -sp "Enter password for $username: " password
+echo
 
 # Create the user
-useradd -m -G wheel "$username"
+useradd -m -G wheel "$username" 2>/dev/null || echo "User $username already exists"
 
 # Set password for the user non-interactively
 echo "$username:$password" | chpasswd
@@ -60,3 +55,4 @@ echo " ssh $username@$(hostname -I)"
 
 # su - $username
 # bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
+
