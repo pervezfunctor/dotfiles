@@ -1,16 +1,5 @@
 #Requires -RunAsAdministrator
 
-function Test-Windows11 {
-    $osInfo = Get-CimInstance -ClassName Win32_OperatingSystem
-    $version = [Version]$osInfo.Version
-
-    # Windows 11 is version 10.0.22000 or higher
-    if ($version.Build -ge 22000) {
-        return $true
-    }
-    return $false
-}
-
 function Test-HyperVInstalled {
     $hyperv = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All
     return $hyperv.State -eq "Enabled"
@@ -85,45 +74,19 @@ function Set-HyperVConfiguration {
 function Main {
     Write-Host "Hyper-V Installation for Windows 11" -ForegroundColor Green
 
-    # Check if running on Windows 11
-    if (-not (Test-Windows11)) {
-        Write-Host "This script is designed for Windows 11. Your system appears to be running an older version of Windows." -ForegroundColor Red
-        Write-Host "Hyper-V installation may still work, but some features might not be available." -ForegroundColor Yellow
-        $continue = Read-Host "Do you want to continue anyway? (y/n)"
-        if ($continue -ne 'y') {
-            return
-        }
-    }
-
-    # Check if Hyper-V is already installed
-    if (Test-HyperVInstalled) {
-        Write-Host "Hyper-V is already installed on this system." -ForegroundColor Yellow
-        $configure = Read-Host "Would you like to configure Hyper-V settings? (y/n)"
-        if ($configure -eq 'y') {
-            Set-HyperVConfiguration
-        }
-        return
-    }
-
-    # Check hardware virtualization support
     $systemInfo = Get-ComputerInfo
     if (-not $systemInfo.HyperVisorPresent) {
         Write-Host "Hardware virtualization might not be enabled in your BIOS/UEFI." -ForegroundColor Red
         Write-Host "Please enable virtualization in your system BIOS/UEFI settings and try again." -ForegroundColor Yellow
-        $continue = Read-Host "Do you want to continue anyway? (y/n)"
-        if ($continue -ne 'y') {
-            return
-        }
+        return
     }
 
-    # Install Hyper-V
-    Install-HyperV
-
-    # Configure Hyper-V if no restart is needed
     if (Test-HyperVInstalled) {
         Set-HyperVConfiguration
+        Write-Host "Hyper-V is already installed on this system." -ForegroundColor Yellow
     }
     else {
+        Install-HyperV
         Write-Host "Please restart your computer to complete Hyper-V installation." -ForegroundColor Yellow
         Write-Host "After restart, run this script again to configure Hyper-V." -ForegroundColor Yellow
     }
@@ -131,6 +94,3 @@ function Main {
 
 # Run the main function
 Main
-
-
-

@@ -12,21 +12,29 @@ function Test-CommandExists {
 function Install-WSL {
     if (Test-CommandExists wsl) {
         Write-Host "WSL is already installed." -ForegroundColor Yellow
-        return $false
+        return
     }
 
     Write-Host "Installing WSL..." -ForegroundColor Yellow
     wsl --install
-    return $true # Restart needed after WSL installation
 }
 
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
-    winget install --id Microsoft.VisualStudioCode -e
-    winget install --id Git.Git -e
+    if (-not (Test-CommandExists code)) {
+        winget install --id Microsoft.VisualStudioCode -e
+    }
+
+    if (-not (Test-CommandExists git)) {
+        winget install --id Git.Git -e
+    }
+
+    if (-not (Test-CommandExists docker)) {
+        winget install --id Docker.DockerDesktop -e
+    }
+
     winget install --id wez.wezterm -e
-    winget install --id Docker.DockerDesktop -e
     winget install --id BurntSushi.ripgrep.MSVC -e
     winget install --id junegunn.fzf -e
     winget install --id sharkdp.fd -e
@@ -43,13 +51,11 @@ function Install-DevTools {
 function Set-CentOSStream10 {
     Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
 
-    # Prompt for username and password
     $username = Read-Host "Enter username for CentOS"
     $password = Read-Host "Enter password for $username" -AsSecureString
     $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
         [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
 
-    # Download the setup-centos.sh script from GitHub
     $scriptUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/installers/windows/setup-centos.sh"
     $scriptContent = $null
 
@@ -62,14 +68,11 @@ function Set-CentOSStream10 {
         return
     }
 
-    # Write the script content to a temporary file
     $tempScriptPath = "$env:TEMP\setup-centos.sh"
     Set-Content -Path $tempScriptPath -Value $scriptContent -Encoding UTF8
 
-    # Set the correct permissions for the script
     wsl -d CentOS-Stream-10 -u root bash -c "chmod +x /tmp/setup-centos.sh"
 
-    # Execute the script with the username and password
     Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
     wsl -d CentOS-Stream-10 -u root /tmp/setup-centos.sh "$username" "$passwordText"
 
@@ -133,20 +136,16 @@ function Install-CentOSStream10 {
 
     Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
 
-    # Create installation directory
     $wslDir = "$env:LOCALAPPDATA\WSL\CentOS-Stream-10"
     New-Item -Path $wslDir -ItemType Directory -Force | Out-Null
 
-    # Create a temporary directory for the download
     $tempDir = "$env:TEMP"
     $archivePath = "$tempDir\CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
 
-    # Download official CentOS Stream 10 WSL image
     $downloadUrl = "https://mirror.stream.centos.org/SIGs/10-stream/altimages/images/wsl/x86_64/CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
 
     Write-Host "Downloading CentOS Stream 10 WSL image (this may take time)..." -ForegroundColor Cyan
 
-    # Disable progress bar for faster downloads
     $ProgressPreference = 'SilentlyContinue'
     try {
         Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
@@ -161,11 +160,9 @@ function Install-CentOSStream10 {
     }
     $ProgressPreference = 'Continue'
 
-    # Import the distro directly from the .tar.xz file (WSL can handle this format)
     Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
     wsl --import --version=2 CentOS-Stream-10 $wslDir $archivePath
 
-    # Clean up
     Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
     Remove-Item -Path $archivePath -Force
 
