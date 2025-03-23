@@ -168,7 +168,6 @@ function Install-CentOSStream10 {
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
-    Set-ExecutionPolicy Bypass -Scope Process
     Install-DevTools
 
     Install-WSL
