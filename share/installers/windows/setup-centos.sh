@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
-# Prompt for username and password
-read -p "Enter username for CentOS: " username
-read -sp "Enter password for $username: " password
-echo
+# Get username and password from arguments
+username="$1"
+password="$2"
+
+if [ -z "$username" ] || [ -z "$password" ]; then
+    echo "Error: Username and password must be provided"
+    exit 1
+fi
 
 # Create the user
 useradd -m -G wheel "$username" 2>/dev/null || echo "User $username already exists"
@@ -53,6 +57,6 @@ echo "Setup complete!"
 echo "You can connect to this instance via SSH:"
 echo " ssh $username@$(hostname -I)"
 
-# su - $username
-# bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
+
+
 

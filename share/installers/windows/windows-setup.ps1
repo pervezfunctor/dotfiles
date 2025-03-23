@@ -41,18 +41,24 @@ function Install-DevTools {
 function Set-CentOSStream10 {
     Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
 
+    # Prompt for username and password
+    $username = Read-Host "Enter username for CentOS"
+    $password = Read-Host "Enter password for $username" -AsSecureString
+    $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
+        [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
+
     # Download and run the setup script directly in CentOS
     Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
 
-    wsl -d CentOS-Stream-10 -u root bash -c "curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/share/installers/windows/setup-centos.sh | bash"
+    wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/share/installers/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
+
+    # Clean up the password from memory
+    $passwordText = $null
+    [System.GC]::Collect()
 
     # Get IP address to display in PowerShell
-    $vmIP = wsl -d CentOS-Stream-10 -u root hostname -I
+    $vmIP = wsl -d CentOS-Stream-10 -u root -- hostname -I
     $vmIP = $vmIP.Trim()
-
-    # Get the username that was created
-    $username = wsl -d CentOS-Stream-10 -u root bash -c "grep default /etc/wsl.conf | cut -d= -f2"
-    $username = $username.Trim()
 
     # Setup SSH keys
     Write-Host "Setting up SSH key authentication..." -ForegroundColor Cyan
@@ -65,10 +71,10 @@ function Set-CentOSStream10 {
 
     # Copy SSH key to VM
     $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_rsa.pub"
-    wsl -d CentOS-Stream-10 -u root bash -c "mkdir -p /home/$username/.ssh && chmod 700 /home/$username/.ssh"
-    wsl -d CentOS-Stream-10 -u root bash -c "echo '$pubKey' >> /home/$username/.ssh/authorized_keys"
-    wsl -d CentOS-Stream-10 -u root bash -c "chmod 600 /home/$username/.ssh/authorized_keys"
-    wsl -d CentOS-Stream-10 -u root bash -c "chown -R ${username}:${username} /home/$username/.ssh"
+    wsl -d CentOS-Stream-10 -u root -- bash -c "mkdir -p /home/$username/.ssh && chmod 700 /home/$username/.ssh"
+    wsl -d CentOS-Stream-10 -u root -- bash -c "echo '$pubKey' >> /home/$username/.ssh/authorized_keys"
+    wsl -d CentOS-Stream-10 -u root -- bash -c "chmod 600 /home/$username/.ssh/authorized_keys"
+    wsl -d CentOS-Stream-10 -u root -- bash -c "chown -R ${username}:${username} /home/$username/.ssh"
 
     # Add VM to SSH config
     $sshConfig = @"
