@@ -173,6 +173,8 @@ function Install-CentOSStream10 {
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
+    Install-DevTools
+
     Install-WSL
     Install-Ubuntu24
 
