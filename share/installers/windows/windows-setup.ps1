@@ -178,7 +178,7 @@ function Main {
     Install-WSL
 
     Install-CentOSStream10
-    Setup-CentOSStream10
+    Set-CentOSStream10
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
