@@ -807,17 +807,9 @@ function Install-Signal {
         return
     }
 
-    # Install Signal using winget
     Write-Host "Installing Signal via winget..." -ForegroundColor Cyan
     winget install --id OpenWhisperSystems.Signal -e
-
-    # Verify installation
-    if (Test-Path "$env:LOCALAPPDATA\Programs\signal-desktop\Signal.exe") {
-        Write-Host "Signal installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Failed to install Signal. Please check your installation." -ForegroundColor Red
-    }
+    Write-Host "Signal installed successfully!" -ForegroundColor Green
 }
 
 function Set-CentOSStream10 {
@@ -1008,40 +1000,92 @@ function Install-JetBrainsMonoNerdFont {
     Write-Host "JetBrains Mono Nerd Font installed successfully!" -ForegroundColor Green
 }
 
+function Set-VSCodeSettings {
+    Write-Host "Setting up VSCode settings..." -ForegroundColor Cyan
+
+    $dotfilesDir = "$env:USERPROFILE\ilm"
+    $vscodeSettingsDir = "$env:APPDATA\Code\User"
+    $extensionsFile = "$dotfilesDir\extras\vscode\extensions\common"
+    $settingsFile = "$dotfilesDir\extras\vscode\settings.json"
+
+    if (!(Test-CommandExists code)) {
+        Write-Host "VS Code is not installed. Please install VS Code first." -ForegroundColor Red
+        return
+    }
+
+    if (!(Test-Path $vscodeSettingsDir)) {
+        try {
+            New-Item -Path $vscodeSettingsDir -ItemType Directory -Force | Out-Null
+            Write-Host "Created VS Code settings directory" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Failed to create VS Code settings directory: $_" -ForegroundColor Red
+            return
+        }
+    }
+
+    if (Test-Path $extensionsFile) {
+        Write-Host "Installing VS Code extensions..." -ForegroundColor Cyan
+        try {
+            Get-Content -Path $extensionsFile | ForEach-Object {
+                if ($_ -and !($_.StartsWith('#'))) {
+                    Write-Host "Installing extension: $_" -ForegroundColor Yellow
+                    code --install-extension $_ --force
+                }
+            }
+        }
+        catch {
+            Write-Host "Failed to install some extensions: $_" -ForegroundColor Red
+        }
+    }
+    else {
+        Write-Host "Extensions file not found at $extensionsFile" -ForegroundColor Red
+    }
+
+    if (Test-Path $settingsFile) {
+        try {
+            Write-Host "Copying VS Code settings..." -ForegroundColor Cyan
+            Copy-Item -Path $settingsFile -Destination "$vscodeSettingsDir\settings.json" -Force
+            Write-Host "VS Code settings copied successfully" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Failed to copy settings file: $_" -ForegroundColor Red
+        }
+    }
+    else {
+        Write-Host "Settings file not found at $settingsFile" -ForegroundColor Red
+    }
+
+    Write-Host "VS Code setup completed" -ForegroundColor Green
+}
+
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
-    # Update-Windows
-    # Install-Chocolatey
-    # Install-Scoop
-    # Install-Starship
-    # Set-PSReadLine
-    # Install-Nushell
-    # Install-DevTools
-    # Install-CppTools
+    Update-Windows
+    Install-Chocolatey
+    Install-Scoop
+
+    Install-DevTools
+    Initialize-Dotfiles
+
     Install-JetBrainsMonoNerdFont
-    # Install-Signal
-    # Initialize-Dotfiles
-    # Set-PowerShellAliases
-    # Install-Multipass
+    Install-Starship
+    Set-PSReadLine
+    Set-PowerShellAliases
+    Install-Nushell
 
-    # $restartNeeded = Install-WSL
+    Install-CppTools
+    Set-VSCodeSettings
 
-    # if ($restartNeeded) {
-    #     Write-Host "A system restart is required to complete WSL setup." -ForegroundColor Yellow
-    #     $restart = Read-Host "Would you like to restart now? (y/n)"
-    #     if ($restart -eq 'y') {
-    #         Restart-Computer
-    #     }
-    # }
-    # else {
-    #     Write-Host "To start Ubuntu in WSL, open a terminal and type: wsl" -ForegroundColor Cyan
-    # }
+    Install-Signal
 
-    # Install-Ubuntu24
-    # Install-CentOSStream10
-    Setup-CentOSStream10
-    # Set-MultipassSSH
+    Install-Multipass
+    Install-WSL
+    Install-Ubuntu24
+    Install-CentOSStream10
+    Set-CentOSStream10
+    Set-MultipassSSH
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
