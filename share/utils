@@ -762,7 +762,7 @@ bootstrap() {
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2>/dev/null
     [ -n "$NOSUDO" ] || keep_sudo_running
 
-    INSTALLERS="share/installers"
+    INSTALLERS="${BASE_URL}/share/installers"
     source_curl "$INSTALLERS/common"
 
     if is_apt; then
