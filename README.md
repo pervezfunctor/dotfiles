@@ -17,24 +17,25 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 
 ## Windows Setup
 
-Following script is tests on fresh install of Windows 11 Pro. This may or may not work on Windows 11 Home.
+Following script is tested on fresh install of Windows 11 Pro. This may or may not work on Windows 11 Home.
 
 Open `powershell` as administrator and run the following command.
 
 ```bash
 iwr -useb https://dub.sh/kIv4BnI | iex
 ```
+
 After the above scripts ends, you must do the following
 
 1. Reboot your system.
 
 2. Use Windows Terminal.
 
-3. Set font to `Jetbrains Mono Nerd Font` for `CentOS-Stream-10` profile or preferrably in defaults.
+3. Set font to `JetbrainsMono Nerd Font` for `CentOS-Stream-10` and `Powershell` profiles or preferrably in defaults.
 
-4. Install neovim extension in `vscode`.
+4. Install neovim extension(`asvetliakov.vscode-neovim`) in `vscode`.
 
-5. Add to vscode settings.
+5. Add to vscode user settings.
 
 ```json
   "remote.extensionKind": {
@@ -42,11 +43,12 @@ After the above scripts ends, you must do the following
   }
 ```
 
-6. Above script will setup `CentOS` Stream 10(`wsl`). To access it, use the following command. Use the username and password you provided during setup, if needed.
+6. Above script will setup `CentOS` Stream 10(`wsl`). To access it, either use `Windows Terminal` profile or use the following command. Use the username and password you provided during setup, if needed.
 
 ```bash
 wsl -d CentOS-Stream-10
 ```
+
 7. Make sure you launch `code` from within this `wsl`.
 
 If the above script does not work, you could manually set up windows wsl environment, using the following commands.
@@ -59,6 +61,7 @@ If the above script does not work, you could manually set up windows wsl environ
 ```
 
 And then follow the above steps.
+
 
 ## Recommended Setup
 
