@@ -1513,6 +1513,10 @@ debian_packages() {
     starship_install
 }
 
+zsh_as_default() {
+    has_cmd zsh && chsh -s "$(command -v zsh)" "$USER"
+}
+
 box_base() {
     cd "$HOME" || warn "could not cd to $HOME"
 
@@ -1538,7 +1542,7 @@ box_base() {
         stowdf tmux
     fi
 
-    has_cmd zsh && chsh -s "$(command -v zsh)" "$USER"
+    zsh_as_default
 }
 
 dbox_base() {
@@ -1742,7 +1746,7 @@ base-group_check() {
 base_groupstall() {
     core_install
     dotfiles_install
-    has_cmd stow && bash_config_install
+    bash_config_install
 
     base-group_check
 }
@@ -1771,13 +1775,19 @@ min_groupstall() {
 
 centos_groupstall() {
     min_groupstall
+    si zsh tmux
     brew_install
     brew_shell_slim_install
 
-    bash_config_install
-    has_cmd zsh && zsh_config_install
-    has_cmd nvim && nvim_config_install
-    has_cmd tmux && tmux_config_install
+    if has_cmd stow; then
+        has_cmd zsh && zsh_config_install
+        has_cmd nvim && nvim_config_install
+        has_cmd tmux && tmux_config_install
+    else
+        warn "stow not installed, skipping configuration for zsh, nvim, tmux"
+    fi
+
+    zsh_as_default
 }
 
 shell-group_check() {
