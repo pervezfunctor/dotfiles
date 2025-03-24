@@ -9,7 +9,10 @@ si() {
 
 enable_epel() {
     slog "Enabling EPEL"
-    is_rocky && sudo dnf config-manager --set-enabled crb
+    if is_rocky || is_centos; then
+        sudo dnf config-manager --set-enabled crb
+    fi
+
     is_fedora && sudo dnf-3 config-manager --set-enabled crb
     si epel-release
 }
