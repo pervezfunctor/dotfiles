@@ -80,7 +80,30 @@ function Set-CentOSStream10 {
     wsl -d CentOS-Stream-10 -u root -- bash -c "chmod 600 /home/$username/.ssh/authorized_keys"
     wsl -d CentOS-Stream-10 -u root -- bash -c "chown -R ${username}:${username} /home/$username/.ssh"
 
-    # Add VM to SSH config
+    # Debug the SSH config file
+    Write-Host "Checking SSH config file..." -ForegroundColor Cyan
+    if (Test-Path "$env:USERPROFILE\.ssh\config") {
+        $configContent = Get-Content "$env:USERPROFILE\.ssh\config" -Raw
+        Write-Host "Current SSH config content:" -ForegroundColor Yellow
+        Write-Host $configContent
+
+        # Check if there's a malformed entry
+        if ($configContent -match "Host centos-wsl\s+HostName\s+t\s+") {
+            Write-Host "Found malformed entry in SSH config. Fixing..." -ForegroundColor Red
+
+            # Fix the SSH config by replacing the malformed entry
+            $fixedConfig = $configContent -replace "Host centos-wsl\s+HostName\s+t\s+", "Host centos-wsl`r`n    HostName $vmIP`r`n    "
+            Set-Content -Path "$env:USERPROFILE\.ssh\config" -Value $fixedConfig
+
+            Write-Host "SSH config fixed. New content:" -ForegroundColor Green
+            Get-Content "$env:USERPROFILE\.ssh\config" -Raw
+        }
+    }
+    else {
+        Write-Host "SSH config file not found." -ForegroundColor Red
+    }
+
+    # Create a new SSH config entry for centos-wsl
     $sshConfig = @"
 Host centos-wsl
     HostName $vmIP
@@ -89,13 +112,15 @@ Host centos-wsl
     StrictHostKeyChecking no
 "@
 
-    if (-not (Test-Path "$env:USERPROFILE\.ssh\config")) {
-        New-Item -Path "$env:USERPROFILE\.ssh\config" -ItemType File -Force | Out-Null
+    # Remove any existing centos-wsl entry
+    if (Test-Path "$env:USERPROFILE\.ssh\config") {
+        $configContent = Get-Content "$env:USERPROFILE\.ssh\config" -Raw
+        $newContent = $configContent -replace "Host centos-wsl(\r?\n|\r)([^\r\n]*(\r?\n|\r))*?(\r?\n|\r)?", ""
+        Set-Content -Path "$env:USERPROFILE\.ssh\config" -Value $newContent
     }
 
-    if (-not (Select-String -Path "$env:USERPROFILE\.ssh\config" -Pattern "Host centos-wsl" -Quiet)) {
-        Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfig
-    }
+    # Add the new entry
+    Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfig
 
     Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
     Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
