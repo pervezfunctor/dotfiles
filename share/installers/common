@@ -1769,6 +1769,17 @@ min_groupstall() {
     min-group_check
 }
 
+centos_groupstall() {
+    min_groupstall
+    brew_install
+    brew_shell_slim_install
+
+    bash_config_install
+    has_cmd zsh && zsh_config_install
+    has_cmd nvim && nvim_config_install
+    has_cmd tmux && tmux_config_install
+}
+
 shell-group_check() {
     cmd_check gh nvim zsh tree-sitter tmux lazygit sd lsd bat fd
     cmd_check fzf zoxide gum bat brew btm htop btm rg starship
@@ -1776,16 +1787,17 @@ shell-group_check() {
     # cmd_check cheat choose curlie direnv doggo dotenv procs
     # cmd_check duf dust gawk gdu hyperfine jq just shellcheck shfmt yq
 
-    bash_config_install
-    has_cmd zsh && zsh_config_install
-    has_cmd nvim && nvim_config_install
-    has_cmd tmux && tmux_config_install
-    has_cmd yazi && yazi_config_install
 }
 
 shell_groupstall() {
     min_groupstall
     shell_install
+
+    bash_config_install
+    has_cmd zsh && zsh_config_install
+    has_cmd nvim && nvim_config_install
+    has_cmd tmux && tmux_config_install
+    has_cmd yazi && yazi_config_install
 
     shell-group_check
 }

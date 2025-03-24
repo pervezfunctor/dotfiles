@@ -75,11 +75,11 @@ cli_install() {
     slog "Installing cli tools using dnf"
 
     si zsh neovim ShellCheck tmux pkg-config urlview htop gh
-    si  fzf ripgrep fd-find hyperfine bat zoxide plocate luarocks
-    si tree-sitter-cli tealdeer cheat navi ugrep micro direnv
+    si fzf ripgrep fd-find bat plocate luarocks tealdeer
 
     if is_fedora; then
-        si python3-neovim git-delta procs
+        si python3-neovim zoxide hyperfine git-delta procs tree-sitter-cli
+        si cheat navi ugrep micro direnv
     fi
 
     gh extension install github/gh-copilot
