@@ -17,7 +17,39 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 
 ## Windows Setup
 
-You could manually set up windows wsl environment, using the following commands.
+Following script is tests on fresh install of Windows 11 Pro. This may or may not work on Windows 11 Home.
+
+Open `powershell` as administrator and run the following command.
+
+```bash
+iwr -useb https://dub.sh/kIv4BnI | iex
+```
+After the above scripts ends, you must do the following
+
+1. Reboot your system.
+
+2. Use Windows Terminal.
+
+3. Set font to `Jetbrains Mono Nerd Font` for `CentOS-Stream-10` profile or preferrably in defaults.
+
+4. Install neovim extension in `vscode`.
+
+5. Add to vscode settings.
+
+```json
+  "remote.extensionKind": {
+      "asvetliakov.vscode-neovim": ["workspace"]
+  }
+```
+
+6. Above script will setup `CentOS` Stream 10(`wsl`). To access it, use the following command. Use the username and password you provided during setup, if needed.
+
+```bash
+wsl -d CentOS-Stream-10
+```
+7. Make sure you launch `code` from within this `wsl`.
+
+If the above script does not work, you could manually set up windows wsl environment, using the following commands.
 
 ```powershell
     wsl --install -d Ubuntu-24.04
@@ -26,20 +58,7 @@ You could manually set up windows wsl environment, using the following commands.
     bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
 
-I am working on a windows setup script. It should install essential tools like `wsl`, `vscode`, `docker`, `multipass` etc. It should setup default `wsl` distribution and `multipass` virtual machine. Unfortunately, I am unable to test this, right now. Let me know if the following works!
-
-Open `powershell` as administrator and run the following command.
-
-```bash
-iwr -useb https://dub.sh/kIv4BnI | iex
-```
-
-This will setup `CentOS` Stream 10(`wsl`). To access it, use the following command. Use the username and password you provided during setup, if needed.
-
-```bash
-wsl -d CentOS-Stream-10
-```
-
+And then follow the above steps.
 
 ## Recommended Setup
 
