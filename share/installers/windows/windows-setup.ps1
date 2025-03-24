@@ -52,9 +52,17 @@ function Set-CentOSStream10 {
     $passwordText = $null
     [System.GC]::Collect()
 
-    # Get IP address to display in PowerShell
+    # Get IP address to display in PowerShell - ensure it's properly trimmed
     $vmIP = wsl -d CentOS-Stream-10 -u root -- hostname -I
     $vmIP = $vmIP.Trim()
+
+    # Verify we have a valid IP address
+    if ([string]::IsNullOrWhiteSpace($vmIP) -or $vmIP -notmatch '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}') {
+        Write-Host "Warning: Could not determine a valid IP address for CentOS WSL. Using localhost instead." -ForegroundColor Yellow
+        $vmIP = "127.0.0.1"
+    }
+
+    Write-Host "CentOS WSL IP address: $vmIP" -ForegroundColor Cyan
 
     # Setup SSH keys
     Write-Host "Setting up SSH key authentication..." -ForegroundColor Cyan

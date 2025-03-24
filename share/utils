@@ -489,12 +489,41 @@ hms() {
 keep_sudo_running() {
     slog "Keeping sudo alive"
     has_cmd sudo || err_exit "sudo must be installed"
+
     sudo -v
-    while true; do
-        sudo -n true
-        sleep 15
-        kill -0 "$$" || exit
-    done 2>/dev/null &
+
+    if [ -w /etc/sudoers.d ]; then
+        echo "Defaults timestamp_timeout=120" | sudo tee /etc/sudoers.d/increased_timeout >/dev/null
+    fi
+
+    # Keep sudo token refreshed in background with more frequent refreshes
+    (
+        while true; do
+            # Refresh sudo timestamp every 60 seconds to be safe
+            sudo -n true
+            sleep 60
+            # Exit loop if parent process is gone
+            kill -0 "$$" 2>/dev/null || exit
+        done
+    ) &
+
+    # Store background process ID to be able to kill it later if needed
+    SUDO_KEEP_ALIVE_PID=$!
+
+    # Make sure the background process is terminated when the script exits
+    trap stop_sudo_running EXIT
+}
+
+stop_sudo_running() {
+    if [ -n "$SUDO_KEEP_ALIVE_PID" ]; then
+        kill $SUDO_KEEP_ALIVE_PID 2>/dev/null || true
+        unset SUDO_KEEP_ALIVE_PID
+    fi
+
+    # Remove temporary sudoers file if we created one
+    if [ -f /etc/sudoers.d/increased_timeout ]; then
+        sudo rm -f /etc/sudoers.d/increased_timeout
+    fi
 }
 
 download_to() {
