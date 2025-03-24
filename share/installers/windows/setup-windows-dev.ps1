@@ -114,6 +114,25 @@ function Install-Ubuntu24 {
     }
 }
 
+function Install-NerdFonts {
+    Write-Host "Installing Nerd Fonts..." -ForegroundColor Cyan
+
+    # Check if scoop is installed, install it if not
+    if (-not (Test-CommandExists scoop)) {
+        Write-Host "Installing Scoop package manager..." -ForegroundColor Cyan
+        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+    }
+
+    # Add the nerd-fonts bucket if not already added
+    scoop bucket add nerd-fonts
+
+    # Install popular Nerd Fonts
+    scoop install nerd-fonts/JetBrainsMono-NF
+    scoop install nerd-fonts/CascadiaCode-NF
+
+    Write-Host "Nerd Fonts installed successfully!" -ForegroundColor Green
+}
+
 function Install-Starship {
     if (Test-CommandExists starship) {
         Write-Host "Starship is already installed." -ForegroundColor Yellow

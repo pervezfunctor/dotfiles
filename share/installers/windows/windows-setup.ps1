@@ -22,6 +22,7 @@ function Install-DevTools {
 
     winget install --id wez.wezterm -e
     winget install --id GitHub.cli -e
+    winget install --id DEVCOM.JetBrainsMonoNerdFont -e
     # winget install --id astral-sh.uv -e
     # winget install --id JesseDuffield.lazygit -e
     # winget install --id JesseDuffield.lazydocker -e
@@ -120,19 +121,35 @@ function Install-CentOSStream10 {
     Write-Host "To start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
 }
 
+function Install-NerdFonts {
+    Write-Host "Installing Nerd Fonts using Chocolatey..." -ForegroundColor Cyan
+
+    # Check if chocolatey is installed, install it if not
+    if (-not (Test-CommandExists choco)) {
+        Write-Host "Installing Chocolatey package manager..." -ForegroundColor Cyan
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    }
+
+    # Install Nerd Fonts
+    choco install nerd-fonts-jetbrainsmono -y
+    choco install nerd-fonts-cascadiacode -y
+
+    Write-Host "Nerd Fonts installed successfully!" -ForegroundColor Green
+}
+
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
-    # Install-DevTools
-
-    $restartNeeded = Install-WSL
-
-    if ($restartNeeded) {
+    if (Install-WSL) {
         Write-Host "Please restart your computer to complete WSL installation." -ForegroundColor Yellow
         Write-Host "After restart, run this script again to continue the setup." -ForegroundColor Yellow
         return
     }
 
+    Install-DevTools
+    Install-NerdFonts
     Install-CentOSStream10
     Set-CentOSStream10
 
