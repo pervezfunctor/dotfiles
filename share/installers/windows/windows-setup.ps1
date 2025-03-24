@@ -141,57 +141,101 @@ function Install-NerdFonts {
     Write-Host "Nerd Fonts installed successfully!" -ForegroundColor Green
 }
 
-function Set-VSCodeWSLSettings {
-    Write-Host "Setting up VSCode WSL settings..." -ForegroundColor Cyan
+function Set-ConfigFromGitHub {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigName,
 
-    $vscodeSettingsPath = "$env:APPDATA\Code\User\settings.json"
-    $wslSettingsUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/extras/vscode/wsl-settings.json"
-    $tempSettingsFile = "$env:TEMP\wsl-settings.json"
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigPath,
 
-    if (!(Test-CommandExists code)) {
-        Write-Host "VS Code is not installed. Please install VS Code first." -ForegroundColor Red
-        return
+        [Parameter(Mandatory = $true)]
+        [string]$GitHubUrl,
+
+        [Parameter(Mandatory = $false)]
+        [string]$RequiredCommand = "",
+
+        [Parameter(Mandatory = $false)]
+        [switch]$CreateDirectory = $false
+    )
+
+    Write-Host "Setting up $ConfigName settings..." -ForegroundColor Cyan
+
+    # Check if required command exists
+    if ($RequiredCommand -and !(Test-CommandExists $RequiredCommand)) {
+        Write-Host "$ConfigName is not installed. Please install $ConfigName first." -ForegroundColor Red
+        return $false
     }
 
-    # Create backup of existing settings if they exist
-    if (Test-Path $vscodeSettingsPath) {
-        $backupPath = "$vscodeSettingsPath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    # Create config directory if it doesn't exist and CreateDirectory is true
+    $configDir = Split-Path -Parent $ConfigPath
+    if ($CreateDirectory -and !(Test-Path $configDir)) {
         try {
-            Copy-Item -Path $vscodeSettingsPath -Destination $backupPath -Force
-            Write-Host "Created backup of VS Code settings at $backupPath" -ForegroundColor Green
+            New-Item -Path $configDir -ItemType Directory -Force | Out-Null
+            Write-Host "Created $ConfigName config directory" -ForegroundColor Green
         }
         catch {
-            Write-Host "Failed to create backup of settings: $_" -ForegroundColor Red
+            Write-Host "Failed to create $ConfigName config directory: $_" -ForegroundColor Red
+            return $false
         }
     }
 
-    # Download WSL settings from GitHub
-    Write-Host "Downloading VS Code WSL settings from GitHub..." -ForegroundColor Cyan
-    try {
-        Invoke-WebRequest -Uri $wslSettingsUrl -OutFile $tempSettingsFile -UseBasicParsing
-        Write-Host "VS Code WSL settings downloaded successfully" -ForegroundColor Green
-    }
-    catch {
-        Write-Host "Failed to download WSL settings: $_" -ForegroundColor Red
-        return
+    # Create backup of existing config if it exists
+    if (Test-Path $ConfigPath) {
+        $backupPath = "$ConfigPath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+        try {
+            Copy-Item -Path $ConfigPath -Destination $backupPath -Force
+            Write-Host "Created backup of $ConfigName config at $backupPath" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Failed to create backup of $ConfigName config: $_" -ForegroundColor Red
+        }
     }
 
-    # Copy downloaded settings to VS Code settings location
+    # Download config from GitHub
+    $tempConfigFile = "$env:TEMP\$(Split-Path -Leaf $ConfigPath)"
+    Write-Host "Downloading $ConfigName config from GitHub..." -ForegroundColor Cyan
     try {
-        Copy-Item -Path $tempSettingsFile -Destination $vscodeSettingsPath -Force
-        Write-Host "VS Code WSL settings applied successfully" -ForegroundColor Green
+        Invoke-WebRequest -Uri $GitHubUrl -OutFile $tempConfigFile -UseBasicParsing
+        Write-Host "$ConfigName config downloaded successfully" -ForegroundColor Green
     }
     catch {
-        Write-Host "Failed to apply WSL settings: $_" -ForegroundColor Red
+        Write-Host "Failed to download $ConfigName config: $_" -ForegroundColor Red
+        return $false
+    }
+
+    # Copy downloaded config to config location
+    try {
+        Copy-Item -Path $tempConfigFile -Destination $ConfigPath -Force
+        Write-Host "$ConfigName config applied successfully" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Failed to apply $ConfigName config: $_" -ForegroundColor Red
+        return $false
     }
     finally {
         # Clean up temporary file
-        if (Test-Path $tempSettingsFile) {
-            Remove-Item -Path $tempSettingsFile -Force
+        if (Test-Path $tempConfigFile) {
+            Remove-Item -Path $tempConfigFile -Force
         }
     }
 
-    Write-Host "VS Code WSL settings setup completed" -ForegroundColor Green
+    Write-Host "$ConfigName settings setup completed" -ForegroundColor Green
+    return $true
+}
+
+function Set-VSCodeSettings {
+    $vscodeSettingsPath = "$env:APPDATA\Code\User\settings.json"
+    $wslSettingsUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/extras/vscode/wsl-settings.json"
+
+    Set-ConfigFromGitHub -ConfigName "VS Code WSL" -ConfigPath $vscodeSettingsPath -GitHubUrl $wslSettingsUrl -RequiredCommand "code"
+}
+
+function Set-WezTermSettings {
+    $wezTermConfigFile = "$env:USERPROFILE\.config\wezterm\wezterm.lua"
+    $wezTermConfigUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/wezterm/dot-config/wezterm/wezterm.lua"
+
+    Set-ConfigFromGitHub -ConfigName "WezTerm" -ConfigPath $wezTermConfigFile -GitHubUrl $wezTermConfigUrl -RequiredCommand "wezterm" -CreateDirectory
 }
 
 function Main {
@@ -207,7 +251,8 @@ function Main {
     Install-NerdFonts
     Install-CentOSStream10
     Set-CentOSStream10
-    Set-VSCodeWSLSettings
+    # Set-VSCodeSettings
+    # Set-WezTermSettings
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
