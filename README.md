@@ -33,7 +33,9 @@ After the above scripts ends, you must do the following
 
 3. Set font to `JetbrainsMono Nerd Font` for `CentOS-Stream-10` and `Powershell` profiles or preferrably in defaults.
 
-4. Install neovim extension(`asvetliakov.vscode-neovim`) in `vscode`.
+4. Install vscode extensions
+    - neovim(`asvetliakov.vscode-neovim`).
+    - WSL(`ms-vscode-remote.remote-wsl`).
 
 5. Add to vscode user settings.
 
