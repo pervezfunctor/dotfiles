@@ -763,18 +763,18 @@ bootstrap() {
     [ -n "$NOSUDO" ] || keep_sudo_running
 
     INSTALLERS="share/installers"
-    source_dotfile "$INSTALLERS/common"
+    source_curl "$INSTALLERS/common"
 
     if is_apt; then
-        source_dotfile "$INSTALLERS/apt"
+        source_curl "$INSTALLERS/apt"
     elif is_rh && ! is_atomic; then
-        source_dotfile "$INSTALLERS/dnf"
+        source_curl "$INSTALLERS/dnf"
     elif is_suse; then
-        source_dotfile "$INSTALLERS/suse"
+        source_curl "$INSTALLERS/suse"
     elif is_arch; then
-        source_dotfile "$INSTALLERS/arch"
+        source_curl "$INSTALLERS/arch"
     elif is_mac; then
-        source_dotfile "$INSTALLERS/mac"
+        source_curl "$INSTALLERS/mac"
     else
         warn "unknown OS; installation might fail, continuing..."
     fi
