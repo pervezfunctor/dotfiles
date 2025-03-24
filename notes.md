@@ -12,3 +12,9 @@
 ```powershell
 iwr -useb https://dub.sh/kIv4BnI | iex
 ```
+
+- Hyper-V Windows Nested Virtualization
+
+```powershell
+Set-VMProcessor -VMName <VMName> -ExposeVirtualizationExtensions $true
+```
