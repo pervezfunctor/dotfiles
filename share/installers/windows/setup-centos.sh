@@ -56,3 +56,8 @@ chown -R "$username:$username" "/home/$username/.ssh"
 echo "Setup complete!"
 echo "You can connect to this instance via SSH:"
 echo " ssh $username@$(hostname -I)"
+
+# Run the setup script as the new user
+echo "Running setup script as $username..."
+sudo -u "$username" bash -c "cd /home/$username && bash -c \"\$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)\" -- shell"
+echo "Setup script complete!"

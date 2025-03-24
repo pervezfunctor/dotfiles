@@ -1,18 +1,4 @@
-function Request-AdminPrivileges {
-    if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        Write-Host "This script requires administrator privileges. Requesting elevation..." -ForegroundColor Yellow
-        $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`""
-        try {
-            Start-Process powershell -Verb RunAs -ArgumentList $arguments -PassThru
-            # Exit the current non-elevated script
-            exit
-        }
-        catch {
-            Write-Host "Failed to obtain administrator privileges. Exiting..." -ForegroundColor Red
-            exit 1
-        }
-    }
-}
+#Requires -RunAsAdministrator
 
 function Test-CommandExists {
     param (
@@ -158,8 +144,6 @@ function Install-CentOSStream10 {
 
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
-
-    Request-AdminPrivileges
 
     Install-DevTools
 
