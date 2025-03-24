@@ -126,8 +126,13 @@ vscode_bin_install() {
 ghostty_install() {
     has_cmd ghostty && return 1
 
-    sudo dnf copr -y enable pgdev/ghostty
-    si ghostty
+    if is_fedora; then
+        sudo dnf copr -y enable pgdev/ghostty
+        si ghostty
+        return 0
+    fi
+
+    warn "ghostty not available for CentOS/Rocky, skipping"
 }
 
 ui_install() {
@@ -176,6 +181,11 @@ podman_install() {
 }
 
 incus_install() {
+    if is_centos; then
+        warn "incus not available for CentOS, skipping"
+        return 1
+    fi
+
     if ! is_fedora; then
         sudo dnf -y copr enable neil/incus
     fi
