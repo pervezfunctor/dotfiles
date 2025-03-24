@@ -56,6 +56,18 @@ function Set-CentOSStream10 {
     Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
 }
 
+function Install-WSL {
+    # first check if wsl at least one distribution is installed.
+    if (wsl --list --quiet) {
+        Write-Host "WSL is already installed." -ForegroundColor Yellow
+        return $false
+    }
+
+    Write-Host "Installing WSL..." -ForegroundColor Cyan
+    wsl --install --no-distribution
+    return $true
+}
+
 function Install-CentOSStream10 {
     if (!(Test-CommandExists wsl)) {
         Write-Host "WSL command does not exist. Older Windows version?. Quitting." -ForegroundColor Red
@@ -108,6 +120,14 @@ function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
     Install-DevTools
+
+    $restartNeeded = Install-WSL
+
+    if ($restartNeeded) {
+        Write-Host "Please restart your computer to complete WSL installation." -ForegroundColor Yellow
+        Write-Host "After restart, run this script again to continue the setup." -ForegroundColor Yellow
+        return
+    }
 
     Install-CentOSStream10
     Set-CentOSStream10
