@@ -349,7 +349,7 @@ is_hyprland() {
 }
 
 is_fedora() {
-    [ -e /etc/redhat-release ] && grep -q 'Fedora' /etc/redhat-release
+    [ -e /etc/redhat-release ] && grep -q -i 'Fedora' /etc/redhat-release
 }
 
 is_kinoite() {
@@ -407,11 +407,11 @@ is_atomic() {
 }
 
 is_rocky() {
-    [ -e /etc/redhat-release ] && grep -q 'Rocky' /etc/redhat-release
+    [ -e /etc/redhat-release ] && grep -q -i 'Rocky' /etc/redhat-release
 }
 
 is_centos() {
-    [ -e /etc/redhat-release ] && grep -q 'Centos' /etc/redhat-release
+    [ -e /etc/redhat-release ] && grep -q -i 'CentOS' /etc/redhat-release
 }
 
 is_rh() {

@@ -376,7 +376,7 @@ ptyxis_install() {
         return 1
     fi
 
-    if ! flatpak list | grep -q Ptyxis >/dev/null; then
+    if ! flatpak list | grep -q -i Ptyxis >/dev/null; then
         slog "Installing Ptyxis"
         fpi app.devsuite.Ptyxis
     fi

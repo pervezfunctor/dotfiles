@@ -56,7 +56,3 @@ chown -R "$username:$username" "/home/$username/.ssh"
 echo "Setup complete!"
 echo "You can connect to this instance via SSH:"
 echo " ssh $username@$(hostname -I)"
-
-
-
-
