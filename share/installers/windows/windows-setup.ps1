@@ -62,6 +62,7 @@ function Install-WSL {
 
     if ($wslFeature.State -ne "Enabled") {
         Write-Host "WSL is not installed. Installing now..." -ForegroundColor Cyan
+        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
         wsl --install --no-distribution
         return $true  # Restart needed
     }
