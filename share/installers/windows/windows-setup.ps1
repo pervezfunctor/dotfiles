@@ -57,8 +57,10 @@ function Set-CentOSStream10 {
 }
 
 function Install-WSL {
-    # first check if wsl at least one distribution is installed.
-    if (wsl --list --quiet) {
+    # Check if WSL has at least one distribution installed
+    $installedDistros = wsl --list --quiet 2>$null
+
+    if ($installedDistros -and $installedDistros.Count -gt 0) {
         Write-Host "WSL is already installed." -ForegroundColor Yellow
         return $false
     }
