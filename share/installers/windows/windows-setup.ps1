@@ -22,7 +22,6 @@ function Install-DevTools {
 
     winget install --id wez.wezterm -e
     winget install --id GitHub.cli -e
-    winget install --id DEVCOM.JetBrainsMonoNerdFont -e
     # winget install --id astral-sh.uv -e
     # winget install --id JesseDuffield.lazygit -e
     # winget install --id JesseDuffield.lazydocker -e
