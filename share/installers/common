@@ -1416,7 +1416,10 @@ github_user_setup() {
         return 1
     fi
 
-    gh auth login
+    if has_cmd gh; then
+        slog "Authenticating github(gh)"
+        gh auth login
+    fi
 }
 
 dbox_nix_setup() {
