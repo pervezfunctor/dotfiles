@@ -33,11 +33,17 @@ After the above scripts ends, you must do the following
 
 3. Set font to `JetbrainsMono Nerd Font` for `CentOS-Stream-10` and `Powershell` profiles or preferrably in defaults.
 
-4. Install vscode extensions
+4. Start neovim to check all is okay.
+
+```bash
+nvim
+```
+
+5. Install vscode extensions
     - neovim(`asvetliakov.vscode-neovim`).
     - WSL(`ms-vscode-remote.remote-wsl`).
 
-5. Add to vscode user settings.
+6. Add to vscode user settings.
 
 ```json
   "remote.extensionKind": {
@@ -45,13 +51,14 @@ After the above scripts ends, you must do the following
   }
 ```
 
-6. Above script will setup `CentOS` Stream 10(`wsl`). To access it, either use `Windows Terminal` profile or use the following command. Use the username and password you provided during setup, if needed.
+7. Above script will setup `CentOS` Stream 10(`wsl`). To access it, either use `Windows Terminal` profile or use the following command. Use the username and password you provided during setup, if needed.
 
 ```bash
 wsl -d CentOS-Stream-10
 ```
 
-7. Make sure you launch `code` from within this `wsl`.
+8. Make sure you launch `code` from within this `wsl`.
+
 
 If the above script does not work, you could manually set up windows wsl environment, using the following commands.
 
