@@ -27,6 +27,11 @@
   "editor.rulers": [
     80
   ],
+  "remote.extensionKind": {
+    "asvetliakov.vscode-neovim": [
+      "workspace"
+    ]
+  },
   "update.mode": "manual",
   "editor.smoothScrolling": true,
   "editor.snippetSuggestions": "bottom",
