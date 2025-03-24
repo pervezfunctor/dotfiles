@@ -80,51 +80,64 @@ function Set-CentOSStream10 {
     wsl -d CentOS-Stream-10 -u root -- bash -c "chmod 600 /home/$username/.ssh/authorized_keys"
     wsl -d CentOS-Stream-10 -u root -- bash -c "chown -R ${username}:${username} /home/$username/.ssh"
 
-    # Debug the SSH config file
-    Write-Host "Checking SSH config file..." -ForegroundColor Cyan
-    if (Test-Path "$env:USERPROFILE\.ssh\config") {
-        $configContent = Get-Content "$env:USERPROFILE\.ssh\config" -Raw
-        Write-Host "Current SSH config content:" -ForegroundColor Yellow
-        Write-Host $configContent
-
-        # Check if there's a malformed entry
-        if ($configContent -match "Host centos-wsl\s+HostName\s+t\s+") {
-            Write-Host "Found malformed entry in SSH config. Fixing..." -ForegroundColor Red
-
-            # Fix the SSH config by replacing the malformed entry
-            $fixedConfig = $configContent -replace "Host centos-wsl\s+HostName\s+t\s+", "Host centos-wsl`r`n    HostName $vmIP`r`n    "
-            Set-Content -Path "$env:USERPROFILE\.ssh\config" -Value $fixedConfig
-
-            Write-Host "SSH config fixed. New content:" -ForegroundColor Green
-            Get-Content "$env:USERPROFILE\.ssh\config" -Raw
-        }
-    }
-    else {
-        Write-Host "SSH config file not found." -ForegroundColor Red
-    }
+    # Completely recreate the SSH config file for centos-wsl
+    Write-Host "Creating SSH config entry..." -ForegroundColor Cyan
 
     # Create a new SSH config entry for centos-wsl
     $sshConfig = @"
 Host centos-wsl
     HostName $vmIP
     User $username
-    IdentityFile ~/.ssh/id_rsa
+    IdentityFile $env:USERPROFILE\.ssh\id_rsa
     StrictHostKeyChecking no
 "@
 
-    # Remove any existing centos-wsl entry
-    if (Test-Path "$env:USERPROFILE\.ssh\config") {
-        $configContent = Get-Content "$env:USERPROFILE\.ssh\config" -Raw
-        $newContent = $configContent -replace "Host centos-wsl(\r?\n|\r)([^\r\n]*(\r?\n|\r))*?(\r?\n|\r)?", ""
-        Set-Content -Path "$env:USERPROFILE\.ssh\config" -Value $newContent
+    # Check if the SSH config directory exists
+    if (-not (Test-Path "$env:USERPROFILE\.ssh")) {
+        New-Item -Path "$env:USERPROFILE\.ssh" -ItemType Directory -Force | Out-Null
     }
 
-    # Add the new entry
-    Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfig
+    # Create a temporary file with the new config
+    $tempConfigPath = "$env:TEMP\ssh_config_temp"
+    Set-Content -Path $tempConfigPath -Value $sshConfig
+
+    # Display the temporary config for debugging
+    Write-Host "New SSH config content:" -ForegroundColor Yellow
+    Get-Content $tempConfigPath -Raw
+
+    # Backup the existing config if it exists
+    if (Test-Path "$env:USERPROFILE\.ssh\config") {
+        Copy-Item -Path "$env:USERPROFILE\.ssh\config" -Destination "$env:USERPROFILE\.ssh\config.bak" -Force
+        Write-Host "Backed up existing SSH config to $env:USERPROFILE\.ssh\config.bak" -ForegroundColor Cyan
+
+        # Read existing config and filter out any centos-wsl entries
+        $existingConfig = Get-Content "$env:USERPROFILE\.ssh\config" -Raw
+        $filteredConfig = $existingConfig -replace "Host centos-wsl(\r?\n|\r)([^\r\n]*(\r?\n|\r))*?(\r?\n|\r)?", ""
+
+        # Append our new config to the filtered existing config
+        $newFullConfig = $filteredConfig + "`r`n" + $sshConfig
+        Set-Content -Path "$env:USERPROFILE\.ssh\config" -Value $newFullConfig
+    }
+    else {
+        # If no config exists, just use our new config
+        Copy-Item -Path $tempConfigPath -Destination "$env:USERPROFILE\.ssh\config" -Force
+    }
+
+    # Clean up the temporary file
+    Remove-Item -Path $tempConfigPath -Force
+
+    # Display the final config for verification
+    Write-Host "Final SSH config content:" -ForegroundColor Green
+    Get-Content "$env:USERPROFILE\.ssh\config" -Raw
+
+    # Test the SSH connection
+    Write-Host "Testing SSH connection to centos-wsl..." -ForegroundColor Cyan
+    Write-Host "ssh -o 'StrictHostKeyChecking=no' $username@$vmIP -i $env:USERPROFILE\.ssh\id_rsa" -ForegroundColor Yellow
 
     Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
     Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
     Write-Host "You can also connect via SSH: ssh centos-wsl" -ForegroundColor Cyan
+    Write-Host "Or directly: ssh $username@$vmIP" -ForegroundColor Cyan
 }
 
 function Install-CentOSStream10 {
