@@ -1,4 +1,18 @@
-#Requires -RunAsAdministrator
+function Request-AdminPrivileges {
+    if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Host "This script requires administrator privileges. Requesting elevation..." -ForegroundColor Yellow
+        $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`""
+        try {
+            Start-Process powershell -Verb RunAs -ArgumentList $arguments -PassThru
+            # Exit the current non-elevated script
+            exit
+        }
+        catch {
+            Write-Host "Failed to obtain administrator privileges. Exiting..." -ForegroundColor Red
+            exit 1
+        }
+    }
+}
 
 function Test-CommandExists {
     param (
@@ -20,20 +34,16 @@ function Install-DevTools {
         winget install --id Git.Git -e
     }
 
-    if (-not (Test-CommandExists docker)) {
-        winget install --id Docker.DockerDesktop -e
-    }
-
     winget install --id wez.wezterm -e
-    winget install --id BurntSushi.ripgrep.MSVC -e
-    winget install --id junegunn.fzf -e
-    winget install --id sharkdp.fd -e
-    winget install --id sharkdp.bat -e
     winget install --id GitHub.cli -e
-    winget install --id dandavison.delta -e
-    winget install --id astral-sh.uv -e
-    winget install --id JesseDuffield.lazygit -e
-    winget install --id JesseDuffield.lazydocker -e
+    # winget install --id astral-sh.uv -e
+    # winget install --id JesseDuffield.lazygit -e
+    # winget install --id JesseDuffield.lazydocker -e
+    # winget install --id dandavison.delta -e
+    # winget install --id BurntSushi.ripgrep.MSVC -e
+    # winget install --id junegunn.fzf -e
+    # winget install --id sharkdp.fd -e
+    # winget install --id sharkdp.bat -e
 
     Write-Host "Development tools installed successfully!" -ForegroundColor Green
 }
@@ -100,7 +110,7 @@ Host centos-wsl
 
 function Install-CentOSStream10 {
     if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
+        Write-Host "WSL command does not exist. Older Windows version?. Quitting." -ForegroundColor Red
         return
     }
 
@@ -149,7 +159,9 @@ function Install-CentOSStream10 {
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
-    # Install-DevTools
+    Request-AdminPrivileges
+
+    Install-DevTools
 
     Install-CentOSStream10
     Set-CentOSStream10

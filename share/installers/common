@@ -1742,7 +1742,7 @@ base-group_check() {
 base_groupstall() {
     core_install
     dotfiles_install
-    bash_config_install
+    has_cmd stow && bash_config_install
 
     base-group_check
 }
@@ -1776,6 +1776,7 @@ shell-group_check() {
     # cmd_check cheat choose curlie direnv doggo dotenv procs
     # cmd_check duf dust gawk gdu hyperfine jq just shellcheck shfmt yq
 
+    bash_config_install
     has_cmd zsh && zsh_config_install
     has_cmd nvim && nvim_config_install
     has_cmd tmux && tmux_config_install

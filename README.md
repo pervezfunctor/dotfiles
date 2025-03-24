@@ -17,7 +17,16 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 
 ## Windows Setup
 
-I am working on a windows setup. It should install essential tools like wsl, vscode, docker, multipass etc. It should setup default wsl distribution and multipass vm. Unfortunately, I am unable to test this, right now. It might or might not work.
+You could manually set up windows wsl environment, using the following commands.
+
+```powershell
+    wsl --install -d Ubuntu-24.04
+    wsl -d Ubuntu-24.04
+    # run the following within wsl
+    bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
+```
+
+I am working on a windows setup script. It should install essential tools like wsl, vscode, docker, multipass etc. It should setup default wsl distribution and multipass vm. Unfortunately, I am unable to test this, right now. Let me know if the following works!
 
 Open powershell as administrator and run the following command.
 
@@ -25,11 +34,12 @@ Open powershell as administrator and run the following command.
 iwr -useb https://dub.sh/kIv4BnI | iex
 ```
 
-Currently I am setting up a CentOS Stream 10 VM. To access it, use the following command. Use the username and password you provided during setup, if needed.
+This will setup CentOS Stream 10(wsl). To access it, use the following command. Use the username and password you provided during setup, if needed.
 
 ```bash
 wsl -d CentOS-Stream-10
 ```
+
 
 ## Recommended Setup
 
