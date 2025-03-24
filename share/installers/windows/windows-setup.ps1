@@ -141,6 +141,59 @@ function Install-NerdFonts {
     Write-Host "Nerd Fonts installed successfully!" -ForegroundColor Green
 }
 
+function Set-VSCodeWSLSettings {
+    Write-Host "Setting up VSCode WSL settings..." -ForegroundColor Cyan
+
+    $vscodeSettingsPath = "$env:APPDATA\Code\User\settings.json"
+    $wslSettingsUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/extras/vscode/wsl-settings.json"
+    $tempSettingsFile = "$env:TEMP\wsl-settings.json"
+
+    if (!(Test-CommandExists code)) {
+        Write-Host "VS Code is not installed. Please install VS Code first." -ForegroundColor Red
+        return
+    }
+
+    # Create backup of existing settings if they exist
+    if (Test-Path $vscodeSettingsPath) {
+        $backupPath = "$vscodeSettingsPath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+        try {
+            Copy-Item -Path $vscodeSettingsPath -Destination $backupPath -Force
+            Write-Host "Created backup of VS Code settings at $backupPath" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Failed to create backup of settings: $_" -ForegroundColor Red
+        }
+    }
+
+    # Download WSL settings from GitHub
+    Write-Host "Downloading VS Code WSL settings from GitHub..." -ForegroundColor Cyan
+    try {
+        Invoke-WebRequest -Uri $wslSettingsUrl -OutFile $tempSettingsFile -UseBasicParsing
+        Write-Host "VS Code WSL settings downloaded successfully" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Failed to download WSL settings: $_" -ForegroundColor Red
+        return
+    }
+
+    # Copy downloaded settings to VS Code settings location
+    try {
+        Copy-Item -Path $tempSettingsFile -Destination $vscodeSettingsPath -Force
+        Write-Host "VS Code WSL settings applied successfully" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Failed to apply WSL settings: $_" -ForegroundColor Red
+    }
+    finally {
+        # Clean up temporary file
+        if (Test-Path $tempSettingsFile) {
+            Remove-Item -Path $tempSettingsFile -Force
+        }
+    }
+
+    Write-Host "VS Code WSL settings setup completed" -ForegroundColor Green
+}
+
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
@@ -154,6 +207,7 @@ function Main {
     Install-NerdFonts
     Install-CentOSStream10
     Set-CentOSStream10
+    Set-VSCodeWSLSettings
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }

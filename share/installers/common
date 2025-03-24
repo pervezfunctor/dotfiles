@@ -1773,7 +1773,7 @@ min_groupstall() {
     min-group_check
 }
 
-centos_groupstall() {
+centos-wsl_groupstall() {
     min_groupstall
     si zsh tmux
     brew_install
@@ -1787,6 +1787,7 @@ centos_groupstall() {
         warn "stow not installed, skipping configuration for zsh, nvim, tmux"
     fi
 
+    has_cmd code && xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/wsl"
     zsh_as_default
 }
 
