@@ -9,6 +9,104 @@ function Test-CommandExists {
     return [bool](Get-Command -Name $Command -ErrorAction SilentlyContinue)
 }
 
+
+function Set-ConfigFromGitHub {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$GitHubUrl,
+
+        [Parameter(Mandatory = $false)]
+        [string]$RequiredCommand = "",
+
+        [Parameter(Mandatory = $false)]
+        [switch]$CreateDirectory = $false
+    )
+
+    Write-Host "Setting up $ConfigName settings..." -ForegroundColor Cyan
+
+    # Check if required command exists
+    if ($RequiredCommand -and !(Test-CommandExists $RequiredCommand)) {
+        Write-Host "$ConfigName is not installed. Please install $ConfigName first." -ForegroundColor Red
+        return $false
+    }
+
+    # Create config directory if it doesn't exist and CreateDirectory is true
+    $configDir = Split-Path -Parent $ConfigPath
+    if ($CreateDirectory -and !(Test-Path $configDir)) {
+        try {
+            New-Item -Path $configDir -ItemType Directory -Force | Out-Null
+            Write-Host "Created $ConfigName config directory" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Failed to create $ConfigName config directory: $_" -ForegroundColor Red
+            return $false
+        }
+    }
+
+    # Create backup of existing config if it exists
+    if (Test-Path $ConfigPath) {
+        $backupPath = "$ConfigPath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+        try {
+            Copy-Item -Path $ConfigPath -Destination $backupPath -Force
+            Write-Host "Created backup of $ConfigName config at $backupPath" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Failed to create backup of $ConfigName config: $_" -ForegroundColor Red
+        }
+    }
+
+    # Download config from GitHub
+    $tempConfigFile = "$env:TEMP\$(Split-Path -Leaf $ConfigPath)"
+    Write-Host "Downloading $ConfigName config from GitHub..." -ForegroundColor Cyan
+    try {
+        Invoke-WebRequest -Uri $GitHubUrl -OutFile $tempConfigFile -UseBasicParsing
+        Write-Host "$ConfigName config downloaded successfully" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Failed to download $ConfigName config: $_" -ForegroundColor Red
+        return $false
+    }
+
+    # Copy downloaded config to config location
+    try {
+        Copy-Item -Path $tempConfigFile -Destination $ConfigPath -Force
+        Write-Host "$ConfigName config applied successfully" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Failed to apply $ConfigName config: $_" -ForegroundColor Red
+        return $false
+    }
+    finally {
+        # Clean up temporary file
+        if (Test-Path $tempConfigFile) {
+            Remove-Item -Path $tempConfigFile -Force
+        }
+    }
+
+    Write-Host "$ConfigName settings setup completed" -ForegroundColor Green
+    return $true
+}
+
+function Set-VSCodeSettings {
+    $vscodeSettingsPath = "$env:APPDATA\Code\User\settings.json"
+    $wslSettingsUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/extras/vscode/wsl-settings.json"
+
+    Set-ConfigFromGitHub -ConfigName "VS Code WSL" -ConfigPath $vscodeSettingsPath -GitHubUrl $wslSettingsUrl -RequiredCommand "code"
+}
+
+function Set-WezTermSettings {
+    $wezTermConfigFile = "$env:USERPROFILE\.config\wezterm\wezterm.lua"
+    $wezTermConfigUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/wezterm/dot-config/wezterm/wezterm.lua"
+
+    Set-ConfigFromGitHub -ConfigName "WezTerm" -ConfigPath $wezTermConfigFile -GitHubUrl $wezTermConfigUrl -RequiredCommand "wezterm" -CreateDirectory
+}
+
 function New-ConfigLink {
     param (
         [string]$sourcePath,
@@ -78,14 +176,19 @@ function Install-Scoop {
 }
 
 function Install-WSL {
-    if (Test-CommandExists wsl) {
-        Write-Host "WSL is already installed." -ForegroundColor Yellow
-        return $false
+    # Check if WSL is installed by looking at Windows features
+    $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+
+    if ($wslFeature.State -ne "Enabled") {
+        Write-Host "WSL is not installed. Installing now..." -ForegroundColor Cyan
+        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+        wsl --install --no-distribution
+        return $true  # Restart needed
     }
 
-    Write-Host "Installing WSL..." -ForegroundColor Yellow
-    wsl --install
-    return $true # Restart needed after WSL installation
+    # If we get here, WSL is installed
+    Write-Host "WSL is already installed." -ForegroundColor Yellow
+    return $false  # No restart needed
 }
 
 function Install-Ubuntu24 {
@@ -608,66 +711,22 @@ function Install-CppTools {
     Write-Host "C++ development tools installed!" -ForegroundColor Green
 }
 
-function Set-PowerShellAliases {
-    Write-Host "Setting up PowerShell aliases..." -ForegroundColor Cyan
+function Set-PowerShellConfig {
+    $psConfigFile = "$env:USERPROFILE\ilm\powershell\Microsoft.PowerShell_profile.ps1"
+    $psProfilePath = $PROFILE
 
-    # Create PowerShell profile directory if it doesn't exist
-    $profileDir = Split-Path -Parent $PROFILE
+    Write-Host "Setting up PowerShell config..." -ForegroundColor Cyan
+
+    # Create profile directory if it doesn't exist
+    $profileDir = Split-Path -Parent $psProfilePath
     if (!(Test-Path $profileDir)) {
         New-Item -Path $profileDir -ItemType Directory -Force | Out-Null
     }
 
-    # Create or append to PowerShell profile
-    $aliasesContent = @"
+    # Use New-ConfigLink to create a symbolic link
+    New-ConfigLink -sourcePath $psConfigFile -targetPath $psProfilePath
 
-# Git aliases
-function Git-Status { git status }
-Set-Alias -Name gst -Value Git-Status
-function Git-Add { git add $args }
-Set-Alias -Name gia -Value Git-Add
-function Git-Commit { git commit -m $args }
-Set-Alias -Name gitcm -Value Git-Commit  # Changed from gcm to gitcm
-function Git-Pull { git pull }
-Set-Alias -Name gfm -Value Git-Pull
-function Git-Push { git push }
-Set-Alias -Name gitps -Value Git-Push    # Changed from gp to gitps
-function Git-Log { git log --topo-order --pretty=format:"%C(yellow)%h%C(reset) %C(cyan)%ar%C(reset) %C(green)%an%C(reset)%n%C(white)%s%C(reset)" }
-Set-Alias -Name gitlog -Value Git-Log    # Changed from gl to gitlog
-
-# Navigation aliases
-function Go-Up { Set-Location .. }
-Set-Alias -Name .. -Value Go-Up
-function Go-Home { Set-Location ~ }
-Set-Alias -Name ~ -Value Go-Home
-function List-All { Get-ChildItem -Force }
-Set-Alias -Name la -Value List-All
-
-# Development aliases
-function Edit-VSCode { code $args }
-Set-Alias -Name c -Value Edit-VSCode
-function Edit-VSCodeHere { code . }
-Set-Alias -Name c. -Value Edit-VSCodeHere
-
-# WSL aliases
-function Start-Ubuntu { wsl -d Ubuntu }
-Set-Alias -Name ubuntu -Value Start-Ubuntu
-
-# Utility aliases
-function Show-Path { $env:Path -split ';' }
-Set-Alias -Name path -Value Show-Path
-"@
-
-    # Add aliases to profile if they don't already exist
-    if (!(Test-Path $PROFILE) -or !(Select-String -Path $PROFILE -Pattern "Git-Status" -Quiet)) {
-        Add-Content -Path $PROFILE -Value $aliasesContent
-        Write-Host "PowerShell aliases added to profile at: $PROFILE" -ForegroundColor Green
-    }
-    else {
-        Write-Host "PowerShell aliases already exist in profile." -ForegroundColor Yellow
-    }
-
-    Write-Host "PowerShell aliases setup complete!" -ForegroundColor Green
-    Write-Host "Note: Restart your PowerShell session or run '. `$PROFILE' to apply changes." -ForegroundColor Cyan
+    Write-Host "PowerShell config setup completed" -ForegroundColor Green
 }
 
 function Install-Nushell {
@@ -912,7 +971,7 @@ Host centos-wsl
 
 function Install-CentOSStream10 {
     if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
+        Write-Host "WSL command does not exist. Older Windows version?. Quitting." -ForegroundColor Red
         return
     }
 
@@ -924,20 +983,16 @@ function Install-CentOSStream10 {
 
     Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
 
-    # Create installation directory
     $wslDir = "$env:LOCALAPPDATA\WSL\CentOS-Stream-10"
     New-Item -Path $wslDir -ItemType Directory -Force | Out-Null
 
-    # Create a temporary directory for the download
     $tempDir = "$env:TEMP"
     $archivePath = "$tempDir\CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
 
-    # Download official CentOS Stream 10 WSL image
     $downloadUrl = "https://mirror.stream.centos.org/SIGs/10-stream/altimages/images/wsl/x86_64/CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
 
     Write-Host "Downloading CentOS Stream 10 WSL image (this may take time)..." -ForegroundColor Cyan
 
-    # Disable progress bar for faster downloads
     $ProgressPreference = 'SilentlyContinue'
     try {
         Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
@@ -952,17 +1007,16 @@ function Install-CentOSStream10 {
     }
     $ProgressPreference = 'Continue'
 
-    # Import the distro directly from the .tar.xz file (WSL can handle this format)
     Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
     wsl --import --version=2 CentOS-Stream-10 $wslDir $archivePath
 
-    # Clean up
     Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
     Remove-Item -Path $archivePath -Force
 
     Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
     Write-Host "To start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
 }
+
 
 function Install-JetBrainsMonoNerdFont {
     Write-Host "Installing JetBrains Mono Nerd Font..." -ForegroundColor Cyan
@@ -1090,8 +1144,7 @@ function Main {
 
     Install-JetBrainsMonoNerdFont
     Install-Starship
-    Set-PSReadLine
-    Set-PowerShellAliases
+    Set-PowerShellConfig
     Install-Nushell
 
     Install-CppTools
