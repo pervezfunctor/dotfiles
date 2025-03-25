@@ -1793,7 +1793,11 @@ centos-wsl_groupstall() {
     # touch /tmp/remote-wsl-loc.txt
     # chmod 666 /tmp/remote-wsl-loc.txt
 
-    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/wsl"
+    slog "Installing vscode extensions"
+    code --version
+    # xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/wsl"
+    # skip empty lines
+    cat "$DOT_DIR/extras/vscode/extensions/wsl" | grep -v '^\s*$' | xargs -L 1 code --install-extension
     slog "Enter your password to set zsh as default shell"
 
     # zsh_as_default

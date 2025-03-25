@@ -9,7 +9,6 @@ function Test-CommandExists {
     return [bool](Get-Command -Name $Command -ErrorAction SilentlyContinue)
 }
 
-
 function Set-ConfigFromGitHub {
     param (
         [Parameter(Mandatory = $true)]
@@ -1132,6 +1131,40 @@ function Set-VSCodeSettings {
     Write-Host "VS Code setup completed" -ForegroundColor Green
 }
 
+function Set-CapsLockAsControl {
+    Write-Host "Remapping Caps Lock to Control key..." -ForegroundColor Cyan
+
+    $regFilePath = "$env:USERPROFILE\ilm\share\installers\windows\caps2ctrl.reg"
+
+    if (Test-Path $regFilePath) {
+        # Silent import of registry file
+        Start-Process -FilePath "regedit.exe" -ArgumentList "/s", "`"$regFilePath`"" -Wait
+        Write-Host "Caps Lock remapped to Control key. A system restart is required." -ForegroundColor Green
+    }
+    else {
+        Write-Host "Registry file not found at: $regFilePath" -ForegroundColor Red
+    }
+}
+
+function Install-VSCodeExtensions {
+    Write-Host "Installing VS Code extensions..." -ForegroundColor Cyan
+
+    $extensionsFile = "$env:USERPROFILE\ilm\extras\vscode\extensions\wsl"
+
+    if (Test-Path $extensionsFile) {
+        Get-Content $extensionsFile | ForEach-Object {
+            if ($_ -match '\S') {
+                Write-Host "Installing extension: $_" -ForegroundColor DarkCyan
+                code --install-extension $_
+            }
+        }
+        Write-Host "VS Code extensions installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Extensions file not found at: $extensionsFile" -ForegroundColor Red
+    }
+}
+
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
@@ -1149,6 +1182,7 @@ function Main {
 
     Install-CppTools
     Set-VSCodeSettings
+    Install-VSCodeExtensions
 
     Install-Signal
 
@@ -1158,6 +1192,8 @@ function Main {
     Install-CentOSStream10
     Set-CentOSStream10
     Set-MultipassSSH
+
+    Set-CapsLockAsControl
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
