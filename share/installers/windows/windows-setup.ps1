@@ -250,8 +250,8 @@ function Main {
     Install-NerdFonts
     Install-CentOSStream10
     Set-CentOSStream10
-    # Set-VSCodeSettings
-    # Set-WezTermSettings
+    Set-VSCodeSettings
+    Set-WezTermSettings
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
