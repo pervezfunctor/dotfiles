@@ -4,6 +4,12 @@ sudo apt install openssh-server
 echo PasswordAuthentication yes/g >> /etc/ssh/sshd_config
 echo Port 22 >> /etc/ssh/sshd_config
 sudo service ssh restart
+
+# Fix VS Code permissions issue
+mkdir -p /tmp
+sudo chmod 1777 /tmp
+touch /tmp/remote-wsl-loc.txt
+chmod 666 /tmp/remote-wsl-loc.txt
 "@
 
 # Run the WSL commands
