@@ -1787,7 +1787,7 @@ centos-wsl_groupstall() {
         warn "stow not installed, skipping configuration for zsh, nvim, tmux"
     fi
 
-    has_cmd code && xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/wsl"
+    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/wsl"
     slog "Enter your password to set zsh as default shell"
 
     # zsh_as_default
