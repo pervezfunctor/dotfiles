@@ -1,8 +1,8 @@
 #Requires -RunAsAdministrator
 
 $global:GitHubBaseUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
-$global:DotDir = "$env:USERPROFILE\DotDir"
-$global:WinDir = "$global:WinDir\windows"
+$global:DotDir = "$env:USERPROFILE\ilm"
+$global:WinDir = "$global:DotDir\windows"
 
 function Test-CommandExists {
     param (
@@ -32,7 +32,7 @@ function Backup-ConfigFile {
 
     $backupPath = "$FilePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
     try {
-        # Check if it's a directory and use -Recurse if it is
+        # Check if it's a directory
         if (Test-Path -Path $FilePath -PathType Container) {
             Copy-Item -Path $FilePath -Destination $backupPath -Force -Recurse
         }
@@ -128,31 +128,14 @@ function New-ConfigLink {
         New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
     }
 
-    # If target exists, handle it appropriately
     if (Test-Path $targetPath) {
-        $item = Get-Item -Path $targetPath -Force
-        $isSymlink = $item.LinkType -eq "SymbolicLink"
-
-        if ($isSymlink) {
-            $existingTarget = $item.Target
-            if ($existingTarget -eq $sourcePath) {
-                Write-Host "$targetPath already points to $sourcePath. Skipping." -ForegroundColor Green
-                return
-            }
-            else {
-                Write-Host "$targetPath is a symbolic link pointing to $existingTarget. Removing it." -ForegroundColor Yellow
-                Remove-Item -Path $targetPath -Force -Confirm:$false
-            }
+        if ((Get-Item -Path $targetPath -Force).LinkType -eq "SymbolicLink") {
+            Write-Host "$targetPath is a symbolic link. Removing it." -ForegroundColor Yellow
+            Remove-Item -Path $targetPath -Force -Confirm:$false
         }
         else {
             Backup-ConfigFile -FilePath $targetPath
-            # After backup, remove the original to make way for the symlink
-            if (Test-Path -Path $targetPath -PathType Container) {
-                Remove-Item -Path $targetPath -Force -Recurse -Confirm:$false
-            }
-            else {
-                Remove-Item -Path $targetPath -Force -Confirm:$false
-            }
+            Remove-Item -Path $targetPath -Force -Recurse -Confirm:$false
         }
     }
 
@@ -247,24 +230,19 @@ function Initialize-SSHKey {
         New-Item -Path "$env:USERPROFILE\.ssh" -ItemType Directory -Force | Out-Null
     }
 
-    if (!(Test-Path "$env:USERPROFILE\.ssh\id_rsa")) {
-        Write-Host "Generating new SSH key..." -ForegroundColor Cyan
-
-        # Check if ssh-keygen is available
-        if (Test-CommandExists ssh-keygen) {
-            # Generate SSH key non-interactively
-            ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
-            Write-Host "SSH key generated successfully!" -ForegroundColor Green
-        }
-        else {
-            Write-Host "ssh-keygen not found. Please install OpenSSH client." -ForegroundColor Red
-            return $false
-        }
-    }
-    else {
+    if (Test-Path "$env:USERPROFILE\.ssh\id_rsa") {
         Write-Host "SSH key already exists." -ForegroundColor Yellow
+        return $true
     }
 
+    if (!(Test-CommandExists ssh-keygen)) {
+        Write-Host "ssh-keygen not found. Please install OpenSSH client." -ForegroundColor Red
+        return $false
+    }
+
+    Write-Host "Generating new SSH key..." -ForegroundColor Cyan
+    ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
+    Write-Host "SSH key generated successfully!" -ForegroundColor Green
     return $true
 }
 
@@ -611,7 +589,7 @@ function Install-Multipass {
     }
 
     Write-Host "Installing Multipass via winget..." -ForegroundColor Cyan
-    winget install Canonical.Multipass
+    winget install --id Canonical.Multipass -e
     Write-Host "Multipass installed successfully!" -ForegroundColor Green
 
     # Refresh PATH to ensure multipass command is available
@@ -619,15 +597,16 @@ function Install-Multipass {
 
     if (!(Test-CommandExists multipass)) {
         Write-Host "Multipass is not available in PATH. Please restart PowerShell or your computer and run this script again." -ForegroundColor Yellow
-        return
+    }
+    else {
+        Write-Host "Multipass is now available in PATH." -ForegroundColor Green
     }
 }
 
 function Install-MultipassVM {
     Write-Host "Setting up Ubuntu 24.10 VM in Multipass..." -ForegroundColor Cyan
 
-    $vmExists = multipass list | Select-String "ubuntu-ilm"
-    if ($vmExists) {
+    if (multipass list | Select-String "ubuntu-ilm") {
         Write-Host "Ubuntu VM 'ubuntu-ilm' already exists. Skipping..." -ForegroundColor Yellow
         return
     }
@@ -644,8 +623,6 @@ function Install-MultipassVM {
     multipass info ubuntu-ilm
 
     Write-Host "To access your VM, use: multipass shell ubuntu-ilm" -ForegroundColor Cyan
-    Write-Host "To stop your VM, use: multipass stop ubuntu-ilm" -ForegroundColor Cyan
-    Write-Host "To start your VM again, use: multipass start ubuntu-ilm" -ForegroundColor Cyan
 }
 
 function Get-MultipassVMIP {
@@ -654,16 +631,21 @@ function Get-MultipassVMIP {
         [string]$VMName
     )
 
-    $vmIP = (multipass info $VMName | Select-String "IPv4").ToString().Split(":")[1].Trim()
-    if (-not $vmIP) {
-        Write-Host "Could not determine IP address for VM '$VMName'." -ForegroundColor Red
+    if (multipass info $VMName 2>&1 | Select-String "does not exist") {
+        Write-Host "VM '$VMName' does not exist." -ForegroundColor Red
         return $null
     }
 
-    return $vmIP
+    $ipLine = multipass info $VMName | Select-String "IPv4"
+    if (!$ipLine) {
+        Write-Host "Could not find IPv4 address for VM '$VMName'." -ForegroundColor Red
+        return $null
+    }
+
+    return $ipLine.ToString().Split(":")[1].Trim()
 }
 
-function Add-SSHConfigToMultipassVM {
+function Add-SSHConfig {
     param (
         [Parameter(Mandatory = $true)]
         [string]$HostName,
@@ -681,6 +663,8 @@ function Add-SSHConfigToMultipassVM {
         [bool]$StrictHostKeyChecking = $false
     )
 
+    Write-Host "Adding SSH config for $HostName..." -ForegroundColor Cyan
+
     # Add VM to SSH config
     $sshConfig = @"
 Host $HostName
@@ -696,6 +680,10 @@ Host $HostName
 
     if (-not (Select-String -Path "$env:USERPROFILE\.ssh\config" -Pattern "Host $HostName" -Quiet)) {
         Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfig
+        Write-Host "SSH config for $HostName added successfully" -ForegroundColor Green
+    }
+    else {
+        Write-Host "SSH config for $HostName already exists" -ForegroundColor Yellow
     }
 }
 
@@ -751,44 +739,14 @@ function Initialize-MultipassSSHVM {
 
     Install-SSHServerInMutlipassVM -VMName $VMName
     Copy-SSHKeyToMultipassVM -VMName $VMName
-    Add-SSHConfigToMultipassVM -HostName $VMName -IPAddress $vmIP -User "ubuntu"
+    Add-SSHConfig -HostName $VMName -IPAddress $vmIP -User "ubuntu"
 
     Write-Host "SSH access to Multipass VM '$VMName' has been set up." -ForegroundColor Green
     Write-Host "You can now connect using: ssh $VMName" -ForegroundColor Cyan
 }
 
+
 function Install-HyperV-WSL {
-    Write-Host "Checking Hyper-V installation status..." -ForegroundColor Cyan
-
-    # Check if Hyper-V is already installed
-    $hyperv = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All
-    if ($hyperv.State -eq "Enabled") {
-        Write-Host "Hyper-V is already installed and enabled." -ForegroundColor Green
-        return $false  # No restart needed
-    }
-
-    Write-Host "Installing Hyper-V and related components..." -ForegroundColor Cyan
-
-    # Enable Hyper-V feature
-    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All -NoRestart
-    Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart
-    Enable-WindowsOptionalFeature -Online -FeatureName HypervisorPlatform -NoRestart
-    Enable-WindowsOptionalFeature -Online -FeatureName Containers -All -NoRestart
-
-    Write-Host "Hyper-V installation complete! A system restart is required to finish the setup." -ForegroundColor Green
-
-    $restart = Read-Host "Would you like to restart now? (y/n)"
-    if ($restart -eq 'y') {
-        Restart-Computer
-    }
-    else {
-        Write-Host "Please restart your computer to complete Hyper-V installation." -ForegroundColor Yellow
-    }
-
-    return $true  # Restart needed
-}
-
-function Enable-HyperV-WSL {
     $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
     $restartNeeded = $false
@@ -889,23 +847,7 @@ function Initialize-CentOSWSLSSH {
     }
 
     Copy-SSHKeyToWSL -Distribution "CentOS-Stream-10" -Username $Username
-
-    # Add VM to SSH config
-    $sshConfig = @"
-Host centos-wsl
-    HostName $vmIP
-    User $username
-    IdentityFile ~/.ssh/id_rsa
-    StrictHostKeyChecking no
-"@
-
-    if (-not (Test-Path "$env:USERPROFILE\.ssh\config")) {
-        New-Item -Path "$env:USERPROFILE\.ssh\config" -ItemType File -Force | Out-Null
-    }
-
-    if (-not (Select-String -Path "$env:USERPROFILE\.ssh\config" -Pattern "Host centos-wsl" -Quiet)) {
-        Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfig
-    }
+    Add-SSHConfig -HostName "centos-wsl" -IPAddress $VmIP -User $Username
 }
 
 function Initialize-CentOSWSL {
@@ -1001,7 +943,7 @@ function Set-CapsLockAsControl {
 function Install-VSCodeExtensions {
     Write-Host "Installing VS Code extensions..." -ForegroundColor Cyan
 
-    $extensionsFile = "$env:USERPROFILE\DotDir\extras\vscode\extensions\wsl"
+    $extensionsFile = "$global:DotDir\extras\vscode\extensions\wsl"
 
     if (Test-Path $extensionsFile) {
         Get-Content $extensionsFile | ForEach-Object {
@@ -1044,44 +986,55 @@ function Install-NerdFonts {
     Write-Host "Nerd Fonts installation completed!" -ForegroundColor Green
 }
 
-function Initialize-Dotfiles {
-    if (Test-Path "$env:USERPROFILE\DotDir") {
+function Get-Dotfiles {
+    if (Test-Path "$global:DotDir") {
         Write-Host "Dotfiles already present. Updating..." -ForegroundColor Cyan
 
         if ($null -eq (git status --porcelain)) {
-            Set-Location "$env:USERPROFILE\DotDir"
+            Set-Location "$global:DotDir"
             git pull --rebase
         }
 
         Write-Host "Dotfiles updated successfully!" -ForegroundColor Green
+        return
+    }
+
+    Write-Host "Cloning dotfiles..." -ForegroundColor Cyan
+    git clone https://github.com/pervezfunctor/dotfiles.git "$global:DotDir"
+
+    if ($LASTEXITCODE -ne 0 -or !(Test-Path "$global:DotDir")) {
+        Write-Host "Failed to clone dotfiles. Exiting..." -ForegroundColor Red
+        return $false
     }
     else {
-        Write-Host "Cloning dotfiles..." -ForegroundColor Cyan
-        git clone https://github.com/pervezfunctor/dotfiles.git "$env:USERPROFILE\DotDir"
         Write-Host "Dotfiles cloned successfully!" -ForegroundColor Green
     }
+}
+
+function Initialize-Dotfiles {
+    Get-Dotfiles
 
     Write-Host "Setting up WezTerm config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$env:USERPROFILE\DotDir\wezterm\dot-config\wezterm" -targetPath "$env:USERPROFILE\.config\wezterm"
+    New-ConfigLink -sourcePath "$global:DotDir\wezterm\dot-config\wezterm" -targetPath "$env:USERPROFILE\.config\wezterm"
 
     Write-Host "Setting up Neovim config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$env:USERPROFILE\DotDir\nvim\dot-config\nvim" -targetPath "$env:LOCALAPPDATA\nvim"
+    New-ConfigLink -sourcePath "$global:DotDir\nvim\dot-config\nvim" -targetPath "$env:LOCALAPPDATA\nvim"
 
     Write-Host "Setting up Emacs config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$env:USERPROFILE\DotDir\emacs-slim\dot-emacs" -targetPath "$env:USERPROFILE\.emacs"
+    New-ConfigLink -sourcePath "$global:DotDir\emacs-slim\dot-emacs" -targetPath "$env:USERPROFILE\.emacs"
 
     Write-Host "Setting up Nushell config..." -ForegroundColor Cyan
     $null = Backup-ConfigFile -FilePath "$env:APPDATA\nushell"
-    New-ConfigLink -sourcePath "$env:USERPROFILE\DotDir\nushell\dot-config\nushell" -targetPath "$env:APPDATA\nushell"
+    New-ConfigLink -sourcePath "$global:DotDir\nushell\dot-config\nushell" -targetPath "$env:APPDATA\nushell"
 
     Write-Host "Setting up PowerShell config..." -ForegroundColor Cyan
-    $psConfigFile = "$env:USERPROFILE\DotDir\powershell\Microsoft.PowerShell_profile.ps1"
+    $psConfigFile = "$global:DotDir\powershell\Microsoft.PowerShell_profile.ps1"
     $psProfilePath = $PROFILE
     $null = New-ConfigDirectory -ConfigPath $psProfilePath
     New-ConfigLink -sourcePath $psConfigFile -targetPath $psProfilePath
 
     Write-Host "Setting up VS Code config..." -ForegroundColor Cyan
-    $vscodeSettingsSource = "$env:USERPROFILE\DotDir\extras\vscode\wsl-settings.json"
+    $vscodeSettingsSource = "$global:DotDir\extras\vscode\wsl-settings.json"
     $vscodeSettingsTarget = "$env:APPDATA\Code\User\settings.json"
 
     if (Test-Path $vscodeSettingsSource) {
@@ -1095,52 +1048,115 @@ function Initialize-Dotfiles {
 }
 
 function Initialize-NushellProfile {
-
     $wtConfigPath = "$env:LOCALAPPDATA\Microsoft\Windows Terminal\settings.json"
-    if (Test-Path $wtConfigPath) {
-        Write-Host "Adding Nushell to Windows Terminal profiles..." -ForegroundColor Cyan
 
+    if (!(Test-Path $wtConfigPath)) {
+        Write-Host "Windows Terminal settings file not found at: $wtConfigPath" -ForegroundColor Red
+        return $false
+    }
+
+    Write-Host "Adding Nushell to Windows Terminal profiles..." -ForegroundColor Cyan
+
+    try {
         $wtConfig = Get-Content -Path $wtConfigPath -Raw | ConvertFrom-Json
 
         $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
 
-        if ($null -eq $nuProfile) {
-            $nuProfileObj = [PSCustomObject]@{
-                name              = "Nushell"
-                commandline       = "nu.exe"
-                icon              = "$env:USERPROFILE\AppData\Local\Programs\Nushell\nu.ico"
-                startingDirectory = "%USERPROFILE%"
-            }
-
-            $wtConfig.profiles.list += $nuProfileObj
-
-            $wtConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $wtConfigPath
-            Write-Host "Nushell profile added to Windows Terminal!" -ForegroundColor Green
-        }
-        else {
+        if ($nuProfile) {
             Write-Host "Nushell profile already exists in Windows Terminal." -ForegroundColor Yellow
+            return $true
         }
-    }
 
-    Write-Host "Nushell installation and configuration complete!" -ForegroundColor Green
-    Write-Host "To start Nushell, open a terminal and type: nu" -ForegroundColor Cyan
+        $nuProfileObj = [PSCustomObject]@{
+            name              = "Nushell"
+            commandline       = "nu.exe"
+            icon              = "$env:USERPROFILE\AppData\Local\Programs\Nushell\nu.ico"
+            startingDirectory = "%USERPROFILE%"
+            guid              = [guid]::NewGuid().ToString()
+        }
+
+        $wtConfig.profiles.list += $nuProfileObj
+
+        $wtConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $wtConfigPath
+        Write-Host "Nushell profile added to Windows Terminal!" -ForegroundColor Green
+
+        return $true
+    }
+    catch {
+        Write-Host "Failed to update Windows Terminal settings: $_" -ForegroundColor Red
+        return $false
+    }
 }
 
-Set-NushellProfileAsDefault {
-    $setAsDefault = Read-Host "Would you like to set Nushell as your default shell in Windows Terminal? (y/n)"
-    if ($setAsDefault -eq 'y') {
-        if (Test-Path $wtConfigPath) {
-            $wtConfig = Get-Content -Path $wtConfigPath -Raw | ConvertFrom-Json
-            $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
+function Set-NushellProfileAsDefault {
+    $wtConfigPath = "$env:LOCALAPPDATA\Microsoft\Windows Terminal\settings.json"
 
-            if ($null -ne $nuProfile) {
-                $nuGuid = $nuProfile.guid
-                $wtConfig.defaultProfile = $nuGuid
-                $wtConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $wtConfigPath
-                Write-Host "Nushell set as default shell in Windows Terminal!" -ForegroundColor Green
-            }
-        }
+    if (!(Test-Path $wtConfigPath)) {
+        Write-Host "Windows Terminal settings file not found at: $wtConfigPath" -ForegroundColor Red
+        return $false
     }
+
+    $setAsDefault = Read-Host "Would you like to set Nushell as your default shell in Windows Terminal? (y/n)"
+    if ($setAsDefault -ne 'y') {
+        Write-Host "Skipping setting Nushell as default shell." -ForegroundColor Yellow
+        return $true
+    }
+
+    try {
+        $wtConfig = Get-Content -Path $wtConfigPath -Raw | ConvertFrom-Json
+        $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
+
+        if ($null -eq $nuProfile) {
+            Write-Host "Nushell profile not found in Windows Terminal." -ForegroundColor Red
+            return $false
+        }
+
+        $wtConfig.defaultProfile = $nuProfile.guid
+        $wtConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $wtConfigPath
+        Write-Host "Nushell set as default shell in Windows Terminal!" -ForegroundColor Green
+        return $true
+    }
+    catch {
+        Write-Host "Failed to set Nushell as default: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
+function Copy-ConfigFromDotfiles {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$SourcePath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$TargetPath
+    )
+
+    Write-Host "Setting up ${TargetPath} from dotfiles..." -ForegroundColor Cyan
+
+    if (!(Test-Path $SourcePath)) {
+        Write-Host "Source path $SourcePath does not exist. Skipping..." -ForegroundColor Yellow
+        return $false
+    }
+
+    if (!(New-ConfigDirectory -ConfigPath $TargetPath)) {
+        Write-Host "Failed to create ${TargetPath} config directory. Skipping..." -ForegroundColor Yellow
+        return $false
+    }
+
+    Backup-ConfigFile -FilePath $TargetPath
+
+    try {
+        Copy-Item -Path $SourcePath -Destination $TargetPath -Force
+        Write-Host "Applied ${TargetPath} configuration successfully from ${SourcePath}" -ForegroundColor Green
+        return $true
+    }
+    catch {
+        Write-Host "Failed to copy or apply ${TargetPath} configuration: $_" -ForegroundColor Red
+        return $false
+    }
+
+    Write-Host "${TargetPath} setup completed" -ForegroundColor Green
+    return $true
 }
 
 function Main {
@@ -1173,7 +1189,10 @@ function Main {
     Initialize-Dotfiles
     Initialize-NushellProfile
     Install-VSCodeExtensions
-    Initialize-SSHKey
+    if (!Initialize-SSHKey) {
+        Write-Host "SSH key initialization failed. Exiting setup." -ForegroundColor Red
+        return
+    }
 
     Install-Multipass
     Install-MultipassVM
