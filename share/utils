@@ -145,6 +145,25 @@ fln() {
     ln -s "$1" "$2"
 }
 
+backup_file() {
+    local file="$1"
+    if [[ -f "$file" ]]; then
+        local timestamp=$(date +"%Y%m%d-%H%M%S")
+        local backup_path="${file}.backup-${timestamp}"
+
+        if cp -f "$file" "$backup_path"; then
+            slog "Created backup of $(basename "$file") at $backup_path"
+            return 0
+        else
+            warn "Failed to create backup of $file"
+            return 1
+        fi
+    else
+        warn "File $file does not exist, cannot create backup"
+        return 1
+    fi
+}
+
 srm() {
     for f in "$@"; do
         if [ -L "$f" ]; then
@@ -154,7 +173,8 @@ srm() {
         elif has_cmd trash; then
             trash "$f" 2>/dev/null && slog "Trashed $f"
         else
-            warn "trash not installed, cannot rm $f"
+            backup_file "$f"
+            rm -f "$f"
         fi
     done
 }
