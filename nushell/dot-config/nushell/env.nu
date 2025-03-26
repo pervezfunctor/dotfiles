@@ -66,3 +66,8 @@ $env.PATH = ($env.PATH | prepend [
     "/opt/homebrew/bin"
     "/home/linuxbrew/.linuxbrew/bin"
 ])
+
+# Add LLVM/Clang to PATH
+$env.PATH = ($env.PATH | prepend [
+    "C:\\Program Files\\LLVM\\bin"
+])

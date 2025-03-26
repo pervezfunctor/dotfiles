@@ -1,6 +1,8 @@
 #Requires -RunAsAdministrator
 
 $global:GitHubBaseUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
+$global:DotDir = "$env:USERPROFILE\DotDir"
+$global:WinDir = "$global:WinDir\windows"
 
 function Test-CommandExists {
     param (
@@ -985,7 +987,7 @@ function Install-CentOSWSL {
 function Set-CapsLockAsControl {
     Write-Host "Remapping Caps Lock to Control key..." -ForegroundColor Cyan
 
-    $regFilePath = "$env:USERPROFILE\ilm\share\installers\windows\caps2ctrl.reg"
+    $regFilePath = "$global:WinDir\caps2ctrl.reg"
 
     if (Test-Path $regFilePath) {
         Start-Process -FilePath "regedit.exe" -ArgumentList "/s", "`"$regFilePath`"" -Wait
@@ -999,7 +1001,7 @@ function Set-CapsLockAsControl {
 function Install-VSCodeExtensions {
     Write-Host "Installing VS Code extensions..." -ForegroundColor Cyan
 
-    $extensionsFile = "$env:USERPROFILE\ilm\extras\vscode\extensions\wsl"
+    $extensionsFile = "$env:USERPROFILE\DotDir\extras\vscode\extensions\wsl"
 
     if (Test-Path $extensionsFile) {
         Get-Content $extensionsFile | ForEach-Object {
@@ -1043,11 +1045,11 @@ function Install-NerdFonts {
 }
 
 function Initialize-Dotfiles {
-    if (Test-Path "$env:USERPROFILE\ilm") {
+    if (Test-Path "$env:USERPROFILE\DotDir") {
         Write-Host "Dotfiles already present. Updating..." -ForegroundColor Cyan
 
         if ($null -eq (git status --porcelain)) {
-            Set-Location "$env:USERPROFILE\ilm"
+            Set-Location "$env:USERPROFILE\DotDir"
             git pull --rebase
         }
 
@@ -1055,31 +1057,31 @@ function Initialize-Dotfiles {
     }
     else {
         Write-Host "Cloning dotfiles..." -ForegroundColor Cyan
-        git clone https://github.com/pervezfunctor/dotfiles.git "$env:USERPROFILE\ilm"
+        git clone https://github.com/pervezfunctor/dotfiles.git "$env:USERPROFILE\DotDir"
         Write-Host "Dotfiles cloned successfully!" -ForegroundColor Green
     }
 
     Write-Host "Setting up WezTerm config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\wezterm\dot-config\wezterm" -targetPath "$env:USERPROFILE\.config\wezterm"
+    New-ConfigLink -sourcePath "$env:USERPROFILE\DotDir\wezterm\dot-config\wezterm" -targetPath "$env:USERPROFILE\.config\wezterm"
 
     Write-Host "Setting up Neovim config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\nvim\dot-config\nvim" -targetPath "$env:LOCALAPPDATA\nvim"
+    New-ConfigLink -sourcePath "$env:USERPROFILE\DotDir\nvim\dot-config\nvim" -targetPath "$env:LOCALAPPDATA\nvim"
 
     Write-Host "Setting up Emacs config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\emacs-slim\dot-emacs" -targetPath "$env:USERPROFILE\.emacs"
+    New-ConfigLink -sourcePath "$env:USERPROFILE\DotDir\emacs-slim\dot-emacs" -targetPath "$env:USERPROFILE\.emacs"
 
     Write-Host "Setting up Nushell config..." -ForegroundColor Cyan
     $null = Backup-ConfigFile -FilePath "$env:APPDATA\nushell"
-    New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\nushell\dot-config\nushell" -targetPath "$env:APPDATA\nushell"
+    New-ConfigLink -sourcePath "$env:USERPROFILE\DotDir\nushell\dot-config\nushell" -targetPath "$env:APPDATA\nushell"
 
     Write-Host "Setting up PowerShell config..." -ForegroundColor Cyan
-    $psConfigFile = "$env:USERPROFILE\ilm\powershell\Microsoft.PowerShell_profile.ps1"
+    $psConfigFile = "$env:USERPROFILE\DotDir\powershell\Microsoft.PowerShell_profile.ps1"
     $psProfilePath = $PROFILE
     $null = New-ConfigDirectory -ConfigPath $psProfilePath
     New-ConfigLink -sourcePath $psConfigFile -targetPath $psProfilePath
 
     Write-Host "Setting up VS Code config..." -ForegroundColor Cyan
-    $vscodeSettingsSource = "$env:USERPROFILE\ilm\extras\vscode\wsl-settings.json"
+    $vscodeSettingsSource = "$env:USERPROFILE\DotDir\extras\vscode\wsl-settings.json"
     $vscodeSettingsTarget = "$env:APPDATA\Code\User\settings.json"
 
     if (Test-Path $vscodeSettingsSource) {
@@ -1120,67 +1122,68 @@ function Initialize-NushellProfile {
         }
     }
 
-    # # Add option to set as default shell
-    # $setAsDefault = Read-Host "Would you like to set Nushell as your default shell in Windows Terminal? (y/n)"
-    # if ($setAsDefault -eq 'y') {
-    #     if (Test-Path $wtConfigPath) {
-    #         $wtConfig = Get-Content -Path $wtConfigPath -Raw | ConvertFrom-Json
-    #         $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
-
-    #         if ($null -ne $nuProfile) {
-    #             $nuGuid = $nuProfile.guid
-    #             $wtConfig.defaultProfile = $nuGuid
-    #             $wtConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $wtConfigPath
-    #             Write-Host "Nushell set as default shell in Windows Terminal!" -ForegroundColor Green
-    #         }
-    #     }
-    # }
-
     Write-Host "Nushell installation and configuration complete!" -ForegroundColor Green
     Write-Host "To start Nushell, open a terminal and type: nu" -ForegroundColor Cyan
+}
+
+Set-NushellProfileAsDefault {
+    $setAsDefault = Read-Host "Would you like to set Nushell as your default shell in Windows Terminal? (y/n)"
+    if ($setAsDefault -eq 'y') {
+        if (Test-Path $wtConfigPath) {
+            $wtConfig = Get-Content -Path $wtConfigPath -Raw | ConvertFrom-Json
+            $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
+
+            if ($null -ne $nuProfile) {
+                $nuGuid = $nuProfile.guid
+                $wtConfig.defaultProfile = $nuGuid
+                $wtConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $wtConfigPath
+                Write-Host "Nushell set as default shell in Windows Terminal!" -ForegroundColor Green
+            }
+        }
+    }
 }
 
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
-    # Update-Windows
+    Update-Windows
 
-    # if (Install-HyperV-WSL) {
-    #     $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
-    #     if ($restart -eq 'y') {
-    #         Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
-    #         Start-Sleep -Seconds 5
-    #         Restart-Computer
-    #     }
-    #     else {
-    #         Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
-    #     }
-    #     return
-    # }
+    if (Install-HyperV-WSL) {
+        $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
+        if ($restart -eq 'y') {
+            Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
+            Start-Sleep -Seconds 5
+            Restart-Computer
+        }
+        else {
+            Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
+        }
+        return
+    }
 
-    # Install-Chocolatey
-    # # Install-Scoop
+    Install-Chocolatey
+    # Install-Scoop
 
-    # Install-DevTools
-    # Install-CppTools
-    # Install-Apps
-    # Install-NerdFonts
+    Install-DevTools
+    Install-CppTools
+    Install-Apps
+    Install-NerdFonts
 
-    # Set-CapsLockAsControl
+    Set-CapsLockAsControl
     Initialize-Dotfiles
-    # Initialize-NushellProfile
-    # Install-VSCodeExtensions
-    # Initialize-SSHKey
+    Initialize-NushellProfile
+    Install-VSCodeExtensions
+    Initialize-SSHKey
 
-    # Install-Multipass
-    # Install-MultipassVM
-    # Initialize-MultipassSSHVM
+    Install-Multipass
+    Install-MultipassVM
+    Initialize-MultipassSSHVM
 
-    # Install-WSLDistro -DistroName "Ubuntu-24.04"
-    # Install-WSLDistro -DistroName "Debian"
-    # Install-WSLDistro -DistroName "openSUSE-Tumbleweed"
-    # Install-CentOSWSL
-    # Initialize-CentOSWSL
+    Install-WSLDistro -DistroName "Ubuntu-24.04"
+    Install-WSLDistro -DistroName "Debian"
+    Install-WSLDistro -DistroName "openSUSE-Tumbleweed"
+    Install-CentOSWSL
+    Initialize-CentOSWSL
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }

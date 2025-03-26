@@ -8,19 +8,19 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
 # PSReadLine configuration for autosuggestions and syntax highlighting
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
-    Set-PSReadLineOption -PredictionSource History
-    Set-PSReadLineOption -PredictionViewStyle ListView
+    # Set-PSReadLineOption -PredictionSource History
+    # Set-PSReadLineOption -PredictionViewStyle ListView
     Set-PSReadLineOption -Colors @{
-        Command          = 'Cyan'
-        Parameter        = 'DarkCyan'
-        Operator         = 'DarkGreen'
-        Variable         = 'DarkGreen'
-        String           = 'DarkYellow'
-        Number           = 'DarkGreen'
-        Member           = 'DarkGreen'
-        Type             = 'DarkYellow'
-        Comment          = 'DarkGray'
-        InlinePrediction = 'DarkGray'
+        Command   = 'Cyan'
+        Parameter = 'DarkCyan'
+        Operator  = 'DarkGreen'
+        Variable  = 'DarkGreen'
+        String    = 'DarkYellow'
+        Number    = 'DarkGreen'
+        Member    = 'DarkGreen'
+        Type      = 'DarkYellow'
+        Comment   = 'DarkGray'
+        # InlinePrediction = 'DarkGray'
     }
     Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
     Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
@@ -36,6 +36,9 @@ Set-Alias -Name ll -Value Get-ChildItem -ErrorAction SilentlyContinue
 
 # Environment variables
 $env:EDITOR = "nvim"
+
+# Add LLVM/Clang to PATH
+$env:PATH = "C:\Program Files\LLVM\bin;" + $env:PATH
 
 # Helper functions
 function which($command) {
@@ -70,7 +73,7 @@ if (Test-Path $localProfile) {
 }
 
 # Source another PS1 file
-. "$env:USERPROFILE\ilm\powershell\functions.ps1"
+# . "$env:USERPROFILE\ilm\powershell\functions.ps1"
 
 # Print welcome message
 Write-Host "PowerShell profile loaded successfully!" -ForegroundColor Green
