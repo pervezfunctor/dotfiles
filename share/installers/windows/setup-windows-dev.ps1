@@ -88,8 +88,8 @@ function Copy-ConfigFromGitHub {
     Backup-ConfigFile -FilePath $ConfigPath
 
     try {
-        Write-Host "Downloading ${ConfigPath} from $global:GitHubBaseUrl..." -ForegroundColor Cyan
-        $content = Invoke-WebRequest -Uri $global:GitHubBaseUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+        Write-Host "Downloading ${ConfigPath} from ${global:GitHubBaseUrl}..." -ForegroundColor Cyan
+        $content = Invoke-WebRequest -Uri ${global:GitHubBaseUrl} -UseBasicParsing | Select-Object -ExpandProperty Content
 
         Set-Content -Path $ConfigPath -Value $content -Force
         Write-Host "Applied ${ConfigPath} configuration successfully" -ForegroundColor Green
@@ -159,7 +159,10 @@ function Copy-SSHKeyToWSL {
 function Update-Windows {
     Write-Host "Checking for Windows updates..." -ForegroundColor Cyan
 
+
     if (!(Get-Module -ListAvailable -Name PSWindowsUpdate)) {
+        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser
+
         Write-Host "Installing PSWindowsUpdate module..." -ForegroundColor Cyan
         Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser
         Write-Host "PSWindowsUpdate module installed successfully!" -ForegroundColor Green
@@ -203,6 +206,34 @@ function Update-Windows {
             Write-Host "Skipping Windows updates installation." -ForegroundColor Yellow
         }
     }
+}
+
+function Initialize-SSHKey {
+    Write-Host "Initializing SSH key..." -ForegroundColor Cyan
+
+    if (!(Test-Path "$env:USERPROFILE\.ssh")) {
+        New-Item -Path "$env:USERPROFILE\.ssh" -ItemType Directory -Force | Out-Null
+    }
+
+    if (!(Test-Path "$env:USERPROFILE\.ssh\id_rsa")) {
+        Write-Host "Generating new SSH key..." -ForegroundColor Cyan
+
+        # Check if ssh-keygen is available
+        if (Test-CommandExists ssh-keygen) {
+            # Generate SSH key non-interactively
+            ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
+            Write-Host "SSH key generated successfully!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "ssh-keygen not found. Please install OpenSSH client." -ForegroundColor Red
+            return $false
+        }
+    }
+    else {
+        Write-Host "SSH key already exists." -ForegroundColor Yellow
+    }
+
+    return $true
 }
 
 function Install-Chocolatey {
@@ -677,111 +708,120 @@ function Initialize-MultipassSSHVM {
     Write-Host "You can now connect using: ssh $VMName" -ForegroundColor Cyan
 }
 
-function Install-WSL {
+function Install-HyperV-WSL {
+    Write-Host "Checking Hyper-V installation status..." -ForegroundColor Cyan
+
+    # Check if Hyper-V is already installed
+    $hyperv = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All
+    if ($hyperv.State -eq "Enabled") {
+        Write-Host "Hyper-V is already installed and enabled." -ForegroundColor Green
+        return $false  # No restart needed
+    }
+
+    Write-Host "Installing Hyper-V and related components..." -ForegroundColor Cyan
+
+    # Enable Hyper-V feature
+    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All -NoRestart
+    Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart
+    Enable-WindowsOptionalFeature -Online -FeatureName HypervisorPlatform -NoRestart
+    Enable-WindowsOptionalFeature -Online -FeatureName Containers -All -NoRestart
+
+    Write-Host "Hyper-V installation complete! A system restart is required to finish the setup." -ForegroundColor Green
+
+    $restart = Read-Host "Would you like to restart now? (y/n)"
+    if ($restart -eq 'y') {
+        Restart-Computer
+    }
+    else {
+        Write-Host "Please restart your computer to complete Hyper-V installation." -ForegroundColor Yellow
+    }
+
+    return $true  # Restart needed
+}
+
+function Enable-HyperV-WSL {
     $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+
+    $restartNeeded = $false
 
     if ($wslFeature.State -ne "Enabled") {
         Write-Host "WSL is not installed. Installing now..." -ForegroundColor Cyan
-        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+
+        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction SilentlyContinue
+
         wsl --install --no-distribution
-        return $true  # Restart needed
+
+        $restartNeeded = $true
+    }
+    else {
+        Write-Host "WSL is already installed." -ForegroundColor Yellow
     }
 
-    Write-Host "WSL is already installed." -ForegroundColor Yellow
-    return $false  # No restart needed
+    $features = @(
+        "Microsoft-Hyper-V-All",
+        "VirtualMachinePlatform",
+        "Containers",
+        "HypervisorPlatform"
+    )
+
+    Write-Host "Enabling Hyper-V and WSL features..." -ForegroundColor Cyan
+
+    foreach ($feature in $features) {
+        $featureStatus = Get-WindowsOptionalFeature -Online -FeatureName $feature
+        if ($featureStatus.State -ne "Enabled") {
+            Write-Host "Enabling $feature..." -ForegroundColor Yellow
+            $result = Enable-WindowsOptionalFeature -Online -FeatureName $feature -NoRestart -ErrorAction SilentlyContinue
+
+            if ($result -and $result.RestartNeeded) {
+                Write-Host "$feature requires a restart." -ForegroundColor Red
+                $restartNeeded = $true
+            }
+        }
+        else {
+            Write-Host "$feature is already enabled." -ForegroundColor Green
+        }
+    }
+
+    if ($restartNeeded) {
+        Write-Host "A system restart is required to complete the installation." -ForegroundColor Yellow
+    }
+    else {
+        Write-Host "All features enabled successfully. No restart required." -ForegroundColor Green
+    }
+
+    return $restartNeeded
 }
 
-function Install-Ubuntu24 {
+function Install-WSLDistro {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$DistroName
+    )
+
     if (!(Test-CommandExists wsl)) {
         Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
         return
     }
 
     $installedDistros = wsl --list --quiet
-    if ($installedDistros -contains "Ubuntu-24.04") {
-        Write-Host "Ubuntu 24.04 is already installed." -ForegroundColor Yellow
+    if ($installedDistros -contains $DistroName) {
+        Write-Host "$DistroName is already installed." -ForegroundColor Yellow
         return
     }
 
-    $availableDistros = wsl --list --online --quiet
-
-    if ($availableDistros -contains "Ubuntu-24.04") {
-        Write-Host "Installing Ubuntu 24.04..." -ForegroundColor Cyan
-        wsl --install -d Ubuntu-24.04
-        Write-Host "Ubuntu 24.04 installed successfully!" -ForegroundColor Green
-        return
+    try {
+        Write-Host "Installing $DistroName..." -ForegroundColor Cyan
+        wsl --install -d $DistroName
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "$DistroName installed successfully!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "$DistroName installation failed. It may not be available." -ForegroundColor Red
+        }
     }
-    else {
-        Write-Host "Ubuntu 24.04 not found in available distributions. Skipping..." -ForegroundColor Yellow
-        return
+    catch {
+        Write-Host "$DistroName not found in available distributions. Skipping..." -ForegroundColor Yellow
     }
-}
-
-function Install-Debian {
-    if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
-        return
-    }
-
-    $installedDistros = wsl --list --quiet
-    if ($installedDistros -contains "Debian") {
-        Write-Host "Debian is already installed." -ForegroundColor Yellow
-        return
-    }
-
-    $availableDistros = wsl --list --online --quiet
-
-    if ($availableDistros -contains "Debian") {
-        Write-Host "Installing Debian..." -ForegroundColor Cyan
-        wsl --install -d Debian
-        Write-Host "Debian installed successfully!" -ForegroundColor Green
-        return
-    }
-    else {
-        Write-Host "Debian not found in available distributions. Skipping..." -ForegroundColor Yellow
-        return
-    }
-}
-
-function Install-TW {
-    if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
-        return
-    }
-
-    $installedDistros = wsl --list --quiet
-    if ($installedDistros -contains "openSUSE-Tumbleweed") {
-        Write-Host "openSUSE Tumbleweed is already installed." -ForegroundColor Yellow
-        return
-    }
-
-    $availableDistros = wsl --list --online --quiet
-
-    if ($availableDistros -contains "openSUSE-Tumbleweed") {
-        Write-Host "Installing openSUSE Tumbleweed..." -ForegroundColor Cyan
-        wsl --install -d openSUSE-Tumbleweed
-        Write-Host "openSUSE Tumbleweed installed successfully!" -ForegroundColor Green
-        return
-    }
-    else {
-        Write-Host "openSUSE Tumbleweed not found in available distributions. Skipping..." -ForegroundColor Yellow
-        return
-    }
-}
-
-function Install-WSLDistributions {
-    Write-Host "Installing WSL distributions..." -ForegroundColor Cyan
-
-    if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL command does not exist. Older Windows version?. Quitting." -ForegroundColor Red
-        return
-    }
-
-    Install-Ubuntu24
-    Install-Debian
-    Install-TW
-
-    Write-Host "WSL distributions installed successfully!" -ForegroundColor Green
 }
 
 function Initialize-CentOSWSLSSH {
@@ -831,7 +871,7 @@ function Initialize-CentOSWSL {
 
     Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
 
-    wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/share/installers/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
+    wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL $global:GitHubBaseUrl/share/installers/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
 
     # Clean up the password from memory
     $passwordText = $null
@@ -930,7 +970,7 @@ function Install-VSCodeExtensions {
     }
 }
 
-function Install-NerdFonts {
+function Install-NerdFontsWithScoop {
     Write-Host "Installing Nerd Fonts..." -ForegroundColor Cyan
 
     if (-not (Test-CommandExists scoop)) {
@@ -944,6 +984,17 @@ function Install-NerdFonts {
     scoop install nerd-fonts/CascadiaCode-NF
 
     Write-Host "Nerd Fonts installed successfully!" -ForegroundColor Green
+}
+
+function Install-NerdFonts {
+    if (-not (Test-CommandExists choco)) {
+        Write-Host "Chocolatey is not installed. Cannot install Nerd Fonts." -ForegroundColor Red
+        return
+    }
+
+    Write-Host "Installing Nerd Fonts ..." -ForegroundColor Cyan
+    choco install nerd-fonts-JetBrainsMono -y
+    Write-Host "Nerd Fonts installation completed!" -ForegroundColor Green
 }
 
 function Initialize-Dotfiles {
@@ -975,14 +1026,24 @@ function Initialize-Dotfiles {
     Write-Host "Setting up Nushell config..." -ForegroundColor Cyan
     New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\nushell\dot-config\nushell" -targetPath "$env:APPDATA\nushell"
 
-    Write-Host "Setting up VS Code config..." -ForegroundColor Cyan
-    Copy-ConfigFromGitHub -ConfigPath "$env:APPDATA\Code\User\settings.json"
-
     Write-Host "Setting up PowerShell config..." -ForegroundColor Cyan
     $psConfigFile = "$env:USERPROFILE\ilm\powershell\Microsoft.PowerShell_profile.ps1"
     $psProfilePath = $PROFILE
     New-ConfigDirectory -ConfigPath $psProfilePath
     New-ConfigLink -sourcePath $psConfigFile -targetPath $psProfilePath
+
+    Write-Host "Setting up VS Code config..." -ForegroundColor Cyan
+    $vscodeSettingsSource = "$env:USERPROFILE\ilm\extras\vscode\wsl-settings.json"
+    $vscodeSettingsTarget = "$env:APPDATA\Code\User\settings.json"
+
+    if (Test-Path $vscodeSettingsSource) {
+        Backup-ConfigFile -FilePath $vscodeSettingsTarget
+        Copy-Item -Path $vscodeSettingsSource -Destination $vscodeSettingsTarget -Force
+        Write-Host "VS Code settings copied successfully" -ForegroundColor Green
+    }
+    else {
+        Write-Host "VS Code settings source file not found at: $vscodeSettingsSource" -ForegroundColor Red
+    }
 }
 
 function Initialize-NushellProfile {
@@ -1038,14 +1099,21 @@ function Main {
 
     Update-Windows
 
-    if (Install-WSL) {
-        Write-Host "Please restart your computer to complete WSL installation." -ForegroundColor Yellow
-        Write-Host "After restart, run this script again to continue the setup." -ForegroundColor Yellow
+    if (Install-HyperV-WSL) {
+        $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
+        if ($restart -eq 'y') {
+            Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
+            Start-Sleep -Seconds 5
+            Restart-Computer
+        }
+        else {
+            Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
+        }
         return
     }
 
     Install-Chocolatey
-    Install-Scoop
+    # Install-Scoop
 
     Install-DevTools
     Install-CppTools
@@ -1053,17 +1121,20 @@ function Main {
     Install-NerdFonts
 
     Set-CapsLockAsControl
-    Initialize-NushellProfile
     Initialize-Dotfiles
+    Initialize-NushellProfile
     Install-VSCodeExtensions
 
-    # Install-Multipass
-    # Install-MultipassVM
-    # Initialize-MultipassSSHVM
+    Install-Multipass
+    Install-MultipassVM
+    Initialize-MultipassSSHVM
 
-    # Install-WSLDistributions
-    # Install-CentOSWSL
-    # Initialize-CentOSWSL
+    Install-WSLDistro -DistroName "Ubuntu-24.04"
+    Install-WSLDistro -DistroName "Debian"
+    Install-WSLDistro -DistroName "openSUSE-Tumbleweed"
+
+    Install-CentOSWSL
+    Initialize-CentOSWSL
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
