@@ -129,14 +129,8 @@ function New-ConfigLink {
     }
 
     if (Test-Path $targetPath) {
-        if ((Get-Item -Path $targetPath -Force).LinkType -eq "SymbolicLink") {
-            Write-Host "$targetPath is a symbolic link. Removing it." -ForegroundColor Yellow
-            Remove-Item -Path $targetPath -Force -Confirm:$false
-        }
-        else {
-            Backup-ConfigFile -FilePath $targetPath
-            Remove-Item -Path $targetPath -Force -Recurse -Confirm:$false
-        }
+        Backup-ConfigFile -FilePath $targetPath
+        Remove-Item -Path $targetPath -Force -Recurse -Confirm:$false
     }
 
     try {
@@ -711,15 +705,21 @@ function Copy-SSHKeyToMultipassVM {
 
     Write-Host "Copying SSH key to $VMName..." -ForegroundColor Cyan
 
-    $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_rsa.pub"
-    multipass exec $VMName -- bash -c "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
-    multipass exec $VMName -- bash -c "echo '$pubKey' >> ~/.ssh/authorized_keys"
-    multipass exec $VMName -- bash -c "chmod 600 ~/.ssh/authorized_keys"
+    try {
+        $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_rsa.pub" -ErrorAction Stop
+        multipass exec $VMName -- bash -c "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
+        multipass exec $VMName -- bash -c "echo '$pubKey' >> ~/.ssh/authorized_keys"
+        multipass exec $VMName -- bash -c "chmod 600 ~/.ssh/authorized_keys"
+    }
+    catch {
+        Write-Host "Failed to copy SSH key: $_" -ForegroundColor Red
+        return $false
+    }
 
     Write-Host "SSH key copied successfully to $VMName" -ForegroundColor Green
 }
 
-function Initialize-MultipassSSHVM {
+function Initialize-MultipassVMSSH {
     param (
         [string]$VMName = "ubuntu-ilm"
     )
@@ -1196,7 +1196,7 @@ function Main {
 
     Install-Multipass
     Install-MultipassVM
-    Initialize-MultipassSSHVM
+    Initialize-MultipassVMSSH
 
     Install-WSLDistro -DistroName "Ubuntu-24.04"
     Install-WSLDistro -DistroName "Debian"
