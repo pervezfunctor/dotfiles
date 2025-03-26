@@ -22,8 +22,9 @@ function Install-DevTools {
         winget install --id Git.Git -e
     }
 
-    winget install --id wez.wezterm -e
     winget install --id GitHub.cli -e
+
+    # winget install --id wez.wezterm -e
     # winget install --id astral-sh.uv -e
     # winget install --id JesseDuffield.lazygit -e
     # winget install --id JesseDuffield.lazydocker -e
@@ -140,29 +141,40 @@ function Install-NerdFonts {
     Write-Host "Nerd Fonts installed successfully!" -ForegroundColor Green
 }
 
+
 function Backup-ConfigFile {
     param (
         [Parameter(Mandatory = $true)]
-        [string]$FilePath,
-
-        [Parameter(Mandatory = $false)]
-        [string]$ConfigName = "config"
+        [string]$FilePath
     )
 
-    if (Test-Path $FilePath) {
-        $backupPath = "$FilePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-        try {
-            Copy-Item -Path $FilePath -Destination $backupPath -Force
-            Write-Host "Created backup of $ConfigName at $backupPath" -ForegroundColor Green
-            return $true
-        }
-        catch {
-            Write-Host "Failed to create backup of ${ConfigName}: $_" -ForegroundColor Red
-            return $false
-        }
+    if (!(Test-Path $FilePath)) {
+        Write-Host "$FilePath does not exist. No backup needed." -ForegroundColor Yellow
+        return $false
     }
 
-    return $false  # No backup needed
+    $item = Get-Item -Path $FilePath -Force
+    if ($item.LinkType -eq "SymbolicLink") {
+        Write-Host "$FilePath is a symbolic link. No backup needed." -ForegroundColor Yellow
+        return $false
+    }
+
+    $backupPath = "$FilePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    try {
+        # Check if it's a directory
+        if (Test-Path -Path $FilePath -PathType Container) {
+            Copy-Item -Path $FilePath -Destination $backupPath -Force -Recurse
+        }
+        else {
+            Copy-Item -Path $FilePath -Destination $backupPath -Force
+        }
+        Write-Host "Created backup of ${FilePath} at ${backupPath}" -ForegroundColor Green
+        return $true
+    }
+    catch {
+        Write-Host "Failed to backup ${FilePath}: $_" -ForegroundColor Red
+        return $false
+    }
 }
 
 function New-ConfigDirectory {
@@ -263,32 +275,6 @@ function Set-WezTermSettings {
     Set-ConfigFromGitHub -ConfigName "WezTerm" -ConfigPath $wezTermConfigFile -GitHubUrl $wezTermConfigUrl -RequiredCommand "wezterm" -CreateDirectory
 }
 
-function Install-Ubuntu24 {
-    if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
-        return
-    }
-
-    $installedDistros = wsl --list --quiet
-    if ($installedDistros -contains "Ubuntu-24.04") {
-        Write-Host "Ubuntu 24.04 is already installed." -ForegroundColor Yellow
-        return
-    }
-
-    $availableDistros = wsl --list --online --quiet
-
-    if ($availableDistros -contains "Ubuntu-24.04") {
-        Write-Host "Installing Ubuntu 24.04..." -ForegroundColor Cyan
-        wsl --install -d Ubuntu-24.04
-        Write-Host "Ubuntu 24.04 installed successfully!" -ForegroundColor Green
-        return
-    }
-    else {
-        Write-Host "Ubuntu 24.04 not found in available distributions. Skipping..." -ForegroundColor Yellow
-        return
-    }
-}
-
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
@@ -302,7 +288,7 @@ function Main {
     Install-NerdFonts
     Install-CentOSStream10
     Set-CentOSStream10
-    Set-VSCodeSettings
+    # Set-VSCodeSettings
     Set-WezTermSettings
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
