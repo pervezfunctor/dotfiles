@@ -468,6 +468,24 @@ function Install-DevTools {
         Write-Host "Starship is already installed." -ForegroundColor Yellow
     }
 
+    if (!(Test-CommandExists zoxide)) {
+        Write-Host "Installing zoxide..." -ForegroundColor Cyan
+        winget install --id ajeetdsouza.zoxide -e
+        Write-Host "zoxide installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "zoxide is already installed." -ForegroundColor Yellow
+    }
+
+    if (!(Test-CommandExists carapace)) {
+        Write-Host "Installing carapace..." -ForegroundColor Cyan
+        winget install --id rsteube.Carapace -e
+        Write-Host "carapace installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "carapace is already installed." -ForegroundColor Yellow
+    }
+
     Write-Host "Development tools installed!" -ForegroundColor Green
 }
 
@@ -700,7 +718,6 @@ function Initialize-MultipassSSHVM {
     }
 
     Install-SSHServerInMutlipassVM -VMName $VMName
-    Initialize-SSHKey
     Copy-SSHKeyToMultipassVM -VMName $VMName
     Add-SSHConfigToMultipassVM -HostName $VMName -IPAddress $vmIP -User "ubuntu"
 
@@ -838,8 +855,6 @@ function Initialize-CentOSWSLSSH {
     if ([string]::IsNullOrEmpty($Username)) {
         $Username = Read-Host "Enter username for CentOS SSH access"
     }
-
-    Initialize-SSHKey
 
     Copy-SSHKeyToWSL -Distribution "CentOS-Stream-10" -Username $Username
 
@@ -1124,6 +1139,7 @@ function Main {
     Initialize-Dotfiles
     Initialize-NushellProfile
     Install-VSCodeExtensions
+    Initialize-SSHKey
 
     Install-Multipass
     Install-MultipassVM
@@ -1132,7 +1148,6 @@ function Main {
     Install-WSLDistro -DistroName "Ubuntu-24.04"
     Install-WSLDistro -DistroName "Debian"
     Install-WSLDistro -DistroName "openSUSE-Tumbleweed"
-
     Install-CentOSWSL
     Initialize-CentOSWSL
 
