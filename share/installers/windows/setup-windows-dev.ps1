@@ -30,7 +30,13 @@ function Backup-ConfigFile {
 
     $backupPath = "$FilePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
     try {
-        Copy-Item -Path $FilePath -Destination $backupPath -Force
+        # Check if it's a directory and use -Recurse if it is
+        if (Test-Path -Path $FilePath -PathType Container) {
+            Copy-Item -Path $FilePath -Destination $backupPath -Force -Recurse
+        }
+        else {
+            Copy-Item -Path $FilePath -Destination $backupPath -Force
+        }
         Write-Host "Created backup of ${FilePath} at ${backupPath}" -ForegroundColor Green
         return $true
     }
@@ -120,8 +126,32 @@ function New-ConfigLink {
         New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
     }
 
+    # If target exists, handle it appropriately
     if (Test-Path $targetPath) {
-        Backup-ConfigFile -FilePath $targetPath
+        $item = Get-Item -Path $targetPath -Force
+        $isSymlink = $item.LinkType -eq "SymbolicLink"
+
+        if ($isSymlink) {
+            $existingTarget = $item.Target
+            if ($existingTarget -eq $sourcePath) {
+                Write-Host "$targetPath already points to $sourcePath. Skipping." -ForegroundColor Green
+                return
+            }
+            else {
+                Write-Host "$targetPath is a symbolic link pointing to $existingTarget. Removing it." -ForegroundColor Yellow
+                Remove-Item -Path $targetPath -Force -Confirm:$false
+            }
+        }
+        else {
+            Backup-ConfigFile -FilePath $targetPath
+            # After backup, remove the original to make way for the symlink
+            if (Test-Path -Path $targetPath -PathType Container) {
+                Remove-Item -Path $targetPath -Force -Recurse -Confirm:$false
+            }
+            else {
+                Remove-Item -Path $targetPath -Force -Confirm:$false
+            }
+        }
     }
 
     try {
@@ -1039,12 +1069,13 @@ function Initialize-Dotfiles {
     New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\emacs-slim\dot-emacs" -targetPath "$env:USERPROFILE\.emacs"
 
     Write-Host "Setting up Nushell config..." -ForegroundColor Cyan
+    $null = Backup-ConfigFile -FilePath "$env:APPDATA\nushell"
     New-ConfigLink -sourcePath "$env:USERPROFILE\ilm\nushell\dot-config\nushell" -targetPath "$env:APPDATA\nushell"
 
     Write-Host "Setting up PowerShell config..." -ForegroundColor Cyan
     $psConfigFile = "$env:USERPROFILE\ilm\powershell\Microsoft.PowerShell_profile.ps1"
     $psProfilePath = $PROFILE
-    New-ConfigDirectory -ConfigPath $psProfilePath
+    $null = New-ConfigDirectory -ConfigPath $psProfilePath
     New-ConfigLink -sourcePath $psConfigFile -targetPath $psProfilePath
 
     Write-Host "Setting up VS Code config..." -ForegroundColor Cyan
@@ -1052,7 +1083,7 @@ function Initialize-Dotfiles {
     $vscodeSettingsTarget = "$env:APPDATA\Code\User\settings.json"
 
     if (Test-Path $vscodeSettingsSource) {
-        Backup-ConfigFile -FilePath $vscodeSettingsTarget
+        $null = Backup-ConfigFile -FilePath $vscodeSettingsTarget
         Copy-Item -Path $vscodeSettingsSource -Destination $vscodeSettingsTarget -Force
         Write-Host "VS Code settings copied successfully" -ForegroundColor Green
     }
@@ -1112,44 +1143,44 @@ function Initialize-NushellProfile {
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
-    Update-Windows
+    # Update-Windows
 
-    if (Install-HyperV-WSL) {
-        $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
-        if ($restart -eq 'y') {
-            Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
-            Start-Sleep -Seconds 5
-            Restart-Computer
-        }
-        else {
-            Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
-        }
-        return
-    }
+    # if (Install-HyperV-WSL) {
+    #     $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
+    #     if ($restart -eq 'y') {
+    #         Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
+    #         Start-Sleep -Seconds 5
+    #         Restart-Computer
+    #     }
+    #     else {
+    #         Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
+    #     }
+    #     return
+    # }
 
-    Install-Chocolatey
-    # Install-Scoop
+    # Install-Chocolatey
+    # # Install-Scoop
 
-    Install-DevTools
-    Install-CppTools
-    Install-Apps
-    Install-NerdFonts
+    # Install-DevTools
+    # Install-CppTools
+    # Install-Apps
+    # Install-NerdFonts
 
-    Set-CapsLockAsControl
+    # Set-CapsLockAsControl
     Initialize-Dotfiles
-    Initialize-NushellProfile
-    Install-VSCodeExtensions
-    Initialize-SSHKey
+    # Initialize-NushellProfile
+    # Install-VSCodeExtensions
+    # Initialize-SSHKey
 
-    Install-Multipass
-    Install-MultipassVM
-    Initialize-MultipassSSHVM
+    # Install-Multipass
+    # Install-MultipassVM
+    # Initialize-MultipassSSHVM
 
-    Install-WSLDistro -DistroName "Ubuntu-24.04"
-    Install-WSLDistro -DistroName "Debian"
-    Install-WSLDistro -DistroName "openSUSE-Tumbleweed"
-    Install-CentOSWSL
-    Initialize-CentOSWSL
+    # Install-WSLDistro -DistroName "Ubuntu-24.04"
+    # Install-WSLDistro -DistroName "Debian"
+    # Install-WSLDistro -DistroName "openSUSE-Tumbleweed"
+    # Install-CentOSWSL
+    # Initialize-CentOSWSL
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
