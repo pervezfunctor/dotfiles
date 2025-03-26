@@ -1,5 +1,7 @@
 #Requires -RunAsAdministrator
 
+$global:GitHubBaseUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
+
 function Test-CommandExists {
     param (
         [Parameter(Mandatory = $true)]
@@ -37,13 +39,11 @@ function Install-DevTools {
 function Set-CentOSStream10 {
     Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
 
-    # Prompt for username and password
     $username = Read-Host "Enter username for CentOS"
     $password = Read-Host "Enter password for $username" -AsSecureString
     $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
         [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
 
-    # Download and run the setup script directly in CentOS
     Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
 
     wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/share/installers/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
@@ -140,6 +140,81 @@ function Install-NerdFonts {
     Write-Host "Nerd Fonts installed successfully!" -ForegroundColor Green
 }
 
+function Backup-ConfigFile {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+
+        [Parameter(Mandatory = $false)]
+        [string]$ConfigName = "config"
+    )
+
+    if (Test-Path $FilePath) {
+        $backupPath = "$FilePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+        try {
+            Copy-Item -Path $FilePath -Destination $backupPath -Force
+            Write-Host "Created backup of $ConfigName at $backupPath" -ForegroundColor Green
+            return $true
+        }
+        catch {
+            Write-Host "Failed to create backup of ${ConfigName}: $_" -ForegroundColor Red
+            return $false
+        }
+    }
+
+    return $false  # No backup needed
+}
+
+function New-ConfigDirectory {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigName
+    )
+
+    $configDir = Split-Path -Parent $ConfigPath
+    if (Test-Path $configDir) {
+        return $true
+    }
+    try {
+        New-Item -Path $configDir -ItemType Directory -Force | Out-Null
+        Write-Host "Created $ConfigName config directory" -ForegroundColor Green
+        return $true
+    }
+    catch {
+        Write-Host "Failed to create $ConfigName config directory: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
+function Get-AndApplyConfig {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$GitHubUrl
+    )
+
+    try {
+        Write-Host "Downloading $ConfigName from $GitHubUrl..." -ForegroundColor Cyan
+        $content = Invoke-WebRequest -Uri $GitHubUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+
+        Set-Content -Path $ConfigPath -Value $content -Force
+        Write-Host "Applied $ConfigName configuration successfully" -ForegroundColor Green
+        return $true
+    }
+    catch {
+        Write-Host "Failed to download or apply $ConfigName configuration: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
 function Set-ConfigFromGitHub {
     param (
         [Parameter(Mandatory = $true)]
@@ -160,63 +235,14 @@ function Set-ConfigFromGitHub {
 
     Write-Host "Setting up $ConfigName settings..." -ForegroundColor Cyan
 
-    # Check if required command exists
-    if ($RequiredCommand -and !(Test-CommandExists $RequiredCommand)) {
-        Write-Host "$ConfigName is not installed. Please install $ConfigName first." -ForegroundColor Red
+    if (!(New-ConfigDirectory -ConfigPath $ConfigPath -ConfigName $ConfigName -CreateDirectory:$CreateDirectory)) {
         return $false
     }
 
-    # Create config directory if it doesn't exist and CreateDirectory is true
-    $configDir = Split-Path -Parent $ConfigPath
-    if ($CreateDirectory -and !(Test-Path $configDir)) {
-        try {
-            New-Item -Path $configDir -ItemType Directory -Force | Out-Null
-            Write-Host "Created $ConfigName config directory" -ForegroundColor Green
-        }
-        catch {
-            Write-Host "Failed to create $ConfigName config directory: $_" -ForegroundColor Red
-            return $false
-        }
-    }
+    Backup-ConfigFile -FilePath $ConfigPath -ConfigName $ConfigName
 
-    # Create backup of existing config if it exists
-    if (Test-Path $ConfigPath) {
-        $backupPath = "$ConfigPath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-        try {
-            Copy-Item -Path $ConfigPath -Destination $backupPath -Force
-            Write-Host "Created backup of $ConfigName config at $backupPath" -ForegroundColor Green
-        }
-        catch {
-            Write-Host "Failed to create backup of $ConfigName config: $_" -ForegroundColor Red
-        }
-    }
-
-    # Download config from GitHub
-    $tempConfigFile = "$env:TEMP\$(Split-Path -Leaf $ConfigPath)"
-    Write-Host "Downloading $ConfigName config from GitHub..." -ForegroundColor Cyan
-    try {
-        Invoke-WebRequest -Uri $GitHubUrl -OutFile $tempConfigFile -UseBasicParsing
-        Write-Host "$ConfigName config downloaded successfully" -ForegroundColor Green
-    }
-    catch {
-        Write-Host "Failed to download $ConfigName config: $_" -ForegroundColor Red
+    if (!(Get-AndApplyConfig -ConfigName $ConfigName -ConfigPath $ConfigPath -GitHubUrl $GitHubUrl)) {
         return $false
-    }
-
-    # Copy downloaded config to config location
-    try {
-        Copy-Item -Path $tempConfigFile -Destination $ConfigPath -Force
-        Write-Host "$ConfigName config applied successfully" -ForegroundColor Green
-    }
-    catch {
-        Write-Host "Failed to apply $ConfigName config: $_" -ForegroundColor Red
-        return $false
-    }
-    finally {
-        # Clean up temporary file
-        if (Test-Path $tempConfigFile) {
-            Remove-Item -Path $tempConfigFile -Force
-        }
     }
 
     Write-Host "$ConfigName settings setup completed" -ForegroundColor Green
@@ -225,16 +251,42 @@ function Set-ConfigFromGitHub {
 
 function Set-VSCodeSettings {
     $vscodeSettingsPath = "$env:APPDATA\Code\User\settings.json"
-    $wslSettingsUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/extras/vscode/wsl-settings.json"
+    $wslSettingsUrl = "$global:GitHubBaseUrl/extras/vscode/wsl-settings.json"
 
     Set-ConfigFromGitHub -ConfigName "VS Code WSL" -ConfigPath $vscodeSettingsPath -GitHubUrl $wslSettingsUrl -RequiredCommand "code"
 }
 
 function Set-WezTermSettings {
     $wezTermConfigFile = "$env:USERPROFILE\.config\wezterm\wezterm.lua"
-    $wezTermConfigUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/wezterm/dot-config/wezterm/wezterm.lua"
+    $wezTermConfigUrl = "$global:GitHubBaseUrl/wezterm/dot-config/wezterm/wezterm.lua"
 
     Set-ConfigFromGitHub -ConfigName "WezTerm" -ConfigPath $wezTermConfigFile -GitHubUrl $wezTermConfigUrl -RequiredCommand "wezterm" -CreateDirectory
+}
+
+function Install-Ubuntu24 {
+    if (!(Test-CommandExists wsl)) {
+        Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
+        return
+    }
+
+    $installedDistros = wsl --list --quiet
+    if ($installedDistros -contains "Ubuntu-24.04") {
+        Write-Host "Ubuntu 24.04 is already installed." -ForegroundColor Yellow
+        return
+    }
+
+    $availableDistros = wsl --list --online --quiet
+
+    if ($availableDistros -contains "Ubuntu-24.04") {
+        Write-Host "Installing Ubuntu 24.04..." -ForegroundColor Cyan
+        wsl --install -d Ubuntu-24.04
+        Write-Host "Ubuntu 24.04 installed successfully!" -ForegroundColor Green
+        return
+    }
+    else {
+        Write-Host "Ubuntu 24.04 not found in available distributions. Skipping..." -ForegroundColor Yellow
+        return
+    }
 }
 
 function Main {
