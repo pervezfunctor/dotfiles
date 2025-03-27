@@ -447,7 +447,7 @@ is_wayland() {
 }
 
 is_desktop() {
-    [[ -n "$XDG_CURRENT_DESKTOP" ]] || [[ -n "$WAYLAND_DISPLAY" ]] || [[ -n "$DESKTOP_SESSION" ]]
+    [[ -n "$XDG_CURRENT_DESKTOP" ]] || [[ -n "$DESKTOP_SESSION" ]]
 }
 
 fn_exists() {
