@@ -868,24 +868,45 @@ tmux_config_install() {
     slog "tmux config done!"
 }
 
+vscode_extensions_from_file() {
+    local extensions_file="$1"
+
+    if ! file_exists "$extensions_file"; then
+        warn "Extensions file not found at: $extensions_file"
+        return 1
+    fi
+
+    while read -r extension; do
+        if [[ -n "$extension" && ! "$extension" =~ ^# ]]; then
+            slog "Installing extension: $extension"
+            code --install-extension "$extension"
+        fi
+    done < "$extensions_file"
+}
+
 vscode-extensions_install() {
     slog "Installing vscode extensions"
+
+    local extensions_file
     if [[ "$USER" == "pervez" ]]; then
-        xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/common"
+        extensions_file="$DOT_DIR/extras/vscode/extensions/common"
     else
-        xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/default"
+        extensions_file="$DOT_DIR/extras/vscode/extensions/default"
     fi
+
+    vscode_extensions_from_file "$extensions_file"
+
     slog "vscode extensions installation done!"
 }
 
 vscode-all-extensions_install() {
     slog "Installing vscode extensions"
 
-    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/common"
-    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/cpp"
-    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/prog"
-    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/python"
-    xargs -L 1 code --install-extension <"$DOT_DIR/extras/vscode/extensions/web"
+    vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/common"
+    vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/cpp"
+    vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/prog"
+    vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/python"
+    vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/web"
 
     slog "vscode extensions installation done!"
 }
