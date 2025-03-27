@@ -96,7 +96,6 @@ function Install-CentOSStream10 {
 
     $tempDir = "$env:TEMP"
     $archivePath = "$tempDir\CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
-
     $downloadUrl = "https://mirror.stream.centos.org/SIGs/10-stream/altimages/images/wsl/x86_64/CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
 
     Write-Host "Downloading CentOS Stream 10 WSL image (this may take time)..." -ForegroundColor Cyan
@@ -115,24 +114,30 @@ function Install-CentOSStream10 {
     }
     $ProgressPreference = 'Continue'
 
-    if (!(Test-Path $archivePath) -or (Get-Item $archivePath).Length -eq 0) {
-        Write-Host "Downloaded file is missing or empty. Aborting." -ForegroundColor Red
-        return $false
-    }
-
     Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
-    if (wsl --import CentOS-Stream-10 $wslDir $archivePath) {
 
-        Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
-        Remove-Item -Path $archivePath -Force
+    wsl --shutdown
 
-        Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
-        Write-Host "To start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
+    try {
+        $result = wsl --import CentOS-Stream-10 $wslDir $archivePath
 
-        return $true
+        $installedDistros = wsl --list --quiet
+        if ($installedDistros -contains "CentOS-Stream-10") {
+            Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
+
+            Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
+            Remove-Item -Path $archivePath -Force
+
+            return $true
+        }
+        else {
+            throw "Import command completed but CentOS-Stream-10 is not in the list of installed distributions."
+        }
     }
-    else {
-        Write-Host "Failed to import CentOS Stream 10 to WSL." -ForegroundColor Red
+    catch {
+        Write-Host "Error importing CentOS Stream 10: $_" -ForegroundColor Red
+        Write-Host "The downloaded file is still available at: $archivePath" -ForegroundColor Cyan
+        Write-Host "Try manually importing with: wsl --import CentOS-Stream-10 $wslDir $archivePath" -ForegroundColor Yellow
         return $false
     }
 }
