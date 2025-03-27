@@ -176,29 +176,36 @@ function Backup-ConfigFile {
         return $false
     }
 }
+function New-Directory {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    if (Test-Path $Path) {
+        return $true
+    }
+
+    try {
+        New-Item -Path $Path -ItemType Directory -Force | Out-Null
+        Write-Host "Created directory at $Path" -ForegroundColor Green
+        return $true
+    }
+    catch {
+        Write-Host "Failed to create directory at ${Path}: $_" -ForegroundColor Red
+        return $false
+    }
+}
 
 function New-ConfigDirectory {
     param (
         [Parameter(Mandatory = $true)]
-        [string]$ConfigPath,
-
-        [Parameter(Mandatory = $true)]
-        [string]$ConfigName
+        [string]$ConfigPath
     )
 
     $configDir = Split-Path -Parent $ConfigPath
-    if (Test-Path $configDir) {
-        return $true
-    }
-    try {
-        New-Item -Path $configDir -ItemType Directory -Force | Out-Null
-        Write-Host "Created $ConfigName config directory" -ForegroundColor Green
-        return $true
-    }
-    catch {
-        Write-Host "Failed to create $ConfigName config directory: $_" -ForegroundColor Red
-        return $false
-    }
+
+    return New-Directory -Path $configDir
 }
 
 function Get-AndApplyConfig {
