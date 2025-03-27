@@ -48,8 +48,10 @@ function Install-WSL {
         return $true  # Restart needed
     }
 
-    # If we get here, WSL is installed
-    Write-Host "WSL is already installed." -ForegroundColor Yellow
+    Write-Host "Updating WSL..." -ForegroundColor Cyan
+    wsl --update
+
+    Write-Host "WSL is installed." -ForegroundColor Yellow
     return $false  # No restart needed
 }
 
@@ -287,15 +289,15 @@ function Main {
         return
     }
 
-    # Install-DevTools
-    # Install-NerdFonts
+    Install-DevTools
+    Install-NerdFonts
 
     if (Install-CentOSWSL) {
         Initialize-CentOSStream10
     }
 
-    # Install-VSCodeExtensions
-    # Set-VSCodeSettings
+    Install-VSCodeExtensions
+    Set-VSCodeSettings
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
