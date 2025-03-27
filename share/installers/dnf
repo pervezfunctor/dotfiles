@@ -128,7 +128,7 @@ vscode_bin_install() {
     cmd_check code
 }
 
-ghostty_install() {
+ghostty_bin_install() {
     has_cmd ghostty && return 1
 
     if is_fedora; then
@@ -143,7 +143,7 @@ ghostty_install() {
 ui_install() {
     si virt-manager chromium gnome-keyring xsel xclip wl-clipboard
 
-    ghostty_install
+    ghostty_bin_install
     vscode_bin_install
     apps_install
 }

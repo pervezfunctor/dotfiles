@@ -176,8 +176,12 @@ pnpm_install() {
     cmd_check pnpm
 }
 
-kitty_install() {
+kitty_bin_install() {
     is_linux || return 1
+    if ! is_desktop; then
+        warn "Not running desktop, skipping kitty installation"
+        return 1
+    fi
 
     has_cmd kitty && return 1
     has_cmd ~.local/kitty.app/bin/kitty && return 1
@@ -186,6 +190,7 @@ kitty_install() {
 
     # force link
     ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
+
 
     smd ~/.local/share/applications
     cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
@@ -1538,7 +1543,7 @@ zsh_as_default() {
     has_cmd zsh && chsh -s "$(command -v zsh)" "$USER"
 }
 
-box_base() {
+slimbox_base() {
     cd "$HOME" || warn "could not cd to $HOME"
 
     "$1_packages"
@@ -1547,7 +1552,53 @@ box_base() {
 
     dotfiles_install
 
-    dir_exists "$DOT_DIR" || err_exit "$DOT_DIR doesn't exist, Qutting"
+    dir_exists "$DOT_DIR" || err_exit "$DOT_DIR doesn't exist, Installation failed."
+}
+
+nvim_install() {
+    if ! has_cmd nvim; then
+        if has_cmd brew; then
+            bi neovim
+        else
+            si neovim
+        fi
+    fi
+
+    has_cmd nvim || err_exit "nvim not installed! Qutting."
+
+    srm ~/.config/nvim
+    smd ~/.config/nvim
+    ln -s ~/.ilm/nvim/dot-config/nvim ~/.config/nvim
+}
+
+tmux_install() {
+    if ! has_cmd tmux; then
+        if has_cmd brew; then
+            bi tmux
+        else
+            si tmux
+        fi
+    fi
+
+    has_cmd tmux || err_exit "tmux not installed! Qutting."
+
+    srm ~/.config/tmux
+    smd ~/.config/tmux
+    ln -s ~/.ilm/tmux/dot-config/tmux ~/.config/tmux
+}
+
+zsh_install() {
+    if ! has_cmd zsh; then
+        si zsh
+    fi
+    has_cmd zsh || err_exit "zsh not installed! Qutting."
+
+    srm ~/.zshrc
+    ln -s ~/.ilm/zsh/dot-zshrc ~/.zshrc
+}
+
+box_base() {
+    slimbox_base "$1"
 
     srm ~/.zshrc
     srm ~/.emacs
@@ -1701,7 +1752,7 @@ dev_groupstall() {
         fpi us.zoom.Zoom
         fpi md.obsidian.Obsidian
     else
-        kitty_install
+        kitty_bin_install
     fi
 }
 
@@ -1762,7 +1813,7 @@ pixi-nosudo_groupstall() {
 
     smd ~/.local/share/fonts
     jetbrains_nerd_font_install
-    kitty_install
+    kitty_bin_install
     kitty_config_install
     vscode_flatpak_install
     tbox_default_setup
