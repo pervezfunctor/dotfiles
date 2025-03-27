@@ -13,11 +13,11 @@ function Test-CommandExists {
 
 function Install-DevTools {
     if (-not (Test-CommandExists winget)) {
-        Write-Error "winget command not found. Please install the Windows Package Manager (App Installer)."
+        Write-Host "winget command not found. Please install the Windows Package Manager (App Installer)." -ForegroundColor Red
         return
     }
 
-    Write-Verbose "Installing/Updating development tools using winget..."
+    Write-Host "Installing/Updating development tools using winget..." -ForegroundColor Cyan
 
     $packages = @(
         "Microsoft.VisualStudioCode"
@@ -31,14 +31,14 @@ function Install-DevTools {
     )
 
     foreach ($packageId in $packages) {
-        Write-Verbose "Processing package: $packageId"
+        Write-Host "Processing package: $packageId" -ForegroundColor Cyan
         winget install --id $packageId -e --accept-source-agreements
 
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to install/update package '$packageId'. winget exited with code $LASTEXITCODE."
+            Write-Host "Failed to install/update package '$packageId'. winget exited with code $LASTEXITCODE." -ForegroundColor Red
         }
         else {
-            Write-Verbose "Package '$packageId' processed successfully."
+            Write-Host "Package '$packageId' processed successfully." -ForegroundColor Cyan
         }
     }
 }
@@ -48,7 +48,7 @@ function Install-WSL {
     $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
     if ($wslFeature.State -ne "Enabled") {
-        Write-Information "WSL is not installed. Installing now..."
+        Write-Host "WSL is not installed. Installing now..." -ForegroundColor Cyan
         Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction Stop
         Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart -ErrorAction Stop
 
@@ -56,21 +56,21 @@ function Install-WSL {
         return $true  # Restart needed
     }
 
-    Write-Information "Updating WSL..."
+    Write-Host "Updating WSL..." -ForegroundColor Cyan
     wsl --update
 
-    Write-Warning "WSL is installed."
+    Write-Host "WSL is installed." -ForegroundColor Cyan
     return $false  # No restart needed
 }
 
 function Install-CentOSWSL {
     $installedDistros = wsl --list --quiet
     if ($installedDistros -contains "CentOS-Stream-10") {
-        Write-Warning "CentOS Stream 10 is already installed."
+        Write-Host "CentOS Stream 10 is already installed." -ForegroundColor Cyan
         return $false
     }
 
-    Write-Information "Installing CentOS Stream 10 on WSL..."
+    Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
 
     $wslDir = "$env:LOCALAPPDATA\WSL\CentOS-Stream-10"
     New-Item -Path $wslDir -ItemType Directory -Force | Out-Null
@@ -80,55 +80,54 @@ function Install-CentOSWSL {
 
     $downloadUrl = "https://mirror.stream.centos.org/SIGs/10-stream/altimages/images/wsl/x86_64/CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
 
-    Write-Information "Downloading CentOS Stream 10 WSL image (this may take time)..."
+    Write-Host "Downloading CentOS Stream 10 WSL image (this may take time)..." -ForegroundColor Cyan
 
     $ProgressPreference = 'SilentlyContinue'
     try {
         if (Test-Path $archivePath) {
-            Write-Warning "CentOS Stream 10 WSL image already downloaded."
+            Write-Host "CentOS Stream 10 WSL image already downloaded." -ForegroundColor Cyan
         }
         else {
             Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
             if ($LASTEXITCODE -ne 0 -or !(Test-Path $archivePath)) {
-                Write-Error "CentOS download failed."
+                Write-Host "CentOS download failed." -ForegroundColor Red
                 return $false
             }
-            Write-Verbose "Download completed successfully!"
+            Write-Host "Download completed successfully!" -ForegroundColor Cyan
         }
     }
     catch {
-        Write-Error "Download failed: $_"
-        Write-Warning "You can try downloading the file manually from:"
-        Write-Warning $downloadUrl
-        Write-Warning "Then place it at: $archivePath"
+        Write-Host "Download failed: $_" -ForegroundColor Red
+        Write-Host "You can try downloading the file manually from:" -ForegroundColor Cyan
+        Write-Host $downloadUrl -ForegroundColor Cyan
+        Write-Host "Then place it at: $archivePath" -ForegroundColor Cyan
         return $false
     }
     $ProgressPreference = 'Continue'
 
-    Write-Information "Importing CentOS Stream 10 to WSL..."
+    Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
     wsl --import --version=2 CentOS-Stream-10 $wslDir $archivePath
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "CentOS import failed."
+        Write-Host "CentOS import failed." -ForegroundColor Red
         return $false
     }
 
-    Write-Information "Cleaning up temporary files..."
+    Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
     Remove-Item -Path $archivePath -Force
 
-    Write-Verbose "CentOS Stream 10 installed successfully!"
-    Write-Information "Reboot your computer. Then to start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10"
+    Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Cyan
 }
 
 function Initialize-CentOSStream10 {
-    Write-Information "Setting up CentOS Stream 10..."
+    Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
 
     $username = Read-Host "Enter username for CentOS"
     $password = Read-Host "Enter password for $username" -AsSecureString
     $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
         [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
 
-    Write-Information "Running setup script in CentOS Stream 10..."
+    Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
 
     wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/share/installers/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
 
@@ -136,15 +135,15 @@ function Initialize-CentOSStream10 {
     $passwordText = $null
     [System.GC]::Collect()
 
-    Write-Verbose "CentOS Stream 10 setup complete!"
-    Write-Information "To access your CentOS environment, use: wsl -d CentOS-Stream-10"
+    Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Cyan
+    Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Green
 }
 
 function Install-NerdFonts {
-    Write-Information "Installing Nerd Fonts using Chocolatey..."
+    Write-Host "Installing Nerd Fonts using Chocolatey..." -ForegroundColor Cyan
 
     if (-not (Test-CommandExists choco)) {
-        Write-Information "Installing Chocolatey package manager..."
+        Write-Host "Installing Chocolatey package manager..."
         Set-ExecutionPolicy Bypass -Scope Process -Force
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
         Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
@@ -153,14 +152,14 @@ function Install-NerdFonts {
     }
 
     if (-not (Test-CommandExists choco)) {
-        Write-Error "Chocolatey is not installed. Cannot install Nerd Fonts."
+        Write-Host "Chocolatey is not installed. Cannot install Nerd Fonts." -ForegroundColor Red
         return
     }
 
     choco install nerd-fonts-jetbrainsmono -y
     choco install nerd-fonts-cascadiacode -y
 
-    Write-Verbose "Nerd Fonts installed successfully!"
+    Write-Host "Nerd Fonts installed successfully!" -ForegroundColor Cyan
 }
 
 function Backup-ConfigFile {
@@ -170,7 +169,7 @@ function Backup-ConfigFile {
     )
 
     if (!(Test-Path $FilePath)) {
-        Write-Warning "$FilePath does not exist. No backup needed."
+        Write-Host "$FilePath does not exist. No backup needed." -ForegroundColor Yellow
         return $false
     }
 
@@ -178,23 +177,23 @@ function Backup-ConfigFile {
         $item = Get-Item -Path $FilePath -Force -ErrorAction Stop
     }
     catch {
-        Write-Error "Failed to get item properties for $FilePath`: $_"
+        Write-Host "Failed to get item properties for $FilePath`: $_" -ForegroundColor Red
         return $false
     }
 
     if ($item.LinkType -eq "SymbolicLink") {
-        Write-Warning "$FilePath is a symbolic link. No backup needed."
+        Write-Host "$FilePath is a symbolic link. No backup needed." -ForegroundColor Yellow
         return $false
     }
 
     $backupPath = "$FilePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
     try {
         Copy-Item -Path $FilePath -Destination $backupPath -Recurse -Force -ErrorAction Stop
-        Write-Verbose "Created backup of ${FilePath} at ${backupPath}"
+        Write-Host "Created backup of ${FilePath} at ${backupPath}" -ForegroundColor Green
         return $true
     }
     catch {
-        Write-Error "Failed to backup ${FilePath}: $_"
+        Write-Host "Failed to backup ${FilePath}: $_" -ForegroundColor Red
         return $false
     }
 }
@@ -207,22 +206,22 @@ function New-ConfigDirectory {
 
     $configDir = Split-Path -Parent $ConfigPath
     if ([string]::IsNullOrEmpty($configDir)) {
-        Write-Verbose "No directory path specified in '$ConfigPath'. Assuming current directory."
+        Write-Host "No directory path specified in '$ConfigPath'. Assuming current directory." -ForegroundColor Yellow
         return $true
     }
 
     if (Test-Path $configDir -PathType Container) {
-        Write-Verbose "Directory '$configDir' already exists."
+        Write-Host "Directory '$configDir' already exists." -ForegroundColor Yellow
         return $true
     }
 
     try {
         New-Item -Path $configDir -ItemType Directory -Force -ErrorAction Stop | Out-Null
-        Write-Verbose "Created directory at $configDir"
+        Write-Host "Created directory at $configDir" -ForegroundColor Green
         return $true
     }
     catch {
-        Write-Error "Failed to create directory at ${configDir}: $_"
+        Write-Host "Failed to create directory at ${configDir}: $_" -ForegroundColor Red
         return $false
     }
 }
@@ -237,27 +236,27 @@ function Copy-ConfigFromGitHub {
         [string]$GitHubUrl
     )
 
-    Write-Verbose "Setting up ${ConfigPath} settings..."
+    Write-Host "Setting up ${ConfigPath} settings..."
 
-    if (!(New-ConfigDirectory -ConfigPath $ConfigPath -Verbose:$VerbosePreference)) {
+    if (!(New-ConfigDirectory -ConfigPath $ConfigPath)) {
         return $false
     }
 
-    if (!(Backup-ConfigFile -FilePath $ConfigPath -Verbose:$VerbosePreference)) {
-        Write-Warning "Backup for $ConfigPath failed or was skipped. Overwriting existing file if it exists."
+    if (!(Backup-ConfigFile -FilePath $ConfigPath)) {
+        Write-Host "Backup for $ConfigPath failed or was skipped. Overwriting existing file if it exists." -ForegroundColor Yellow
     }
 
     try {
-        Write-Verbose "Downloading ${ConfigPath} from ${GitHubUrl}..."
+        Write-Host "Downloading ${ConfigPath} from ${GitHubUrl}..." -ForegroundColor Cyan
         $content = Invoke-WebRequest -Uri $GitHubUrl -UseBasicParsing -ErrorAction Stop | Select-Object -ExpandProperty Content
 
-        Write-Verbose "Applying configuration to ${ConfigPath}..."
+        Write-Host "Applying configuration to ${ConfigPath}..."
         Set-Content -Path $ConfigPath -Value $content -Force -ErrorAction Stop
-        Write-Verbose "Applied ${ConfigPath} configuration successfully"
+        Write-Host "Applied ${ConfigPath} configuration successfully" -ForegroundColor Green
         return $true
     }
     catch {
-        Write-Error "Failed to download or apply ${ConfigPath} configuration from ${GitHubUrl}: $_"
+        Write-Host "Failed to download or apply ${ConfigPath} configuration from ${GitHubUrl}: $_" -ForegroundColor Red
         return $false
     }
 }
@@ -277,36 +276,36 @@ function Set-WezTermSettings {
 }
 
 function Install-VSCodeExtensions {
-    Write-Information "Installing VS Code extensions..."
+    Write-Host "Installing VS Code extensions..." -ForegroundColor Cyan
 
     $extensionsUrl = "$global:GitHubBaseUrl/extras/vscode/extensions/wsl"
 
     try {
-        Write-Information "Downloading VS Code extensions list from GitHub..."
+        Write-Host "Downloading VS Code extensions list from GitHub..."
         $extensionsList = Invoke-WebRequest -Uri $extensionsUrl -UseBasicParsing | Select-Object -ExpandProperty Content
 
         $extensionsList -split "`n" | ForEach-Object {
             $extension = $_.Trim()
             if ($extension -match '\S' -and -not $extension.StartsWith('#')) {
-                Write-Information "Installing extension: $extension"
+                Write-Host "Installing extension: $extension"
                 code --install-extension $extension
             }
         }
 
-        Write-Verbose "VS Code extensions installed successfully!"
+        Write-Host "VS Code extensions installed successfully!" -ForegroundColor Cyan
     }
     catch {
-        Write-Error "Failed to download VS Code extensions list: $_"
-        Write-Warning "Extensions URL: $extensionsUrl"
+        Write-Host "Failed to download VS Code extensions list: $_" -ForegroundColor Red
+        Write-Host "Extensions URL: $extensionsUrl" -ForegroundColor Yellow
     }
 }
 
 function Main {
-    Write-Verbose "Starting Windows development environment setup..."
+    Write-Host "Starting Windows development environment setup..." -ForegroundColor Cyan
 
     if (Install-WSL) {
-        Write-Warning "Please restart your computer to complete WSL installation."
-        Write-Warning "After restart, run this script again to continue the setup."
+        Write-Host "Please restart your computer to complete WSL installation." -ForegroundColor Yellow
+        Write-Host "After restart, run this script again to continue the setup." -ForegroundColor Yellow
         return
     }
 
@@ -321,7 +320,7 @@ function Main {
     Set-VSCodeSettings
     Set-WezTermSettings
 
-    Write-Verbose "Windows development environment setup complete!"
+    Write-Host "Windows development environment setup complete!" -ForegroundColor Cyan
 }
 
 Main
