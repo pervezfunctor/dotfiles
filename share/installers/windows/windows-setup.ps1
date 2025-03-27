@@ -277,6 +277,25 @@ function Set-WezTermSettings {
     Copy-ConfigFromGitHub -ConfigPath $wezTermConfigFile -GithubUrl $wezTermConfigUrl
 }
 
+function Install-VSCodeExtensions {
+    Write-Host "Installing VS Code extensions..." -ForegroundColor Cyan
+
+    $extensionsFile = "$global:DotDir\extras\vscode\extensions\wsl"
+
+    if (Test-Path $extensionsFile) {
+        Get-Content $extensionsFile | ForEach-Object {
+            if ($_ -match '\S') {
+                Write-Host "Installing extension: $_" -ForegroundColor DarkCyan
+                code --install-extension $_
+            }
+        }
+        Write-Host "VS Code extensions installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Extensions file not found at: $extensionsFile" -ForegroundColor Red
+    }
+}
+
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
@@ -291,6 +310,7 @@ function Main {
     Install-CentOSStream10
     Set-CentOSStream10
     # Set-VSCodeSettings
+    Install-VSCodeExtensions
     Set-WezTermSettings
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
