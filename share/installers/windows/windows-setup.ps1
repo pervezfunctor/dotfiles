@@ -87,6 +87,10 @@ function Install-CentOSStream10 {
 
     Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
 
+    # Ensure WSL is fully stopped
+    wsl --shutdown
+    Start-Sleep -Seconds 2
+
     $wslDir = "$env:LOCALAPPDATA\WSL\CentOS-Stream-10"
     if (Test-Path $wslDir) {
         Write-Host "Removing existing WSL directory..." -ForegroundColor Yellow
@@ -116,11 +120,15 @@ function Install-CentOSStream10 {
 
     Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
 
-    wsl --shutdown
-
     try {
-        $result = wsl --import CentOS-Stream-10 $wslDir $archivePath
+        # Run the import command and capture output
+        $importOutput = & wsl --import CentOS-Stream-10 $wslDir $archivePath 2>&1
+        Write-Host "Import command output: $importOutput" -ForegroundColor DarkCyan
 
+        # Wait a moment for WSL to register the new distribution
+        Start-Sleep -Seconds 5
+
+        # Check if the distribution was installed
         $installedDistros = wsl --list --quiet
         if ($installedDistros -contains "CentOS-Stream-10") {
             Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
@@ -128,10 +136,38 @@ function Install-CentOSStream10 {
             Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
             Remove-Item -Path $archivePath -Force
 
+            # Test the distribution
+            Write-Host "Testing CentOS Stream 10 installation..." -ForegroundColor Cyan
+            $testOutput = & wsl -d CentOS-Stream-10 -- echo "WSL test successful"
+            Write-Host "Test output: $testOutput" -ForegroundColor DarkCyan
+
             return $true
         }
         else {
-            throw "Import command completed but CentOS-Stream-10 is not in the list of installed distributions."
+            Write-Host "Import command completed but CentOS-Stream-10 is not in the list of installed distributions." -ForegroundColor Red
+            Write-Host "Installed distributions:" -ForegroundColor Yellow
+            wsl --list
+
+            # Try a different approach - unregister and try again
+            Write-Host "Trying alternative approach..." -ForegroundColor Yellow
+            wsl --unregister CentOS-Stream-10 2>$null
+
+            Write-Host "Retrying import with explicit path..." -ForegroundColor Cyan
+            $fullWslDir = (Resolve-Path $wslDir).Path
+            $fullArchivePath = (Resolve-Path $archivePath).Path
+
+            $importCmd = "wsl --import CentOS-Stream-10 `"$fullWslDir`" `"$fullArchivePath`""
+            Write-Host "Running: $importCmd" -ForegroundColor DarkCyan
+            Invoke-Expression $importCmd
+
+            Start-Sleep -Seconds 3
+            $installedDistros = wsl --list --quiet
+            if ($installedDistros -contains "CentOS-Stream-10") {
+                Write-Host "CentOS Stream 10 installed successfully on second attempt!" -ForegroundColor Green
+                Remove-Item -Path $archivePath -Force
+                return $true
+            }
+
             return $false
         }
     }
@@ -333,7 +369,7 @@ function Main {
         return
     }
 
-    Write-Host "FOO BAR"
+    Write-Host "Fizz Buzz"
 
     # Install-DevTools
     # Install-NerdFonts
