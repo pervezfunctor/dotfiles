@@ -211,60 +211,52 @@ function New-ConfigDirectory {
 function Get-AndApplyConfig {
     param (
         [Parameter(Mandatory = $true)]
-        [string]$ConfigName,
-
-        [Parameter(Mandatory = $true)]
-        [string]$ConfigPath,
-
-        [Parameter(Mandatory = $true)]
-        [string]$GitHubUrl
+        [string]$ConfigPath
     )
 
     try {
-        Write-Host "Downloading $ConfigName from $GitHubUrl..." -ForegroundColor Cyan
+        Write-Host "Downloading $ConfigPath from $GitHubUrl..." -ForegroundColor Cyan
         $content = Invoke-WebRequest -Uri $GitHubUrl -UseBasicParsing | Select-Object -ExpandProperty Content
 
         Set-Content -Path $ConfigPath -Value $content -Force
-        Write-Host "Applied $ConfigName configuration successfully" -ForegroundColor Green
+        Write-Host "Applied $ConfigPath configuration successfully" -ForegroundColor Green
         return $true
     }
     catch {
-        Write-Host "Failed to download or apply $ConfigName configuration: $_" -ForegroundColor Red
+        Write-Host "Failed to download or apply $ConfigPath configuration: $_" -ForegroundColor Red
         return $false
     }
 }
 
-function Set-ConfigFromGitHub {
+function Copy-ConfigFromGitHub {
     param (
         [Parameter(Mandatory = $true)]
-        [string]$ConfigName,
-
-        [Parameter(Mandatory = $true)]
-        [string]$ConfigPath,
-
-        [Parameter(Mandatory = $true)]
-        [string]$GitHubUrl,
-
-        [Parameter(Mandatory = $false)]
-        [string]$RequiredCommand = "",
-
-        [Parameter(Mandatory = $false)]
-        [switch]$CreateDirectory = $false
+        [string]$ConfigPath
     )
 
-    Write-Host "Setting up $ConfigName settings..." -ForegroundColor Cyan
+    Write-Host "Setting up ${ConfigPath} settings..." -ForegroundColor Cyan
 
-    if (!(New-ConfigDirectory -ConfigPath $ConfigPath -ConfigName $ConfigName -CreateDirectory:$CreateDirectory)) {
+    if (!(New-ConfigDirectory -ConfigPath $ConfigPath)) {
+        Write-Host "Failed to create ${ConfigPath} config directory. Skipping..." -ForegroundColor Yellow
         return $false
     }
 
-    Backup-ConfigFile -FilePath $ConfigPath -ConfigName $ConfigName
+    Backup-ConfigFile -FilePath $ConfigPath
 
-    if (!(Get-AndApplyConfig -ConfigName $ConfigName -ConfigPath $ConfigPath -GitHubUrl $GitHubUrl)) {
+    try {
+        Write-Host "Downloading ${ConfigPath} from ${global:GitHubBaseUrl}..." -ForegroundColor Cyan
+        $content = Invoke-WebRequest -Uri ${global:GitHubBaseUrl} -UseBasicParsing | Select-Object -ExpandProperty Content
+
+        Set-Content -Path $ConfigPath -Value $content -Force
+        Write-Host "Applied ${ConfigPath} configuration successfully" -ForegroundColor Green
+        return $true
+    }
+    catch {
+        Write-Host "Failed to download or apply ${ConfigPath} configuration: $_" -ForegroundColor Red
         return $false
     }
 
-    Write-Host "$ConfigName settings setup completed" -ForegroundColor Green
+    Write-Host "${ConfigPath} setup completed" -ForegroundColor Green
     return $true
 }
 
@@ -272,14 +264,14 @@ function Set-VSCodeSettings {
     $vscodeSettingsPath = "$env:APPDATA\Code\User\settings.json"
     $wslSettingsUrl = "$global:GitHubBaseUrl/extras/vscode/wsl-settings.json"
 
-    Set-ConfigFromGitHub -ConfigName "VS Code WSL" -ConfigPath $vscodeSettingsPath -GitHubUrl $wslSettingsUrl -RequiredCommand "code"
+    Copy-ConfigFromGitHub -ConfigPath $vscodeSettingsPath
 }
 
 function Set-WezTermSettings {
     $wezTermConfigFile = "$env:USERPROFILE\.config\wezterm\wezterm.lua"
     $wezTermConfigUrl = "$global:GitHubBaseUrl/wezterm/dot-config/wezterm/wezterm.lua"
 
-    Set-ConfigFromGitHub -ConfigName "WezTerm" -ConfigPath $wezTermConfigFile -GitHubUrl $wezTermConfigUrl -RequiredCommand "wezterm" -CreateDirectory
+    Copy-ConfigFromGitHub -ConfigPath $wezTermConfigFile
 }
 
 function Main {
@@ -291,9 +283,9 @@ function Main {
         return
     }
 
-    Install-DevTools
-    Install-NerdFonts
-    Install-CentOSStream10
+    # Install-DevTools
+    # Install-NerdFonts
+    # Install-CentOSStream10
     Set-CentOSStream10
     # Set-VSCodeSettings
     Set-WezTermSettings
