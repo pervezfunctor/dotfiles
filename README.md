@@ -21,7 +21,7 @@ Following script is tested on fresh install of Windows 11 Pro. This may or may n
 
 Open `powershell` as administrator and run the following command.
 
-```bash
+```powershell
 iwr -useb https://dub.sh/kIv4BnI | iex
 ```
 

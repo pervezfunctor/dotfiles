@@ -75,19 +75,23 @@ function Install-WSL {
 
 function Install-CentOSStream10 {
     if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL command does not exist. Older Windows version?. Quitting." -ForegroundColor Red
-        return
+        Write-Host "WSL command does not exist. Older Windows version? Quitting." -ForegroundColor Red
+        return $false
     }
 
     $installedDistros = wsl --list --quiet
     if ($installedDistros -contains "CentOS-Stream-10") {
         Write-Host "CentOS Stream 10 is already installed." -ForegroundColor Yellow
-        return
+        return $false
     }
 
     Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
 
     $wslDir = "$env:LOCALAPPDATA\WSL\CentOS-Stream-10"
+    if (Test-Path $wslDir) {
+        Write-Host "Removing existing WSL directory..." -ForegroundColor Yellow
+        Remove-Item -Path $wslDir -Recurse -Force
+    }
     New-Item -Path $wslDir -ItemType Directory -Force | Out-Null
 
     $tempDir = "$env:TEMP"
@@ -107,18 +111,30 @@ function Install-CentOSStream10 {
         Write-Host "You can try downloading the file manually from:" -ForegroundColor Yellow
         Write-Host $downloadUrl -ForegroundColor Yellow
         Write-Host "Then place it at: $archivePath" -ForegroundColor Yellow
-        return
+        return $false
     }
     $ProgressPreference = 'Continue'
 
+    if (!(Test-Path $archivePath) -or (Get-Item $archivePath).Length -eq 0) {
+        Write-Host "Downloaded file is missing or empty. Aborting." -ForegroundColor Red
+        return $false
+    }
+
     Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
-    wsl --import --version=2 CentOS-Stream-10 $wslDir $archivePath
+    if (wsl --import CentOS-Stream-10 $wslDir $archivePath) {
 
-    Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
-    Remove-Item -Path $archivePath -Force
+        Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
+        Remove-Item -Path $archivePath -Force
 
-    Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
-    Write-Host "To start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
+        Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
+        Write-Host "To start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
+
+        return $true
+    }
+    else {
+        Write-Host "Failed to import CentOS Stream 10 to WSL." -ForegroundColor Red
+        return $false
+    }
 }
 
 function Install-NerdFonts {
@@ -307,8 +323,11 @@ function Main {
 
     # Install-DevTools
     # Install-NerdFonts
-    Install-CentOSStream10
-    Set-CentOSStream10
+
+    if (Install-CentOSStream10) {
+        Set-CentOSStream10
+    }
+
     # Set-VSCodeSettings
     Install-VSCodeExtensions
     Set-WezTermSettings
