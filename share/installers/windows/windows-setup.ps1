@@ -287,8 +287,6 @@ function Main {
         return
     }
 
-    Write-Host "Fizz Buzz"
-
     # Install-DevTools
     # Install-NerdFonts
 
