@@ -132,6 +132,7 @@ function Install-CentOSStream10 {
         }
         else {
             throw "Import command completed but CentOS-Stream-10 is not in the list of installed distributions."
+            return $false
         }
     }
     catch {
@@ -332,16 +333,17 @@ function Main {
         return
     }
 
+    Write-Host "FOO BAR"
+
     # Install-DevTools
     # Install-NerdFonts
 
-    # if (Install-CentOSStream10) {
-    #     Set-CentOSStream10
-    # }
+    if (Install-CentOSStream10) {
+        Set-CentOSStream10
+    }
 
+    # Install-VSCodeExtensions
     # Set-VSCodeSettings
-    Install-VSCodeExtensions
-    Set-WezTermSettings
 
     Write-Host "Windows development environment setup complete!" -ForegroundColor Green
 }
