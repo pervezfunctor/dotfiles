@@ -335,9 +335,9 @@ function Main {
     # Install-DevTools
     # Install-NerdFonts
 
-    if (Install-CentOSStream10) {
-        Set-CentOSStream10
-    }
+    # if (Install-CentOSStream10) {
+    #     Set-CentOSStream10
+    # }
 
     # Set-VSCodeSettings
     Install-VSCodeExtensions
