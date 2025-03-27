@@ -37,7 +37,81 @@ function Install-DevTools {
     Write-Host "Development tools installed successfully!" -ForegroundColor Green
 }
 
-function Set-CentOSStream10 {
+function Install-WSL {
+    # Check if WSL is installed by looking at Windows features
+    $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+
+    if ($wslFeature.State -ne "Enabled") {
+        Write-Host "WSL is not installed. Installing now..." -ForegroundColor Cyan
+        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+        wsl --install --no-distribution
+        return $true  # Restart needed
+    }
+
+    # If we get here, WSL is installed
+    Write-Host "WSL is already installed." -ForegroundColor Yellow
+    return $false  # No restart needed
+}
+
+function Install-CentOSWSL {
+    $installedDistros = wsl --list --quiet
+    if ($installedDistros -contains "CentOS-Stream-10") {
+        Write-Host "CentOS Stream 10 is already installed." -ForegroundColor Yellow
+        return $false
+    }
+
+    Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
+
+    $wslDir = "$env:LOCALAPPDATA\WSL\CentOS-Stream-10"
+    New-Item -Path $wslDir -ItemType Directory -Force | Out-Null
+
+    $tempDir = "$env:TEMP"
+    $archivePath = "$tempDir\CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
+
+    $downloadUrl = "https://mirror.stream.centos.org/SIGs/10-stream/altimages/images/wsl/x86_64/CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
+
+    Write-Host "Downloading CentOS Stream 10 WSL image (this may take time)..." -ForegroundColor Cyan
+
+    $ProgressPreference = 'SilentlyContinue'
+    try {
+        # if already downloaded ignore
+        if (Test-Path $archivePath) {
+            Write-Host "CentOS Stream 10 WSL image already downloaded." -ForegroundColor Yellow
+        }
+        else {
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
+            if ($LASTEXITCODE -ne 0 -or !(Test-Path $archivePath)) {
+                Write-Host "Download failed." -ForegroundColor Red
+                return $false
+            }
+            Write-Host "Download completed successfully!" -ForegroundColor Green
+        }
+    }
+    catch {
+        Write-Host "Download failed: $_" -ForegroundColor Red
+        Write-Host "You can try downloading the file manually from:" -ForegroundColor Yellow
+        Write-Host $downloadUrl -ForegroundColor Yellow
+        Write-Host "Then place it at: $archivePath" -ForegroundColor Yellow
+        return $false
+    }
+    $ProgressPreference = 'Continue'
+
+    Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
+    wsl --import --version=2 CentOS-Stream-10 $wslDir $archivePath
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "CentOS import failed." -ForegroundColor Red
+        return $false
+    }
+
+    Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
+    Remove-Item -Path $archivePath -Force
+
+    Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
+    Write-Host "To start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
+}
+
+function Initialize-CentOSStream10 {
     Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
 
     $username = Read-Host "Enter username for CentOS"
@@ -55,128 +129,6 @@ function Set-CentOSStream10 {
 
     Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
     Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
-}
-
-function Install-WSL {
-    # Check if WSL is installed by looking at Windows features
-    $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
-
-    if ($wslFeature.State -ne "Enabled") {
-        Write-Host "WSL is not installed. Installing now..." -ForegroundColor Cyan
-        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
-        wsl --install --no-distribution
-        return $true  # Restart needed
-    }
-
-    # If we get here, WSL is installed
-    Write-Host "WSL is already installed." -ForegroundColor Yellow
-    return $false  # No restart needed
-}
-
-function Install-CentOSStream10 {
-    if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL command does not exist. Older Windows version? Quitting." -ForegroundColor Red
-        return $false
-    }
-
-    $installedDistros = wsl --list --quiet
-    if ($installedDistros -contains "CentOS-Stream-10") {
-        Write-Host "CentOS Stream 10 is already installed." -ForegroundColor Yellow
-        return $false
-    }
-
-    Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
-
-    # Ensure WSL is fully stopped
-    wsl --shutdown
-    Start-Sleep -Seconds 2
-
-    $wslDir = "$env:LOCALAPPDATA\WSL\CentOS-Stream-10"
-    if (Test-Path $wslDir) {
-        Write-Host "Removing existing WSL directory..." -ForegroundColor Yellow
-        Remove-Item -Path $wslDir -Recurse -Force
-    }
-    New-Item -Path $wslDir -ItemType Directory -Force | Out-Null
-
-    $tempDir = "$env:TEMP"
-    $archivePath = "$tempDir\CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
-    $downloadUrl = "https://mirror.stream.centos.org/SIGs/10-stream/altimages/images/wsl/x86_64/CentOS-Stream-Image-WSL-Base.x86_64-10-202501111101.tar.xz"
-
-    Write-Host "Downloading CentOS Stream 10 WSL image (this may take time)..." -ForegroundColor Cyan
-
-    $ProgressPreference = 'SilentlyContinue'
-    try {
-        Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
-        Write-Host "Download completed successfully!" -ForegroundColor Green
-    }
-    catch {
-        Write-Host "Download failed: $_" -ForegroundColor Red
-        Write-Host "You can try downloading the file manually from:" -ForegroundColor Yellow
-        Write-Host $downloadUrl -ForegroundColor Yellow
-        Write-Host "Then place it at: $archivePath" -ForegroundColor Yellow
-        return $false
-    }
-    $ProgressPreference = 'Continue'
-
-    Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
-
-    try {
-        # Run the import command and capture output
-        $importOutput = & wsl --import CentOS-Stream-10 $wslDir $archivePath 2>&1
-        Write-Host "Import command output: $importOutput" -ForegroundColor DarkCyan
-
-        # Wait a moment for WSL to register the new distribution
-        Start-Sleep -Seconds 5
-
-        # Check if the distribution was installed
-        $installedDistros = wsl --list --quiet
-        if ($installedDistros -contains "CentOS-Stream-10") {
-            Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
-
-            Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
-            Remove-Item -Path $archivePath -Force
-
-            # Test the distribution
-            Write-Host "Testing CentOS Stream 10 installation..." -ForegroundColor Cyan
-            $testOutput = & wsl -d CentOS-Stream-10 -- echo "WSL test successful"
-            Write-Host "Test output: $testOutput" -ForegroundColor DarkCyan
-
-            return $true
-        }
-        else {
-            Write-Host "Import command completed but CentOS-Stream-10 is not in the list of installed distributions." -ForegroundColor Red
-            Write-Host "Installed distributions:" -ForegroundColor Yellow
-            wsl --list
-
-            # Try a different approach - unregister and try again
-            Write-Host "Trying alternative approach..." -ForegroundColor Yellow
-            wsl --unregister CentOS-Stream-10 2>$null
-
-            Write-Host "Retrying import with explicit path..." -ForegroundColor Cyan
-            $fullWslDir = (Resolve-Path $wslDir).Path
-            $fullArchivePath = (Resolve-Path $archivePath).Path
-
-            $importCmd = "wsl --import CentOS-Stream-10 `"$fullWslDir`" `"$fullArchivePath`""
-            Write-Host "Running: $importCmd" -ForegroundColor DarkCyan
-            Invoke-Expression $importCmd
-
-            Start-Sleep -Seconds 3
-            $installedDistros = wsl --list --quiet
-            if ($installedDistros -contains "CentOS-Stream-10") {
-                Write-Host "CentOS Stream 10 installed successfully on second attempt!" -ForegroundColor Green
-                Remove-Item -Path $archivePath -Force
-                return $true
-            }
-
-            return $false
-        }
-    }
-    catch {
-        Write-Host "Error importing CentOS Stream 10: $_" -ForegroundColor Red
-        Write-Host "The downloaded file is still available at: $archivePath" -ForegroundColor Cyan
-        Write-Host "Try manually importing with: wsl --import CentOS-Stream-10 $wslDir $archivePath" -ForegroundColor Yellow
-        return $false
-    }
 }
 
 function Install-NerdFonts {
@@ -219,38 +171,12 @@ function Backup-ConfigFile {
 
     $backupPath = "$FilePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
     try {
-        # Check if it's a directory
-        if (Test-Path -Path $FilePath -PathType Container) {
-            Copy-Item -Path $FilePath -Destination $backupPath -Force -Recurse
-        }
-        else {
-            Copy-Item -Path $FilePath -Destination $backupPath -Force
-        }
+        Copy-Item -Path $FilePath -Destination $backupPath -Force -Recurse
         Write-Host "Created backup of ${FilePath} at ${backupPath}" -ForegroundColor Green
         return $true
     }
     catch {
         Write-Host "Failed to backup ${FilePath}: $_" -ForegroundColor Red
-        return $false
-    }
-}
-function New-Directory {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$Path
-    )
-
-    if (Test-Path $Path) {
-        return $true
-    }
-
-    try {
-        New-Item -Path $Path -ItemType Directory -Force | Out-Null
-        Write-Host "Created directory at $Path" -ForegroundColor Green
-        return $true
-    }
-    catch {
-        Write-Host "Failed to create directory at ${Path}: $_" -ForegroundColor Red
         return $false
     }
 }
@@ -263,25 +189,17 @@ function New-ConfigDirectory {
 
     $configDir = Split-Path -Parent $ConfigPath
 
-    return New-Directory -Path $configDir
-}
-
-function Get-AndApplyConfig {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$ConfigPath
-    )
+    if (Test-Path $configDir) {
+        return $true
+    }
 
     try {
-        Write-Host "Downloading $ConfigPath from $GitHubUrl..." -ForegroundColor Cyan
-        $content = Invoke-WebRequest -Uri $GitHubUrl -UseBasicParsing | Select-Object -ExpandProperty Content
-
-        Set-Content -Path $ConfigPath -Value $content -Force
-        Write-Host "Applied $ConfigPath configuration successfully" -ForegroundColor Green
+        New-Item -Path $configDir -ItemType Directory -Force | Out-Null
+        Write-Host "Created directory at $configDir" -ForegroundColor Green
         return $true
     }
     catch {
-        Write-Host "Failed to download or apply $ConfigPath configuration: $_" -ForegroundColor Red
+        Write-Host "Failed to create directory at ${configDir}: $_" -ForegroundColor Red
         return $false
     }
 }
@@ -328,12 +246,12 @@ function Set-VSCodeSettings {
     Copy-ConfigFromGitHub -ConfigPath $vscodeSettingsPath -GithubUrl $wslSettingsUrl
 }
 
-function Set-WezTermSettings {
-    $wezTermConfigFile = "$env:USERPROFILE\.config\wezterm\wezterm.lua"
-    $wezTermConfigUrl = "$global:GitHubBaseUrl/wezterm/dot-config/wezterm/wezterm.lua"
+# function Set-WezTermSettings {
+#     $wezTermConfigFile = "$env:USERPROFILE\.config\wezterm\wezterm.lua"
+#     $wezTermConfigUrl = "$global:GitHubBaseUrl/wezterm/dot-config/wezterm/wezterm.lua"
 
-    Copy-ConfigFromGitHub -ConfigPath $wezTermConfigFile -GithubUrl $wezTermConfigUrl
-}
+#     Copy-ConfigFromGitHub -ConfigPath $wezTermConfigFile -GithubUrl $wezTermConfigUrl
+# }
 
 function Install-VSCodeExtensions {
     Write-Host "Installing VS Code extensions..." -ForegroundColor Cyan
@@ -374,8 +292,8 @@ function Main {
     # Install-DevTools
     # Install-NerdFonts
 
-    if (Install-CentOSStream10) {
-        Set-CentOSStream10
+    if (Install-CentOSWSL) {
+        Initialize-CentOSStream10
     }
 
     # Install-VSCodeExtensions
