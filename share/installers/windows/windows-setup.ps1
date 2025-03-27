@@ -301,19 +301,25 @@ function Set-WezTermSettings {
 function Install-VSCodeExtensions {
     Write-Host "Installing VS Code extensions..." -ForegroundColor Cyan
 
-    $extensionsFile = "$global:DotDir\extras\vscode\extensions\wsl"
+    $extensionsUrl = "$global:GitHubBaseUrl/extras/vscode/extensions/wsl"
 
-    if (Test-Path $extensionsFile) {
-        Get-Content $extensionsFile | ForEach-Object {
-            if ($_ -match '\S') {
-                Write-Host "Installing extension: $_" -ForegroundColor DarkCyan
-                code --install-extension $_
+    try {
+        Write-Host "Downloading VS Code extensions list from GitHub..." -ForegroundColor Cyan
+        $extensionsList = Invoke-WebRequest -Uri $extensionsUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+
+        $extensionsList -split "`n" | ForEach-Object {
+            $extension = $_.Trim()
+            if ($extension -match '\S' -and -not $extension.StartsWith('#')) {
+                Write-Host "Installing extension: $extension" -ForegroundColor DarkCyan
+                code --install-extension $extension
             }
         }
+
         Write-Host "VS Code extensions installed successfully!" -ForegroundColor Green
     }
-    else {
-        Write-Host "Extensions file not found at: $extensionsFile" -ForegroundColor Red
+    catch {
+        Write-Host "Failed to download VS Code extensions list: $_" -ForegroundColor Red
+        Write-Host "Extensions URL: $extensionsUrl" -ForegroundColor Yellow
     }
 }
 
