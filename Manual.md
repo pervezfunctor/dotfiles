@@ -109,9 +109,19 @@ You could install chocolatey with the following command.
    sudo apt-get install -y curl wget git-core trash-cli
    sudo apt-get install -y tar unzip cmake build-essential
    ```
+
+On `OpenSuse Tumbleweed`
+
+```bash
+sudo zypper refresh && sudo zypper dup
+sudo zypper in neovim gcc make ripgrep fd fzf starship zsh tmux trash-cli curl
+sudo zypper in wget stow cmake tar unzip git-core autoconf automake binutils
+sudo zypper in expect flex bison glibc-devel
+```
+
 If you are using OS other than `Ubuntu` then you need to make sure git, wget, curl, trash-cli, unzip, tar, python, perl and all C development tools like gcc and make are installed.
 
-3. Install homebrew
+3. Install homebrew. Optional on Tumbleweed.
 
    ```bash
    NONINTERACTIVE=1 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -127,6 +137,8 @@ If you are using OS other than `Ubuntu` then you need to make sure git, wget, cu
    ```bash
    git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
    ```
+
+Following steps only for Linux Desktop.
 
 6. Install Ptyxis using `flatpak`(`flathub`).
 
@@ -226,7 +238,7 @@ Some modern linux/macos tools
 
 ```bash
 brew install tree-sitter gh gum stow tmux carapace lazygit eza fzf fd zoxide
-brew install git-delta  yazi ripgrep bat ugrep micro carapace nushell
+brew install git-delta yazi ripgrep bat ugrep micro carapace nushell
 brew install jq just shfmt shellcheck lazydocker broot dust htop dysk
 brew install cheat curlie duf sd xh doggo atuin procs hyperfine pixi
 brew install yq yazi superfile gdu tealdeer choose-rust bottom television
