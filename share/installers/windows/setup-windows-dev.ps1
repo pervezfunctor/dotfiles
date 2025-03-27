@@ -879,6 +879,65 @@ function Initialize-CentOSWSL {
     Write-Host "You can also connect via SSH: ssh centos-wsl" -ForegroundColor Cyan
 }
 
+function Install-NixOSWSL {
+    Write-Host "Installing NixOS on WSL..." -ForegroundColor Cyan
+
+    if (!(Test-CommandExists wsl)) {
+        Write-Host "WSL command does not exist. Please install WSL first." -ForegroundColor Red
+        return
+    }
+
+    $installedDistros = wsl --list --quiet
+    if ($installedDistros -contains "NixOS") {
+        Write-Host "NixOS is already installed." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Downloading NixOS WSL image (this may take time)..." -ForegroundColor Cyan
+
+    $tempDir = "$env:TEMP"
+    $wslFile = "$tempDir\nixos.wsl"
+    $downloadUrl = "https://github.com/nix-community/NixOS-WSL/releases/download/2411.6.0/nixos.wsl"
+
+    $ProgressPreference = 'SilentlyContinue'
+    try {
+        if (Test-Path $wslFile) {
+            Write-Host "NixOS WSL image already downloaded." -ForegroundColor Cyan
+        }
+        else {
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $wslFile -UseBasicParsing
+            Write-Host "Download completed successfully!" -ForegroundColor Green
+        }
+    }
+    catch {
+        Write-Host "Download failed: $_" -ForegroundColor Red
+        Write-Host "You can try downloading the file manually from:" -ForegroundColor Yellow
+        Write-Host $downloadUrl -ForegroundColor Yellow
+        Write-Host "Then place it at: $wslFile" -ForegroundColor Yellow
+        return
+    }
+    $ProgressPreference = 'Continue'
+
+    Write-Host "Installing NixOS from .wsl file..." -ForegroundColor Cyan
+    wsl --import-in-place NixOS $wslFile
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "NixOS installation failed." -ForegroundColor Red
+        return
+    }
+
+    Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
+    Remove-Item -Path $wslFile -Force
+
+    Write-Host "Updating NixOS to the latest version..." -ForegroundColor Cyan
+    wsl -d NixOS -u root -- bash -c "nix-channel --update && nixos-rebuild switch"
+
+    Write-Host "NixOS installed successfully!" -ForegroundColor Green
+    Write-Host "To start NixOS, open a terminal and type: wsl -d NixOS" -ForegroundColor Cyan
+    Write-Host "Note: NixOS on WSL uses the root user by default." -ForegroundColor Yellow
+    Write-Host "To update NixOS in the future, run: wsl -d NixOS -u root -- bash -c 'nix-channel --update && nixos-rebuild switch'" -ForegroundColor Cyan
+}
+
 function Install-CentOSWSL {
     if (!(Test-CommandExists wsl)) {
         Write-Host "WSL command does not exist. Older Windows version?. Quitting." -ForegroundColor Red
