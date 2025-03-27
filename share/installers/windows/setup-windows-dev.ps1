@@ -83,7 +83,10 @@ function New-ConfigDirectory {
 function Copy-ConfigFromGitHub {
     param (
         [Parameter(Mandatory = $true)]
-        [string]$ConfigPath
+        [string]$ConfigPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$GitHubUrl
     )
 
     Write-Host "Setting up ${ConfigPath} settings..." -ForegroundColor Cyan
@@ -96,8 +99,8 @@ function Copy-ConfigFromGitHub {
     Backup-ConfigFile -FilePath $ConfigPath
 
     try {
-        Write-Host "Downloading ${ConfigPath} from ${global:GitHubBaseUrl}..." -ForegroundColor Cyan
-        $content = Invoke-WebRequest -Uri ${global:GitHubBaseUrl} -UseBasicParsing | Select-Object -ExpandProperty Content
+        Write-Host "Downloading ${ConfigPath} from ${GithubUrl}..." -ForegroundColor Cyan
+        $content = Invoke-WebRequest -Uri ${GithubUrl} -UseBasicParsing | Select-Object -ExpandProperty Content
 
         Set-Content -Path $ConfigPath -Value $content -Force
         Write-Host "Applied ${ConfigPath} configuration successfully" -ForegroundColor Green

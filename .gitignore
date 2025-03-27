@@ -27,3 +27,4 @@ yazi/dot-config/yazi/package.toml
 vim/*.un~
 history.txt
 starship.nu
+*.backup-*

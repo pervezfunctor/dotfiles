@@ -231,7 +231,10 @@ function Get-AndApplyConfig {
 function Copy-ConfigFromGitHub {
     param (
         [Parameter(Mandatory = $true)]
-        [string]$ConfigPath
+        [string]$ConfigPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$GitHubUrl
     )
 
     Write-Host "Setting up ${ConfigPath} settings..." -ForegroundColor Cyan
@@ -244,8 +247,8 @@ function Copy-ConfigFromGitHub {
     Backup-ConfigFile -FilePath $ConfigPath
 
     try {
-        Write-Host "Downloading ${ConfigPath} from ${global:GitHubBaseUrl}..." -ForegroundColor Cyan
-        $content = Invoke-WebRequest -Uri ${global:GitHubBaseUrl} -UseBasicParsing | Select-Object -ExpandProperty Content
+        Write-Host "Downloading ${ConfigPath} from ${GithubUrl}..." -ForegroundColor Cyan
+        $content = Invoke-WebRequest -Uri ${GithubUrl} -UseBasicParsing | Select-Object -ExpandProperty Content
 
         Set-Content -Path $ConfigPath -Value $content -Force
         Write-Host "Applied ${ConfigPath} configuration successfully" -ForegroundColor Green
@@ -264,14 +267,14 @@ function Set-VSCodeSettings {
     $vscodeSettingsPath = "$env:APPDATA\Code\User\settings.json"
     $wslSettingsUrl = "$global:GitHubBaseUrl/extras/vscode/wsl-settings.json"
 
-    Copy-ConfigFromGitHub -ConfigPath $vscodeSettingsPath
+    Copy-ConfigFromGitHub -ConfigPath $vscodeSettingsPath -GithubUrl $wslSettingsUrl
 }
 
 function Set-WezTermSettings {
     $wezTermConfigFile = "$env:USERPROFILE\.config\wezterm\wezterm.lua"
     $wezTermConfigUrl = "$global:GitHubBaseUrl/wezterm/dot-config/wezterm/wezterm.lua"
 
-    Copy-ConfigFromGitHub -ConfigPath $wezTermConfigFile
+    Copy-ConfigFromGitHub -ConfigPath $wezTermConfigFile -GithubUrl $wezTermConfigUrl
 }
 
 function Main {
@@ -285,7 +288,7 @@ function Main {
 
     # Install-DevTools
     # Install-NerdFonts
-    # Install-CentOSStream10
+    Install-CentOSStream10
     Set-CentOSStream10
     # Set-VSCodeSettings
     Set-WezTermSettings
