@@ -45,6 +45,7 @@ You could install chocolatey with the following command.
 
 8. Follow the linux instructions below for almost everything.
 
+
 ### MACOS
 
 1. Install xcode command line tools
@@ -93,6 +94,9 @@ You could install chocolatey with the following command.
    cd ~/.ilm
    stow aerospace
    ```
+
+9. For Containers/Virtual machines, try [orbstack](https://orbstack.dev/) or [colima](https://github.com/abiosoft/colima) or [UTM](https://mac.getutm.app/)
+
 
 ### Linux
 
@@ -143,6 +147,7 @@ For flatpak/flathub setup, follow the instructions [here](https://flathub.org/se
 
 9. Definitely use either [distrobox](https://github.com/89luca89/distrobox) or [toolbox](https://github.com/containers/toolbox) for software development. [devcontainers](https://code.visualstudio.com/docs/devcontainers/containers) is also a good choice.
 
+
 ## TMUX
 
 1. Install tmux with your package manager.
@@ -158,6 +163,7 @@ Setup configuration with
    cd ~/.ilm
    stow tmux
    ```
+
 
 ## ZSH
 
@@ -178,6 +184,7 @@ Setup configuration with
    cd ~/.ilm
    stow zsh
    ```
+
 
 ## Neovim
 
@@ -212,9 +219,10 @@ On Linux, follow the instruction [here](https://code.visualstudio.com/docs/setup
    }
    ```
 
+
 ## Additional Modern Linux Tools
 
-Install linux tools of your choice
+Some modern linux/macos tools
 
 ```bash
 brew install tree-sitter gh gum stow tmux carapace lazygit eza fzf fd zoxide
@@ -223,3 +231,39 @@ brew install jq just shfmt shellcheck lazydocker broot dust htop dysk
 brew install cheat curlie duf sd xh doggo atuin procs hyperfine pixi
 brew install yq yazi superfile gdu tealdeer choose-rust bottom television
 ```
+
+Some modern tools for windows
+
+```powershell
+winget install --id dandavison.delta -e
+winget install --id wez.wezterm -e
+winget install --id BurntSushi.ripgrep.MSVC -e
+winget install --id junegunn.fzf -e
+winget install --id Nushell.Nushell -e
+winget install --id 7zip.7zip -e
+winget install --id Microsoft.VisualStudioCode -e
+winget install --id Mozilla.Firefox -e
+winget install --id Git.Git -e
+winget install --id wez.wezterm -e
+winget install --id Docker.DockerDesktop -e
+winget install --id BurntSushi.ripgrep -e
+winget install --id junegunn.fzf -e
+winget install --id sharkdp.fd -e
+winget install --id sharkdp.bat -e
+winget install --id GitHub.cli -e
+winget install --id dandavison.delta -e
+winget install --id astral-sh.uv -e
+winget install --id jesseduffield.lazygit -e
+winget install --id jesseduffield.lazydocker -e
+winget install --id Neovim.Neovim -e
+winget install --id Starship.Starship
+winget install --id ajeetdsouza.zoxide -e
+winget install --id rsteube.Carapace -e
+winget install --id glazewm.glazewm -e
+winget install --id Telegram.TelegramDesktop -e
+winget install --id Zoom.Zoom -e
+winget install --id OpenWhisperSystems.Signal -e
+winget install --id Canonical.Multipass -e
+```
+
+Consider `multipass` for virtualization. It allows you to create and destroy Ubuntu VMs very easily.
