@@ -1496,8 +1496,8 @@ fedora_packages() {
 }
 
 centos_packages() {
-    si git unzip wget curl tar gcc make gum tree
-    si bat fzf ripgrep htop bat plocate file just
+    si git unzip wget curl tar gcc make gum tree bat fzf ripgrep \
+        htop bat plocate file just emacs-nox neovim tmux zsh
 
     starship_install
 }
@@ -1953,8 +1953,12 @@ wsl_groupstall() {
 
 centos-wsl_groupstall() {
     wsl_groupstall
+
     si gcc-c++ gdb clang clang-devel clang-tools-extra clang-libs
     si clang-analyzer lldb lld llvm llvm-devel ccache pre-commit
+
+    tmux_install
+    nvim_install
 }
 
 shell-group_check() {
