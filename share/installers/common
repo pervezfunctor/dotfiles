@@ -250,7 +250,6 @@ brew_shell_install() {
     has_cmd spf || bi superfile
     has_cmd gdu || has_cmd gdu-go || bi gdu
     has_cmd tldr || bi tealdeer
-    has_cmd delta || bi git-delta
     has_cmd choose || bi choose-rust
     has_cmd btm || bi bottom
     has_cmd nu || bi nushell
@@ -1599,7 +1598,8 @@ emacs_install() {
     has_cmd emacs || err_exit "emacs not installed! Qutting."
 
     srm ~/.emacs
-    ln -s ~/.ilm/emacs/dot-config/emacs ~/.emacs
+    srm ~/.emacs.d
+    ln -s ~/.ilm/emac-slim/dot-emacs ~/.emacs
 }
 
 tmux_install() {
@@ -1737,11 +1737,6 @@ ubuntu-dbox_groupstall() {
     is_ubuntu || err_exit "This script is only for Ubuntu"
 
     dbox_base ubuntu
-}
-
-wsl_groupstall() {
-    is_wsl || err_exit "This script is only for WSL"
-    box_base ubuntu
 }
 
 dbox_groupstall() {
@@ -1922,25 +1917,16 @@ min_groupstall() {
     min-group_check
 }
 
-centos-wsl_groupstall() {
-    min_groupstall
-    si zsh tmux
+wsl_groupstall() {
+    wslbox_groupstall
+    python_install
+    has_cmd trash || pipx install trash-cli
     brew_install
-    brew_shell_slim_install
+    bis stow carapace fzf trash-cli lazygit eza zoxide gh tree-sitter gum
+    has_cmd delta || bi git-delta
+    bi bash-preexec
 
-    if has_cmd stow; then
-        has_cmd zsh && zsh_config_install
-        has_cmd nvim && nvim_config_install
-        has_cmd tmux && tmux_config_install
-    else
-        warn "stow not installed, skipping configuration for zsh, nvim, tmux"
-    fi
-
-    # # Fix VS Code permissions issue
-    # mkdir -p /tmp
-    # sudo chmod 1777 /tmp
-    # touch /tmp/remote-wsl-loc.txt
-    # chmod 666 /tmp/remote-wsl-loc.txt
+    zsh_install
 }
 
 shell-group_check() {
@@ -1949,7 +1935,6 @@ shell-group_check() {
     cmd_check eza fd fzf atuin delta
     # cmd_check cheat choose curlie direnv doggo dotenv procs
     # cmd_check duf dust gawk gdu hyperfine jq just shellcheck shfmt yq
-
 }
 
 shell_groupstall() {
