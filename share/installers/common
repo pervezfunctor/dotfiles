@@ -64,6 +64,7 @@ pixi_install() {
     slog "pixi installation done!"
 
     cmd_check ~/.pixi/bin/pixi
+    cmd_check pixi
 }
 
 devbox_install() {
@@ -1496,7 +1497,7 @@ fedora_packages() {
 }
 
 centos_packages() {
-    si git unzip wget curl tar gcc make gum tree bat fzf ripgrep \
+    si git unzip wget curl tar gcc make gum tree bat ripgrep \
         htop bat plocate file just emacs-nox neovim tmux zsh
 
     starship_install
@@ -1954,11 +1955,24 @@ wsl_groupstall() {
 centos-wsl_groupstall() {
     wsl_groupstall
 
-    si gcc-c++ gdb clang clang-devel clang-tools-extra clang-libs
-    si clang-analyzer lldb lld llvm llvm-devel ccache pre-commit
-
     tmux_install
     nvim_install
+}
+
+centos-fast_groupstall() {
+    is_centos || err_exit "This script is only for CentOS"
+
+    sudo dnf update
+    sudo dnf install -y git-core wget curl gcc make unzip tar tree neovim tmux \
+        zsh gcc-c++ gdb clang lldb lld llvm bat gum  ripgrep luarocks
+
+    pixi_install
+    pixi global install trash-cli fzf lazygit eza zoxide gh git-delta
+
+    starship_install
+    tmux_install
+    nvim_install
+    zsh_install
 }
 
 shell-group_check() {
