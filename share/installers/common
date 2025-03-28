@@ -1583,7 +1583,6 @@ nvim_install() {
     has_cmd nvim || err_exit "nvim not installed! Qutting."
 
     srm ~/.config/nvim
-    smd ~/.config/nvim
     ln -s ~/.ilm/nvim/dot-config/nvim ~/.config/nvim
 }
 
@@ -1616,7 +1615,7 @@ tmux_install() {
 
     srm ~/.config/tmux
     smd ~/.config/tmux
-    ln -s ~/.ilm/tmux/dot-config/tmux ~/.config/tmux
+    ln -s ~/.ilm/tmux/dot-config/tmux/tmux.conf ~/.config/tmux/tmux.conf
 }
 
 zsh_install() {
