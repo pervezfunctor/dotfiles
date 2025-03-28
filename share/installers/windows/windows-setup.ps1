@@ -43,6 +43,36 @@ function Install-DevTools {
     }
 }
 
+function Initialize-WSLDistro {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$DistroName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Username,
+
+        [Parameter(Mandatory = $true)]
+        [System.Security.SecureString]$Password
+    )
+
+    Write-Host "Running setup script in $DistroName..." -ForegroundColor Cyan
+
+    # Extract the base distro type (centos, ubuntu, debian, opensuse)
+    $distroType = $DistroName
+    if ($DistroName -match "^(CentOS|Ubuntu|Debian|openSUSE)") {
+        $distroType = $matches[1].ToLower()
+    }
+
+    wsl -d $DistroName -u root -- bash -c "curl -sSL $global:GitHubBaseUrl/share/installers/windows/setup-distro.sh | bash -s -- '$Username' '$Password' '$distroType'"
+
+    # Clean up the password from memory
+    $Password = $null
+    [System.GC]::Collect()
+
+    Write-Host "$DistroName setup complete!" -ForegroundColor Green
+    Write-Host "To access your $DistroName environment, use: wsl -d $DistroName" -ForegroundColor Cyan
+}
+
 function Install-WSL {
     $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
