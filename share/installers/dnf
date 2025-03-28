@@ -102,7 +102,7 @@ cpp_install() {
     si gcc gcc-c++ gdb valgrind systemtap ltrace strace
     si clang clang-devel clang-tools-extra clang-libs
     si clang-analyzer lldb lld llvm llvm-devel
-    si graphviz ccache cppcheck pre-commit
+    si graphviz ccache cppcheck pre-commit cmake
 
     conan_install
     cmake_install

@@ -1496,8 +1496,8 @@ fedora_packages() {
 }
 
 centos_packages() {
-    si git unzip wget curl tar gcc make zsh tmux neovim
-    si gum tree bat fzf ripgrep htop bat plocate file just emacs-nox
+    si git unzip wget curl tar gcc make gum tree
+    si bat fzf ripgrep htop bat plocate file just
 
     starship_install
 }
@@ -1651,18 +1651,21 @@ tw-wslbox_groupstall() {
 ubuntu-wslbox_groupstall() {
     is_ubuntu || err_exit "This script is only for Ubuntu"
 
+    sudo apt-get update && sudo apt-get upgrade -y
     wslbox_base ubuntu
 }
 
 debian-wslbox_groupstall() {
     is_debian || err_exit "This script is only for Debian"
 
+    sudo apt-get update && sudo apt-get upgrade -y
     wslbox_base debian
 }
 
 centos-wslbox_groupstall() {
     is_centos || err_exit "This script is only for CentOS"
 
+    sudo dnf update
     wslbox_base centos
 }
 
@@ -1691,6 +1694,26 @@ wslbox_groupstall() {
         warn "Unknown OS, using brew, this is not recommended"
         sleep 3
         brew-wslbox_groupstall
+    fi
+}
+
+box_groupstall() {
+    if is_tw; then
+        box_base tw
+    elif is_ubuntu; then
+        box_base ubuntu
+    elif is_debian; then
+        box_base debian
+    elif is_fedora; then
+        box_base fedora
+    elif is_arch; then
+        box_base arch
+    elif is_centos; then
+        box_base centos
+    else
+        warn "Unknown OS, using brew, this is not recommended"
+        sleep 3
+        box_base brew
     fi
 }
 
@@ -1774,12 +1797,13 @@ dev_groupstall() {
     bis zsh starship fzf fd bat zoxide eza htop tmux gum
     bi bash-preexec
 
-    vscode_install
-
     docker_install
     atomic_distrobox_install
 
+    is_desktop || return 0
+
     jetbrains_nerd_font_install
+    vscode_install
 
     if has_cmd flatpak; then
         flathub_install
@@ -1920,13 +1944,17 @@ min_groupstall() {
 wsl_groupstall() {
     wslbox_groupstall
     python_install
-    has_cmd trash || pipx install trash-cli
     brew_install
     bis stow carapace fzf trash-cli lazygit eza zoxide gh tree-sitter gum
     has_cmd delta || bi git-delta
-    bi bash-preexec
 
     zsh_install
+}
+
+centos-wsl_groupstall() {
+    wsl_groupstall
+    si gcc-c++ gdb clang clang-devel clang-tools-extra clang-libs
+    si clang-analyzer lldb lld llvm llvm-devel ccache pre-commit
 }
 
 shell-group_check() {
