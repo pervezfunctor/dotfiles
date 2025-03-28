@@ -506,44 +506,40 @@ hms() {
     nix run home-manager -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
 }
 
+SUDO_KEEPALIVE_PID=""
+
+_stop_sudo_keepalive() {
+    if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
+        echo "Stopping sudo keep-alive process (PID: $SUDO_KEEPALIVE_PID)..." >&2
+        kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
+    fi
+    SUDO_KEEPALIVE_PID=""
+}
+
 keep_sudo_running() {
-    slog "Keeping sudo alive"
-    has_cmd sudo || err_exit "sudo must be installed"
-
-    sudo -v
-
-    if [ -w /etc/sudoers.d ]; then
-        echo "Defaults timestamp_timeout=120" | sudo tee /etc/sudoers.d/increased_timeout >/dev/null
+    if ! has_cmd sudo; then
+        slog "Error: sudo command not found." >&2; return 1;
     fi
 
-    # Keep sudo token refreshed in background with more frequent refreshes
+    if ! sudo -v; then
+        slog "Error: Failed to validate sudo credentials. Please run sudo manually once or check password."
+        return 1
+    fi
+
+    slog "Sudo credentials active."
     (
         while true; do
-            # Refresh sudo timestamp every 60 seconds to be safe
-            sudo -n true
-            sleep 60
-            # Exit loop if parent process is gone
-            kill -0 "$$" 2>/dev/null || exit
+        sudo -n true 2>/dev/null
+        sleep 60
         done
     ) &
 
-    # Store background process ID to be able to kill it later if needed
-    SUDO_KEEP_ALIVE_PID=$!
+    SUDO_KEEPALIVE_PID=$!
+    slog "Sudo keep-alive background process started (PID: $SUDO_KEEPALIVE_PID)."
 
-    # Make sure the background process is terminated when the script exits
-    trap stop_sudo_running EXIT
-}
+    trap _stop_sudo_keepalive EXIT INT TERM HUP
 
-stop_sudo_running() {
-    if [ -n "$SUDO_KEEP_ALIVE_PID" ]; then
-        kill $SUDO_KEEP_ALIVE_PID 2>/dev/null || true
-        unset SUDO_KEEP_ALIVE_PID
-    fi
-
-    # Remove temporary sudoers file if we created one
-    if [ -f /etc/sudoers.d/increased_timeout ]; then
-        sudo rm -f /etc/sudoers.d/increased_timeout
-    fi
+    return 0
 }
 
 download_to() {
