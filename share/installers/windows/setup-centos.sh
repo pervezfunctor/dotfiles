@@ -59,5 +59,5 @@ echo " ssh $username@$(hostname -I)"
 
 # Run the setup script as the new user
 echo "Running setup script as $username..."
-sudo -u "$username" bash -c "cd /home/$username && bash -c \"\$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)\" -- centos-wsl"
+sudo -u "$username" bash -c "cd /home/$username && bash -c \"\$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)\" -- wslbox"
 echo "Setup script complete!"

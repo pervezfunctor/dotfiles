@@ -564,7 +564,7 @@ web_install() {
     fi
 }
 
-emacs_install() {
+emacs_bin_install() {
     slog "Installing emacs"
 
     if is_apt; then
@@ -1496,16 +1496,33 @@ fedora_packages() {
     starship_install
 }
 
-pixi_packages() {
-    pi git gh lazygit git-delta unzip wget curl trash-cli tar stow \
-        gcc make file just emacs tree-sitter-cli zsh starship tmux go-gum \
+centos_packages() {
+    si git unzip wget curl tar gcc make zsh tmux neovim
+    si gum tree bat fzf ripgrep htop bat plocate file just emacs-nox
+
+    starship_install
+}
+
+pixi_good_packages() {
+    pi gh lazygit git-delta unzip wget curl trash-cli tar stow \
+        just emacs tree-sitter-cli starship tmux go-gum \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer navi
 }
 
+pixi_packages() {
+    pi git gcc make file zsh
+    pixi_good_packages
+}
+
+brew_good_packages() {
+    bi gh unzip wget curl trash-cli stow starship tmux gum \
+        just emacs tree-sitter zsh tree bat eza fzf ripgrep zoxide fd \
+        htop sd yazi bat tealdeer cheat navi lazygit git-delta
+}
+
 brew_packages() {
-    si git gh lazygit git-delta unzip wget curl trash-cli stow \
-        gcc make file just emacs tree-sitter zsh starship tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer cheat navi
+    bi git gcc make file
+    brew_good_packages
 }
 
 tw_packages() {
@@ -1548,9 +1565,8 @@ slimbox_base() {
 
     "$1_packages"
 
-    has_cmd gh && gh extension install github/gh-copilot
-
     dotfiles_install
+    bash_config_install
 
     dir_exists "$DOT_DIR" || err_exit "$DOT_DIR doesn't exist, Installation failed."
 }
@@ -1569,6 +1585,22 @@ nvim_install() {
     srm ~/.config/nvim
     smd ~/.config/nvim
     ln -s ~/.ilm/nvim/dot-config/nvim ~/.config/nvim
+}
+
+emacs_install() {
+    if ! has_cmd emacs; then
+        if has_cmd brew; then
+            bi emacs
+        else
+            si emacs-nox
+            has_cmd emacs || si emacs
+        fi
+    fi
+
+    has_cmd emacs || err_exit "emacs not installed! Qutting."
+
+    srm ~/.emacs
+    ln -s ~/.ilm/emacs/dot-config/emacs ~/.emacs
 }
 
 tmux_install() {
@@ -1600,27 +1632,14 @@ zsh_install() {
 box_base() {
     slimbox_base "$1"
 
-    srm ~/.zshrc
-    srm ~/.emacs
-    srm ~/.config/tmux/tmux.conf
-    smd ~/.config
-    stowdf zsh emacs-slim
-
-    # older version of stow don't work with dot directories.
-    if is_ubuntu || is_debian || is_rocky; then
-        srm ~/.config/tmux.conf
-        ln -s ~/.ilm/tmux/dot-config/tmux/tmux.conf ~/.config/tmux.conf
-    else
-        stowdf tmux
-    fi
-
-    zsh_as_default
+    zsh_install
+    tmux_install
+    nvim_install
 }
 
 wslbox_base() {
     is_wsl || err_exit "This script is only for WSL"
-    box_base "$1"
-    bash_config_install
+    slimbox_base "$1"
 }
 
 tw-wslbox_groupstall() {
@@ -1642,6 +1661,12 @@ debian-wslbox_groupstall() {
     wslbox_base debian
 }
 
+centos-wslbox_groupstall() {
+    is_centos || err_exit "This script is only for CentOS"
+
+    wslbox_base centos
+}
+
 brew-wslbox_groupstall() {
     is_ublue || err_exit "This script is only for UBlue"
 
@@ -1652,6 +1677,22 @@ pixi-wslbox_groupstall() {
     is_atomic || err_exit "This script is only for Atomic Host"
 
     wslbox_base pixi
+}
+
+wslbox_groupstall() {
+    if is_tw; then
+        tw-wslbox_groupstall
+    elif is_ubuntu; then
+        ubuntu-wslbox_groupstall
+    elif is_debian; then
+        debian-wslbox_groupstall
+    elif is_centos; then
+        centos-wslbox_groupstall
+    else
+        warn "Unknown OS, using brew, this is not recommended"
+        sleep 3
+        brew-wslbox_groupstall
+    fi
 }
 
 dbox_base() {
@@ -1988,7 +2029,7 @@ all-group_check() {
 all_groupstall() {
     prog_groupstall
     pixi_install
-    emacs_install
+    emacs_bin_install
 
     emacs_config_install
 
