@@ -34,7 +34,7 @@ function Install-DevTools {
         Write-Host "Processing package: $packageId" -ForegroundColor Cyan
         winget install --id $packageId -e --accept-source-agreements
 
-        if ($LASTEXITCODE -ne 0) {
+        if (($LASTEXITCODE -ne 0) -and ($LASTEXITCODE -ne -1978335189)) {
             Write-Host "Failed to install/update package '$packageId'. winget exited with code $LASTEXITCODE." -ForegroundColor Red
         }
         else {
@@ -44,7 +44,6 @@ function Install-DevTools {
 }
 
 function Install-WSL {
-    # Check if WSL is installed by looking at Windows features
     $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
     if ($wslFeature.State -ne "Enabled") {
@@ -53,14 +52,14 @@ function Install-WSL {
         Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart -ErrorAction Stop
 
         wsl --install --no-distribution
-        return $true  # Restart needed
+        return $true
     }
 
     Write-Host "Updating WSL..." -ForegroundColor Cyan
-    wsl --update
+    wsl --update | Out-Null
 
     Write-Host "WSL is installed." -ForegroundColor Cyan
-    return $false  # No restart needed
+    return $false
 }
 
 function Install-CentOSWSL {
@@ -85,16 +84,15 @@ function Install-CentOSWSL {
     $ProgressPreference = 'SilentlyContinue'
     try {
         if (Test-Path $archivePath) {
-            Write-Host "CentOS Stream 10 WSL image already downloaded." -ForegroundColor Cyan
+            Remove-Item -Path $archivePath -Force
         }
-        else {
-            Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
-            if ($LASTEXITCODE -ne 0 -or !(Test-Path $archivePath)) {
-                Write-Host "CentOS download failed." -ForegroundColor Red
-                return $false
-            }
-            Write-Host "Download completed successfully!" -ForegroundColor Cyan
+
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
+        if ($LASTEXITCODE -ne 0 -or !(Test-Path $archivePath)) {
+            Write-Host "CentOS download failed." -ForegroundColor Red
+            return $false
         }
+        Write-Host "Download completed successfully!" -ForegroundColor Cyan
     }
     catch {
         Write-Host "Download failed: $_" -ForegroundColor Red
@@ -236,9 +234,10 @@ function Copy-ConfigFromGitHub {
         [string]$GitHubUrl
     )
 
-    Write-Host "Setting up ${ConfigPath} settings..."
+    Write-Host "Setting up ${ConfigPath} settings..." -ForegroundColor Cyan
 
     if (!(New-ConfigDirectory -ConfigPath $ConfigPath)) {
+        Write-Host "Failed to create ${ConfigPath} config directory. Skipping..." -ForegroundColor Yellow
         return $false
     }
 
@@ -248,10 +247,8 @@ function Copy-ConfigFromGitHub {
 
     try {
         Write-Host "Downloading ${ConfigPath} from ${GitHubUrl}..." -ForegroundColor Cyan
-        $content = Invoke-WebRequest -Uri $GitHubUrl -UseBasicParsing -ErrorAction Stop | Select-Object -ExpandProperty Content
+        Invoke-WebRequest -Uri $GitHubUrl -OutFile $ConfigPath -UseBasicParsing -ErrorAction Stop
 
-        Write-Host "Applying configuration to ${ConfigPath}..."
-        Set-Content -Path $ConfigPath -Value $content -Force -ErrorAction Stop
         Write-Host "Applied ${ConfigPath} configuration successfully" -ForegroundColor Green
         return $true
     }
@@ -265,14 +262,14 @@ function Set-VSCodeSettings {
     $vscodeSettingsPath = "$env:APPDATA\Code\User\settings.json"
     $wslSettingsUrl = "$global:GitHubBaseUrl/extras/vscode/wsl-settings.json"
 
-    Copy-ConfigFromGitHub -ConfigPath $vscodeSettingsPath -GithubUrl $wslSettingsUrl
+    Copy-ConfigFromGitHub -ConfigPath $vscodeSettingsPath -GithubUrl $wslSettingsUrl | Out-Null
 }
 
 function Set-WezTermSettings {
     $wezTermConfigFile = "$env:USERPROFILE\.config\wezterm\wezterm.lua"
     $wezTermConfigUrl = "$global:GitHubBaseUrl/wezterm/dot-config/wezterm/wezterm.lua"
 
-    Copy-ConfigFromGitHub -ConfigPath $wezTermConfigFile -GithubUrl $wezTermConfigUrl
+    Copy-ConfigFromGitHub -ConfigPath $wezTermConfigFile -GithubUrl $wezTermConfigUrl | Out-Null
 }
 
 function Install-VSCodeExtensions {

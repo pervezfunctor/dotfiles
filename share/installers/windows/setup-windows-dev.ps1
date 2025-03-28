@@ -86,6 +86,7 @@ function Copy-ConfigFromGitHub {
         [string]$ConfigPath,
 
         [Parameter(Mandatory = $true)]
+        [ValidatePattern('^https?://.+')]
         [string]$GitHubUrl
     )
 
@@ -96,23 +97,21 @@ function Copy-ConfigFromGitHub {
         return $false
     }
 
-    Backup-ConfigFile -FilePath $ConfigPath
+    if (!(Backup-ConfigFile -FilePath $ConfigPath)) {
+        Write-Host "Backup for $ConfigPath failed or was skipped. Overwriting existing file if it exists." -ForegroundColor Yellow
+    }
 
     try {
-        Write-Host "Downloading ${ConfigPath} from ${GithubUrl}..." -ForegroundColor Cyan
-        $content = Invoke-WebRequest -Uri ${GithubUrl} -UseBasicParsing | Select-Object -ExpandProperty Content
+        Write-Host "Downloading ${ConfigPath} from ${GitHubUrl}..." -ForegroundColor Cyan
+        Invoke-WebRequest -Uri $GitHubUrl -OutFile $ConfigPath -UseBasicParsing -ErrorAction Stop
 
-        Set-Content -Path $ConfigPath -Value $content -Force
         Write-Host "Applied ${ConfigPath} configuration successfully" -ForegroundColor Green
         return $true
     }
     catch {
-        Write-Host "Failed to download or apply ${ConfigPath} configuration: $_" -ForegroundColor Red
+        Write-Host "Failed to download or apply ${ConfigPath} configuration from ${GitHubUrl}: $_" -ForegroundColor Red
         return $false
     }
-
-    Write-Host "${ConfigPath} setup completed" -ForegroundColor Green
-    return $true
 }
 
 function New-ConfigLink {
