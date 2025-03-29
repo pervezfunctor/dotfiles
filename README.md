@@ -39,8 +39,20 @@ After the above scripts ends, you must do the following
 wsl -d CentOS-Stream-10
 ```
 
-4. Start neovim to check all is okay. You can always use `:checkhealth` for diagnostics in nvim.
+4. Change your default shell to `zsh`.
 
+```bash
+chsh -s $(which zsh) $USER
+zsh
+```
+
+5. Start `tmux`. This will take a little bit of time to install plugins. Be patient.
+
+```bash
+tmux
+```
+
+4. Start neovim to check all is okay. You can always use `:checkhealth` for diagnostics in nvim.
 
 ```bash
 nvim
@@ -61,8 +73,6 @@ Reboot your computer. Then use the following commands.
     # run the following within wsl
     bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
-
-Follow above steps.
 
 
 ## Recommended Setup
