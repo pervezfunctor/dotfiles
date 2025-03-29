@@ -2,24 +2,26 @@
 
 ## TLDR
 
-If your on desktop and want to get started quickly, use the following command.
+On linux desktop, to get started quickly, use the following command.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- dev
 ```
 
 
-If within a container, use the following command.
+If within a linux container, use the following command.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
 
+
 ## Windows Setup
 
-Following script is tested on fresh install of Windows 11 Pro. This may or may not work on Windows 11 Home.
 
-Open `powershell` as administrator and run the following command.
+Following script is tested on a fresh install of Windows 11 Pro.
+
+Open `powershell` as administrator and run the following command. You will be asked to enter `username` and `password` to setup `CentOS` which you will need later.
 
 ```powershell
 iwr -useb https://dub.sh/kIv4BnI | iex
@@ -29,47 +31,38 @@ After the above scripts ends, you must do the following
 
 1. Reboot your system.
 
-2. Use Windows Terminal.
+2. Open Windows Terminal. Open settings(`Ctrl+,`) and set font to `JetbrainsMono Nerd Font` for `CentOS-Stream-10` and `Powershell` profiles or preferably in defaults profile.
 
-3. Set font to `JetbrainsMono Nerd Font` for `CentOS-Stream-10` and `Powershell` profiles or preferrably in defaults.
-
-4. Start neovim to check all is okay.
-
-```bash
-nvim
-```
-
-5. Install vscode extensions
-    - neovim(`asvetliakov.vscode-neovim`).
-    - WSL(`ms-vscode-remote.remote-wsl`).
-
-6. Add to vscode user settings.
-
-```json
-  "remote.extensionKind": {
-      "asvetliakov.vscode-neovim": ["workspace"]
-  }
-```
-
-7. Above script will setup `CentOS` Stream 10(`wsl`). To access it, either use `Windows Terminal` profile or use the following command. Use the username and password you provided during setup, if needed.
+3. Above script will setup `CentOS` Stream 10(`wsl`). To access it, either use `Windows Terminal` profile or use the following command.
 
 ```bash
 wsl -d CentOS-Stream-10
 ```
 
-8. Make sure you launch `code` from within this `wsl`.
+4. Start neovim to check all is okay. You can always use `:checkhealth` for diagnostics in nvim.
 
 
-If the above script does not work, you could manually set up windows wsl environment, using the following commands.
+```bash
+nvim
+```
+
+5. Open `vscode`, from `CentOS-Stream-10` wsl. Go to extensions, and install extension neovim(`asvetliakov.vscode-neovim`) in WSL(CentOS-Stream-10)).
+
+
+If the above script does not work, you could manually set up windows wsl(Ubuntu) environment, using the following commands.
 
 ```powershell
     wsl --install -d Ubuntu-24.04
+```
+
+Reboot your computer. Then use the following commands.
+
     wsl -d Ubuntu-24.04
     # run the following within wsl
     bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
 
-And then follow the above steps.
+Follow above steps.
 
 
 ## Recommended Setup
