@@ -1,6 +1,12 @@
 {
   "extras": [
-
+    "lazyvim.plugins.extras.dap.core",
+    "lazyvim.plugins.extras.editor.harpoon2",
+    "lazyvim.plugins.extras.editor.leap",
+    "lazyvim.plugins.extras.lang.clangd",
+    "lazyvim.plugins.extras.lang.cmake",
+    "lazyvim.plugins.extras.test.core",
+    "lazyvim.plugins.extras.vscode"
   ],
   "news": {
     "NEWS.md": "10960"
