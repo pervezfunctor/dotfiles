@@ -1226,6 +1226,21 @@ function Copy-ConfigFromDotfiles {
     return $true
 }
 
+function Install-PowerShell {
+    Write-Host "Installing latest PowerShell..." -ForegroundColor Cyan
+    winget install --id Microsoft.PowerShell -e
+
+    # Refresh PATH to ensure pwsh command is available
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+    if (Test-CommandExists pwsh) {
+        $installedVersion = (pwsh -Command '$PSVersionTable.PSVersion.ToString()')
+        Write-Host "PowerShell $installedVersion installed successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "PowerShell installation completed, but pwsh command not found in PATH. You may need to restart your terminal." -ForegroundColor Yellow
+    }
+}
+
 function Main {
     Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
 
@@ -1246,6 +1261,7 @@ function Main {
 
     Install-Chocolatey
     # Install-Scoop
+    # Install-PowerShell
 
     Install-DevTools
     Install-CppTools
