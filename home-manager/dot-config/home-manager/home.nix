@@ -11,6 +11,7 @@
 
   home.packages = [
     pkgs.bat
+    pkgs.carapace
     pkgs.curl
     pkgs.delta
     pkgs.emacs-nox
@@ -20,13 +21,15 @@
     pkgs.gcc
     pkgs.gh
     pkgs.git
-    pkgs.git
     pkgs.htop
     pkgs.just
     pkgs.lazygit
     pkgs.luarocks
     pkgs.gnumake
+    pkgs.micro-with-wl-clipboard
     pkgs.neovim
+    pkgs.nixfmt-classic
+    pkgs.nushell
     pkgs.ripgrep
     pkgs.sd
     pkgs.starship
@@ -54,9 +57,9 @@
   ];
 
   programs.direnv = {
-      enable = true;
-      enableBashIntegration = true;
-      nix-direnv.enable = true;
+    enable = true;
+    enableBashIntegration = true;
+    nix-direnv.enable = true;
   };
   programs.bash = {
     enable = true;
@@ -74,7 +77,9 @@
   home.file = {
     ".zshrc" = { source = ~/.ilm/zsh/dot-zshrc; };
     ".config/nvim" = { source = ~/.ilm/nvim/dot-config/nvim; };
-    ".config/tmux/tmux.conf" = { source = ~/.ilm/tmux/dot-config/tmux/tmux.conf; };
+    ".config/tmux/tmux.conf" = {
+      source = ~/.ilm/tmux/dot-config/tmux/tmux.conf;
+    };
     ".gitconfig" = { source = ~/.ilm/git/dot-gitconfig; };
     ".emacs" = { source = ~/.ilm/emacs-nano/dot-emacs; };
     # ".config/Code/User/settings.json" = {
@@ -104,7 +109,5 @@
   #
   #  /etc/profiles/per-user/<user-name>/etc/profile.d/hm-session-vars.sh
   #
-  home.sessionVariables = {
-    EDITOR = "emacs";
-  };
+  home.sessionVariables = { EDITOR = "emacs"; };
 }
