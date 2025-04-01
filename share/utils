@@ -315,7 +315,9 @@ is_wsl() {
 }
 
 is_multipass() {
-    [ -e /etc/multipass.conf ]
+    # Check for multipass in cloud-init instance data
+    [ -f "/run/cloud-init/instance-data.json" ] &&
+    grep -q "multipass" /run/cloud-init/instance-data.json
 }
 
 is_hyperv() {
