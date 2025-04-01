@@ -756,7 +756,9 @@ function Install-HyperV-WSL {
     if ($wslFeature.State -ne "Enabled") {
         Write-Host "WSL is not installed. Installing now..." -ForegroundColor Cyan
 
-        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction SilentlyContinue
+        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction Stop
+
+        Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart -ErrorAction Stop
 
         wsl --install --no-distribution
 
@@ -768,7 +770,6 @@ function Install-HyperV-WSL {
 
     $features = @(
         "Microsoft-Hyper-V-All",
-        "VirtualMachinePlatform",
         "Containers",
         "HypervisorPlatform"
     )
@@ -938,15 +939,10 @@ function Install-NixOSWSL {
 }
 
 function Install-CentOSWSL {
-    if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL command does not exist. Older Windows version?. Quitting." -ForegroundColor Red
-        return
-    }
-
     $installedDistros = wsl --list --quiet
     if ($installedDistros -contains "CentOS-Stream-10") {
-        Write-Host "CentOS Stream 10 is already installed." -ForegroundColor Yellow
-        return
+        Write-Host "CentOS Stream 10 is already installed." -ForegroundColor Cyan
+        return $false
     }
 
     Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
@@ -963,28 +959,38 @@ function Install-CentOSWSL {
 
     $ProgressPreference = 'SilentlyContinue'
     try {
+        if (Test-Path $archivePath) {
+            Remove-Item -Path $archivePath -Force
+        }
+
         Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
-        Write-Host "Download completed successfully!" -ForegroundColor Green
+        if ($LASTEXITCODE -ne 0 -or !(Test-Path $archivePath)) {
+            Write-Host "CentOS download failed." -ForegroundColor Red
+            return $false
+        }
+        Write-Host "Download completed successfully!" -ForegroundColor Cyan
     }
     catch {
         Write-Host "Download failed: $_" -ForegroundColor Red
-        Write-Host "You can try downloading the file manually from:" -ForegroundColor Yellow
-        Write-Host $downloadUrl -ForegroundColor Yellow
-        Write-Host "Then place it at: $archivePath" -ForegroundColor Yellow
-        return
+        Write-Host "You can try downloading the file manually from:" -ForegroundColor Cyan
+        Write-Host $downloadUrl -ForegroundColor Cyan
+        Write-Host "Then place it at: $archivePath" -ForegroundColor Cyan
+        return $false
     }
     $ProgressPreference = 'Continue'
 
     Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
     wsl --import --version=2 CentOS-Stream-10 $wslDir $archivePath
 
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "CentOS import failed." -ForegroundColor Red
+        return $false
+    }
+
     Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
     Remove-Item -Path $archivePath -Force
 
-    Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Green
-    Write-Host "To start CentOS Stream 10, open a terminal and type: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
-
-    Initialize-CentOSWSL
+    Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Cyan
 }
 
 function Set-CapsLockAsControl {
@@ -1250,7 +1256,7 @@ function Main {
     Initialize-Dotfiles
     Initialize-NushellProfile
     Install-VSCodeExtensions
-    if (!Initialize-SSHKey) {
+    if (!(Initialize-SSHKey)) {
         Write-Host "SSH key initialization failed. Exiting setup." -ForegroundColor Red
         return
     }
