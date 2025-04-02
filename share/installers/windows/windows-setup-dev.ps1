@@ -1,8 +1,16 @@
 #Requires -RunAsAdministrator
 
+# Set execution policy for the current process only
+$originalPolicy = Get-ExecutionPolicy -Scope Process
+if ($originalPolicy -ne "RemoteSigned" -and $originalPolicy -ne "Unrestricted") {
+    Write-Host "Setting execution policy to RemoteSigned for current session..." -ForegroundColor Cyan
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
+    Write-Host "Execution policy set to RemoteSigned for this session." -ForegroundColor Green
+}
+
 $global:GitHubBaseUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 $global:DotDir = "$env:USERPROFILE\ilm"
-$global:WinDir = "$global:DotDir\windows"
+$global:WinDir = "$global:DotDir\share\installers\windows"
 
 function Test-CommandExists {
     param (
@@ -170,7 +178,6 @@ function Copy-SSHKeyToWSL {
 function Update-Windows {
     Write-Host "Checking for Windows updates..." -ForegroundColor Cyan
 
-
     if (!(Get-Module -ListAvailable -Name PSWindowsUpdate)) {
         Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser
 
@@ -217,6 +224,8 @@ function Update-Windows {
             Write-Host "Skipping Windows updates installation." -ForegroundColor Yellow
         }
     }
+}
+
 }
 
 function Initialize-SSHKey {
@@ -340,7 +349,16 @@ function Install-DevTools {
     if (!(Test-CommandExists git)) {
         Write-Host "Installing Git..." -ForegroundColor Cyan
         winget install --id Git.Git -e
-        Write-Host "Git installed successfully!" -ForegroundColor Green
+
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+        if (Test-CommandExists git) {
+            Write-Host "Git installed successfully!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "Git installation completed, but git command not found in PATH." -ForegroundColor Yellow
+            Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
+        }
     }
     else {
         Write-Host "Git is already installed." -ForegroundColor Yellow
@@ -581,22 +599,16 @@ function Install-Multipass {
 
     if (Test-CommandExists multipass) {
         Write-Host "Multipass is already installed." -ForegroundColor Yellow
-        return
+        return $false
     }
 
     Write-Host "Installing Multipass via winget..." -ForegroundColor Cyan
     winget install --id Canonical.Multipass -e
+
     Write-Host "Multipass installed successfully!" -ForegroundColor Green
+    Write-Host "A system restart is required before using Multipass." -ForegroundColor Yellow
 
-    # Refresh PATH to ensure multipass command is available
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-
-    if (!(Test-CommandExists multipass)) {
-        Write-Host "Multipass is not available in PATH. Please restart PowerShell or your computer and run this script again." -ForegroundColor Yellow
-    }
-    else {
-        Write-Host "Multipass is now available in PATH." -ForegroundColor Green
-    }
+    return $true  # Return true to indicate restart is needed
 }
 
 function Install-MultipassVM {
@@ -606,6 +618,9 @@ function Install-MultipassVM {
         Write-Host "Ubuntu VM 'ubuntu-ilm' already exists. Skipping..." -ForegroundColor Yellow
         return
     }
+
+    multipass find
+    Start-Sleep -Seconds 5
 
     Write-Host "Creating Ubuntu 24.10 VM with 16GB RAM and 20GB disk..." -ForegroundColor Cyan
     multipass launch oracular --name ubuntu-ilm --memory 16G --disk 20G
@@ -1247,9 +1262,23 @@ function Install-PowerShell {
     if (Test-CommandExists pwsh) {
         $installedVersion = (pwsh -Command '$PSVersionTable.PSVersion.ToString()')
         Write-Host "PowerShell $installedVersion installed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "PowerShell installation completed, but pwsh command not found in PATH. You may need to restart your terminal." -ForegroundColor Yellow
     }
+}
+
+function Restart-PC {
+    $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
+    if ($restart -eq 'y') {
+        Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
+        Start-Sleep -Seconds 5
+        Restart-Computer
+    }
+    else {
+        Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
+    }
+    return
 }
 
 function Main {
@@ -1257,17 +1286,8 @@ function Main {
 
     Update-Windows
 
-    if (Install-HyperV-WSL) {
-        $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
-        if ($restart -eq 'y') {
-            Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
-            Start-Sleep -Seconds 5
-            Restart-Computer
-        }
-        else {
-            Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
-        }
-        return
+    if (Install-HyperV-WSL -or Install-Multipass) {
+        Restart-PC
     }
 
     Install-Chocolatey
@@ -1279,8 +1299,8 @@ function Main {
     Install-Apps
     Install-NerdFonts
 
-    Set-CapsLockAsControl
     Initialize-Dotfiles
+    Set-CapsLockAsControl
     Initialize-NushellProfile
     Install-VSCodeExtensions
     if (!(Initialize-SSHKey)) {
@@ -1288,7 +1308,6 @@ function Main {
         return
     }
 
-    Install-Multipass
     Install-MultipassVM
     Initialize-MultipassVMSSH
 
@@ -1302,3 +1321,10 @@ function Main {
 }
 
 Main
+
+# Restore original execution policy at the end of the script
+if ($originalPolicy -ne "RemoteSigned" -and $originalPolicy -ne "Unrestricted") {
+    Write-Host "Restoring original execution policy..." -ForegroundColor Cyan
+    Set-ExecutionPolicy -ExecutionPolicy $originalPolicy -Scope Process -Force
+    Write-Host "Original execution policy restored." -ForegroundColor Green
+}
