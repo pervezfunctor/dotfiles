@@ -74,6 +74,11 @@ Reboot your computer. Then use the following commands.
     bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
 
+If you want to install all WSL distributions available and setup multipass along with a decent windows powershell configuration, use the following command.
+
+```powershell
+iwr -useb https://dub.sh/NDyiu7a | iex
+```
 
 ## Recommended Setup
 
