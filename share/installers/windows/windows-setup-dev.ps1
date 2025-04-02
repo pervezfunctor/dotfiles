@@ -226,8 +226,6 @@ function Update-Windows {
     }
 }
 
-}
-
 function Initialize-SSHKey {
     Write-Host "Initializing SSH key..." -ForegroundColor Cyan
 
