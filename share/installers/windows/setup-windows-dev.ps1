@@ -632,13 +632,20 @@ function Get-MultipassVMIP {
         return $null
     }
 
-    $ipLine = multipass info $VMName | Select-String "IPv4"
-    if (!$ipLine) {
+    $ipInfo = multipass info $VMName | Select-String "IPv4:"
+    if (!$ipInfo) {
         Write-Host "Could not find IPv4 address for VM '$VMName'." -ForegroundColor Red
         return $null
     }
 
-    return $ipLine.ToString().Split(":")[1].Trim()
+    # More robust parsing of the IP address
+    $ipMatch = $ipInfo -match "IPv4:\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"
+    if ($ipMatch -and $Matches.Count -gt 1) {
+        return $Matches[1]
+    }
+
+    Write-Host "Failed to parse IPv4 address from output." -ForegroundColor Red
+    return $null
 }
 
 function Add-SSHConfig {
@@ -694,6 +701,10 @@ function Install-SSHServerInMutlipassVM {
     # Ensure SSH server is installed and configured in the VM
     multipass exec $VMName -- bash -c "sudo apt update && sudo apt install -y openssh-server"
     multipass exec $VMName -- bash -c "sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config"
+    # multipass exec $VMName -- bash -c "sudo sed -i 's/#UseLogin no/UseLogin yes/' /etc/ssh/sshd_config"
+    # multipass exec $VMName -- bash -c "echo 'PermitUserEnvironment yes' | sudo tee -a /etc/ssh/sshd_config"
+
+    # Restart SSH service to apply changes
     multipass exec $VMName -- bash -c "sudo systemctl restart ssh"
 
     Write-Host "SSH server configured successfully on $VMName" -ForegroundColor Green
