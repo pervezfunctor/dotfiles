@@ -51,6 +51,22 @@ function Test-CommandExists {
     return [bool](Get-Command -Name $Command -ErrorAction SilentlyContinue)
 }
 
+
+function Restart-PC {
+    $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
+    if ($restart -eq 'y' -or $restart -eq 'Y') {
+        Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
+        Start-Sleep -Seconds 5
+        $global:LASTEXITCODE = 0
+        Restart-Computer
+        exit 0
+    }
+    else {
+        Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
+        exit 0
+    }
+}
+
 function Backup-ConfigFile {
     param (
         [Parameter(Mandatory = $true)]
@@ -244,6 +260,8 @@ function Update-Windows {
             Write-Host "Installing updates with automatic reboot..." -ForegroundColor Cyan
             Write-Host "Please run this script again manually after the system reboots." -ForegroundColor Yellow
             Install-WindowsUpdate -AcceptAll -AutoReboot
+            Write-Host "Windows updates installed successfully! System will now reboot." -ForegroundColor Green
+            exit 0
         }
         "2" {
             Write-Host "Installing updates that don't require reboot..." -ForegroundColor Cyan
@@ -629,7 +647,7 @@ function Install-Multipass {
 
     if (Test-CommandExists multipass) {
         Write-Host "Multipass is already installed." -ForegroundColor Yellow
-        return $false
+        return
     }
 
     Write-Host "Installing Multipass via winget..." -ForegroundColor Cyan
@@ -638,7 +656,7 @@ function Install-Multipass {
     Write-Host "Multipass installed successfully!" -ForegroundColor Green
     Write-Host "A system restart is required before using Multipass." -ForegroundColor Yellow
 
-    return $true  # Return true to indicate restart is needed
+    Restart-PC
 }
 
 function Install-MultipassVM {
@@ -849,13 +867,11 @@ function Install-HyperV-WSL {
     }
 
     if ($restartNeeded) {
-        Write-Host "A system restart is required to complete the installation." -ForegroundColor Yellow
+        Restart-PC
     }
     else {
-        Write-Host "All features enabled successfully. No restart required." -ForegroundColor Green
+        Write-Host "All features enabled successfully." -ForegroundColor Green
     }
-
-    return $restartNeeded
 }
 
 function Install-WSLDistro {
@@ -1294,21 +1310,6 @@ function Install-PowerShell {
     }
 }
 
-function Restart-PC {
-    $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
-    if ($restart -eq 'y' -or $restart -eq 'Y') {
-        Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
-        Start-Sleep -Seconds 5
-        $global:LASTEXITCODE = 0
-        Restart-Computer
-        exit 0
-    }
-    else {
-        Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
-        exit 0
-    }
-}
-
 # Define available components with preserved order
 $availableComponents = [ordered]@{
     "windows-update" = "Update Windows"
@@ -1436,8 +1437,6 @@ function Install-SelectedComponents {
         [string[]]$ComponentList
     )
 
-    $restartNeeded = $false
-
     if ($ComponentList -contains "all") {
         $ComponentList = $availableComponents.Keys | Where-Object { $_ -ne "all" }
     }
@@ -1449,9 +1448,9 @@ function Install-SelectedComponents {
 
         Initialize-SSHKey
         switch ($component) {
-            "windows-update" { $result = Update-Windows; if ($result) { $restartNeeded = $true } }
-            "wsl" { $result = Install-HyperV-WSL; if ($result) { $restartNeeded = $true } }
-            "multipass" { $result = Install-Multipass; if ($result) { $restartNeeded = $true } }
+            "windows-update" { Update-Windows }
+            "wsl" { Install-HyperV-WSL }
+            "multipass" { Install-Multipass }
 
             "nerd-fonts" { Install-Chocolatey; Install-NerdFonts }
             "capslock" { Set-CapsLockAsControl }
@@ -1471,24 +1470,18 @@ function Install-SelectedComponents {
         }
     }
 
-    if ($restartNeeded) {
-        Restart-PC
-    }
-
     Write-Host "`nSelected components installation complete!" -ForegroundColor Green
 }
 
 function Install-PowerShellModules {
     Write-Host "Installing essential PowerShell modules..." -ForegroundColor Cyan
 
-    # List of modules to install
     $modules = @(
         "PSReadLine",
         "posh-git",
         "Terminal-Icons"
     )
 
-    # Install for Windows PowerShell 5.x
     foreach ($module in $modules) {
         if (!(Get-Module -ListAvailable -Name $module)) {
             Write-Host "Installing $module for Windows PowerShell..." -ForegroundColor Yellow
@@ -1496,7 +1489,6 @@ function Install-PowerShellModules {
         }
     }
 
-    # Install for PowerShell 7.x if available
     if (Test-CommandExists pwsh) {
         foreach ($module in $modules) {
             Write-Host "Installing $module for PowerShell 7..." -ForegroundColor Yellow
@@ -1525,7 +1517,6 @@ function Initialize-PowerShell {
     $sourceProfilePath = "$global:DotDir\powershell\Microsoft.PowerShell_profile.ps1"
 
     if (Test-Path $sourceProfilePath) {
-        # Create symbolic links or copy the profile to both locations
         New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps5ProfilePath
         New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps7ProfilePath
 
