@@ -505,11 +505,11 @@ select-one() {
 }
 
 hms() {
-    nix run home-manager -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
+    nix run home-manager -- switch --flake $DOT_DIR/home-manager/dot-config/home-manager\#ilm --impure -b bak
 }
 
 hms-wsl() {
-    nix run home-manager -- switch --flake ~/.ilm/nixos-wsl/dot-config/home-manager\#nixos --impure -b bak
+    nix run home-manager -- switch --flake $DOT_DIR/nixos-wsl/dot-config/home-manager\#nixos --impure -b bak
 }
 
 SUDO_KEEPALIVE_PID=""

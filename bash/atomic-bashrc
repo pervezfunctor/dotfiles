@@ -1,7 +1,9 @@
 #! /usr/bin/env bash
 
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+
 if [[ -n "$CONTAINER_ID" ]]; then
-    source ~/.ilm/share/bashrc
+    source "$DOT_DIR/share/bashrc"
 else
     eval "$(starship init bash)"
 fi

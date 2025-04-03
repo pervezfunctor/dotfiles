@@ -840,7 +840,7 @@ bash_config_install() {
 
     if ! bash_config_exists; then
         echo "export DOT_DIR=$DOT_DIR" >>~/.bashrc
-        echo "source ~/.ilm/share/bashrc" >>~/.bashrc
+        echo "source ${DOT_DIR}/share/bashrc" >>~/.bashrc
     fi
 
     slog "bash config done!"
@@ -1284,12 +1284,12 @@ home_manager_install() {
 
     slog "Setting up home-manager"
 
-    if ! dir_exists ~/.ilm; then
-        warn "could not clone dotfiles respository to ~/.ilm, Quitting"
+    if ! dir_exists $DOT_DIR; then
+        warn "could not clone dotfiles respository to $DOT_DIR, Quitting"
         return 1
     fi
 
-    nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake ~/.ilm/home-manager/dot-config/home-manager\#ilm --impure -b bak
+    nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake $DOT_DIR/home-manager/dot-config/home-manager\#ilm --impure -b bak
 
     if file_exists /etc/nix/nix.conf; then
         if ! grep -q nix-command flakes /etc/nix/nix.conf 2>/dev/null; then
@@ -1583,7 +1583,7 @@ nvim_install() {
     has_cmd nvim || err_exit "nvim not installed! Qutting."
 
     srm ~/.config/nvim
-    ln -s ~/.ilm/nvim/dot-config/nvim ~/.config/nvim
+    ln -s $DOT_DIR/nvim/dot-config/nvim ~/.config/nvim
 }
 
 emacs_install() {
@@ -1600,7 +1600,7 @@ emacs_install() {
 
     srm ~/.emacs
     srm ~/.emacs.d
-    ln -s ~/.ilm/emac-slim/dot-emacs ~/.emacs
+    ln -s $DOT_DIR/emac-slim/dot-emacs ~/.emacs
 }
 
 tmux_install() {
@@ -1616,7 +1616,7 @@ tmux_install() {
 
     srm ~/.config/tmux
     smd ~/.config/tmux
-    ln -s ~/.ilm/tmux/dot-config/tmux/tmux.conf ~/.config/tmux/tmux.conf
+    ln -s $DOT_DIR/tmux/dot-config/tmux/tmux.conf ~/.config/tmux/tmux.conf
 }
 
 zsh_install() {
@@ -1626,7 +1626,7 @@ zsh_install() {
     has_cmd zsh || err_exit "zsh not installed! Qutting."
 
     srm ~/.zshrc
-    ln -s ~/.ilm/zsh/dot-zshrc ~/.zshrc
+    ln -s $DOT_DIR/zsh/dot-zshrc ~/.zshrc
 }
 
 box_base() {
@@ -1668,6 +1668,13 @@ centos-wslbox_groupstall() {
 
     sudo dnf update
     wslbox_base centos
+}
+
+nixos-wslbox_groupstall() {
+    is_nixos || err_exit "This script is only for NixOS"
+    # nix git clone dotfiles
+    nix run nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git $DOT_DIR
+    hms-wsl
 }
 
 brew-wslbox_groupstall() {
@@ -1832,7 +1839,7 @@ fedora-atomic_groupstall() {
 
     if ! grep -q starship ~/.bashrc; then
         slog "Adding starship to bashrc"
-        echo "source ~/.ilm/share/bashrc" >>~/.bashrc
+        echo "source ${DOT_DIR}/share/bashrc" >>~/.bashrc
     fi
 
     jetbrains_nerd_font_install

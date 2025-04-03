@@ -219,7 +219,7 @@ system-update() {
     has_cmd mise && mise self-update && mise upgrade --bump
     has_cmd pixi && pixi global update
 
-    # cd ~/.ilm && git-up
+    # cd $DOT_DIR && git-up
     #has_cmd devbox && devbox update
     # has_cmd hms && hms update?
 }
