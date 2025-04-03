@@ -992,7 +992,7 @@ function Install-NixOSWSL {
     $ProgressPreference = 'Continue'
 
     Write-Host "Installing NixOS from .wsl file..." -ForegroundColor Cyan
-    wsl --import-in-place NixOS $wslFile
+    wsl --install --from-file $wslFile
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "NixOS installation failed." -ForegroundColor Red
@@ -1169,7 +1169,13 @@ function Initialize-Dotfiles {
     $psConfigFile = "$global:DotDir\powershell\Microsoft.PowerShell_profile.ps1"
     $psProfilePath = $PROFILE
     $null = New-ConfigDirectory -ConfigPath $psProfilePath
+
+    $originalUserPolicy = Get-ExecutionPolicy -Scope CurrentUser
+    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+    Write-Host "PowerShell execution policy set to RemoteSigned for current user" -ForegroundColor Green
     New-ConfigLink -sourcePath $psConfigFile -targetPath $psProfilePath
+    Set-ExecutionPolicy -ExecutionPolicy $originalUserPolicy -Scope CurrentUser -Force
+    Write-Host "PowerShell profile linked successfully. You may need to restart PowerShell." -ForegroundColor Green
 
     Write-Host "Setting up VS Code config..." -ForegroundColor Cyan
     $vscodeSettingsSource = "$global:DotDir\extras\vscode\wsl-settings.json"
@@ -1177,6 +1183,7 @@ function Initialize-Dotfiles {
 
     if (Test-Path $vscodeSettingsSource) {
         $null = Backup-ConfigFile -FilePath $vscodeSettingsTarget
+        $null = New-ConfigDirectory -ConfigPath $vscodeSettingsTarget
         Copy-Item -Path $vscodeSettingsSource -Destination $vscodeSettingsTarget -Force
         Write-Host "VS Code settings copied successfully" -ForegroundColor Green
     }
