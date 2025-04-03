@@ -1,4 +1,34 @@
-#Requires -RunAsAdministrator
+<#
+.SYNOPSIS
+Windows development environment setup script.
+
+.DESCRIPTION
+This script automates the setup of a Windows development environment with various components.
+
+.PARAMETER ListComponents
+Lists all available components that can be installed.
+
+.PARAMETER Components
+Specifies which components to install. Can be component names like "wsl", "devtools", "nerd-fonts", etc.
+Multiple components can be specified separated by commas.
+
+.EXAMPLE
+.\windows-setup-dev.ps1 -ListComponents
+Lists all available components.
+
+.EXAMPLE
+.\windows-setup-dev.ps1 -Components wsl,devtools,nerd-fonts
+Installs the specified components without showing the interactive menu.
+
+.EXAMPLE
+.\windows-setup-dev.ps1
+Runs in fully interactive mode with no pre-selections.
+#>
+
+param(
+    [switch]$ListComponents,
+    [string[]]$Components = @()
+)
 
 # Set execution policy for the current process only
 $originalPolicy = Get-ExecutionPolicy -Scope Process
@@ -295,6 +325,17 @@ function Install-Scoop {
     }
 }
 
+function Install-VSCode {
+    if (!(Test-CommandExists code)) {
+        Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
+        winget install --id Microsoft.VisualStudioCode -e
+        Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Visual Studio Code is already installed." -ForegroundColor Yellow
+    }
+}
+
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
@@ -323,15 +364,6 @@ function Install-DevTools {
     }
     else {
         Write-Host "7-Zip is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists code)) {
-        Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
-        winget install --id Microsoft.VisualStudioCode -e
-        Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Visual Studio Code is already installed." -ForegroundColor Yellow
     }
 
     if (!(Test-Path "C:\Program Files\Mozilla Firefox\firefox.exe") -and
@@ -1251,10 +1283,6 @@ function Copy-ConfigFromDotfiles {
 }
 
 function Install-PowerShell {
-    Write-Host "Installing latest PowerShell..." -ForegroundColor Cyan
-    winget install --id Microsoft.PowerShell -e
-
-    # Refresh PATH to ensure pwsh command is available
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
     if (Test-CommandExists pwsh) {
@@ -1268,57 +1296,285 @@ function Install-PowerShell {
 
 function Restart-PC {
     $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
-    if ($restart -eq 'y') {
+    if ($restart -eq 'y' -or $restart -eq 'Y') {
         Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
         Start-Sleep -Seconds 5
+        $global:LASTEXITCODE = 0
         Restart-Computer
+        exit 0
     }
     else {
         Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
+        exit 0
     }
-    return
 }
 
-function Main {
-    Write-Host "Starting Windows development environment setup..." -ForegroundColor Green
+# Define available components with preserved order
+$availableComponents = [ordered]@{
+    "windows-update" = "Update Windows"
+    "wsl"            = "Install Hyper-V and WSL"
+    "multipass"      = "Install Multipass"
 
-    Update-Windows
+    "nerd-fonts"     = "Install Nerd Fonts"
+    "capslock"       = "Set CapsLock as Control"
+    "vscode"         = "Install VS Code"
+    "devtools"       = "Install Development Tools"
+    "dotfiles"       = "Initialize Dotfiles"
+    "apps"           = "Install Applications"
 
-    if (Install-HyperV-WSL -or Install-Multipass) {
+    "multipass-vm"   = "Install Multipass VM"
+    "wsl-ubuntu"     = "Install Ubuntu WSL"
+    "wsl-debian"     = "Install Debian WSL"
+    "wsl-opensuse"   = "Install openSUSE WSL"
+    "wsl-centos"     = "Install CentOS WSL"
+    "wsl-nixos"      = "Install NixOS WSL"
+    # "scoop"          = "Install Scoop"
+    "all"            = "Install All Components"
+}
+
+function Debug-Variable {
+    param(
+        [string]$Name,
+        [object]$Value
+    )
+    Write-Host "DEBUG: $Name = $($Value | ConvertTo-Json -Compress)" -ForegroundColor Magenta
+}
+
+function Show-Menu {
+    param (
+        [string]$Title = "Select components to install",
+        [string[]]$PreSelected = @()
+    )
+
+    Write-Host "`n$Title" -ForegroundColor Cyan
+    Write-Host "=======================================" -ForegroundColor Cyan
+
+    $menuItems = [ordered]@{}
+    $selectedItems = [ordered]@{}
+    $index = 1
+
+    foreach ($key in $availableComponents.Keys | Where-Object { $_ -ne "all" }) {
+        $menuItems[$index.ToString()] = $key
+        $isSelected = $false
+
+        if ($PreSelected -contains $key) {
+            $isSelected = $true
+            Write-Host "Preselecting item: $key" -ForegroundColor Magenta
+        }
+
+        $selectedItems[$index.ToString()] = $isSelected
+        $index++
+    }
+
+    $done = $false
+    while (-not $done) {
+        Clear-Host
+        Write-Host "`n$Title" -ForegroundColor Cyan
+        Write-Host "=======================================" -ForegroundColor Cyan
+
+        for ($i = 1; $i -le $menuItems.Count; $i++) {
+            $key = $menuItems[$i.ToString()]
+            $selected = $selectedItems[$i.ToString()]
+            $marker = if ($selected) { "[X]" } else { "[ ]" }
+            Write-Host "$marker [$i] $($availableComponents[$key])" -ForegroundColor $(if ($selected) { "Green" } else { "Yellow" })
+        }
+
+        Write-Host "`nCommands:" -ForegroundColor Cyan
+        Write-Host "  number(s) - Toggle selection (comma/space separated)" -ForegroundColor Gray
+        Write-Host "  a - Select all items" -ForegroundColor Gray
+        Write-Host "  n - Deselect all items" -ForegroundColor Gray
+        Write-Host "  d - Done, proceed with selected items" -ForegroundColor Gray
+        Write-Host "  q - Quit without installing" -ForegroundColor Gray
+        Write-Host "=======================================" -ForegroundColor Cyan
+
+        $choice = Read-Host "Enter command"
+
+        switch -Regex ($choice) {
+            '^\d+(\s*[,]\s*\d+|\s+\d+)*$' {
+                $numbers = $choice -split '[,\s]+' | Where-Object { $_ -match '^\d+$' }
+                foreach ($num in $numbers) {
+                    if ([int]$num -ge 1 -and [int]$num -le $menuItems.Count) {
+                        $selectedItems[$num] = -not $selectedItems[$num]
+                    }
+                }
+            }
+
+            '^a$' {
+                for ($i = 1; $i -le $menuItems.Count; $i++) {
+                    $selectedItems[$i.ToString()] = $true
+                }
+            }
+
+            '^n$' {
+                for ($i = 1; $i -le $menuItems.Count; $i++) {
+                    $selectedItems[$i.ToString()] = $false
+                }
+            }
+
+            '^d$|^$' {
+                $done = $true
+            }
+
+            '^q$' {
+                return @()
+            }
+        }
+    }
+
+    $selections = @()
+    for ($i = 1; $i -le $menuItems.Count; $i++) {
+        if ($selectedItems[$i.ToString()]) {
+            $selections += $menuItems[$i.ToString()]
+        }
+    }
+
+    return $selections
+}
+
+function Install-SelectedComponents {
+    param (
+        [string[]]$ComponentList
+    )
+
+    $restartNeeded = $false
+
+    if ($ComponentList -contains "all") {
+        $ComponentList = $availableComponents.Keys | Where-Object { $_ -ne "all" }
+    }
+
+    Debug-Variable "ComponentList" $ComponentList
+
+    foreach ($component in $ComponentList) {
+        Write-Host "`nProcessing component: $component ($($availableComponents[$component]))" -ForegroundColor Cyan
+
+        Initialize-SSHKey
+        switch ($component) {
+            "windows-update" { $result = Update-Windows; if ($result) { $restartNeeded = $true } }
+            "wsl" { $result = Install-HyperV-WSL; if ($result) { $restartNeeded = $true } }
+            "multipass" { $result = Install-Multipass; if ($result) { $restartNeeded = $true } }
+
+            "nerd-fonts" { Install-Chocolatey; Install-NerdFonts }
+            "capslock" { Set-CapsLockAsControl }
+            "devtools" { Install-DevTools; Install-CppTools; Install-PowerShell }
+            "vscode" { Install-VSCode; Install-VSCodeExtensions }
+            "dotfiles" { Initialize-Dotfiles; Initialize-NushellProfile }
+            "apps" { Install-Apps }
+
+            "multipass-vm" { Install-MultipassVM; Initialize-MultipassVMSSH }
+            "wsl-ubuntu" { Install-WSLDistro -DistroName "Ubuntu-24.04" }
+            "wsl-debian" { Install-WSLDistro -DistroName "Debian" }
+            "wsl-opensuse" { Install-WSLDistro -DistroName "openSUSE-Tumbleweed" }
+            "wsl-centos" { Install-CentOSWSL; Initialize-CentOSWSL }
+            "wsl-nixos" { Install-NixOSWSL; Initialize-NixOSWSL }
+            # "scoop" { Install-Scoop }
+            default { Write-Host "Unknown component: $component" -ForegroundColor Red }
+        }
+    }
+
+    if ($restartNeeded) {
         Restart-PC
     }
 
-    Install-Chocolatey
-    # Install-Scoop
-    # Install-PowerShell
+    Write-Host "`nSelected components installation complete!" -ForegroundColor Green
+}
 
-    Install-DevTools
-    Install-CppTools
-    Install-Apps
-    Install-NerdFonts
+function Install-PowerShellModules {
+    Write-Host "Installing essential PowerShell modules..." -ForegroundColor Cyan
 
-    Initialize-Dotfiles
-    Set-CapsLockAsControl
-    Initialize-NushellProfile
-    Install-VSCodeExtensions
-    if (!(Initialize-SSHKey)) {
-        Write-Host "SSH key initialization failed. Exiting setup." -ForegroundColor Red
+    # List of modules to install
+    $modules = @(
+        "PSReadLine",
+        "posh-git",
+        "Terminal-Icons"
+    )
+
+    # Install for Windows PowerShell 5.x
+    foreach ($module in $modules) {
+        if (!(Get-Module -ListAvailable -Name $module)) {
+            Write-Host "Installing $module for Windows PowerShell..." -ForegroundColor Yellow
+            Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+    }
+
+    # Install for PowerShell 7.x if available
+    if (Test-CommandExists pwsh) {
+        foreach ($module in $modules) {
+            Write-Host "Installing $module for PowerShell 7..." -ForegroundColor Yellow
+            pwsh -Command "if (!(Get-Module -ListAvailable -Name $module)) { Install-Module -Name $module -Scope CurrentUser -Force }"
+        }
+    }
+    else {
+        Write-Host "PowerShell 7 not found. Skipping module installation for PowerShell 7." -ForegroundColor Yellow
+        Write-Host "Consider installing PowerShell 7 for better features and performance." -ForegroundColor Yellow
+    }
+
+    Write-Host "PowerShell modules installed successfully!" -ForegroundColor Green
+}
+
+function Initialize-PowerShell {
+    Write-Host "Setting up PowerShell profiles for both Windows PowerShell and PowerShell 7..." -ForegroundColor Cyan
+
+    $ps5ProfilePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
+    $ps7ProfilePath = "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
+
+
+    Backup-ConfigFile -FilePath $ps5ProfilePath
+    Backup-ConfigFile -FilePath $ps7ProfilePath
+
+
+    $sourceProfilePath = "$global:DotDir\powershell\Microsoft.PowerShell_profile.ps1"
+
+    if (Test-Path $sourceProfilePath) {
+        # Create symbolic links or copy the profile to both locations
+        New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps5ProfilePath
+        New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps7ProfilePath
+
+        Write-Host "PowerShell profiles configured for both PowerShell 5.x and 7.x" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Source PowerShell profile not found at: $sourceProfilePath" -ForegroundColor Red
+    }
+
+    Install-PowerShellModules
+}
+
+function Main {
+    param (
+        [switch]$ListComponents,
+        [string[]]$Components = @()
+    )
+
+    if ($ListComponents) {
+        Write-Host "Available components:" -ForegroundColor Cyan
+        foreach ($key in $availableComponents.Keys | Sort-Object) {
+            Write-Host "  $key - $($availableComponents[$key])" -ForegroundColor Yellow
+        }
         return
     }
 
-    Install-MultipassVM
-    Initialize-MultipassVMSSH
+    if ($null -eq $Components -or $Components.Count -eq 0) {
+        # Pass the Components array as PreSelected to Show-Menu
+        Write-Host "Running in interactive mode with preselected components: $($Components -join ', ')" -ForegroundColor Cyan
+        $selectedComponents = Show-Menu -PreSelected @("nerd-fonts", "vscode", "wsl", "wsl-ubuntu")
+    }
+    else {
+        # Non-interactive mode, use provided components
+        Write-Host "Running in non-interactive mode with components: $($Components -join ', ')" -ForegroundColor Cyan
+        $selectedComponents = $Components
+    }
 
-    Install-WSLDistro -DistroName "Ubuntu-24.04"
-    Install-WSLDistro -DistroName "Debian"
-    Install-WSLDistro -DistroName "openSUSE-Tumbleweed"
-    Install-CentOSWSL
-    Initialize-CentOSWSL
+    if ($selectedComponents.Count -eq 0) {
+        Write-Host "No components selected. Exiting." -ForegroundColor Yellow
+        return
+    }
 
-    Write-Host "Windows development environment setup complete!" -ForegroundColor Green
+    Write-Host "Selected components: $($selectedComponents -join ', ')" -ForegroundColor Green
+    Install-SelectedComponents -ComponentList $selectedComponents
 }
 
-Main
+if ($MyInvocation.InvocationName -ne ".") {
+    Main @PSBoundParameters
+}
 
 # Restore original execution policy at the end of the script
 if ($originalPolicy -ne "RemoteSigned" -and $originalPolicy -ne "Unrestricted") {
