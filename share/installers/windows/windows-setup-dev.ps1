@@ -288,18 +288,18 @@ function Initialize-SSHKey {
 
     if (Test-Path "$env:USERPROFILE\.ssh\id_rsa") {
         Write-Host "SSH key already exists." -ForegroundColor Yellow
-        return $true
+        return
     }
 
     if (!(Test-CommandExists ssh-keygen)) {
         Write-Host "ssh-keygen not found. Please install OpenSSH client." -ForegroundColor Red
-        return $false
+        return
     }
 
     Write-Host "Generating new SSH key..." -ForegroundColor Cyan
     ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
     Write-Host "SSH key generated successfully!" -ForegroundColor Green
-    return $true
+    return
 }
 
 function Install-Chocolatey {
@@ -1440,8 +1440,6 @@ function Install-SelectedComponents {
         $ComponentList = $availableComponents.Keys | Where-Object { $_ -ne "all" }
     }
 
-    Debug-Variable "ComponentList" $ComponentList
-
     foreach ($component in $ComponentList) {
         Write-Host "`nProcessing component: $component ($($availableComponents[$component]))" -ForegroundColor Cyan
 
@@ -1463,7 +1461,7 @@ function Install-SelectedComponents {
             "wsl-debian" { Install-WSLDistro -DistroName "Debian" }
             "wsl-opensuse" { Install-WSLDistro -DistroName "openSUSE-Tumbleweed" }
             "wsl-centos" { Install-CentOSWSL; Initialize-CentOSWSL }
-            "wsl-nixos" { Install-NixOSWSL; Initialize-NixOSWSL }
+            "wsl-nixos" { Install-NixOSWSL }
             # "scoop" { Install-Scoop }
             default { Write-Host "Unknown component: $component" -ForegroundColor Red }
         }
