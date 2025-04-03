@@ -1672,9 +1672,11 @@ centos-wslbox_groupstall() {
 
 nixos-wslbox_groupstall() {
     is_nixos || err_exit "This script is only for NixOS"
-    # nix git clone dotfiles
-    nix run nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git $DOT_DIR
-    hms-wsl
+    is_wsl || err_exit "This script is only for NixOS WSL"
+
+    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git $DOT_DIR
+    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#stow -- -d $DOT_DIR -t $HOME --dotfiles -R nixos-wsl
+    nix run --extra-experimental-features 'nix-command flakes' home-manager -- switch --impure -b bak
 }
 
 brew-wslbox_groupstall() {
