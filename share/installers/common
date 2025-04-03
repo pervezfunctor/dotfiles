@@ -1675,7 +1675,7 @@ nixos-wslbox_groupstall() {
     is_wsl || err_exit "This script is only for NixOS WSL"
 
     nix run --extra-experimental-features 'nix-command flakes' nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git $DOT_DIR
-    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#stow -- -d $DOT_DIR -t $HOME --dotfiles -R nixos-wsl
+    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#stow -- -d $DOT_DIR -t $HOME --dotfiles -R nixos-wsl nvim
     nix run --extra-experimental-features 'nix-command flakes' home-manager -- switch --impure -b bak
 }
 
