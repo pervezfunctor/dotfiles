@@ -40,7 +40,6 @@
     pkgs.wget
     pkgs.zoxide
     pkgs.zsh
-    # pkgs.nix-ld-rs
   ];
 
   # programs.git = {
@@ -96,4 +95,11 @@
   home.sessionVariables = { EDITOR = "nvim"; };
 
   programs.home-manager.enable = true;
+
+  # programs.nushell = {
+  #   enable = true;
+  #   # Optional configuration
+  #   configFile.source = ~/.ilm/nushell/dot-config/nushell/config.nu;
+  #   envFile.source = ~/.ilm/nushell/dot-config/nushell/env.nu;
+  # };
 }
