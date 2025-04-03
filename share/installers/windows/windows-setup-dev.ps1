@@ -210,11 +210,16 @@ function Copy-SSHKeyToWSL {
         [string]$Username
     )
 
+    if (!(Test-Path "$env:USERPROFILE\.ssh\id_rsa.pub")) {
+        Write-Host "SSH public key not found at $env:USERPROFILE\.ssh\id_rsa.pub" -ForegroundColor Red
+        return $false
+    }
+
     Write-Host "Copying SSH key to $Distribution for user $Username..." -ForegroundColor Cyan
 
     $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_rsa.pub"
     wsl -d $Distribution -u root bash -c "mkdir -p /home/$Username/.ssh && chmod 700 /home/$Username/.ssh"
-    wsl -d $Distribution -u root bash -c "echo '$pubKey' >> /home/$Username/.ssh/authorized_keys"
+    wsl -d $Distribution -u root bash -c "grep -q $pubKey /home/$Username/.ssh/authorized_keys || echo '$pubKey' >> /home/$Username/.ssh/authorized_keys"
     wsl -d $Distribution -u root bash -c "chmod 600 /home/$Username/.ssh/authorized_keys"
     wsl -d $Distribution -u root bash -c "chown -R ${Username}:${Username} /home/$Username/.ssh"
 
@@ -922,7 +927,6 @@ function Initialize-CentOSWSLSSH {
     }
 
     Copy-SSHKeyToWSL -Distribution "CentOS-Stream-10" -Username $Username
-    Add-SSHConfig -HostName "centos-wsl" -IPAddress $VmIP -User $Username
 }
 
 function Initialize-CentOSWSL {
@@ -944,11 +948,8 @@ function Initialize-CentOSWSL {
     Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
     Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
 
-    Initialize-CentOSWSLSSH -Username $username -VmIP "localhost"
-
     Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
     Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
-    Write-Host "You can also connect via SSH: ssh centos-wsl" -ForegroundColor Cyan
 }
 
 function Install-NixOSWSL {
@@ -1006,8 +1007,6 @@ function Install-NixOSWSL {
 
     Write-Host "NixOS installed successfully!" -ForegroundColor Green
     Write-Host "To start NixOS, open a terminal and type: wsl -d NixOS" -ForegroundColor Cyan
-    Write-Host "Note: NixOS on WSL uses the root user by default." -ForegroundColor Yellow
-    Write-Host "To update NixOS in the future, run: wsl -d NixOS -u root -- bash -c 'nix-channel --update && nixos-rebuild switch'" -ForegroundColor Cyan
 }
 
 function Install-CentOSWSL {
@@ -1459,7 +1458,7 @@ function Install-SelectedComponents {
             "dotfiles" { Initialize-Dotfiles; Initialize-NushellProfile }
             "apps" { Install-Apps }
 
-            "multipass-vm" { Install-MultipassVM; Initialize-MultipassVMSSH }
+            "multipass-vm" { Install-MultipassVM }
             "wsl-ubuntu" { Install-WSLDistro -DistroName "Ubuntu-24.04" }
             "wsl-debian" { Install-WSLDistro -DistroName "Debian" }
             "wsl-opensuse" { Install-WSLDistro -DistroName "openSUSE-Tumbleweed" }
