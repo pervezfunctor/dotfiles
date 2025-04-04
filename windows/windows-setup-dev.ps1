@@ -70,7 +70,7 @@ function Install-WithWinget {
         [string]$PackageId
     )
 
-    winget install --id $PackageId -e --accept-source-agreements --accept-package-agreements
+    winget install --id $PackageId -e --accept-source-agreements --accept-package-agreements --silent | Out-Null
 }
 
 function Backup-ConfigFile {
@@ -389,9 +389,25 @@ function Install-Nushell {
 
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 }
+
+function Install-Starship {
+    if (!(Test-CommandExists starship)) {
+        Write-Host "Setting up Starship prompt..." -ForegroundColor Cyan
+        Install-WithWinget Starship.Stars
+        Write-Host "Starship prompt installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Starship is already installed." -ForegroundColor Yellow
+    }
+
+}
+
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
+    Install-Starship
+    Install-Git
+    Install-Nushell
 
     if (!(Test-Path "C:\Program Files\7-Zip\7z.exe")) {
         Write-Host "Installing 7-Zip..." -ForegroundColor Cyan
@@ -528,16 +544,6 @@ function Install-DevTools {
     }
     else {
         Write-Host "emacs is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists starship)) {
-
-        Write-Host "Setting up Starship prompt..." -ForegroundColor Cyan
-        Install-WithWinget Starship.Stars
-        Write-Host "Starship prompt installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Starship is already installed." -ForegroundColor Yellow
     }
 
     if (!(Test-CommandExists zoxide)) {
@@ -1083,6 +1089,8 @@ function Get-Dotfiles {
 function Install-PowerShellModules {
     Write-Host "Installing essential PowerShell modules..." -ForegroundColor Cyan
 
+    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser
+
     $modules = @(
         "PSReadLine",
         "posh-git",
@@ -1170,6 +1178,7 @@ function Initialize-Dotfiles {
         Write-Host "VS Code settings source file not found at: $vscodeSettingsSource" -ForegroundColor Red
     }
 
+    Install-Starship
     Install-Nushell
     if ((Initialize-NushellProfile)) {
         Set-NushellProfileAsDefault
