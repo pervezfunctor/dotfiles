@@ -70,7 +70,7 @@ function Install-WithWinget {
         [string]$PackageId
     )
 
-    winget install --id $PackageId -e --accept-package-agreements
+    winget install --id $PackageId -e --accept-source-agreements --accept-package-agreements
 }
 
 function Backup-ConfigFile {
@@ -523,7 +523,7 @@ function Install-DevTools {
 
     if (!(Test-Path "C:\Program Files\GNU Emacs")) {
         Write-Host "Installing emacs..." -ForegroundColor Cyan
-        winget install GNU.Emacs
+        Install-WithWinget GNU.Emacs
         Write-Host "emacs installed successfully!" -ForegroundColor Green
     }
     else {
@@ -566,7 +566,7 @@ function Install-CppTools {
 
     if (!(Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\2022")) {
         Write-Host "Installing Visual Studio Build Tools..." -ForegroundColor Cyan
-        winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+        Install-WithWinget Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
         Write-Host "Visual Studio Build Tools installed successfully!" -ForegroundColor Green
     }
     else {
@@ -575,7 +575,7 @@ function Install-CppTools {
 
     if (!(Test-CommandExists cmake)) {
         Write-Host "Installing CMake..." -ForegroundColor Cyan
-        winget install Kitware.CMake
+        Install-WithWinget Kitware.CMake
         Write-Host "CMake installed successfully!" -ForegroundColor Green
     }
     else {
@@ -584,7 +584,7 @@ function Install-CppTools {
 
     if (!(Test-CommandExists clang)) {
         Write-Host "Installing LLVM/Clang..." -ForegroundColor Cyan
-        winget install LLVM.LLVM
+        Install-WithWinget LLVM.LLVM
         Write-Host "LLVM/Clang installed successfully!" -ForegroundColor Green
     }
     else {
@@ -593,7 +593,7 @@ function Install-CppTools {
 
     if (!(Test-CommandExists ninja)) {
         Write-Host "Installing Ninja build system..." -ForegroundColor Cyan
-        winget install Ninja-build.Ninja
+        Install-WithWinget Ninja-build.Ninja
         Write-Host "Ninja build system installed successfully!" -ForegroundColor Green
     }
     else {
