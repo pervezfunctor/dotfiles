@@ -266,8 +266,6 @@ function Update-Windows {
         default {
             Write-Host "Skipping Windows updates installation." -ForegroundColor Yellow
         }
-        function Initialize-SSHKey {
-        }
     }
 
     Write-Host "nitializing SSH key..." -ForegroundColor Cyan
@@ -1477,7 +1475,6 @@ function Install-SelectedComponents {
         $ComponentList = $availableComponents.Keys | Where-Object { $_ -ne "all" }
     }
 
-    Initialize-SSHKey
     foreach ($component in $ComponentList) {
         Write-Host "`nProcessing component: $component ($($availableComponents[$component]))" -ForegroundColor Cyan
 
