@@ -64,6 +64,15 @@ function Restart-PC {
     exit 0
 }
 
+function Install-WithWinget {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$PackageId
+    )
+
+    winget install --id $PackageId -e --accept-source-agreements --accept-package-agreements
+}
+
 function Backup-ConfigFile {
     param (
         [Parameter(Mandatory = $true)]
@@ -345,7 +354,7 @@ function Install-VSCode {
     }
 
     Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
-    winget install --id Microsoft.VisualStudioCode -e
+    Install-WithWinget Microsoft.VisualStudioCode
     Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
 }
 
@@ -356,7 +365,7 @@ function Install-Git {
     }
 
     Write-Host "Installing Git..." -ForegroundColor Cyan
-    winget install --id Git.Git -e
+    Install-WithWinget Git.Git
 
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
@@ -376,7 +385,7 @@ function Install-Nushell {
     }
 
     Write-Host "Installing Nushell via winget..." -ForegroundColor Cyan
-    winget install --id Nushell.Nushell -e
+    Install-WithWinget Nushell.Nushell
 
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 }
@@ -386,7 +395,7 @@ function Install-DevTools {
 
     if (!(Test-Path "C:\Program Files\7-Zip\7z.exe")) {
         Write-Host "Installing 7-Zip..." -ForegroundColor Cyan
-        winget install --id 7zip.7zip -e
+        Install-WithWinget 7zip.7zip
         Write-Host "7-Zip installed successfully!" -ForegroundColor Green
     }
     else {
@@ -396,7 +405,7 @@ function Install-DevTools {
     if (!(Test-Path "C:\Program Files\Mozilla Firefox\firefox.exe") -and
         !(Test-Path "${env:ProgramFiles(x86)}\Mozilla Firefox\firefox.exe")) {
         Write-Host "Installing Firefox..." -ForegroundColor Cyan
-        winget install --id Mozilla.Firefox -e
+        Install-WithWinget Mozilla.Firefox
         Write-Host "Firefox installed successfully!" -ForegroundColor Green
     }
     else {
@@ -405,7 +414,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists wezterm)) {
         Write-Host "Installing WezTerm..." -ForegroundColor Cyan
-        winget install --id wez.wezterm -e
+        Install-WithWinget wez.wezterm
         Write-Host "WezTerm installed successfully!" -ForegroundColor Green
     }
     else {
@@ -414,7 +423,7 @@ function Install-DevTools {
 
     if (!(Test-Path "C:\Program Files\Docker\Docker\Docker Desktop.exe")) {
         Write-Host "Installing Docker Desktop..." -ForegroundColor Cyan
-        winget install --id Docker.DockerDesktop -e
+        Install-WithWinget Docker.DockerDesktop
         Write-Host "Docker Desktop installed successfully!" -ForegroundColor Green
         Write-Host "Make sure to enable the required WSL distro in Docker Desktop settings." -ForegroundColor Yellow
     }
@@ -424,7 +433,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists rg)) {
         Write-Host "Installing ripgrep..." -ForegroundColor Cyan
-        winget install --id BurntSushi.ripgrep -e
+        Install-WithWinget BurntSushi.ripgrep
         Write-Host "ripgrep installed successfully!" -ForegroundColor Green
     }
     else {
@@ -433,7 +442,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists fzf)) {
         Write-Host "Installing fzf..." -ForegroundColor Cyan
-        winget install --id junegunn.fzf -e
+        Install-WithWinget junegunn.fzf
         Write-Host "fzf installed successfully!" -ForegroundColor Green
     }
     else {
@@ -442,7 +451,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists fd)) {
         Write-Host "Installing fd..." -ForegroundColor Cyan
-        winget install --id sharkdp.fd -e
+        Install-WithWinget sharkdp.fd
         Write-Host "fd installed successfully!" -ForegroundColor Green
     }
     else {
@@ -451,7 +460,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists bat)) {
         Write-Host "Installing bat..." -ForegroundColor Cyan
-        winget install --id sharkdp.bat -e
+        Install-WithWinget sharkdp.bat
         Write-Host "bat installed successfully!" -ForegroundColor Green
     }
     else {
@@ -460,7 +469,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists gh)) {
         Write-Host "Installing gh..." -ForegroundColor Cyan
-        winget install --id GitHub.cli -e
+        Install-WithWinget GitHub.cli
         Write-Host "gh installed successfully!" -ForegroundColor Green
     }
     else {
@@ -469,7 +478,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists delta)) {
         Write-Host "Installing delta..." -ForegroundColor Cyan
-        winget install --id dandavison.delta -e
+        Install-WithWinget dandavison.delta
         Write-Host "delta installed successfully!" -ForegroundColor Green
     }
     else {
@@ -478,7 +487,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists uv)) {
         Write-Host "Installing uv..." -ForegroundColor Cyan
-        winget install --id astral-sh.uv -e
+        Install-WithWinget astral-sh.uv
         Write-Host "uv installed successfully!" -ForegroundColor Green
     }
     else {
@@ -487,7 +496,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists lazygit)) {
         Write-Host "Installing lazygit..." -ForegroundColor Cyan
-        winget install --id jesseduffield.lazygit -e
+        Install-WithWinget jesseduffield.lazygit
         Write-Host "lazygit installed successfully!" -ForegroundColor Green
     }
     else {
@@ -496,7 +505,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists lazydocker)) {
         Write-Host "Installing lazydocker..." -ForegroundColor Cyan
-        winget install --id jesseduffield.lazydocker -e
+        Install-WithWinget jesseduffield.lazydocker
         Write-Host "lazydocker installed successfully!" -ForegroundColor Green
     }
     else {
@@ -505,7 +514,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists nvim)) {
         Write-Host "Installing neovim..." -ForegroundColor Cyan
-        winget install --id Neovim.Neovim -e
+        Install-WithWinget Neovim.Neovim
         Write-Host "neovim installed successfully!" -ForegroundColor Green
     }
     else {
@@ -524,7 +533,7 @@ function Install-DevTools {
     if (!(Test-CommandExists starship)) {
 
         Write-Host "Setting up Starship prompt..." -ForegroundColor Cyan
-        winget install --id Starship.Starship
+        Install-WithWinget Starship.Stars
         Write-Host "Starship prompt installed successfully!" -ForegroundColor Green
     }
     else {
@@ -533,7 +542,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists zoxide)) {
         Write-Host "Installing zoxide..." -ForegroundColor Cyan
-        winget install --id ajeetdsouza.zoxide -e
+        Install-WithWinget ajeetdsouza.zoxide
         Write-Host "zoxide installed successfully!" -ForegroundColor Green
     }
     else {
@@ -542,7 +551,7 @@ function Install-DevTools {
 
     if (!(Test-CommandExists carapace)) {
         Write-Host "Installing carapace..." -ForegroundColor Cyan
-        winget install --id rsteube.Carapace -e
+        Install-WithWinget rsteube.Carapace
         Write-Host "carapace installed successfully!" -ForegroundColor Green
     }
     else {
@@ -598,7 +607,7 @@ function Install-Apps {
 
     if (!(Test-CommandExists glazewm)) {
         Write-Host "Installing glazewm..." -ForegroundColor Cyan
-        winget install --id glazewm.glazewm -e
+        Install-WithWinget glazewm.glazewm
         Write-Host "glazewm installed successfully!" -ForegroundColor Green
     }
     else {
@@ -607,7 +616,7 @@ function Install-Apps {
 
     if (!(Test-Path "C:\Users\Pervez Iqbal\AppData\Roaming\Telegram Desktop")) {
         Write-Host "Installing telegram..." -ForegroundColor Cyan
-        winget install --id Telegram.TelegramDesktop -e
+        Install-WithWinget Telegram.TelegramDesktop
         Write-Host "telegram installed successfully!" -ForegroundColor Green
     }
     else {
@@ -616,7 +625,7 @@ function Install-Apps {
 
     if (!(Test-Path "C:\Program Files\Zoom\bin\Zoom.exe")) {
         Write-Host "Installing zoom..." -ForegroundColor Cyan
-        winget install --id Zoom.Zoom -e
+        Install-WithWinget Zoom.Zoom
         Write-Host "zoom installed successfully!" -ForegroundColor Green
     }
     else {
@@ -628,7 +637,7 @@ function Install-Apps {
     }
     else {
         Write-Host "Signal is not installed. Installing..." -ForegroundColor Cyan
-        winget install --id OpenWhisperSystems.Signal -e
+        Install-WithWinget OpenWhisperSystems.Signal
         Write-Host "Signal installed successfully!" -ForegroundColor Green
     }
 }
@@ -642,7 +651,7 @@ function Install-Multipass {
     }
 
     Write-Host "Installing Multipass via winget..." -ForegroundColor Cyan
-    winget install --id Canonical.Multipass -e
+    Install-WithWinget Canonical.Multipass
 
     Write-Host "Multipass installed successfully!" -ForegroundColor Green
     Write-Host "A system restart is required before using Multipass." -ForegroundColor Yellow
