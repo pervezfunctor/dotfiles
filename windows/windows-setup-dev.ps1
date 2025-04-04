@@ -51,7 +51,6 @@ function Test-CommandExists {
     return [bool](Get-Command -Name $Command -ErrorAction SilentlyContinue)
 }
 
-
 function Restart-PC {
     $restart = Read-Host "A restart is required to complete installation. Would you like to restart now? (y/n)"
     if ($restart -eq 'y' -or $restart -eq 'Y') {
@@ -59,12 +58,10 @@ function Restart-PC {
         Start-Sleep -Seconds 5
         $global:LASTEXITCODE = 0
         Restart-Computer
-        exit 0
     }
-    else {
-        Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
-        exit 0
-    }
+
+    Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
+    exit 0
 }
 
 function Backup-ConfigFile {
@@ -75,30 +72,22 @@ function Backup-ConfigFile {
 
     if (!(Test-Path $FilePath)) {
         Write-Host "$FilePath does not exist. No backup needed." -ForegroundColor Yellow
-        return $false
+        return
     }
 
     $item = Get-Item -Path $FilePath -Force
     if ($item.LinkType -eq "SymbolicLink") {
         Write-Host "$FilePath is a symbolic link. No backup needed." -ForegroundColor Yellow
-        return $false
+        return
     }
 
     $backupPath = "$FilePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
     try {
-        # Check if it's a directory
-        if (Test-Path -Path $FilePath -PathType Container) {
-            Copy-Item -Path $FilePath -Destination $backupPath -Force -Recurse
-        }
-        else {
-            Copy-Item -Path $FilePath -Destination $backupPath -Force
-        }
+        Copy-Item -Path $FilePath -Destination $backupPath -Force -Recurse
         Write-Host "Created backup of ${FilePath} at ${backupPath}" -ForegroundColor Green
-        return $true
     }
     catch {
         Write-Host "Failed to backup ${FilePath}: $_" -ForegroundColor Red
-        return $false
     }
 }
 
@@ -151,14 +140,10 @@ function Copy-ConfigFromGitHub {
         return $false
     }
 
-    if (!(Backup-ConfigFile -FilePath $ConfigPath)) {
-        Write-Host "Backup for $ConfigPath failed or was skipped. Overwriting existing file if it exists." -ForegroundColor Yellow
-    }
-
     try {
+        Backup-ConfigFile -FilePath $ConfigPath
         Write-Host "Downloading ${ConfigPath} from ${GitHubUrl}..." -ForegroundColor Cyan
         Invoke-WebRequest -Uri $GitHubUrl -OutFile $ConfigPath -UseBasicParsing -ErrorAction Stop
-
         Write-Host "Applied ${ConfigPath} configuration successfully" -ForegroundColor Green
         return $true
     }
@@ -175,18 +160,17 @@ function New-ConfigLink {
     )
 
     if (!(Test-Path $sourcePath)) {
-        Write-Host "Source path $sourcePath does not exist. Skipping." -ForegroundColor Yellow
+        Write-Host "Source path $sourcePath does not exist. Skipping." -ForegroundColor Red
         return
-    }
-
-    $targetDir = Split-Path -Parent $targetPath
-    if (!(Test-Path $targetDir)) {
-        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
     }
 
     if (Test-Path $targetPath) {
         Backup-ConfigFile -FilePath $targetPath
         Remove-Item -Path $targetPath -Force -Recurse -Confirm:$false
+    }
+    else {
+        $targetDir = Split-Path -Parent $targetPath
+        New-Directory -Path $targetDir
     }
 
     try {
@@ -194,10 +178,7 @@ function New-ConfigLink {
         Write-Host "Created symbolic link: $targetPath -> $sourcePath" -ForegroundColor Green
     }
     catch {
-        Write-Host "Failed to create symbolic link. Falling back to copy." -ForegroundColor Red
-        Write-Host "Note: Run PowerShell as Administrator to create symbolic links." -ForegroundColor Yellow
-        Copy-Item $sourcePath $targetPath -Recurse -Force
-        Write-Host "Copied $sourcePath to $targetPath" -ForegroundColor Yellow
+        Write-Host "Failed to create symbolic link. Skipping." -ForegroundColor Red
     }
 }
 
@@ -233,8 +214,14 @@ function Update-Windows {
         Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser
 
         Write-Host "Installing PSWindowsUpdate module..." -ForegroundColor Cyan
-        Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser
-        Write-Host "PSWindowsUpdate module installed successfully!" -ForegroundColor Green
+        $originalPolicy = Get-ExecutionPolicy -Scope CurrentUser
+        try {
+            Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser
+            Write-Host "PSWindowsUpdate module installed successfully!" -ForegroundColor Green
+        }
+        finally {
+            Set-ExecutionPolicy -ExecutionPolicy $originalPolicy -Scope CurrentUser -Force
+        }
     }
 
     Import-Module PSWindowsUpdate
@@ -282,9 +269,7 @@ function Update-Windows {
 function Initialize-SSHKey {
     Write-Host "Initializing SSH key..." -ForegroundColor Cyan
 
-    if (!(Test-Path "$env:USERPROFILE\.ssh")) {
-        New-Item -Path "$env:USERPROFILE\.ssh" -ItemType Directory -Force | Out-Null
-    }
+    New-Directory -Path "$env:USERPROFILE\.ssh" | Out-Null
 
     if (Test-Path "$env:USERPROFILE\.ssh\id_rsa") {
         Write-Host "SSH key already exists." -ForegroundColor Yellow
@@ -299,7 +284,6 @@ function Initialize-SSHKey {
     Write-Host "Generating new SSH key..." -ForegroundColor Cyan
     ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
     Write-Host "SSH key generated successfully!" -ForegroundColor Green
-    return
 }
 
 function Install-Chocolatey {
@@ -310,19 +294,25 @@ function Install-Chocolatey {
 
     Write-Host "Installing Chocolatey..." -ForegroundColor Cyan
 
-    Set-ExecutionPolicy Bypass -Scope Process -Force
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    $originalPolicy = Get-ExecutionPolicy -Scope Process
+    try {
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-    # refreshenv is not available until after installation and shell restart, so we manually update the path
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+        # refreshenv is not available until after installation and shell restart, so we manually update the path
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
-    if (Test-CommandExists choco) {
-        Write-Host "Chocolatey installed successfully!" -ForegroundColor Green
+        if (Test-CommandExists choco) {
+            Write-Host "Chocolatey installed successfully!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "Chocolatey installation may have succeeded, but the command is not available in this session." -ForegroundColor Yellow
+            Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
+        }
     }
-    else {
-        Write-Host "Chocolatey installation may have succeeded, but the command is not available in this session." -ForegroundColor Yellow
-        Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
+    finally {
+        Set-ExecutionPolicy -ExecutionPolicy $originalPolicy -Scope Process -Force
     }
 }
 
@@ -334,58 +324,61 @@ function Install-Scoop {
 
     Write-Host "Installing Scoop..." -ForegroundColor Cyan
 
-    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-    Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+    $originalPolicy = Get-ExecutionPolicy -Scope Process
+    try {
+        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
 
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "Machine")
 
-    if (Test-CommandExists scoop) {
-        Write-Host "Scoop installed successfully!" -ForegroundColor Green
+        if (Test-CommandExists scoop) {
+            Write-Host "Scoop installed successfully!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "Scoop installation may have succeeded, but the command is not available in this session." -ForegroundColor Yellow
+            Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
+        }
     }
-    else {
-        Write-Host "Scoop installation may have succeeded, but the command is not available in this session." -ForegroundColor Yellow
-        Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
+    finally {
+        Set-ExecutionPolicy -ExecutionPolicy $originalPolicy -Scope Process -Force
     }
 }
 
 function Install-VSCode {
-    if (!(Test-CommandExists code)) {
-        Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
-        winget install --id Microsoft.VisualStudioCode -e
-        Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
-    }
-    else {
+    if ((Test-CommandExists code)) {
         Write-Host "Visual Studio Code is already installed." -ForegroundColor Yellow
+        return
     }
+
+    Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
+    winget install --id Microsoft.VisualStudioCode -e
+    Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
 }
 
 function Install-Git {
-    if (!(Test-CommandExists git)) {
-        Write-Host "Installing Git..." -ForegroundColor Cyan
-        winget install --id Git.Git -e
+    if ((Test-CommandExists git)) {
+        Write-Host "Git is already installed." -ForegroundColor Yellow
+        return
+    }
 
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+    Write-Host "Installing Git..." -ForegroundColor Cyan
+    winget install --id Git.Git -e
 
-        if (Test-CommandExists git) {
-            Write-Host "Git installed successfully!" -ForegroundColor Green
-        }
-        else {
-            Write-Host "Git installation completed, but git command not found in PATH." -ForegroundColor Yellow
-            Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
-        }
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+    if (Test-CommandExists git) {
+        Write-Host "Git installed successfully!" -ForegroundColor Green
     }
     else {
-        Write-Host "Git is already installed." -ForegroundColor Yellow
+        Write-Host "Git installation completed, but git command not found in PATH." -ForegroundColor Yellow
+        Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
     }
 }
 
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
-    if (Test-CommandExists nu) {
-        Write-Host "Nushell is already installed." -ForegroundColor Yellow
-    }
-    else {
+    if (!(Test-CommandExists nu)) {
         Write-Host "Installing Nushell via winget..." -ForegroundColor Cyan
         winget install --id Nushell.Nushell -e
 
@@ -398,6 +391,9 @@ function Install-DevTools {
             Write-Host "Failed to install Nushell. Please check your installation." -ForegroundColor Red
             return
         }
+    }
+    else {
+        Write-Host "Nushell is already installed." -ForegroundColor Yellow
     }
 
     if (!(Test-Path "C:\Program Files\7-Zip\7z.exe")) {
@@ -692,75 +688,6 @@ function Install-MultipassVM {
     Write-Host "To access your VM, use: multipass shell ubuntu-ilm" -ForegroundColor Cyan
 }
 
-function Get-MultipassVMIP {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$VMName
-    )
-
-    if (multipass info $VMName 2>&1 | Select-String "does not exist") {
-        Write-Host "VM '$VMName' does not exist." -ForegroundColor Red
-        return $null
-    }
-
-    $ipInfo = multipass info $VMName | Select-String "IPv4:"
-    if (!$ipInfo) {
-        Write-Host "Could not find IPv4 address for VM '$VMName'." -ForegroundColor Red
-        return $null
-    }
-
-    # More robust parsing of the IP address
-    $ipMatch = $ipInfo -match "IPv4:\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"
-    if ($ipMatch -and $Matches.Count -gt 1) {
-        return $Matches[1]
-    }
-
-    Write-Host "Failed to parse IPv4 address from output." -ForegroundColor Red
-    return $null
-}
-
-function Add-SSHConfig {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$HostName,
-
-        [Parameter(Mandatory = $true)]
-        [string]$IPAddress,
-
-        [Parameter(Mandatory = $false)]
-        [string]$User = "ubuntu",
-
-        [Parameter(Mandatory = $false)]
-        [string]$IdentityFile = "~/.ssh/id_rsa",
-
-        [Parameter(Mandatory = $false)]
-        [bool]$StrictHostKeyChecking = $false
-    )
-
-    Write-Host "Adding SSH config for $HostName..." -ForegroundColor Cyan
-
-    # Add VM to SSH config
-    $sshConfig = @"
-Host $HostName
-    HostName $IPAddress
-    User $User
-    IdentityFile $IdentityFile
-    StrictHostKeyChecking $(if ($StrictHostKeyChecking) { "yes" } else { "no" })
-"@
-
-    if (-not (Test-Path "$env:USERPROFILE\.ssh\config")) {
-        New-Item -Path "$env:USERPROFILE\.ssh\config" -ItemType File -Force | Out-Null
-    }
-
-    if (-not (Select-String -Path "$env:USERPROFILE\.ssh\config" -Pattern "Host $HostName" -Quiet)) {
-        Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfig
-        Write-Host "SSH config for $HostName added successfully" -ForegroundColor Green
-    }
-    else {
-        Write-Host "SSH config for $HostName already exists" -ForegroundColor Yellow
-    }
-}
-
 function Install-SSHServerInMutlipassVM {
     param (
         [Parameter(Mandatory = $true)]
@@ -816,14 +743,8 @@ function Initialize-MultipassVMSSH {
         return
     }
 
-    # $vmIP = Get-MultipassVMIP -VMName $VMName
-    # if (-not $vmIP) {
-    #     return
-    # }
-
     Install-SSHServerInMutlipassVM -VMName $VMName
     Copy-SSHKeyToMultipassVM -VMName $VMName
-    # Add-SSHConfig -HostName $VMName -IPAddress $vmIP -User "ubuntu"
 
     Write-Host "SSH access to Multipass VM '$VMName' has been set up." -ForegroundColor Green
     Write-Host "You can now connect using: ssh $VMName" -ForegroundColor Cyan
@@ -848,6 +769,12 @@ function Install-HyperV-WSL {
     }
     else {
         Write-Host "WSL is already installed." -ForegroundColor Yellow
+        Write-Host "Updating WSL..." -ForegroundColor Cyan
+        $result = wsl --update
+        if ($result -and $result.RestartNeeded) {
+            Write-Host "WSL update requires a restart." -ForegroundColor Red
+            $restartNeeded = $true
+        }
     }
 
     $features = @(
@@ -914,24 +841,6 @@ function Install-WSLDistro {
     }
 }
 
-function Initialize-CentOSWSLSSH {
-    param (
-        [Parameter(Mandatory = $false)]
-        [string]$Username = $null,
-
-        [Parameter(Mandatory = $false)]
-        [string]$VmIP = "localhost"
-    )
-
-    Write-Host "Setting up SSH access for CentOS Stream..." -ForegroundColor Cyan
-
-    if ([string]::IsNullOrEmpty($Username)) {
-        $Username = Read-Host "Enter username for CentOS SSH access"
-    }
-
-    Copy-SSHKeyToWSL -Distribution "CentOS-Stream-10" -Username $Username
-}
-
 function Initialize-CentOSWSL {
     Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
 
@@ -940,16 +849,14 @@ function Initialize-CentOSWSL {
     $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
         [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
 
-    Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
-
-    wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL $global:GitHubBaseUrl/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
-
-    # Clean up the password from memory
-    $passwordText = $null
-    [System.GC]::Collect()
-
-    Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
-    Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
+    try {
+        Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
+        wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL $global:GitHubBaseUrl/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
+    }
+    finally {
+        $passwordText = $null
+        [System.GC]::Collect()
+    }
 
     Write-Host "CentOS Stream 10 setup complete!" -ForegroundColor Green
     Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
@@ -1010,6 +917,11 @@ function Install-NixOSWSL {
 
     Write-Host "NixOS installed successfully!" -ForegroundColor Green
     Write-Host "To start NixOS, open a terminal and type: wsl -d NixOS" -ForegroundColor Cyan
+
+    Write-Host "Running setup script with home-manager..." -ForegroundColor Cyan
+    wsl -d NixOS -u root -- bash -c "bash -c \"\$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)\" -- nixos-wslbox"
+
+    Write-Host "nixos setup completed!" -ForegroundColor Green
 }
 
 function Install-CentOSWSL {
@@ -1128,6 +1040,13 @@ function Install-NerdFonts {
 }
 
 function Get-Dotfiles {
+    Install-Git
+
+    if (!(Test-CommandExists git)) {
+        Write-Host "Git is not installed. Cannot clone dotfiles." -ForegroundColor Red
+        return
+    }
+
     if (Test-Path "$global:DotDir") {
         Write-Host "Dotfiles already present. Updating..." -ForegroundColor Cyan
 
@@ -1137,7 +1056,7 @@ function Get-Dotfiles {
         }
 
         Write-Host "Dotfiles updated successfully!" -ForegroundColor Green
-        return
+        return $true
     }
 
     Write-Host "Cloning dotfiles..." -ForegroundColor Cyan
@@ -1147,13 +1066,72 @@ function Get-Dotfiles {
         Write-Host "Failed to clone dotfiles. Exiting..." -ForegroundColor Red
         return $false
     }
-    else {
-        Write-Host "Dotfiles cloned successfully!" -ForegroundColor Green
+
+    Write-Host "Dotfiles cloned successfully!" -ForegroundColor Green
+    return $true
+}
+
+function Install-PowerShellModules {
+    Write-Host "Installing essential PowerShell modules..." -ForegroundColor Cyan
+
+    $modules = @(
+        "PSReadLine",
+        "posh-git",
+        "Terminal-Icons"
+    )
+
+    foreach ($module in $modules) {
+        if (!(Get-Module -ListAvailable -Name $module)) {
+            Write-Host "Installing $module for Windows PowerShell..." -ForegroundColor Yellow
+            Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
     }
+
+    if (Test-CommandExists pwsh) {
+        foreach ($module in $modules) {
+            Write-Host "Installing $module for PowerShell 7..." -ForegroundColor Yellow
+            pwsh -Command "if (!(Get-Module -ListAvailable -Name $module)) { Install-Module -Name $module -Scope CurrentUser -Force }"
+        }
+    }
+    else {
+        Write-Host "PowerShell 7 not found. Skipping module installation for PowerShell 7." -ForegroundColor Yellow
+        Write-Host "Consider installing PowerShell 7 for better features and performance." -ForegroundColor Yellow
+    }
+
+    Write-Host "PowerShell modules installed successfully!" -ForegroundColor Green
+}
+
+function Initialize-PowerShell {
+    Write-Host "Setting up PowerShell profiles for both Windows PowerShell and PowerShell 7..." -ForegroundColor Cyan
+
+    $ps5ProfilePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
+    $ps7ProfilePath = "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
+
+
+    Backup-ConfigFile -FilePath $ps5ProfilePath
+    Backup-ConfigFile -FilePath $ps7ProfilePath
+
+
+    $sourceProfilePath = "$global:DotDir\powershell\Microsoft.PowerShell_profile.ps1"
+
+    if (Test-Path $sourceProfilePath) {
+        New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps5ProfilePath
+        New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps7ProfilePath
+
+        Write-Host "PowerShell profiles configured for both PowerShell 5.x and 7.x" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Source PowerShell profile not found at: $sourceProfilePath" -ForegroundColor Red
+    }
+
+    Install-PowerShellModules
 }
 
 function Initialize-Dotfiles {
-    Get-Dotfiles
+    if (!Get-Dotfiles) {
+        Write-Host "Failed to clone dotfiles. Exiting..." -ForegroundColor Red
+        return
+    }
 
     Write-Host "Setting up WezTerm config..." -ForegroundColor Cyan
     New-ConfigLink -sourcePath "$global:DotDir\wezterm\dot-config\wezterm" -targetPath "$env:USERPROFILE\.config\wezterm"
@@ -1174,11 +1152,15 @@ function Initialize-Dotfiles {
     $null = New-ConfigDirectory -ConfigPath $psProfilePath
 
     $originalUserPolicy = Get-ExecutionPolicy -Scope CurrentUser
-    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-    Write-Host "PowerShell execution policy set to RemoteSigned for current user" -ForegroundColor Green
-    New-ConfigLink -sourcePath $psConfigFile -targetPath $psProfilePath
-    Set-ExecutionPolicy -ExecutionPolicy $originalUserPolicy -Scope CurrentUser -Force
-    Write-Host "PowerShell profile linked successfully. You may need to restart PowerShell." -ForegroundColor Green
+    try {
+        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+        Write-Host "PowerShell execution policy set to RemoteSigned for current user" -ForegroundColor Green
+        New-ConfigLink -sourcePath $psConfigFile -targetPath $psProfilePath
+        Write-Host "PowerShell profile linked successfully. You may need to restart PowerShell." -ForegroundColor Green
+    }
+    finally {
+        Set-ExecutionPolicy -ExecutionPolicy $originalUserPolicy -Scope CurrentUser -Force
+    }
 
     Write-Host "Setting up VS Code config..." -ForegroundColor Cyan
     $vscodeSettingsSource = "$global:DotDir\extras\vscode\wsl-settings.json"
@@ -1305,18 +1287,6 @@ function Copy-ConfigFromDotfiles {
 
     Write-Host "${TargetPath} setup completed" -ForegroundColor Green
     return $true
-}
-
-function Install-PowerShell {
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-
-    if (Test-CommandExists pwsh) {
-        $installedVersion = (pwsh -Command '$PSVersionTable.PSVersion.ToString()')
-        Write-Host "PowerShell $installedVersion installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "PowerShell installation completed, but pwsh command not found in PATH. You may need to restart your terminal." -ForegroundColor Yellow
-    }
 }
 
 # Define available components with preserved order
@@ -1461,9 +1431,9 @@ function Install-SelectedComponents {
 
             "nerd-fonts" { Install-Chocolatey; Install-NerdFonts }
             "capslock" { Set-CapsLockAsControl }
-            "devtools" { Install-DevTools; Install-CppTools; Install-PowerShell }
-            "vscode" { Install-VSCode; Install-VSCodeExtensions }
-            "dotfiles" { Initialize-Dotfiles; Initialize-NushellProfile }
+            "devtools" { Install-Git; Install-DevTools; Install-CppTools; Install-PowerShell }
+            "vscode" { Install-Git; Install-VSCode; Install-VSCodeExtensions }
+            "dotfiles" { Install-Git ; Initialize-Dotfiles; Initialize-NushellProfile }
             "apps" { Install-Apps }
 
             "multipass-vm" { Install-MultipassVM; Initialize-MultipassVMSSH }
@@ -1478,62 +1448,6 @@ function Install-SelectedComponents {
     }
 
     Write-Host "`nSelected components installation complete!" -ForegroundColor Green
-}
-
-function Install-PowerShellModules {
-    Write-Host "Installing essential PowerShell modules..." -ForegroundColor Cyan
-
-    $modules = @(
-        "PSReadLine",
-        "posh-git",
-        "Terminal-Icons"
-    )
-
-    foreach ($module in $modules) {
-        if (!(Get-Module -ListAvailable -Name $module)) {
-            Write-Host "Installing $module for Windows PowerShell..." -ForegroundColor Yellow
-            Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
-        }
-    }
-
-    if (Test-CommandExists pwsh) {
-        foreach ($module in $modules) {
-            Write-Host "Installing $module for PowerShell 7..." -ForegroundColor Yellow
-            pwsh -Command "if (!(Get-Module -ListAvailable -Name $module)) { Install-Module -Name $module -Scope CurrentUser -Force }"
-        }
-    }
-    else {
-        Write-Host "PowerShell 7 not found. Skipping module installation for PowerShell 7." -ForegroundColor Yellow
-        Write-Host "Consider installing PowerShell 7 for better features and performance." -ForegroundColor Yellow
-    }
-
-    Write-Host "PowerShell modules installed successfully!" -ForegroundColor Green
-}
-
-function Initialize-PowerShell {
-    Write-Host "Setting up PowerShell profiles for both Windows PowerShell and PowerShell 7..." -ForegroundColor Cyan
-
-    $ps5ProfilePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
-    $ps7ProfilePath = "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
-
-
-    Backup-ConfigFile -FilePath $ps5ProfilePath
-    Backup-ConfigFile -FilePath $ps7ProfilePath
-
-
-    $sourceProfilePath = "$global:DotDir\powershell\Microsoft.PowerShell_profile.ps1"
-
-    if (Test-Path $sourceProfilePath) {
-        New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps5ProfilePath
-        New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps7ProfilePath
-
-        Write-Host "PowerShell profiles configured for both PowerShell 5.x and 7.x" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Source PowerShell profile not found at: $sourceProfilePath" -ForegroundColor Red
-    }
-
-    Install-PowerShellModules
 }
 
 function Main {
