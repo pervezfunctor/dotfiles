@@ -13,6 +13,8 @@ $env.NU_PLUGIN_DIRS = [
     ($nu.default-config-dir | path join 'plugins') # add <nushell-config-dir>/plugins
 ]
 
+$env.XDG_CONFIG_HOME = ($nu.home-path | path join ".config")
+
 $env.config.show_banner = false
 
 # To add entries to PATH (on Windows you might use Path), you can use the following pattern:
@@ -36,24 +38,24 @@ $env.CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense' # optional
 mkdir ~/.cache/carapace
 carapace _carapace nushell | save --force ~/.cache/carapace/init.nu
 
-$env.GOPATH = ($env.HOME | path join "go")
+$env.GOPATH = ($nu.home-path | path join "go")
 
 $env.PATH = ($env.PATH | prepend [
     "/usr/bin"
     "/snap/bin"
     ($env.GOPATH | path join "bin")
     ($env.XDG_CONFIG_HOME | path join "emacs/bin")
-    ($env.HOME | path join ".local/bin")
-    ($env.HOME | path join "bin")
-    ($env.HOME | path join ".bin")
-    ($env.HOME | path join ".ilm/bin")
-    ($env.HOME | path join "Applications")
-    ($env.HOME | path join ".local/share/pypoetry")
+    ($nu.home-path | path join ".local/bin")
+    ($nu.home-path | path join "bin")
+    ($nu.home-path | path join ".bin")
+    ($nu.home-path | path join ".ilm/bin")
+    ($nu.home-path | path join "Applications")
+    ($nu.home-path | path join ".local/share/pypoetry")
     ($env.XDG_CONFIG_HOME | path join "Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin")
-    ($env.HOME | path join ".console-ninja/.bin")
+    ($nu.home-path | path join ".console-ninja/.bin")
 ])
 
-$env.GOPATH = ($env.HOME | path join "go")
+$env.GOPATH = ($nu.home-path | path join "go")
 
 $env.MANPAGER = "nvim +Man!"
 
