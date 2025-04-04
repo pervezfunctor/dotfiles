@@ -369,26 +369,20 @@ function Install-Git {
     }
 }
 
+function Install-Nushell {
+    if ((Test-CommandExists nu)) {
+        Write-Host "Nushell is already installed." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Installing Nushell via winget..." -ForegroundColor Cyan
+    winget install --id Nushell.Nushell -e
+
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+}
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
-    if (!(Test-CommandExists nu)) {
-        Write-Host "Installing Nushell via winget..." -ForegroundColor Cyan
-        winget install --id Nushell.Nushell -e
-
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-
-        if (Test-CommandExists nu) {
-            Write-Host "Nushell installed successfully!" -ForegroundColor Green
-        }
-        else {
-            Write-Host "Failed to install Nushell. Please check your installation." -ForegroundColor Red
-            return
-        }
-    }
-    else {
-        Write-Host "Nushell is already installed." -ForegroundColor Yellow
-    }
 
     if (!(Test-Path "C:\Program Files\7-Zip\7z.exe")) {
         Write-Host "Installing 7-Zip..." -ForegroundColor Cyan
@@ -976,6 +970,8 @@ function Install-CentOSWSL {
 }
 
 function Set-CapsLockAsControl {
+    Get-Dotfiles
+
     Write-Host "Remapping Caps Lock to Control key..." -ForegroundColor Cyan
 
     $regFilePath = "$global:WinDir\caps2ctrl.reg"
@@ -1103,8 +1099,6 @@ function Install-PowerShellModules {
 }
 
 function Initialize-PowerShell {
-    Write-Host "Setting up PowerShell profiles for both Windows PowerShell and PowerShell 7..." -ForegroundColor Cyan
-
     $ps5ProfilePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
     $ps7ProfilePath = "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
 
@@ -1114,6 +1108,9 @@ function Initialize-PowerShell {
     $sourceProfilePath = "$global:DotDir\powershell\Microsoft.PowerShell_profile.ps1"
 
     if (Test-Path $sourceProfilePath) {
+        Write-Host "Setting up PowerShell profiles for both Windows PowerShell and PowerShell 7..." -ForegroundColor Cyan
+
+        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
         New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps5ProfilePath
         New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps7ProfilePath
 
@@ -1160,10 +1157,19 @@ function Initialize-Dotfiles {
     else {
         Write-Host "VS Code settings source file not found at: $vscodeSettingsSource" -ForegroundColor Red
     }
+
+    Install-Nushell
+    if ((Initialize-NushellProfile)) {
+        Set-NushellProfileAsDefault
+    }
 }
 
 function Initialize-NushellProfile {
-    # Check multiple possible locations for Windows Terminal settings
+    if (!(Test-CommandExists nu)) {
+        Write-Host "Nushell is not installed. Cannot initialize profile." -ForegroundColor Red
+        return $false
+    }
+
     $possiblePaths = @(
         "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json",
         "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json",
@@ -1213,7 +1219,6 @@ function Initialize-NushellProfile {
 }
 
 function Set-NushellProfileAsDefault {
-    # Check multiple possible locations for Windows Terminal settings
     $possiblePaths = @(
         "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json",
         "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json",
@@ -1224,17 +1229,10 @@ function Set-NushellProfileAsDefault {
 
     if (-Not $wtConfigPath) {
         Write-Host "Windows Terminal settings.json not found in any of the expected locations" -ForegroundColor Red
-        return $false
-    }
-
-    $setAsDefault = Read-Host "Would you like to set Nushell as your default shell in Windows Terminal? (y/n)"
-    if ($setAsDefault -ne 'y') {
-        Write-Host "Skipping setting Nushell as default shell." -ForegroundColor Yellow
-        return $true
+        return
     }
 
     try {
-        # Read the file as text first to check for JSON errors
         $jsonContent = Get-Content -Path $wtConfigPath -Raw
         try {
             $wtConfig = $jsonContent | ConvertFrom-Json -ErrorAction Stop
@@ -1242,27 +1240,25 @@ function Set-NushellProfileAsDefault {
         catch {
             Write-Host "Error parsing Windows Terminal settings JSON: $_" -ForegroundColor Red
             Write-Host "Please fix the Windows Terminal settings file manually before setting Nushell as default." -ForegroundColor Red
-            return $false
+            return
         }
 
         $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
 
         if ($null -eq $nuProfile) {
             Write-Host "Nushell profile not found in Windows Terminal." -ForegroundColor Red
-            return $false
+            return
         }
 
         $wtConfig.defaultProfile = $nuProfile.guid
 
-        # Convert back to JSON with proper formatting
         $newJsonContent = $wtConfig | ConvertTo-Json -Depth 10
         Set-Content -Path $wtConfigPath -Value $newJsonContent
         Write-Host "Nushell set as default shell in Windows Terminal!" -ForegroundColor Green
-        return $true
     }
     catch {
         Write-Host "Failed to set Nushell as default: $_" -ForegroundColor Red
-        return $false
+
     }
 }
 
@@ -1446,11 +1442,11 @@ function Install-SelectedComponents {
             "multipass" { Install-Multipass }
 
             "nerd-fonts" { Install-Chocolatey; Install-NerdFonts }
-            "capslock" { Set-CapsLockAsControl }
-            "devtools" { Install-Git; Install-DevTools; Install-CppTools }
-            "vscode" { Install-Git; Install-VSCode; Install-VSCodeExtensions }
-            "dotfiles" { Install-Git; Initialize-Dotfiles }
+            "devtools" { Install-DevTools; Install-CppTools }
+            "vscode" { Install-VSCode; Install-VSCodeExtensions }
             "apps" { Install-Apps }
+            "dotfiles" { Initialize-Dotfiles }
+            "capslock" { Set-CapsLockAsControl }
 
             "multipass-vm" { Install-MultipassVM; Initialize-MultipassVMSSH }
             "wsl-ubuntu" { Install-WSLDistro -DistroName "Ubuntu-24.04" }
