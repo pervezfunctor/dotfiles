@@ -1434,7 +1434,7 @@ function Install-SelectedComponents {
         Write-Host "`nProcessing component: $component ($($availableComponents[$component]))" -ForegroundColor Cyan
 
         Initialize-SSHKey
-        winget source add --name msstore --arg https://storeedgefd.dsx.mp.microsoft.com/v9/collection --accept-source-agreements
+        winget source update --name msstore --accept-source-agreements
 
         switch ($component) {
             "windows-update" { Update-Windows }
