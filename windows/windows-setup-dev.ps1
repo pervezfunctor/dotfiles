@@ -1178,13 +1178,21 @@ function Initialize-Dotfiles {
 }
 
 function Initialize-NushellProfile {
-    $wtConfigPath = "$env:LOCALAPPDATA\Microsoft\Windows Terminal\settings.json"
+    # Check multiple possible locations for Windows Terminal settings
+    $possiblePaths = @(
+        "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json",
+        "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json",
+        "$env:LOCALAPPDATA\Microsoft\Windows Terminal\settings.json"
+    )
 
-    if (!(Test-Path $wtConfigPath)) {
-        Write-Host "Windows Terminal settings file not found at: $wtConfigPath" -ForegroundColor Red
+    $wtConfigPath = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+    if (-Not $wtConfigPath) {
+        Write-Host "Windows Terminal settings.json not found in any of the expected locations" -ForegroundColor Red
         return $false
     }
 
+    Write-Host "Found Windows Terminal settings at: $wtConfigPath" -ForegroundColor Cyan
     Write-Host "Adding Nushell to Windows Terminal profiles..." -ForegroundColor Cyan
 
     try {
@@ -1202,12 +1210,13 @@ function Initialize-NushellProfile {
             commandline       = "nu.exe"
             icon              = "$env:USERPROFILE\AppData\Local\Programs\Nushell\nu.ico"
             startingDirectory = "%USERPROFILE%"
-            guid              = [guid]::NewGuid().ToString()
+            guid              = "{$(New-Guid)}"
         }
 
         $wtConfig.profiles.list += $nuProfileObj
 
-        $wtConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $wtConfigPath
+        $newJsonContent = $wtConfig | ConvertTo-Json -Depth 10
+        Set-Content -Path $wtConfigPath -Value $newJsonContent
         Write-Host "Nushell profile added to Windows Terminal!" -ForegroundColor Green
 
         return $true
@@ -1219,10 +1228,17 @@ function Initialize-NushellProfile {
 }
 
 function Set-NushellProfileAsDefault {
-    $wtConfigPath = "$env:LOCALAPPDATA\Microsoft\Windows Terminal\settings.json"
+    # Check multiple possible locations for Windows Terminal settings
+    $possiblePaths = @(
+        "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json",
+        "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json",
+        "$env:LOCALAPPDATA\Microsoft\Windows Terminal\settings.json"
+    )
 
-    if (!(Test-Path $wtConfigPath)) {
-        Write-Host "Windows Terminal settings file not found at: $wtConfigPath" -ForegroundColor Red
+    $wtConfigPath = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+    if (-Not $wtConfigPath) {
+        Write-Host "Windows Terminal settings.json not found in any of the expected locations" -ForegroundColor Red
         return $false
     }
 
@@ -1233,7 +1249,17 @@ function Set-NushellProfileAsDefault {
     }
 
     try {
-        $wtConfig = Get-Content -Path $wtConfigPath -Raw | ConvertFrom-Json
+        # Read the file as text first to check for JSON errors
+        $jsonContent = Get-Content -Path $wtConfigPath -Raw
+        try {
+            $wtConfig = $jsonContent | ConvertFrom-Json -ErrorAction Stop
+        }
+        catch {
+            Write-Host "Error parsing Windows Terminal settings JSON: $_" -ForegroundColor Red
+            Write-Host "Please fix the Windows Terminal settings file manually before setting Nushell as default." -ForegroundColor Red
+            return $false
+        }
+
         $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
 
         if ($null -eq $nuProfile) {
@@ -1242,7 +1268,10 @@ function Set-NushellProfileAsDefault {
         }
 
         $wtConfig.defaultProfile = $nuProfile.guid
-        $wtConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $wtConfigPath
+
+        # Convert back to JSON with proper formatting
+        $newJsonContent = $wtConfig | ConvertTo-Json -Depth 10
+        Set-Content -Path $wtConfigPath -Value $newJsonContent
         Write-Host "Nushell set as default shell in Windows Terminal!" -ForegroundColor Green
         return $true
     }
@@ -1433,7 +1462,7 @@ function Install-SelectedComponents {
             "capslock" { Set-CapsLockAsControl }
             "devtools" { Install-Git; Install-DevTools; Install-CppTools }
             "vscode" { Install-Git; Install-VSCode; Install-VSCodeExtensions }
-            "dotfiles" { Install-Git ; Initialize-Dotfiles; Initialize-NushellProfile }
+            "dotfiles" { Install-Git; Initialize-Dotfiles }
             "apps" { Install-Apps }
 
             "multipass-vm" { Install-MultipassVM; Initialize-MultipassVMSSH }
