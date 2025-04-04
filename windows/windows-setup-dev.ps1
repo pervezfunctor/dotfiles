@@ -70,7 +70,7 @@ function Install-WithWinget {
         [string]$PackageId
     )
 
-    winget install --id $PackageId -e --accept-source-agreements --accept-package-agreements
+    winget install --id $PackageId -e --accept-package-agreements
 }
 
 function Backup-ConfigFile {
