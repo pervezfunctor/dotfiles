@@ -402,12 +402,37 @@ function Install-Starship {
 
 }
 
+function Install-Zoxide {
+    if (!(Test-CommandExists zoxide)) {
+        Write-Host "Installing zoxide..." -ForegroundColor Cyan
+        Install-WithWinget ajeetdsouza.zoxide
+        Write-Host "zoxide installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "zoxide is already installed." -ForegroundColor Yellow
+    }
+}
+
+function Install-Carapace {
+    if (!(Test-CommandExists carapace)) {
+        Write-Host "Installing carapace..." -ForegroundColor Cyan
+        Install-WithWinget rsteube.Carapace
+        Write-Host "carapace installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "carapace is already installed." -ForegroundColor Yellow
+    }
+
+}
+
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
     Install-Starship
     Install-Git
     Install-Nushell
+    Install-Zoxide
+    Install-Carapace
 
     if (!(Test-Path "C:\Program Files\7-Zip\7z.exe")) {
         Write-Host "Installing 7-Zip..." -ForegroundColor Cyan
@@ -544,24 +569,6 @@ function Install-DevTools {
     }
     else {
         Write-Host "emacs is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists zoxide)) {
-        Write-Host "Installing zoxide..." -ForegroundColor Cyan
-        Install-WithWinget ajeetdsouza.zoxide
-        Write-Host "zoxide installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "zoxide is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists carapace)) {
-        Write-Host "Installing carapace..." -ForegroundColor Cyan
-        Install-WithWinget rsteube.Carapace
-        Write-Host "carapace installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "carapace is already installed." -ForegroundColor Yellow
     }
 
     Write-Host "Development tools installed!" -ForegroundColor Green
@@ -1182,6 +1189,9 @@ function Initialize-Dotfiles {
 
     Install-Starship
     Install-Nushell
+    Install-Zoxide
+    Install-Carapace
+
     if ((Initialize-NushellProfile)) {
         Set-NushellProfileAsDefault
     }
