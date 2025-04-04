@@ -1128,7 +1128,7 @@ function Initialize-PowerShell {
 }
 
 function Initialize-Dotfiles {
-    if (!Get-Dotfiles) {
+    if (!(Get-Dotfiles)) {
         Write-Host "Failed to clone dotfiles. Exiting..." -ForegroundColor Red
         return
     }
@@ -1431,7 +1431,7 @@ function Install-SelectedComponents {
 
             "nerd-fonts" { Install-Chocolatey; Install-NerdFonts }
             "capslock" { Set-CapsLockAsControl }
-            "devtools" { Install-Git; Install-DevTools; Install-CppTools; Install-PowerShell }
+            "devtools" { Install-Git; Install-DevTools; Install-CppTools }
             "vscode" { Install-Git; Install-VSCode; Install-VSCodeExtensions }
             "dotfiles" { Install-Git ; Initialize-Dotfiles; Initialize-NushellProfile }
             "apps" { Install-Apps }
