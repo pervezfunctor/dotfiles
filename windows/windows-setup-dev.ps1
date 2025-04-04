@@ -40,7 +40,7 @@ if ($originalPolicy -ne "RemoteSigned" -and $originalPolicy -ne "Unrestricted") 
 
 $global:GitHubBaseUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 $global:DotDir = "$env:USERPROFILE\ilm"
-$global:WinDir = "$global:DotDir\share\installers\windows"
+$global:WinDir = "$global:DotDir\windows"
 
 function Test-CommandExists {
     param (
@@ -359,6 +359,26 @@ function Install-VSCode {
     }
 }
 
+function Install-Git {
+    if (!(Test-CommandExists git)) {
+        Write-Host "Installing Git..." -ForegroundColor Cyan
+        winget install --id Git.Git -e
+
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+        if (Test-CommandExists git) {
+            Write-Host "Git installed successfully!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "Git installation completed, but git command not found in PATH." -ForegroundColor Yellow
+            Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
+        }
+    }
+    else {
+        Write-Host "Git is already installed." -ForegroundColor Yellow
+    }
+}
+
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
 
@@ -397,24 +417,6 @@ function Install-DevTools {
     }
     else {
         Write-Host "Firefox is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists git)) {
-        Write-Host "Installing Git..." -ForegroundColor Cyan
-        winget install --id Git.Git -e
-
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-
-        if (Test-CommandExists git) {
-            Write-Host "Git installed successfully!" -ForegroundColor Green
-        }
-        else {
-            Write-Host "Git installation completed, but git command not found in PATH." -ForegroundColor Yellow
-            Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
-        }
-    }
-    else {
-        Write-Host "Git is already installed." -ForegroundColor Yellow
     }
 
     if (!(Test-CommandExists wezterm)) {
@@ -940,7 +942,7 @@ function Initialize-CentOSWSL {
 
     Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
 
-    wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL $global:GitHubBaseUrl/share/installers/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
+    wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL $global:GitHubBaseUrl/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
 
     # Clean up the password from memory
     $passwordText = $null

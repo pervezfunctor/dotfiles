@@ -63,7 +63,7 @@ function Initialize-WSLDistro {
         $distroType = $matches[1].ToLower()
     }
 
-    wsl -d $DistroName -u root -- bash -c "curl -sSL $global:GitHubBaseUrl/share/installers/windows/setup-distro.sh | bash -s -- '$Username' '$Password' '$distroType'"
+    wsl -d $DistroName -u root -- bash -c "curl -sSL $global:GitHubBaseUrl/windows/setup-distro.sh | bash -s -- '$Username' '$Password' '$distroType'"
 
     # Clean up the password from memory
     $Password = $null
@@ -157,7 +157,7 @@ function Initialize-CentOSStream10 {
 
     Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
 
-    wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/share/installers/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
+    wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
 
     # Clean up the password from memory
     $passwordText = $null
