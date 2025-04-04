@@ -672,11 +672,12 @@ function Install-MultipassVM {
         return
     }
 
-    multipass find
+    multipass find | Out-Null
+
     Start-Sleep -Seconds 5
 
-    Write-Host "Creating Ubuntu 24.10 VM with 16GB RAM and 20GB disk..." -ForegroundColor Cyan
-    multipass launch oracular --name ubuntu-ilm --memory 16G --disk 20G
+    Write-Host "Creating Ubuntu 24.10 VM with 8GB RAM and 20GB disk..." -ForegroundColor Cyan
+    multipass launch oracular --name ubuntu-ilm --memory 8G --disk 20G
 
     Start-Sleep -Seconds 5
 
@@ -813,14 +814,14 @@ function Initialize-MultipassVMSSH {
         return
     }
 
-    $vmIP = Get-MultipassVMIP -VMName $VMName
-    if (-not $vmIP) {
-        return
-    }
+    # $vmIP = Get-MultipassVMIP -VMName $VMName
+    # if (-not $vmIP) {
+    #     return
+    # }
 
     Install-SSHServerInMutlipassVM -VMName $VMName
     Copy-SSHKeyToMultipassVM -VMName $VMName
-    Add-SSHConfig -HostName $VMName -IPAddress $vmIP -User "ubuntu"
+    # Add-SSHConfig -HostName $VMName -IPAddress $vmIP -User "ubuntu"
 
     Write-Host "SSH access to Multipass VM '$VMName' has been set up." -ForegroundColor Green
     Write-Host "You can now connect using: ssh $VMName" -ForegroundColor Cyan
@@ -1463,7 +1464,7 @@ function Install-SelectedComponents {
             "dotfiles" { Initialize-Dotfiles; Initialize-NushellProfile }
             "apps" { Install-Apps }
 
-            "multipass-vm" { Install-MultipassVM }
+            "multipass-vm" { Install-MultipassVM; Initialize-MultipassVMSSH }
             "wsl-ubuntu" { Install-WSLDistro -DistroName "Ubuntu-24.04" }
             "wsl-debian" { Install-WSLDistro -DistroName "Debian" }
             "wsl-opensuse" { Install-WSLDistro -DistroName "openSUSE-Tumbleweed" }
