@@ -977,6 +977,8 @@ function Install-CentOSWSL {
     Remove-Item -Path $archivePath -Force
 
     Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Cyan
+
+    Initialize-CentOSWSL
 }
 
 function Set-CapsLockAsControl {
@@ -998,18 +1000,23 @@ function Install-VSCodeExtensions {
 
     $extensionsFile = "$global:DotDir\extras\vscode\extensions\wsl"
 
-    if (Test-Path $extensionsFile) {
-        Get-Content $extensionsFile | ForEach-Object {
-            if ($_ -match '\S') {
-                Write-Host "Installing extension: $_" -ForegroundColor DarkCyan
-                code --install-extension $_
+    if (!(Test-Path $extensionsFile)) {
+        Write-Host "Extensions file not found at: $extensionsFile" -ForegroundColor Red
+        return
+    }
+
+    $installedExtensions = code --list-extensions
+
+    Get-Content $extensionsFile | ForEach-Object {
+        if ($_ -match '\S' -and -not $_.StartsWith('#')) {
+            $extension = $_.Trim()
+            if (!($installedExtensions -contains $extension)) {
+                Write-Host "Installing extension: $extension" -ForegroundColor DarkCyan
+                code --install-extension $extension
             }
         }
-        Write-Host "VS Code extensions installed successfully!" -ForegroundColor Green
     }
-    else {
-        Write-Host "Extensions file not found at: $extensionsFile" -ForegroundColor Red
-    }
+    Write-Host "VS Code extensions installed successfully!" -ForegroundColor Green
 }
 
 function Install-NerdFontsWithScoop {
@@ -1469,7 +1476,7 @@ function Install-SelectedComponents {
             "wsl-ubuntu" { Install-WSLDistro -DistroName "Ubuntu-24.04" }
             "wsl-debian" { Install-WSLDistro -DistroName "Debian" }
             "wsl-opensuse" { Install-WSLDistro -DistroName "openSUSE-Tumbleweed" }
-            "wsl-centos" { Install-CentOSWSL; Initialize-CentOSWSL }
+            "wsl-centos" { Install-CentOSWSL }
             "wsl-nixos" { Install-NixOSWSL }
             # "scoop" { Install-Scoop }
             default { Write-Host "Unknown component: $component" -ForegroundColor Red }
