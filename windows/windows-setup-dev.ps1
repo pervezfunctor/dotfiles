@@ -1065,10 +1065,12 @@ function Get-Dotfiles {
     if (Test-Path "$global:DotDir") {
         Write-Host "Dotfiles already present. Updating..." -ForegroundColor Cyan
 
+        Push-Location "$global:DotDir"
         if ($null -eq (git status --porcelain)) {
-            Set-Location "$global:DotDir"
+            Write-Host "Pulling latest changes..." -ForegroundColor Cyan
             git pull --rebase
         }
+        Pop-Location
 
         Write-Host "Dotfiles updated successfully!" -ForegroundColor Green
         return $true
