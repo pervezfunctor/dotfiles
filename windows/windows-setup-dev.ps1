@@ -918,8 +918,8 @@ function Install-NixOSWSL {
     Write-Host "NixOS installed successfully!" -ForegroundColor Green
     Write-Host "To start NixOS, open a terminal and type: wsl -d NixOS" -ForegroundColor Cyan
 
-    Write-Host "Running setup script with home-manager..." -ForegroundColor Cyan
-    wsl -d NixOS -u root -- bash -c "bash -c \"\$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)\" -- nixos-wslbox"
+    Write-Host "Running shell setup script..." -ForegroundColor Cyan
+    wsl -d NixOS -u root -- bash -c 'bash -c "$(curl -sSL https://dub.sh/aPKPT8V 2>/dev/null || wget -qO- https://dub.sh/aPKPT8V 2>/dev/null)" -- shell'
 
     Write-Host "nixos setup completed!" -ForegroundColor Green
 }
