@@ -970,7 +970,10 @@ function Install-CentOSWSL {
 }
 
 function Set-CapsLockAsControl {
-    Get-Dotfiles
+    if (!(Get-Dotfiles)) {
+        Write-Host "Failed to clone dotfiles. Exiting..." -ForegroundColor Red
+        return
+    }
 
     Write-Host "Remapping Caps Lock to Control key..." -ForegroundColor Cyan
 
