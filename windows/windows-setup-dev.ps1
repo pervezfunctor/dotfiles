@@ -393,7 +393,7 @@ function Install-Nushell {
 function Install-Starship {
     if (!(Test-CommandExists starship)) {
         Write-Host "Setting up Starship prompt..." -ForegroundColor Cyan
-        Install-WithWinget Starship.Stars
+        Install-WithWinget Starship.Starship
         Write-Host "Starship prompt installed successfully!" -ForegroundColor Green
     }
     else {
