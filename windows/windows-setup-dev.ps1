@@ -266,11 +266,11 @@ function Update-Windows {
         default {
             Write-Host "Skipping Windows updates installation." -ForegroundColor Yellow
         }
+        function Initialize-SSHKey {
+        }
     }
-}
 
-function Initialize-SSHKey {
-    Write-Host "Initializing SSH key..." -ForegroundColor Cyan
+    Write-Host "nitializing SSH key..." -ForegroundColor Cyan
 
     New-Directory -Path "$env:USERPROFILE\.ssh" | Out-Null
 
@@ -356,6 +356,15 @@ function Install-VSCode {
     Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
     Install-WithWinget Microsoft.VisualStudioCode
     Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
+
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+    if (Test-CommandExists code) {
+        Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Visual Studio Code installation completed, but code command not found in PATH." -ForegroundColor Yellow
+        Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
+    }
 }
 
 function Install-Git {
@@ -579,7 +588,7 @@ function Install-CppTools {
 
     if (!(Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\2022")) {
         Write-Host "Installing Visual Studio Build Tools..." -ForegroundColor Cyan
-        Install-WithWinget Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+        winget install --id Microsoft.VisualStudio.2022.BuildTools -e --silent --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
         Write-Host "Visual Studio Build Tools installed successfully!" -ForegroundColor Green
     }
     else {
@@ -669,7 +678,7 @@ function Install-Multipass {
     Write-Host "Multipass installed successfully!" -ForegroundColor Green
     Write-Host "A system restart is required before using Multipass." -ForegroundColor Yellow
 
-    Restart-PC
+    # Restart-PC
 }
 
 function Install-MultipassVM {
@@ -1017,6 +1026,11 @@ function Install-VSCodeExtensions {
 
     if (!(Test-Path $extensionsFile)) {
         Write-Host "Extensions file not found at: $extensionsFile" -ForegroundColor Red
+        return
+    }
+
+    if (!(Test-CommandExists code)) {
+        Write-Host "VS Code is not installed. Please install VS Code first." -ForegroundColor Red
         return
     }
 
@@ -1463,10 +1477,9 @@ function Install-SelectedComponents {
         $ComponentList = $availableComponents.Keys | Where-Object { $_ -ne "all" }
     }
 
+    Initialize-SSHKey
     foreach ($component in $ComponentList) {
         Write-Host "`nProcessing component: $component ($($availableComponents[$component]))" -ForegroundColor Cyan
-
-        Initialize-SSHKey
 
         switch ($component) {
             "windows-update" { Update-Windows }
