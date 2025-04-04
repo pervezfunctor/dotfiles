@@ -1666,7 +1666,7 @@ debian-wslbox_groupstall() {
 centos-wslbox_groupstall() {
     is_centos || err_exit "This script is only for CentOS"
 
-    sudo dnf update
+    sudo dnf update -q -y && sudo dnf upgrade -q -y
     wslbox_base centos
 }
 

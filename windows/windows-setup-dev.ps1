@@ -214,14 +214,8 @@ function Update-Windows {
         Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser
 
         Write-Host "Installing PSWindowsUpdate module..." -ForegroundColor Cyan
-        $originalPolicy = Get-ExecutionPolicy -Scope CurrentUser
-        try {
-            Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser
-            Write-Host "PSWindowsUpdate module installed successfully!" -ForegroundColor Green
-        }
-        finally {
-            Set-ExecutionPolicy -ExecutionPolicy $originalPolicy -Scope CurrentUser -Force
-        }
+        Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser
+        Write-Host "PSWindowsUpdate module installed successfully!" -ForegroundColor Green
     }
 
     Import-Module PSWindowsUpdate
@@ -986,13 +980,13 @@ function Set-CapsLockAsControl {
 
     $regFilePath = "$global:WinDir\caps2ctrl.reg"
 
-    if (Test-Path $regFilePath) {
-        Start-Process -FilePath "regedit.exe" -ArgumentList "/s", "`"$regFilePath`"" -Wait
-        Write-Host "Caps Lock remapped to Control key. A system restart is required." -ForegroundColor Green
-    }
-    else {
+    if (!(Test-Path $regFilePath)) {
         Write-Host "Registry file not found at: $regFilePath" -ForegroundColor Red
+        return
     }
+
+    Start-Process -FilePath "regedit.exe" -ArgumentList "/s", "`"$regFilePath`"" -Wait
+    Write-Host "Caps Lock remapped to Control key. A system restart is required." -ForegroundColor Green
 }
 
 function Install-VSCodeExtensions {
@@ -1114,10 +1108,8 @@ function Initialize-PowerShell {
     $ps5ProfilePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
     $ps7ProfilePath = "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
 
-
     Backup-ConfigFile -FilePath $ps5ProfilePath
     Backup-ConfigFile -FilePath $ps7ProfilePath
-
 
     $sourceProfilePath = "$global:DotDir\powershell\Microsoft.PowerShell_profile.ps1"
 
@@ -1153,21 +1145,7 @@ function Initialize-Dotfiles {
     $null = Backup-ConfigFile -FilePath "$env:APPDATA\nushell"
     New-ConfigLink -sourcePath "$global:DotDir\nushell\dot-config\nushell" -targetPath "$env:APPDATA\nushell"
 
-    Write-Host "Setting up PowerShell config..." -ForegroundColor Cyan
-    $psConfigFile = "$global:DotDir\powershell\Microsoft.PowerShell_profile.ps1"
-    $psProfilePath = $PROFILE
-    $null = New-ConfigDirectory -ConfigPath $psProfilePath
-
-    $originalUserPolicy = Get-ExecutionPolicy -Scope CurrentUser
-    try {
-        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-        Write-Host "PowerShell execution policy set to RemoteSigned for current user" -ForegroundColor Green
-        New-ConfigLink -sourcePath $psConfigFile -targetPath $psProfilePath
-        Write-Host "PowerShell profile linked successfully. You may need to restart PowerShell." -ForegroundColor Green
-    }
-    finally {
-        Set-ExecutionPolicy -ExecutionPolicy $originalUserPolicy -Scope CurrentUser -Force
-    }
+    Initialize-PowerShell
 
     Write-Host "Setting up VS Code config..." -ForegroundColor Cyan
     $vscodeSettingsSource = "$global:DotDir\extras\vscode\wsl-settings.json"
@@ -1460,6 +1438,8 @@ function Install-SelectedComponents {
         Write-Host "`nProcessing component: $component ($($availableComponents[$component]))" -ForegroundColor Cyan
 
         Initialize-SSHKey
+        winget source add --name msstore --arg https://storeedgefd.dsx.mp.microsoft.com/v9/collection --accept-source-agreements
+
         switch ($component) {
             "windows-update" { Update-Windows }
             "wsl" { Install-HyperV-WSL }
