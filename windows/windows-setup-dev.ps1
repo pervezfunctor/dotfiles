@@ -242,7 +242,7 @@ function Update-Windows {
 
     $rebootRequired = $updates | Where-Object { $_.RebootRequired -eq $true }
 
-    if (!$rebootRequired) {
+    if (!($rebootRequired)) {
         Write-Host "Installing Windows updates. This may take some time..." -ForegroundColor Cyan
         Install-WindowsUpdate -AcceptAll -AutoReboot:$false
         Write-Host "Windows updates installed successfully!" -ForegroundColor Green
