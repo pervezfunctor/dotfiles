@@ -687,7 +687,7 @@ function Install-Multipass {
         Write-Host "Failed to install Multipass." -ForegroundColor Red
     }
 
-    # Restart-PC
+    Restart-PC
 }
 
 function Install-MultipassVM {
