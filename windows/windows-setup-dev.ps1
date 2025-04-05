@@ -1,3 +1,5 @@
+#Requires -RunAsAdministrator
+
 <#
 .SYNOPSIS
 Windows development environment setup script.
@@ -70,7 +72,7 @@ function Install-WithWinget {
         [string]$PackageId
     )
 
-    winget install --id $PackageId -e --accept-source-agreements --accept-package-agreements --silent | Out-Null
+    winget install --id $PackageId -e --accept-source-agreements --accept-package-agreements --silent
 }
 
 function Backup-ConfigFile {
@@ -267,24 +269,6 @@ function Update-Windows {
             Write-Host "Skipping Windows updates installation." -ForegroundColor Yellow
         }
     }
-
-    Write-Host "nitializing SSH key..." -ForegroundColor Cyan
-
-    New-Directory -Path "$env:USERPROFILE\.ssh" | Out-Null
-
-    if (Test-Path "$env:USERPROFILE\.ssh\id_rsa") {
-        Write-Host "SSH key already exists." -ForegroundColor Yellow
-        return
-    }
-
-    if (!(Test-CommandExists ssh-keygen)) {
-        Write-Host "ssh-keygen not found. Please install OpenSSH client." -ForegroundColor Red
-        return
-    }
-
-    Write-Host "Generating new SSH key..." -ForegroundColor Cyan
-    ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
-    Write-Host "SSH key generated successfully!" -ForegroundColor Green
 }
 
 function Install-Chocolatey {
@@ -395,41 +379,62 @@ function Install-Nushell {
     Install-WithWinget Nushell.Nushell
 
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+    if (Test-CommandExists nu) {
+        Write-Host "Nushell installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Nushell installation completed, but nu command not found in PATH." -ForegroundColor Yellow
+        Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
+    }
 }
 
 function Install-Starship {
-    if (!(Test-CommandExists starship)) {
-        Write-Host "Setting up Starship prompt..." -ForegroundColor Cyan
-        Install-WithWinget Starship.Starship
-        Write-Host "Starship prompt installed successfully!" -ForegroundColor Green
-    }
-    else {
+    if ((Test-CommandExists starship)) {
         Write-Host "Starship is already installed." -ForegroundColor Yellow
+        return
     }
 
+    Write-Host "Setting up Starship prompt..." -ForegroundColor Cyan
+    Install-WithWinget Starship.Starship
+
+    if ($LastExitCode -ne 0) {
+        Write-Host "Failed to install Starship prompt." -ForegroundColor Red
+    }
+    else {
+        Write-Host "Starship prompt installed successfully!" -ForegroundColor Green
+    }
 }
 
 function Install-Zoxide {
-    if (!(Test-CommandExists zoxide)) {
-        Write-Host "Installing zoxide..." -ForegroundColor Cyan
-        Install-WithWinget ajeetdsouza.zoxide
-        Write-Host "zoxide installed successfully!" -ForegroundColor Green
+    if ((Test-CommandExists zoxide)) {
+        Write-Host "zoxide is already installed." -ForegroundColor Yellow
+        return
+    }
+    Write-Host "Installing zoxide..." -ForegroundColor Cyan
+    Install-WithWinget ajeetdsouza.zoxide
+
+    if ($LastExitCode -ne 0) {
+        Write-Host "Failed to install zoxide." -ForegroundColor Red
     }
     else {
-        Write-Host "zoxide is already installed." -ForegroundColor Yellow
+        Write-Host "zoxide installed successfully!" -ForegroundColor Green
     }
 }
 
+
 function Install-Carapace {
-    if (!(Test-CommandExists carapace)) {
-        Write-Host "Installing carapace..." -ForegroundColor Cyan
-        Install-WithWinget rsteube.Carapace
-        Write-Host "carapace installed successfully!" -ForegroundColor Green
-    }
-    else {
+    if ((Test-CommandExists carapace)) {
         Write-Host "carapace is already installed." -ForegroundColor Yellow
     }
 
+    Write-Host "Installing carapace..." -ForegroundColor Cyan
+    Install-WithWinget rsteube.Carapace
+    if ($LastExitCode -ne 0) {
+        Write-Host "Failed to install carapace." -ForegroundColor Red
+    }
+    else {
+        Write-Host "carapace installed successfully!" -ForegroundColor Green
+    }
 }
 
 function Install-DevTools {
@@ -673,13 +678,24 @@ function Install-Multipass {
     Write-Host "Installing Multipass via winget..." -ForegroundColor Cyan
     Install-WithWinget Canonical.Multipass
 
-    Write-Host "Multipass installed successfully!" -ForegroundColor Green
-    Write-Host "A system restart is required before using Multipass." -ForegroundColor Yellow
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+    if (Test-CommandExists multipass) {
+        Write-Host "Multipass installed successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Failed to install Multipass." -ForegroundColor Red
+    }
 
     # Restart-PC
 }
 
 function Install-MultipassVM {
+    if (!(Test-CommandExists multipass)) {
+        Write-Host "Multipass is not installed. Please install Multipass first." -ForegroundColor Red
+        return
+    }
+
     Write-Host "Setting up Ubuntu 24.10 VM in Multipass..." -ForegroundColor Cyan
 
     if (multipass list | Select-String "ubuntu-ilm") {
@@ -751,6 +767,11 @@ function Initialize-MultipassVMSSH {
     param (
         [string]$VMName = "ubuntu-ilm"
     )
+
+    if (!(Test-CommandExists multipass)) {
+        Write-Host "Multipass is not installed. Please install Multipass first." -ForegroundColor Red
+        return
+    }
 
     Write-Host "Setting up SSH access to Multipass VM '$VMName'..." -ForegroundColor Cyan
 
@@ -882,11 +903,6 @@ function Initialize-CentOSWSL {
 function Install-NixOSWSL {
     Write-Host "Installing NixOS on WSL..." -ForegroundColor Cyan
 
-    if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL command does not exist. Please install WSL first." -ForegroundColor Red
-        return
-    }
-
     $installedDistros = wsl --list --quiet
     if ($installedDistros -contains "NixOS") {
         Write-Host "NixOS is already installed." -ForegroundColor Yellow
@@ -936,7 +952,7 @@ function Install-NixOSWSL {
     Write-Host "To start NixOS, open a terminal and type: wsl -d NixOS" -ForegroundColor Cyan
 
     Write-Host "Running shell setup script..." -ForegroundColor Cyan
-    wsl -d NixOS -u root -- bash -c 'bash -c "$(curl -sSL https://dub.sh/aPKPT8V 2>/dev/null || wget -qO- https://dub.sh/aPKPT8V 2>/dev/null)" -- shell'
+    wsl -d NixOS -u root -- bash -c 'nix-shell -p curl --run "curl -sSL https://dub.sh/aPKPT8V | bash -s -- nixos-wsl"'
 
     Write-Host "nixos setup completed!" -ForegroundColor Green
 }
@@ -1064,8 +1080,11 @@ function Install-NerdFontsWithScoop {
 
 function Install-NerdFonts {
     if (-not (Test-CommandExists choco)) {
-        Write-Host "Chocolatey is not installed. Cannot install Nerd Fonts." -ForegroundColor Red
-        return
+        Install-Chocolatey
+        if (-not (Test-CommandExists choco)) {
+            Write-Host "Failed to install Chocolatey. Cannot install Nerd Fonts." -ForegroundColor Red
+            return
+        }
     }
 
     Write-Host "Installing Nerd Fonts ..." -ForegroundColor Cyan
@@ -1085,14 +1104,25 @@ function Get-Dotfiles {
         Write-Host "Dotfiles already present. Updating..." -ForegroundColor Cyan
 
         Push-Location "$global:DotDir"
-        if ($null -eq (git status --porcelain)) {
-            Write-Host "Pulling latest changes..." -ForegroundColor Cyan
-            git pull --rebase
+        try {
+            if ($null -eq (git status --porcelain)) {
+                Write-Host "Pulling latest changes..." -ForegroundColor Cyan
+                git pull --rebase
+                Write-Host "Dotfiles updated successfully!" -ForegroundColor Green
+                return $true
+            }
+            else {
+                Write-Host "Dotfiles have uncommitted changes. Please commit or stash them before updating." -ForegroundColor Red
+                return $false
+            }
         }
-        Pop-Location
-
-        Write-Host "Dotfiles updated successfully!" -ForegroundColor Green
-        return $true
+        catch {
+            Write-Host "Failed to update dotfiles: $_" -ForegroundColor Red
+            return $false
+        }
+        finally {
+            Pop-Location
+        }
     }
 
     Write-Host "Cloning dotfiles..." -ForegroundColor Cyan
@@ -1175,6 +1205,7 @@ function Initialize-Dotfiles {
 
     Write-Host "Setting up Neovim config..." -ForegroundColor Cyan
     New-ConfigLink -sourcePath "$global:DotDir\nvim\dot-config\nvim" -targetPath "$env:LOCALAPPDATA\nvim"
+    New-ConfigLink -sourcePath "$global:DotDir\nvim\dot-config\nvim" -targetPath "$env:USERPROFILE\.config\nvim"
 
     Write-Host "Setting up Emacs config..." -ForegroundColor Cyan
     New-ConfigLink -sourcePath "$global:DotDir\emacs-slim\dot-emacs" -targetPath "$env:USERPROFILE\.emacs"
