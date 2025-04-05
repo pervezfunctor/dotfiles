@@ -221,3 +221,5 @@ source_if_exists "$HOME/.localzshrc"
 # is_wsl && is_suse && sudo systemd-tmpfiles --create
 
 # one_shell_tmux
+
+source_if_exists ~/.config/broot/launcher/bash/br

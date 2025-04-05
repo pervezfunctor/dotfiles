@@ -192,7 +192,6 @@ kitty_bin_install() {
     # force link
     ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
 
-
     smd ~/.local/share/applications
     cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
     cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
@@ -886,7 +885,7 @@ vscode_extensions_from_file() {
             slog "Installing extension: $extension"
             code --install-extension "$extension"
         fi
-    done < "$extensions_file"
+    done <"$extensions_file"
 }
 
 vscode-extensions_install() {
@@ -1284,12 +1283,12 @@ home_manager_install() {
 
     slog "Setting up home-manager"
 
-    if ! dir_exists $DOT_DIR; then
+    if ! dir_exists "$DOT_DIR"; then
         warn "could not clone dotfiles respository to $DOT_DIR, Quitting"
         return 1
     fi
 
-    nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake $DOT_DIR/home-manager/dot-config/home-manager\#ilm --impure -b bak
+    nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#ilm --impure -b bak
 
     if file_exists /etc/nix/nix.conf; then
         if ! grep -q nix-command flakes /etc/nix/nix.conf 2>/dev/null; then
@@ -1583,7 +1582,7 @@ nvim_install() {
     has_cmd nvim || err_exit "nvim not installed! Qutting."
 
     srm ~/.config/nvim
-    ln -s $DOT_DIR/nvim/dot-config/nvim ~/.config/nvim
+    ln -s "$DOT_DIR/nvim/dot-config/nvim" ~/.config/nvim
 }
 
 emacs_install() {
@@ -1600,7 +1599,7 @@ emacs_install() {
 
     srm ~/.emacs
     srm ~/.emacs.d
-    ln -s $DOT_DIR/emac-slim/dot-emacs ~/.emacs
+    ln -s "$DOT_DIR/emac-slim/dot-emacs" ~/.emacs
 }
 
 tmux_install() {
@@ -1616,7 +1615,7 @@ tmux_install() {
 
     srm ~/.config/tmux
     smd ~/.config/tmux
-    ln -s $DOT_DIR/tmux/dot-config/tmux/tmux.conf ~/.config/tmux/tmux.conf
+    ln -s "$DOT_DIR/tmux/dot-config/tmux/tmux.conf" ~/.config/tmux/tmux.conf
 }
 
 zsh_install() {
@@ -1626,7 +1625,7 @@ zsh_install() {
     has_cmd zsh || err_exit "zsh not installed! Qutting."
 
     srm ~/.zshrc
-    ln -s $DOT_DIR/zsh/dot-zshrc ~/.zshrc
+    ln -s "$DOT_DIR/zsh/dot-zshrc" ~/.zshrc
 }
 
 box_base() {
@@ -1673,8 +1672,8 @@ centos-wslbox_groupstall() {
 nixos-wslbox_groupstall() {
     is_wsl || err_exit "This script is only for NixOS WSL"
 
-    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git $DOT_DIR
-    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#stow -- -d $DOT_DIR -t $HOME --dotfiles -R nixos-wsl nvim
+    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR"
+    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#stow -- -d "$DOT_DIR" -t "$HOME" --dotfiles -R nixos-wsl nvim
     nix run --extra-experimental-features 'nix-command flakes' home-manager -- switch --impure -b bak
 }
 
@@ -1972,7 +1971,7 @@ centos-fast_groupstall() {
 
     sudo dnf update
     sudo dnf install -y git-core wget curl gcc make unzip tar tree neovim tmux \
-        zsh gcc-c++ gdb clang lldb lld llvm bat gum  ripgrep luarocks
+        zsh gcc-c++ gdb clang lldb lld llvm bat gum ripgrep luarocks
 
     pixi_install
     pixi global install trash-cli fzf lazygit eza zoxide gh git-delta

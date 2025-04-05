@@ -148,7 +148,8 @@ fln() {
 backup_file() {
     local file="$1"
     if [[ -f "$file" ]]; then
-        local timestamp=$(date +"%Y%m%d-%H%M%S")
+        local timestamp
+        timestamp=$(date +"%Y%m%d-%H%M%S")
         local backup_path="${file}.backup-${timestamp}"
 
         if cp -f "$file" "$backup_path"; then
@@ -317,7 +318,7 @@ is_wsl() {
 is_multipass() {
     # Check for multipass in cloud-init instance data
     [ -f "/run/cloud-init/instance-data.json" ] &&
-    grep -q "multipass" /run/cloud-init/instance-data.json
+        grep -q "multipass" /run/cloud-init/instance-data.json
 }
 
 is_hyperv() {
@@ -453,7 +454,7 @@ is_desktop() {
 }
 
 fn_exists() {
-    [[ $(type -t $1) == function ]]
+    [[ $(type -t "$1") == function ]]
 }
 
 pre_dir_check() {
@@ -505,11 +506,11 @@ select-one() {
 }
 
 hms() {
-    nix run home-manager -- switch --flake $DOT_DIR/home-manager/dot-config/home-manager\#ilm --impure -b bak
+    nix run home-manager -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#ilm --impure -b bak
 }
 
 hms-wsl() {
-    nix run home-manager -- switch --flake $DOT_DIR/nixos-wsl/dot-config/home-manager\#nixos --impure -b bak
+    nix run home-manager -- switch --flake "$DOT_DIR"/nixos-wsl/dot-config/home-manager\#nixos --impure -b bak
 }
 
 SUDO_KEEPALIVE_PID=""
@@ -524,7 +525,8 @@ _stop_sudo_keepalive() {
 
 keep_sudo_running() {
     if ! has_cmd sudo; then
-        slog "Error: sudo command not found." >&2; return 1;
+        slog "Error: sudo command not found." >&2
+        return 1
     fi
 
     if ! sudo -v; then
@@ -535,8 +537,8 @@ keep_sudo_running() {
     slog "Sudo credentials active."
     (
         while true; do
-        sudo -n true 2>/dev/null
-        sleep 60
+            sudo -n true 2>/dev/null
+            sleep 60
         done
     ) &
 
