@@ -1497,6 +1497,26 @@ function Show-Menu {
     return $selections
 }
 
+function Initialize-SSHKey {
+    Write-Host "Initializing SSH key..." -ForegroundColor Cyan
+
+    New-Directory -Path "$env:USERPROFILE\.ssh" | Out-Null
+
+    if (Test-Path "$env:USERPROFILE\.ssh\id_rsa") {
+        Write-Host "SSH key already exists." -ForegroundColor Yellow
+        return
+    }
+
+    if (!(Test-CommandExists ssh-keygen)) {
+        Write-Host "ssh-keygen not found. Please install OpenSSH client." -ForegroundColor Red
+        return
+    }
+
+    Write-Host "Generating new SSH key..." -ForegroundColor Cyan
+    ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
+    Write-Host "SSH key generated successfully!" -ForegroundColor Green
+}
+
 function Install-SelectedComponents {
     param (
         [string[]]$ComponentList
@@ -1506,8 +1526,11 @@ function Install-SelectedComponents {
         $ComponentList = $availableComponents.Keys | Where-Object { $_ -ne "all" }
     }
 
+    Initialize-SSHKey
+
     foreach ($component in $ComponentList) {
         Write-Host "`nProcessing component: $component ($($availableComponents[$component]))" -ForegroundColor Cyan
+
 
         switch ($component) {
             "windows-update" { Update-Windows }
