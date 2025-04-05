@@ -76,6 +76,49 @@ Reboot your computer. Then use the following commands.
 
 If you want to install all WSL distributions available and setup multipass along with a decent windows powershell configuration, use the following command.
 
+Install windows updates first. This might require reboot.
+
+```powershell
+iex "& { $(iwr -useb https://dub.sh/NDyiu7a) } -Components windows-update"
+```
+
+Install WSL next. You might have to reboot again.
+
+```powershell
+iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components wsl }"
+```
+
+Install ubuntu wsl.
+
+```powershell
+iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components wsl-ubuntu }"
+```
+
+If you want multipass. You might have to reboot again.
+
+```powershell
+iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components multipass }"
+```
+
+Install multipass vm.
+
+```powershell
+iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components multipass-vm }"
+```
+
+Install the folowing for sure.
+
+```powershell
+iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components nerd-fonts vscode }"
+```
+
+If you want to install everything, use the following command .
+```
+iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components all }"
+```
+
+Or pick and choose.
+
 ```powershell
 iwr -useb https://dub.sh/NDyiu7a | iex
 ```
