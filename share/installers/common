@@ -1160,22 +1160,22 @@ pyenv_install() {
 }
 
 pyenv_anaconda_install() {
-    if has_cmd pyenv; then
-        if ! pyenv versions | grep anaconda >/dev/null; then
-            local anacondaversion
-            anacondaversion=$(pyenv install --list | grep anaconda | tail -1)
-            slog "Installing $anacondaversion"
-            pyenv install "$anacondaversion"
-            smd ~/py
-            if cd ~/py; then
-                pyenv global "$anacondaversion"
-                python -m pip install --user pipx neovim uv
-            else
-                warn "$HOME/py doesn't exist, skipping part of python install"
-            fi
-        fi
-    else
+    if ! has_cmd pyenv; then
         warn "pyenv not installed, skipping anaconda"
+    fi
+
+    if ! pyenv versions | grep anaconda >/dev/null; then
+        local anacondaversion
+        anacondaversion=$(pyenv install --list | grep -i "anaconda3-" | sort -V | tail -1 | tr -d '[:space:]')
+        slog "Installing $anacondaversion"
+        pyenv install "$anacondaversion"
+        smd ~/py
+        if cd ~/py; then
+            pyenv global "$anacondaversion"
+            python -m pip install --user pipx neovim uv
+        else
+            warn "$HOME/py doesn't exist, skipping part of python install"
+        fi
     fi
 
     cmd_check conda
