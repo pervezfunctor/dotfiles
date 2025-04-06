@@ -1142,18 +1142,21 @@ poetry_install() {
 }
 
 pyenv_install() {
-    has_cmd pyenv && return 0
+    if has_cmd pyenv; then
+        eval "$(pyenv init -)"
+        return 0
+    fi
 
     slog "Installing pyenv"
     sclone https://github.com/yyuu/pyenv.git ~/.pyenv
     sclone https://github.com/yyuu/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv
     slog "pyenv installation done!"
 
-    cmd_check pyenv
-
     export PYENV_ROOT="$HOME/.pyenv"
     export PATH="$PYENV_ROOT/bin:$PATH"
-    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+
+    cmd_check pyenv
 }
 
 pyenv_anaconda_install() {
@@ -1167,8 +1170,7 @@ pyenv_anaconda_install() {
             smd ~/py
             if cd ~/py; then
                 pyenv global "$anacondaversion"
-                python -m pip install --user pipx neovim
-                poetry_install
+                python -m pip install --user pipx neovim uv
             else
                 warn "$HOME/py doesn't exist, skipping part of python install"
             fi
