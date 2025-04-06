@@ -1162,10 +1162,9 @@ pyenv_install() {
 pyenv_anaconda_install() {
     if has_cmd pyenv; then
         if ! pyenv versions | grep anaconda >/dev/null; then
-            slog "Installing anaconda"
             local anacondaversion
             anacondaversion=$(pyenv install --list | grep anaconda | tail -1)
-
+            slog "Installing $anacondaversion"
             pyenv install "$anacondaversion"
             smd ~/py
             if cd ~/py; then
