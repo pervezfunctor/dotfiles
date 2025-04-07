@@ -45,7 +45,6 @@ essential_install() {
     slog "Installing Essential packages"
 
     core_install
-    # mise_install
 
     bis gawk p7zip cmake unar zip
 
@@ -102,6 +101,17 @@ pyenv_mac_install() {
     slog "Installing pyenv"
     bi pyenv
     bi pyenv-virtualenv
+}
+
+emacs_bin_install() {
+    dir_exists /Applications/Emacs.app && return 0
+    dir_exists /usr/local/opt/emacs-mac && return 0
+
+    slog "Installing emacs"
+
+    bic emacs-mac
+
+    slog "emacs installation done!"
 }
 
 docker_install() {
