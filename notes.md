@@ -18,3 +18,9 @@ iwr -useb https://dub.sh/kIv4BnI | iex
 ```powershell
 Set-VMProcessor -VMName <VMName> -ExposeVirtualizationExtensions $true
 ```
+
+- Install base from this repository
+
+```bash
+curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/share/installers/setup | bash
+```

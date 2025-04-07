@@ -1,8 +1,6 @@
-# Manual Installation Instructions
+# Minimal Installation Instructions
 
-## Initial set of instructions
-
-### Windows
+## Windows
 
 1. Make sure you have latest windows 11 updates.
 
@@ -46,7 +44,7 @@
 
 8. Follow the linux and vscode instructions below.
 
-### MACOS
+## MACOS
 
 1. Install xcode command line tools
 
@@ -105,7 +103,11 @@
 
 ### Linux
 
-1. There are lot's of linux distributions. If you want to use OS package manager for most things, use `Fedora` or `Tumbleweed`. Your base linux doesn't matter much if you use `distrobox` or `toolobox` or `devcontainers`, in this case `Ubuntu` or `CentOS Stream` is fine.
+1. Install base system packages and configure this repository using the following command on linux or macos.
+
+   ```bash
+   bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- min
+   ```
 
 2. Install essential packages. Following will work on `Ubuntu`.
 
