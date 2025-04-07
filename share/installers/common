@@ -1939,17 +1939,6 @@ nix_groupstall() {
     cmd_check home-manager nix devbox
 }
 
-min-group_check() {
-    cmd_check micro zip unar
-}
-
-min_groupstall() {
-    base_groupstall
-    essential_install
-
-    min-group_check
-}
-
 wsl_groupstall() {
     wslbox_groupstall
     python_install
@@ -1981,6 +1970,17 @@ centos-fast_groupstall() {
     tmux_install
     nvim_install
     zsh_install
+}
+
+min-group_check() {
+    cmd_check micro zip unar
+}
+
+min_groupstall() {
+    base_groupstall
+    essential_install
+
+    min-group_check
 }
 
 shell-group_check() {
