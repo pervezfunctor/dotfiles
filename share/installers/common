@@ -1629,6 +1629,15 @@ zsh_install() {
     ln -s "$DOT_DIR/zsh/dot-zshrc" ~/.zshrc
 }
 
+terminal_install() {
+    terminal_bin_install
+    nerd_fonts_install
+
+    has_cmd ghostty && ghostty_config_install
+    has_cmd kitty && kitty_config_install
+    # ptyxis_config_install
+}
+
 box_base() {
     slimbox_base "$1"
 
