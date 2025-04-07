@@ -34,7 +34,7 @@ compinit
 
 export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
 zstyle ':completion:::::default' menu select
-zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
+# zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
 
 if has_cmd starship; then
     eval "$(starship init zsh)"

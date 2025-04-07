@@ -36,6 +36,7 @@ core_install() {
     xcode-select --install
     brew_install
 
+    bi mas
     bi coreutils bash
     bis curl wget trash tree unzip coreutils gum stow
 }
@@ -101,4 +102,27 @@ pyenv_mac_install() {
     slog "Installing pyenv"
     bi pyenv
     bi pyenv-virtualenv
+}
+
+docker_install() {
+    has_cmd docker && return 0
+    dir_exists /Applications/Docker.app && return 0
+
+    slog "Installing docker"
+
+    if [ -f ~/Downloads/Docker.dmg ]; then
+        warn "Docker.dmg already exists, skipping download"
+    else
+        curl -sSL https://desktop.docker.com/mac/main/amd64/Docker.dmg -o ~/Downloads/Docker.dmg
+    fi
+
+    if [ -d /Volumes/Docker ]; then
+        warn "Docker.dmg already mounted, unmounting"
+        sudo hdiutil detach /Volumes/Docker
+    fi
+    sudo hdiutil attach ~/Downloads/Docker.dmg
+    sudo /Volumes/Docker/Docker.app/Contents/MacOS/install
+    sudo hdiutil detach /Volumes/Docker
+
+    slog "docker installation done!"
 }
