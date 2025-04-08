@@ -49,6 +49,7 @@
 # theme = rose-pine-moon
 
 theme = rose-pine-moon
+font-family = JetBrainsMonoNL NFM Medium
 font-size = 12
 background-blur-radius = 20
 mouse-hide-while-typing = true
