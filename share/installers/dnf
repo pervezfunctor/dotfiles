@@ -128,22 +128,28 @@ vscode_bin_install() {
     cmd_check code
 }
 
-ghostty_bin_install() {
+terminal_bin_install() {
     has_cmd ghostty && return 1
 
     if is_fedora; then
         sudo dnf copr -y enable pgdev/ghostty
         si ghostty
-        return 0
-    fi
 
-    warn "ghostty not available for CentOS/Rocky, skipping"
+        cmd_check ghostty
+    else
+        si kitty
+
+        if ! has_cmd kitty; then
+            si alacritty
+            cmd_check alacritty
+        fi
+    fi
 }
 
 ui_install() {
     si virt-manager chromium gnome-keyring xsel xclip wl-clipboard
 
-    ghostty_bin_install
+    terminal_bin_install
     vscode_bin_install
     apps_install
 }

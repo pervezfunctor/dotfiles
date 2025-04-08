@@ -13,13 +13,17 @@ vscode_bin_install() {
     bi visual-studio-code
 }
 
+terminal_bin_install() {
+    bic ghostty
+}
+
 ui_install() {
+    terminal_bin_install
     vscode_bin_install
 
     bi deluge
     bic telegram
     bic zoom
-    bic ghostty
     bic google-chrome
     bic microsoft-remote-desktop
     bic nikitabobko/tap/aerospace

@@ -105,16 +105,25 @@ uv_install() {
 python_install() {
     slog "Installing python tools"
 
+    has_cmd sys_python_install && sys_python_install
+
+    if ! has_cmd python3; then
+        warn "python3 not installed! Skipping python setup."
+        return 1
+    fi
+
     if ! has_cmd pipx; then
         if ! has_cmd pip; then
             python3 -m ensurepip --user --default-pip
             python3 -m pip install --user --force-reinstall --upgrade pip
         fi
-        has_cmd pip || return 1
 
-        pip install --upgrade --force-reinstall pipx
-        cmd_check pipx
-        has_cmd pipx || return 1
+        if has_cmd pip; then
+            pip install --upgrade --force-reinstall pipx
+            cmd_check pipx
+        else
+            warn "pip not installed! Skipping python setup."
+        fi
     fi
 
     uv_install
@@ -1635,6 +1644,12 @@ terminal_install() {
 
     has_cmd ghostty && ghostty_config_install
     has_cmd kitty && kitty_config_install
+    has_cmd alacritty && alacritty_config_install
+
+    if is_linux; then
+        flathub_install
+        ptyxis_install
+    fi
     # ptyxis_config_install
 }
 

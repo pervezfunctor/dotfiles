@@ -78,9 +78,14 @@ vscode_bin_install() {
     cmd_check code
 }
 
-ui_install() {
-    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard ghostty
+terminal_bin_install() {
+    si ghostty
+}
 
+ui_install() {
+    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard
+
+    terminal_bin_install
     vscode_bin_install
     apps_install
 }

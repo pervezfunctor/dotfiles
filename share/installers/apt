@@ -145,15 +145,18 @@ windsurf_install() {
     slog "windsurf installation done!"
 }
 
-ui_install() {
-    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
-
+terminal_bin_install() {
     if has_cmd snap; then
         snap install ghostty --classic
     else
         si kitty
     fi
+}
 
+ui_install() {
+    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
+
+    terminal_bin_install
     vscode_bin_install
     apps_install
 }
