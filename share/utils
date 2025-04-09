@@ -1,22 +1,59 @@
 #! /usr/bin/env bash
 
 export DOT_DIR=${USE_DOT_DIR:-$HOME/.ilm}
-
-BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
-
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+export BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
+
+select-one() {
+    local PS3="Please enter your choice: "
+    select result in "$@"; do
+        if [[ -n "$result" ]]; then
+            break
+        fi
+    done
+    echo "$result"
+}
+
+press_enter() {
+    echo "Press Enter to continue..."
+    read -r
+}
 
 safe_append() {
     if ! grep -q "$1" "$2" 2>/dev/null; then
         slog "Adding $1 to $2"
-        echo "$1" >>"$2"
+
+        if [[ ! -f "$2" ]] && ! touch "$2" 2>/dev/null; then
+            fail "Cannot create or access $2 for appending"
+            return 1
+        fi
+
+        if ! echo "$1" >>"$2"; then
+            fail "Failed to append content to $2"
+            return 1
+        fi
+
+        return 0
     fi
 }
 
 safe_prepend() {
     if ! grep -q "$1" "$2" 2>/dev/null; then
         slog "Prepending $1 to $2"
-        echo "$1" | cat - "$2" >temp && mv temp "$2"
+        local tmpfile
+        tmpfile=$(mktemp)
+
+        if ! echo "$1" | cat - "$2" >"$tmpfile"; then
+            fail "Failed to create temporary file for prepending"
+            rm -f "$tmpfile"
+            return 1
+        fi
+
+        if ! mv "$tmpfile" "$2"; then
+            fail "Failed to update $2 with prepended content"
+            rm -f "$tmpfile"
+            return 1
+        fi
     fi
 }
 
@@ -27,35 +64,83 @@ source_if_exists() {
 
 source_curl() {
     slog "Sourcing: $1"
-    if has_cmd curl; then
-        # shellcheck disable=SC1090
-        source <(curl -sSL "$1") || warn "Cannot source $1"
+    local temp_file
+    temp_file=$(mktemp)
 
+    if has_cmd curl; then
+        if ! curl -sSL --fail "$1" -o "$temp_file"; then
+            warn "Failed to download $1"
+            rm -f "$temp_file"
+            return 1
+        fi
     elif has_cmd wget; then
-        # shellcheck disable=SC1090
-        source <(wget -qO- "$1") || warn "Cannot source $1"
+        if ! wget -q --no-check-certificate "$1" -O "$temp_file"; then
+            warn "Failed to download $1"
+            rm -f "$temp_file"
+            return 1
+        fi
     else
         warn "curl or wget not found, Cannot source $1"
+        rm -f "$temp_file"
+        return 1
     fi
+
+    # shellcheck disable=SC1090
+    if ! source "$temp_file"; then
+        warn "Cannot source $1"
+    fi
+
+    rm -f "$temp_file"
+    return 0
 }
 
 sh_curl() {
-    slog "executing code from $1"
+    slog "Executing code from $1"
+
+    local temp_file
+    temp_file=$(mktemp)
 
     if has_cmd curl; then
-        curl -sSL "$1" | bash
+        if ! curl -sSL --fail "$1" -o "$temp_file"; then
+            warn "Failed to download $1"
+            rm -f "$temp_file"
+            return 1
+        fi
     elif has_cmd wget; then
-        wget -qO- "$1" | bash
+        if ! wget -q --no-check-certificate "$1" -O "$temp_file"; then
+            warn "Failed to download $1"
+            rm -f "$temp_file"
+            return 1
+        fi
     else
         warn "curl or wget not found, Cannot execute $1"
+        return 1
     fi
+
+    # shellcheck disable=SC1090
+    if ! bash "$temp_file"; then
+        warn "Failed to execute $1"
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    rm -f "$temp_file"
+    return 0
 }
 
 source_dotfile() {
     if [ -d "$DOT_DIR" ]; then
-        # shellcheck disable=SC1090
-        source "$DOT_DIR/$1"
+        local dotfile="$DOT_DIR/$1"
+        if [ -f "$dotfile" ]; then
+            slog "Sourcing local dotfile: $dotfile"
+            # shellcheck disable=SC1090
+            source "$dotfile"
+        else
+            fail "Local dotfile not found: $dotfile"
+            source_curl "$BASE_URL/$1"
+        fi
     else
+        slog "Dotfiles directory not found, sourcing from remote: $BASE_URL/$1"
         source_curl "$BASE_URL/$1"
     fi
 }
@@ -101,30 +186,103 @@ has_cmd() {
 }
 
 sclone() {
+    if [ $# -lt 2 ]; then
+        fail "sclone requires at least 2 arguments"
+        return 1
+    fi
+
     local dest=${*: -1}
     local src=${*: -2:1}
 
-    [ -d "$dest" ] && return 1
+    if [ -d "$dest" ]; then
+        if cd "$dest" && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            slog "Updating existing repository in $dest"
+
+            local stashed=1
+            if git --porcelain status | grep -q '^'; then
+                slog "Repository not clean, stashing changes"
+                if ! git stash --include-untracked; then
+                    warn "Failed to stash changes"
+                    # shellcheck disable=SC2164
+                    cd - >/dev/null
+                    return 1
+                fi
+                stashed=0
+            fi
+
+            if git pull --rebase; then
+                if [ $stashed -eq 0 ]; then
+                    slog "Applying stashed changes"
+                    if ! git stash pop; then
+                        warn "Failed to apply stashed changes, they remain in the stash"
+                    fi
+                fi
+            else
+                warn "Rebase failed, aborting"
+                git rebase --abort
+                if [ $stashed -eq 0 ]; then
+                    slog "Restoring stashed changes"
+                    if ! git stash pop; then
+                        warn "Failed to restore stashed changes, they remain in the stash"
+                    fi
+                fi
+            fi
+            # shellcheck disable=SC2164
+            cd - >/dev/null 2>&1
+        fi
+
+    fi
 
     slog "Cloning $src to $dest"
-    git clone "$@"
+    if ! git clone "$@"; then
+        fail "Failed to clone $src to $dest"
+        return 1
+    fi
+    return 0
 }
 
 fclone() {
+    if [ $# -lt 2 ]; then
+        fail "fclone requires at least 2 arguments"
+        return 1
+    fi
+
     local dest=${*: -1}
     local src=${*: -2:1}
 
     srm "$dest"
+
+    if dir_exists "$dest"; then
+        fail "Destination directory $dest already exists. Cannot clone."
+        return 1
+    fi
+
     slog "Cloning $src to $dest"
-    git clone "$@"
+    if ! git clone "$@"; then
+        fail "Failed to clone $src to $dest"
+        return 1
+    fi
+    return 0
 }
 
 smv() {
+    if [ $# -ne 2 ]; then
+        fail "smv requires exactly 2 arguments"
+        return 1
+    fi
+
+    if [ ! -e "$1" ]; then
+        fail "$1 does not exist, cannot move to $2"
+        return 1
+    fi
+
     if mv "$1" "$2" 2>/dev/null; then
         slog "Moved $1 to $2"
         return 0
+    else
+        fail "Failed to move $1 to $2"
+        return 1
     fi
-    return 1
 }
 
 smd() {
@@ -135,32 +293,33 @@ smd() {
 }
 
 fln() {
-    if [ -e "$1" ]; then
-        srm "$2"
-    else
-        warn "$1 does not exist, cannot create link $2"
+    if ! [ -e "$1" ]; then
+        fail "$1 does not exist, link to $2 not created"
         return 1
     fi
+
+    srm "$2"
     slog "Creating link $2 to $1"
     ln -s "$1" "$2"
 }
 
 backup_file() {
     local file="$1"
-    if [[ -f "$file" ]]; then
-        local timestamp
-        timestamp=$(date +"%Y%m%d-%H%M%S")
-        local backup_path="${file}.backup-${timestamp}"
 
-        if cp -f "$file" "$backup_path"; then
-            slog "Created backup of $(basename "$file") at $backup_path"
-            return 0
-        else
-            warn "Failed to create backup of $file"
-            return 1
-        fi
+    if ! [[ -f "$file" ]]; then
+        warn "File $file does not exist, no backup created"
+        return 1
+    fi
+
+    local timestamp
+    timestamp=$(date +"%Y%m%d-%H%M%S")
+    local backup_path="${file}.backup-${timestamp}"
+
+    if cp -f "$file" "$backup_path"; then
+        slog "Created backup of $(basename "$file") at $backup_path"
+        return 0
     else
-        warn "File $file does not exist, cannot create backup"
+        warn "Failed to create backup of $file"
         return 1
     fi
 }
@@ -196,50 +355,94 @@ frm() {
 }
 
 safe-cp() {
-    if [ -e "$1" ]; then
-        if [ -e "$2" ]; then
-            warn "$2 already exists, cannot copy $1"
-        else
-            slog "Copying $1 to $2"
-            cp -r "$1" "$2"
-        fi
+    if [ $# -ne 2 ]; then
+        fail "safe-cp requires exactly 2 arguments"
+        return 1
+    fi
+
+    if [ ! -e "$1" ]; then
+        fail "$1 does not exist, cannot copy to $2"
+        return 1
+    fi
+
+    if [ -e "$2" ]; then
+        warn "$2 already exists, cannot copy $1"
+        return 1
+    fi
+
+    slog "Copying $1 to $2"
+    if cp -r "$1" "$2" 2>/dev/null; then
+        return 0
     else
-        warn "$1 does not exist, cannot copy to $2"
+        fail "Failed to copy $1 to $2"
         return 1
     fi
 }
 
 fcp() {
-    if [ -e "$1" ]; then
-        srm "$2"
-    else
-        warn "$1 does not exist, cannot copy to $2"
+    if [ $# -ne 2 ]; then
+        fail "fcp requires exactly 2 arguments"
         return 1
     fi
+
+    if [ ! -e "$1" ]; then
+        fail "$1 does not exist, cannot copy to $2"
+        return 1
+    fi
+
+    srm "$2"
+
     slog "Copying $1 to $2"
-    cp -r "$1" "$2"
+    if cp -r "$1" "$2" 2>/dev/null; then
+        return 0
+    else
+        fail "Failed to copy $1 to $2"
+        return 1
+    fi
 }
 
 fmv() {
-    if [ -e "$1" ]; then
-        srm "$2"
-    else
+    if [ $# -ne 2 ]; then
+        fail "fmv requires exactly 2 arguments"
+        return 1
+    fi
+
+    if [ ! -e "$1" ]; then
         warn "$1 does not exist, cannot move to $2"
         return 1
     fi
+
+    srm "$2"
+
     slog "Moving $1 to $2"
-    mv "$1" "$2"
+    if mv "$1" "$2" 2>/dev/null; then
+        return 0
+    else
+        fail "Failed to move $1 to $2"
+        return 1
+    fi
 }
 
 omv() {
+    if [ $# -ne 2 ]; then
+        fail "omv requires exactly 2 arguments"
+        return 1
+    fi
+
     if [ -e "$1" ]; then
         srm "$2"
     else
+        fail "$1 does not exist, cannot move to $2"
         return 1
     fi
 
     slog "Moving $1 to $2"
-    mv "$1" "$2"
+    if mv "$1" "$2" 2>/dev/null; then
+        return 0
+    else
+        fail "Failed to move $1 to $2"
+        return 1
+    fi
 }
 
 sln() {
@@ -249,16 +452,24 @@ sln() {
     fi
 
     if ! [[ -e "$1" ]]; then
-        warn "$1 does not exist, cannot create the link $2"
+        fail "$1 does not exist, link to $2 not created"
         return 1
-    elif [[ -L "$2" ]]; then
+    fi
+
+    if [[ -L "$2" ]]; then
         srm "$2"
     elif [[ -e "$2" ]]; then
         warn "$2 exists and not a symbolic link! not creating link"
         return 1
     fi
+
     slog "Creating link $2 to $1"
-    ln -s "$1" "$2"
+    if ln -s "$1" "$2" 2>/dev/null; then
+        return 0
+    else
+        fail "Failed to create symbolic link from $2 to $1"
+        return 1
+    fi
 }
 
 spath_export() {
@@ -316,15 +527,16 @@ is_wsl() {
 }
 
 is_multipass() {
-    # Check for multipass in cloud-init instance data
     [ -f "/run/cloud-init/instance-data.json" ] &&
         grep -q "multipass" /run/cloud-init/instance-data.json
 }
 
 is_hyperv() {
-    if [ -e /sys/hypervisor/type ] && grep -qi "hyperv" /sys/hypervisor/type; then
+    if [ -e /sys/hypervisor/type ] &&
+        grep -qi "hyperv" /sys/hypervisor/type; then
         return 0
-    elif [ -e /sys/class/dmi/id/product_name ] && grep -qi "virtual machine" /sys/class/dmi/id/product_name; then
+    elif [ -e /sys/class/dmi/id/product_name ] &&
+        grep -qi "virtual machine" /sys/class/dmi/id/product_name; then
         return 0
     elif [ -e /proc/cpuinfo ] && grep -qi "hypervisor" /proc/cpuinfo; then
         return 0
@@ -336,7 +548,9 @@ is_hyperv() {
 is_ubuntu() {
     local ID
     ID=$(get_os)
-    [[ "$ID" == *"ubuntu"* ]] || [[ "$ID" == *"neon"* ]] || [[ "$ID" == *"elementary"* ]] || [[ "$ID" == *"linuxmint"* ]] || [[ "$ID" == *"pop"* ]]
+    [[ "$ID" == *"ubuntu"* ]] || [[ "$ID" == *"neon"* ]] ||
+        [[ "$ID" == *"elementary"* ]] || [[ "$ID" == *"linuxmint"* ]] ||
+        [[ "$ID" == *"pop"* ]]
 }
 
 is_inside_distrobox() {
@@ -356,19 +570,24 @@ gnome_major_version() {
 }
 
 is_gnome() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME" ]] || [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME-Shell" ]] && [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "gnome" ]]
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME" ]] ||
+        [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME-Shell" ]] &&
+        [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "gnome" ]]
 }
 
 is_kde() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "KDE" ]] || [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "plasma" ]]
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "KDE" ]] ||
+        [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "plasma" ]]
 }
 
 is_sway() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Sway" ]] || [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "sway" ]]
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Sway" ]] ||
+        [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "sway" ]]
 }
 
 is_hyprland() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Hyprland" ]] || [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "hyprland" ]]
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Hyprland" ]] ||
+        [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "hyprland" ]]
 }
 
 is_fedora() {
@@ -392,7 +611,8 @@ is_silverblue() {
 
     # shellcheck disable=SC1091
     . /etc/os-release
-    [[ "${ID:-}" =~ .*[Ss]ilverblue.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Ss]ilverblue.* ]]
+    [[ "${ID:-}" =~ .*[Ss]ilverblue.* ]] ||
+        [[ "${PRETTY_NAME:-}" =~ .*[Ss]ilverblue.* ]]
 }
 
 is_aurora() {
@@ -480,9 +700,19 @@ cmd_check() {
 }
 
 ln_to_exists() {
-    local rl=readlink
-    is_mac && rl=greadlink
-    [[ "$1" == $($rl -f "$2") ]]
+    local rl="readlink"
+
+    if is_mac; then
+        if has_cmd greadlink; then
+            rl="greadlink"
+        else
+            fail "greadlink not found, cannot check if $2 is a link to $1"
+            return 1
+        fi
+    fi
+
+    [[ "$1" == $($rl -f "$2" 2>/dev/null) ]]
+    return $?
 }
 
 ln_check() {
@@ -495,22 +725,17 @@ file_check() {
     done
 }
 
-select-one() {
-    local PS3="Please enter your choice: "
-    select result in "$@"; do
-        if [[ -n "$result" ]]; then
-            break
-        fi
-    done
-    echo "$result"
+hms-wsl() {
+    nix run home-manager -- switch --flake "$DOT_DIR"/nixos-wsl/dot-config/home-manager\#nixos --impure -b bak
 }
 
 hms() {
-    nix run home-manager -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#ilm --impure -b bak
-}
+    if is_wsl; then
+        hms-wsl
+        return 0
+    fi
 
-hms-wsl() {
-    nix run home-manager -- switch --flake "$DOT_DIR"/nixos-wsl/dot-config/home-manager\#nixos --impure -b bak
+    nix run home-manager -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#ilm --impure -b bak
 }
 
 SUDO_KEEPALIVE_PID=""
@@ -808,10 +1033,5 @@ bootstrap() {
     slog "Installation done! Look at /tmp/dotfiles-error.log for any errors."
 
     # shellcheck disable=SC2164
-    cd "$curdir"
-}
-
-press_enter() {
-    echo "Press Enter to continue..."
-    read -r
+    cd "$curdir" || cd
 }
