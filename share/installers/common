@@ -939,7 +939,6 @@ emacs-doom_config_install() {
     slog "Installing doom"
 
     sclone --depth=1 https://github.com/doomemacs/doomemacs "$XDG_CONFIG_HOME/emacs"
-    omv "$XDG_CONFIG_HOME/doom" "$XDG_CONFIG_HOME/doom.backup"
     sclone https://github.com/pervezfunctor/doomemacs-config "$XDG_CONFIG_HOME/doom"
 
     slog "Configure doom"

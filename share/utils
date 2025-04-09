@@ -194,51 +194,126 @@ sclone() {
     local dest=${*: -1}
     local src=${*: -2:1}
 
-    if [ -d "$dest" ]; then
-        if cd "$dest" && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-            slog "Updating existing repository in $dest"
+    if ! [ -d "$dest" ]; then
+        slog "Cloning $src to $dest"
+        git clone "$@"
+        return $?
+    fi
+
+    fail "$dest exists but is not a git repository"
+    return 1
+}
+
+clone-update() {
+    if [ $# -lt 2 ]; then
+        fail "sclone requires at least 2 arguments"
+        return 1
+    fi
+
+    local dest=${*: -1}
+    local src=${*: -2:1}
+
+    if ! [ -d "$dest" ]; then
+        slog "Cloning $src to $dest"
+        git clone "$@"
+        return $?
+    fi
+
+    if (cd "$dest" 2>/dev/null && git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
+        slog "Updating existing repository in $dest"
+
+        (
+            cd "$dest" || return 1
+
+            if [ "$(git remote get-url origin)" != "$src" ]; then
+                fail "Remote repository in $dest does not match the provided source, skipping update"
+                return 1
+            fi
+
+            local original_branch
+            original_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+            if [ -z "$original_branch" ]; then
+                fail "Cannot determine current branch in $dest, skipping update"
+                return 1
+            fi
+
+            local default_branch
+            default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's#^refs/remotes/origin/##')
+            if [ -z "$default_branch" ]; then
+                fail "Cannot determine default branch in $dest, skipping update"
+                return 1
+            fi
+
+            local dirty
+            dirty=false
+            if [[ -n $(git status --porcelain) ]]; then
+                dirty=true
+            fi
+
+            if [ "$original_branch" != "$default_branch" ] && $dirty; then
+                fail "Repository is dirty AND not on the default branch, skipping update"
+                return 1
+            fi
 
             local stashed=1
-            if git --porcelain status | grep -q '^'; then
+            if $dirty; then
                 slog "Repository not clean, stashing changes"
-                if ! git stash --include-untracked; then
-                    warn "Failed to stash changes"
-                    # shellcheck disable=SC2164
-                    cd - >/dev/null
+                if git stash --include-untracked; then
+                    stashed=0
+                else
+                    fail "Failed to stash changes"
                     return 1
                 fi
-                stashed=0
+            fi
+
+            if [ "$original_branch" != "$default_branch" ]; then
+                slog "Switching to $default_branch branch for update"
+                if ! git checkout "$default_branch"; then
+                    fail "Failed to switch to $default_branch branch"
+                    return 1
+                fi
             fi
 
             if git pull --rebase; then
-                if [ $stashed -eq 0 ]; then
-                    slog "Applying stashed changes"
-                    if ! git stash pop; then
-                        warn "Failed to apply stashed changes, they remain in the stash"
-                    fi
+                if [ "$original_branch" != "$default_branch" ]; then
+                    git checkout "$original_branch"
                 fi
+
+                if [ $stashed -eq 0 ]; then
+                    slog "Your changes are stashed"
+                    git stash apply && git stash drop
+                fi
+                return 0
             else
-                warn "Rebase failed, aborting"
+                warn "Update failed, aborting rebase"
                 git rebase --abort
-                if [ $stashed -eq 0 ]; then
-                    slog "Restoring stashed changes"
-                    if ! git stash pop; then
-                        warn "Failed to restore stashed changes, they remain in the stash"
+
+                if [ "$original_branch" != "$default_branch" ]; then
+                    slog "Attempting to switch back to $original_branch branch..."
+                    if ! git checkout "$original_branch"; then
+                        fail "CRITICAL: Failed to switch back to $original_branch after failed update! Repo may be in an inconsistent state."
                     fi
                 fi
+
+                if [ $stashed -eq 0 ]; then
+                    slog "Attempting to apply stashed changes after failed update..."
+                    if git stash apply; then
+                        git stash drop >/dev/null
+                    else
+                        warn "Stashed changes applied WITH CONFLICTS after failed update!"
+                        warn "Please resolve conflicts manually. The stash entry still exists."
+                    fi
+                fi
+                return 1
             fi
-            # shellcheck disable=SC2164
-            cd - >/dev/null 2>&1
-        fi
+        )
 
+        # Return the exit status of the subshell
+        return $?
     fi
 
-    slog "Cloning $src to $dest"
-    if ! git clone "$@"; then
-        fail "Failed to clone $src to $dest"
-        return 1
-    fi
-    return 0
+    fail "$dest exists but is not a git repository"
+    return 1
 }
 
 fclone() {
@@ -805,7 +880,7 @@ dotfiles_install() {
     fi
 
     slog "Cloning dotfiles to $DOT_DIR"
-    sclone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
+    clone-update https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 
     dir_check "$DOT_DIR"
 
