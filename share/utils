@@ -914,8 +914,9 @@ dotfiles_install() {
     slog "Cloning dotfiles to $DOT_DIR"
     clone-update https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 
-    dir_check "$DOT_DIR"
-
+    if ! dir_exists "$DOT_DIR"; then
+        err_exit "Failed to clone dotfiles repository. Quitting."
+    fi
 }
 
 stowgf() {
