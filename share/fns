@@ -1,47 +1,59 @@
-# shellcheck disable=SC2148
+#! /usr/bin/env bash
+
+# shellcheck disable=SC2120
+
 dbox_ubuntu() {
+    local CONTAINER_NAME=${1:-ubuntu}
     smd ~/boxes
-    distrobox create --yes --image ubuntu:latest --home /home/pervez/boxes/ubuntu --name ubuntu
+    distrobox create --yes --image ubuntu:latest --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
 }
 
 dbox_arch() {
+    local CONTAINER_NAME=${1:-arch}
     smd ~/boxes
-    distrobox create --yes --image archlinux:latest --home /home/pervez/boxes/arch --name arch
+    distrobox create --yes --image archlinux:latest --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
 }
 
 dbox_fedora() {
+    local CONTAINER_NAME=${1:-fedora}
     smd ~/boxes
-    distrobox create --yes --image fedora:latest --home /home/pervez/boxes/fedora --name fedora
+    distrobox create --yes --image fedora:latest --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
 }
 
 dbox_centos() {
+    local CONTAINER_NAME=${1:-centos}
     smd ~/boxes
-    distrobox create --yes --image centos:latest --home /home/pervez/boxes/centos --name centos
+    distrobox create --yes --image centos:latest --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
 }
 
 dbox_debian() {
+    local CONTAINER_NAME=${1:-debian}
     smd ~/boxes
-    distrobox create --yes --image debian:latest --home /home/pervez/boxes/debian --name debian
+    distrobox create --yes --image debian:latest --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
 }
 
 dbox_rocky() {
+    local CONTAINER_NAME=${1:-rocky}
     smd ~/boxes
-    distrobox create --yes --image quay.io/rockylinux/rockylinux:9 --home /home/pervez/boxes/rocky --name rocky
+    distrobox create --yes --image quay.io/rockylinux/rockylinux:9 --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
 }
 
 dbox_tw() {
+    local CONTAINER_NAME=${1:-tw}
     smd ~/boxes
-    distrobox create --yes --image opensuse/tumbleweed --home /home/pervez/boxes/tw --name tw
+    distrobox create --yes --image opensuse/tumbleweed --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
 }
 
 dbox_bluefin() {
+    local CONTAINER_NAME=${1:-bluefin-cli}
     smd ~/boxes
-    distrobox create --yes --image ghcr.io/ublue-os/bluefin-cli --home /home/pervez/boxes/bluefin-cli --name bluefin-cli
+    distrobox create --yes --image ghcr.io/ublue-os/bluefin-cli --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
 }
 
 dbox_wolfi() {
+    local CONTAINER_NAME=${1:-wolfi-ublue}
     smd ~/boxes
-    distrobox create --yes --image ghcr.io/ublue-os/wolfi-toolbox --home /home/pervez/boxes/wolfi-ublue --name wolfi-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/wolfi-toolbox --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
 }
 
 dbox_ublue_all() {
@@ -70,35 +82,30 @@ dbox_apline_init() {
     distrobox create --yes --image alpine:latest --init --additional-packages "openrc" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
-# shellcheck disable=SC2120
 dbox_debian_init() {
     local CONTAINER_NAME=${1:-debian-init}
     smd ~/boxes
     distrobox create --yes --image debian:stable --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
-# shellcheck disable=SC2120
 dbox_ubuntu_init() {
     local CONTAINER_NAME=${1:-ubuntu-init}
     smd ~/boxes
     distrobox create --yes --image ubuntu:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
-# shellcheck disable=SC2120
 dbox_arch_init() {
     local CONTAINER_NAME=${1:-arch-init}
     smd ~/boxes
     distrobox create --yes --image archlinux:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
-# shellcheck disable=SC2120
 dbox_tw_init() {
     local CONTAINER_NAME=${1:-tw-init}
     smd ~/boxes
     distrobox create --yes --image registry.opensuse.org/opensuse/tumbleweed:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 }
 
-# shellcheck disable=SC2120
 dbox_fedora_init() {
     local CONTAINER_NAME=${1:-fedora-init}
     smd ~/boxes
@@ -219,7 +226,7 @@ system-update() {
     has_cmd mise && mise self-update && mise upgrade --bump
     has_cmd pixi && pixi global update
 
-    # cd $DOT_DIR && git-up
-    #has_cmd devbox && devbox update
-    # has_cmd hms && hms update?
+    cd "$DOT_DIR" && git-up
+    has_cmd devbox && devbox update
+    has_cmd home-manager && hms
 }
