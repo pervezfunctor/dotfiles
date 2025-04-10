@@ -50,10 +50,10 @@
 
 theme = rose-pine-moon
 font-family = JetBrainsMonoNL NFM Medium
-font-size = 12
+font-size = 15
 background-blur-radius = 20
 mouse-hide-while-typing = true
 window-decoration = true
 macos-option-as-alt = true
-background-opacity = 0.95
+background-opacity = 0.90
 background-blur-radius = 20

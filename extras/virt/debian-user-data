@@ -1,0 +1,62 @@
+#cloud-config
+# /var/lib/libvirt/boot/cloud-init/debian-user-data
+# User configuration for the Debian cloud VM
+
+# Set the hostname (redundant with meta-data but good practice)
+hostname: debian-cloud
+manage_etc_hosts: true # Optional: Update /etc/hosts with the hostname
+
+# Configure the default user (usually 'debian' for official Debian cloud images)
+# If your image uses a different default user, change the name below.
+users:
+  - name: debian
+    # Give the user sudo privileges without needing a password
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    # Add user to common groups
+    groups: [adm, sudo]
+    # Set the default shell
+    shell: /bin/bash
+    # Ensure the default user is not locked (sometimes they are initially)
+    lock_passwd: false
+    # --- IMPORTANT: Add your SSH public key for login ---
+    ssh_authorized_keys:
+      - <PASTE YOUR PUBLIC SSH KEY HERE> # Example: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... your_email@example.com
+
+# Optional: Set a password for the user and enable SSH password authentication
+# (Less secure than SSH keys, use with caution!)
+# ssh_pwauth: true
+# chpasswd:
+#   list: |
+#     debian:YourSecurePasswordHere # Change 'YourSecurePasswordHere'
+#   expire: False
+
+# System update and package installation
+package_update: true
+package_upgrade: true
+
+packages:
+  # Essential for better host integration (shutdown, freeze, info)
+  - qemu-guest-agent
+  # Useful common utilities
+  - vim
+  - curl
+  - wget
+  - bash-completion
+  - sudo # Ensure sudo package is present
+
+# Commands to run on first boot after packages are installed
+runcmd:
+  # Ensure the guest agent service is running and enabled
+  - [ systemctl, enable, --now, qemu-guest-agent ]
+  # Example: Create a marker file
+  - [ touch, /home/debian/cloud-init-success.txt ]
+
+# Optional: Set timezone
+# timezone: Europe/London
+
+# Optional: Write arbitrary files
+# write_files:
+# - path: /etc/motd
+#   content: |
+#     Welcome to the Debian Cloud VM provisioned by cloud-init!
+#   append: true

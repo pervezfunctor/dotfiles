@@ -1,0 +1,2 @@
+instance-id: iid-debian-cloud-01 # Can be any unique string
+local-hostname: debian-cloud     # Desired hostname for the VM
