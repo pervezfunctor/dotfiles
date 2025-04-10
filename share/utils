@@ -204,6 +204,20 @@ sclone() {
     return 1
 }
 
+unstash() {
+    slog "Attempting to apply stashed changes after failed update..."
+    if git stash show -p | git apply --check >/dev/null 2>&1; then
+        if git stash apply; then
+            git stash drop >/dev/null
+        else
+            warn "Failed to apply stash despite no conflicts detected"
+        fi
+    else
+        fail "Detected potential conflicts with stashed changes"
+        fail "Your changes are preserved in the stash. Use 'git stash apply' manually and resolve conflicts."
+    fi
+}
+
 clone-update() {
     if [ $# -lt 2 ]; then
         fail "sclone requires at least 2 arguments"
@@ -281,7 +295,7 @@ clone-update() {
 
                 if [ $stashed -eq 0 ]; then
                     slog "Your changes are stashed"
-                    git stash apply && git stash drop
+                    unstash
                 fi
                 return 0
             else
@@ -296,13 +310,7 @@ clone-update() {
                 fi
 
                 if [ $stashed -eq 0 ]; then
-                    slog "Attempting to apply stashed changes after failed update..."
-                    if git stash apply; then
-                        git stash drop >/dev/null
-                    else
-                        warn "Stashed changes applied WITH CONFLICTS after failed update!"
-                        warn "Please resolve conflicts manually. The stash entry still exists."
-                    fi
+                    unstash
                 fi
                 return 1
             fi
