@@ -2,7 +2,7 @@
 
 export DOT_DIR=${USE_DOT_DIR:-$HOME/.ilm}
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
-export BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
+export ILM_BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 
 select-one() {
     local PS3="Please enter your choice: "
@@ -137,11 +137,11 @@ source_dotfile() {
             source "$dotfile"
         else
             fail "Local dotfile not found: $dotfile"
-            source_curl "$BASE_URL/$1"
+            source_curl "$ILM_BASE_URL/$1"
         fi
     else
-        slog "Dotfiles directory not found, sourcing from remote: $BASE_URL/$1"
-        source_curl "$BASE_URL/$1"
+        slog "Dotfiles directory not found, sourcing from remote: $ILM_BASE_URL/$1"
+        source_curl "$ILM_BASE_URL/$1"
     fi
 }
 
@@ -636,6 +636,30 @@ is_ubuntu() {
         [[ "$ID" == *"pop"* ]]
 }
 
+is_toolbox() {
+    [[ -f /run/.containerenv || -f /.dockerenv ]] || return 1
+
+    [[ -v name && "$name" == *"toolbox"* ]] && return 0
+    grep -q "toolbox" /run/.containerenv 2>/dev/null && return 0
+    [[ -v TOOLBOX_PATH ]] && return 0
+    [[ -f "/run/.toolboxenv" ]] && return 0
+
+    return 1
+}
+
+is_distrobox() {
+    # Check for container environment files
+    [[ -f /run/.containerenv || -f /.dockerenv ]] || return 1
+
+    [[ -v container_name && "$container_name" == *"distrobox"* ]] && return 0
+    grep -q "distrobox" /run/.containerenv 2>/dev/null && return 0
+    [[ -v DISTROBOX_ENTER_PATH ]] && return 0
+    [[ -v container_host_path && "$container_host_path" == *"distrobox"* ]] && return 0
+    # [[ "$CONTAINER_ID" != "" ]] && return 0
+
+    return 1
+}
+
 is_inside_distrobox() {
     [[ "$CONTAINER_ID" != "" ]]
 }
@@ -1094,7 +1118,7 @@ bootstrap() {
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2>/dev/null
     [ -n "$NOSUDO" ] || keep_sudo_running
 
-    INSTALLERS="${BASE_URL}/share/installers"
+    INSTALLERS="${ILM_BASE_URL}/share/installers"
     source_curl "$INSTALLERS/common"
 
     if is_apt; then
