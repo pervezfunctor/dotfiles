@@ -1583,12 +1583,14 @@ nvim_install() {
     if ! has_cmd nvim; then
         if has_cmd brew; then
             bi neovim
+        elif has_cmd pixi; then
+            pi nvim
         else
             si neovim
         fi
     fi
 
-    has_cmd nvim || err_exit "nvim not installed! Qutting."
+    has_cmd nvim || warn "nvim not installed!"
 
     srm ~/.config/nvim
     ln -s "$DOT_DIR/nvim/dot-config/nvim" ~/.config/nvim
@@ -1604,7 +1606,7 @@ emacs_install() {
         fi
     fi
 
-    has_cmd emacs || err_exit "emacs not installed! Qutting."
+    has_cmd emacs || warn "emacs not installed! Qutting."
 
     srm ~/.emacs
     srm ~/.emacs.d
@@ -1620,7 +1622,7 @@ tmux_install() {
         fi
     fi
 
-    has_cmd tmux || err_exit "tmux not installed! Qutting."
+    has_cmd tmux || warn "tmux not installed! Qutting."
 
     srm ~/.config/tmux
     smd ~/.config/tmux
@@ -1631,7 +1633,7 @@ zsh_install() {
     if ! has_cmd zsh; then
         si zsh
     fi
-    has_cmd zsh || err_exit "zsh not installed! Qutting."
+    has_cmd zsh || warn "zsh not installed! Qutting."
 
     srm ~/.zshrc
     ln -s "$DOT_DIR/zsh/dot-zshrc" ~/.zshrc
