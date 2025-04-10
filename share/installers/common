@@ -270,7 +270,6 @@ brew_shell_install() {
 
 pixi_shell_slim_install() {
     has_cmd trash || pi trash-cli
-    has_cmd || pi stow
     has_cmd rg || pi ripgrep
     has_cmd gum || pi go-gum
     has_cmd ug || pi ugrep
