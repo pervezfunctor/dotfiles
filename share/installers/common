@@ -1485,6 +1485,21 @@ tbox_default() {
     toolbox run gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
 }
 
+dbox_with_home() {
+    has_cmd distrobox || return
+
+    slog "Creating default distrobox"
+    source_dotfile "share/fns"
+
+    local os
+    os=${1:-ilm}
+    "dbox_$os" "${os}-ilm"
+    distrobox enter "${os}-ilm" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
+    distrobox enter "${os}-ilm" -- si firefox
+    distrobox enter "${os}-ilm" -- gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+    slog "distrobox ${os}-ilm created!"
+}
+
 dbox_default() {
     has_cmd distrobox || return
 
