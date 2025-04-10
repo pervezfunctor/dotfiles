@@ -24,6 +24,21 @@ update_packages() {
     fi
 }
 
+fedora_packages() {
+    update_packages
+
+    si git gh git-delta unzip wget curl trash-cli tar stow \
+        gcc make file just emacs-nox tree-sitter zsh tmux gum \
+        tree bat eza fzf ripgrep zoxide fd htop sd bat tealdeer plocate cheat
+}
+
+centos_packages() {
+    update_packages
+
+    si git unzip wget curl tar gcc make gum tree bat ripgrep \
+        htop bat plocate file just emacs-nox neovim tmux zsh
+}
+
 base_dev_install() {
     if dnf group list -q | grep -q "c-development"; then
         si @c-development

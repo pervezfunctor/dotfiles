@@ -14,6 +14,14 @@ update_packages() {
     fi
 }
 
+tw_packages() {
+    update_packages
+
+    si git gh lazygit git-delta unzip wget curl trash-cli tar stow \
+        gcc make file just emacs-nox tree-sitter zsh starship tmux gum cheat \
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer plocate
+}
+
 sys_python_install() {
     si python313 python313-virtualenv python313-pip python313-setuptools
     pipx install uv

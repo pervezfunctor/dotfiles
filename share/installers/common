@@ -1496,21 +1496,6 @@ dbox_default() {
     slog "Default distrobox created!"
 }
 
-fedora_packages() {
-    si git gh git-delta unzip wget curl trash-cli tar stow \
-        gcc make file just emacs-nox tree-sitter zsh tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd bat tealdeer plocate cheat
-
-    starship_install
-}
-
-centos_packages() {
-    si git unzip wget curl tar gcc make gum tree bat ripgrep \
-        htop bat plocate file just emacs-nox neovim tmux zsh
-
-    starship_install
-}
-
 pixi_good_packages() {
     pi gh lazygit git-delta unzip wget curl trash-cli tar stow \
         just emacs tree-sitter-cli starship tmux go-gum \
@@ -1518,6 +1503,8 @@ pixi_good_packages() {
 }
 
 pixi_packages() {
+    pixi_install
+
     pi git gcc make file zsh
     pixi_good_packages
 }
@@ -1529,114 +1516,74 @@ brew_good_packages() {
 }
 
 brew_packages() {
+    brew_install
+
     bi git gcc make file
     brew_good_packages
-}
-
-tw_packages() {
-    si git gh lazygit git-delta unzip wget curl trash-cli tar stow \
-        gcc make file just emacs-nox tree-sitter zsh starship tmux gum cheat \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer plocate
-}
-
-arch_packages() {
-    si git github-cli lazygit git-delta unzip wget curl trash-cli tar stow \
-        gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat plocate tealdeer
-}
-
-ubuntu_packages() {
-    DEBIAN_FRONTEND=noninteractive si git gh git-delta unzip wget curl \
-        trash-cli tar stow gcc make file just tree-sitter-cli zsh tmux \
-        tree bat eza fzf ripgrep zoxide fd-find htop sd bat emacs-nox
-
-    starship_install
-
-    # si golang-go
-    # go install github.com/charmbracelet/gum@latest
-}
-
-debian_packages() {
-    #  git-delta eza just treesitter-cli fzf
-    si git gh unzip wget curl trash-cli tar stow gcc make file zsh tmux \
-        tree bat ripgrep zoxide fd-find htop sd
-
-    starship_install
 }
 
 zsh_as_default() {
     has_cmd zsh && chsh -s "$(command -v zsh)" "$USER"
 }
 
-slimbox_base() {
-    cd "$HOME" || warn "could not cd to $HOME"
-
-    "$1_packages"
-
-    dotfiles_install
-    bash_config_install
-
-    dir_exists "$DOT_DIR" || err_exit "$DOT_DIR doesn't exist, Installation failed."
-}
-
 nvim_install() {
-    if ! has_cmd nvim; then
-        if has_cmd brew; then
-            bi neovim
-        elif has_cmd pixi; then
-            pi nvim
-        else
-            si neovim
-        fi
+    srm ~/.config/nvim
+    ln -s "$DOT_DIR/nvim/dot-config/nvim" ~/.config/nvim
+
+    has_cmd nvim && return 0
+
+    if has_cmd brew; then
+        bi neovim luarocks lazygit
+    elif has_cmd pixi; then
+        pi nvim luarocks lazygit
+    else
+        si neovim
     fi
 
     has_cmd nvim || warn "nvim not installed!"
-
-    srm ~/.config/nvim
-    ln -s "$DOT_DIR/nvim/dot-config/nvim" ~/.config/nvim
 }
 
 emacs_install() {
-    if ! has_cmd emacs; then
-        if has_cmd brew; then
-            bi emacs
-        else
-            si emacs-nox
-            has_cmd emacs || si emacs
-        fi
-    fi
-
-    has_cmd emacs || warn "emacs not installed! Qutting."
-
     srm ~/.emacs
     srm ~/.emacs.d
     ln -s "$DOT_DIR/emac-slim/dot-emacs" ~/.emacs
+
+    has_cmd emacs && return 0
+    if has_cmd brew; then
+        bi emacs
+    else
+        si emacs-nox
+        has_cmd emacs || si emacs
+    fi
+
+    has_cmd emacs || warn "emacs not installed! Qutting."
 }
 
 tmux_install() {
-    if ! has_cmd tmux; then
-        if has_cmd brew; then
-            bi tmux
-        else
-            si tmux
-        fi
-    fi
-
-    has_cmd tmux || warn "tmux not installed! Qutting."
-
     srm ~/.config/tmux
     smd ~/.config/tmux
     ln -s "$DOT_DIR/tmux/dot-config/tmux/tmux.conf" ~/.config/tmux/tmux.conf
+
+    has_cmd tmux && return 0
+
+    if has_cmd brew; then
+        bi tmux
+    else
+        si tmux
+    fi
+
+    has_cmd tmux || warn "tmux not installed! Qutting."
 }
 
 zsh_install() {
-    if ! has_cmd zsh; then
-        si zsh
-    fi
-    has_cmd zsh || warn "zsh not installed! Qutting."
-
     srm ~/.zshrc
     ln -s "$DOT_DIR/zsh/dot-zshrc" ~/.zshrc
+
+    has_cmd zsh && return 0
+
+    si zsh
+    has_cmd zsh || warn "zsh not installed! Qutting."
+    # set_zsh_as_default
 }
 
 terminal_install() {
@@ -1654,17 +1601,62 @@ terminal_install() {
     # ptyxis_config_install
 }
 
+slimbox_base() {
+    cd "$HOME" || warn "could not cd to $HOME"
+
+    "$1_packages"
+
+    dotfiles_install
+    bash_config_install
+    starship_install
+
+    dir_exists "$DOT_DIR" || err_exit "$DOT_DIR doesn't exist, Installation failed."
+}
+
 box_base() {
     slimbox_base "$1"
 
     zsh_install
     tmux_install
     nvim_install
+    emacs_install
 }
 
-wslbox_base() {
-    is_wsl || err_exit "This script is only for WSL"
-    slimbox_base "$1"
+dbox_base() {
+    is_inside_distrobox || err_exit "This script is only for distrobox containers"
+    [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
+
+    box_base "$1"
+}
+
+get_boxos() {
+    if is_tw; then
+        echo "tw"
+    elif is_ubuntu; then
+        echo "ubuntu"
+    elif is_debian; then
+        echo "debian"
+    elif is_fedora; then
+        echo "fedora"
+    elif is_arch; then
+        echo "arch"
+    elif is_centos; then
+        echo "centos"
+    else
+        echo "brew"
+    fi
+}
+
+slimbox_groupstall() {
+    slimbox_base "$(get_boxos)"
+}
+
+box_groupstall() {
+    box_base "$(get_boxos)"
+}
+
+dbox_groupstall() {
+    dbox_base "$(get_boxos)"
 }
 
 tw-wslbox_groupstall() {
@@ -1672,27 +1664,6 @@ tw-wslbox_groupstall() {
 
     sudo systemd-tmpfiles --create
     wslbox_base tw
-}
-
-ubuntu-wslbox_groupstall() {
-    is_ubuntu || err_exit "This script is only for Ubuntu"
-
-    sudo apt-get update && sudo apt-get upgrade -y
-    wslbox_base ubuntu
-}
-
-debian-wslbox_groupstall() {
-    is_debian || err_exit "This script is only for Debian"
-
-    sudo apt-get update && sudo apt-get upgrade -y
-    wslbox_base debian
-}
-
-centos-wslbox_groupstall() {
-    is_centos || err_exit "This script is only for CentOS"
-
-    sudo dnf update -q -y && sudo dnf upgrade -q -y
-    wslbox_base centos
 }
 
 nixos-wslbox_groupstall() {
@@ -1703,116 +1674,13 @@ nixos-wslbox_groupstall() {
     nix run --extra-experimental-features 'nix-command flakes' home-manager -- switch --impure -b bak
 }
 
-brew-wslbox_groupstall() {
-    is_ublue || err_exit "This script is only for UBlue"
-
-    wslbox_base brew
-}
-
-pixi-wslbox_groupstall() {
-    is_atomic || err_exit "This script is only for Atomic Host"
-
-    wslbox_base pixi
-}
-
 wslbox_groupstall() {
     if is_tw; then
         tw-wslbox_groupstall
-    elif is_ubuntu; then
-        ubuntu-wslbox_groupstall
-    elif is_debian; then
-        debian-wslbox_groupstall
-    elif is_centos; then
-        centos-wslbox_groupstall
+    elif is_nixos; then
+        nixos-wslbox_groupstall
     else
-        warn "Unknown OS, using brew, this is not recommended"
-        sleep 3
-        brew-wslbox_groupstall
-    fi
-}
-
-box_groupstall() {
-    if is_tw; then
-        box_base tw
-    elif is_ubuntu; then
-        box_base ubuntu
-    elif is_debian; then
-        box_base debian
-    elif is_fedora; then
-        box_base fedora
-    elif is_arch; then
-        box_base arch
-    elif is_centos; then
-        box_base centos
-    else
-        warn "Unknown OS, using brew, this is not recommended"
-        sleep 3
-        box_base brew
-    fi
-}
-
-dbox_base() {
-    is_inside_distrobox || err_exit "This script is only for distrobox containers"
-    [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
-
-    box_base ubuntu
-}
-
-arch-dbox_groupstall() {
-    is_arch || err_exit "This script is only for Arch Linux"
-
-    dbox_base arch
-}
-
-tw-dbox_groupstall() {
-    is_tw || err_exit "This script is only for openSUSE Tumbleweed"
-
-    dbox_base tw
-}
-
-fedora-dbox_groupstall() {
-    is_fedora || err_exit "This script is only for Fedora"
-
-    dbox_base fedora
-}
-
-pixi-dbox_groupstall() {
-    dbox_base pixi
-}
-
-brew-dbox_groupstall() {
-    dbox_base brew
-}
-
-debian-dbox_groupstall() {
-    is_debian || err_exit "This script is only for Debian"
-
-    dbox_base debian
-}
-
-ubuntu-dbox_groupstall() {
-    is_ubuntu || err_exit "This script is only for Ubuntu"
-
-    dbox_base ubuntu
-}
-
-dbox_groupstall() {
-    if is_suse; then
-        tw-dbox_groupstall
-    elif is_ubuntu; then
-        ubuntu-dbox_groupstall
-    elif is_debian; then
-        debian-dbox_groupstall
-    elif is_arch; then
-        arch-dbox_groupstall
-    elif is_ublue; then
-        brew-dbox_groupstall
-    elif is_atomic; then
-        pixi-dbox_groupstall
-    elif is_fedora; then
-        fedora-dbox_groupstall
-    else
-        brew-dbox_groupstall
+        wslbox_base "$(get_boxos)"
     fi
 }
 

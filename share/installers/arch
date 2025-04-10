@@ -15,6 +15,14 @@ update_packages() {
     fi
 }
 
+arch_packages() {
+    update_packages
+
+    si git github-cli lazygit git-delta unzip wget curl trash-cli tar stow \
+        gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat plocate tealdeer
+}
+
 core_install() {
     update_packages
 
