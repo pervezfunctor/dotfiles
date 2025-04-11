@@ -1643,6 +1643,26 @@ dbox_base() {
     box_base "$1"
 }
 
+nixbox_base() {
+    is_wsl && err_exit "This script is not for wsl. Use this for linux desktop/vm or distrobox/toolbox."
+    is_linux || err_exit "This script is only for linux."
+
+    has_cmd curl || si curl
+
+    has_cmd nix || curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
+    # shellcheck disable=SC1091
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
+    if has_cmd git; then
+        clone-update https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR"
+    else
+        nix run --extra-experimental-features 'nix-command flakes' nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR"
+    fi
+
+    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#stow -- -d "$DOT_DIR" -t "$HOME" --dotfiles -R home-manager
+    nix run --extra-experimental-features 'nix-command flakes' home-manager -- switch --flake "$DOT_DIR"/nixos-wsl/dot-config/home-manager\#nixos --impure -b bak
+}
+
 get_boxos() {
     if is_tw; then
         echo "tw"
@@ -1671,6 +1691,10 @@ box_groupstall() {
 
 dbox_groupstall() {
     dbox_base "$(get_boxos)"
+}
+
+nixbox_groupstall() {
+    nixbox_base
 }
 
 tw-wslbox_groupstall() {
