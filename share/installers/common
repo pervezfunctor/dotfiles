@@ -205,9 +205,19 @@ kitty_bin_install() {
     cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
     cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
 
+    # Update the paths to the kitty and its icon in the kitty desktop file(s)
+    sed -i "s|Icon=kitty|Icon=$(readlink -f ~)/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|g" ~/.local/share/applications/kitty*.desktop
+    sed -i "s|Exec=kitty|Exec=$(readlink -f ~)/.local/kitty.app/bin/kitty|g" ~/.local/share/applications/kitty*.desktop
+
     echo 'kitty.desktop' >~/.config/xdg-terminals.list
 
     cmd_check kitty
+
+    # @TODO: simpler
+    # curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin \
+    # dest=~/.local/stow
+    # cd ~/.local/stow
+    # stow kitty.app
 }
 
 mise_shell_install() {
@@ -1649,7 +1659,7 @@ nixbox_base() {
 
     has_cmd curl || si curl
 
-    has_cmd nix || curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
+    nix_install
     # shellcheck disable=SC1091
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 
@@ -1801,6 +1811,7 @@ fedora-atomic_groupstall() {
     distrobox enter -- distrobox-export --bin "$(which stow)"
     distrobox enter -- distrobox-export --bin "$(which wl-copy)"
     distrobox enter -- distrobox-export --bin "$(which wl-paste)"
+    stowdf emacs-nano
 
     slog "Fedora Atomic Host setup done!"
 }
