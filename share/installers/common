@@ -1769,16 +1769,25 @@ fedora-atomic_groupstall() {
     slog "Installing starship"
     starship_install
 
+    dotfiles-install
+
+    pixi_install
+
+    slog "Installing shell tools"
+    pi eza fzf zoxide
+
     if ! grep -q starship ~/.bashrc; then
         slog "Adding starship to bashrc"
         echo "source ${DOT_DIR}/share/bashrc" >>~/.bashrc
     fi
 
     jetbrains_nerd_font_install
-    ptyxis_install
+    # kitty_bin_install
+    # ptyxis_install
 
     slog "Installing apps"
     apps_slim_install
+    fpi org.gnu.emacs
 
     is_gnome && gnome_config_install
     is_sway && sway_config_install
@@ -1788,6 +1797,10 @@ fedora-atomic_groupstall() {
 
     slog "Setting up default distrobox for development"
     dbox_default
+
+    distrobox enter -- distrobox-export --bin "$(which stow)"
+    distrobox enter -- distrobox-export --bin "$(which wl-copy)"
+    distrobox enter -- distrobox-export --bin "$(which wl-paste)"
 
     slog "Fedora Atomic Host setup done!"
 }
