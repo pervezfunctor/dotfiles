@@ -1,5 +1,4 @@
 arrterian.nix-env-selector
-asvetliakov.vscode-neovim
 Catppuccin.catppuccin-vsc
 Catppuccin.catppuccin-vsc-icons
 charliermarsh.ruff
@@ -9,7 +8,6 @@ donjayamanne.githistory
 GitHub.github-vscode-theme
 gruntfuggly.todo-tree
 hangxingliu.vscode-systemd-support
-hverlin.mise-vscode
 jnoortheen.nix-ide
 knisterpeter.vscode-commitizen
 mads-hartmann.bash-ide-vscode
