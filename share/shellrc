@@ -19,6 +19,8 @@ source_if_exists "$HOME/.cargo/env"
 
 source_if_exists /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 
+has_cmd webi && source_if_exists "$XDG_CONFIG_HOME/envman/PATH.env"
+
 export DOTNET_ROOT="$HOME/.dotnet"
 export GOPATH="$HOME/go"
 

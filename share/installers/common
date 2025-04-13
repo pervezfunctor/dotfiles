@@ -30,8 +30,8 @@ webi_install() {
     has_cmd ~/.local/bin/webi && return 0
 
     curl -sS https://webi.sh/webi | sh
-    source_if_exists "$XDG_CONFIG_HOME/envman/PATH.env"
     webi pathman
+    source_if_exists "$XDG_CONFIG_HOME/envman/PATH.env"
 
     cmd_check webi
 }
@@ -355,14 +355,10 @@ starship_install() {
 }
 
 webi_shell_install() {
-    wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq rg arc
+    wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq rg arc fzf shellcheck
 
-    # webi node golang go-essentials shellcheck shfmt pathman
-    # webi bat curlie delta jq lsd rg gh fd sd
-
-    # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing k9s kubectx kubens
-    # webi pyenv
-    # webi fd git watchexec rustlang
+    # webi node golang go-essentials pyenv k9s kubectx kubens watchexec rustlang
+    # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing git
     # sudo apt install -y libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 }
 
@@ -1782,6 +1778,9 @@ fedora-atomic_groupstall() {
     dotfiles-install
 
     pixi_install
+    # mise_install
+    # webi_install
+    # webi node
 
     slog "Installing shell tools"
     pi eza fzf zoxide
