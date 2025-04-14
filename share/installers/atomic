@@ -1,0 +1,624 @@
+#! /usr/bin/env bash
+
+webi_install() {
+    has_cmd ~/.local/bin/webi && return 0
+
+    curl -sS https://webi.sh/webi | sh
+    webi pathman
+    source_if_exists "$XDG_CONFIG_HOME/envman/PATH.env"
+
+    cmd_check webi
+}
+
+mise_install() {
+    if has_cmd ~/.local/bin/mise; then
+        eval "$(~/.local/bin/mise activate bash)"
+        return 0
+    fi
+
+    slog "Installing mise"
+    curl https://mise.run | MISE_QUIET=1 sh
+    eval "$(~/.local/bin/mise activate bash)"
+
+    if has_cmd mise; then
+        mise use -g usage
+        mise settings experimental=true
+        mise use -g cargo-binstall
+    else
+        warn "mise installation failed"
+    fi
+}
+
+pixi_install() {
+    has_cmd ~/.pixi/bin/pixi && return 0
+
+    slog "Installing pixi"
+    curl -fsSL https://pixi.sh/install.sh | bash
+
+    slog "pixi installation done!"
+
+    cmd_check ~/.pixi/bin/pixi
+    cmd_check pixi
+}
+
+pkgs_install() {
+    has_cmd pkgx && return 0
+
+    if has_cmd brew; then
+        brew install pkgx
+    else
+        curl https://pkgx.sh | sh
+    fi
+
+    cmd_check pkgx
+}
+
+uv_install() {
+    has_cmd uv && return 0
+
+    if has_cmd pipx; then
+        pipx install uv
+    else
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    fi
+
+    cmd_check uv
+}
+
+python_install() {
+    slog "Installing python tools"
+
+    has_cmd sys_python_install && sys_python_install
+
+    if ! has_cmd python3; then
+        warn "python3 not installed! Skipping python setup."
+        return 1
+    fi
+
+    if ! has_cmd pipx; then
+        if ! has_cmd pip; then
+            python3 -m ensurepip --user --default-pip
+            python3 -m pip install --user --force-reinstall --upgrade pip
+        fi
+
+        if has_cmd pip; then
+            pip install --upgrade --force-reinstall pipx
+            cmd_check pipx
+        else
+            warn "pip not installed! Skipping python setup."
+        fi
+    fi
+
+    uv_install
+
+    slog "Python tools installation done!"
+}
+
+flathub_install() {
+    if has_cmd flatpak; then
+        slog "Adding flathub remote"
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+    else
+        warn "flatpak not installed! Ignoring flathub config."
+    fi
+}
+
+pnpm_install() {
+    has_cmd pnpm && return 0
+
+    slog "Installing pnpm"
+    curl -fsSL https://get.pnpm.io/install.sh | sh -
+
+    # docker container installation
+    # wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.bashrc" SHELL="$(which bash)" bash -
+    slog "Installing node"
+    pnpm env use --global latest
+
+    slog "pnpm/node installation done!"
+
+    cmd_check pnpm
+}
+
+kitty_bin_install() {
+    if ! is_desktop; then
+        warn "Not running desktop, skipping kitty installation"
+        return 1
+    fi
+
+    has_cmd kitty && return 1
+    has_cmd ~.local/kitty.app/bin/kitty && return 1
+
+    curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin
+
+    # force link
+    ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
+
+    smd ~/.local/share/applications
+    cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
+    cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
+
+    # Update the paths to the kitty and its icon in the kitty desktop file(s)
+    sed -i "s|Icon=kitty|Icon=$(readlink -f ~)/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|g" ~/.local/share/applications/kitty*.desktop
+    sed -i "s|Exec=kitty|Exec=$(readlink -f ~)/.local/kitty.app/bin/kitty|g" ~/.local/share/applications/kitty*.desktop
+
+    echo 'kitty.desktop' >~/.config/xdg-terminals.list
+
+    cmd_check kitty
+
+    # @TODO: simpler
+    # curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin \
+    # dest=~/.local/stow
+    # cd ~/.local/stow
+    # stow kitty.app
+}
+
+ghostty_bin_install() {
+    has_cmd ghostty && return 1
+
+    local VERSION, ARCH
+    VERSION=$(curl -s https://api.github.com/repos/pkgforge-dev/ghostty-appimage/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    ARCH=$(uname -m)
+
+    wget "https://github.com/pkgforge-dev/ghostty-appimage/releases/download/${VERSION}/Ghostty-${VERSION}-${ARCH}.AppImage"
+    chmod +x "Ghostty-${VERSION}-${ARCH}.AppImage"
+    install "./Ghostty-${VERSION}-${ARCH}.AppImage" "$HOME/.local/bin/ghostty"
+}
+
+cmake_install() {
+    has_cmd ~/.local/bin/cmake && return 1
+
+    CMAKE_VERSION="4.0.1"
+    ARCH=$(uname -m)
+    CMAKE_BINARY_NAME="cmake-${CMAKE_VERSION}-linux-${ARCH}.sh"
+    CMAKE_CHECKSUM_NAME="cmake-${CMAKE_VERSION}-SHA-256.txt"
+
+    slog "Installing latest cmake"
+    TMP_DIR=$(mktemp -d -t cmake-XXXXXXXXXX)
+    if cd "${TMP_DIR}"; then
+        curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_BINARY_NAME}" -O
+        curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_CHECKSUM_NAME}" -O
+
+        sha256sum -c --ignore-missing "${CMAKE_CHECKSUM_NAME}"
+        local PREFIX
+        PREFIX=~/.cmake
+
+        sudo mkdir -p "${PREFIX}"
+        sudo sh "${TMP_DIR}/${CMAKE_BINARY_NAME}" --prefix="${PREFIX}" --skip-license
+
+        sudo ln -s "${PREFIX}/bin/cmake" ~/.local/bin/cmake
+        sudo ln -s "${PREFIX}/bin/ctest" ~/.local/bin/ctest
+        frm "${TMP_DIR}"
+    fi
+
+    slog "cmake installation done!"
+
+    cmd_check cmake
+}
+
+nosudo_groupstall() {
+    slog "Setting up python, pip, pipx"
+    python_install
+
+    slog "Installing trash-cli"
+    pipx install trash-cli
+
+    dotfiles_install
+
+    starship_install
+    bash_config_install
+
+    pixi_install
+    slog "Installing shell tools"
+    pixi_shell_slim_install
+
+    is_desktop && jetbrains_nerd_font_install
+    is_desktop && kitty_bin_install
+
+    if ! has_cmd podman && ! has_cmd docker; then
+        fail "No container runtime(docker or podman) installed, skipping distrobox installation"
+        return 0
+    fi
+
+    atomic_distrobox_install
+
+}
+
+fedora-atomic_groupstall() {
+    is_std_atomic || err_exit "This script is only for Atomic Host"
+
+    slog "Fedora Atomic Host setup"
+
+    nosudo_groupstall
+
+    # mise_install
+    # webi_install
+    # webi node
+
+    if ! grep -q starship ~/.bashrc; then
+        slog "Adding starship to bashrc"
+        echo "source ${DOT_DIR}/share/bashrc" >>~/.bashrc
+    fi
+
+    # ghostty_bin_install
+
+    slog "Installing apps"
+    apps_slim_install
+    fpi org.gnu.emacs
+
+    is_gnome && gnome_config_install
+    is_sway && sway_config_install
+
+    slog "Setting up default distrobox for development"
+
+    # shellcheck disable=SC2119
+    dbox_with_home
+
+    distrobox enter ilm -- distrobox-export --bin "$(which stow)"
+    distrobox enter ilm -- distrobox-export --bin "$(which wl-copy)"
+    distrobox enter ilm -- distrobox-export --bin "$(which wl-paste)"
+
+    stowdf emacs-nano kitty
+    # stowd ghostty
+
+    slog "Fedora Atomic Host setup done!"
+}
+
+vscode_flatpak_install() {
+    fpi com.visualstudio.code
+    flatpak install com.visualstudio.code.tool.podman
+    alias code="flatpak run com.visualstudio.code"
+    xargs -L 1 flatpak run com.visualstudio.code --install-extension <"$DOT_DIR/extras/vscode/extensions/default"
+    vscode-flatpak_config_install
+}
+
+ptyxis_install() {
+    if ! has_cmd flatpak; then
+        warn "flatpak not installed, skipping ptyxis installation."
+        return 1
+    fi
+
+    if ! flatpak list | grep -q -i Ptyxis >/dev/null; then
+        slog "Installing Ptyxis"
+        fpi app.devsuite.Ptyxis
+    fi
+
+    # has_cmd gsettings || return 1
+
+    # slog "Configuring Ptyxis"
+
+    # gsettings set org.gnome.Ptyxis use-system-font false
+    # gsettings set org.gnome.Ptyxis font-name 'JetBrains Mono Medium 12'
+    # gsettings set org.gnome.Ptyxis interface-style 'dark'
+
+    # local profid
+    # profid=$(gsettings get org.gnome.Ptyxis default-profile-uuid)
+    # gsettings set "org.gnome.Ptyxis.Profile:/${profid}/" palette 'Catppuccin Mocha'
+
+    slog "Ptyxis installation and configuration done!"
+}
+
+apps_slim_install() {
+    if ! has_cmd flatpak; then
+        warn "flatpak not installed, skipping flatpak apps"
+        return 1
+    fi
+
+    flathub_install
+
+    fpi org.telegram.desktop
+    fpi flatpak run org.qbittorrent.qBittorrent # verified
+    fpi md.obsidian.Obsidian
+    fpi us.zoom.Zoom # unverified
+    # fpi org.deluge_torrent.deluge # unverified
+}
+
+apps_install() {
+
+    slog "Installing flatpak apps"
+
+    apps_slim_install
+
+    fpi org.wezfurlong.wezterm
+    fpi io.github.dvlv.boxbuddyrs
+    fpi io.github.getnf.embellish
+    # fpi io.github.shiftey.Desktop # unverified
+    fpi com.bitwarden.desktop
+    fpi sh.cider.Cider
+    fpi io.podman_desktop.PodmanDesktop
+
+    alias wezterm="flatpak run org.wezfurlong.wezterm"
+
+    slog "Flatpak apps installation done!"
+}
+
+more_apps_install() {
+    fpi org.wireshark.Wireshark
+
+    # fpi io.dbeaver.DBeaverCommunity
+    # fpi dev.neovide.neovide
+    # fpi io.github.zyedidia.micro
+    # fpi com.jetbrains.CLion
+    # fpi com.google.Chrome
+}
+
+incus_config_install() {
+    slog "incus config"
+
+    if ! has_cmd incus; then
+        warn "incus not installed, skipping incus config"
+        return 0
+    fi
+    slog "incus config"
+
+    sudo usermod -aG incus "$USER"
+    sudo usermod -aG incus-admin "$USER"
+    sudo systemctl enable --now incus.socket
+    sudo systemctl enable --now incus.service
+
+    if has_cmd firewalld; then
+        sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
+        sudo firewall-cmd --reload
+    fi
+
+    # should be invoked by user after reboot
+    # sudo incus admin init --minimal
+
+    slog "incus config done!"
+}
+
+atomic_nvim_install() {
+    is_mac && return 0
+
+    has_cmd nvim && return 0
+
+    slog "Installing neovim..."
+
+    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+    chmod u+x nvim.appimage
+
+    ./nvim.appimage --appimage-extract
+
+    sudo mv squashfs-root /
+    sudo ln -s /squashfs-root/AppRun /usr/bin/nvim
+    frm nvim.appimage
+
+    cmd_check nvim
+}
+
+micro_install() {
+    has_cmd micro && return 0
+
+    slog "Installing micro"
+
+    curl https://getmic.ro | bash
+    mv micro "$HOME/.local/bin/"
+
+    slog "micro installation done!"
+
+    cmd_check micro
+}
+
+rust_install() {
+    source_if_exists "$HOME/.cargo/env"
+
+    has_cmd rustup && return 0
+
+    slog "Installing rust"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source_if_exists "$HOME/.cargo/env"
+
+    slog "rust installation done!"
+
+    cmd_check rustc
+}
+
+docker_common_install() {
+    if ! has_cmd docker; then
+        warn "docker not installed, skipping docker post install configuration"
+        return 1
+    fi
+
+    if has_cmd brew; then
+        bi jesseduffield/lazydocker/lazydocker
+        bi lazydocker
+    fi
+
+    sudo groupadd docker
+    sudo usermod -aG docker "$USER"
+
+    sudo systemctl --now enable docker
+    sudo systemctl --now enable containerd
+}
+
+conan_install() {
+    has_cmd conan && return 1
+
+    slog "Installing conan"
+    pipx install conan
+    slog "conan installation done!"
+
+    cmd_check conan
+}
+
+monaspace_install() {
+    file_exists ~/.local/share/fonts/MonaspaceRadon-Regular.otf && return 0
+
+    smd ~/.local/share/fonts
+
+    frm /tmp/monaspace /tmp/monaspace.zip
+    wget -nv https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip -O /tmp/monaspace.zip
+    unzip -qq -d /tmp/monaspace -o /tmp/monaspace.zip
+
+    cp /tmp/monaspace/monaspace-*/fonts/otf/* ~/.local/share/fonts
+    cp /tmp/monaspace/monaspace-*/fonts/variable/* ~/.local/share/fonts
+
+    frm /tmp/monaspace /tmp/monaspace.zip
+}
+
+cascadia_nerd_font_install() {
+    if ! file_exists ~/.local/share/fonts/CaskaydiaMonoNerdFont-Regular.ttf; then
+        smd ~/.local/share/fonts
+        frm /tmp/cascadia /tmp/CascadiaMono.zip
+        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip -O /tmp/CascadiaMono.zip
+        unzip -qq -d /tmp/cascadia -o /tmp/CascadiaMono.zip
+        cp /tmp/cascadia/*.ttf ~/.local/share/fonts
+        frm /tmp/cascadia /tmp/CascadiaMono.zip
+    fi
+}
+
+monaspace_nerd_font_install() {
+    if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
+        smd ~/.local/share/fonts
+        frm /tmp/monaspace /tmp/Monaspace.zip
+        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip -O /tmp/Monaspace.zip
+        unzip -qq -d /tmp/monaspace -o /tmp/Monaspace.zip
+        cp /tmp/monaspace/*.otf ~/.local/share/fonts
+        frm /tmp/monaspace /tmp/Monaspace.zip
+    fi
+
+}
+
+jetbrains_nerd_font_install() {
+    if ! file_exists ~/.local/share/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf; then
+        slog "Installing JetBrains Mono Nerd Font"
+        smd ~/.local/share/fonts
+        frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
+        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
+        unzip -qq -d /tmp/jetbrains-mono -o /tmp/jetbrains-mono.zip
+        cp /tmp/jetbrains-mono/*.ttf ~/.local/share/fonts
+        frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
+        slog "JetBrains Mono Nerd Font installation done!"
+    fi
+}
+
+nerd_font_install() {
+    smd ~/.local/share/fonts
+
+    cascadia_nerd_font_install
+    jetbrains_nerd_font_install
+    monaspace_nerd_font_install
+}
+
+fonts_install() {
+    if ! has_cmd wget || ! has_cmd unzip; then
+        warn "wget and unzip not installed, skipping fonts"
+        return 1
+    fi
+
+    slog "Installing fonts"
+
+    monaspace_install
+    nerd_font_install
+
+    # if is_apt; then
+    #     si fonts-cascadia-code fonts-jetbrains-mono
+    # elif is_rh; then
+    #     is_fedora || si cascadia-fonts-all jetbrains-mono-fonts-all
+    # fi
+
+    slog "Fonts installation done!"
+}
+
+starship_install() {
+    has_cmd starship && return 0
+
+    smd ~/.local/bin
+    curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
+}
+
+vscode-flatpak_config_install() {
+    slog "vscode config"
+
+    smd ~/.var/app/com.visualstudio.code/config/Code/User
+    safe-cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
+
+    slog "vscode config done!"
+}
+
+sway-waybar_config_install() {
+    slog "waybar config"
+    has_cmd waybar || return 1
+    stowgf waybar
+    slog "waybar config done!"
+}
+
+wlogout_config_install() {
+    slog "wlogout config"
+    has_cmd wlogout || return 1
+    stowgf wlogout
+    slog "wlogout config done!"
+}
+
+sway_config_install() {
+    has_cmd sway || return 1
+    slog "sway config"
+    stowgf sway
+    slog "sway config done!"
+}
+
+rofi_config_install() {
+    has_cmd rofi || return 1
+
+    slog "rofi config"
+    stowgf rofi
+    slog "rofi config done!"
+}
+
+github_user_setup() {
+    if ! has_cmd gh; then
+        warn "gh not installed, skipping github user setup"
+        return 1
+    fi
+
+    if has_cmd gh; then
+        slog "Authenticating github(gh)"
+        gh auth login
+    fi
+}
+
+# shellcheck disable=SC2120
+tbox_group() {
+    has_cmd toolbox || return 0
+
+    toolbox --assumeyes create
+
+    local group=${1:-shell}
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- "$group"
+}
+
+tbox_default() {
+    has_cmd toolbox || return
+
+    toolbox --assumeyes create
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
+    toolbox run si firefox
+    toolbox run gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+}
+
+dbox_default() {
+    has_cmd distrobox || return
+
+    slog "Creating default distrobox"
+    distrobox create --yes
+    distrobox enter -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
+    distrobox enter -- si firefox
+    distrobox enter -- gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+    slog "Default distrobox created!"
+}
+
+# shellcheck disable=SC2120
+dbox_with_home() {
+    has_cmd distrobox || return
+
+    slog "Creating default distrobox"
+
+    local os
+    os=${1:-fedora_init}
+    distrobox list | grep -q "^${os}$" && return
+
+    "dbox_$os"
+    distrobox enter "${os}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
+    distrobox enter "${os}" -- si firefox
+    distrobox enter "${os}" -- gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+    slog "distrobox ${os} created!"
+}

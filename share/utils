@@ -610,6 +610,7 @@ is_wsl() {
 }
 
 is_multipass() {
+    # [ -f /var/snap/multipass/current/var/lib/multipassd/multipassd.sock ]
     [ -f "/run/cloud-init/instance-data.json" ] &&
         grep -q "multipass" /run/cloud-init/instance-data.json
 }
@@ -1120,20 +1121,28 @@ bootstrap() {
     [ -n "$NOSUDO" ] || keep_sudo_running
 
     INSTALLERS="${ILM_BASE_URL}/share/installers"
+
     source_curl "$INSTALLERS/common"
 
-    if is_apt; then
-        source_curl "$INSTALLERS/apt"
-    elif is_rh && ! is_atomic; then
-        source_curl "$INSTALLERS/dnf"
-    elif is_suse; then
-        source_curl "$INSTALLERS/suse"
-    elif is_arch; then
-        source_curl "$INSTALLERS/arch"
-    elif is_mac; then
+    if is_mac; then
         source_curl "$INSTALLERS/mac"
     else
-        warn "unknown OS; installation might fail, continuing..."
+        source_curl "$INSTALLERS/atomic"
+
+        if ! is_atomic; then
+            if is_apt; then
+                source_curl "$INSTALLERS/apt"
+            elif is_rh && ! is_atomic; then
+                source_curl "$INSTALLERS/dnf"
+            elif is_suse; then
+                source_curl "$INSTALLERS/suse"
+            elif is_arch; then
+                source_curl "$INSTALLERS/arch"
+            fi
+
+            source_curl "$INSTALLERS/fns"
+            source_curl "$INSTALLERS/box"
+        fi
     fi
 
     slog "Installing ${*} ..."

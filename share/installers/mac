@@ -4,6 +4,18 @@ macos_settings_install() {
     defaults write -g NSWindowShouldDragOnGesture -bool true
 }
 
+amethyst_config_install() {
+    slog "amethyst config"
+    stowdf amethyst
+    slog "amethyst config done!"
+
+}
+
+aerospace_config_install() {
+    slog "aerospace config"
+    stowgf aerospace
+}
+
 macos_config_install() {
     stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R aerospace
     stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R amethyst

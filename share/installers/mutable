@@ -1,0 +1,746 @@
+#! /usr/bin/env bash
+
+nix_install() {
+  has_cmd nix && return 0
+  slog "Installing nix"
+
+  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
+  source_if_exists /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
+  # if has_cmd nix-channel; then
+  #     nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+  #     nix-channel --update
+  # fi
+
+  slog "nix installation done!"
+
+  cmd_check nix nix-shell nix-env
+}
+
+devbox_install() {
+  has_cmd devbox && return 0
+
+  slog "Installing devbox"
+  curl -fsSL https://get.jetify.com/devbox | bash
+
+  slog "devbox installation done!"
+
+  cmd_check devbox
+}
+
+nix-no-init_install() {
+  has_cmd nix && return 0
+
+  slog "Installing nix"
+  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
+  slog "nix installation done!"
+
+  cmd_check nix nix-shell nix-env
+}
+
+emacs_bin_install() {
+  slog "Installing emacs"
+
+  if is_apt; then
+    echo "postfix postfix/main_mailer_type select No configuration" | sudo debconf-set-selections
+    si -y --no-install-recommends emacs
+  elif is_mac; then
+    brew tap railwaycat/emacsmacport
+    bi emacs-mac --with-modules
+    ln -s /usr/local/opt/emacs-mac/Emacs.app /Applications/Emacs.app
+  else
+    si emacs
+  fi
+
+  slog "emacs installation done!"
+
+  cmd_check emacs
+}
+
+go_install() {
+  if ! has_cmd go; then
+    slog "Installing go"
+
+    sudo rm -rf /usr/local/go
+    VERSION=$(curl -sSL "https://go.dev/VERSION?m=text" | head -n 1)
+    frm "/tmp/${VERSION}.linux-amd64.tar.gz"
+    wget -nv "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz" -O /tmp/"${VERSION}.linux-amd64.tar.gz"
+    slog "Untar ${VERSION}.linux-amd64.tar.gz"
+    sudo tar -C /usr/local -xzf /tmp/"${VERSION}.linux-amd64.tar.gz"
+    frm "/tmp/${VERSION}.linux-amd64.tar.gz"
+    export PATH=$PATH:/usr/local/go/bin
+
+    slog "go installation done!"
+
+  fi
+
+  if ! has_cmd go; then
+    warn "go not installed, skipping go dev tools"
+    return 1
+  fi
+
+  go-tools_install
+
+  slog "go dev tools installation done!"
+}
+
+multipass_install() {
+  has_cmd snap || snap_install
+
+  if has_cmd snap; then
+    sudo snap install multipass
+  else
+    warn "snap not installed, skipping multipass installation"
+  fi
+}
+
+# home_manager_install() {
+#   has_cmd home-manager && return 0
+
+#   slog "Setting up home-manager"
+
+#   if ! dir_exists "$DOT_DIR"; then
+#     warn "could not clone dotfiles respository to $DOT_DIR, Quitting"
+#     return 1
+#   fi
+
+#   nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#ilm --impure -b bak
+
+#   if file_exists /etc/nix/nix.conf; then
+#     if ! grep -q nix-command flakes /etc/nix/nix.conf 2>/dev/null; then
+#       slog "enabling flakes in /etc/nix/nix.conf"
+#       echo "extra-experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
+#     fi
+#   elif ! grep -q nix-command flakes "$XDG_CONFIG_HOME/nix/nix.conf" 2>/dev/null; then
+#     slog "enabling flakes in $XDG_CONFIG_HOME/nix/nix.conf"
+#     echo "extra-experimental-features = nix-command flakes" >>"$XDG_CONFIG_HOME/nix/nix.conf"
+#   fi
+# }
+
+dev_groupstall() {
+  slog "Generic OS setup for Development(docker,vscode,kitty,brew,flatpak, distrobox)"
+
+  essential_install
+
+  brew_install
+
+  has_cmd trash || bi trash-cli
+  has_cmd rg || bi ripgrep
+  has_cmd delta || bi git-delta
+
+  bis gh wget tree tar unzip stow micro make cmake
+  bis zsh starship fzf fd bat zoxide eza htop tmux gum
+  bi bash-preexec
+
+  docker_install
+  atomic_distrobox_install
+
+  is_desktop || return 0
+
+  jetbrains_nerd_font_install
+  vscode_install
+
+  if has_cmd flatpak; then
+    flathub_install
+    ptyxis_install
+    fpi us.zoom.Zoom
+    fpi md.obsidian.Obsidian
+  else
+    kitty_bin_install
+  fi
+}
+
+base-group_check() {
+  cmd_check gcc make curl wget git trash tree tar unzip stow
+  dir_check "$DOT_DIR"
+  bash_config_check
+}
+
+base_groupstall() {
+  core_install
+  dotfiles_install
+  bash_config_install
+
+  base-group_check
+}
+
+min-group_check() {
+  cmd_check micro zip unar
+}
+
+min_groupstall() {
+  base_groupstall
+  essential_install
+
+  min-group_check
+}
+
+shell-group_check() {
+  cmd_check gh nvim zsh tree-sitter tmux lazygit sd lsd bat fd
+  cmd_check fzf zoxide gum bat brew btm htop btm rg starship
+  cmd_check eza fd fzf atuin delta
+  # cmd_check cheat choose curlie direnv doggo dotenv procs
+  # cmd_check duf dust gawk gdu hyperfine jq just shellcheck shfmt yq
+}
+
+shell_groupstall() {
+  min_groupstall
+  shell_install
+
+  bash_config_install
+  has_cmd zsh && zsh_config_install
+  has_cmd nvim && nvim_config_install
+  has_cmd tmux && tmux_config_install
+  has_cmd yazi && yazi_config_install
+
+  shell-group_check
+}
+
+ct-group_check() {
+  cmd_check incus docker podman distrobox toolbox
+}
+
+ct_groupstall() {
+  shell_groupstall
+  ct_install
+
+  ct-group_check
+}
+
+vm_groupstall() {
+  ct_groupstall
+  vm_install
+}
+
+work_groupstall() {
+  ct_groupstall
+
+  jetbrains_nerd_font_install
+  vscode_install
+
+  flathub_install
+  ptyxis_install
+}
+
+desktop_groupstall() {
+  vm_groupstall
+  fonts_install
+  ui_install
+
+  # tailscale_install
+  # @TODO: flatpak aliases?
+
+  has_cmd code && vscode-extensions_install
+  has_cmd code && vscode_config_install
+  has_cmd foot && foot_config_install
+  has_cmd ghostty && ghostty_config_install
+  has_cmd kitty && kitty_config_install
+  has_cmd wezterm && wezterm_config_install
+}
+
+prog-group_check() {
+  cmd_check go rustc pnpm uv pyenv conda
+}
+
+prog_groupstall() {
+  vm_groupstall
+  go_install
+  rust_install
+  pnpm_install
+  python_install
+  uv_install
+  prog-group_check
+}
+
+all-group_check() {
+  cmd_check pixi emacs
+}
+
+all_groupstall() {
+  prog_groupstall
+  pixi_install
+  emacs_bin_install
+
+  emacs_config_install
+
+  all-group_check
+}
+
+nix_groupstall() {
+  base_groupstall
+  nix_install
+  home_manager_install
+  devbox_install
+
+  hms
+
+  cmd_check home-manager nix devbox
+}
+
+sway_groupstall() {
+  slog "Installing sway"
+  shell_groupstall
+
+  sway_install
+
+  slog "sway instalation done!"
+}
+
+hyprland_groupstall() {
+  slog "Installing hyprland"
+  shell_groupstall
+
+  hyprland_install
+
+  slog "hyprland instalation done!"
+}
+
+docker_install() {
+  has_cmd docker && return 0
+
+  slog "Installing docker..."
+
+  frm /tmp/get-docker.sh
+  curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+  sudo sh /tmp/get-docker.sh
+  frm /tmp/get-docker.sh
+
+  docker_common_install
+
+  slog "Docker installation done!"
+}
+
+code_server_install() {
+  has_cmd code-server && return 1
+
+  slog "Installing code-server"
+  curl -sSL https://code-server.dev/install.sh | sh
+  slog "code-server installation done!"
+
+  cmd_check code-server
+
+}
+
+coder_install() {
+  slog "Installing coder"
+  curl -L https://coder.com/install.sh | sh
+  slog "coder installation done!"
+}
+
+atomic_distrobox_install() {
+  has_cmd distrobox && return 0
+
+  slog "Installing distrobox"
+
+  curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
+
+  slog "distrobox installation done!"
+}
+
+permissive_selinux() {
+  sed -i 's/^SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
+
+  sudo setenforce 0
+  if [[ "$(getenforce)" == "Permissive" ]]; then
+    slog "Successfully set SELinux to permissive mode."
+  else
+    err_exit "Failed to set SELinux to permissive mode. Quitting."
+  fi
+}
+
+foot_config_install() {
+  slog "foot config"
+  stowgf foot
+  slog "foot config done!"
+}
+
+pyenv_install() {
+  if has_cmd pyenv; then
+    eval "$(pyenv init -)"
+    return 0
+  fi
+
+  slog "Installing pyenv"
+  sclone https://github.com/yyuu/pyenv.git ~/.pyenv
+  sclone https://github.com/yyuu/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv
+  slog "pyenv installation done!"
+
+  export PYENV_ROOT="$HOME/.pyenv"
+  export PATH="$PYENV_ROOT/bin:$PATH"
+  eval "$(pyenv init -)"
+
+  cmd_check pyenv
+}
+
+tailscale_install() {
+  has_cmd tailscale && return 0
+
+  slog "Installing tailscale"
+  curl -fsSL https://tailscale.com/install.sh | sh
+  slog "tailscale installation done!"
+}
+
+portainer_install() {
+  if ! has_cmd docker; then
+    warn "docker not installed, skipping portainer"
+    return 1
+  fi
+
+  if has_cmd docker && docker ps -a | grep -q portainer; then
+    slog "Portainer is already installed"
+    return 1
+  fi
+
+  if ! docker volume inspect portainer_data &>/dev/null; then
+    slog "Creating portainer_data volume"
+    docker volume create portainer_data
+    docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
+
+    slog "Portainer installation done!"
+  fi
+}
+
+sway_install() {
+  slog "Installing sway..."
+
+  sway_bin_install
+
+  sway-waybar_config_install
+  kitty_config_install
+  sway_config_install
+  rofi_config_install
+  wlogout_config_install
+
+  if ! has_cmd pipx; then
+    warn "pipx not installed, cannot install autotiling"
+    return 1
+  fi
+
+  pipx install i3ipc
+  pipx install autotiling
+
+  slog "Installing sway done!"
+}
+
+hyprland_install() {
+  slog "Installing hyprland..."
+
+  hyprland_bin_install
+
+  hyprland_config_install
+  hypr-waybar_config_install
+  kitty_config_install
+  sway_config_install
+  rofi_config_install
+  wlogout_config_install
+
+  slog "hyprland installation done!"
+}
+
+vscode_install() {
+  vscode_bin_install
+  vscode-extensions_install
+  vscode_config_install
+}
+
+gnome_extensions_install() {
+  if ! has_cmd gext; then
+    if ! has_cmd pipx; then
+      warn "pipx not installed, skipping gnome extensions"
+      return 1
+    fi
+
+    pipx install gnome-extensions-cli --system-site-packages
+    cmd_check gext
+  fi
+
+  slog "Installing gnome extensions"
+
+  gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
+  gext install Vitals@CoreCoding.com
+  gext install tailscale@joaophi.github.com
+  gext install tilingshell@ferrarodomenico.com
+  gext install CoverflowAltTab@palatis.blogspot.com
+  gext install just-perfection-desktop@just-perfection
+  gext install blur-my-shell@aunetx
+  gext install undecorate@sun.wxg@gmail.com
+  gext install AlphabeticalAppGrid@stuarthayhurst
+
+  slog "gnome extensions installation done!"
+}
+
+gnome_settings_install() {
+
+  if ! has_cmd gsettings; then
+    warn "gsettings not found, skipping gnome basic settings"
+    return 1
+  fi
+
+  slog "gnome settings"
+
+  gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
+  gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+  gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
+  gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
+  gsettings set org.gnome.desktop.interface accent-color 'purple'
+
+  # Use 4 fixed workspaces instead of dynamic mode
+  gsettings set org.gnome.mutter dynamic-workspaces false
+  gsettings set org.gnome.desktop.wm.preferences num-workspaces 4
+
+  # Center new windows in the middle of the screen
+  gsettings set org.gnome.mutter center-new-windows true
+
+  # Set JetBrains Mono as the default monospace font
+  gsettings set org.gnome.desktop.interface monospace-font-name 'JetbrainsMono Nerd Font 11'
+
+  slog "gnome settings done!"
+}
+
+# https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
+gnome_config_install() {
+  if ! is_gnome; then
+    warn "Not running GNOME, skipping GNOME config"
+    return 1
+  fi
+
+  slog "gnome config"
+
+  if is_ubuntu; then
+    si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
+  elif is_fedora && ! is_atomic; then
+    si gnome-extensions-app gnome-tweaks
+  fi
+
+  if is_ubuntu; then
+    gnome-extensions disable tiling-assistant@ubuntu.com
+    gnome-extensions disable ubuntu-appindicators@ubuntu.com
+    gnome-extensions disable ubuntu-dock@ubuntu.com
+    gnome-extensions disable ding@rastersoft.com
+  fi
+
+  gnome_settings_install
+  gnome_keybindings_install
+
+  gnome_extensions_install
+
+  slog "gnome config done!"
+}
+
+hypr-waybar_config_install() {
+  has_cmd waybar || return 1
+
+  slog "waybar config"
+  stowgf hypr-waybar
+  slog "waybar config done!"
+}
+
+hyprland_config_install() {
+  slog "hypr config install"
+
+  hypr-waybar_config_install
+  wlogout_config_install
+  rofi_config_install
+  kitty_config_install
+
+  slog "hypr config done!"
+}
+
+kwin_script_install() {
+  local SCRIPT="$1"
+
+  if plasmapkg2 -t kwinscript -l | grep -q "krohnkite"; then
+    echo "Upgrading KWin script $SCRIPT ..."
+    plasmapkg2 -t kwinscript -u "$SCRIPT"
+  else
+    echo "Installing KWin script $SCRIPT ..."
+    plasmapkg2 -t kwinscript -i "$SCRIPT"
+  fi
+}
+
+kde_settings() {
+  if ! is_kde; then
+    warn "Not running KDE, skipping KDE settings"
+    return 1
+  fi
+
+  if ! [[ $(plasma_major_version) -eq 6 ]]; then
+    warn "KDE Plasma 6 is required"
+    return 1
+  fi
+
+  kwin_script_install "krohnkite.kwinscript"
+}
+
+# https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-hotkeys.sh
+gnome_keybindings_install() {
+  # Make it easy to resize undecorated windows
+  gsettings set org.gnome.desktop.wm.keybindings begin-resize "['<Super>BackSpace']"
+
+  # Alt+F4 is very cumbersome
+  # gsettings set org.gnome.desktop.wm.keybindings close "['<Super>w']"
+
+  # Make it easy to maximize like you can fill left/right
+  # gsettings set org.gnome.desktop.wm.keybindings maximize "['<Super>Up']"
+
+  # For keyboards that only have a start/stop button for music, like Logitech MX Keys Mini
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys next "['<Shift>AudioPlay']"
+
+  # Full-screen with title/navigation bar
+  # gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Shift>F11']"
+
+  # # Use alt for pinned apps
+  # gsettings set org.gnome.shell.keybindings switch-to-application-1 "['<Alt>1']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-2 "['<Alt>2']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-3 "['<Alt>3']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-4 "['<Alt>4']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-5 "['<Alt>5']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-6 "['<Alt>6']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-7 "['<Alt>7']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-8 "['<Alt>8']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-9 "['<Alt>9']"
+
+  # # Use super for workspaces
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-1 "['<Super>1']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-2 "['<Super>2']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-3 "['<Super>3']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-4 "['<Super>4']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-5 "['<Super>5']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-6 "['<Super>6']"
+
+  # # Reserve slots for custom keybindings
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/']"
+
+  # # Set ulauncher to Super+Space
+  # gsettings set org.gnome.desktop.wm.keybindings switch-input-source "@as []"
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name 'ulauncher-toggle'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 'ulauncher-toggle'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ binding '<Super>space'
+
+  # # Set flameshot (with the sh fix for starting under Wayland) on alternate print screen key
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ name 'Flameshot'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ command 'sh -c -- "flameshot gui"'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ binding '<Control>Print'
+
+  # # Start a new alacritty window (rather than just switch to the already open one)
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ name 'alacritty'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ command 'alacritty'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ binding '<Shift><Alt>2'
+
+  # # Start a new Chrome window (rather than just switch to the already open one)
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ name 'new chrome'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ command 'google-chrome'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ binding '<Shift><Alt>1'
+
+  # xdg-settings set default-web-browser google-chrome.desktop
+
+  # Install new extensions
+
+  # gext install tophat@fflewddur.github.io
+  # gext install space-bar@luchrioh
+  # gext install tactile@lundal.io
+
+  # # Compile gsettings schemas in order to be able to set them
+  # sudo cp ~/.local/share/gnome-shell/extensions/tactile@lundal.io/schemas/org.gnome.shell.extensions.tactile.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo cp ~/.local/share/gnome-shell/extensions/just-perfection-desktop\@just-perfection/schemas/org.gnome.shell.extensions.just-perfection.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo cp ~/.local/share/gnome-shell/extensions/blur-my-shell\@aunetx/schemas/org.gnome.shell.extensions.blur-my-shell.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo cp ~/.local/share/gnome-shell/extensions/space-bar\@luchrioh/schemas/org.gnome.shell.extensions.space-bar.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo cp ~/.local/share/gnome-shell/extensions/tophat@fflewddur.github.io/schemas/org.gnome.shell.extensions.tophat.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo cp ~/.local/share/gnome-shell/extensions/AlphabeticalAppGrid\@stuarthayhurst/schemas/org.gnome.shell.extensions.AlphabeticalAppGrid.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo glib-compile-schemas /usr/share/glib-2.0/schemas/
+
+  # # Configure Tactile
+  # gsettings set org.gnome.shell.extensions.tactile col-0 1
+  # gsettings set org.gnome.shell.extensions.tactile col-1 2
+  # gsettings set org.gnome.shell.extensions.tactile col-2 1
+  # gsettings set org.gnome.shell.extensions.tactile col-3 0
+  # gsettings set org.gnome.shell.extensions.tactile row-0 1
+  # gsettings set org.gnome.shell.extensions.tactile row-1 1
+  # gsettings set org.gnome.shell.extensions.tactile gap-size 32
+
+  # # Configure Just Perfection
+  # gsettings set org.gnome.shell.extensions.just-perfection animation 2
+  # gsettings set org.gnome.shell.extensions.just-perfection dash-app-running true
+  # gsettings set org.gnome.shell.extensions.just-perfection workspace true
+  # gsettings set org.gnome.shell.extensions.just-perfection workspace-popup false
+
+  # # Configure Blur My Shell
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.appfolder blur false
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.lockscreen blur false
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.screenshot blur false
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.window-list blur false
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.panel blur false
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.overview blur true
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.overview pipeline 'pipeline_default'
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock blur true
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock brightness 0.6
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock sigma 30
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock static-blur true
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock style-dash-to-dock 0
+
+  # # Configure Space Bar
+  # gsettings set org.gnome.shell.extensions.space-bar.behavior smart-workspace-names false
+  # gsettings set org.gnome.shell.extensions.space-bar.shortcuts enable-activate-workspace-shortcuts false
+  # gsettings set org.gnome.shell.extensions.space-bar.shortcuts enable-move-to-workspace-shortcuts true
+  # gsettings set org.gnome.shell.extensions.space-bar.shortcuts open-menu "@as []"
+
+  # # Configure TopHat
+  # gsettings set org.gnome.shell.extensions.tophat show-icons false
+  # gsettings set org.gnome.shell.extensions.tophat show-cpu false
+  # gsettings set org.gnome.shell.extensions.tophat show-disk false
+  # gsettings set org.gnome.shell.extensions.tophat show-mem false
+  # gsettings set org.gnome.shell.extensions.tophat network-usage-unit bits
+
+  # # Configure AlphabeticalAppGrid
+  # gsettings set org.gnome.shell.extensions.alphabetical-app-grid folder-order-position 'end'
+
+  # app/com.github.rafostar.Clapper
+  # app/org.fedoraproject.MediaWriter
+  # app/com.github.tchx84.Flatseal
+  # app/io.github.flattool.Ignition
+  # app/io.github.flattool.Warehouse
+  # app/org.gnome.baobab
+  # app/org.gnome.Calculator
+  # app/org.gnome.Calendar
+  # app/org.gnome.Characters
+  # app/org.gnome.clocks
+  # app/org.gnome.Connections
+  # app/org.gnome.Contacts
+  # app/org.gnome.DejaDup
+  # app/org.gnome.Papers
+  # app/com.mattjakeman.ExtensionManager
+  # app/org.gnome.FileRoller
+  # app/org.gnome.font-viewer
+  # app/org.gnome.Logs
+  # app/org.gnome.Loupe
+  # app/org.gnome.Maps
+  # app/org.gnome.NautilusPreviewer
+  # app/org.gnome.World.PikaBackup
+  # app/org.gnome.TextEditor
+  # app/org.gnome.Weather
+  # app/io.missioncenter.MissionCenter
+  # app/org.mozilla.firefox
+  # app/org.mozilla.Thunderbird
+  # app/org.gustavoperedo.FontDownloader
+  # runtime/org.gtk.Gtk3theme.adw-gtk3/x86_64/3.22
+  # runtime/org.gtk.Gtk3theme.adw-gtk3-dark/x86_64/3.22
+
+  #     # Reveal week numbers in the Gnome calendar
+  #     gsettings set org.gnome.desktop.calendar show-weekdate true
+}
+
+# ulauncher_install() {
+#     sudo add-apt-repository universe -y
+#     sudo add-apt-repository ppa:agornostal/ulauncher -y
+#     sudo apt update -y
+#     sudo apt install -y ulauncher
+
+#     # Start ulauncher to have it populate config before we overwrite
+#     mkdir -p ~/.config/autostart/
+#     cp ~/.local/share/omakub/configs/ulauncher.desktop ~/.config/autostart/ulauncher.desktop
+#     gtk-launch ulauncher.desktop >/dev/null 2>&1
+#     sleep 2 # ensure enough time for ulauncher to set defaults
+#     cp ~/.local/share/omakub/configs/ulauncher.json ~/.config/ulauncher/settings.json
+# }

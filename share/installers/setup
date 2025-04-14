@@ -19,7 +19,7 @@ main() {
     fi
 }
 
-if [ "$1" == "nosudo" ] || [ "$1" == "fedora-atomic" ] || [ "$1" == "pixi_nosudo" ] || is_multipass; then
+if [[ "$1" == "nosudo" ]] || [[ "$1" == "fedora-atomic" ]] || is_multipass; then
     export NOSUDO=1
 fi
 
