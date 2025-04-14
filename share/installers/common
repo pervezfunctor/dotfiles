@@ -173,13 +173,12 @@ pnpm_install() {
     has_cmd pnpm && return 0
 
     slog "Installing pnpm"
-    curl -sSL https://get.pnpm.io/install.sh | sh -
+    curl -fsSL https://get.pnpm.io/install.sh | sh -
 
+    # docker container installation
+    # wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.bashrc" SHELL="$(which bash)" bash -
     slog "Installing node"
     pnpm env use --global latest
-
-    has_cmd bash && pnpm install-completion bash
-    has_cmd zsh && pnpm install-completion zsh
 
     slog "pnpm/node installation done!"
 
@@ -1814,6 +1813,8 @@ fedora-atomic_groupstall() {
 
     slog "Fedora Atomic Host setup done!"
 }
+
+fedora-atomic-host_
 
 pixi_groupstall() {
     pixi_install

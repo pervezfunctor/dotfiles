@@ -229,4 +229,5 @@ system-update() {
     cd "$DOT_DIR" && git-up
     has_cmd devbox && devbox update
     has_cmd home-manager && hms
+    has_cmd pnpm && pnpm self-update
 }
