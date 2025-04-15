@@ -499,6 +499,16 @@ gnome_settings_install() {
   slog "gnome settings done!"
 }
 
+gnome_flatpaks_install() {
+  fpi page.tesk.Refine
+  fpi com.github.tchx84.Flatseal
+  fpi io.github.flattool.Ignition
+  fpi io.github.flattool.Warehouse
+  fpi io.missioncenter.MissionCenter
+  fpi org.gnome.World.PikaBackup
+  fpi org.gnome.Papers
+}
+
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
 gnome_config_install() {
   if ! is_gnome; then
