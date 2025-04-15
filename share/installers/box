@@ -91,7 +91,6 @@ dbox_nix_setup() {
     return 1
   fi
 
-  source_dotfile "share/fns"
   dbox_nix
 }
 

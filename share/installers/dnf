@@ -98,7 +98,7 @@ cli_install() {
     slog "Installing cli tools using dnf"
 
     si zsh neovim ShellCheck tmux pkg-config urlview htop gh
-    si fzf ripgrep fd-find bat plocate luarocks tealdeer
+    si fzf ripgrep fd-find bat plocate luarocks tealdeer zsh
 
     if is_fedora; then
         si python3-neovim zoxide hyperfine git-delta procs tree-sitter-cli
@@ -162,6 +162,8 @@ vscode_bin_install() {
 
 terminal_bin_install() {
     has_cmd ghostty && return 1
+    has_cmd kitty && return 1
+    has_cmd alacritty && return 1
 
     if is_fedora; then
         sudo dnf copr -y enable pgdev/ghostty
@@ -179,7 +181,7 @@ terminal_bin_install() {
 }
 
 ui_install() {
-    si virt-manager chromium gnome-keyring xsel xclip wl-clipboard
+    si virt-manager chromium gnome-keyring xsel xclip wl-clipboard flatpak
 
     terminal_bin_install
     vscode_bin_install

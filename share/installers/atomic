@@ -152,6 +152,11 @@ kitty_bin_install() {
     # stow kitty.app
 }
 
+kitty_install() {
+    kitty_bin_install
+    kitty_config_install
+}
+
 ghostty_bin_install() {
     has_cmd ghostty && return 1
 
@@ -162,6 +167,11 @@ ghostty_bin_install() {
     wget "https://github.com/pkgforge-dev/ghostty-appimage/releases/download/${VERSION}/Ghostty-${VERSION}-${ARCH}.AppImage"
     chmod +x "Ghostty-${VERSION}-${ARCH}.AppImage"
     install "./Ghostty-${VERSION}-${ARCH}.AppImage" "$HOME/.local/bin/ghostty"
+}
+
+ghostty_install() {
+    ghostty_bin_install
+    ghostty_config_install
 }
 
 cmake_install() {

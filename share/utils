@@ -523,7 +523,7 @@ omv() {
     if mv "$1" "$2" 2>/dev/null; then
         return 0
     else
-        fail "Failed to move $1 to $2"
+        warn "Failed to move $1 to $2"
         return 1
     fi
 }
@@ -1093,10 +1093,12 @@ common-installer() {
             "${1:1}_groupstall"
         elif fn_exists "${1}_install"; then
             "${1}_install"
-        elif fn_exists "${1}_groupstall"; then
-            "${1}_groupstall"
+        elif fn_exists "${1}_boxstall"; then
+            "${1}_boxstall"
         elif fn_exists "${1}_config_install"; then
             "${1}_config_install"
+        elif fn_exists "${1}_groupstall"; then
+            "${1}_groupstall"
         elif fn_exists "${1}"; then
             "${1}"
         else
@@ -1120,7 +1122,9 @@ bootstrap() {
     rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2>/dev/null
     [ -n "$NOSUDO" ] || keep_sudo_running
 
-    INSTALLERS="${ILM_BASE_URL}/share/installers"
+    local SHARE, INSTALLERS
+    SHARE="${ILM_BASE_URL}/share"
+    INSTALLERS="${SHARE}/installers"
 
     source_curl "$INSTALLERS/common"
 
@@ -1141,7 +1145,7 @@ bootstrap() {
             fi
 
             source_curl "$INSTALLERS/mutable"
-            source_curl "$INSTALLERS/share/fns"
+            source_curl "$SHARE/fns"
             source_curl "$INSTALLERS/box"
         fi
     fi

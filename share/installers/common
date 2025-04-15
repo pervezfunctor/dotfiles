@@ -166,12 +166,12 @@ webi_shell_install() {
 }
 
 shell_install() {
+  cli_install
+
   brew_install
   webi_install
   mise_install
   # pixi_install
-
-  cli_install
 
   webi_shell_install
   brew_shell_install
