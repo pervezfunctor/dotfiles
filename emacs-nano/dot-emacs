@@ -13,7 +13,7 @@
       (set-face-attribute 'default nil
                           :family "JetBrainsMono Nerd Font"
                           :weight 'bold
-                          :height 140)))
+                          :height 120)))
 (when *is-a-mac*
   (setq mac-option-modifier 'meta)
   (custom-set-variables '(ns-use-srgb-colorspace nil)))

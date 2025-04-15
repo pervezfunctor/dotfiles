@@ -18,19 +18,23 @@ nvim_boxstall() {
   has_cmd nvim || warn "nvim not installed!"
 }
 
+emacs_version() {
+  emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1
+}
+
 emacs_boxstall() {
   srm ~/.emacs
   srm ~/.emacs.d
   ln -s "$DOT_DIR/emac-slim/dot-emacs" ~/.emacs
 
-  has_cmd emacs && return 0
+  has_cmd emacs && [ "$(emacs_version)" -gt 29 ] && return 0
 
   if has_cmd brew; then
     bi emacs
   else
-    si emacs-nox
-    has_cmd emacs || si emacs
     has_cmd emacs || (has_cmd pixi && pic emacs)
+    is_apt || si emacs-nox
+    has_cmd emacs || si emacs
   fi
 
   has_cmd emacs || warn "emacs not installed! Qutting."
@@ -108,8 +112,6 @@ box_base() {
 
   zsh_boxstall
   tmux_boxstall
-  nvim_boxstall
-  emacs_boxstall
 }
 
 dbox_base() {

@@ -81,6 +81,10 @@ brew_shell_install() {
 
   alias gdu=gdu-go
 
+  if is_linux; then
+    brew install stress-ng topgrade
+  fi
+
   slog "shell tools with brew done!"
 }
 
