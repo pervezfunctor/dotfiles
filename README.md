@@ -4,26 +4,34 @@
 
 On windows, use the following command and select what you want. DO NOT deselect preselected options.
 
+**NOTE**: Run the following in powershell as administrator.
+
 ```powershell
 iwr -useb https://dub.sh/NDyiu7a | iex
+```
+
+To configure your existing wsl distribution, use the following command in wsl(ubuntu 24.04 at least).
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- wslbox
+```
+
+On linux desktop(or a desktop VM), install shell tools, vscode and docker.
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- dev
+```
+
+In development container/vm/desktop, install modern unix tools using the following command. Works on linux and macos.
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
 
 On macos, install essential apps along with shell tools. Works on linux too.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- desktop
-```
-
-Install modern unix tools using the following command. Perfect for development container/vm. Works on linux and macos.
-
-```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
-```
-
-On linux desktop(or a desktop VM(vmware/virtualbox for example)), use the following command.
-
-```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- dev
 ```
 
 
@@ -56,6 +64,7 @@ If you are an experienced linux user and and an experienced developer, then [Blu
 
   - Or use [incus](https://linuxcontainers.org/incus) for both virtual machines and [lxc(stateful)](https://linuxcontainers.org/lxc) isolated and stateful containers.
 
+
 ### Fedora Atomic
 
 If you prefer Fedora Atomic([Kinoite](https://fedoraproject.org/atomic-desktops/kinoite) or [Silverblue](https://fedoraproject.org/atomic-desktops/kinoite)), then use the following command. If you prefer a tiling window manager, then [Fedora Sway Atomic](https://fedoraproject.org/atomic-desktops/sway) is an excellent option.
@@ -71,3 +80,12 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
   - You can also install visual studio code using flatpak.
 
   - Use [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal, as it has great support for toolbox.
+
+
+### Linux Desktop
+
+This should work on almost any linux system. Doesn't need sudo privileges.
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- nosudo
+```
