@@ -1,0 +1,13 @@
+#!/bin/bash
+
+WSL_DISTRO=${1:-Ubuntu}
+USERNAME=${2:-user}
+
+if ! wsl -l | grep -q "$WSL_DISTRO"; then
+  echo "WSL distro $WSL_DISTRO not found"
+  exit 1
+fi
+
+WSL_IP=$(wsl -d "$WSL_DISTRO" -- ip -4 addr show eth0 | awk '/inet / {print $2}' | cut -d/ -f1)
+
+ssh "$USERNAME"@"$WSL_IP"

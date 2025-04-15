@@ -1,0 +1,11 @@
+#!/bin/bash
+
+VM_NAME=${1:-ubuntu-ilm}
+USERNAME=${2:-ubuntu}
+
+if ! multipass list | grep -q "${VM_NAME}"; then
+  echo "VM ${VM_NAME} not found"
+  exit 1
+fi
+
+ssh ${USERNAME}@"$(multipass info ${VM_NAME} | awk '/IPv4/ {print $2}')"

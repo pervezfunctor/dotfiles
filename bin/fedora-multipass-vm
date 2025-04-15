@@ -1,0 +1,26 @@
+#!/bin/bash
+
+INSTANCE="fedora-cloud"
+CPUS=2
+MEM=8G
+DISK=20G
+
+# Create cloud-init config
+cat >cloud-init.yaml <<EOF
+#cloud-config
+users:
+  - name: fedora
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh-authorized-keys:
+      - $(cat ~/.ssh/id_rsa.pub)
+EOF
+
+# Launch instance
+multipass launch \
+  --name "$INSTANCE" \
+  --cpus "$CPUS" \
+  --mem "$MEM" \
+  --disk "$DISK" \
+  --cloud-init cloud-init.yaml \
+  --image fedora@41

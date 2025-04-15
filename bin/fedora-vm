@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# Variables
+VM_NAME="fedora-cloud"
+QCOW2_IMAGE="Fedora-Cloud-Base-41-1.14.x86_64.qcow2"
+CLOUD_INIT_ISO="seed.iso"
+DISK_PATH="/var/lib/libvirt/images/${VM_NAME}.qcow2"
+RAM_MB=2048
+VCPUS=2
+
+# Download the image if not present
+if [ ! -f "$QCOW2_IMAGE" ]; then
+  echo "Downloading Fedora Cloud Base image..."
+  wget https://download.fedoraproject.org/pub/fedora/linux/releases/41/Cloud/x86_64/images/$QCOW2_IMAGE
+fi
+
+# Create cloud-init ISO
+mkdir -p cloud-init
+cat >cloud-init/user-data <<EOF
+#cloud-config
+users:
+  - name: fedora
+    groups: wheel
+    shell: /bin/bash
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh-authorized-keys:
+      - $(cat ~/.ssh/id_rsa.pub)
+EOF
+
+cat >cloud-init/meta-data <<EOF
+instance-id: ${VM_NAME}
+local-hostname: ${VM_NAME}
+EOF
+
+genisoimage -output "$CLOUD_INIT_ISO" -volid cidata -joliet -rock cloud-init/user-data cloud-init/meta-data
+
+# Copy disk image
+sudo qemu-img create -f qcow2 -b "$QCOW2_IMAGE" "$DISK_PATH" 10G
+
+# Install the VM
+sudo virt-install \
+  --name "$VM_NAME" \
+  --memory "$RAM_MB" \
+  --vcpus "$VCPUS" \
+  --disk path="$DISK_PATH",format=qcow2 \
+  --disk path="$CLOUD_INIT_ISO",device=cdrom \
+  --os-variant=fedora41 \
+  --import \
+  --graphics none \
+  --network bridge=virbr0 \
+  --noautoconsole
