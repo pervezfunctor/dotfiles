@@ -16,7 +16,7 @@ pacstall_install() {
 }
 
 update_packages() {
-    slog "Updating"
+    slog "Updating Ubuntu"
 
     if ! { sudo apt-get -qq update && sudo apt-get -qq upgrade -y; }; then
         err_exit "apt-get update/upgrade failed, quitting"
@@ -26,6 +26,8 @@ update_packages() {
 ubuntu_packages() {
     update_packages
 
+    slog "Installing packages"
+
     DEBIAN_FRONTEND=noninteractive si git gh git-delta unzip wget curl \
         trash-cli tar stow gcc make file just tree-sitter-cli zsh tmux \
         tree bat eza ripgrep zoxide fd-find htop sd bat emacs-nox
@@ -33,28 +35,39 @@ ubuntu_packages() {
     # si golang-go fzf
     # go install github.com/charmbracelet/gum@latest
 
+    slog "Installing packages done!"
+
     pixi_install
+
+    slog "Installing pixi packages"
     pi fzf lazygit yazi tealdeer
+    slog "Installing pixi packages done!"
 }
 
 debian_packages() {
     update_packages
 
+    slog "Installing packages"
     #  git-delta eza just treesitter-cli fzf
     DEBIAN_FRONTEND=noninteractive si git gh unzip wget curl trash-cli tar \
         stow gcc make file zsh tmux \
         tree bat ripgrep zoxide fd-find htop sd emacs-nox
 
+    slog "Installing packages done!"
+
     pixi_install
     pi fzf lazygit yazi tealdeer git-delta just eza bat
+    slog "Installing pixi packages done!"
 }
 
 core_install() {
     update_packages
 
+    slog "Installing core packages"
     si software-properties-common apt-transport-https ca-certificates gpg
     si curl wget git-core trash-cli tree command-not-found file
     si tar unzip cmake build-essential stow libfuse2 zstd
+    slog "Core packages installation done!"
 }
 
 sys_python_install() {
@@ -85,6 +98,7 @@ essential_install() {
 
     core_install
     sys_python_install
+    snap_install
 
     si zip unar micro nala p7zip gawk
     si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
@@ -115,6 +129,8 @@ cli_install() {
         si gh shellcheck just htop shfmt tree-sitter-cli
         gh extension install github/gh-copilot
     fi
+
+    slog "cli tools installation done!"
 }
 
 cpp_install() {
@@ -125,7 +141,11 @@ cpp_install() {
     si doxygen graphviz ccache cppcheck pre-commit
     si valgrind systemtap ltrace strace lldb lld
 
-    cmake_install
+    if has_cmd brew; then
+        bi cmake
+    else
+        cmake_install
+    fi
     conan_install
 
     cmd_check gcc g++ gdb clang clang-tidy clang-format
@@ -136,6 +156,8 @@ cpp_install() {
 
 vscode_bin_install() {
     has_cmd code && return 0
+
+    slog "Installing vscode"
 
     if ! grep -q "https://packages.microsoft.com/repos/code stable main" /etc/apt/sources.list.d/vscode.list 2>/dev/null; then
         echo "code code/add-microsoft-repo boolean true" | sudo debconf-set-selections
@@ -150,6 +172,8 @@ vscode_bin_install() {
 
     sudo apt-get -qq update
     si code
+
+    slog "vscode installation done!"
 
     cmd_check code
 }
@@ -172,21 +196,30 @@ windsurf_install() {
 }
 
 terminal_bin_install() {
+    has_cmd ghostty && return 1
+
+    slog "Installing terminal"
+
     if has_cmd snap; then
         snap install ghostty --classic
     else
         si kitty
     fi
+
+    slog "terminal installation done!"
 }
 
 ui_install() {
-    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard flatpak
+    slog "Installing ui"
+    si chromium-browser virt-manager gnome-keyring wl-clipboard flatpak
 
     flathub_install
 
     terminal_bin_install
     vscode_bin_install
     apps_install
+
+    slog "ui installation done!"
 }
 
 cockpit_install() {
@@ -203,20 +236,36 @@ cockpit_install() {
 }
 
 podman_install() {
+    slog "Installing podman"
     si podman podman-toolbox podman-compose
+    slog "podman installation done!"
 }
 
 vm_install() {
     si libvirt-daemon
     sudo systemctl enable --now libvirtd
+
+    is_desktop || return 0
+
+    si virt-manager
+    # fpi org.virt-manager.virt-manager
+    fpi org.gnome.Boxes
 }
 
 incus_install() {
+    has_cmd incus && return 1
+
+    slog "Installing incus"
+
     si incus
     incus_config_install
+
+    slog "incus installation done!"
 }
 
 ct_install() {
+    slog "Installing container tools"
+
     incus_install
     docker_install
     portainer_install
@@ -224,11 +273,17 @@ ct_install() {
     cockpit_install
 
     si buildah distrobox
+
+    slog "Container tools installation done!"
 }
 
 virt_install() {
+    slog "Installing virtualization packages"
+
     ct_install
     vm_install
 
     code_server_install
+
+    slog "Virtualization packages installation done!"
 }

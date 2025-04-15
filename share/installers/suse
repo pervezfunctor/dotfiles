@@ -8,7 +8,7 @@ si() {
 }
 
 update_packages() {
-    slog "Updating"
+    slog "Updating SUSE"
 
     if ! { sudo zypper refresh && sudo zypper --non-interactive --quiet dup; }; then
         err_exit "zypper refresh failed. quitting"
@@ -18,23 +18,35 @@ update_packages() {
 tw_packages() {
     update_packages
 
+    slog "Installing packages"
+
     si git gh lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh starship tmux gum cheat \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer plocate
+
+    slog "Installing packages done!"
 }
 
 sys_python_install() {
+    slog "Installing python"
+
     si python313 python313-virtualenv python313-pip python313-setuptools
     pipx install uv
+
+    slog "Python installation done!"
 }
 
 core_install() {
     update_packages
 
+    slog "Installing core packages"
+
     si curl wget git tar tree unzip python313-pipx cmake stow file
     sudo zypper install -y -t pattern devel_basis
 
     pipx install trash-cli
+
+    slog "Core packages installation done!"
 }
 
 snap_install() {
@@ -50,12 +62,11 @@ snap_install() {
 }
 
 essential_install() {
-    slog "Installing essential packages"
-
     core_install
     sys_python_install
     # snap_install
 
+    slog "Installing essential packages"
     si unar zip micro-editor 7zip gawk
     si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel gum
 
@@ -71,6 +82,8 @@ cli_install() {
     si hyperfine cheat curlie jq ShellCheck
 
     gh extension install github/gh-copilot
+
+    slog "cli tools installation done!"
 }
 
 cpp_install() {
@@ -81,7 +94,12 @@ cpp_install() {
     si doxygen graphviz ccache cppcheck python3-pre-commit
     si valgrind systemtap ltrace strace lldb lld
 
-    cmake_install
+    if has_cmd brew; then
+        bi cmake
+    else
+        cmake_install
+    fi
+
     conan_install
 
     slog "C++ installation done!"
@@ -90,26 +108,38 @@ cpp_install() {
 vscode_bin_install() {
     has_cmd code && return 0
 
+    slog "Installing vscode"
+
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/zypp/repos.d/vscode.repo'
     sudo zypper refresh
     si code
 
+    slog "vscode installation done!"
+
     cmd_check code
 }
 
 terminal_bin_install() {
+    has_cmd ghostty && return 1
+
+    slog "Installing ghostty"
     si ghostty
+    slog "ghostty installation done!"
 }
 
 ui_install() {
-    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard flatpak
+    slog "Installing ui"
+
+    si chromium-browser virt-manager gnome-keyring wl-clipboard flatpak
 
     flathub_install
 
     terminal_bin_install
     vscode_bin_install
     apps_install
+
+    slog "ui installation done!"
 }
 
 cockpit_install() {
@@ -126,7 +156,11 @@ cockpit_install() {
 }
 
 podman_install() {
+    has_cmd podman && return 1
+
+    slog "Installing podman"
     si podman podman-remote
+    slog "podman installation done!"
 }
 
 vm_install() {
@@ -136,32 +170,54 @@ vm_install() {
 }
 
 docker_install() {
+    has_cmd docker && return 1
+
+    slog "Installing docker"
+
     si docker docker-compose docker-compose-switch
     docker_common_install
+
+    slog "docker installation done!"
 }
 
 incus_install() {
+    has_cmd incus && return 1
+
+    slog "Installing incus"
+
     si incus
     incus_config_install
+
+    slog "incus installation done!"
 }
 
 ct_install() {
+    slog "Installing container tools"
+
     incus_install
     docker_install
     podman_install
     cockpit_install
 
     si buildah distrobox
+
+    slog "Container tools installation done!"
 }
 
 virt_install() {
+    slog "Installing virtualization packages"
+
     vm_install
     ct_install
 
     code_server_install
+
+    slog "Virtualization packages installation done!"
 }
 
 sway_install() {
+    slog "Installing sway"
+
     sudo zypper install -y -t pattern openSuseway
 
     si openSuseway qt6ct alacritty swaylock swaybg swayidle swaynag waybar grim
@@ -179,9 +235,13 @@ sway_install() {
     cmd_check /usr/libexec/polkit-gnome-authentication-agent-1
     cmd_check bluetoothctl bluemoon tlp firefox slurp qt5ct
     cmd_check swaync swaync-client
+
+    slog "sway installation done!"
 }
 
 hyprland_install() {
+    slog "Installing hyprland"
+
     si grep aaa_base bash-completion ghostscript-fonts-std NetworkManager curl tar pipewire wget xdg-utils sudo xdg-desktop-portal xdg-desktop-portal-gtk git gzip bzip2 jq adwaita-icon-theme dejavu-fonts glibc-locale less wl-clipboard google-roboto-fonts noto-sans-fonts google-droid-fonts google-opensans-fonts gtk3-metatheme-adwaita noto-coloremoji-fonts adobe-sourcecodepro-fonts command-not-found greetd metatheme-adwaita-common xdg-desktop-portal-wlr adobe-sourcesanspro-fonts adobe-sourceserifpro-fonts cantarell-fonts ghostscript-fonts-other google-carlito-fonts noto-emoji-fonts mpris-ctl
 
     si hyprcursor hypridle hyprland hyprland-bash-completion hyprland-devel
@@ -202,4 +262,6 @@ hyprland_install() {
     # cmd_check /usr/libexec/polkit-gnome-authentication-agent-1
     cmd_check bluetoothctl bluemoon tlp firefox slurp qt5ct
     cmd_check swaync swaync-client
+
+    slog "hyprland installation done!"
 }

@@ -8,7 +8,7 @@ si() {
 }
 
 update_packages() {
-    slog "Updating"
+    slog "Updating Arch"
 
     if ! sudo pacman -Syu --noconfirm --quiet; then
         err_exit "pacman update/upgrade failed, quitting"
@@ -18,26 +18,43 @@ update_packages() {
 arch_packages() {
     update_packages
 
+    slog "Installing packages"
+
     si git github-cli lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh starship tmux gum \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi bat plocate tealdeer
+
+    slog "Installing packages done!"
 }
 
 core_install() {
     update_packages
 
+    slog "Installing core packages"
+
     si curl wget git base-devel trash-cli tree micro tar unzip stow cmake zstd
     si fuse2 file
+
+    slog "Core packages installation done!"
 }
 
 sys_python_install() {
+    slog "Installing python"
+
     si python python-pipx python-pip python-setuptools python-wheel python-virtualenv
     pipx install uv
+
+    slog "Python installation done!"
 }
 
 yay_install() {
+    has_cmd yay && return 1
+    slog "Installing yay"
+
     frm /tmp/yay
     git clone https://aur.archlinux.org/yay.git /tmp/yay && cd /tmp/yay && makepkg -si && cd - && frm /tmp/yay
+
+    slog "yay installation done!"
 }
 
 essential_install() {
@@ -63,6 +80,8 @@ cli_install() {
     si plocate tealdeer television dysk yazi pixi procs dust direnv atuin
 
     gh extension install github/gh-copilot
+
+    slog "cli tools installation done!"
 }
 
 cpp_install() {
@@ -81,23 +100,33 @@ cpp_install() {
 }
 
 vscode_bin_install() {
+    slog "Installing vscode"
+
     yay -Sy --noconfirm visual-studio-code-bin
+
+    slog "vscode installation done!"
 
     cmd_check code
 }
 
 terminal_bin_install() {
+    slog "Installing terminal"
     si ghostty
+    slog "terminal installation done!"
 }
 
 ui_install() {
-    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard flatpak
+    slog "Installing ui"
+
+    si chromium virt-manager neovide gnome-keyring wl-clipboard flatpak
 
     flathub_install
 
     terminal_bin_install
     vscode_bin_install
     apps_install
+
+    slog "ui installation done!"
 }
 
 cockpit_install() {
@@ -112,26 +141,48 @@ cockpit_install() {
 }
 
 podman_install() {
+    has_cmd podman && return 1
+
+    slog "Installing podman"
     si podman podman-compose
+    slog "podman installation done!"
 }
 
 vm_install() {
+    slog "Installing vm"
+
     si buildah libvirt virt-install distrobox
 
     sudo systemctl enable --now libvirtd
+
+    slog "vm installation done!"
 }
 
 docker_install() {
+    has_cmd docker && return 1
+
+    slog "Installing docker"
+
     si docker docker-compose
     docker_common_install
+
+    slog "docker installation done!"
 }
 
 incus_install() {
+    has_cmd incus && return 1
+
+    slog "Installing incus"
+
     si incus
     incus_config_install
+
+    slog "incus installation done!"
 }
 
 ct_install() {
+    slog "Installing container tools"
+
     incus_install
     docker_install
     portainer_install
@@ -139,11 +190,17 @@ ct_install() {
     cockpit_install
 
     si buildah distrobox
+
+    slog "Container tools installation done!"
 }
 
 virt_install() {
+    slog "Installing virtualization packages"
+
     ct_install
     vm_install
 
     code_server_install
+
+    slog "Virtualization packages installation done!"
 }

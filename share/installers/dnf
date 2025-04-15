@@ -18,7 +18,7 @@ enable_epel() {
 }
 
 update_packages() {
-    slog "Updating packages"
+    slog "Updating fedora"
     if ! { sudo dnf update -q -y && sudo dnf upgrade -q -y; }; then
         err_exit "dnf update/upgrade failed, quitting"
     fi
@@ -27,24 +27,36 @@ update_packages() {
 fedora_packages() {
     update_packages
 
+    slog "Installing packages"
+
     si git gh git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh tmux gum \
         tree eza fzf ripgrep zoxide fd htop sd bat tealdeer plocate cheat
+
+    slog "Installing packages done!"
 }
 
 rpm-ostree_packages() {
+    slog "Installing packages"
+
     sudo rpm-ostree install -q -y --apply-live \
         stow zsh tmux gcc make emacs gum fzf ripgrep wl-clipboard \
         libvirt virt-manager distrobox
 
     sudo systemctl enable --now libvirtd
+
+    slog "Installing packages done!"
 }
 
 centos_packages() {
     update_packages
 
+    slog "Installing packages"
+
     si git unzip wget curl tar gcc make gum tree bat ripgrep \
         htop bat plocate file just emacs-nox neovim tmux zsh
+
+    slog "Installing packages done!"
 }
 
 base_dev_install() {
@@ -64,6 +76,8 @@ sys_python_install() {
 }
 
 core_install() {
+    slog "Installing core packages"
+
     si 'dnf-command(copr)'
     si 'dnf-command(config-manager)'
     is_fedora || enable_epel
@@ -74,6 +88,8 @@ core_install() {
     si curl wget git-core trash-cli cmake tree tar unzip
     si util-linux-user which fuse fuse-libs zstd file
     is_fedora && si stow
+
+    slog "Core packages installation done!"
 }
 
 essential_install() {
@@ -106,6 +122,8 @@ cli_install() {
     fi
 
     gh extension install github/gh-copilot
+
+    slog "cli tools installation done!"
 }
 
 snap_install() {
@@ -145,17 +163,25 @@ vscode_fedora_repo() {
 
     [ -f /etc/yum.repos.d/vscode.repo ] && return 1
 
+    slog "Adding vscode repo"
+
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+
+    slog "vscode repo added!"
 }
 
 vscode_bin_install() {
     has_cmd code && return 1
 
+    slog "Installing vscode"
+
     vscode_fedora_repo
 
     dnf check-update
     si code code-insiders
+
+    slog "vscode installation done!"
 
     cmd_check code
 }
@@ -166,28 +192,38 @@ terminal_bin_install() {
     has_cmd alacritty && return 1
 
     if is_fedora; then
+        slog "Installing ghostty"
         sudo dnf copr -y enable pgdev/ghostty
         si ghostty
 
         cmd_check ghostty
+        slog "ghostty installation done!"
     else
+        slog "Installing kitty"
         si kitty
+        slog "kitty installation done!"
 
         if ! has_cmd kitty; then
+            slog "Installing alacritty"
             si alacritty
             cmd_check alacritty
+            slog "alacritty installation done!"
         fi
     fi
 }
 
 ui_install() {
-    si virt-manager chromium gnome-keyring xsel xclip wl-clipboard flatpak
+    slog "Installing ui"
+
+    si virt-manager chromium gnome-keyring wl-clipboard flatpak
 
     flathub_install
 
     terminal_bin_install
     vscode_bin_install
     apps_install
+
+    slog "ui installation done!"
 }
 
 cockpit_install() {
@@ -224,7 +260,9 @@ docker_install() {
 }
 
 podman_install() {
+    slog "Installing podman"
     si podman podman-compose podman-tui toolbox
+    slog "podman installation done!"
 }
 
 incus_install() {
@@ -233,21 +271,32 @@ incus_install() {
         return 1
     fi
 
+    slog "Installing incus"
+
     if ! is_fedora; then
         sudo dnf -y copr enable neil/incus
     fi
 
     si incus
     incus_config_install
+
+    slog "incus installation done!"
 }
 
 vm_install() {
+    slog "Installing vm"
+
     sudo dnf groupinstall -q -y --with-optional "System Tools"
     si libvirt buildah distrobox
     sudo systemctl enable --now libvirtd
+    # sudo systemctl enable --now virtlogd
+
+    slog "vm installation done!"
 }
 
 ct_install() {
+    slog "Installing container tools"
+
     incus_install
     docker_install
     portainer_install
@@ -255,13 +304,19 @@ ct_install() {
     cockpit_install
 
     si buildah distrobox
+
+    slog "Container tools installation done!"
 }
 
 virt_install() {
+    slog "Installing virtualization packages"
+
     ct_install
     vm_install
 
     code_server_install
+
+    slog "Virtualization packages installation done!"
 }
 
 more_virt_install() {
@@ -313,22 +368,35 @@ more_essential_install() {
 }
 
 tiling_common_install() {
+    slog "Installing tiling common packages"
+
     si waybar pavucontrol Thunar wl-clipboard thunar-archive-plugin
     si network-manager-applet blueman gnome-keyring-pam gnome-keyring
     si gnome-themes-extra kanshi sddm playerctl wlsunset rofi-wayland
     si rofi-themes dunst swaync lxqt-policykit network-manager-applet
     si xdg-desktop-portal-gtk pmv imv mpv wlogout qt6-qtquickcontrols2 qt6-qtsvg
     si SwayNotificationCenter
+
+    slog "Tiling common packages installation done!"
 }
 
 hyprland_bin_install() {
     tiling_common_install
+    slog "Installing hyprland"
+
     si hyprland hyprland-devel hyprutils hyprutils-devel
     si hypridle hyprpaper hyprpicker hyprlock kitty hyprcursor
+
+    slog "hyprland installation done!"
 }
 
 sway_bin_install() {
     tiliing_common_install
+
+    slog "Installing sway"
+
     si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway
     si sway-config-fedora kitty
+
+    slog "sway installation done!"
 }
