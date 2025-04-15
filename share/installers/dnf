@@ -29,7 +29,12 @@ fedora_packages() {
 
     si git gh git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh tmux gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd bat tealdeer plocate cheat
+        tree eza fzf ripgrep zoxide fd htop sd bat tealdeer plocate cheat
+}
+
+rpm-ostree_packages() {
+    sudo rpm-ostree install -q -y --apply-live \
+        stow zsh tmux gcc make emacs gum fzf ripgrep
 }
 
 centos_packages() {
@@ -132,11 +137,20 @@ cpp_install() {
     slog "C++ installation done!"
 }
 
-vscode_bin_install() {
+vscode_fedora_repo() {
     has_cmd code && return 1
+
+    [ -f /etc/yum.repos.d/vscode.repo ] && return 1
 
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+}
+
+vscode_bin_install() {
+    has_cmd code && return 1
+
+    vscode_fedora_repo
+
     dnf check-update
     si code code-insiders
 
