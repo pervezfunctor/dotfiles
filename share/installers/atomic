@@ -160,8 +160,10 @@ kitty_install() {
 ghostty_bin_install() {
     has_cmd ghostty && return 1
 
-    local VERSION, ARCH
+    local VERSION
     VERSION=$(curl -s https://api.github.com/repos/pkgforge-dev/ghostty-appimage/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+    local ARCH
     ARCH=$(uname -m)
 
     wget "https://github.com/pkgforge-dev/ghostty-appimage/releases/download/${VERSION}/Ghostty-${VERSION}-${ARCH}.AppImage"
