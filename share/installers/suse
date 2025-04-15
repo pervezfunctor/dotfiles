@@ -1,4 +1,5 @@
 #! /usr/bin/env bash
+
 si() {
     for p in "$@"; do
         slog "Installing package $p"
@@ -102,7 +103,9 @@ terminal_bin_install() {
 }
 
 ui_install() {
-    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard
+    si chromium-browser virt-manager gnome-keyring xsel xclip wl-clipboard flatpak
+
+    flathub_install
 
     terminal_bin_install
     vscode_bin_install

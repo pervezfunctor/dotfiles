@@ -91,7 +91,9 @@ terminal_bin_install() {
 }
 
 ui_install() {
-    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard
+    si chromium virt-manager neovide gnome-keyring xsel xclip wl-clipboard flatpak
+
+    flathub_install
 
     terminal_bin_install
     vscode_bin_install

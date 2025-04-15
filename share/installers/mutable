@@ -218,6 +218,7 @@ work_groupstall() {
   jetbrains_nerd_font_install
   vscode_install
 
+  si flatpak
   flathub_install
   ptyxis_install
 }
