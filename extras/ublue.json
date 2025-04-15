@@ -170,8 +170,7 @@
     "exclude": {
       "all": [
         "firefox-langpacks",
-        "firefox",
-        "podman-docker"
+        "firefox"
       ],
       "silverblue": [
         "gnome-extensions-app",

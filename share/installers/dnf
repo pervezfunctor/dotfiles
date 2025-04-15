@@ -34,7 +34,10 @@ fedora_packages() {
 
 rpm-ostree_packages() {
     sudo rpm-ostree install -q -y --apply-live \
-        stow zsh tmux gcc make emacs gum fzf ripgrep
+        stow zsh tmux gcc make emacs gum fzf ripgrep wl-clipboard \
+        libvirt virt-manager distrobox
+
+    sudo systemctl enable --now libvirtd
 }
 
 centos_packages() {
