@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 # shellcheck disable=SC1090
-source <(curl -sSL https://dub.sh/z3pTnAK)
+source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 
 INSTALL_OPTIONS=("shell" "vscode" "cpp" "ct" "vm" "virt" "ui" "essential" "webi" "kitty" "mise" "flathub" "cursor" "vscode_flatpak" "ptyxis" "apps" "rust" "miniconda" "pnpm" "web" "brew" "monaspace" "jetbrains_nerd_font" "fonts" "doom" "go" "docker" "code_server" "conan" "cmake" "home_manager" "pyenv" "uv" "devbox" "pixi" "tailscale" "portainer" "cockpit" "podman" "incus" "@nix" "@min" "@shell" "@ct" "@vm" "@work" "@desktop" "@prog" "@all" "@sway" "@hyprland")
 
