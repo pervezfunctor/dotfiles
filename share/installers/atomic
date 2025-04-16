@@ -639,11 +639,13 @@ dbox_with_home() {
 
     local os
     os=${1:-fedora_init}
-    distrobox list | grep -q "^${os}$" && return
+    local osname
+    osname="ilm"
+    distrobox list | grep -q "^${osname}$" && return
 
-    "dbox_$os"
-    distrobox enter "${os}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
-    distrobox enter "${os}" -- si firefox
-    distrobox enter "${os}" -- gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
-    slog "distrobox ${os} created!"
+    "dbox_$os" osname
+    distrobox enter "${osname}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
+    distrobox enter "${osname}" -- si firefox
+    distrobox enter "${osname}" -- gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+    slog "distrobox ${osname} created!"
 }
