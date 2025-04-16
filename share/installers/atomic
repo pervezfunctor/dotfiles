@@ -643,7 +643,7 @@ dbox_with_home() {
     osname="ilm"
     distrobox list | grep -q "^${osname}$" && return
 
-    "dbox_$os" osname
+    "dbox_$os" $osname
     distrobox enter "${osname}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
     distrobox enter "${osname}" -- si firefox
     distrobox enter "${osname}" -- gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
