@@ -244,6 +244,104 @@ nosudo_groupstall() {
     atomic_distrobox_install
 }
 
+
+gnome_extensions_install() {
+  if ! has_cmd gext; then
+    if ! has_cmd pipx; then
+      warn "pipx not installed, skipping gnome extensions"
+      return 1
+    fi
+
+    pipx install gnome-extensions-cli --system-site-packages
+    cmd_check gext
+  fi
+
+  slog "Installing gnome extensions"
+
+  gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
+  gext install Vitals@CoreCoding.com
+  gext install tailscale@joaophi.github.com
+  gext install tilingshell@ferrarodomenico.com
+  gext install CoverflowAltTab@palatis.blogspot.com
+  gext install just-perfection-desktop@just-perfection
+  gext install blur-my-shell@aunetx
+  gext install undecorate@sun.wxg@gmail.com
+  gext install AlphabeticalAppGrid@stuarthayhurst
+
+  slog "gnome extensions installation done!"
+}
+
+gnome_settings_install() {
+
+  if ! has_cmd gsettings; then
+    warn "gsettings not found, skipping gnome basic settings"
+    return 1
+  fi
+
+  slog "gnome settings"
+
+  gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
+  gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+  gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
+  gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
+  gsettings set org.gnome.desktop.interface accent-color 'purple'
+
+  # Use 4 fixed workspaces instead of dynamic mode
+  gsettings set org.gnome.mutter dynamic-workspaces false
+  gsettings set org.gnome.desktop.wm.preferences num-workspaces 4
+
+  # Center new windows in the middle of the screen
+  gsettings set org.gnome.mutter center-new-windows true
+
+  # Set JetBrains Mono as the default monospace font
+  gsettings set org.gnome.desktop.interface monospace-font-name 'JetbrainsMono Nerd Font 11'
+
+  slog "gnome settings done!"
+}
+
+gnome_flatpaks_install() {
+  fpi page.tesk.Refine
+  fpi com.github.tchx84.Flatseal
+  fpi io.github.flattool.Ignition
+  fpi io.github.flattool.Warehouse
+  fpi io.missioncenter.MissionCenter
+  fpi org.gnome.World.PikaBackup
+  fpi org.gnome.Papers
+  fpi org.gnome.Boxes
+}
+
+# https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
+gnome_config_install() {
+  if ! is_gnome; then
+    warn "Not running GNOME, skipping GNOME config"
+    return 1
+  fi
+
+  slog "gnome config"
+
+  if is_ubuntu; then
+    si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
+  elif is_fedora && ! is_atomic; then
+    si gnome-extensions-app gnome-tweaks
+  fi
+
+  if is_ubuntu; then
+    gnome-extensions disable tiling-assistant@ubuntu.com
+    gnome-extensions disable ubuntu-appindicators@ubuntu.com
+    gnome-extensions disable ubuntu-dock@ubuntu.com
+    gnome-extensions disable ding@rastersoft.com
+  fi
+
+  gnome_settings_install
+  gnome_keybindings_install
+
+  gnome_extensions_install
+
+  slog "gnome config done!"
+}
+
 fedora-atomic_groupstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
@@ -277,6 +375,8 @@ fedora-atomic_groupstall() {
     distrobox enter ilm -- distrobox-export --bin "$(which stow)"
     distrobox enter ilm -- distrobox-export --bin "$(which wl-copy)"
     distrobox enter ilm -- distrobox-export --bin "$(which wl-paste)"
+    distrobox enter ilm -- distrobox-export --bin "$(which code)"
+    distrobox enter ilm -- distrobox-export --app "Visual Studio Code"
 
     stowdf emacs-nano kitty
     # stowd ghostty
@@ -598,6 +698,14 @@ github_user_setup() {
     fi
 }
 
+box-default_groupstall() {
+    shell_groupstall
+    vscode_install
+
+    si firefox gnome-keyring wl-clipboard
+    gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+}
+
 # shellcheck disable=SC2120
 tbox_group() {
     has_cmd toolbox || return 0
@@ -612,9 +720,7 @@ tbox_default() {
     has_cmd toolbox || return
 
     toolbox --assumeyes create
-    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
-    toolbox run si firefox
-    toolbox run gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default
 }
 
 dbox_default() {
@@ -622,9 +728,7 @@ dbox_default() {
 
     slog "Creating default distrobox"
     distrobox create --yes
-    distrobox enter -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
-    distrobox enter -- si firefox
-    distrobox enter -- gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+    distrobox enter -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default
     slog "Default distrobox created!"
 }
 
@@ -640,12 +744,10 @@ dbox_with_home() {
     local os
     os=${1:-fedora_init}
     local osname
-    osname="ilm"
+    osname=${2:-ilm}
     distrobox list | grep -q "^${osname}$" && return
 
     "dbox_$os" $osname
-    distrobox enter "${osname}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- shell vscode
-    distrobox enter "${osname}" -- si firefox
-    distrobox enter "${osname}" -- gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+    distrobox enter "${osname}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default
     slog "distrobox ${osname} created!"
 }
