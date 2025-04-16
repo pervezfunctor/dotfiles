@@ -43,14 +43,13 @@
 # resize-overlay-duration = 4s 200ms
 # keybind = global:cmd+/=toggle_quick_terminal
 
-# theme = catppuccin-mocha
 # theme = GitHub-Dark-Default
 # theme = Everforest Dark - Hard
 # theme = rose-pine-moon
 
-theme = rose-pine-moon
-font-family = JetBrainsMonoNL NFM Medium
-font-size = 15
+theme = catppuccin-mocha
+font-family = JetBrainsMono Nerd Font Medium
+font-size = 13
 background-blur-radius = 20
 mouse-hide-while-typing = true
 window-decoration = true

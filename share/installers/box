@@ -72,7 +72,7 @@ zsh_boxstall() {
 
 terminal_boxstall() {
   terminal_bin_install
-  nerd_fonts_install
+  jetbrains_nerd_font_install
 
   has_cmd ghostty && ghostty_config_install
   has_cmd kitty && kitty_config_install
