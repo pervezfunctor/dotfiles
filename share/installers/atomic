@@ -372,12 +372,6 @@ fedora-atomic_groupstall() {
     # shellcheck disable=SC2119
     dbox_with_home
 
-    distrobox enter ilm -- distrobox-export --bin "$(which stow)"
-    distrobox enter ilm -- distrobox-export --bin "$(which wl-copy)"
-    distrobox enter ilm -- distrobox-export --bin "$(which wl-paste)"
-    distrobox enter ilm -- distrobox-export --bin "$(which code)"
-    distrobox enter ilm -- distrobox-export --app "Visual Studio Code"
-
     stowdf emacs-nano kitty
     # stowd ghostty
 
@@ -704,6 +698,16 @@ box-default_groupstall() {
 
     si firefox gnome-keyring wl-clipboard
     gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+}
+
+box-default-atomic_groupstall() {
+    box-default_groupstall
+
+    distrobox-export --bin "$(which stow)"
+    distrobox-export --bin "$(which wl-copy)"
+    distrobox-export --bin "$(which wl-paste)"
+    distrobox-export --bin "$(which code)"
+    distrobox-export --app "Visual Studio Code"
 }
 
 # shellcheck disable=SC2120
