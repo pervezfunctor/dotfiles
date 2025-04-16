@@ -950,7 +950,7 @@ stowdf() {
 
     for p in "$@"; do
         slog "stow $p"
-        stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
+        stow -d "$DOT_DIR" -t "$HOME" --dotfiles "$p"
     done
 }
 
