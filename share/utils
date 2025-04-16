@@ -1144,6 +1144,7 @@ bootstrap() {
         source_curl "$INSTALLERS/mac"
     else
         source_curl "$INSTALLERS/atomic"
+        source_curl "$SHARE/fns"
 
         if ! is_atomic; then
             if is_apt; then
@@ -1157,7 +1158,6 @@ bootstrap() {
             fi
 
             source_curl "$INSTALLERS/mutable"
-            source_curl "$SHARE/fns"
             source_curl "$INSTALLERS/box"
         fi
     fi
