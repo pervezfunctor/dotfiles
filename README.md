@@ -4,13 +4,13 @@
 
 On windows, use the following command and select what you want. DO NOT deselect preselected options.
 
-**NOTE**: Run the following in powershell as administrator.
+**Important**: Run the following in powershell as administrator.
 
 ```powershell
 iwr -useb https://dub.sh/NDyiu7a | iex
 ```
 
-To configure your existing wsl distribution, use the following command in wsl(ubuntu 24.04 at least).
+To configure your existing wsl distribution, use the following command in wsl(tumbleweed or ubuntu 24.04 recommended).
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- wslbox
@@ -80,6 +80,8 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
   - You can also install visual studio code using flatpak.
 
   - Use [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal, as it has great support for toolbox.
+
+  - Use [Boxes](https://github.com/boxes-project/boxes) for virtual machines. Remember to enable 3d acceleration.
 
 
 ### Linux Desktop
