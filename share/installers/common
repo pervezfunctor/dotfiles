@@ -202,7 +202,7 @@ miniconda_install() {
 }
 
 bash_config_exists() {
-  grep -q .ilm/share/bashrc ~/.bashrc
+  grep -q .ilm/share/bashrc ~/.bashrc || grep -i ${DOT_DIR}/share/bashrc
 }
 
 bash_config_check() {
