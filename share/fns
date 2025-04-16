@@ -4,122 +4,175 @@
 
 dbox_ubuntu() {
     local CONTAINER_NAME=${1:-ubuntu}
+    slog "Creating Ubuntu distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
     distrobox create --yes --image ubuntu:latest --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "Ubuntu distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox_arch() {
     local CONTAINER_NAME=${1:-arch}
+    slog "Creating Arch distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
     distrobox create --yes --image archlinux:latest --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "Arch distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox_fedora() {
     local CONTAINER_NAME=${1:-fedora}
+    slog "Creating Fedora distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
     distrobox create --yes --image fedora:latest --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "Fedora distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox_centos() {
     local CONTAINER_NAME=${1:-centos}
+    slog "Creating CentOS distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
     distrobox create --yes --image centos:latest --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "CentOS distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox_debian() {
     local CONTAINER_NAME=${1:-debian}
+    slog "Creating Debian distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
     distrobox create --yes --image debian:latest --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "Debian distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox_rocky() {
     local CONTAINER_NAME=${1:-rocky}
+    slog "Creating Rocky Linux distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
     distrobox create --yes --image quay.io/rockylinux/rockylinux:9 --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "Rocky Linux distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox_tw() {
     local CONTAINER_NAME=${1:-tw}
+    slog "Creating OpenSUSE Tumbleweed distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
     distrobox create --yes --image opensuse/tumbleweed --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "OpenSUSE Tumbleweed distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox_bluefin() {
     local CONTAINER_NAME=${1:-bluefin-cli}
+    slog "Creating Bluefin distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
     distrobox create --yes --image ghcr.io/ublue-os/bluefin-cli --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "Bluefin distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox_wolfi() {
     local CONTAINER_NAME=${1:-wolfi-ublue}
+    slog "Creating Wolfi distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
     distrobox create --yes --image ghcr.io/ublue-os/wolfi-toolbox --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "Wolfi distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox_ublue_all() {
     smd ~/boxes
+    slog "Creating Bluefin, Wolfi and Ublue distroboxes"
     dbox_bluefin
     dbox_wolfi
 
     distrobox create --yes --image ghcr.io/ublue-os/ubuntu-toolbox --home /home/pervez/boxes/ubuntu-ublue --name ubuntu-ublue
     distrobox create --yes --image ghcr.io/ublue-os/fedora-toolbox --home /home/pervez/boxes/fedora-ublue --name fedora-ublue
     distrobox create --yes --image ghcr.io/ublue-os/arch-distrobox --home /home/pervez/boxes/arch-ublue --name arch-ublue
+
+    slog "Creating Bluefin, Wolfi and Ublue distroboxes done!"
 }
 
 dbox_toolbox_all() {
     smd ~/boxes
+    slog "Creating toolbox distroboxes"
+
     distrobox create --yes --image ubuntu-toolbox:latest --home /home/pervez/boxes/ubuntu-toolbox --name ubuntu-toolbox
     distrobox create --yes --image fedora-toolbox:latest --home /home/pervez/boxes/fedora-toolbox --name fedora-toolbox
     distrobox create --yes --image arch-toolbox:latest --home /home/pervez/boxes/arch-toolbox --name arch-toolbox
     distrobox create --yes --image centos-toolbox:latest --home /home/pervez/boxes/centos-toolbox --name centos-toolbox
     distrobox create --yes --image debian-toolbox:latest --home /home/pervez/boxes/debian-toolbox --name debian-toolbox
     distrobox create --yes --image rockylinux-toolbox:9 --home /home/pervez/boxes/rockylinux-toolbox --name rockylinux-toolbox
+
+    slog "Creating toolbox distroboxes done!"
 }
 
 dbox_apline_init() {
     local CONTAINER_NAME=${1:-alpine-init}
+    slog "Creating distrobox $CONTAINER_NAME"
+
     smd ~/boxes
     distrobox create --yes --image alpine:latest --init --additional-packages "openrc" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+
+    slog "Done creating distrobox $CONTAINER_NAME"
 }
 
 dbox_debian_init() {
     local CONTAINER_NAME=${1:-debian-init}
+    slog "Creating distrobox $CONTAINER_NAME"
+
     smd ~/boxes
     distrobox create --yes --image debian:stable --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+
+    slog "Done creating distrobox $CONTAINER_NAME"
 }
 
 dbox_ubuntu_init() {
     local CONTAINER_NAME=${1:-ubuntu-init}
+    slog "Creating distrobox $CONTAINER_NAME"
+
     smd ~/boxes
     distrobox create --yes --image ubuntu:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+
+    slog "Done creating distrobox $CONTAINER_NAME"
 }
 
 dbox_arch_init() {
     local CONTAINER_NAME=${1:-arch-init}
+    slog "Creating distrobox $CONTAINER_NAME"
+
     smd ~/boxes
     distrobox create --yes --image archlinux:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+
+    slog "Done creating distrobox $CONTAINER_NAME"
 }
 
 dbox_tw_init() {
     local CONTAINER_NAME=${1:-tw-init}
+    slog "Creating distrobox $CONTAINER_NAME"
+
     smd ~/boxes
     distrobox create --yes --image registry.opensuse.org/opensuse/tumbleweed:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+
+    slog "Done creating distrobox $CONTAINER_NAME"
 }
 
 dbox_fedora_init() {
     local CONTAINER_NAME=${1:-fedora-init}
+    slog "Creating distrobox $CONTAINER_NAME"
+
     smd ~/boxes
     distrobox create --yes --image registry.fedoraproject.org/fedora:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+
+    slog "Done creating distrobox $CONTAINER_NAME"
 }
 
 dbox_with_init() {
     smd ~/boxes
+
+    slog "Creating distroboxes with init"
 
     dbox_ubuntu_init
     dbox_debian_init
     dbox_arch_init
     dbox_tw_init
     dbox_fedora_init
+
+    slog "Done creating distroboxes with init"
 }
 
 toolbox_create_all() {
@@ -183,32 +236,50 @@ dbox_to_image() {
 
 dbox_from_image() {
     local dbox_name=${1:dbox}
+    slog "Creating distrobox from image $1"
+
     smd ~/boxes
     distrobox create --yes --image "$1":latest --name "$dbox_name"
     distrobox enter --name "$dbox_name"
+
+    slog "Done creating distrobox from image $1"
 }
 
 dbox_nix() {
     local CONTAINER_NAME=${1:-deb-nix}
+
+    slog "Creating distrobox $CONTAINER_NAME"
+
     srm ~/boxes/"${CONTAINER_NAME}"
+    smd ~/boxes
 
     distrobox create --yes --name "${CONTAINER_NAME}" -i debian:stable --init --additional-packages "systemd libpam-systemd" --home ~/boxes/"${CONTAINER_NAME}"
 
     distrobox enter "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- nixbox
+
+    slog "Done creating distrobox $CONTAINER_NAME"
 }
 
 incus_containers() {
+    slog "Creating incus containers"
+
     incus launch images:ubuntu/24.04 ubuntu # --config limits.cpu=1 --config limits.memory=192MiB
     incus launch images:fedora/41 fedora
     incus launch images:opensuse/tumbleweed tw
     incus launch images:archlinux/current archlinux
+
+    slog "Creating incus containers done!"
 }
 
 incus_vms() {
+    slog "Creating incus vms"
+
     incus launch images:ubuntu/24.04 ubuntu-vm --vm
     incus launch images:fedora/41 fedora-vm --vm
     incus launch images:opensuse/tumbleweed-vm tw --vm
     incus launch images:archlinux/current archlinux-vm --vm
+
+    slog "Creating incus vms done!"
 }
 
 system-update() {
