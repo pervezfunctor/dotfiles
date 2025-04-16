@@ -1129,7 +1129,7 @@ bootstrap() {
     has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 
     slog "Removing old logs"
-    rm -f /tmp/dotfiles-error.log /tmp/dotfiles-output.log 2>/dev/null
+    rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log 2>/dev/null
     [ -n "$NOSUDO" ] || keep_sudo_running
 
     local SHARE
@@ -1163,8 +1163,8 @@ bootstrap() {
     fi
 
     slog "Installing ${*} ..."
-    main "$@" > >(tee /tmp/dotfiles-output.log) 2> >(tee /tmp/dotfiles-error.log >&2)
-    slog "Installation done! Look at /tmp/dotfiles-error.log for any errors."
+    main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee ~/.dotfiles-error.log >&2)
+    slog "Installation done! Look at ~/.dotfiles-error.log for any errors."
 
     # shellcheck disable=SC2164
     cd "$curdir" || cd

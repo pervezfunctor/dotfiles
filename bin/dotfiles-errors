@@ -3,39 +3,50 @@
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 source $DOT_DIR/share/utils
 
-cat /tmp/dotfiles-output.log | grep -i fail
-press_enter
+if cat ~/.dotfiles-output.log | grep -i fail; then
+  press_enter
+fi
 
-cat /tmp/dotfiles-output.log | grep -i warn
-press_enter
+if cat ~/.dotfiles-output.log | grep -i warn; then
+  press_enter
+fi
 
-cat /tmp/dotfiles-output.log | grep -i error
-press_enter
+if cat ~/.dotfiles-output.log | grep -i error; then
+  press_enter
+fi
 
-cat /tmp/dotfiles-output.log | grep -i not
-press_enter
+if cat ~/.dotfiles-output.log | grep -i not; then
+  press_enter
+fi
 
-cat /tmp/dotfiles-output.log | grep -i unable
-press_enter
+if cat ~/.dotfiles-output.log | grep -i unable; then
+  press_enter
+fi
 
-cat /tmp/dotfiles-output.log | grep -i fatal
-press_enter
+if cat ~/.dotfiles-output.log | grep -i fatal; then
+  press_enter
+fi
 
+if cat ~/.dotfiles-error.log | grep -i fail; then
+  press_enter
+fi
 
-cat /tmp/dotfiles-error.log | grep -i fail
-press_enter
+if cat ~/.dotfiles-error.log | grep -i warn; then
+  press_enter
+fi
 
-cat /tmp/dotfiles-error.log | grep -i warn
-press_enter
+if cat ~/.dotfiles-error.log | grep -i error; then
+  press_enter
+fi
 
-cat /tmp/dotfiles-error.log | grep -i error
-press_enter
+if cat ~/.dotfiles-error.log | grep -i not; then
+  press_enter
+fi
 
-cat /tmp/dotfiles-error.log | grep -i not
-press_enter
+if cat ~/.dotfiles-error.log | grep -i unable; then
+  press_enter
+fi
 
-cat /tmp/dotfiles-error.log | grep -i unable
-press_enter
-
-cat /tmp/dotfiles-error.log | grep -i fatal
-press_enter
+if cat ~/.dotfiles-error.log | grep -i fatal; then
+  press_enter
+fi
