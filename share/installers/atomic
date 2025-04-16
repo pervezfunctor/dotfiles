@@ -318,7 +318,7 @@ apps_slim_install() {
     flathub_install
 
     fpi org.telegram.desktop
-    fpi flatpak run org.qbittorrent.qBittorrent # verified
+    fpi org.qbittorrent.qBittorrent # verified
     fpi md.obsidian.Obsidian
     fpi org.gnome.Boxes
     fpi us.zoom.Zoom # unverified

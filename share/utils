@@ -515,7 +515,6 @@ omv() {
     if [ -e "$1" ]; then
         srm "$2"
     else
-        fail "$1 does not exist, cannot move to $2"
         return 1
     fi
 
