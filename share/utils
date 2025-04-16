@@ -722,6 +722,17 @@ is_silverblue() {
         [[ "${PRETTY_NAME:-}" =~ .*[Ss]ilverblue.* ]]
 }
 
+is_sway_atomic() {
+    if [ ! -f /etc/os-release ]; then
+        return 1
+    fi
+
+    # Check ID, PRETTY_NAME and VARIANT fields for sway atomic.
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    [[ "${ID:-}" =~ .*[Ss]way[[:space:]]*[Aa]tomic.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Ss]way[[:space:]]*[Aa]tomic.* ]] || [[ "${VARIANT:-}" == "Sway Atomic" ]]
+}
+
 is_aurora() {
     if [ ! -f /etc/os-release ]; then
         return 1
@@ -749,11 +760,11 @@ is_ublue() {
 }
 
 is_std_atomic() {
-    is_kinoite || is_silverblue # || sway atomic
+    is_kinoite || is_silverblue || is_sway_atomic
 }
 
 is_atomic() {
-    is_kinoite || is_silverblue || is_aurora || is_bluefin
+    is_kinoite || is_silverblue || is_aurora || is_bluefin || is_sway_atomic
 }
 
 is_rocky() {
