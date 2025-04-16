@@ -214,7 +214,7 @@ bash_config_install() {
 
   if ! bash_config_exists; then
     echo "export DOT_DIR=$DOT_DIR" >>~/.bashrc
-    echo "source ${DOT_DIR}/share/bashrc" >>~/.bashrc
+    echo "source \${DOT_DIR}/share/bashrc" >>~/.bashrc
   fi
 
   slog "bash config done!"
