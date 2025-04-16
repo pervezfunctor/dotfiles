@@ -322,9 +322,9 @@ gnome_config_install() {
   slog "gnome config"
 
   if is_ubuntu; then
-    si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
+    has_cmd si && si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
   elif is_fedora && ! is_atomic; then
-    si gnome-extensions-app gnome-tweaks
+    has_cmd si && si gnome-extensions-app gnome-tweaks
   fi
 
   if is_ubuntu; then
@@ -336,7 +336,7 @@ gnome_config_install() {
 
   gnome_settings_install
   gnome_keybindings_install
-
+  gnome_flatpaks_install
   gnome_extensions_install
 
   slog "gnome config done!"
