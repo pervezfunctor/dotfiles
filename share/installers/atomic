@@ -630,7 +630,10 @@ dbox_default() {
 
 # shellcheck disable=SC2120
 dbox_with_home() {
-    has_cmd distrobox || return
+    if ! has_cmd distrobox; then
+        fail "distrobox not installed, skipping distrobox creation"
+        return 1
+    fi
 
     slog "Creating default distrobox"
 
