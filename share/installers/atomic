@@ -335,7 +335,7 @@ gnome_config_install() {
   fi
 
   gnome_settings_install
-  gnome_keybindings_install
+  #   gnome_keybindings_install
   gnome_flatpaks_install
   gnome_extensions_install
 

@@ -83,7 +83,7 @@ bluefin_setup() {
     slog "gnome setup"
 
     gnome_settings_install
-    gnome_keybindings_install
+    # gnome_keybindings_install
     gnome_extensions_install
 
     slog "gnome setup done!"
