@@ -328,16 +328,6 @@ coder_install() {
   slog "coder installation done!"
 }
 
-atomic_distrobox_install() {
-  has_cmd distrobox && return 0
-
-  slog "Installing distrobox"
-
-  curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
-
-  slog "distrobox installation done!"
-}
-
 permissive_selinux() {
   sed -i 's/^SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
 

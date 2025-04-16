@@ -176,6 +176,16 @@ ghostty_install() {
     ghostty_config_install
 }
 
+atomic_distrobox_install() {
+    has_cmd distrobox && return 0
+
+    slog "Installing distrobox"
+
+    curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
+
+    slog "distrobox installation done!"
+}
+
 cmake_install() {
     has_cmd ~/.local/bin/cmake && return 1
 
@@ -232,7 +242,6 @@ nosudo_groupstall() {
     fi
 
     atomic_distrobox_install
-
 }
 
 fedora-atomic_groupstall() {
