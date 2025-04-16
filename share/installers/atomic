@@ -723,7 +723,7 @@ tbox_default() {
     has_cmd toolbox || return
 
     toolbox --assumeyes create
-    toolbox run bash -ic "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default
+    toolbox run bash -ic "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
 }
 
 dbox_default() {
@@ -731,7 +731,7 @@ dbox_default() {
 
     slog "Creating default distrobox"
     distrobox create --yes
-    distrobox enter -- bash -ic "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default
+    distrobox enter -- bash -ic "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
     slog "Default distrobox created!"
 }
 
@@ -751,6 +751,6 @@ dbox_with_home() {
     distrobox list | grep -q "^${osname}$" && return
 
     "dbox_$os" $osname
-    distrobox enter "${osname}" -- bash -ic "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default
+    distrobox enter "${osname}" -- bash -ic "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
     slog "distrobox ${osname} created!"
 }
