@@ -708,7 +708,7 @@ is_kinoite() {
 
     # shellcheck disable=SC1091
     . /etc/os-release
-    [[ "${ID:-}" =~ .*kinoite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*kinoite.* ]]
+    [[ "${ID:-}" =~ .*[Kk]inoite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Kk]inoite.* ]]
 }
 
 is_silverblue() {
