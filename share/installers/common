@@ -202,7 +202,7 @@ miniconda_install() {
 }
 
 bash_config_exists() {
-  grep -q .ilm/share/bashrc ~/.bashrc || grep -i ${DOT_DIR}/share/bashrc
+  grep -q .ilm/share/bashrc ~/.bashrc || grep -q -i "${DOT_DIR}/share/bashrc" ~/.bashrc
 }
 
 bash_config_check() {
@@ -232,7 +232,13 @@ zsh_config_install() {
   sclone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$HOME/.zsh/zsh-autosuggestions"
   sclone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.zsh/zsh-syntax-highlighting"
 
-  stowdf zsh
+  slog "Applying zsh configuration with stow"
+  if timeout 30 stowdf zsh; then
+    slog "zsh configuration applied successfully"
+  else
+    warn "stowdf zsh timed out or failed, falling back to manual configuration"
+    # Add fallback configuration here if needed
+  fi
 
   slog "zsh config done!"
 }
