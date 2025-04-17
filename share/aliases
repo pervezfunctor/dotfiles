@@ -300,12 +300,9 @@ fi
 # fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
 
 if has_cmd emacs; then
-    EMACS_VERSION=$(emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1)
-    if [ "$EMACS_VERSION" -gt 25 ]; then
-        export EDITOR="emacsclient -t"
-        export VISUAL="emacsclient -c -n"
-        alias e="emacsclient -t"
-        alias ec="emacsclient -c -n"
-        alias en="emacs -nw"
-    fi
+    # export EDITOR="emacsclient -t"
+    # export VISUAL="emacsclient -c -n"
+    alias e="emacsclient -t"
+    alias ec="emacsclient -c -n"
+    alias en="emacs -nw"
 fi
