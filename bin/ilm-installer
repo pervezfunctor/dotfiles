@@ -77,7 +77,7 @@ main() {
 if [[ "$1" == "help" ]]; then
     help
 else
-    if [[ "$1" == "nosudo" ]] || [[ "$1" == "fedora-atomic" ]] || is_multipass; then
+    if [[ "$1" == "generic" ]] || [[ "$1" == "generic-ct" ]] || [[ "$1" == "fedora-atomic" ]] || is_multipass; then
         export NOSUDO=1
     fi
 

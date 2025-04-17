@@ -217,15 +217,14 @@ cmake_install() {
     cmd_check cmake
 }
 
-nosudo-ct_groupstall() {
+generic-ct_groupstall() {
     has_cmd curl || err_exit "Install curl and run this script again."
 
     pixi_install
 
-
     slog "Installing shell tools with pixi"
     pixi_shell_slim_install
-    has_cmd git || pic git
+    pis git
     has_cmd git || fatal "git not installed. Quitting."
     slog "Installing shell tools with pixi done!"
 
@@ -250,8 +249,8 @@ nosudo-ct_groupstall() {
     bash_config_install
 }
 
-nosudo_groupstall() {
-    nosudo-ct_groupstall
+generic_groupstall() {
+    generic-ct_groupstall
 
     is_desktop && jetbrains_nerd_font_install
     is_desktop && kitty_bin_install
@@ -365,7 +364,7 @@ fedora-atomic_groupstall() {
 
     slog "Fedora Atomic Host setup"
 
-    nosudo_groupstall
+    generic_groupstall
 
     # mise_install
     # webi_install
