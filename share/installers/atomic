@@ -748,7 +748,8 @@ dbox_default() {
 
     slog "Creating default distrobox"
     distrobox create --yes
-    distrobox enter -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
+    # distrobox enter -- env -u PATH bash -ic "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
+    distrobox enter -nw --clean-path -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
     slog "Default distrobox created!"
 }
 
@@ -768,6 +769,6 @@ dbox_with_home() {
     distrobox list | grep -q "^${osname}$" && return
 
     "dbox_$os" $osname
-    distrobox enter "${osname}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
+    distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
     slog "distrobox ${osname} created!"
 }

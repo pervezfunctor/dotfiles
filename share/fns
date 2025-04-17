@@ -240,7 +240,7 @@ dbox_from_image() {
 
     smd ~/boxes
     distrobox create --yes --image "$1":latest --name "$dbox_name"
-    distrobox enter --name "$dbox_name"
+    distrobox enter --nw --clean-path --name "$dbox_name"
 
     slog "Done creating distrobox from image $1"
 }
@@ -255,7 +255,7 @@ dbox_nix() {
 
     distrobox create --yes --name "${CONTAINER_NAME}" -i debian:stable --init --additional-packages "systemd libpam-systemd" --home ~/boxes/"${CONTAINER_NAME}"
 
-    distrobox enter "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- nixbox
+    distrobox enter --nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- nixbox
 
     slog "Done creating distrobox $CONTAINER_NAME"
 }
