@@ -217,31 +217,50 @@ cmake_install() {
     cmd_check cmake
 }
 
-nosudo_groupstall() {
-    slog "Setting up python, pip, pipx"
-    python_install
+nosudo-ct_groupstall() {
+    has_cmd curl || err_exit "Install curl and run this script again."
 
-    slog "Installing trash-cli"
-    pipx install trash-cli
+    pixi_install
+
+
+    slog "Installing shell tools with pixi"
+    pixi_shell_slim_install
+    has_cmd git || pic git
+    has_cmd git || fatal "git not installed. Quitting."
+    slog "Installing shell tools with pixi done!"
+
+    slog "Setting up python, pip, pipx"
+    if has_cmd python3; then
+        unset -f sys_python_install
+        python_install
+    else
+        python_install
+    fi
+
+    if has_cmd pipx; then
+        slog "Installing trash-cli"
+        pipx install trash-cli
+    else
+        fatal "pipx not available! Cannot setup python and install some essential tools!"
+    fi
 
     dotfiles_install
 
     starship_install
     bash_config_install
+}
 
-    pixi_install
-    slog "Installing shell tools"
-    pixi_shell_slim_install
+nosudo_groupstall() {
+    nosudo-ct_groupstall
 
     is_desktop && jetbrains_nerd_font_install
     is_desktop && kitty_bin_install
 
-    if ! has_cmd podman && ! has_cmd docker; then
+    if has_cmd podman || has_cmd docker; then
+        atomic_distrobox_install
+    else
         fail "No container runtime(docker or podman) installed, skipping distrobox installation"
-        return 0
     fi
-
-    atomic_distrobox_install
 }
 
 gnome_extensions_install() {
@@ -723,7 +742,7 @@ tbox_default() {
     has_cmd toolbox || return
 
     toolbox --assumeyes create
-    toolbox run bash -ic "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
+    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
 }
 
 dbox_default() {
@@ -731,7 +750,7 @@ dbox_default() {
 
     slog "Creating default distrobox"
     distrobox create --yes
-    distrobox enter -- bash -ic "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
+    distrobox enter -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
     slog "Default distrobox created!"
 }
 
@@ -751,6 +770,6 @@ dbox_with_home() {
     distrobox list | grep -q "^${osname}$" && return
 
     "dbox_$os" $osname
-    distrobox enter "${osname}" -- bash -ic "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
+    distrobox enter "${osname}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
     slog "distrobox ${osname} created!"
 }
