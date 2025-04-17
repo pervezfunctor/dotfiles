@@ -86,8 +86,8 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 
 ### Linux Desktop
 
-This should work on almost any linux system. Doesn't need sudo privileges.
+This should work on almost any linux system/container even without sudo privileges, provided curl, bash, unzip and python3 are installed.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- nosudo
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- generic
 ```
