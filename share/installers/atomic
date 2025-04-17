@@ -225,7 +225,7 @@ generic-ct_groupstall() {
     slog "Installing shell tools with pixi"
     pixi_shell_slim_install
     pis git
-    has_cmd git || fatal "git not installed. Quitting."
+    has_cmd git || fail "git not installed. Quitting."
     slog "Installing shell tools with pixi done!"
 
     slog "Setting up python, pip, pipx"
@@ -240,7 +240,7 @@ generic-ct_groupstall() {
         slog "Installing trash-cli"
         pipx install trash-cli
     else
-        fatal "pipx not available! Cannot setup python and install some essential tools!"
+        fail "pipx not available! Cannot setup python and install some essential tools!"
     fi
 
     dotfiles_install
@@ -289,7 +289,6 @@ gnome_extensions_install() {
 }
 
 gnome_settings_install() {
-
     if ! has_cmd gsettings; then
         warn "gsettings not found, skipping gnome basic settings"
         return 1
