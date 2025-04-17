@@ -95,7 +95,6 @@ core_install() {
 essential_install() {
     slog "Installing essential packages"
 
-    core_install
     sys_python_install
     # mise_install
     # snap_install

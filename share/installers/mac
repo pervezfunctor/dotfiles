@@ -60,8 +60,6 @@ core_install() {
 essential_install() {
     slog "Installing Essential packages"
 
-    core_install
-
     bis gawk p7zip cmake unar zip
 
     slog "Essential packages installation done!"

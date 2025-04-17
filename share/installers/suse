@@ -62,7 +62,6 @@ snap_install() {
 }
 
 essential_install() {
-    core_install
     sys_python_install
     # snap_install
 

@@ -120,7 +120,7 @@ multipass_install() {
 dev_groupstall() {
   slog "Generic OS setup for Development(docker,vscode,kitty,brew,flatpak, distrobox)"
 
-  essential_install
+  min_groupstall
 
   brew_install
 
