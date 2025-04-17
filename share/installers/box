@@ -32,7 +32,7 @@ emacs_boxstall() {
   if has_cmd brew; then
     bi emacs
   else
-    has_cmd emacs || (has_cmd pixi && pic emacs)
+    has_cmd emacs || (has_cmd pixi && pi emacs)
     is_apt || si emacs-nox
     has_cmd emacs || si emacs
   fi
@@ -51,7 +51,7 @@ tmux_boxstall() {
     bi tmux
   else
     si tmux
-    has_cmd tmux || (has_cmd pixi && pic tmux)
+    has_cmd tmux || (has_cmd pixi && pi tmux)
   fi
 
   has_cmd tmux || warn "tmux not installed! Qutting."
@@ -64,7 +64,7 @@ zsh_boxstall() {
   has_cmd zsh && return 0
 
   si zsh
-  has_cmd zsh || (has_cmd pixi && pic zsh)
+  has_cmd zsh || (has_cmd pixi && pi zsh)
 
   has_cmd zsh || warn "zsh not installed! Qutting."
   set_zsh_as_default
