@@ -81,7 +81,7 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 
   - Use [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal, as it has great support for toolbox.
 
-  - Use [Boxes](https://github.com/boxes-project/boxes) for virtual machines. Remember to enable 3d acceleration.
+  - Use [Boxes](https://apps.gnome.org/Boxes) for virtual machines. Remember to enable 3d acceleration.
 
 
 ### Linux Desktop
