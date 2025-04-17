@@ -232,13 +232,11 @@ zsh_config_install() {
   sclone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$HOME/.zsh/zsh-autosuggestions"
   sclone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.zsh/zsh-syntax-highlighting"
 
-  which stowdf
-  if timeout 30 stowdf zsh; then
-    slog "zsh configuration applied successfully"
-  else
-    warn "stowdf zsh timed out or failed, falling back to manual configuration"
-    # Add fallback configuration here if needed
+  if has_cmd stowdf; then
+    slog "stowdf defined"
+    declare -f my_func
   fi
+  stowdf zsh
 
   slog "zsh config done!"
 }
