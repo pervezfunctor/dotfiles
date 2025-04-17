@@ -194,6 +194,7 @@ sclone() {
     local dest=${*: -1}
     local src=${*: -2:1}
 
+    frm $dest
     if ! [ -d "$dest" ]; then
         slog "Cloning $src to $dest"
         git clone "$@"
@@ -1143,9 +1144,6 @@ bootstrap() {
     if is_mac; then
         source_curl "$INSTALLERS/mac"
     else
-        source_curl "$INSTALLERS/atomic"
-        source_curl "$SHARE/fns"
-
         if ! is_atomic; then
             if is_apt; then
                 source_curl "$INSTALLERS/apt"
@@ -1156,6 +1154,8 @@ bootstrap() {
             elif is_arch; then
                 source_curl "$INSTALLERS/arch"
             fi
+            source_curl "$INSTALLERS/atomic"
+            source_curl "$SHARE/fns"
 
             source_curl "$INSTALLERS/mutable"
             source_curl "$INSTALLERS/box"
