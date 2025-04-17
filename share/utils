@@ -1154,12 +1154,13 @@ bootstrap() {
             elif is_arch; then
                 source_curl "$INSTALLERS/arch"
             fi
-            source_curl "$INSTALLERS/atomic"
-            source_curl "$SHARE/fns"
 
             source_curl "$INSTALLERS/mutable"
             source_curl "$INSTALLERS/box"
         fi
+
+        source_curl "$INSTALLERS/atomic"
+        source_curl "$SHARE/fns"
     fi
 
     slog "Installing ${*} ..."

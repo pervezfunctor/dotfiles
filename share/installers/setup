@@ -14,7 +14,12 @@ main() {
     if [[ "$#" -eq 1 ]] && has_cmd "${1}_groupstall"; then
         "${1}_groupstall"
     else
-        base_groupstall
+        if has_cmd base_groupstall; then
+            base_groupstall
+        else
+            err_exit "unknown or unsupported $* options"
+        fi
+
         common-installer "$@"
     fi
 }
