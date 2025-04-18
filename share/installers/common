@@ -165,24 +165,6 @@ webi_shell_install() {
   # sudo apt install -y libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 }
 
-shell_install() {
-  brew_install
-  cli_install
-
-  webi_install
-  mise_install
-  # pixi_install
-
-  webi_shell_install
-  brew_shell_install
-  # mise_shell_install
-  # pixi_shell_install
-
-  starship_install
-
-  gh extension install github/gh-copilot
-}
-
 miniconda_install() {
   has_cmd conda && return 0
   dir_exists ~/miniconda3 && return 0

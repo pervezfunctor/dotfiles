@@ -66,7 +66,8 @@ core_install() {
     slog "Installing core packages"
     si software-properties-common apt-transport-https ca-certificates gpg
     si curl wget git-core trash-cli tree command-not-found file
-    si tar unzip cmake build-essential stow libfuse2 zstd
+    si tar unzip cmake build-essential libfuse2 zstd
+    is_plucky && si stow fzf
     slog "Core packages installation done!"
 }
 
@@ -114,17 +115,13 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using apt"
 
-    # old fzf doesn't support --bash
-    # old stow version does not work on dot-* folders;
-    sudo apt purge -y stow fzf
-
     # ugrep tealdeer
     si tmux pkg-config urlview zsh git plocate
 
     if is_plucky || ! has_cmd brew; then
         is_plucky || warn "Use brew for newer versions of modern unix tools"
 
-        si sd gdu bat hyperfine fd-find fzf ripgrep zoxide
+        si sd gdu bat hyperfine fd-find ripgrep zoxide eza
         si gh shellcheck just htop shfmt tree-sitter-cli
         gh extension install github/gh-copilot
     fi

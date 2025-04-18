@@ -688,6 +688,7 @@ gnome_major_version() {
 
 is_gnome() {
     [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME" ]] ||
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "ubuntu:GNOME" ]] ||
         [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME-Shell" ]] &&
         [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "gnome" ]]
 }

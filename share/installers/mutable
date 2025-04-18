@@ -94,6 +94,24 @@ multipass_install() {
   fi
 }
 
+shell_install() {
+  brew_install
+  cli_install
+
+  webi_install
+  mise_install
+  # pixi_install
+
+  webi_shell_install
+  brew_shell_install
+  # mise_shell_install
+  # pixi_shell_install
+
+  starship_install
+
+  gh extension install github/gh-copilot
+}
+
 # home_manager_install() {
 #   has_cmd home-manager && return 0
 
