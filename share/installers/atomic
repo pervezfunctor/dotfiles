@@ -437,10 +437,10 @@ apps_slim_install() {
     flathub_install
 
     fpi org.telegram.desktop
-    fpi org.qbittorrent.qBittorrent # verified
     fpi md.obsidian.Obsidian
     fpi org.gnome.Boxes
     fpi us.zoom.Zoom # unverified
+    # fpi org.qbittorrent.qBittorrent # verified
     # fpi org.deluge_torrent.deluge # unverified
 }
 
@@ -450,15 +450,15 @@ apps_install() {
 
     apps_slim_install
 
-    fpi org.wezfurlong.wezterm
     fpi io.github.dvlv.boxbuddyrs
     fpi io.github.getnf.embellish
-    # fpi io.github.shiftey.Desktop # unverified
     fpi com.bitwarden.desktop
     fpi sh.cider.Cider
     fpi io.podman_desktop.PodmanDesktop
+    # fpi io.github.shiftey.Desktop # unverified
 
-    alias wezterm="flatpak run org.wezfurlong.wezterm"
+    # fpi org.wezfurlong.wezterm
+    # alias wezterm="flatpak run org.wezfurlong.wezterm"
 
     slog "Flatpak apps installation done!"
 }

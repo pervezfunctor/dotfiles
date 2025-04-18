@@ -658,19 +658,6 @@ is_toolbox() {
 }
 
 is_distrobox() {
-    # Check for container environment files
-    [[ -f /run/.containerenv || -f /.dockerenv ]] || return 1
-
-    [[ -v container_name && "$container_name" == *"distrobox"* ]] && return 0
-    grep -q "distrobox" /run/.containerenv 2>/dev/null && return 0
-    [[ -v DISTROBOX_ENTER_PATH ]] && return 0
-    [[ -v container_host_path && "$container_host_path" == *"distrobox"* ]] && return 0
-    # [[ "$CONTAINER_ID" != "" ]] && return 0
-
-    return 1
-}
-
-is_inside_distrobox() {
     [[ "$CONTAINER_ID" != "" ]]
 }
 
