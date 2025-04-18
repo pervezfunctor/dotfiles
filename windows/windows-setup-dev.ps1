@@ -1391,6 +1391,7 @@ $availableComponents = [ordered]@{
     "wsl-ubuntu"     = "Install Ubuntu WSL"
     "wsl-debian"     = "Install Debian WSL"
     "wsl-opensuse"   = "Install openSUSE WSL"
+    "wsl-fedora"     = "Install Fedora WSL"
     "wsl-centos"     = "Install CentOS WSL"
     "wsl-nixos"      = "Install NixOS WSL"
     # "scoop"          = "Install Scoop"
@@ -1547,6 +1548,7 @@ function Install-SelectedComponents {
             "wsl-ubuntu" { Install-WSLDistro -DistroName "Ubuntu-24.04" }
             "wsl-debian" { Install-WSLDistro -DistroName "Debian" }
             "wsl-opensuse" { Install-WSLDistro -DistroName "openSUSE-Tumbleweed" }
+            "wsl-fedora" { Install-WSLDistro -DistroName "FedoraLinux-42" }
             "wsl-centos" { Install-CentOSWSL }
             "wsl-nixos" { Install-NixOSWSL }
             # "scoop" { Install-Scoop }

@@ -29,7 +29,7 @@ fedora_packages() {
 
     slog "Installing packages"
 
-    si git gh git-delta unzip wget curl trash-cli tar stow \
+    sudo dnf -q -y --refresh install --skip-unavailable --skip-broken git gh git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh tmux gum \
         tree eza fzf ripgrep zoxide fd htop sd bat tealdeer plocate cheat
 

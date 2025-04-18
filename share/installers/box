@@ -194,7 +194,7 @@ wslbox_groupstall() {
   elif is_nixos; then
     nixos-wslbox_groupstall
   else
-    wslbox_base "$(get_boxos)"
+    box_base "$(get_boxos)"
   fi
 }
 
