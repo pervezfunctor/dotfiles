@@ -637,6 +637,15 @@ is_ubuntu() {
         [[ "$ID" == *"pop"* ]]
 }
 
+is_plucky() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        [[ "${VERSION:-}" =~ .*[Pp]lucky.* ]] || [[ "${NAME:-}" =~ .*[Pp]lucky.* ]]
+    fi
+
+    return 1
+}
+
 is_toolbox() {
     [[ -f /run/.containerenv || -f /.dockerenv ]] || return 1
 

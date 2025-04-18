@@ -121,8 +121,8 @@ cli_install() {
     # ugrep tealdeer
     si tmux pkg-config urlview zsh git plocate
 
-    if ! has_cmd brew; then
-        warn "Use brew for newer versions of modern unix tools"
+    if is_plucky || ! has_cmd brew; then
+        is_plucky || warn "Use brew for newer versions of modern unix tools"
 
         si sd gdu bat hyperfine fd-find fzf ripgrep zoxide
         si gh shellcheck just htop shfmt tree-sitter-cli
