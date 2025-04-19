@@ -260,24 +260,56 @@ dbox_nix() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
+incus_ubuntu_lxc() {
+    incus launch images:ubuntu/24.04 ubuntu # --config limits.cpu=1 --config limits.memory=192MiB
+}
+
+incus_fedora_lxc() {
+    incus launch images:fedora/42 fedora
+}
+
+incus_tw_lxc() {
+    incus launch images:opensuse/tumbleweed tw
+}
+
+incus_arch_lxc() {
+    incus launch images:archlinux/current archlinux
+}
+
 incus_containers() {
     slog "Creating incus containers"
 
-    incus launch images:ubuntu/24.04 ubuntu # --config limits.cpu=1 --config limits.memory=192MiB
-    incus launch images:fedora/42 fedora
-    incus launch images:opensuse/tumbleweed tw
-    incus launch images:archlinux/current archlinux
+    incus_ubuntu_lxc
+    incus_fedora_lxc
+    incus_tw_lxc
+    incus_arch_lxc
 
     slog "Creating incus containers done!"
+}
+
+incus_ubuntu_vm() {
+    incus launch images:ubuntu/24.04 ubuntu-vm --vm
+}
+
+incus_fedora_vm() {
+    incus launch images:fedora/42 fedora-vm --vm
+}
+
+incus_tw_vm() {
+    incus launch images:opensuse/tumbleweed-vm tw --vm
+}
+
+incus_arch_vm() {
+    incus launch images:archlinux/current archlinux-vm --vm
 }
 
 incus_vms() {
     slog "Creating incus vms"
 
-    incus launch images:ubuntu/24.04 ubuntu-vm --vm
-    incus launch images:fedora/42 fedora-vm --vm
-    incus launch images:opensuse/tumbleweed-vm tw --vm
-    incus launch images:archlinux/current archlinux-vm --vm
+    incus_ubuntu_vm
+    incus_fedora_vm
+    incus_tw_vm
+    incus_arch_vm
 
     slog "Creating incus vms done!"
 }
