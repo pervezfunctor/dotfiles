@@ -325,7 +325,6 @@ gnome_flatpaks_install() {
     fpi io.missioncenter.MissionCenter
     fpi org.gnome.World.PikaBackup
     fpi org.gnome.Papers
-    fpi org.gnome.Boxes
 }
 
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh

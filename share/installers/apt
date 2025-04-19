@@ -245,7 +245,7 @@ vm_install() {
 
     si virt-manager
     # fpi org.virt-manager.virt-manager
-    fpi org.gnome.Boxes
+    # fpi org.gnome.Boxes
 }
 
 incus_install() {
