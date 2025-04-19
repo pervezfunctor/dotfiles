@@ -491,8 +491,9 @@ incus_config_install() {
         sudo firewall-cmd --reload
     fi
 
-    # should be invoked by user after reboot
-    # sudo incus admin init --minimal
+    newgrp incus-admin <<EOF
+    sudo incus admin init --minimal
+EOF
 
     slog "incus config done!"
 }
