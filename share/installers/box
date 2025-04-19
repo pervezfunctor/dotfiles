@@ -114,7 +114,7 @@ box_base() {
 }
 
 dbox_base() {
-  is_inside_distrobox || err_exit "This script is only for distrobox containers"
+  is_distrobox || err_exit "This script is only for distrobox containers"
   [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
 
   box_base "$1"
