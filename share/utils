@@ -37,6 +37,10 @@ safe_append() {
     fi
 }
 
+is_snap_working() {
+    has_cmd snap && systemctl is-active --quiet snapd.service 2>/dev/null && systemctl is-active --quiet snapd.socket 2>/dev/null
+}
+
 safe_prepend() {
     if ! grep -q "$1" "$2" 2>/dev/null; then
         slog "Prepending $1 to $2"
