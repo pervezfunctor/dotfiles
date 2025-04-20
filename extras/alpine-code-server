@@ -1,0 +1,24 @@
+FROM alpine:latest
+
+RUN apk add --no-cache \
+  bash \
+  curl \
+  nodejs \
+  npm \
+  libstdc++ \
+  libc6-compat \
+  python3 \
+  make \
+  g++
+
+ENV CODE_SERVER_VERSION=4.99.3
+
+RUN curl -L -o code-server.tar.gz \
+  https://github.com/coder/code-server/releases/download/v${CODE_SERVER_VERSION}/code-server-${CODE_SERVER_VERSION}-linux-alpine.tar.gz && \
+  tar -xzf code-server.tar.gz && \
+  cp -r code-server-${CODE_SERVER_VERSION}-linux-alpine/* /usr/local/ && \
+  rm -rf code-server*
+
+EXPOSE 8080
+
+CMD ["code-server"]
