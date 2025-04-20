@@ -161,6 +161,30 @@ dbox_fedora_init() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
+dbox_alpine() {
+    local CONTAINER_NAME=${1:-alpine}
+    slog "Creating distrobox $CONTAINER_NAME"
+
+    smd ~/boxes
+    distrobox create --yes --image alpine:latest --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+
+    distrobox enter --nw --clean-path --name "$CONTAINER_NAME"
+
+    slog "Done creating distrobox $CONTAINER_NAME"
+}
+
+tbox_alpine() {
+    local CONTAINER_NAME=${1:-alpine}
+    slog "Creating distrobox $CONTAINER_NAME"
+
+    smd ~/boxes
+    toolbox create --assumeyes --image alpine:latest "$CONTAINER_NAME"
+
+    toolbox enter "$CONTAINER_NAME"
+
+    slog "Done creating distrobox $CONTAINER_NAME"
+}
+
 dbox_with_init() {
     smd ~/boxes
 
@@ -171,6 +195,7 @@ dbox_with_init() {
     dbox_arch_init
     dbox_tw_init
     dbox_fedora_init
+    dbox_alpine
 
     slog "Done creating distroboxes with init"
 }

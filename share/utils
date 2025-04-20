@@ -665,6 +665,14 @@ is_distrobox() {
     [[ "$CONTAINER_ID" != "" ]]
 }
 
+is_box() {
+    is_distrobox || is_toolbox || is_wsl # || is_multipass
+}
+
+get_current_shell() {
+    ps -p "$$" -o comm=
+}
+
 is_apt() {
     is_ubuntu || is_debian
 }
@@ -776,6 +784,10 @@ is_rocky() {
 
 is_centos() {
     [ -e /etc/redhat-release ] && grep -q -i 'CentOS' /etc/redhat-release
+}
+
+is_alpine() {
+    [[ -f /etc/alpine-release ]] && has_cmd apk
 }
 
 is_rh() {

@@ -152,9 +152,15 @@ get_boxos() {
     echo "arch"
   elif is_centos; then
     echo "centos"
+  elif is_alpine; then
+    echo "alpine"
   else
     echo "brew"
   fi
+}
+
+alpine_packages() {
+  sudo apk add --no-cache curl wget gcc libc-dev make gzip zsh git unzip neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli starship stow just file tree fd htop sd # libstdc++ libc6-compat python3 g++ bash emacs clang-analyzer clang-ccache clang-extra-tools llvm
 }
 
 slimbox_groupstall() {
