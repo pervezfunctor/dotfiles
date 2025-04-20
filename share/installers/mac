@@ -34,17 +34,8 @@ ui_install() {
     vscode_bin_install
 
     bi deluge
-    bic telegram
-    bic zoom
-    bic google-chrome
-    bic microsoft-remote-desktop
+    bic telegram zoom google-chrome microsoft-remote-desktop
     bic nikitabobko/tap/aerospace
-}
-
-bic() {
-    for cmd in "$@"; do
-        brew install -q --cask "$cmd"
-    done
 }
 
 core_install() {
@@ -52,9 +43,7 @@ core_install() {
     xcode-select --install
     brew_install
 
-    bi mas
-    bi coreutils bash
-    bis curl wget trash tree unzip coreutils gum stow
+    bi mas coreutils bash curl wget trash tree unzip coreutils gum stow
 }
 
 essential_install() {
@@ -66,13 +55,10 @@ essential_install() {
 }
 
 cli_install() {
-    bis tmux pkg-config urlview htop starship gping
-    bis broot mcfly jq
-
-    bi zsh-syntax-highlighting zsh-autosuggestions
-    bi golang rust ripgrep neovim neovide luarocks lazydocker
-    bi reattach-to-user-namespace
-    brew link luarocks
+    bis tmux pkg-config urlview htop starship gping broot mcfly jq \
+        zsh-syntax-highlighting zsh-autosuggestions golang rust ripgrep neovim \
+        neovide luarocks lazydocker reattach-to-user-namespace \
+        brew link luarocks
     gh extension install github/gh-copilot
 }
 
@@ -103,8 +89,7 @@ ct_install() {
 vm_install() {
     slog "Installing virtualization packages"
 
-    bi orbstack
-    bi colima
+    bi orbstack colima lim
 
     dir_exists /Applications/Docker.app || bic docker
 
@@ -113,8 +98,7 @@ vm_install() {
 
 pyenv_mac_install() {
     slog "Installing pyenv"
-    bi pyenv
-    bi pyenv-virtualenv
+    bi pyenv pyenv-virtualenv
 }
 
 emacs_bin_install() {

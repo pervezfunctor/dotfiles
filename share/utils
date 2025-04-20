@@ -1029,6 +1029,10 @@ bi() {
     # done
 }
 
+bic() {
+    brew install -q --cask "$@"
+}
+
 bis() {
     if ! has_cmd brew; then
         warn "brew not installed, skipping brew packages"

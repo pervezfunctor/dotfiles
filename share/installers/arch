@@ -1,10 +1,12 @@
 #! /usr/bin/env bash
 
 si() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        sudo pacman -S --needed --quiet --noconfirm "$p"
-    done
+    sudo pacman -S --needed --quiet --noconfirm "$@"
+
+    # for p in "$@"; do
+    #     slog "Installing package $p"
+    #     sudo pacman -S --needed --quiet --noconfirm "$p"
+    # done
 }
 
 update_packages() {
@@ -32,8 +34,8 @@ core_install() {
 
     slog "Installing core packages"
 
-    si curl wget git base-devel trash-cli tree micro tar unzip stow cmake zstd
-    si fuse2 file
+    si curl wget git base-devel trash-cli tree micro tar unzip stow cmake zstd \
+        fuse2 file
 
     slog "Core packages installation done!"
 }
@@ -64,8 +66,8 @@ essential_install() {
     sys_python_install
     yay -Sy --noconfirm snapd
 
-    si unarchiver zip gawk tmux pkg-config
-    si p7zip cmake readline sqlite libffi zlib xz pkgfile gum
+    si unarchiver zip gawk tmux pkg-config \
+        p7zip cmake readline sqlite libffi zlib xz pkgfile gum
     sudo pkgfile --update
 
     slog "Essential packages installation done!"
@@ -74,9 +76,10 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using pacman"
 
-    si neovim github-cli shellcheck shfmt python-pynvim zsh zsh-completions luarocks duf lazygit starship eza ugrep git-delta navi
-    si sd gdu bat hyperfine fd fzf ripgrep zoxide htop nushell bottom
-    si plocate tealdeer television dysk yazi pixi procs dust direnv atuin
+    si neovim github-cli shellcheck shfmt python-pynvim zsh zsh-completions \
+        luarocks duf lazygit starship eza ugrep git-delta navi \
+        sd gdu bat hyperfine fd fzf ripgrep zoxide htop nushell bottom \
+        plocate tealdeer television dysk yazi pixi procs dust direnv atuin
 
     gh extension install github/gh-copilot
 
@@ -86,9 +89,9 @@ cli_install() {
 cpp_install() {
     slog "Installing C++"
 
-    si gcc gdb boost boost-libs catch2 libc++ clang llvm
-    si doxygen graphviz ccache cppcheck pre-commit
-    si valgrind ltrace strace lldb lld
+    si gcc gdb boost boost-libs catch2 libc++ clang llvm \
+        doxygen graphviz ccache cppcheck pre-commit \
+        valgrind ltrace strace lldb lld
 
     cmake_install
     conan_install

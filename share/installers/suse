@@ -1,10 +1,12 @@
 #! /usr/bin/env bash
 
 si() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$p"
-    done
+    sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$@"
+
+    # for p in "$@"; do
+    #     slog "Installing package $p"
+    #     sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$p"
+    # done
 }
 
 update_packages() {
@@ -66,8 +68,8 @@ essential_install() {
     # snap_install
 
     slog "Installing essential packages"
-    si unar zip micro-editor 7zip gawk
-    si readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel gum
+    si unar zip micro-editor 7zip gawk readline-devel sqlite3-devel \
+        libffi-devel libbz2-devel xz-devel gum
 
     slog "Essential packages installation done!"
 }
@@ -75,10 +77,10 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using zypper"
 
-    si gh neovim zsh tmux sd bat fd fzf ripgrep zoxide just procs
-    si lazygit bottom git-delta htop xh plocate tealdeer urlview nushell
-    si lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk shfmt
-    si hyperfine cheat curlie jq ShellCheck
+    si gh neovim zsh tmux sd bat fd fzf ripgrep zoxide just procs \
+        lazygit bottom git-delta htop xh plocate tealdeer urlview nushell \
+        lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk \
+        shfmt hyperfine cheat curlie jq ShellCheck gum
 
     gh extension install github/gh-copilot
 
@@ -88,10 +90,9 @@ cli_install() {
 cpp_install() {
     slog "Installing C++"
 
-    si gcc gdb g++ boost-devel catch2-devel
-    si clang llvm clang-tools clang-devel
-    si doxygen graphviz ccache cppcheck python3-pre-commit
-    si valgrind systemtap ltrace strace lldb lld
+    si gcc gdb g++ boost-devel catch2-devel ltrace strace lldb lld \
+        clang llvm clang-tools clang-devel valgrind systemtap \
+        doxygen graphviz ccache cppcheck python3-pre-commit
 
     if has_cmd brew; then
         bi cmake
@@ -146,8 +147,9 @@ cockpit_install() {
 
     slog "Installing cockpit"
 
-    si systemd-network
-    si cockpit cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged cockpit-kdump cockpit-networkmanager cockpit-packagekit cockpit-system cockpit-tukit
+    si systemd-networkd cockpit cockpit-machines cockpit-pcp cockpit-podman \
+        cockpit-storaged cockpit-kdump cockpit-networkmanager \
+        cockpit-packagekit cockpit-system cockpit-tukit
     # microos_cockpit patterns-microos-cockpit
     sudo systemctl enable --now cockpit.socket
 
@@ -219,12 +221,13 @@ sway_install() {
 
     sudo zypper install -y -t pattern openSuseway
 
-    si openSuseway qt6ct alacritty swaylock swaybg swayidle swaynag waybar grim
-    si clipman imv mpv bluez slirp qt5ct qt6ct sway-marker polkit-gnome
-    si brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl
-    si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard firefox rofi-wayland
-    si SwayNotificationCenter SwayNotificationCenter-bash-completion
-    si SwayNotificationCenter-zsh-completion
+    si openSuseway qt6ct alacritty swaylock swaybg swayidle \
+        grim clipman imv mpv bluez slirp qt5ct swaynag waybar \
+        brightnessctl pamixer playerctl greetd mpris-ctl firefox \
+        symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard \
+        rofi-wayland SwayNotificationCenter polkit-gnome slurp \
+        SwayNotificationCenter-bash-completion bluemoon tlp \
+        SwayNotificationCenter-zsh-completion qt6ct sway-marker
 
     nerd_fonts_install
 
@@ -241,17 +244,26 @@ sway_install() {
 hyprland_install() {
     slog "Installing hyprland"
 
-    si grep aaa_base bash-completion ghostscript-fonts-std NetworkManager curl tar pipewire wget xdg-utils sudo xdg-desktop-portal xdg-desktop-portal-gtk git gzip bzip2 jq adwaita-icon-theme dejavu-fonts glibc-locale less wl-clipboard google-roboto-fonts noto-sans-fonts google-droid-fonts google-opensans-fonts gtk3-metatheme-adwaita noto-coloremoji-fonts adobe-sourcecodepro-fonts command-not-found greetd metatheme-adwaita-common xdg-desktop-portal-wlr adobe-sourcesanspro-fonts adobe-sourceserifpro-fonts cantarell-fonts ghostscript-fonts-other google-carlito-fonts noto-emoji-fonts mpris-ctl
+    si grep aaa_base bash-completion ghostscript-fonts-std NetworkManager curl \
+        tar pipewire wget xdg-utils sudo xdg-desktop-portal \
+        xdg-desktop-portal-gtk git gzip bzip2 jq adwaita-icon-theme \
+        dejavu-fonts glibc-locale less wl-clipboard google-roboto-fonts \
+        noto-sans-fonts google-droid-fonts google-opensans-fonts \
+        gtk3-metatheme-adwaita noto-coloremoji-fonts noto-emoji-fonts \
+        adobe-sourcecodepro-fonts command-not-found greetd mpris-ctl \
+        metatheme-adwaita-common xdg-desktop-portal-wlr \
+        adobe-sourcesanspro-fonts adobe-sourceserifpro-fonts cantarell-fonts \
+        ghostscript-fonts-other google-carlito-fonts
 
-    si hyprcursor hypridle hyprland hyprland-bash-completion hyprland-devel
-    si hyprlock hyprland-wallpapers hyprland-zsh-completion hyprpaper
-    si hyprpicker hyprpolkitagent hyprshot xdg-desktop-portal-hyprland
-    si hyprland-qt-support hyprland-qtutils qt6ctwaybar imv mpv
-    si clipman bluez slirp qt5ct qt6ct ghostty firefox
-    si brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl
-    si symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard rofi-wayland
-    si SwayNotificationCenter SwayNotificationCenter-bash-completion
-    si SwayNotificationCenter-zsh-completion
+    si hyprcursor hypridle hyprland hyprland-bash-completion hyprland-devel \
+        hyprlock hyprland-wallpapers hyprland-zsh-completion hyprpaper \
+        hyprpicker hyprpolkitagent hyprshot xdg-desktop-portal-hyprland \
+        hyprland-qt-support hyprland-qtutils qt6ctwaybar imv mpv \
+        clipman bluez slirp qt5ct qt6ct ghostty firefox \
+        brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl \
+        symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard rofi-wayland \
+        SwayNotificationCenter SwayNotificationCenter-bash-completion \
+        SwayNotificationCenter-zsh-completion
 
     nerd_fonts_install
 

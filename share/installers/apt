@@ -3,10 +3,27 @@
 export DEBIAN_FRONTEND=noninteractive
 
 function si() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        sudo apt-get -qq -y install "$p"
+    local found=()
+    local not_found=()
+
+    for pkg in "$@"; do
+        if apt-cache show "$pkg" >/dev/null 2>&1; then
+            found+=("$pkg")
+        else
+            not_found+=("$pkg")
+        fi
     done
+
+    sudo apt-get -qq -y install "${found[@]}"
+
+    for pkg in "${not_found[@]}"; do
+        warn "Package $pkg not found in apt repository"
+    done
+
+    # for p in "$@"; do
+    #     slog "Installing package $p"
+    #     sudo apt-get -qq -y install "$p"
+    # done
 }
 
 pacstall_install() {
@@ -48,7 +65,7 @@ debian_packages() {
     update_packages
 
     slog "Installing packages"
-    #  git-delta eza just treesitter-cli fzf
+    #  git-delta eza just fzf
     DEBIAN_FRONTEND=noninteractive si git gh unzip wget curl trash-cli tar \
         stow gcc make file zsh tmux \
         tree bat ripgrep zoxide fd-find htop sd emacs-nox
