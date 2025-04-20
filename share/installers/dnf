@@ -1,10 +1,22 @@
 #! /usr/bin/env bash
 
 si() {
-    for p in "$@"; do
-        slog "Installing package $p"
-        sudo dnf -q -y install "$p"
-    done
+    if has_cmd dnf5; then
+        sudo dnf5 -q -y \
+            --skip-unavailable \
+            --skip-broken \
+            --setopt=install_weak_deps=False \
+            --setopt=fastestmirror=True \
+            --setopt=keepcache=False \
+            --setopt=defaultyes=True \
+            --setopt=max_parallel_downloads=10 \
+            --setopt=metadata_timer_sync=0 \
+            --setopt=keepcache=False \
+            --setopt=defaultyes=True \
+            install "$@"
+    else
+        sudo dnf -q -y --skip-unavailable --skip-broken install "$@"
+    fi
 }
 
 enable_epel() {
@@ -29,7 +41,7 @@ fedora_packages() {
 
     slog "Installing packages"
 
-    sudo dnf -q -y --refresh install --skip-unavailable --skip-broken git gh git-delta unzip wget curl trash-cli tar stow \
+    si git gh git-delta unzip wget curl trash-cli tar stow \
         gcc make file just emacs-nox tree-sitter zsh tmux gum \
         tree fzf ripgrep zoxide fd htop bat tealdeer plocate cheat
 
