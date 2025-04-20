@@ -3,8 +3,6 @@
 si() {
     if has_cmd dnf5; then
         sudo dnf5 -q -y \
-            --skip-unavailable \
-            --skip-broken \
             --setopt=install_weak_deps=False \
             --setopt=fastestmirror=True \
             --setopt=keepcache=False \
@@ -13,9 +11,9 @@ si() {
             --setopt=metadata_timer_sync=0 \
             --setopt=keepcache=False \
             --setopt=defaultyes=True \
-            install "$@"
+            install --skip-unavailable --skip-broken "$@"
     else
-        sudo dnf -q -y --skip-unavailable --skip-broken install "$@"
+        sudo dnf -q -y install --skip-unavailable --skip-broken "$@"
     fi
 }
 
