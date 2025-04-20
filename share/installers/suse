@@ -21,7 +21,7 @@ tw_packages() {
     slog "Installing packages"
 
     si git gh lazygit git-delta unzip wget curl trash-cli tar stow \
-        gcc make file just emacs-nox tree-sitter zsh starship tmux gum cheat \
+        gcc make file just emacs-nox zsh starship tmux gum cheat \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer plocate
 
     slog "Installing packages done!"
@@ -75,7 +75,7 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using zypper"
 
-    si gh neovim zsh tree-sitter tmux sd bat fd fzf ripgrep zoxide just procs
+    si gh neovim zsh tmux sd bat fd fzf ripgrep zoxide just procs
     si lazygit bottom git-delta htop xh plocate tealdeer urlview nushell
     si lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk shfmt
     si hyperfine cheat curlie jq ShellCheck

@@ -642,12 +642,11 @@ is_ubuntu() {
 }
 
 is_plucky() {
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        [[ "${VERSION:-}" =~ .*[Pp]lucky.* ]] || [[ "${NAME:-}" =~ .*[Pp]lucky.* ]]
-    fi
+    [[ -f /etc/os-release ]] || return 1
+    # shellcheck disable=SC1091
+    . /etc/os-release
 
-    return 1
+    [[ "$VERSION_CODENAME" == "plucky" ]] || [[ "${VERSION:-}" =~ .*[Pp]lucky.* ]] || [[ "${NAME:-}" =~ .*[Pp]lucky.* ]]
 }
 
 is_toolbox() {
@@ -1022,10 +1021,12 @@ bi() {
         return 1
     fi
 
-    for p in "$@"; do
-        slog "Installing package $p"
-        brew install -q "$p"
-    done
+    brew install -q "$@"
+
+    # for p in "$@"; do
+    #     slog "Installing package $p"
+    #     brew install -q "$p"
+    # done
 }
 
 bis() {
@@ -1034,10 +1035,20 @@ bis() {
         return 1
     fi
 
+    local PKGS
+
     for p in "$@"; do
-        slog "Installing package $p"
-        has_cmd "$p" || brew install -q "$p"
+        slog "Installing brew package $p"
+        has_cmd "$p" && continue
+        PKGS="$PKGS $p"
     done
+
+    [ -n "$PKGS" ] && brew install -q $PKGS
+
+    # for p in "$@"; do
+    #     slog "Installing package $p"
+    #     has_cmd "$p" || brew install -q "$p"
+    # done
 }
 
 wis() {

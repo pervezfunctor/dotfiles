@@ -2,7 +2,7 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-si() {
+function si() {
     for p in "$@"; do
         slog "Installing package $p"
         sudo apt-get -qq -y install "$p"
@@ -29,7 +29,7 @@ ubuntu_packages() {
     slog "Installing packages"
 
     DEBIAN_FRONTEND=noninteractive si git gh git-delta unzip wget curl \
-        trash-cli tar stow gcc make file just tree-sitter-cli zsh tmux \
+        trash-cli tar stow gcc make file just zsh tmux \
         tree bat eza ripgrep zoxide fd-find htop sd bat emacs-nox
 
     # si golang-go fzf
@@ -122,8 +122,8 @@ cli_install() {
         is_plucky || warn "Use brew for newer versions of modern unix tools"
 
         si sd gdu bat hyperfine fd-find ripgrep zoxide eza
-        si gh shellcheck just htop shfmt tree-sitter-cli
-        gh extension install github/gh-copilot
+        si gh shellcheck just htop shfmt starship
+        gh extension install github/gh-copilot gum
     fi
 
     slog "cli tools installation done!"
@@ -205,6 +205,17 @@ terminal_bin_install() {
     slog "terminal installation done!"
 }
 
+vm_ui_install() {
+
+    is_desktop || return 0
+
+    fpi org.gnome.Boxes
+
+    if has_cmd virsh && has_cmd virt-install; then
+        si virt-manager
+    fi
+}
+
 ui_install() {
     slog "Installing ui"
     si chromium-browser virt-manager gnome-keyring wl-clipboard flatpak
@@ -215,6 +226,7 @@ ui_install() {
     vscode_bin_install
     apps_install
 
+    vm_ui_install
     slog "ui installation done!"
 }
 
@@ -240,12 +252,6 @@ podman_install() {
 vm_install() {
     si libvirt-daemon
     sudo systemctl enable --now libvirtd
-
-    is_desktop || return 0
-
-    si virt-manager
-    # fpi org.virt-manager.virt-manager
-    # fpi org.gnome.Boxes
 }
 
 incus_install() {

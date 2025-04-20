@@ -194,7 +194,7 @@ min_groupstall() {
 }
 
 shell-group_check() {
-  cmd_check gh nvim zsh tree-sitter tmux lazygit sd lsd bat fd
+  cmd_check gh nvim zsh tmux lazygit sd lsd bat fd
   cmd_check fzf zoxide gum bat brew btm htop btm rg starship
   cmd_check eza fd fzf atuin delta
   # cmd_check cheat choose curlie direnv doggo dotenv procs

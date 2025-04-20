@@ -29,7 +29,7 @@ brew_install() {
 mise_shell_install() {
   slog "shell tools with mise"
 
-  mis tree-sitter just lazygit lazydocker starship ripgrep gdu choose yazi
+  mis just lazygit lazydocker starship ripgrep gdu choose yazi
   mis shellcheck gum xh bottom fzf hyperfine cheat duf eza dust zoxide
 
   mi superfile
@@ -40,7 +40,7 @@ mise_shell_install() {
 }
 
 brew_shell_slim_install() {
-  bis tree-sitter gh gum stow tmux carapace
+  bis gh gum stow tmux carapace
   bis lazygit eza fzf fd zoxide starship yazi
 
   if ! has_cmd luarocks; then
@@ -103,7 +103,6 @@ pixi_shell_install() {
   pis broot just shellcheck lazydocker broot gdu nvim luarocks micro glances
   pis cheat curlie duf sd xh atuin direnv dust procs hyperfine yq yazi htop jq
 
-  has_cmd tree-sitter || pi tree-sitter-cli
   has_cmd tv || pi television
   has_cmd spf || pi superfile
   has_cmd tldr || pi tealdeer
@@ -565,7 +564,7 @@ go-tools_install() {
 
 pixi_good_packages() {
   pi gh lazygit git-delta unzip wget curl trash-cli tar stow \
-    just emacs tree-sitter-cli starship tmux go-gum \
+    just emacs starship tmux go-gum \
     tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer navi
 }
 
@@ -578,7 +577,7 @@ pixi_packages() {
 
 brew_good_packages() {
   bi gh unzip wget curl trash-cli stow starship tmux gum \
-    just emacs tree-sitter zsh tree bat eza fzf ripgrep zoxide fd \
+    just emacs zsh tree bat eza fzf ripgrep zoxide fd \
     htop sd yazi bat tealdeer cheat navi lazygit git-delta
 }
 

@@ -277,7 +277,7 @@ On Linux, follow the instruction [here](https://code.visualstudio.com/docs/setup
 Pick your favorite modern linux/macos tools
 
 ```bash
-brew install tree-sitter gh gum stow tmux carapace lazygit eza fzf fd zoxide
+brew install gh gum stow tmux carapace lazygit eza fzf fd zoxide
 brew install git-delta yazi ripgrep bat ugrep micro carapace nushell
 brew install jq just shfmt shellcheck lazydocker broot dust htop dysk
 brew install cheat curlie duf sd xh doggo atuin procs hyperfine pixi
