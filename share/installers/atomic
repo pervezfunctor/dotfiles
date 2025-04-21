@@ -228,21 +228,6 @@ generic-ct_groupstall() {
     has_cmd git || fail "git not installed. Quitting."
     slog "Installing shell tools with pixi done!"
 
-    slog "Setting up python, pip, pipx"
-    if has_cmd python3; then
-        unset -f sys_python_install
-        python_install
-    else
-        python_install
-    fi
-
-    if has_cmd pipx; then
-        slog "Installing trash-cli"
-        pipx install trash-cli
-    else
-        fail "pipx not available! Cannot setup python and install some essential tools!"
-    fi
-
     dotfiles_install
 
     starship_install
