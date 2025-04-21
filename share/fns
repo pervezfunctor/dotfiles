@@ -18,6 +18,21 @@ dbox-arch() {
     slog "Arch distrobox ${CONTAINER_NAME} created successfully"
 }
 
+dbox-fedora-minimal() {
+    local CONTAINER_NAME=${1:-fedora-minimal}
+    slog "Creating Fedora minimal distrobox: ${CONTAINER_NAME}"
+    smd ~/boxes
+    distrobox create --yes --image registry.fedoraproject.org/fedora-minimal:latest --name "${CONTAINER_NAME}"
+}
+
+dbox-debian-slim() {
+    local CONTAINER_NAME=${1:-debian-slim}
+    slog "Creating Debian slim distrobox: ${CONTAINER_NAME}"
+    smd ~/boxes
+    distrobox create --yes --image debian:booksworm-slim --home /home/pervez/boxes/"${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "Debian slim distrobox ${CONTAINER_NAME} created successfully"
+}
+
 dbox-fedora() {
     local CONTAINER_NAME=${1:-fedora}
     slog "Creating Fedora distrobox: ${CONTAINER_NAME}"
@@ -101,12 +116,22 @@ dbox-toolbox-all() {
     slog "Creating toolbox distroboxes done!"
 }
 
+dbox-apline-edge-init() {
+    local CONTAINER_NAME=${1:-alpine-edge-init}
+    slog "Creating distrobox $CONTAINER_NAME"
+
+    smd ~/boxes
+    distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:edge --init --additional-packages "openrc" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+
+    slog "Done creating distrobox $CONTAINER_NAME"
+}
+
 dbox-apline-init() {
     local CONTAINER_NAME=${1:-alpine-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
     smd ~/boxes
-    distrobox create --yes --image alpine:latest --init --additional-packages "openrc" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+    distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:latest --init --additional-packages "openrc" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 
     slog "Done creating distrobox $CONTAINER_NAME"
 }
@@ -166,9 +191,21 @@ dbox-alpine() {
     slog "Creating distrobox $CONTAINER_NAME"
 
     smd ~/boxes
-    distrobox create --yes --image alpine:latest --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+    distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:latest --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
 
-    distrobox enter --nw --clean-path --name "$CONTAINER_NAME"
+    distrobox enter -nw --clean-path --name "$CONTAINER_NAME"
+
+    slog "Done creating distrobox $CONTAINER_NAME"
+}
+
+dbox-alpine-edge() {
+    local CONTAINER_NAME=${1:-alpine-edge}
+    slog "Creating distrobox $CONTAINER_NAME"
+
+    smd ~/boxes
+    distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:edge --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli" --name "$CONTAINER_NAME" --home ~/boxes/"${CONTAINER_NAME}"
+
+    distrobox enter -nw --clean-path --name "$CONTAINER_NAME"
 
     slog "Done creating distrobox $CONTAINER_NAME"
 }
@@ -178,7 +215,7 @@ tbox-alpine() {
     slog "Creating distrobox $CONTAINER_NAME"
 
     smd ~/boxes
-    toolbox create --assumeyes --image alpine:latest "$CONTAINER_NAME"
+    toolbox create --assumeyes --image quay.io/toolbx-images/alpine-toolbox:latest "$CONTAINER_NAME"
 
     toolbox enter "$CONTAINER_NAME"
 
@@ -265,7 +302,7 @@ dbox-from-image() {
 
     smd ~/boxes
     distrobox create --yes --image "$1":latest --name "$dbox_name"
-    distrobox enter --nw --clean-path --name "$dbox_name"
+    distrobox enter -nw --clean-path --name "$dbox_name"
 
     slog "Done creating distrobox from image $1"
 }
@@ -280,9 +317,31 @@ dbox-nix() {
 
     distrobox create --yes --name "${CONTAINER_NAME}" -i debian:stable --init --additional-packages "systemd libpam-systemd" --home ~/boxes/"${CONTAINER_NAME}"
 
-    distrobox enter --nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- nixbox
+    distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- nixbox
 
     slog "Done creating distrobox $CONTAINER_NAME"
+}
+
+dbox-sizes() {
+    local name="$1"
+
+    if ! command -v distrobox >/dev/null; then
+        echo "distrobox not found" >&2
+        return 1
+    fi
+
+    local container="distrobox-$name"
+
+    if command -v podman >/dev/null; then
+        podman container inspect "$container" --size --format '{{.SizeRootFs}}' 2>/dev/null ||
+            echo "Container '$container' not found in Podman"
+    elif command -v docker >/dev/null; then
+        docker container inspect "$container" --size --format '{{.SizeRootFs}}' 2>/dev/null ||
+            echo "Container '$container' not found in Docker"
+    else
+        echo "Neither podman nor docker found" >&2
+        return 1
+    fi
 }
 
 incus-ubuntu-lxc() {
