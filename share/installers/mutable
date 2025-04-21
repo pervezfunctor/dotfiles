@@ -278,6 +278,8 @@ all-group_check() {
 all_groupstall() {
   prog_groupstall
   pixi_install
+  pkgx_install
+
   emacs_bin_install
 
   emacs_config_install
