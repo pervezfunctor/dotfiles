@@ -2,7 +2,7 @@
 
 # shellcheck disable=SC2120
 
-dbox_ubuntu() {
+dbox-ubuntu() {
     local CONTAINER_NAME=${1:-ubuntu}
     slog "Creating Ubuntu distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
@@ -10,7 +10,7 @@ dbox_ubuntu() {
     slog "Ubuntu distrobox ${CONTAINER_NAME} created successfully"
 }
 
-dbox_arch() {
+dbox-arch() {
     local CONTAINER_NAME=${1:-arch}
     slog "Creating Arch distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
@@ -18,7 +18,7 @@ dbox_arch() {
     slog "Arch distrobox ${CONTAINER_NAME} created successfully"
 }
 
-dbox_fedora() {
+dbox-fedora() {
     local CONTAINER_NAME=${1:-fedora}
     slog "Creating Fedora distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
@@ -26,7 +26,7 @@ dbox_fedora() {
     slog "Fedora distrobox ${CONTAINER_NAME} created successfully"
 }
 
-dbox_centos() {
+dbox-centos() {
     local CONTAINER_NAME=${1:-centos}
     slog "Creating CentOS distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
@@ -34,7 +34,7 @@ dbox_centos() {
     slog "CentOS distrobox ${CONTAINER_NAME} created successfully"
 }
 
-dbox_debian() {
+dbox-debian() {
     local CONTAINER_NAME=${1:-debian}
     slog "Creating Debian distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
@@ -42,7 +42,7 @@ dbox_debian() {
     slog "Debian distrobox ${CONTAINER_NAME} created successfully"
 }
 
-dbox_rocky() {
+dbox-rocky() {
     local CONTAINER_NAME=${1:-rocky}
     slog "Creating Rocky Linux distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
@@ -50,7 +50,7 @@ dbox_rocky() {
     slog "Rocky Linux distrobox ${CONTAINER_NAME} created successfully"
 }
 
-dbox_tw() {
+dbox-tw() {
     local CONTAINER_NAME=${1:-tw}
     slog "Creating OpenSUSE Tumbleweed distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
@@ -58,7 +58,7 @@ dbox_tw() {
     slog "OpenSUSE Tumbleweed distrobox ${CONTAINER_NAME} created successfully"
 }
 
-dbox_bluefin() {
+dbox-bluefin() {
     local CONTAINER_NAME=${1:-bluefin-cli}
     slog "Creating Bluefin distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
@@ -66,7 +66,7 @@ dbox_bluefin() {
     slog "Bluefin distrobox ${CONTAINER_NAME} created successfully"
 }
 
-dbox_wolfi() {
+dbox-wolfi() {
     local CONTAINER_NAME=${1:-wolfi-ublue}
     slog "Creating Wolfi distrobox: ${CONTAINER_NAME}"
     smd ~/boxes
@@ -74,11 +74,11 @@ dbox_wolfi() {
     slog "Wolfi distrobox ${CONTAINER_NAME} created successfully"
 }
 
-dbox_ublue_all() {
+dbox-ublue-all() {
     smd ~/boxes
     slog "Creating Bluefin, Wolfi and Ublue distroboxes"
-    dbox_bluefin
-    dbox_wolfi
+    dbox-bluefin
+    dbox-wolfi
 
     distrobox create --yes --image ghcr.io/ublue-os/ubuntu-toolbox --home /home/pervez/boxes/ubuntu-ublue --name ubuntu-ublue
     distrobox create --yes --image ghcr.io/ublue-os/fedora-toolbox --home /home/pervez/boxes/fedora-ublue --name fedora-ublue
@@ -87,7 +87,7 @@ dbox_ublue_all() {
     slog "Creating Bluefin, Wolfi and Ublue distroboxes done!"
 }
 
-dbox_toolbox_all() {
+dbox-toolbox-all() {
     smd ~/boxes
     slog "Creating toolbox distroboxes"
 
@@ -101,7 +101,7 @@ dbox_toolbox_all() {
     slog "Creating toolbox distroboxes done!"
 }
 
-dbox_apline_init() {
+dbox-apline-init() {
     local CONTAINER_NAME=${1:-alpine-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
@@ -111,7 +111,7 @@ dbox_apline_init() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
-dbox_debian_init() {
+dbox-debian-init() {
     local CONTAINER_NAME=${1:-debian-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
@@ -121,7 +121,7 @@ dbox_debian_init() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
-dbox_ubuntu_init() {
+dbox-ubuntu-init() {
     local CONTAINER_NAME=${1:-ubuntu-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
@@ -131,7 +131,7 @@ dbox_ubuntu_init() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
-dbox_arch_init() {
+dbox-arch-init() {
     local CONTAINER_NAME=${1:-arch-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
@@ -141,7 +141,7 @@ dbox_arch_init() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
-dbox_tw_init() {
+dbox-tw-init() {
     local CONTAINER_NAME=${1:-tw-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
@@ -151,7 +151,7 @@ dbox_tw_init() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
-dbox_fedora_init() {
+dbox-fedora-init() {
     local CONTAINER_NAME=${1:-fedora-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
@@ -161,7 +161,7 @@ dbox_fedora_init() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
-dbox_alpine() {
+dbox-alpine() {
     local CONTAINER_NAME=${1:-alpine}
     slog "Creating distrobox $CONTAINER_NAME"
 
@@ -173,7 +173,7 @@ dbox_alpine() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
-tbox_alpine() {
+tbox-alpine() {
     local CONTAINER_NAME=${1:-alpine}
     slog "Creating distrobox $CONTAINER_NAME"
 
@@ -185,22 +185,22 @@ tbox_alpine() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
-dbox_with_init() {
+dbox-with-init() {
     smd ~/boxes
 
     slog "Creating distroboxes with init"
 
-    dbox_ubuntu_init
-    dbox_debian_init
-    dbox_arch_init
-    dbox_tw_init
-    dbox_fedora_init
-    dbox_alpine
+    dbox-ubuntu-init
+    dbox-debian-init
+    dbox-arch-init
+    dbox-tw-init
+    dbox-fedora-init
+    dbox-alpine
 
     slog "Done creating distroboxes with init"
 }
 
-toolbox_create_all() {
+toolbox-create-all() {
     slog "Creating toolbox containers"
 
     smd ~/boxes
@@ -222,7 +222,7 @@ function safe_push() {
     git stash -u && git push "$@" && git stash pop
 }
 
-one_shell_tmux() {
+one-shell-tmux() {
     local tmux_session="default"
 
     [[ -n "$TMUX" || -n "$EMACS" || -n "$INSIDE_EMACS" || -n "$VIM" || -n "$VSCODE_RESOLVING_ENVIRONMENT" || "$TERM_PROGRAM" == "vscode" ]] && return
@@ -237,7 +237,7 @@ one_shell_tmux() {
     exec tmux attach-session -t "$tmux_session"
 }
 
-dbox_nvidia_container_toolkit() {
+dbox-nvidia-container-toolkit() {
     smd ~/boxes
     if has_cmd podman; then
         distrobox create --yes --name example-nvidia-toolkit --additional-flags "--gpus all" --image docker.io/nvidia/cuda
@@ -248,7 +248,7 @@ dbox_nvidia_container_toolkit() {
     fi
 }
 
-dbox_to_image() {
+dbox-to-image() {
     smd ~/boxes
     if has_cmd podman; then
         podman container commit -p dbox_name "$1"
@@ -259,7 +259,7 @@ dbox_to_image() {
     fi
 }
 
-dbox_from_image() {
+dbox-from-image() {
     local dbox_name=${1:dbox}
     slog "Creating distrobox from image $1"
 
@@ -270,7 +270,7 @@ dbox_from_image() {
     slog "Done creating distrobox from image $1"
 }
 
-dbox_nix() {
+dbox-nix() {
     local CONTAINER_NAME=${1:-deb-nix}
 
     slog "Creating distrobox $CONTAINER_NAME"
@@ -285,56 +285,56 @@ dbox_nix() {
     slog "Done creating distrobox $CONTAINER_NAME"
 }
 
-incus_ubuntu_lxc() {
+incus-ubuntu-lxc() {
     incus launch images:ubuntu/24.04 ubuntu # --config limits.cpu=1 --config limits.memory=192MiB
 }
 
-incus_fedora_lxc() {
+incus-fedora-lxc() {
     incus launch images:fedora/42 fedora
 }
 
-incus_tw_lxc() {
+incus-tw-lxc() {
     incus launch images:opensuse/tumbleweed tw
 }
 
-incus_arch_lxc() {
+incus-arch-lxc() {
     incus launch images:archlinux/current archlinux
 }
 
-incus_containers() {
+incus-containers() {
     slog "Creating incus containers"
 
-    incus_ubuntu_lxc
-    incus_fedora_lxc
-    incus_tw_lxc
-    incus_arch_lxc
+    incus-ubuntu-lxc
+    incus-fedora-lxc
+    incus-tw-lxc
+    incus-arch-lxc
 
     slog "Creating incus containers done!"
 }
 
-incus_ubuntu_vm() {
+incus-ubuntu-vm() {
     incus launch images:ubuntu/24.04 ubuntu-vm --vm
 }
 
-incus_fedora_vm() {
+incus-fedora-vm() {
     incus launch images:fedora/42 fedora-vm --vm
 }
 
-incus_tw_vm() {
+incus-tw-vm() {
     incus launch images:opensuse/tumbleweed-vm tw --vm
 }
 
-incus_arch_vm() {
+incus-arch-vm() {
     incus launch images:archlinux/current archlinux-vm --vm
 }
 
-incus_vms() {
+incus-vms() {
     slog "Creating incus vms"
 
-    incus_ubuntu_vm
-    incus_fedora_vm
-    incus_tw_vm
-    incus_arch_vm
+    incus-ubuntu-vm
+    incus-fedora-vm
+    incus-tw-vm
+    incus-arch-vm
 
     slog "Creating incus vms done!"
 }

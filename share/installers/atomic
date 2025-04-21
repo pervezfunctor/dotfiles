@@ -748,12 +748,12 @@ dbox_with_home() {
     slog "Creating default distrobox"
 
     local os
-    os=${1:-fedora_init}
+    os=${1:-fedora-init}
     local osname
     osname=${2:-ilm}
     distrobox list | grep -q "^${osname}$" && return
 
-    "dbox_$os" $osname
+    "dbox-$os" $osname
     distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
     slog "distrobox ${osname} created!"
 }
