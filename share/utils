@@ -1033,6 +1033,21 @@ bic() {
     brew install -q --cask "$@"
 }
 
+pyi() {
+    if ! has_cmd pipx && ! has_cmd uv; then
+        warn "neither pipx not uv installed, skipping packages"
+        return 1
+    fi
+
+    local in="pipx"
+    has_cmd uv && in="uv tool"
+
+    for p in "$@"; do
+        slog "Installing $in package $p"
+        $in install "$p"
+    done
+}
+
 bis() {
     if ! has_cmd brew; then
         warn "brew not installed, skipping brew packages"
