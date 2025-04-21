@@ -33,7 +33,14 @@ pixi_install() {
     has_cmd ~/.pixi/bin/pixi && return 0
 
     slog "Installing pixi"
-    curl -fsSL https://pixi.sh/install.sh | bash
+    if has_cmd curl; then
+        curl -fsSL https://pixi.sh/install.sh | bash
+    elif has_cmd wget; then
+        wget -qO- https://pixi.sh/install.sh | bash
+    else
+        warn "curl or wget not installed, skipping pixi installation"
+        return 1
+    fi
 
     slog "pixi installation done!"
 
@@ -41,13 +48,29 @@ pixi_install() {
     cmd_check pixi
 }
 
-pkgs_install() {
-    has_cmd pkgx && return 0
+# pkgx_install() {
+#     has_cmd pkgx && return 0
 
-    if has_cmd brew; then
-        brew install pkgx
+#     if has_cmd brew; then
+#         brew install pkgx
+#     else
+#         curl https://pkgx.sh | sh
+#     fi
+
+#     cmd_check pkgx
+# }
+
+pkgx_install() {
+    has_cmd ~/.local/bin/pkgx && return 0
+
+    mkdir -p ~/.local/bin
+    if has_cmd curl; then
+        curl -fsSL "https://pkgx.sh/$(uname)/$(uname -m).tgz" | tar xz -C ~/.local/bin
+    elif has_cmd wget; then
+        wget -qO- "https://pkgx.sh/$(uname)/$(uname -m).tgz" | tar xz -C ~/.local/bin
     else
-        curl https://pkgx.sh | sh
+        warn "curl or wget not installed, skipping pkgx installation"
+        return 1
     fi
 
     cmd_check pkgx
@@ -218,13 +241,16 @@ cmake_install() {
 }
 
 generic-ct_groupstall() {
-    has_cmd curl || err_exit "Install curl and run this script again."
+    has_cmd curl || has_cmd wget || err_exit "Install curl and run this script again."
 
     pixi_install
+    pis git curl wget
+
+    pkgx_install
 
     slog "Installing shell tools with pixi"
     pixi_shell_slim_install
-    pis git
+
     has_cmd git || fail "git not installed. Quitting."
     slog "Installing shell tools with pixi done!"
 
