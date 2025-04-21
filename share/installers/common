@@ -587,7 +587,3 @@ brew_packages() {
   bi git gcc make file
   brew_good_packages
 }
-
-zsh_as_default() {
-  has_cmd zsh && chsh -s "$(command -v zsh)" "$USER"
-}
