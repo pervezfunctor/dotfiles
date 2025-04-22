@@ -62,7 +62,6 @@ yay_install() {
 essential_install() {
     slog "Installing essential packages"
 
-    # mise_install
     sys_python_install
     yay -Sy --noconfirm snapd
 
@@ -80,8 +79,6 @@ cli_install() {
         luarocks duf lazygit starship eza ugrep git-delta navi \
         sd gdu bat hyperfine fd fzf ripgrep zoxide htop nushell bottom \
         plocate tealdeer television dysk yazi pixi procs dust direnv atuin
-
-    gh extension install github/gh-copilot
 
     slog "cli tools installation done!"
 }

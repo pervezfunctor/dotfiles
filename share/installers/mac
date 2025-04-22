@@ -59,7 +59,6 @@ cli_install() {
         zsh-syntax-highlighting zsh-autosuggestions golang rust ripgrep neovim \
         neovide luarocks lazydocker reattach-to-user-namespace \
         brew link luarocks
-    gh extension install github/gh-copilot
 }
 
 fonts_install() {

@@ -106,8 +106,6 @@ essential_install() {
     slog "Installing essential packages"
 
     sys_python_install
-    # mise_install
-    # snap_install
 
     si zip p7zip cmake unar gawk
     si readline-devel sqlite-devel libffi-devel bzip2-devel xz-devel
@@ -129,8 +127,6 @@ cli_install() {
         si python3-neovim zoxide hyperfine git-delta procs
         si cheat navi ugrep micro direnv
     fi
-
-    gh extension install github/gh-copilot
 
     slog "cli tools installation done!"
 }

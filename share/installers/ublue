@@ -95,7 +95,7 @@ main() {
     ublue_brew_setup
     ublue_apps_setup
     ublue_code_setup
-    mise_install
+
     config_setup
     is_bluefin && bluefin_setup
 

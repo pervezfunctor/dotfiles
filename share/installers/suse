@@ -82,8 +82,6 @@ cli_install() {
         lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk \
         shfmt hyperfine cheat curlie jq ShellCheck gum
 
-    gh extension install github/gh-copilot
-
     slog "cli tools installation done!"
 }
 

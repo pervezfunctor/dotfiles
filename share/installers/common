@@ -94,14 +94,15 @@ pixi_shell_slim_install() {
   has_cmd gum || pi go-gum
   has_cmd ug || pi ugrep
 
-  pis lazygit eza fzf zoxide starship bat fd gh carapace git-delta
+  pis lazygit eza fzf zoxide starship bat fd gh carapace git-delta yazi
 }
 
 pixi_shell_install() {
   pixi_shell_slim_install
 
   pis broot just shellcheck lazydocker broot gdu nvim luarocks micro glances
-  pis cheat curlie duf sd xh atuin direnv dust procs hyperfine yq yazi htop jq
+  pis cheat curlie duf sd xh atuin direnv dust procs hyperfine yq htop jq
+  pis dotenv carapace
 
   has_cmd tv || pi television
   has_cmd spf || pi superfile

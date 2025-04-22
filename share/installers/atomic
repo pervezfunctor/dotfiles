@@ -375,10 +375,6 @@ fedora-atomic_groupstall() {
 
     generic_groupstall
 
-    # mise_install
-    # webi_install
-    # webi node
-
     if ! grep -q starship ~/.bashrc; then
         slog "Adding starship to bashrc"
         echo "source ${DOT_DIR}/share/bashrc" >>~/.bashrc

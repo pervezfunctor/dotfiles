@@ -140,7 +140,6 @@ cli_install() {
 
         si sd gdu bat hyperfine fd-find ripgrep zoxide eza
         si gh shellcheck just htop shfmt starship
-        gh extension install github/gh-copilot gum
     fi
 
     slog "cli tools installation done!"
