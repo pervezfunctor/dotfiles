@@ -19,7 +19,7 @@ nvim_boxstall() {
 }
 
 emacs_version() {
-  emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1
+  emacs --version | head -1 | cut -d' ' -f3 | cut -d'.' -f1
 }
 
 emacs_boxstall() {

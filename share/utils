@@ -578,7 +578,7 @@ get_os() {
         . /etc/lsb-release
         ID=${DISTRIB_ID}
     elif [ -f /etc/redhat-release ]; then
-        ID=$(awk '{print $1}' /etc/redhat-release)
+        ID=$(head -1 /etc/redhat-release | cut -d' ' -f1)
     else
         ID=$(uname -s)
     fi

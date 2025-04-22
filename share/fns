@@ -2,8 +2,6 @@
 
 # shellcheck disable=SC2120
 
-smd ~/boxes
-
 dbox-ubuntu() {
     local CONTAINER_NAME=${1:-ubuntu}
     slog "Creating Ubuntu distrobox: ${CONTAINER_NAME}"
