@@ -711,6 +711,7 @@ github_user_setup() {
 box-default_groupstall() {
     shell_groupstall
     vscode_install
+    fonts_install
 
     si firefox gnome-keyring wl-clipboard
     gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh

@@ -57,10 +57,23 @@ Above script, especially on linux will take a long time.
 
 ### ublue
 
+First, update your system.
+
+```bash
+ujust update
+```
+
+You get awesome terminal experience with
+
+```bash
+ujust bluefin-cli # on Bluefin
+ujust aurora-cli # on Aurora
+```
+
 Install and configure shell tools and common applications using the following command. Works only on bluefin and aurora.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/Hr0YTqp || wget -qO- https://dub.sh/Hr0YTqp)"
+bash -c "$(curl -sSL https://dub.sh/Hr0YTqp)"
 ```
 
 If you are an experienced linux user and and an experienced developer, then [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en) would be perfect. Bluefin and Aurora are based on Fedora Atomic, an immutable(image based) distribution.
@@ -91,7 +104,7 @@ If ublue is not stable on your system or if you prefer Fedora official distribut
   -  [Fedora Sway Atomic](https://fedoraproject.org/atomic-desktops/sway) if you prefer a tiling window manager
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- fedora-atomic
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- fedora-atomic
 ```
 
 #### Recommendations
@@ -107,7 +120,7 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 
 ### Linux Desktop
 
-This should work on almost any linux system/container even without sudo privilege; You should have curl, bash, unzip and python3 are installed. Not recommended on macos.
+This should work on almost any linux system/container even without sudo privilege; You should have curl/wget, bash are installed. Not recommended on macos.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- generic
