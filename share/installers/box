@@ -11,7 +11,10 @@ nvim_boxstall() {
   elif has_cmd pixi; then
     pi nvim luarocks lazygit
   else
+    # has_cmd apk && si nvim
     si neovim
+    si luarocks
+    si lazygit
     is_apt && warn "Older version of neovim is installed. Some features might not work."
   fi
 
@@ -25,7 +28,7 @@ emacs_version() {
 emacs_boxstall() {
   srm ~/.emacs
   srm ~/.emacs.d
-  ln -s "$DOT_DIR/emac-slim/dot-emacs" ~/.emacs
+  ln -s "$DOT_DIR/emacs-slim/dot-emacs" ~/.emacs
 
   has_cmd emacs && [ "$(emacs_version)" -gt 29 ] && return 0
 
@@ -43,6 +46,7 @@ emacs_boxstall() {
 tmux_boxstall() {
   srm ~/.config/tmux
   smd ~/.config/tmux
+  smd ~/.tmux
   ln -s "$DOT_DIR/tmux/dot-config/tmux/tmux.conf" ~/.config/tmux/tmux.conf
 
   has_cmd tmux && return 0

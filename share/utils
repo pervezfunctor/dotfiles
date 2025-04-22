@@ -1122,6 +1122,7 @@ eval_brew() {
 }
 
 environs() {
+    smd ~/.config
     smd ~/.local/bin
     smd ~/bin
     smd ~/.bin
