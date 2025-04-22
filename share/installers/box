@@ -110,7 +110,6 @@ box_base() {
   slimbox_base "$1"
 
   zsh_boxstall
-  tmux_boxstall
 }
 
 dbox_base() {
@@ -169,6 +168,13 @@ slimbox_groupstall() {
 
 box_groupstall() {
   box_base "$(get_boxos)"
+}
+
+fullbox_groupstall() {
+  box_base "$(get_boxos)"
+  nvim_boxstall
+  tmux_boxstall
+  emacs_boxstall
 }
 
 dbox_groupstall() {

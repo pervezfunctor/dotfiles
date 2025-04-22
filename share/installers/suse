@@ -23,7 +23,7 @@ tw_packages() {
     slog "Installing packages"
 
     si git gh lazygit git-delta unzip wget curl trash-cli tar stow \
-        gcc make file just emacs-nox zsh starship tmux gum cheat \
+        gcc make file just zsh starship gum wl-clipboard cheat \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer plocate
 
     slog "Installing packages done!"

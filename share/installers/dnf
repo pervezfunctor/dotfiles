@@ -40,7 +40,7 @@ fedora_packages() {
     slog "Installing packages"
 
     si git gh git-delta unzip wget curl trash-cli tar stow \
-        gcc make file just emacs-nox zsh tmux gum \
+        gcc make file just zsh gum wl-clipboard \
         tree fzf ripgrep zoxide fd htop bat tealdeer plocate cheat
 
     slog "Installing packages done!"

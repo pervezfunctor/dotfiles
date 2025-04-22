@@ -23,7 +23,7 @@ arch_packages() {
     slog "Installing packages"
 
     si git github-cli lazygit git-delta unzip wget curl trash-cli tar stow \
-        gcc make file just emacs-nox zsh starship tmux gum \
+        gcc make file just zsh starship gum wl-clipboard \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi bat plocate tealdeer
 
     slog "Installing packages done!"
