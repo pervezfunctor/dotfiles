@@ -102,7 +102,7 @@ pixi_shell_install() {
 
   pis broot just shellcheck lazydocker broot gdu nvim luarocks micro glances
   pis cheat curlie duf sd xh atuin direnv dust procs hyperfine yq htop jq
-  pis dotenv carapace
+  pis direnv carapace
 
   has_cmd tv || pi television
   has_cmd spf || pi superfile
@@ -184,7 +184,7 @@ miniconda_install() {
 }
 
 bash_config_exists() {
-  grep -q .ilm/share/bashrc ~/.bashrc || grep -q -i '${DOT_DIR}/share/bashrc' ~/.bashrc
+  grep -q .ilm/share/bashrc ~/.bashrc || grep -q 'source ${DOT_DIR}/share/bashrc' ~/.bashrc
 }
 
 bash_config_check() {

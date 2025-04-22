@@ -375,13 +375,6 @@ fedora-atomic_groupstall() {
 
     generic_groupstall
 
-    if ! grep -q starship ~/.bashrc; then
-        slog "Adding starship to bashrc"
-        echo "source ${DOT_DIR}/share/bashrc" >>~/.bashrc
-    fi
-
-    # ghostty_bin_install
-
     slog "Installing apps"
     apps_slim_install
     fpi org.gnu.emacs
