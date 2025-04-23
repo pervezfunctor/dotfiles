@@ -80,16 +80,16 @@ dbox-wolfi() {
 
 dbox-docker() {
     local CONTAINER_NAME=${1:-docker}
-    slog "Creating Wolfi distrobox: ${CONTAINER_NAME}"
+    slog "Creating Docker distrobox: ${CONTAINER_NAME}"
     distrobox create --yes --image ghcr.io/ublue-os/docker-toolbox:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
-    slog "Wolfi distrobox ${CONTAINER_NAME} created successfully"
+    slog "Docker distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox-incus() {
     local CONTAINER_NAME=${1:-incus}
-    slog "Creating Wolfi distrobox: ${CONTAINER_NAME}"
+    slog "Creating Incus distrobox: ${CONTAINER_NAME}"
     distrobox create --yes --image ghcr.io/ublue-os/incus-toolbox:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
-    slog "Wolfi distrobox ${CONTAINER_NAME} created successfully"
+    slog "Incus distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox-ublue-all() {
