@@ -404,3 +404,7 @@ system-update() {
     has_cmd devbox && devbox update
     has_cmd home-manager && hms
 }
+
+remove_keyrings() {
+    trash .local/share/keyrings/*
+}
