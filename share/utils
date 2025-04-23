@@ -1065,7 +1065,6 @@ bis() {
         PKGS="$PKGS $p"
     done
 
-    slog "Install all brew packages"
     [ -n "$PKGS" ] && brew install -q $PKGS
 
     # for p in "$@"; do
