@@ -394,6 +394,34 @@ fedora-atomic_groupstall() {
     slog "Fedora Atomic Host setup done!"
 }
 
+fedora-layered_groupstall() {
+    is_std_atomic || err_exit "This script is only for Atomic Host"
+
+    slog "Fedora Atomic Host setup"
+
+    pixi_install
+    pkgx_install
+
+    pis wget
+    pixi_shell_slim_install
+
+    dotfiles_install
+    bash_config_install
+    zsh_boxstall
+
+    fonts_install
+    atomic_distrobox_install
+    vscode_config_install
+    # docker_common_install
+
+    apps_slim_install
+
+    is_gnome && gnome_config_install
+    is_sway && sway_config_install
+
+    slog "Fedora layered setup done! Reboot your system."
+}
+
 vscode_flatpak_install() {
     fpi com.visualstudio.code
     flatpak install com.visualstudio.code.tool.podman

@@ -1203,12 +1203,14 @@ bootstrap() {
                 source_curl "$INSTALLERS/suse"
             elif is_arch; then
                 source_curl "$INSTALLERS/arch"
+            # elif is_alpine; then
+            #   source_curl "$INSTALLERS/alpine"
             fi
 
             source_curl "$INSTALLERS/mutable"
-            source_curl "$INSTALLERS/box"
         fi
 
+        source_curl "$INSTALLERS/box" # some box fns are usefule in atomic too!
         source_curl "$INSTALLERS/atomic"
         source_curl "$SHARE/fns"
     fi

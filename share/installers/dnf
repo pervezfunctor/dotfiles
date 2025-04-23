@@ -74,13 +74,32 @@ rpm-ostree_packages() {
     vscode_fedora_repo
     # docker_fedora_repo
 
-    sudo rpm-ostree install -q -y --apply-live \
-        stow zsh gcc make wl-clipboard libvirt distrobox code
-        # docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    local PKGS=()
+
+    has_cmd stow || PKGS+=("stow")
+    has_cmd zsh || PKGS+=("zsh")
+    has_cmd gcc || PKGS+=("gcc")
+    has_cmd make || PKGS+=("make")
+    has_cmd wl-copy || PKGS+=("wl-clipboard")
+    has_cmd virsh || PKGS+=("libvirt")
+    has_cmd virt-install || PKGS+=("virt-install")
+    has_cmd code || PKGS+=("code")
+    # has_cmd docker || PKGS+=("docker-ce" "docker-ce-cli" "containerd.io" "docker-buildx-plugin" "docker-compose-plugin")
+
+    if [[ ${#PKGS[@]} -eq 0 ]]; then
+        slog "No packages to install"
+        return 0
+    fi
+
+    if has_cmd stow || has_cmd zsh || has_cmd gcc || has_cmd make || has_cmd wl || has_cmd virsh || has_cmd virt || has_cmd code; then
+        warn "This script is supposed to be run only once"
+    fi
+
+    sudo rpm-ostree install -q -y --apply-live "${PKGS[@]}"
 
     sudo systemctl enable --now libvirtd
 
-    slog "Installing packages done!"
+    warn "Installing packages done! Note that you need to reboot for the changes to take effect."
 }
 
 centos_packages() {
