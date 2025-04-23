@@ -81,14 +81,14 @@ dbox-wolfi() {
 dbox-docker() {
     local CONTAINER_NAME=${1:-docker}
     slog "Creating Wolfi distrobox: ${CONTAINER_NAME}"
-    distrobox create --yes --image ghcr.io/ublue-os/docker-toolbox:latest --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    distrobox create --yes --image ghcr.io/ublue-os/docker-toolbox:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
     slog "Wolfi distrobox ${CONTAINER_NAME} created successfully"
 }
 
 dbox-incus() {
     local CONTAINER_NAME=${1:-incus}
     slog "Creating Wolfi distrobox: ${CONTAINER_NAME}"
-    distrobox create --yes --image ghcr.io/ublue-os/incus-toolbox:latest --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    distrobox create --yes --image ghcr.io/ublue-os/incus-toolbox:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
     slog "Wolfi distrobox ${CONTAINER_NAME} created successfully"
 }
 
@@ -99,9 +99,9 @@ dbox-ublue-all() {
     dbox-docker
     dbox-incus
 
-    distrobox create --yes --image ghcr.io/ublue-os/ubuntu-toolbox --home $HOME/boxes/ubuntu-ublue --name ubuntu-ublue
-    distrobox create --yes --image ghcr.io/ublue-os/fedora-toolbox --home $HOME/boxes/fedora-ublue --name fedora-ublue
-    distrobox create --yes --image ghcr.io/ublue-os/arch-distrobox --home $HOME/boxes/arch-ublue --name arch-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/ubuntu-toolbox --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --home $HOME/boxes/ubuntu-ublue --name ubuntu-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/fedora-toolbox --init --additional-packages "systemd" --home $HOME/boxes/fedora-ublue --name fedora-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/arch-distrobox --init --additional-packages "systemd" --home $HOME/boxes/arch-ublue --name arch-ublue
 
     slog "Creating Bluefin, Wolfi and Ublue distroboxes done!"
 }
