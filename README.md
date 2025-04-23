@@ -99,8 +99,8 @@ If you are an experienced linux user and and an experienced developer, then [Blu
 
 If ublue is not stable on your system or if you prefer Fedora official distributions, use Fedora Atomic.
 
-  - [Silverblue](https://fedoraproject.org/atomic-desktops/silverblue)) with gnome 48 is a great choice.
-  - [Kinoite](https://fedoraproject.org/atomic-desktops/kinoite if you prefer KDE.
+  - [Silverblue](https://fedoraproject.org/atomic-desktops/silverblue) with gnome 48 is a great choice.
+  - [Kinoite](https://fedoraproject.org/atomic-desktops/kinoite) if you prefer KDE.
   -  [Fedora Sway Atomic](https://fedoraproject.org/atomic-desktops/sway) if you prefer a tiling window manager
 
 ```bash
