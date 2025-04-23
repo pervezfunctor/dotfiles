@@ -373,7 +373,9 @@ fedora-atomic_groupstall() {
 
     slog "Fedora Atomic Host setup"
 
-    generic_groupstall
+    generic-ct_groupstall
+    jetbrains_nerd_font_install
+    atomic_distrobox_install
 
     slog "Installing apps"
     apps_slim_install
@@ -387,8 +389,7 @@ fedora-atomic_groupstall() {
     # shellcheck disable=SC2119
     dbox_with_home
 
-    stowdf emacs-nano kitty
-    # stowd ghostty
+    stowdf emacs-nano
 
     slog "Fedora Atomic Host setup done!"
 }
@@ -435,6 +436,10 @@ apps_slim_install() {
 
     flathub_install
 
+    ptyxis_install
+
+    has_cmd distrobox && fpi io.github.dvlv.boxbuddyrs
+    has_cmd podman && fpi io.podman_desktop.PodmanDesktop
     fpi org.telegram.desktop
     fpi md.obsidian.Obsidian
     fpi org.gnome.Boxes
@@ -444,16 +449,13 @@ apps_slim_install() {
 }
 
 apps_install() {
-
     slog "Installing flatpak apps"
 
     apps_slim_install
 
-    fpi io.github.dvlv.boxbuddyrs
     fpi io.github.getnf.embellish
     fpi com.bitwarden.desktop
     fpi sh.cider.Cider
-    fpi io.podman_desktop.PodmanDesktop
     # fpi io.github.shiftey.Desktop # unverified
 
     # fpi org.wezfurlong.wezterm
@@ -713,8 +715,9 @@ box-default_groupstall() {
     vscode_install
     fonts_install
 
-    si firefox gnome-keyring wl-clipboard
+    si firefox gnome-keyring wl-clipboard kitty
     gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+    systemctl --user enable --now dbus
 }
 
 box-default-atomic_groupstall() {
