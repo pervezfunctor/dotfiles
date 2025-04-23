@@ -34,9 +34,10 @@ emacs_boxstall() {
 
   if has_cmd brew; then
     bi emacs
+  elif has_cmd pixi; then
+    pi emacs
   else
-    has_cmd emacs || (has_cmd pixi && pi emacs)
-    is_apt || si emacs-nox
+    si emacs-nox
     has_cmd emacs || si emacs
   fi
 
