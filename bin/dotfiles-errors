@@ -3,6 +3,10 @@
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 source $DOT_DIR/share/utils
 
+if cat ~/.dotfiles-output.log | grep -i denied; then
+  press_enter
+fi
+
 if cat ~/.dotfiles-output.log | grep -i fail; then
   press_enter
 fi
@@ -20,6 +24,10 @@ if cat ~/.dotfiles-output.log | grep -i not; then
 fi
 
 if cat ~/.dotfiles-output.log | grep -i unable; then
+  press_enter
+fi
+
+if cat ~/.dotfiles-output.log | grep -i denied; then
   press_enter
 fi
 

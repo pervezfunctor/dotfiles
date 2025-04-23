@@ -151,12 +151,10 @@ essential_install() {
 
     sys_python_install
 
-    si zip p7zip cmake unar gawk
-    si readline-devel sqlite-devel libffi-devel bzip2-devel xz-devel
+    si zip p7zip cmake unar gawk readline-devel sqlite-devel libffi-devel \
+        bzip2-devel xz-devel gum
 
     micro_install
-
-    si gum
 
     slog "Essential packages installation done!"
 }
@@ -164,12 +162,12 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using dnf"
 
-    si zsh neovim ShellCheck tmux pkg-config urlview htop gh
-    si fzf ripgrep fd-find bat plocate luarocks tealdeer zsh
+    si zsh neovim ShellCheck tmux pkg-config urlview htop gh fzf ripgrep \
+        fd-find bat plocate luarocks tealdeer zsh lsd
 
     if is_fedora; then
-        si python3-neovim zoxide hyperfine git-delta procs
-        si cheat navi ugrep micro direnv
+        si python3-neovim zoxide hyperfine git-delta procs cheat navi ugrep \
+            micro direnv
     fi
 
     slog "cli tools installation done!"
@@ -189,10 +187,9 @@ snap_install() {
 cpp_install() {
     slog "Installing C++"
 
-    si gcc gcc-c++ gdb valgrind systemtap ltrace strace
-    si clang clang-devel clang-tools-extra clang-libs
-    si clang-analyzer lldb lld llvm llvm-devel
-    si graphviz ccache cppcheck pre-commit cmake
+    si gcc gcc-c++ gdb valgrind systemtap ltrace strace clang clang-devel \
+        clang-tools-extra clang-libs clang-analyzer lldb lld llvm llvm-devel \
+        graphviz ccache cppcheck pre-commit cmake
 
     conan_install
     cmake_install
@@ -215,7 +212,7 @@ vscode_bin_install() {
     vscode_fedora_repo
 
     dnf check-update
-    si code code-insiders
+    si code
 
     slog "vscode installation done!"
 
@@ -266,9 +263,10 @@ cockpit_install() {
     has_cmd cockpit && return 1
 
     slog "Installing cockpit"
-    si cockpit cockpit-machines cockpit-podman cockpit-storaged cockpit-bridge cockpit-networkmanager cockpit-selinux cockpit-system cockpit-packagekit
+    si cockpit cockpit-machines cockpit-podman cockpit-storaged cockpit-bridge \
+        cockpit-networkmanager cockpit-selinux cockpit-system \
+        firewalld cockpit-packagekit
 
-    si firewalld # cockpit-file-sharing
     sudo systemctl enable --now cockpit.socket
     sudo systemctl enable --now firewalld
     sudo firewall-cmd --add-service=cockpit
@@ -284,8 +282,8 @@ docker_install() {
 
     docker_fedora_repo
 
-    si docker-ce docker-ce-cli containerd.io docker-buildx-plugin
-    si docker-compose-plugin
+    si docker-ce docker-ce-cli containerd.io docker-buildx-plugin \
+        docker-compose-plugin
 
     docker_common_install
 
