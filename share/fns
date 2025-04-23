@@ -322,26 +322,8 @@ dbox-nix() {
     fi
 }
 
-dbox-sizes() {
-    local name="$1"
-
-    if ! command -v distrobox >/dev/null; then
-        echo "distrobox not found" >&2
-        return 1
-    fi
-
-    local container="distrobox-$name"
-
-    if command -v podman >/dev/null; then
-        podman container inspect "$container" --size --format '{{.SizeRootFs}}' 2>/dev/null ||
-            echo "Container '$container' not found in Podman"
-    elif command -v docker >/dev/null; then
-        docker container inspect "$container" --size --format '{{.SizeRootFs}}' 2>/dev/null ||
-            echo "Container '$container' not found in Docker"
-    else
-        echo "Neither podman nor docker found" >&2
-        return 1
-    fi
+dbox-containers() {
+    podman ps -a -s
 }
 
 incus-ubuntu-lxc() {
