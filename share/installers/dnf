@@ -27,6 +27,28 @@ enable_epel() {
     si epel-release
 }
 
+docker_fedora_repo() {
+    has_cmd docker && return 0
+
+    si dnf-plugins-core
+
+    is_rocky && sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    is_fedora && sudo dnf-3 config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+}
+
+vscode_fedora_repo() {
+    has_cmd code && return 1
+
+    [ -f /etc/yum.repos.d/vscode.repo ] && return 1
+
+    slog "Adding vscode repo"
+
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+    sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+
+    slog "vscode repo added!"
+}
+
 update_packages() {
     slog "Updating fedora"
     if ! { sudo dnf update -q -y && sudo dnf upgrade -q -y; }; then
@@ -49,9 +71,12 @@ fedora_packages() {
 rpm-ostree_packages() {
     slog "Installing packages"
 
+    vscode_fedora_repo
+    # docker_fedora_repo
+
     sudo rpm-ostree install -q -y --apply-live \
-        stow zsh tmux gcc make emacs gum fzf ripgrep wl-clipboard \
-        libvirt virt-manager distrobox
+        stow zsh gcc make wl-clipboard libvirt distrobox code
+        # docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
     sudo systemctl enable --now libvirtd
 
@@ -163,19 +188,6 @@ cpp_install() {
     slog "C++ installation done!"
 }
 
-vscode_fedora_repo() {
-    has_cmd code && return 1
-
-    [ -f /etc/yum.repos.d/vscode.repo ] && return 1
-
-    slog "Adding vscode repo"
-
-    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-    sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
-
-    slog "vscode repo added!"
-}
-
 vscode_bin_install() {
     has_cmd code && return 1
 
@@ -251,10 +263,7 @@ docker_install() {
 
     slog "Installing docker"
 
-    si dnf-plugins-core
-
-    is_rocky && sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    is_fedora && sudo dnf-3 config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+    docker_fedora_repo
 
     si docker-ce docker-ce-cli containerd.io docker-buildx-plugin
     si docker-compose-plugin
