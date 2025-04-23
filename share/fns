@@ -78,10 +78,26 @@ dbox-wolfi() {
     slog "Wolfi distrobox ${CONTAINER_NAME} created successfully"
 }
 
+dbox-docker() {
+    local CONTAINER_NAME=${1:-docker}
+    slog "Creating Wolfi distrobox: ${CONTAINER_NAME}"
+    distrobox create --yes --image ghcr.io/ublue-os/docker-toolbox:latest --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "Wolfi distrobox ${CONTAINER_NAME} created successfully"
+}
+
+dbox-incus() {
+    local CONTAINER_NAME=${1:-incus}
+    slog "Creating Wolfi distrobox: ${CONTAINER_NAME}"
+    distrobox create --yes --image ghcr.io/ublue-os/incus-toolbox:latest --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"
+    slog "Wolfi distrobox ${CONTAINER_NAME} created successfully"
+}
+
 dbox-ublue-all() {
     slog "Creating Bluefin, Wolfi and Ublue distroboxes"
     dbox-bluefin
     dbox-wolfi
+    dbox-docker
+    dbox-incus
 
     distrobox create --yes --image ghcr.io/ublue-os/ubuntu-toolbox --home $HOME/boxes/ubuntu-ublue --name ubuntu-ublue
     distrobox create --yes --image ghcr.io/ublue-os/fedora-toolbox --home $HOME/boxes/fedora-ublue --name fedora-ublue
