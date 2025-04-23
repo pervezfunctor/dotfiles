@@ -104,33 +104,17 @@ shell_install() {
   brew_shell_install
 }
 
-# home_manager_install() {
-#   has_cmd home-manager && return 0
-
-#   slog "Setting up home-manager"
-
-#   if ! dir_exists "$DOT_DIR"; then
-#     warn "could not clone dotfiles respository to $DOT_DIR, Quitting"
-#     return 1
-#   fi
-
-#   nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#ilm --impure -b bak
-
-#   if file_exists /etc/nix/nix.conf; then
-#     if ! grep -q nix-command flakes /etc/nix/nix.conf 2>/dev/null; then
-#       slog "enabling flakes in /etc/nix/nix.conf"
-#       echo "extra-experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
-#     fi
-#   elif ! grep -q nix-command flakes "$XDG_CONFIG_HOME/nix/nix.conf" 2>/dev/null; then
-#     slog "enabling flakes in $XDG_CONFIG_HOME/nix/nix.conf"
-#     echo "extra-experimental-features = nix-command flakes" >>"$XDG_CONFIG_HOME/nix/nix.conf"
-#   fi
-# }
+vscode_install() {
+  vscode_bin_install
+  vscode-extensions_install
+  vscode_config_install
+}
 
 dev_groupstall() {
-  slog "Generic OS setup for Development(docker,vscode,kitty,brew,flatpak, distrobox)"
+  slog "Generic OS setup for Development(docker, vscode, ptyxis, brew, distrobox)"
 
   min_groupstall
+  si zsh flatpak
 
   brew_install
 
@@ -138,9 +122,8 @@ dev_groupstall() {
   has_cmd rg || bi ripgrep
   has_cmd delta || bi git-delta
 
-  bis gh wget tree tar unzip stow micro make cmake
-  bis zsh starship fzf fd bat zoxide eza htop tmux gum
-  bi bash-preexec
+  bis gh wget tree tar unzip stow micro make cmake starship fzf fd bat \
+    zoxide eza htop tmux gum bash-preexec
 
   docker_install
   atomic_distrobox_install
@@ -156,7 +139,7 @@ dev_groupstall() {
     fpi us.zoom.Zoom
     fpi md.obsidian.Obsidian
   else
-    kitty_bin_install
+    terminal_bin_install
   fi
 }
 
@@ -440,12 +423,6 @@ hyprland_install() {
   slog "hyprland installation done!"
 }
 
-vscode_install() {
-  vscode_bin_install
-  vscode-extensions_install
-  vscode_config_install
-}
-
 hypr-waybar_config_install() {
   has_cmd waybar || return 1
 
@@ -465,31 +442,54 @@ hyprland_config_install() {
   slog "hypr config done!"
 }
 
-kwin_script_install() {
-  local SCRIPT="$1"
+# kwin_script_install() {
+#   local SCRIPT="$1"
 
-  if plasmapkg2 -t kwinscript -l | grep -q "krohnkite"; then
-    echo "Upgrading KWin script $SCRIPT ..."
-    plasmapkg2 -t kwinscript -u "$SCRIPT"
-  else
-    echo "Installing KWin script $SCRIPT ..."
-    plasmapkg2 -t kwinscript -i "$SCRIPT"
-  fi
-}
+#   if plasmapkg2 -t kwinscript -l | grep -q "krohnkite"; then
+#     echo "Upgrading KWin script $SCRIPT ..."
+#     plasmapkg2 -t kwinscript -u "$SCRIPT"
+#   else
+#     echo "Installing KWin script $SCRIPT ..."
+#     plasmapkg2 -t kwinscript -i "$SCRIPT"
+#   fi
+# }
 
-kde_settings() {
-  if ! is_kde; then
-    warn "Not running KDE, skipping KDE settings"
-    return 1
-  fi
+# kde_settings() {
+#   if ! is_kde; then
+#     warn "Not running KDE, skipping KDE settings"
+#     return 1
+#   fi
 
-  if ! [[ $(plasma_major_version) -eq 6 ]]; then
-    warn "KDE Plasma 6 is required"
-    return 1
-  fi
+#   if ! [[ $(plasma_major_version) -eq 6 ]]; then
+#     warn "KDE Plasma 6 is required"
+#     return 1
+#   fi
 
-  kwin_script_install "krohnkite.kwinscript"
-}
+#   kwin_script_install "krohnkite.kwinscript"
+# }
+
+# home_manager_install() {
+#   has_cmd home-manager && return 0
+
+#   slog "Setting up home-manager"
+
+#   if ! dir_exists "$DOT_DIR"; then
+#     warn "could not clone dotfiles respository to $DOT_DIR, Quitting"
+#     return 1
+#   fi
+
+#   nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#ilm --impure -b bak
+
+#   if file_exists /etc/nix/nix.conf; then
+#     if ! grep -q nix-command flakes /etc/nix/nix.conf 2>/dev/null; then
+#       slog "enabling flakes in /etc/nix/nix.conf"
+#       echo "extra-experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
+#     fi
+#   elif ! grep -q nix-command flakes "$XDG_CONFIG_HOME/nix/nix.conf" 2>/dev/null; then
+#     slog "enabling flakes in $XDG_CONFIG_HOME/nix/nix.conf"
+#     echo "extra-experimental-features = nix-command flakes" >>"$XDG_CONFIG_HOME/nix/nix.conf"
+#   fi
+# }
 
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-hotkeys.sh
 gnome_keybindings_install() {
