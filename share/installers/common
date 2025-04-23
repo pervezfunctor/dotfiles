@@ -40,8 +40,7 @@ mise_shell_install() {
 }
 
 brew_shell_slim_install() {
-  bis gh gum stow tmux carapace
-  bis lazygit eza fzf fd zoxide starship yazi
+  bis gh gum stow tmux carapace lazygit eza fzf fd zoxide starship yazi
 
   if ! has_cmd luarocks; then
     bi luarocks
@@ -67,9 +66,9 @@ brew_shell_install() {
 
   brew_shell_slim_install
 
-  bis jq just shfmt shellcheck lazydocker broot
-  bis cheat curlie duf sd xh doggo atuin direnv dust
-  bis procs hyperfine pixi yq yazi htop dysk
+  bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
+    atuin direnv dust procs hyperfine pixi yq yazi htop dysk
+
   has_cmd tv || bi television
 
   has_cmd spf || bi superfile
