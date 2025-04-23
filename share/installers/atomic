@@ -720,14 +720,18 @@ box-default_groupstall() {
     systemctl --user enable --now dbus
 }
 
-box-default-atomic_groupstall() {
-    box-default_groupstall
-
+default_dbox_exports() {
     distrobox-export --bin "$(which stow)"
     distrobox-export --bin "$(which wl-copy)"
     distrobox-export --bin "$(which wl-paste)"
     distrobox-export --bin "$(which code)"
     distrobox-export --app "Visual Studio Code"
+    distrobox-export --app "kitty"
+}
+
+box-default-atomic_groupstall() {
+    box-default_groupstall
+    default_dbox_exports
 }
 
 # shellcheck disable=SC2120
