@@ -35,7 +35,7 @@ core_install() {
     slog "Installing core packages"
 
     si curl wget git base-devel trash-cli tree micro tar unzip stow cmake zstd \
-        fuse2 file
+        fuse2 file libxcrypt-compat
 
     slog "Core packages installation done!"
 }
