@@ -94,6 +94,13 @@ multipass_install() {
   fi
 }
 
+slim-shell_install() {
+  cli_install
+  pixi_install
+  pixi_shell_slim_install
+  pkgx_install
+}
+
 shell_install() {
   cli_install
 
@@ -113,7 +120,7 @@ vscode_install() {
 }
 
 dev_groupstall() {
-  slog "Generic OS setup for Development(docker, vscode, ptyxis, brew, distrobox)"
+  slog "Setup for Development(docker, vscode, ptyxis, brew, distrobox)"
 
   min_groupstall
   si zsh flatpak
@@ -173,9 +180,17 @@ min_groupstall() {
 shell-group_check() {
   cmd_check gh nvim zsh tmux lazygit sd bat fd
   cmd_check fzf zoxide gum bat brew btm htop btm rg starship
-  cmd_check eza fd fzf atuin delta
+  cmd_check eza fd fzf atuin delta gawk
   # cmd_check cheat choose curlie direnv doggo dotenv procs
-  # cmd_check duf dust gawk gdu hyperfine jq just shellcheck shfmt yq
+  # cmd_check duf dust gdu hyperfine jq just shellcheck shfmt yq
+}
+
+slim-shell_groupstall() {
+  min_groupstall
+  slim-shell_install
+
+  bash_config_install
+  has_cmd zsh && zsh_config_install
 }
 
 shell_groupstall() {
