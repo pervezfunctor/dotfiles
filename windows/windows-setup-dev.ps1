@@ -900,6 +900,56 @@ function Initialize-CentOSWSL {
     Write-Host "To access your CentOS environment, use: wsl -d CentOS-Stream-10" -ForegroundColor Cyan
 }
 
+
+function Install-Ubuntu2504 {
+    Write-Host "Installing Ubuntu 25.04 on WSL..." -ForegroundColor Cyan
+
+    $installedDistros = wsl --list --quiet
+    if ($installedDistros -contains "Ubuntu-25.04") {
+        Write-Host "Ubuntu 25.04 is already installed." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Downloading Ubuntu 25.04 WSL image (this may take time)..." -ForegroundColor Cyan
+
+    $tempDir = "$env:TEMP"
+    $wslFile = "$tempDir\ubuntu.wsl"
+    $downloadUrl = "https://releases.ubuntu.com/plucky/ubuntu-25.04-wsl-amd64.wsl"
+
+    $ProgressPreference = 'SilentlyContinue'
+    try {
+        if (Test-Path $wslFile) {
+            Write-Host "Ubuntu 25.04 WSL image already downloaded." -ForegroundColor Cyan
+        }
+        else {
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $wslFile -UseBasicParsing
+            Write-Host "Download completed successfully!" -ForegroundColor Green
+        }
+    }
+    catch {
+        Write-Host "Download failed: $_" -ForegroundColor Red
+        Write-Host "You can try downloading the file manually from:" -ForegroundColor Yellow
+        Write-Host $downloadUrl -ForegroundColor Yellow
+        Write-Host "Then place it at: $wslFile" -ForegroundColor Yellow
+        return
+    }
+    $ProgressPreference = 'Continue'
+
+    Write-Host "Installing Ubuntu from .wsl file..." -ForegroundColor Cyan
+    wsl --install --from-file $wslFile
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Ubuntu installation failed." -ForegroundColor Red
+        return
+    }
+
+    Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
+    Remove-Item -Path $wslFile -Force
+
+    Write-Host "Ubuntu installed successfully!" -ForegroundColor Green
+    Write-Host "To start Ubuntu, open a terminal and type: wsl -d Ubuntu-25.04" -ForegroundColor Cyan
+}
+
 function Install-NixOSWSL {
     Write-Host "Installing NixOS on WSL..." -ForegroundColor Cyan
 
@@ -1375,27 +1425,28 @@ function Copy-ConfigFromDotfiles {
 }
 
 # Define available components with preserved order
-$availableComponents = [ordered]@{
-    "windows-update" = "Update Windows"
-    "wsl"            = "Install Hyper-V and WSL"
-    "multipass"      = "Install Multipass"
+$availableComponents   = [ordered]@{
+    "windows-update"   = "Update Windows"
+    "wsl"              = "Install Hyper-V and WSL"
+    "multipass"        = "Install Multipass"
 
-    "nerd-fonts"     = "Install Nerd Fonts"
-    "capslock"       = "Set CapsLock as Control"
-    "vscode"         = "Install VS Code"
-    "devtools"       = "Install Development Tools"
-    "dotfiles"       = "Initialize Dotfiles"
-    "apps"           = "Install Applications"
+    "nerd-fonts"       = "Install Nerd Fonts"
+    "capslock"         = "Set CapsLock as Control"
+    "vscode"           = "Install VS Code"
+    "devtools"         = "Install Development Tools"
+    "dotfiles"         = "Initialize Dotfiles"
+    "apps"             = "Install Applications"
 
-    "multipass-vm"   = "Install Multipass VM"
-    "wsl-ubuntu"     = "Install Ubuntu WSL"
-    "wsl-debian"     = "Install Debian WSL"
-    "wsl-opensuse"   = "Install openSUSE WSL"
-    "wsl-fedora"     = "Install Fedora WSL"
-    "wsl-centos"     = "Install CentOS WSL"
-    "wsl-nixos"      = "Install NixOS WSL"
+    "multipass-vm"     = "Install Multipass VM"
+    "wsl-ubuntu"       = "Install Ubuntu WSL"
+    "wsl-debian"       = "Install Debian WSL"
+    "wsl-opensuse"     = "Install openSUSE WSL"
+    "wsl-fedora"       = "Install Fedora WSL"
+    "wsl-centos"       = "Install CentOS WSL"
+    "wsl-nixos"        = "Install NixOS WSL"
+    "wsl-ubuntu-25.04" = "Install Ubuntu 25.04 WSL"
     # "scoop"          = "Install Scoop"
-    "all"            = "Install All Components"
+    "all"              = "Install All Components"
 }
 
 function Debug-Variable {
@@ -1551,6 +1602,7 @@ function Install-SelectedComponents {
             "wsl-fedora" { Install-WSLDistro -DistroName "FedoraLinux-42" }
             "wsl-centos" { Install-CentOSWSL }
             "wsl-nixos" { Install-NixOSWSL }
+            "wsl-ubuntu-25.04" { Install-Ubuntu2504 }
             # "scoop" { Install-Scoop }
             default { Write-Host "Unknown component: $component" -ForegroundColor Red }
         }
