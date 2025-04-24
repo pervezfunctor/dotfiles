@@ -1,12 +1,16 @@
 #! /usr/bin/env bash
 
+zi() {
+    sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$@"
+}
+
 si() {
-    if ! sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$@"; then
-        for p in "$@"; do
-            slog "Installing package $p"
-            sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$p"
-        done
-    fi
+    zi "$@" && return 0
+
+    for p in "$@"; do
+        slog "Installing package $p"
+        zi "$p"
+    done
 }
 
 update_packages() {
@@ -80,7 +84,7 @@ cli_install() {
     si gh neovim zsh tmux sd bat fd fzf ripgrep zoxide just procs \
         lazygit bottom git-delta htop xh plocate tealdeer urlview nushell \
         lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk \
-        shfmt hyperfine cheat curlie jq ShellCheck gum
+        shfmt hyperfine cheat curlie jq ShellCheck gum lsd
 
     slog "cli tools installation done!"
 }
