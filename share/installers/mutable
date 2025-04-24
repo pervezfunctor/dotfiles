@@ -95,12 +95,14 @@ multipass_install() {
 }
 
 shell_install() {
-  brew_install
-  pixi_install
-  pkgx_install
   cli_install
 
+  pixi_install
   pixi_shell_install
+
+  pkgx_install
+
+  brew_install
   brew_shell_install
 }
 
