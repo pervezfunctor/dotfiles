@@ -2,6 +2,7 @@
 
 si() {
     if has_cmd dnf5; then
+    # fedora 41
         sudo dnf5 -q -y \
             --setopt=install_weak_deps=False \
             --setopt=fastestmirror=True \
@@ -13,7 +14,11 @@ si() {
             --setopt=defaultyes=True \
             install --skip-unavailable --skip-broken "$@"
     else
-        sudo dnf -q -y install --skip-unavailable --skip-broken "$@"
+        # needed to support centos and rocky
+        for p in "$@"; do
+            slog "Installing package $p"
+            sudo dnf -q -y install "$p"
+        done
     fi
 }
 
