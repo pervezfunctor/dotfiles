@@ -47,7 +47,7 @@ ubuntu_packages() {
 
     DEBIAN_FRONTEND=noninteractive si git gh git-delta unzip wget curl \
         trash-cli tar stow gcc make file just zsh wl-clipboard \
-        tree bat eza ripgrep zoxide fd-find htop sd bat
+        tree bat eza ripgrep zoxide fd-find htop sd bat gawk
 
     # si golang-go fzf
     # go install github.com/charmbracelet/gum@latest
@@ -67,8 +67,8 @@ debian_packages() {
     slog "Installing packages"
     #  git-delta eza just fzf
     DEBIAN_FRONTEND=noninteractive si git gh unzip wget curl trash-cli tar \
-        stow gcc make file zsh tmux \
-        tree bat ripgrep zoxide fd-find htop sd emacs-nox
+        stow gcc make file zsh tmux tree bat ripgrep zoxide fd-find htop sd \
+        emacs-nox gawk
 
     slog "Installing packages done!"
 
