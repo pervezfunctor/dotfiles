@@ -1,12 +1,12 @@
 #! /usr/bin/env bash
 
 si() {
-    sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$@"
-
-    # for p in "$@"; do
-    #     slog "Installing package $p"
-    #     sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$p"
-    # done
+    if ! sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$@"; then
+        for p in "$@"; do
+            slog "Installing package $p"
+            sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$p"
+        done
+    fi
 }
 
 update_packages() {
