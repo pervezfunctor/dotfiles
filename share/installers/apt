@@ -83,7 +83,7 @@ core_install() {
     slog "Installing core packages"
 
     si software-properties-common apt-transport-https ca-certificates gpg curl \
-        wget git-core trash-cli tree command-not-found file tar unzip cmake \
+        wget git-core trash-cli tree command-not-found file tar unzip \
         build-essential libfuse2 zstd
 
     is_plucky && si stow fzf
@@ -150,8 +150,10 @@ cpp_install() {
         clang-tools libclang-dev clangd doxygen graphviz ccache cppcheck \
         pre-commit valgrind systemtap ltrace strace lldb lld
 
-    if has_cmd brew; then
-        bi cmake
+    if has_cmd pixi; then
+        pis cmake
+    elif has_cmd brew; then
+        bis cmake
     else
         cmake_install
     fi
