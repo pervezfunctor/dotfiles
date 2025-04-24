@@ -54,16 +54,19 @@ yay_install() {
     slog "Installing yay"
 
     frm /tmp/yay
-    git clone https://aur.archlinux.org/yay.git /tmp/yay && cd /tmp/yay && makepkg -si && cd - && frm /tmp/yay
+    git clone https://aur.archlinux.org/yay.git /tmp/yay && cd /tmp/yay && makepkg --syncdeps --noconfirm --install && cd - && frm /tmp/yay
 
     slog "yay installation done!"
+}
+
+snap_install() {
+    yay -Sy --noconfirm snapd
 }
 
 essential_install() {
     slog "Installing essential packages"
 
     sys_python_install
-    yay -Sy --noconfirm snapd
 
     si unarchiver zip gawk tmux pkg-config \
         p7zip cmake readline sqlite libffi zlib xz pkgfile gum
@@ -78,7 +81,8 @@ cli_install() {
     si neovim github-cli shellcheck shfmt python-pynvim zsh zsh-completions \
         luarocks duf lazygit starship eza ugrep git-delta navi \
         sd gdu bat hyperfine fd fzf ripgrep zoxide htop nushell bottom \
-        plocate tealdeer television dysk yazi pixi procs dust direnv atuin
+        plocate tealdeer television dysk yazi pixi procs dust direnv atuin \
+        broot just glances curlie xh jq superfile choose lsd
 
     slog "cli tools installation done!"
 }
