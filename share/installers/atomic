@@ -368,6 +368,24 @@ gnome_config_install() {
     slog "gnome config done!"
 }
 
+fedora-atomic-tbox_groupstall() {
+    is_std_atomic || err_exit "This script is only for Atomic Host"
+
+    slog "Fedora Atomic Host setup"
+
+    jetbrains_nerd_font_install
+
+    slog "Installing apps"
+    apps_slim_install
+
+    slog "Setting up default distrobox for development"
+
+    # shellcheck disable=SC2119
+    tbox_default
+
+    slog "Fedora Atomic Host With default toolbox setup done!"
+}
+
 fedora-atomic_groupstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
@@ -467,13 +485,8 @@ apps_slim_install() {
     ptyxis_install
 
     has_cmd distrobox && fpi io.github.dvlv.boxbuddyrs
-    has_cmd podman && fpi io.podman_desktop.PodmanDesktop
-    fpi org.telegram.desktop
-    fpi md.obsidian.Obsidian
     fpi org.gnome.Boxes
     fpi us.zoom.Zoom # unverified
-    # fpi org.qbittorrent.qBittorrent # verified
-    # fpi org.deluge_torrent.deluge # unverified
 }
 
 apps_install() {
@@ -481,10 +494,15 @@ apps_install() {
 
     apps_slim_install
 
+    fpi md.obsidian.Obsidian
+    has_cmd podman && fpi io.podman_desktop.PodmanDesktop
+    fpi org.telegram.desktop
     fpi io.github.getnf.embellish
     fpi com.bitwarden.desktop
     fpi sh.cider.Cider
     # fpi io.github.shiftey.Desktop # unverified
+    # fpi org.qbittorrent.qBittorrent # verified
+    # fpi org.deluge_torrent.deluge # unverified
 
     # fpi org.wezfurlong.wezterm
     # alias wezterm="flatpak run org.wezfurlong.wezterm"
@@ -773,10 +791,7 @@ tbox_group() {
 }
 
 tbox_default() {
-    has_cmd toolbox || return
-
-    toolbox --assumeyes create
-    toolbox run bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
+    tbox_group box-default-atomic
 }
 
 dbox_default() {
