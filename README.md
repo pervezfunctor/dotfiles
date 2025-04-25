@@ -1,14 +1,16 @@
 # Development environment
 
-## Installation on your current setup
+## Installation on your current system
 
-On windows, use WSL. If already not installed, install wsl with the following command.
+### Windows
+
+On windows, use WSL. If not installed, install with the following command.
 
 ```powershell
 wsl --install --no-distribution
 ```
 
-I recommend fedora for development. Any other distribution should be fine too.
+I recommend fedora for development. ArchLinux and OpenSUSE Tumbleweed are also good choices. You could also use Ubuntu 24.04.
 
 ```powershell
 wsl --list --online # Pick any from here in the following command.
@@ -16,46 +18,57 @@ wsl --install FedoraLinux-42
 wsl -d FedoraLinux-42 # Create user and set a password.
 ```
 
+Run the following command in WSL for installing basic tools and a nice shell prompt.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- wslbox
 ```
 
-If you want to setup vscode and other tools on Windows(11), use the following command instead.
-
-**Important**: Run the following in powershell as administrator.
+If you want to setup vscode and other tools on Windows, run the following command in powershell **as administrator**.
 
 ```powershell
 iwr -useb https://dub.sh/NDyiu7a | iex
 ```
 
-Setup any of your WSL distribution with the above bash script(wslbox).
+### MACOS
+
+On macos, install applications(vscode, ghostty terminal, fonts etc) along with shell tools. Works on linux too.
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- desktop
+```
+
+If you just homebrew and basic unix tools.
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
+```
 
 
-On linux desktop(Ubuntu 25.04 for eg), install shell tools, vscode and docker. This should work on Ubuntu 25.04, Fedora 42, Tumbleweed, CentOS Stream 10 and Arch. This will also work on Debian trixie once that's released.
+### Linux
+
+On linux desktop(Ubuntu 25.04 for eg), install shell tools, vscode and docker with the following command. Ubuntu 25.04, Fedora 42, OpenSUSE Tumbleweed, CentOS Stream 10 and Arch are supported.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- dev
 ```
 
-IF you only want to install modern unix tools in a development container/vm/desktop, use the following command instead. Works on linux and macos.
+If you only want to install modern unix tools in a development container/vm/desktop, use the following command instead. Works on linux and macos.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
 ```
 
-On macos, install common applications(vscode, ghostty terminal, fonts etc) along with shell tools. Works on linux too.
+Or just install the very basic packages(gcc, make, tar, git etc)
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- desktop
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)"
 ```
-
-Above script, especially on linux will take a long time.
 
 ## Recommended Setup
 
 
-### ublue
+### ublue(Aurora/Bluefin)
 
 First, update your system.
 
@@ -63,17 +76,11 @@ First, update your system.
 ujust update
 ```
 
-You get awesome terminal experience with
+For a good terminal experience(nice prompt), run the following command.
 
 ```bash
 ujust bluefin-cli # on Bluefin
 ujust aurora-cli # on Aurora
-```
-
-Install and configure shell tools and common applications using the following command. Works only on bluefin and aurora.
-
-```bash
-bash -c "$(curl -sSL https://dub.sh/Hr0YTqp)"
 ```
 
 If you are an experienced linux user and and an experienced developer, then [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en) would be perfect. Bluefin and Aurora are based on Fedora Atomic, an immutable(image based) distribution.
@@ -92,16 +99,23 @@ If you are an experienced linux user and and an experienced developer, then [Blu
 
   - Use [libvirt](https://libvirt.org)/[virt-manager](https://virt-manager.org) for virtual machines.
 
-  - Or use [incus](https://linuxcontainers.org/incus) for virtual machines and [lxc(stateful)](https://linuxcontainers.org/lxc) containersisolated and stateful containers. You need to run `ujust incus`.
+  - Or use [incus](https://linuxcontainers.org/incus) for virtual machines and [lxc(stateful and isolated)](https://linuxcontainers.org/lxc) for containers. You need to run `ujust incus`.
+
+
+Install and configure shell tools and common applications using the following command. This is optional.
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/Hr0YTqp)"
+```
 
 
 ### Fedora Atomic
 
-If ublue is not stable on your system or if you prefer Fedora official distributions, use Fedora Atomic.
+If ublue is not stable enough or if you prefer an official Fedora distribution, use Fedora Atomic.
 
   - [Silverblue](https://fedoraproject.org/atomic-desktops/silverblue) with gnome 48 is a great choice.
   - [Kinoite](https://fedoraproject.org/atomic-desktops/kinoite) if you prefer KDE.
-  -  [Fedora Sway Atomic](https://fedoraproject.org/atomic-desktops/sway) if you prefer a tiling window manager
+  - [Fedora Sway Atomic](https://fedoraproject.org/atomic-desktops/sway) if you prefer a tiling window manager
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- fedora-atomic
@@ -120,8 +134,35 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- fedora-atomic
 
 ### Linux Desktop
 
-This should work on almost any linux system/container even without sudo privilege; You should have curl/wget, bash are installed. Not recommended on macos.
+This should work on almost any linux system/container even without sudo privilege; You should have curl/wget and bash installed. Not recommended on macos.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- generic
+```
+
+
+## Linux Development Container/VM
+
+Install essential tools and bash config with
+
+```bash
+bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- slimbox
+```
+
+You could later install additional development tools with
+
+```bash
+ilm-installer zsh tmux nvim emacs # pick any
+```
+
+If you are in distrobox or a virtual machine with desktop environment, you could install terminal with
+
+```bash
+ilm-installer terminal
+```
+
+You might be able to install vscode with
+
+```bash
+ilm-installer vscode
 ```
