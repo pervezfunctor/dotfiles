@@ -2,6 +2,7 @@
 
 ## Installation on your current system
 
+
 ### Windows
 
 On windows, use WSL. If not installed, install with the following command.
@@ -10,7 +11,7 @@ On windows, use WSL. If not installed, install with the following command.
 wsl --install --no-distribution
 ```
 
-I recommend fedora for development. ArchLinux and OpenSUSE Tumbleweed are also good choices. You could also use Ubuntu 24.04.
+I recommend fedora for development. You could also use Ubuntu 24.04.
 
 ```powershell
 wsl --list --online # Pick any from here in the following command.
@@ -23,12 +24,20 @@ Run the following command in WSL for installing basic tools and a nice shell pro
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- wslbox
 ```
+Exit and enter WSL again to install few more tools of your choice.
+
+```bash
+ilm-installer tmux nvim emacs # pick any
+```
 
 If you want to setup vscode and other tools on Windows, run the following command in powershell **as administrator**.
 
 ```powershell
 iwr -useb https://dub.sh/NDyiu7a | iex
 ```
+
+You will be presented with a menu, pick what you want to install.
+
 
 ### MACOS
 
@@ -64,6 +73,7 @@ Or just install the very basic packages(gcc, make, tar, git etc)
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)"
 ```
+
 
 ## Recommended Setup
 
@@ -123,13 +133,14 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- fedora-atomic
 
 #### Recommendations
 
-  - Use [distrobox](https://distrobox.it) for everything. Default distrobox is setup with zsh and shell utilies, gnome-keyring, visual studio code and firefox(needed for authentication).
+  - Use [distrobox](https://distrobox.it) for everything. Default distrobox is setup with zsh and shell utilities, gnome-keyring, vscode and firefox.
 
-  - You can also install visual studio code using flatpak.
+  - Use [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal, as it has great support for distrobox and toolbox.
 
-  - Use [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal, as it has great support for toolbox.
+  - Use [Boxes](https://apps.gnome.org/Boxes) for simple virtual machines. Remember to enable 3d acceleration.
 
-  - Use [Boxes](https://apps.gnome.org/Boxes) for virtual machines. Remember to enable 3d acceleration.
+
+In future, I will add a distrobox container for docker, incus and libvirt. Currently with the above setup, you won't have docker. You could install ubuntu server in vm and configure docker there.
 
 
 ### Linux Desktop
