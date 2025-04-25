@@ -37,7 +37,7 @@ sys_python_install() {
     slog "Installing python"
 
     si python313 python313-virtualenv python313-pip python313-setuptools \
-     python313-pipx
+        python313-pipx
     pipx install uv
 
     slog "Python installation done!"

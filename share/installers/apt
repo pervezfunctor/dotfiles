@@ -135,7 +135,7 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using apt"
 
-    local base_pkgs=(tmux pkg-config urlview zsh git plocate sd gdu bat hyperfine fd-find \
+    local base_pkgs=(tmux pkg-config urlview zsh git plocate sd gdu bat hyperfine fd-find
         ripgrep zoxide eza gh shellcheck just htop shfmt)
 
     local plucky_pkgs=()
