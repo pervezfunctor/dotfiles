@@ -167,13 +167,16 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using dnf"
 
-    si zsh neovim ShellCheck tmux pkg-config urlview htop gh fzf ripgrep \
-        fd-find bat plocate luarocks tealdeer zsh lsd
+    local base_pkgs=(zsh neovim ShellCheck tmux pkg-config urlview htop gh fzf ripgrep \
+        fd-find bat plocate luarocks tealdeer zsh lsd)
 
+    local fedora_pkgs=()
     if is_fedora; then
-        si python3-neovim zoxide hyperfine git-delta procs cheat navi ugrep \
-            micro direnv
+        fedora_pkgs=(python3-neovim zoxide hyperfine git-delta procscheat navi \
+            ugrep micro direnv yq)
     fi
+
+    si "${base_pkgs[@]}" "${fedora_pkgs[@]}"
 
     slog "cli tools installation done!"
 }

@@ -82,7 +82,7 @@ cli_install() {
         luarocks duf lazygit starship eza ugrep git-delta navi \
         sd gdu bat hyperfine fd fzf ripgrep zoxide htop nushell bottom \
         plocate tealdeer television dysk yazi pixi procs dust direnv atuin \
-        broot just glances curlie xh jq superfile choose lsd
+        broot just glances curlie xh jq superfile choose lsd yq
 
     slog "cli tools installation done!"
 }

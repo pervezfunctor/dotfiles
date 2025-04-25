@@ -28,7 +28,7 @@ tw_packages() {
 
     si git gh lazygit git-delta unzip wget curl trash-cli tar stow \
         gcc make file just zsh starship gum wl-clipboard cheat \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer plocate
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi tealdeer plocate
 
     slog "Installing packages done!"
 }
@@ -36,7 +36,8 @@ tw_packages() {
 sys_python_install() {
     slog "Installing python"
 
-    si python313 python313-virtualenv python313-pip python313-setuptools
+    si python313 python313-virtualenv python313-pip python313-setuptools \
+     python313-pipx
     pipx install uv
 
     slog "Python installation done!"
@@ -47,10 +48,8 @@ core_install() {
 
     slog "Installing core packages"
 
-    si curl wget git tar tree unzip python313-pipx cmake stow file
+    si curl wget git tar tree unzip cmake stow file trash-cli
     sudo zypper install -y -t pattern devel_basis
-
-    pipx install trash-cli
 
     slog "Core packages installation done!"
 }
@@ -81,10 +80,10 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using zypper"
 
-    si gh neovim zsh tmux sd bat fd fzf ripgrep zoxide just procs \
+    si gh neovim zsh tmux sd bat eza fd fzf ripgrep zoxide just procs \
         lazygit bottom git-delta htop xh plocate tealdeer urlview nushell \
         lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk \
-        shfmt hyperfine cheat curlie jq ShellCheck gum lsd
+        shfmt hyperfine cheat curlie jq ShellCheck gum lsd starship direnv yq
 
     slog "cli tools installation done!"
 }

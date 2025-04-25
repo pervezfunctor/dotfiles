@@ -47,10 +47,9 @@ ubuntu_packages() {
 
     DEBIAN_FRONTEND=noninteractive si git gh git-delta unzip wget curl \
         trash-cli tar stow gcc make file just zsh wl-clipboard \
-        tree bat eza ripgrep zoxide fd-find htop sd bat gawk
+        tree bat eza ripgrep zoxide fd-find htop sd bat gawk starship
 
-    # si golang-go fzf
-    # go install github.com/charmbracelet/gum@latest
+    is_plucky && si fzf tealdeer gum
 
     slog "Installing packages done!"
 
@@ -136,9 +135,13 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using apt"
 
-    # ugrep tealdeer
-    si tmux pkg-config urlview zsh git plocate sd gdu bat hyperfine fd-find \
-        ripgrep zoxide eza gh shellcheck just htop shfmt starship
+    local base_pkgs=(tmux pkg-config urlview zsh git plocate sd gdu bat hyperfine fd-find \
+        ripgrep zoxide eza gh shellcheck just htop shfmt)
+
+    local plucky_pkgs=()
+    is_plucky && plucky_pkgs=(fzf ugrep tealdeer starship gum git-delta direnv yq)
+
+    si "${base_pkgs[@]}" "${plucky_pkgs[@]}"
 
     slog "cli tools installation done!"
 }
