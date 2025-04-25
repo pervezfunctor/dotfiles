@@ -6,7 +6,7 @@ if is_linux; then
 
     pbcopy() {
         if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
-            wl-copy --foreground
+            wl-copy
         else
             xsel --clipboard --input
         fi
@@ -19,11 +19,6 @@ if is_linux; then
             xsel --clipboard --output
         fi
     }
-fi
-
-if is_ubuntu; then
-    alias trash=trash-put
-    alias bat=batcat
 fi
 
 if is_mac; then
@@ -188,7 +183,6 @@ alias md="mkdir -p"
 alias rd="rmdir"
 alias del="trash"
 alias ipa="ip -brief a"
-has_cmd batcat && alias bat="batcat"
 
 has_cmd gdu || has_cmd gdu-go && alias gdu="gdu-go"
 
@@ -293,12 +287,17 @@ fi
 #     code-insiders --enable-features=UseOzonePlatform --ozone-platform-hint=auto "$@"
 # }
 
-# alias fd='fdfind'
+fcd() {
+    cd "$(find . -type d -not -path '*/.*' | fzf)" && l
+}
 
-# cx() { cd "$@" && l; }
-# fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
-# f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
-# fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
+fvim() {
+    local file
+    file=$(find . -type f -not -path '*/.*' | fzf)
+    if [ -n "$file" ]; then
+        nvim "$file"
+    fi
+}
 
 if has_cmd emacs; then
     # export EDITOR="emacsclient -t"
@@ -306,4 +305,12 @@ if has_cmd emacs; then
     alias e="emacsclient -t"
     alias ec="emacsclient -c -n"
     alias en="emacs -nw"
+fi
+
+if has_cmd bat; then
+    alias ccat="cat"
+    alias cat="bat"
+elif has_cmd batcat; then
+    alias ccat="cat"
+    alias cat="batcat"
 fi
