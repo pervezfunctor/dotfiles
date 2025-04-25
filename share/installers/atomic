@@ -819,7 +819,7 @@ dbox_with_home() {
     osname=${2:-ilm}
     distrobox list | grep -q "^${osname}$" && return
 
-    "dbox-$os" $osname
+    "dbox-$os" "$osname"
     distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
     slog "distrobox ${osname} created!"
 }

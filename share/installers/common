@@ -183,7 +183,8 @@ miniconda_install() {
 }
 
 bash_config_exists() {
-  grep -q .ilm/share/bashrc ~/.bashrc || grep -q 'source ${DOT_DIR}/share/bashrc' ~/.bashrc
+  # shellcheck disable=SC2016
+  grep -q '\.ilm/share/bashrc' ~/.bashrc 2>/dev/null || grep -q 'source ${DOT_DIR}/share/bashrc' ~/.bashrc 2>/dev/null
 }
 
 bash_config_check() {
@@ -195,6 +196,7 @@ bash_config_install() {
 
   if ! bash_config_exists; then
     echo "export DOT_DIR=$DOT_DIR" >>~/.bashrc
+    # shellcheck disable=SC2016
     echo 'source ${DOT_DIR}/share/bashrc' >>~/.bashrc
   fi
 

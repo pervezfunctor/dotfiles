@@ -198,7 +198,7 @@ sclone() {
     local dest=${*: -1}
     local src=${*: -2:1}
 
-    frm $dest
+    frm "$dest"
     if ! [ -d "$dest" ]; then
         slog "Cloning $src to $dest"
         git clone "$@"
@@ -1065,7 +1065,7 @@ bis() {
         PKGS="$PKGS $p"
     done
 
-    [ -n "$PKGS" ] && brew install -q $PKGS
+    [ -n "$PKGS" ] && brew install -q "$PKGS"
 
     # for p in "$@"; do
     #     slog "Installing package $p"
