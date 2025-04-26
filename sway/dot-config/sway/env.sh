@@ -1,3 +1,5 @@
+#! /usr/bin/env bash
+
 export XCURSOR_SIZE=32
 export CLUTTER_BACKEND=wayland
 export GDK_BACKEND=wayland,x11
