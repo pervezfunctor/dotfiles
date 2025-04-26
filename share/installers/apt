@@ -45,9 +45,9 @@ ubuntu_packages() {
 
     slog "Installing packages"
 
-    DEBIAN_FRONTEND=noninteractive si git gh git-delta unzip wget curl \
-        trash-cli tar stow gcc make file just zsh wl-clipboard \
-        tree bat eza ripgrep zoxide fd-find htop sd bat gawk starship
+    DEBIAN_FRONTEND=noninteractive si git-core gh git-delta unzip wget curl \
+        trash-cli tar stow gcc make file wl-clipboard tree bat eza ripgrep \
+        zoxide fd-find htop sd bat gawk starship
 
     is_plucky && si fzf tealdeer gum
 
@@ -65,14 +65,14 @@ debian_packages() {
 
     slog "Installing packages"
     #  git-delta eza just fzf
-    DEBIAN_FRONTEND=noninteractive si git gh unzip wget curl trash-cli tar \
-        stow gcc make file zsh tmux tree bat ripgrep zoxide fd-find htop sd \
-        emacs-nox gawk
+    DEBIAN_FRONTEND=noninteractive si git-core gh unzip wget curl trash-cli \
+        tar stow gcc make file tree bat ripgrep zoxide fd-find htop sd gawk \
+        wl-clipboard
 
     slog "Installing packages done!"
 
     pixi_install
-    pi fzf lazygit yazi tealdeer git-delta just eza bat
+    pi fzf yazi tealdeer git-delta eza bat starship lazygit
     slog "Installing pixi packages done!"
 }
 
