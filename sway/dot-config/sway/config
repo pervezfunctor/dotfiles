@@ -5,11 +5,13 @@ input "type:keyboard" {
 	xkb_options caps:ctrl_modifier
 }
 
-output HDMI-A-1 resolution 3840x2160 position 0,0 scale 2
+output HDMI-A-1 resolution 3840x2160 position 0,0 scale 1.75
+output HDMI-A-2 resolution 3840x2160 position 0,0 scale 1.75
+output DP-1 resolution 3840x2160 position 0,0 scale 1.75
+output DP-2 resolution 3840x2160 position 0,0 scale 1.75
+output Virtual-1 resolution 3840x2160 position 0,0 scale 1.75
 
 include catppuccin-mocha
-
-include '$("/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf")'
 
 set $mod Mod4
 
@@ -43,10 +45,14 @@ exec wl-paste -t text --watch clipman store --no-persist
 exec_always swaybg -i ~/.config/wallpapers/wallpaper.png -m fill
 
 exec swayidle -w \
-    timeout 180 'swaymsg "output * dpms off"' \
-    resume 'swaymsg "output * dpms on"' \
-    before-sleep '$screenlock' \
-    timeout 600 'systemctl suspend'
+        timeout 300 'swaylock -f' \
+        timeout 600 'swaymsg "output * power off"' \
+                      resume 'swaymsg "output * power on"'  \
+        timeout $180 'pgrep -xu "$USER" swaylock >/dev/null && swaymsg "output * power off"' \
+        resume 'pgrep -xu "$USER" swaylock >/dev/null && swaymsg "output * power on"'  \
+        before-sleep 'swaylock -f' \
+        lock 'swaylock -f' \
+        unlock 'pkill -xu "$USER" -SIGUSR1 swaylock'
 
 exec_always {
     systemctl --user import-environment
@@ -207,21 +213,6 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-# Media keys
-bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
-
-bindsym XF86MonBrightnessDown exec brightnessctl -q set 5%- && ( echo $((`brightnessctl get` * 100 / `brightnessctl m`)) > $SWAYSOCK.wob )
-bindsym XF86MonBrightnessUp exec brightnessctl -q set +5% && ( echo $((`brightnessctl get` * 100 / `brightnessctl m`)) > $SWAYSOCK.wob )
-
-bindsym XF86AudioRaiseVolume exec pamixer --allow-boost -ui 2 && dc -e "[`pamixer --get-volume`]sM 100d `pamixer --get-volume`<Mp" > $SWAYSOCK.wob
-bindsym XF86AudioLowerVolume exec pamixer --allow-boost -ud 2 && dc -e "[`pamixer --get-volume`]sM 100d `pamixer --get-volume`<Mp" > $SWAYSOCK.wob
-bindsym XF86AudioMute exec pamixer --toggle-mute && ( pamixer --get-mute && echo 0 > $SWAYSOCK.wob )
-
-# Media player controls
-bindsym --no-warn XF86AudioPlay exec playerctl play-pause
-bindsym --no-warn XF86AudioNext exec playerctl next
-bindsym --no-warn XF86AudioPrev exec playerctl previous
-
 # Screenshots
 set $selected_window swaymsg -t get_tree | jq -r '.. | select(.pid? and .visible?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"' | slurp
 set $focused_window swaymsg -t get_tree | jq -j '.. | select(.type?) | select(.focused).rect | "\(.x),\(.y) \(.width)x\(.height)"'
@@ -295,7 +286,7 @@ assign [class="Alacritty"] $ws1
 assign [class="kitty"] $ws1
 assign [class="WezTerm"] $ws1
 assign [class="foot"] $ws1
-assign [class="Firefox"] $ws2
+assign [app_id="firefox"] $ws2
 assign [class="Chromium"] $ws2
 assign [app_id="code"] $ws3
 assign [app_id="org.telegram.desktop"] $ws5
@@ -347,23 +338,33 @@ for_window [app_id="code"] opacity 0.98
 #   }
 #
 
-# for_window [app_id="(Calendar|Calculator|Power-statistics|Control-center)"] floating enable
-# for_window [app_id="org.gnome.(Nautilus|Weather)"] floating enable
-# for_window [app_id="nm-connection-editor"] floating enable
-# for_window [app_id="(pavucontrol|psensor)"] floating enable
-# for_window [app_id="evolution-alarm-notify"] floating enable
-# for_window [app_id="nemo"] floating enable
-# for_window [app_id="evolution" title="Compose Message"] floating enable
-# for_window [app_id="evolution" title="Re(.*)"] floating enable
-# for_window [app_id="evolution" title="Fwd(.*)"] floating enable
-# for_window [app_id="mpv"] floating enable
-# for_window [app_id="mpv"] resize set 960 540
-# for_window [app_id="mpv"] border pixel 0
-# for_window [app_id="firefox" title="Pushbullet"] floating enable
-# for_window [app_id="firefox" title="Firefox — Sharing Indicator"] floating enable
-# for_window [app_id="firefox" title="Picture-in-Picture"] floating enable
-# for_window [app_id="firefox" title="Pushbullet – Mozilla Firefox"] floating enable
-# for_window [app_id="firefox" title="About Mozilla Firefox"] floating enable
+for_window [app_id="(Calendar|Calculator|Power-statistics|Control-center)"] floating enable
+for_window [app_id="org.gnome.(Nautilus|Weather)"] floating enable
+for_window [app_id="nm-connection-editor"] floating enable
+for_window [app_id="(pavucontrol|psensor)"] floating enable
+for_window [app_id="evolution-alarm-notify"] floating enable
+for_window [app_id="nemo"] floating enable
+for_window [app_id="evolution" title="Compose Message"] floating enable
+for_window [app_id="evolution" title="Re(.*)"] floating enable
+for_window [app_id="evolution" title="Fwd(.*)"] floating enable
+for_window [app_id="mpv"] floating enable
+for_window [app_id="mpv"] resize set 960 540
+for_window [app_id="mpv"] border pixel 0
+for_window [app_id="firefox" title="Pushbullet"] floating enable
+for_window [app_id="firefox" title="Firefox — Sharing Indicator"] floating enable
+for_window [app_id="firefox" title="Picture-in-Picture"] floating enable
+for_window [app_id="firefox" title="Pushbullet – Mozilla Firefox"] floating enable
+for_window [app_id="firefox" title="About Mozilla Firefox"] floating enable
 
-# # Brave, chrome, chromium
-# for_window [title="Picture-in-picture"] floating enable
+# Brave, chrome, chromium
+for_window [title="Picture-in-picture"] floating enable
+
+for_window [app_id="lxqt-policykit-agent"] {
+    floating enable
+    move position center
+}
+
+# Fedora Sway
+exec fedora.sh
+
+# include '$(/usr/libexec/sway/layered-include "/usr/share/sway/config.d/*.conf" "/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf")'
