@@ -591,7 +591,7 @@ is_debian() {
     [[ "$ID" == *"debian"* ]]
 }
 
-is_suse() {
+is_tw() {
     local ID
     ID=$(get_os)
     [[ "$ID" == *"opensuse"* ]]
@@ -1201,8 +1201,8 @@ bootstrap() {
                 source_curl "$INSTALLERS/apt"
             elif is_rh && ! is_atomic; then
                 source_curl "$INSTALLERS/dnf"
-            elif is_suse; then
-                source_curl "$INSTALLERS/suse"
+            elif is_tw; then
+                source_curl "$INSTALLERS/tw"
             elif is_arch; then
                 source_curl "$INSTALLERS/arch"
             # elif is_alpine; then

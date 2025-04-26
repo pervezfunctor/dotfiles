@@ -218,7 +218,7 @@ function preexec {
 
 source_if_exists "$HOME/.localzshrc"
 
-# is_wsl && is_suse && sudo systemd-tmpfiles --create
+# is_wsl && is_tw && sudo systemd-tmpfiles --create
 
 # one_shell_tmux
 

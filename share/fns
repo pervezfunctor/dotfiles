@@ -247,7 +247,7 @@ toolbox-create-all() {
     is_ubuntu || toolbox create --assumeyes --distro ubuntu --release 24.10 ubuntu
     # toolbox create --distro rhel --release 9.5 rhel
 
-    is_suse || toolbox create --assumeyes --image registry.opensuse.org/opensuse/toolbox:latest tw
+    is_tw || toolbox create --assumeyes --image registry.opensuse.org/opensuse/toolbox:latest tw
     is_rocky || toolbox create --assumeyes --image quay.io/rockylinux/rockylinux:9 rocky
     # is_centos || toolbox create --image quay.io/toolbx-images/centos-toolbox:latest centos
 
