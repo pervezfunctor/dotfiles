@@ -9,3 +9,4 @@ is_fedora || return
 /usr/libexec/sway-systemd/wait-sni-ready && systemctl --user start sway-xdg-autostart.target
 /usr/libexec/sway-systemd/assign-cgroups.py
 /usr/libexec/sway-systemd/session.sh
+has_cmd gnome-keyring-daemon && gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
