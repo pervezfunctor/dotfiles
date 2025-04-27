@@ -1205,8 +1205,8 @@ bootstrap() {
                 source_curl "$INSTALLERS/tw"
             elif is_arch; then
                 source_curl "$INSTALLERS/arch"
-            # elif is_alpine; then
-            #   source_curl "$INSTALLERS/alpine"
+            elif is_alpine; then
+                source_curl "$INSTALLERS/alpine"
             fi
 
             source_curl "$INSTALLERS/mutable"

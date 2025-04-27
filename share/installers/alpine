@@ -1,0 +1,133 @@
+#! /usr/bin/env bash
+
+function si() {
+    sudo apk add --no-cache "$@"
+}
+
+update_packages() {
+    slog "Updating Alpine"
+
+    if ! { sudo apk update && sudo apk upgrade; }; then
+        err_exit "apk update/upgrade failed, quitting"
+    fi
+}
+
+alpine_packages() {
+    sudo apk add --no-cache curl wget gcc libc-dev make gzip zsh git unzip \
+        neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat \
+        trash-cli starship stow just file tree fd htop sd
+}
+
+core_install() {
+    update_packages
+
+    slog "Installing core packages"
+
+    si gpg curl wget git trash-cli tree tar unzip gcc make stow fzf
+
+    slog "Core packages installation done!"
+}
+
+sys_python_install() {
+    slog "Installing python"
+
+    si python3 py3-virtualenv pipx uv
+
+    slog "Python installation done!"
+
+    cmd_check uv
+}
+
+essential_install() {
+    slog "Installing essential packages"
+
+    sys_python_install
+
+    si zip micro p7zip gawk
+
+    slog "Essential packages installation done!"
+}
+
+cli_install() {
+    slog "Installing cli tools using apt"
+
+    local base_pkgs=(tmux urlview zsh git sd gdu bat hyperfine fd ripgrep
+        zoxide eza github-cli shellcheck just htop shfmt)
+
+    local plucky_pkgs=()
+    is_plucky && plucky_pkgs=(fzf ugrep starship gum delta direnv yq)
+
+    si "${base_pkgs[@]}" "${plucky_pkgs[@]}"
+
+    slog "cli tools installation done!"
+}
+
+cpp_install() {
+    slog "Installing C++"
+
+    si libstdc++ libc6-compat python3 g++ bash emacs clang-analyzer lldb lld \
+        clang-ccache clang-extra-tools llvm gcc gdb g++ catch2 clang llvm \
+        clang-extra-tools ccache cppcheck pre-commit valgrind ltrace strace \
+        cmake
+
+    conan_install
+
+    cmd_check gcc g++ gdb clang clang-tidy clang-format
+    cmd_check cmake conan
+
+    slog "C++ installation done!"
+}
+
+terminal_bin_install() {
+    has_cmd kitty && return 1
+
+    slog "Installing terminal"
+
+    si kitty
+
+    slog "terminal installation done!"
+}
+
+podman_install() {
+    slog "Installing podman"
+    si podman podman-compose
+    slog "podman installation done!"
+}
+
+vm_install() {
+    si libvirt
+    sudo systemctl enable --now libvirtd
+}
+
+incus_install() {
+    has_cmd incus && return 1
+
+    slog "Installing incus"
+
+    si incus
+    incus_config_install
+
+    slog "incus installation done!"
+}
+
+ct_install() {
+    slog "Installing container tools"
+
+    incus_install
+    # docker_install
+    portainer_install
+    podman_install
+
+    si buildah distrobox
+
+    slog "Container tools installation done!"
+}
+
+virt_install() {
+    slog "Installing virtualization packages"
+
+    ct_install
+    vm_install
+
+    slog "Virtualization packages installation done!"
+}
