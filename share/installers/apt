@@ -45,7 +45,7 @@ ubuntu_packages() {
 
     slog "Installing packages"
 
-    DEBIAN_FRONTEND=noninteractive si git-core gh git-delta unzip wget curl \
+    si git-core gh git-delta unzip wget curl \
         trash-cli tar stow gcc make file wl-clipboard tree bat eza ripgrep \
         zoxide fd-find htop sd bat gawk starship
 
@@ -65,7 +65,7 @@ debian_packages() {
 
     slog "Installing packages"
     #  git-delta eza just fzf
-    DEBIAN_FRONTEND=noninteractive si git-core gh unzip wget curl trash-cli \
+    si git-core gh unzip wget curl trash-cli \
         tar stow gcc make file tree bat ripgrep zoxide fd-find htop sd gawk \
         wl-clipboard
 
@@ -120,8 +120,8 @@ essential_install() {
     sys_python_install
     snap_install
 
-    si zip unar micro nala p7zip gawk
-    si libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
+    si zip unar micro nala p7zip gawk libreadline-dev libsqlite3-dev \
+        libffi-dev libbz2-dev liblzma-dev
 
     slog "Essential packages installation done!"
 }

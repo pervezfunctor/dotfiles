@@ -7,11 +7,6 @@ nix_install() {
   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
   source_if_exists /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 
-  # if has_cmd nix-channel; then
-  #     nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
-  #     nix-channel --update
-  # fi
-
   slog "nix installation done!"
 
   cmd_check nix nix-shell nix-env
@@ -95,14 +90,14 @@ multipass_install() {
 }
 
 slim-shell_install() {
-  cli_install
+  has_cmd cli_install && cli_install
   pixi_install
   pixi_shell_slim_install
   pkgx_install
 }
 
 shell_install() {
-  cli_install
+  has_cmd cli_install && cli_install
 
   pixi_install
   pixi_shell_install
@@ -159,7 +154,7 @@ base-group_check() {
 }
 
 base_groupstall() {
-  core_install
+  has_cmd core_install && core_install
   dotfiles_install
   bash_config_install
 
@@ -172,7 +167,7 @@ min-group_check() {
 
 min_groupstall() {
   base_groupstall
-  essential_install
+  has_cmd essential_install && essential_install
 
   min-group_check
 }
@@ -212,14 +207,14 @@ ct-group_check() {
 
 ct_groupstall() {
   shell_groupstall
-  ct_install
+  has_cmd ct_install && ct_install
 
   ct-group_check
 }
 
 vm_groupstall() {
   ct_groupstall
-  vm_install
+  has_cmd vm_install && vm_install
 }
 
 work_groupstall() {
@@ -236,7 +231,7 @@ work_groupstall() {
 desktop_groupstall() {
   vm_groupstall
   fonts_install
-  ui_install
+  has_cmd ui_install && ui_install
 
   # tailscale_install
   # @TODO: flatpak aliases?
