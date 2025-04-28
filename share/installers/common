@@ -1,591 +1,591 @@
 #! /usr/bin/env bash
 
 brew_install() {
-  has_cmd brew && return 0
+    has_cmd brew && return 0
 
-  slog "Installing homebrew"
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-  eval_brew
-
-  if ! has_cmd brew; then
-    warn "homebrew not installed, trying again, might require sudo password"
-    /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    slog "Installing homebrew"
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
     eval_brew
-    if has_cmd brew; then
-      slog "homebrew installation done!"
-    else
-      warn "homebrew installation failed"
+
+    if ! has_cmd brew; then
+        warn "homebrew not installed, trying again, might require sudo password"
+        /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+        eval_brew
+        if has_cmd brew; then
+            slog "homebrew installation done!"
+        else
+            warn "homebrew installation failed"
+        fi
     fi
-  fi
 
-  is_linux && dir_check /home/linuxbrew/.linuxbrew
-  is_mac && dir_check /opt/homebrew
+    is_linux && dir_check /home/linuxbrew/.linuxbrew
+    is_mac && dir_check /opt/homebrew
 
-  cmd_check brew
+    cmd_check brew
 }
 
 mise_shell_install() {
-  slog "shell tools with mise"
+    slog "shell tools with mise"
 
-  mis just lazygit lazydocker starship ripgrep gdu choose yazi
-  mis shellcheck gum xh bottom fzf hyperfine cheat duf eza dust zoxide
+    mis just lazygit lazydocker starship ripgrep gdu choose yazi
+    mis shellcheck gum xh bottom fzf hyperfine cheat duf eza dust zoxide
 
-  mi superfile
+    mi superfile
 
-  has_cmd nu || mise use -g cargo:nu
+    has_cmd nu || mise use -g cargo:nu
 
-  slog "shell tools with mise done!"
+    slog "shell tools with mise done!"
 }
 
 brew_shell_slim_install() {
-  bis gh gum stow tmux carapace lazygit eza fzf fd zoxide starship yazi
+    bis gh gum stow tmux carapace lazygit eza fzf fd zoxide starship yazi
 
-  if ! has_cmd luarocks; then
-    bi luarocks
-    brew link luarocks # unfortunately, this is needed currently.
-  fi
-  bi bash-preexec
-  has_cmd trash || bi trash-cli
-  has_cmd delta || bi git-delta
-  has_cmd nvim || bi neovim
-  has_cmd rg || bi ripgrep
-  has_cmd batcat || has_cmd bat || bi bat
-  has_cmd ug || bi ugrep
-  has_cmd emacs || bis micro
+    if ! has_cmd luarocks; then
+        bi luarocks
+        brew link luarocks # unfortunately, this is needed currently.
+    fi
+    bi bash-preexec
+    has_cmd trash || bi trash-cli
+    has_cmd delta || bi git-delta
+    has_cmd nvim || bi neovim
+    has_cmd rg || bi ripgrep
+    has_cmd batcat || has_cmd bat || bi bat
+    has_cmd ug || bi ugrep
+    has_cmd emacs || bis micro
 }
 
 brew_shell_install() {
-  # bi ffmpeg sevenzip poppler imagemagick
-  # bis gping ncdu httpie font-symbols-only-nerd-font
-  # bi glab
-  # bi -q glances
+    # bi ffmpeg sevenzip poppler imagemagick
+    # bis gping ncdu httpie font-symbols-only-nerd-font
+    # bi glab
+    # bi -q glances
 
-  slog "shell tools with brew"
+    slog "shell tools with brew"
 
-  brew_shell_slim_install
+    brew_shell_slim_install
 
-  bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
-    atuin direnv dust procs hyperfine pixi yq yazi htop dysk lsd
+    bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
+        atuin direnv dust procs hyperfine pixi yq yazi htop dysk lsd
 
-  has_cmd tv || bi television
+    has_cmd tv || bi television
 
-  has_cmd spf || bi superfile
-  has_cmd gdu || has_cmd gdu-go || bi gdu
-  has_cmd tldr || bi tealdeer
-  has_cmd choose || bi choose-rust
-  has_cmd btm || bi bottom
-  has_cmd nu || bi nushell
+    has_cmd spf || bi superfile
+    has_cmd gdu || has_cmd gdu-go || bi gdu
+    has_cmd tldr || bi tealdeer
+    has_cmd choose || bi choose-rust
+    has_cmd btm || bi bottom
+    has_cmd nu || bi nushell
 
-  alias gdu=gdu-go
+    alias gdu=gdu-go
 
-  if is_linux; then
-    brew install stress-ng topgrade
-  fi
+    if is_linux; then
+        brew install stress-ng topgrade
+    fi
 
-  slog "shell tools with brew done!"
+    slog "shell tools with brew done!"
 }
 
 pixi_shell_slim_install() {
-  has_cmd trash || pi trash-cli
-  has_cmd rg || pi ripgrep
-  has_cmd gum || pi go-gum
-  has_cmd ug || pi ugrep
-  has_cmd tldr || pi tealdeer
-  has_cmd tv || pi television
+    has_cmd trash || pi trash-cli
+    has_cmd rg || pi ripgrep
+    has_cmd gum || pi go-gum
+    has_cmd ug || pi ugrep
+    has_cmd tldr || pi tealdeer
+    has_cmd tv || pi television
 
-  pis starship zoxide bat eza gh fzf carapace shellcheck fd git-delta direnv yq
+    pis starship zoxide bat eza gh fzf carapace shellcheck fd git-delta direnv yq
 }
 
 pixi_shell_install() {
-  pixi_shell_slim_install
+    pixi_shell_slim_install
 
-  pis broot just lazydocker broot gdu nvim lazygit luarocks micro glances
-  pis cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi
-  pis carapace
+    pis broot just lazydocker broot gdu nvim lazygit luarocks micro glances
+    pis cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi
+    pis carapace
 
-  has_cmd spf || pi superfile
-  has_cmd choose || pi choose-rust
-  has_cmd btm || pi bottom
-  has_cmd nu || pi nushell
+    has_cmd spf || pi superfile
+    has_cmd choose || pi choose-rust
+    has_cmd btm || pi bottom
+    has_cmd nu || pi nushell
 }
 
 go_shell_install() {
-  has_cmd go || return 1
+    has_cmd go || return 1
 
-  slog "shell tools with go"
+    slog "shell tools with go"
 
-  has_cmd cheat || go install github.com/cheat/cheat/cmd/cheat@latest
-  has_cmd curlie || go install github.com/rs/curlie@latest
-  has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
-  has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
-  has_cmd duf || go install github.com/muesli/duf@latest
+    has_cmd cheat || go install github.com/cheat/cheat/cmd/cheat@latest
+    has_cmd curlie || go install github.com/rs/curlie@latest
+    has_cmd lazygit || go install github.com/jesseduffield/lazygit@latest
+    has_cmd gdu || go install github.com/dundee/gdu/v5/cmd/gdu@latest
+    has_cmd duf || go install github.com/muesli/duf@latest
 
-  slog "shell tools with go done!"
+    slog "shell tools with go done!"
 
-  cmd_check cheat curlie lazygit gdu duf
+    cmd_check cheat curlie lazygit gdu duf
 }
 
 rust_shell_install() {
-  has_cmd rustup || return 1
+    has_cmd rustup || return 1
 
-  rustup update stable
+    rustup update stable
 
-  slog "shell tools with rust"
+    slog "shell tools with rust"
 
-  has_cmd starship || cargoi starship
-  has_cmd delta || cargoi git-delta
-  has_cmd dust || cargoi du-dust
-  has_cmd choose || cargoi choose
-  has_cmd sd || cargoi sd
-  has_cmd procs || cargoi procs
-  has_cmd btm || cargoi bottom
-  has_cmd xh || cargoi xh
+    has_cmd starship || cargoi starship
+    has_cmd delta || cargoi git-delta
+    has_cmd dust || cargoi du-dust
+    has_cmd choose || cargoi choose
+    has_cmd sd || cargoi sd
+    has_cmd procs || cargoi procs
+    has_cmd btm || cargoi bottom
+    has_cmd xh || cargoi xh
 
-  slog "shell tools with rust done!"
+    slog "shell tools with rust done!"
 
-  cmd_check starship delta dust choose sd procs btm xh lsd
+    cmd_check starship delta dust choose sd procs btm xh lsd
 }
 
 pnpm_shell_install() {
-  has_cmd pnpm || return 1
+    has_cmd pnpm || return 1
 
-  slog "shell tools with pnpm"
-  pnpm install -g degit neovim
-  cmd_check degit
+    slog "shell tools with pnpm"
+    pnpm install -g degit neovim
+    cmd_check degit
 }
 
 webi_shell_install() {
-  wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq rg arc fzf shellcheck
+    wis shfmt gh dotenv bat curlie delta fd jq lsd sd yq rg arc fzf shellcheck
 
-  # webi node golang go-essentials pyenv k9s kubectx kubens watchexec rustlang
-  # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing git
-  # sudo apt install -y libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
+    # webi node golang go-essentials pyenv k9s kubectx kubens watchexec rustlang
+    # webi caddy xcaddy gitdeploy gitea rclone serviceman syncthing git
+    # sudo apt install -y libreadline-dev libsqlite3-dev libffi-dev libbz2-dev liblzma-dev
 }
 
 miniconda_install() {
-  has_cmd conda && return 0
-  dir_exists ~/miniconda3 && return 0
+    has_cmd conda && return 0
+    dir_exists ~/miniconda3 && return 0
 
-  slog "Installing miniconda"
+    slog "Installing miniconda"
 
-  smd ~/miniconda3
-  download_to https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-  bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-  frm ~/miniconda3/miniconda.sh
-  has_cmd bash && ~/miniconda3/bin/conda init bash
-  has_cmd zsh && ~/miniconda3/bin/conda init zsh
+    smd ~/miniconda3
+    download_to https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+    bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+    frm ~/miniconda3/miniconda.sh
+    has_cmd bash && ~/miniconda3/bin/conda init bash
+    has_cmd zsh && ~/miniconda3/bin/conda init zsh
 
-  slog "miniconda installation done!"
+    slog "miniconda installation done!"
 
-  cmd_check conda
+    cmd_check conda
 }
 
 bash_config_exists() {
-  # shellcheck disable=SC2016
-  grep -q '\.ilm/share/bashrc' ~/.bashrc 2>/dev/null || grep -q 'source ${DOT_DIR}/share/bashrc' ~/.bashrc 2>/dev/null
+    # shellcheck disable=SC2016
+    grep -q '\.ilm/share/bashrc' ~/.bashrc 2>/dev/null || grep -q 'source ${DOT_DIR}/share/bashrc' ~/.bashrc 2>/dev/null
 }
 
 bash_config_check() {
-  bash_config_exists || warn "bash config is not setup correctly"
+    bash_config_exists || warn "bash config is not setup correctly"
 }
 
 bash_config_install() {
-  slog "Configuring bash"
+    slog "Configuring bash"
 
-  if ! bash_config_exists; then
-    echo "export DOT_DIR=$DOT_DIR" >>~/.bashrc
-    # shellcheck disable=SC2016
-    echo 'source ${DOT_DIR}/share/bashrc' >>~/.bashrc
-  fi
+    if ! bash_config_exists; then
+        echo "export DOT_DIR=$DOT_DIR" >>~/.bashrc
+        # shellcheck disable=SC2016
+        echo 'source ${DOT_DIR}/share/bashrc' >>~/.bashrc
+    fi
 
-  slog "bash config done!"
+    slog "bash config done!"
 }
 
 zsh_config_install() {
-  slog "zsh config"
+    slog "zsh config"
 
-  # @TODO: prepend DOT_DIR
+    # @TODO: prepend DOT_DIR
 
-  srm "$HOME/.zshrc"
-  smd "$HOME/.zsh"
-  sclone --depth=1 https://github.com/sindresorhus/pure.git "$HOME/.zsh/pure"
-  sclone --depth=1 https://github.com/djui/alias-tips.git "$HOME/.zsh/alias-tips"
-  sclone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$HOME/.zsh/zsh-autosuggestions"
-  sclone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.zsh/zsh-syntax-highlighting"
+    srm "$HOME/.zshrc"
+    smd "$HOME/.zsh"
+    sclone --depth=1 https://github.com/sindresorhus/pure.git "$HOME/.zsh/pure"
+    sclone --depth=1 https://github.com/djui/alias-tips.git "$HOME/.zsh/alias-tips"
+    sclone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$HOME/.zsh/zsh-autosuggestions"
+    sclone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.zsh/zsh-syntax-highlighting"
 
-  if has_cmd stowdf; then
-    slog "stowdf defined"
-    declare -f my_func
-  fi
-  stowdf zsh
+    if has_cmd stowdf; then
+        slog "stowdf defined"
+        declare -f my_func
+    fi
+    stowdf zsh
 
-  slog "zsh config done!"
+    slog "zsh config done!"
 }
 
 tmux_config_install() {
-  slog "tmux config"
+    slog "tmux config"
 
-  srm "$XDG_CONFIG_HOME/tmux"
+    srm "$XDG_CONFIG_HOME/tmux"
 
-  stownf tmux
+    stownf tmux
 
-  slog "tmux config done!"
+    slog "tmux config done!"
 }
 
 vscode_extensions_from_file() {
-  local extensions_file="$1"
+    local extensions_file="$1"
 
-  if ! file_exists "$extensions_file"; then
-    warn "Extensions file not found at: $extensions_file"
-    return 1
-  fi
-
-  while read -r extension; do
-    if [[ -n "$extension" && ! "$extension" =~ ^# ]]; then
-      slog "Installing extension: $extension"
-      code --install-extension "$extension"
+    if ! file_exists "$extensions_file"; then
+        warn "Extensions file not found at: $extensions_file"
+        return 1
     fi
-  done <"$extensions_file"
+
+    while read -r extension; do
+        if [[ -n "$extension" && ! "$extension" =~ ^# ]]; then
+            slog "Installing extension: $extension"
+            code --install-extension "$extension"
+        fi
+    done <"$extensions_file"
 }
 
 vscode-extensions_install() {
-  slog "Installing vscode extensions"
+    slog "Installing vscode extensions"
 
-  local extensions_file
-  if [[ "$USER" == "pervez" ]]; then
-    extensions_file="$DOT_DIR/extras/vscode/extensions/common"
-  else
-    extensions_file="$DOT_DIR/extras/vscode/extensions/default"
-  fi
+    local extensions_file
+    if [[ "$USER" == "pervez" ]]; then
+        extensions_file="$DOT_DIR/extras/vscode/extensions/common"
+    else
+        extensions_file="$DOT_DIR/extras/vscode/extensions/default"
+    fi
 
-  vscode_extensions_from_file "$extensions_file"
+    vscode_extensions_from_file "$extensions_file"
 
-  slog "vscode extensions installation done!"
+    slog "vscode extensions installation done!"
 }
 
 vscode-all-extensions_install() {
-  slog "Installing vscode extensions"
+    slog "Installing vscode extensions"
 
-  vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/common"
-  vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/cpp"
-  vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/prog"
-  vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/python"
-  vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/web"
+    vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/common"
+    vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/cpp"
+    vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/prog"
+    vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/python"
+    vscode_extensions_from_file "$DOT_DIR/extras/vscode/extensions/web"
 
-  slog "vscode extensions installation done!"
+    slog "vscode extensions installation done!"
 }
 
 emacs-doom_config_install() {
-  dir_exists "$XDG_CONFIG_HOME/doom" && return 0
+    dir_exists "$XDG_CONFIG_HOME/doom" && return 0
 
-  slog "Installing doom"
+    slog "Installing doom"
 
-  sclone --depth=1 https://github.com/doomemacs/doomemacs "$XDG_CONFIG_HOME/emacs"
-  sclone https://github.com/pervezfunctor/doomemacs-config "$XDG_CONFIG_HOME/doom"
+    sclone --depth=1 https://github.com/doomemacs/doomemacs "$XDG_CONFIG_HOME/emacs"
+    sclone https://github.com/pervezfunctor/doomemacs-config "$XDG_CONFIG_HOME/doom"
 
-  slog "Configure doom"
-  doom sync
-  doom env
+    slog "Configure doom"
+    doom sync
+    doom env
 
-  slog "doom installation done!"
+    slog "doom installation done!"
 
-  has_cmd update-locale && sudo update-locale LANG=en_US.UTF8
+    has_cmd update-locale && sudo update-locale LANG=en_US.UTF8
 }
 
 emacs_config_install() {
-  slog "emacs config"
+    slog "emacs config"
 
-  # srm $XDG_CONFIG_HOME/.emacs
-  # srm $XDG_CONFIG_HOME/.emacs.d
-  srm "$XDG_CONFIG_HOME/emacs"
-  smd "$XDG_CONFIG_HOME/emacs"
-  stowdf emacs
+    # srm $XDG_CONFIG_HOME/.emacs
+    # srm $XDG_CONFIG_HOME/.emacs.d
+    srm "$XDG_CONFIG_HOME/emacs"
+    smd "$XDG_CONFIG_HOME/emacs"
+    stowdf emacs
 
-  slog "emacs config done!"
+    slog "emacs config done!"
 }
 
 emacs-slim_config_install() {
-  slog "Installing slim emacs"
+    slog "Installing slim emacs"
 
-  srm ~/.emacs
-  stowdf emacs-slim
+    srm ~/.emacs
+    stowdf emacs-slim
 
-  slog "emacs slim installation done!"
+    slog "emacs slim installation done!"
 }
 
 nvim_config_install() {
-  slog "nvim config"
+    slog "nvim config"
 
-  frm "$XDG_CONFIG_HOME/nvim.bak"
-  omv "$XDG_CONFIG_HOME/nvim" "$XDG_CONFIG_HOME/nvim.bak"
-  frm "$HOME/.local/share/nvim"
-  frm "$HOME/.local/state/nvim"
-  frm "$HOME/.cache/nvim"
+    frm "$XDG_CONFIG_HOME/nvim.bak"
+    omv "$XDG_CONFIG_HOME/nvim" "$XDG_CONFIG_HOME/nvim.bak"
+    frm "$HOME/.local/share/nvim"
+    frm "$HOME/.local/state/nvim"
+    frm "$HOME/.cache/nvim"
 
-  stowgf nvim
-  # nvim --headless "+Lazy! sync" +qa
+    stowgf nvim
+    # nvim --headless "+Lazy! sync" +qa
 
-  slog "nvim config done!"
+    slog "nvim config done!"
 }
 
 git_conf() {
-  git config --global "$@"
+    git config --global "$@"
 }
 
 git_config_install() {
-  slog "Configuring git"
+    slog "Configuring git"
 
-  is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
+    is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
 
-  # stowdf git
+    # stowdf git
 
-  git_conf init.defaultBranch main
-  git_conf pull.ff only
-  git_conf delta.navigate true
-  git_conf delta.line-numbers true
-  git_conf delta.syntax-theme "Monokai Extended"
-  git_conf delta.side-by-side true
-  git_conf merge.conflictStyle diff3
-  git_conf interactive.diffFilter "delta --color-only"
-  git_conf fetch.prune true
+    git_conf init.defaultBranch main
+    git_conf pull.ff only
+    git_conf delta.navigate true
+    git_conf delta.line-numbers true
+    git_conf delta.syntax-theme "Monokai Extended"
+    git_conf delta.side-by-side true
+    git_conf merge.conflictStyle diff3
+    git_conf interactive.diffFilter "delta --color-only"
+    git_conf fetch.prune true
 
-  if [[ "$USER" == "pervez" ]]; then
-    git_conf user.name "Pervez Iqbal"
-    git_conf user.email "pervefunctor@gmail.com"
-  fi
+    if [[ "$USER" == "pervez" ]]; then
+        git_conf user.name "Pervez Iqbal"
+        git_conf user.email "pervefunctor@gmail.com"
+    fi
 
-  slog "git configuration done!"
+    slog "git configuration done!"
 }
 
 vscode_config_install() {
-  slog "vscode config"
+    slog "vscode config"
 
-  if is_mac; then
-    safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$HOME/Library/Application Support/Code/User/settings.json"
-  else
-    smd "$XDG_CONFIG_HOME/Code/User"
-    fmv "$XDG_CONFIG_HOME/Code/User/settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json.bak"
-    safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json"
-  fi
+    if is_mac; then
+        safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$HOME/Library/Application Support/Code/User/settings.json"
+    else
+        smd "$XDG_CONFIG_HOME/Code/User"
+        fmv "$XDG_CONFIG_HOME/Code/User/settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json.bak"
+        safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json"
+    fi
 
-  slog "vscode config done!"
+    slog "vscode config done!"
 }
 
 alacritty_config_install() {
-  slog "alacritty config"
-  stowgf alacritty
-  slog "alacritty config done!"
+    slog "alacritty config"
+    stowgf alacritty
+    slog "alacritty config done!"
 }
 
 wezterm_config_install() {
-  slog "wezterm config"
-  stowgf wezterm
-  slog "wezterm config done!"
+    slog "wezterm config"
+    stowgf wezterm
+    slog "wezterm config done!"
 }
 
 kitty_config_install() {
-  slog "kitty config"
-  stowgf kitty
-  slog "kitty config done!"
+    slog "kitty config"
+    stowgf kitty
+    slog "kitty config done!"
 }
 
 ghostty_config_install() {
-  slog "ghostty config"
-  stowgf ghostty
-  slog "ghostty config done!"
+    slog "ghostty config"
+    stowgf ghostty
+    slog "ghostty config done!"
 }
 
 atuin_config_install() {
-  slog "atuin config"
-  stowgf atuin
-  slog "atuin config done!"
+    slog "atuin config"
+    stowgf atuin
+    slog "atuin config done!"
 }
 
 yazi_config_install() {
-  slog "yazi config"
+    slog "yazi config"
 
-  srm "$XDG_CONFIG_HOME/yazi"
-  smd "$XDG_CONFIG_HOME/yazi"
-  stownf yazi
+    srm "$XDG_CONFIG_HOME/yazi"
+    smd "$XDG_CONFIG_HOME/yazi"
+    stownf yazi
 
-  # @TODO: use package.toml file to install flavors
-  if has_cmd ya; then
-    ya pack -a yazi-rs/flavors:catppuccin-frappe
-    ya pack -a yazi-rs/flavors:catppuccin-mocha
-    ya pack -a yazi-rs/flavors:catppuccin-macchiato
-    ya pack -u
-  fi
+    # @TODO: use package.toml file to install flavors
+    if has_cmd ya; then
+        ya pack -a yazi-rs/flavors:catppuccin-frappe
+        ya pack -a yazi-rs/flavors:catppuccin-mocha
+        ya pack -a yazi-rs/flavors:catppuccin-macchiato
+        ya pack -u
+    fi
 
-  slog "yazi config done!"
+    slog "yazi config done!"
 }
 
 config_install() {
-  shell_config_install
+    shell_config_install
 
-  has_cmd atuin && atuin_config_install
-  has_cmd yazi && yazi_config_install
+    has_cmd atuin && atuin_config_install
+    has_cmd yazi && yazi_config_install
 
-  has_cmd alacritty && alacritty_config_install
-  has_cmd foot && foot_config_install
-  has_cmd ghostty && ghostty_config_install
-  has_cmd kitty && kitty_config_install
-  has_cmd wezterm && wezterm_config_install
+    has_cmd alacritty && alacritty_config_install
+    has_cmd foot && foot_config_install
+    has_cmd ghostty && ghostty_config_install
+    has_cmd kitty && kitty_config_install
+    has_cmd wezterm && wezterm_config_install
 
-  has_cmd aerospace && aerospace_config_install
-  has_cmd amethyst && amethyst_config_install
+    has_cmd aerospace && aerospace_config_install
+    has_cmd amethyst && amethyst_config_install
 }
 
 poetry_install() {
-  has_cmd poetry && return 0
+    has_cmd poetry && return 0
 
-  slog "Installing poetry"
-  if has_cmd python3; then
-    curl -sSL https://install.python-poetry.org | python3 -
-    smd ~/.zfunc
-    poetry completions zsh >~/.zfunc/_poetry
-    slog "poetry installation done!"
-  else
-    warn "python3 not installed, skipping poetry"
-  fi
+    slog "Installing poetry"
+    if has_cmd python3; then
+        curl -sSL https://install.python-poetry.org | python3 -
+        smd ~/.zfunc
+        poetry completions zsh >~/.zfunc/_poetry
+        slog "poetry installation done!"
+    else
+        warn "python3 not installed, skipping poetry"
+    fi
 
-  cmd_check poetry
+    cmd_check poetry
 }
 
 pyenv-anaconda_install() {
-  if ! has_cmd pyenv; then
-    warn "pyenv not installed, skipping anaconda"
-  fi
-
-  if ! pyenv versions | grep anaconda >/dev/null; then
-    local anacondaversion
-    anacondaversion=$(pyenv install --list | grep -i "anaconda3-" | sort -V | tail -1 | tr -d '[:space:]')
-    slog "Installing $anacondaversion"
-    pyenv install "$anacondaversion"
-    smd ~/py
-    if cd ~/py; then
-      pyenv global "$anacondaversion"
-      python -m pip install --user pipx neovim uv
-    else
-      warn "$HOME/py doesn't exist, skipping part of python install"
+    if ! has_cmd pyenv; then
+        warn "pyenv not installed, skipping anaconda"
     fi
-  fi
 
-  cmd_check conda
+    if ! pyenv versions | grep anaconda >/dev/null; then
+        local anacondaversion
+        anacondaversion=$(pyenv install --list | grep -i "anaconda3-" | sort -V | tail -1 | tr -d '[:space:]')
+        slog "Installing $anacondaversion"
+        pyenv install "$anacondaversion"
+        smd ~/py
+        if cd ~/py; then
+            pyenv global "$anacondaversion"
+            python -m pip install --user pipx neovim uv
+        else
+            warn "$HOME/py doesn't exist, skipping part of python install"
+        fi
+    fi
+
+    cmd_check conda
 }
 
 pyenv-miniconda_install() {
-  if has_cmd pyenv; then
-    if ! pyenv versions | grep miniconda >/dev/null; then
-      slog "Installing miniconda"
-      local minicondaversion
-      minicondaversion=$(pyenv install --list | grep miniconda | tail -1)
+    if has_cmd pyenv; then
+        if ! pyenv versions | grep miniconda >/dev/null; then
+            slog "Installing miniconda"
+            local minicondaversion
+            minicondaversion=$(pyenv install --list | grep miniconda | tail -1)
 
-      pyenv install "$minicondaversion"
-      slog "miniconda installation done!"
+            pyenv install "$minicondaversion"
+            slog "miniconda installation done!"
+        fi
+    else
+        warn "pyenv not installed, skipping miniconda"
     fi
-  else
-    warn "pyenv not installed, skipping miniconda"
-  fi
 
-  cmd_check conda
+    cmd_check conda
 }
 
 shell_config_install() {
-  bash_config_install
-  has_cmd code && vscode_config_install
+    bash_config_install
+    has_cmd code && vscode_config_install
 
-  if ! has_cmd stow; then
-    warn "stow not installed, skipping config"
-    return 1
-  fi
+    if ! has_cmd stow; then
+        warn "stow not installed, skipping config"
+        return 1
+    fi
 
-  has_cmd git && git_config_install
-  has_cmd nvim && nvim_config_install
-  has_cmd tmux && tmux_config_install
-  has_cmd zsh && zsh_config_install
+    has_cmd git && git_config_install
+    has_cmd nvim && nvim_config_install
+    has_cmd tmux && tmux_config_install
+    has_cmd zsh && zsh_config_install
 
-  has_cmd emacs || return 0
+    has_cmd emacs || return 0
 
-  local emacs_version
-  emacs_version=$(emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1)
-  if [ "$emacs_version" -gt 28 ]; then
-    emacs_config_install
-  fi
+    local emacs_version
+    emacs_version=$(emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1)
+    if [ "$emacs_version" -gt 28 ]; then
+        emacs_config_install
+    fi
 }
 
 web_install() {
-  slog "Installing npm packages globally"
-  pnpm install -g ndb @antfu/ni
-  pnpm install -g tsx vite-node zx turbo
+    slog "Installing npm packages globally"
+    pnpm install -g ndb @antfu/ni
+    pnpm install -g tsx vite-node zx turbo
 
-  if is_linux; then
-    if ! grep "fs.inotify.max_user_watches" /etc/sysctl.conf >/dev/null; then
-      echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf >/dev/null && sudo sysctl -p
+    if is_linux; then
+        if ! grep "fs.inotify.max_user_watches" /etc/sysctl.conf >/dev/null; then
+            echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf >/dev/null && sudo sysctl -p
+        fi
     fi
-  fi
 
-  if is_apt; then
-    pnpm dlx playwright install-deps
-    pnpm dlx playwright install
-  fi
+    if is_apt; then
+        pnpm dlx playwright install-deps
+        pnpm dlx playwright install
+    fi
 }
 
 go-tools_install() {
-  if ! has_cmd go; then
-    warn "go not installed, skipping go dev tools"
-    return 1
-  fi
+    if ! has_cmd go; then
+        warn "go not installed, skipping go dev tools"
+        return 1
+    fi
 
-  slog "Installing go dev tools..."
+    slog "Installing go dev tools..."
 
-  go install golang.org/x/lint/golint@latest
-  go install golang.org/x/tools/cmd/goimports@latest
-  go install golang.org/x/tools/gopls@latest
-  go install github.com/go-delve/delve/cmd/dlv@latest
-  go install github.com/ramya-rao-a/go-outline@latest
-  go install github.com/acroca/go-symbols@latest
-  go install github.com/mdempsky/gocode@latest
-  go install github.com/uudashr/gopkgs/v2/cmd/gopkgs@latest
-  go install github.com/cweill/gotests/gotests@latest
-  go install github.com/fatih/gomodifytags@latest
-  go install github.com/josharian/impl@latest
-  go install github.com/haya14busa/goplay/cmd/goplay@latest
-  go install github.com/go-delve/delve/cmd/dlv@latest
-  go install github.com/davidrjenni/reftools/cmd/fillstruct@latest
-  go install github.com/godoctor/godoctor@latest
-  go install github.com/zmb3/gogetdoc@latest
-  go install github.com/jstemmer/gotags@latest
-  go install github.com/fatih/motion@latest
-  go install github.com/klauspost/asmfmt/cmd/asmfmt@latest
-  go install github.com/kisielk/errcheck@latest
-  go install mvdan.cc/gofumpt@latest
-  go install github.com/fatih/gomodifytags@latest
+    go install golang.org/x/lint/golint@latest
+    go install golang.org/x/tools/cmd/goimports@latest
+    go install golang.org/x/tools/gopls@latest
+    go install github.com/go-delve/delve/cmd/dlv@latest
+    go install github.com/ramya-rao-a/go-outline@latest
+    go install github.com/acroca/go-symbols@latest
+    go install github.com/mdempsky/gocode@latest
+    go install github.com/uudashr/gopkgs/v2/cmd/gopkgs@latest
+    go install github.com/cweill/gotests/gotests@latest
+    go install github.com/fatih/gomodifytags@latest
+    go install github.com/josharian/impl@latest
+    go install github.com/haya14busa/goplay/cmd/goplay@latest
+    go install github.com/go-delve/delve/cmd/dlv@latest
+    go install github.com/davidrjenni/reftools/cmd/fillstruct@latest
+    go install github.com/godoctor/godoctor@latest
+    go install github.com/zmb3/gogetdoc@latest
+    go install github.com/jstemmer/gotags@latest
+    go install github.com/fatih/motion@latest
+    go install github.com/klauspost/asmfmt/cmd/asmfmt@latest
+    go install github.com/kisielk/errcheck@latest
+    go install mvdan.cc/gofumpt@latest
+    go install github.com/fatih/gomodifytags@latest
 }
 
 pixi_good_packages() {
-  pi gh lazygit git-delta unzip wget curl trash-cli tar stow \
-    just emacs starship tmux go-gum \
-    tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer navi
+    pi gh lazygit git-delta unzip wget curl trash-cli tar stow \
+        just emacs starship tmux go-gum \
+        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer navi
 }
 
 pixi_packages() {
-  pixi_install
+    pixi_install
 
-  pi git gcc make file zsh
-  pixi_good_packages
+    pi git gcc make file zsh
+    pixi_good_packages
 }
 
 brew_good_packages() {
-  bi gh unzip wget curl trash-cli stow starship tmux gum \
-    just emacs zsh tree bat eza fzf ripgrep zoxide fd \
-    htop sd yazi bat tealdeer cheat navi lazygit git-delta
+    bi gh unzip wget curl trash-cli stow starship tmux gum \
+        just emacs zsh tree bat eza fzf ripgrep zoxide fd \
+        htop sd yazi bat tealdeer cheat navi lazygit git-delta
 }
 
 brew_packages() {
-  brew_install
+    brew_install
 
-  bi git gcc make file
-  brew_good_packages
+    bi git gcc make file
+    brew_good_packages
 }

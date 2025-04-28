@@ -823,3 +823,31 @@ dbox_with_home() {
     distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- box-default-atomic
     slog "distrobox ${osname} created!"
 }
+
+sway-full_config_install() {
+    sway-waybar_config_install
+    foot_config_install
+    kitty_config_install
+    sway_config_install
+    rofi_config_install
+    wlogout_config_install
+}
+
+hypr-waybar_config_install() {
+    has_cmd waybar || return 1
+
+    slog "waybar config"
+    stowgf hypr-waybar
+    slog "waybar config done!"
+}
+
+hyprland_config_install() {
+    slog "hypr config install"
+
+    hypr-waybar_config_install
+    wlogout_config_install
+    rofi_config_install
+    kitty_config_install
+
+    slog "hypr config done!"
+}
