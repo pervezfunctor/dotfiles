@@ -1,0 +1,10 @@
+#!/bin/bash
+
+choice=$(echo -e "Lock\nLogout\nReboot\nShutdown" | rofi -dmenu -i -p "Power Menu")
+
+case "$choice" in
+Lock) swaylock ;;
+Logout) swaymsg exit ;;
+Reboot) systemctl reboot ;;
+Shutdown) systemctl poweroff ;;
+esac
