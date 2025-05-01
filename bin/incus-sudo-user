@@ -1,0 +1,74 @@
+#!/bin/bash
+
+set -e
+
+# Ensure script is run as root
+if [[ $EUID -ne 0 ]]; then
+  echo "This script must be run as root." >&2
+  exit 1
+fi
+
+read -r -p "Enter new username: " USERNAME
+
+if id "$USERNAME" &>/dev/null; then
+  echo "User '$USERNAME' already exists." >&2
+  exit 1
+fi
+
+if [[ -f /etc/os-release ]]; then
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  DISTRO=$ID
+else
+  echo "Cannot detect OS type." >&2
+  exit 1
+fi
+
+echo "Detected distro: $DISTRO"
+
+case "$DISTRO" in
+ubuntu | debian)
+  SUDO_GROUP="sudo"
+  ;;
+fedora | rhel | centos)
+  SUDO_GROUP="wheel"
+  ;;
+opensuse* | suse | tumbleweed)
+  SUDO_GROUP="sudo"
+  ;;
+*)
+  echo "Unsupported distribution: $DISTRO" >&2
+  exit 1
+  ;;
+esac
+
+if ! getent group "$SUDO_GROUP" >/dev/null; then
+  echo "Creating group '$SUDO_GROUP'..."
+  groupadd "$SUDO_GROUP"
+fi
+
+useradd -m -G "$SUDO_GROUP" -s /bin/bash "$USERNAME"
+
+echo "Set password for user '$USERNAME':"
+passwd "$USERNAME"
+
+if ! command -v sudo &>/dev/null; then
+  echo "Installing sudo..."
+  case "$DISTRO" in
+  ubuntu | debian)
+    apt update && apt install -y sudo
+    ;;
+  fedora)
+    dnf install -y sudo
+    ;;
+  opensuse* | suse | tumbleweed)
+    zypper install -y sudo
+    ;;
+  esac
+fi
+
+if ! grep -qE "^%$SUDO_GROUP\s+ALL=\(ALL(:ALL)?\)\s+ALL" /etc/sudoers; then
+  echo "%$SUDO_GROUP ALL=(ALL:ALL) ALL" >>/etc/sudoers
+fi
+
+echo "User '$USERNAME' created and added to '$SUDO_GROUP' group with sudo access."
