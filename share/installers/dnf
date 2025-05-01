@@ -187,6 +187,7 @@ snap_install() {
     slog "Installing snapd"
     si snapd
     sudo systemctl enable --now snapd.socket
+    sudo systemctl enable --now snapd
     [ -e /snap ] || sudo ln -s /var/lib/snapd/snap /snap
 
     slog "snapd setup done!"

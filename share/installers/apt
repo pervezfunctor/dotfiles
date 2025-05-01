@@ -109,6 +109,7 @@ snap_install() {
     slog "Installing snap..."
     si snapd
     sudo systemctl enable --now snapd.socket
+    sudo systemctl enable --now snapd
 
     sudo snap install core
     slog "snap installation done!"

@@ -61,6 +61,7 @@ yay_install() {
 
 snap_install() {
     yay -Sy --noconfirm snapd
+    sudo systemctl enable --now snapd
 }
 
 essential_install() {
