@@ -157,8 +157,21 @@ if has_cmd distrobox; then
     alias dboxl='distrobox list'
     alias dboxr='distrobox run'
     alias dboxc='distrobox create'
+    alias dboxd='distrobox rm'
+
+    alias rdboxe='distrobox enter -nw --clean-path --root'
+    alias rdboxl='distrobox list --root'
+    alias rdboxr='distrobox run --root'
+    alias rdboxc='distrobox create --root'
+    alias rdboxd='distrobox rm --root'
 
     [[ "${CONTAINER_ID}" != "" ]] && alias on-host='distrobox-host-exec'
+fi
+
+if has_cmd fastfetch; then
+    alias sys-info='fastfetch'
+elif has_cmd neofetch; then
+    alias sys-info='neofetch'
 fi
 
 if has_cmd toolbox; then
