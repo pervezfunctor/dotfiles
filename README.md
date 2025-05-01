@@ -5,7 +5,7 @@
 
 ### Windows
 
-On windows, use WSL. If not installed, install with the following command.
+On windows, use WSL. Install WSL, use  the following command.
 
 ```powershell
 wsl --install --no-distribution
@@ -19,18 +19,19 @@ wsl --install FedoraLinux-42
 wsl -d FedoraLinux-42 # Create user and set a password.
 ```
 
-Run the following command in WSL for installing basic tools and a nice shell prompt.
+Run the following command in WSL for installing basic tools and a nice shell prompt. Make sure you are not root.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- wslbox
 ```
-Exit and enter WSL again to install few more tools of your choice.
+
+Exit and enter WSL again(or reboot) to install more development tools.
 
 ```bash
 ilm-installer tmux nvim emacs # pick any
 ```
 
-If you want to setup vscode and other tools on Windows, run the following command in powershell **as administrator**.
+If you want to setup vscode and other development tools on Windows, run the following command in powershell **as administrator**.
 
 ```powershell
 iwr -useb https://dub.sh/NDyiu7a | iex
@@ -47,16 +48,15 @@ On macos, install applications(vscode, ghostty terminal, fonts etc) along with s
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- desktop
 ```
 
-If you just homebrew and basic unix tools.
+If you just want homebrew and basic unix tools, run the following command.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
 ```
 
-
 ### Linux
 
-On linux desktop(Ubuntu 25.04 for eg), install shell tools, vscode and docker with the following command. Ubuntu 25.04, Fedora 42, OpenSUSE Tumbleweed, CentOS Stream 10 and Arch are supported.
+On linux desktop(Ubuntu 25.04 for eg), install shell tools, vscode and docker with the following command. Works on Ubuntu 25.04, Fedora 42, OpenSUSE Tumbleweed, CentOS Stream 10 and Arch.
 
 ```bash
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- dev
@@ -93,13 +93,12 @@ ujust bluefin-cli # on Bluefin
 ujust aurora-cli # on Aurora
 ```
 
-If you are an experienced linux user and and an experienced developer, then [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en) would be perfect. Bluefin and Aurora are based on Fedora Atomic, an immutable(image based) distribution.
 
 #### Recommendations
 
-  - Install shell tools using [homebrew](https://brew.sh), which is comparable to `nix` or `aur` in package selection. You also get the latest versions of packages.
+  - Install shell tools using [homebrew](https://brew.sh), which is comparable to `nix` or `aur` in package selection. You generally get the latest versions of packages.
 
-  - Install desktop apps using [flatpak](https://flathub.org), most modern apps on linux are available. Use Software on Gnome and Discover on KDE. These should be preinstalled.
+  - Install desktop apps using [flatpak](https://flathub.org), most modern apps on linux are available. Use Software on Gnome and Discover on KDE. These should be preinstalled on your system.
 
   - [Visual studio code](https://code.visualstudio.com) is installed and configured properly. You could install neovim extension, to use your neovim configuration and keybindings in `vscode`.
 
@@ -109,7 +108,7 @@ If you are an experienced linux user and and an experienced developer, then [Blu
 
   - Use [libvirt](https://libvirt.org)/[virt-manager](https://virt-manager.org) for virtual machines.
 
-  - Or use [incus](https://linuxcontainers.org/incus) for virtual machines and [lxc(stateful and isolated)](https://linuxcontainers.org/lxc) for containers. You need to run `ujust incus`.
+  - Or use [incus](https://linuxcontainers.org/incus) for virtual machines and [lxc(stateful and isolated)](https://linuxcontainers.org/lxc) for containers. You need to run `ujust incus` before using incus.
 
 
 Install and configure shell tools and common applications using the following command. This is optional.
