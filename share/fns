@@ -93,15 +93,43 @@ dbox-wolfi() {
 dbox-docker() {
     local CONTAINER_NAME=${1:-docker}
     slog "Creating Docker distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image ghcr.io/ublue-os/docker-toolbox:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    sudo mkdir -p /var/lib/docker
+
+    # can pass nvidia too if CUDA is needed
+    if distrobox create \
+        --yes \
+        --image ghcr.io/ublue-os/docker-distrobox:latest \
+        --init \
+        --root \
+        --no-entry \
+        --volume /var/lib/docker \
+        --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" \
+        --home "$HOME/boxes/${CONTAINER_NAME}" \
+        --name "${CONTAINER_NAME}"; then
+
         slog "Docker distrobox ${CONTAINER_NAME} created successfully"
     fi
+
+    distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c usermod -aG docker "\${USER}"
 }
 
 dbox-incus() {
     local CONTAINER_NAME=${1:-incus}
     slog "Creating Incus distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image ghcr.io/ublue-os/incus-toolbox:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    sudo mkdir -p /var/lib/incus
+
+    if distrobox create \
+        --yes \
+        --image ghcr.io/ublue-os/incus-distrobox:latest \
+        --init \
+        --root \
+        --no-entry \
+        --volume /var/lib/incus:/var/lib/incus \
+        --volume /lib/modules:/lib/modules:ro \
+        --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" \
+        --home "$HOME/boxes/${CONTAINER_NAME}" \
+        --name "${CONTAINER_NAME}"; then
+
         slog "Incus distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
