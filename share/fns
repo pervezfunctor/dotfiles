@@ -100,6 +100,7 @@ dbox-docker() {
         --yes \
         --image ghcr.io/ublue-os/docker-distrobox:latest \
         --init \
+        --unshare-all \
         --root \
         --no-entry \
         --volume /var/lib/docker \
@@ -110,7 +111,7 @@ dbox-docker() {
         slog "Docker distrobox ${CONTAINER_NAME} created successfully"
     fi
 
-    distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c usermod -aG docker "\${USER}"
+    distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c usermod -aG docker "\${USER}"
 }
 
 dbox-incus() {
@@ -122,6 +123,7 @@ dbox-incus() {
         --yes \
         --image ghcr.io/ublue-os/incus-distrobox:latest \
         --init \
+        --unshare-all \
         --root \
         --no-entry \
         --volume /var/lib/incus:/var/lib/incus \
