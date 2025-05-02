@@ -431,5 +431,6 @@ system-update() {
 }
 
 remove_keyrings() {
+    sudo rm -rf /run/user/1000/keyrings/*
     trash .local/share/keyrings/*
 }

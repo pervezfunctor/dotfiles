@@ -24,7 +24,7 @@ Keys are a personal preference, most popular are cherry mx blue, red, brown.
 
 - Blue would be very loud and clicky.
 
-- Red will be relatively more silent and is considered best for gamers and programmers. Red are also more closer to common membrane keyboards and some people hate this.
+- Red will be relatively more silent and is considered best for gamers and programmers. Red are also more closer to common membrane keyboards and some people hate these.
 
 - Brown if you like a bit clicky compared to Red but almost as silent as red. This is the safest choice, if it's your first mechanical keyboard.
 
@@ -80,7 +80,7 @@ Or If you prefer an ATX/mATX desktop
 
 4. [Crucial Pro 6400 DDR5 2x48GB](https://www.amazon.com/Crucial-6000MHz-Overclocking-Desktop-Compatible/dp/B0DSQMCV8B)
 
-5. If you need a GPU consider `AMD 9070 XT`. AMD GPUs works better than nvidia on linux. If you work with 3D models and/or blender, then nvidia is better. Consider something like `4070 Ti Super` or `5070 Ti`. Note these aren't useful for LLMs.
+5. If you need a GPU consider `AMD 9070 XT`. AMD GPUs works better than nvidia on linux. If you work with 3D models and/or blender, then nvidia is better. Consider something like `4070 Ti Super` or `5070 Ti`. Note that these aren't useful for LLMs.
 
 You could also buy a mini PC instead of a desktop, especially if you don't need more than 96GB RAM.
 

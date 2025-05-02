@@ -118,6 +118,10 @@ python_install() {
 }
 
 flathub_install() {
+    if ! has_cmd flatpak; then
+        has_cmd si && si flatpak
+    fi
+
     if has_cmd flatpak; then
         slog "Adding flathub remote"
         flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user

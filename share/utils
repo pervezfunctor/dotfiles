@@ -1129,7 +1129,7 @@ environs() {
     smd ~/.local/bin
     smd ~/bin
     smd ~/.bin
-    smd ~/boxes
+    is_distrobox || is_toolbox || smd ~/boxes
 
     export GOPATH="$HOME/go"
     export PNPM_HOME="$HOME/.local/share/pnpm:$PATH"
@@ -1172,6 +1172,11 @@ common-installer() {
 }
 
 bootstrap() {
+    if [[ $EUID -ne 0 ]]; then
+        echo "This script must be run as root. DO NOT use sudo." >&2
+        exit 1
+    fi
+
     environs
 
     curdir=$(pwd)
@@ -1179,10 +1184,11 @@ bootstrap() {
     slog "Bootstrapping, switching to directory $HOME"
     cd "$HOME" || err_exit "could not cd to $HOME"
 
-    has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
-
     slog "Removing old logs"
     rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log 2>/dev/null
+
+    has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
+
     [ -n "$NOSUDO" ] || keep_sudo_running
 
     local SHARE

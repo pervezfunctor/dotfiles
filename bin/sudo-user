@@ -12,37 +12,43 @@ else
 fi
 
 # Check if the script is run as root
-[[ "$(id -u)" != "0" ]] && err_exit "This script must be run as root" 1>&2
+[[ $EUID -ne 0 ]] && err_exit "This script must be run as root" 1>&2
 
 # Check if username is provided
 [[ "$#" -ne 1 ]] && err_exit "Usage: $0 username" 1>&2
 
-username=$1
+USERNAME=$1
 
-# Create the user
-if useradd -m "$username"; then
+if id "$USERNAME" &>/dev/null; then
+    echo "User '$USERNAME' already exists." >&2
+    echo "Setting password for existing user..."
+    passwd "$USERNAME" || err_exit "Failed to set password"
+elif useradd -m "$USERNAME"; then
     slog "User created successfully"
 else
     err_exit "Failed to create user"
 fi
 
-# Set the user's password
-passwd "$username"
-
 # Determine the sudo group based on the system
 if is_apt; then
-    pkg_manager="apt-get"
-    sudo_group="sudo"
+    apt-get update && apt-get install -y sudo
+    SUDO_GROUP="sudo"
 elif is_rh; then
-    pkg_manager="dnf"
-    sudo_group="wheel"
+    dnf install -y sudo
+    SUDO_GROUP="wheel"
+elif is_tw; then
+    zypper install -y sudo
+    SUDO_GROUP="wheel"
 else
     err_exit "Unsupported system"
 fi
 
-$pkg_manager install -y sudo
+if ! getent group "$SUDO_GROUP" >/dev/null; then
+    echo "Creating group '$SUDO_GROUP'..."
+    groupadd "$SUDO_GROUP"
+fi
 
 # Add the user to the sudo group
-usermod -aG "$sudo_group" "$username"
+usermod -aG "$SUDO_GROUP" "$USERNAME"
 
-slog "$username now has sudo privileges"
+slog "$USERNAME now has sudo privileges"
