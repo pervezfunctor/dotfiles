@@ -874,6 +874,7 @@ hms() {
 }
 
 SUDO_KEEPALIVE_PID=""
+SUDO_KEEPALIVE_TRAP_SET=0
 
 _stop_sudo_keepalive() {
     if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
@@ -894,20 +895,54 @@ keep_sudo_running() {
         return 1
     fi
 
+    # If a sudo keepalive process is already running, don't start another one
+    if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
+        slog "Sudo keep-alive process already running (PID: $SUDO_KEEPALIVE_PID)."
+        return 0
+    fi
+
+    # Create a temporary file to store the PID
+    local pid_file
+    pid_file=$(mktemp -t sudo_keepalive_XXXXXX)
+
+    # Start the background process with its own trap to clean up
     slog "Sudo credentials active."
     (
+        # Write PID to the temporary file
+        echo $$ >"$pid_file"
+
+        # Set up self-cleanup
+        trap 'rm -f "$pid_file"; exit 0' EXIT INT TERM HUP
+
         while true; do
+            slog "Refreshing sudo credentials..."
             sudo -n true 2>/dev/null
             sleep 60
         done
     ) &
 
-    SUDO_KEEPALIVE_PID=$!
-    slog "Sudo keep-alive background process started (PID: $SUDO_KEEPALIVE_PID)."
+    # Give the background process time to write its PID
+    sleep 0.5
 
-    trap _stop_sudo_keepalive EXIT INT TERM HUP
+    # Read the PID from the file if it exists
+    if [ -f "$pid_file" ]; then
+        SUDO_KEEPALIVE_PID=$(cat "$pid_file")
+        rm -f "$pid_file"
+        slog "Sudo keep-alive background process started (PID: $SUDO_KEEPALIVE_PID)."
 
-    return 0
+        # Set the trap in the main shell only once
+        if [ "$SUDO_KEEPALIVE_TRAP_SET" -eq 0 ]; then
+            trap _stop_sudo_keepalive EXIT INT TERM HUP
+            SUDO_KEEPALIVE_TRAP_SET=1
+            export SUDO_KEEPALIVE_PID
+            export SUDO_KEEPALIVE_TRAP_SET
+        fi
+
+        return 0
+    else
+        slog "Failed to start sudo keep-alive process."
+        return 1
+    fi
 }
 
 download_to() {
@@ -1188,7 +1223,13 @@ bootstrap() {
 
     has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 
-    [ -n "$NOSUDO" ] || keep_sudo_running
+    # Only start sudo keepalive if not explicitly disabled and we're not running as root
+    if [ -z "$NOSUDO" ] && [ "$EUID" -ne 0 ]; then
+        # Export these variables to make them available to subprocesses
+        export SUDO_KEEPALIVE_PID
+        export SUDO_KEEPALIVE_TRAP_SET
+        keep_sudo_running
+    fi
 
     local SHARE
     SHARE="${ILM_BASE_URL}/share"
