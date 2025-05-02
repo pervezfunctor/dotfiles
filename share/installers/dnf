@@ -144,8 +144,9 @@ core_install() {
     update_packages
     base_dev_install
 
-    si curl wget git-core trash-cli cmake tree tar unzip
-    si util-linux-user which fuse fuse-libs zstd file
+    si curl wget git-core trash-cli cmake tree tar unzip util-linux-user which \
+        fuse fuse-libs zstd file libsecret
+
     is_fedora && si stow
 
     slog "Core packages installation done!"
@@ -431,7 +432,7 @@ hyprland_bin_install() {
 }
 
 sway_bin_install() {
-    tiliing_common_install
+    tiling_common_install
 
     slog "Installing sway"
 

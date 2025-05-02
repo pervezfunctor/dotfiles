@@ -48,7 +48,7 @@ core_install() {
 
     slog "Installing core packages"
 
-    si curl wget git tar tree unzip cmake stow file trash-cli
+    si curl wget git tar tree unzip cmake stow file trash-cli libsecret
     sudo zypper install -y -t pattern devel_basis
 
     slog "Core packages installation done!"

@@ -1057,15 +1057,14 @@ bis() {
         return 1
     fi
 
-    local PKGS
-
+    local PKGS=()
     for p in "$@"; do
         has_cmd "$p" && continue
         slog "brew package $p will be installed"
-        PKGS="$PKGS $p"
+        PKGS+=("$p")
     done
 
-    [ -n "$PKGS" ] && brew install -q "$PKGS"
+    [ ${#PKGS[@]} -gt 0 ] && brew install -q "${PKGS[@]}"
 
     # for p in "$@"; do
     #     slog "Installing package $p"
