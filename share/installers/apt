@@ -82,10 +82,10 @@ core_install() {
     slog "Installing core packages"
 
     si software-properties-common apt-transport-https ca-certificates gpg curl \
-        wget git-core trash-cli tree command-not-found file tar unzip \
-        build-essential libfuse2 zstd
+        wget git-core trash-cli tar unzip \
+        tree command-not-found file build-essential libfuse2 zstd
 
-    is_plucky && si stow fzf
+    is_plucky && si stow
 
     slog "Core packages installation done!"
 }
