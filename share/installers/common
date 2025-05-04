@@ -235,6 +235,11 @@ tmux_config_install() {
 }
 
 vscode_extensions_from_file() {
+    if ! command -v code &>/dev/null; then
+        warn "'code' not found, skipping vscode extensions installation."
+        return 1
+    fi
+
     local extensions_file="$1"
 
     if ! file_exists "$extensions_file"; then
@@ -242,10 +247,17 @@ vscode_extensions_from_file() {
         return 1
     fi
 
+    local installed_extensions
+    installed_extensions=$(code --list-extensions)
+
     while read -r extension; do
-        if [[ -n "$extension" && ! "$extension" =~ ^# ]]; then
+        [[ -z "$extension" || "$extension" =~ ^# ]] && continue
+
+        if ! grep -Fxq "$extension" <<<"$installed_extensions"; then
             slog "Installing extension: $extension"
             code --install-extension "$extension"
+        else
+            slog "Extension already installed: $extension"
         fi
     done <"$extensions_file"
 }
