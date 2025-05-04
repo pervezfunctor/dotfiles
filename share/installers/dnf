@@ -68,7 +68,7 @@ fedora_packages() {
 
     si git-core gh git-delta unzip wget curl trash-cli tar stow gcc make file \
         gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate \
-        cheat
+        cheat libsecret
 
     slog "Installing packages done!"
 }
@@ -113,7 +113,7 @@ centos_packages() {
     slog "Installing packages"
 
     si git unzip wget curl tar gcc make gum tree bat ripgrep \
-        htop bat plocate file just emacs-nox neovim tmux zsh
+        htop bat plocate file just emacs-nox neovim tmux zsh libsecret
 
     slog "Installing packages done!"
 }

@@ -47,7 +47,7 @@ ubuntu_packages() {
 
     si git-core gh git-delta unzip wget curl \
         trash-cli tar stow gcc make file wl-clipboard tree bat eza ripgrep \
-        zoxide fd-find htop sd bat gawk starship
+        zoxide fd-find htop sd bat gawk starship libsecret
 
     is_plucky && si fzf tealdeer gum
 
@@ -67,7 +67,7 @@ debian_packages() {
     #  git-delta eza just fzf
     si git-core gh unzip wget curl trash-cli \
         tar stow gcc make file tree bat ripgrep zoxide fd-find htop sd gawk \
-        wl-clipboard
+        wl-clipboard libsecret
 
     slog "Installing packages done!"
 

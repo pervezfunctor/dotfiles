@@ -24,7 +24,7 @@ arch_packages() {
 
     si git-core github-cli git-delta unzip wget curl trash-cli tar stow \
         gcc make file starship gum wl-clipboard tree bat eza fzf ripgrep \
-        zoxide fd htop sd yazi bat tealdeer lazygit
+        zoxide fd htop sd yazi bat tealdeer lazygit libsecret
 
     slog "Installing packages done!"
 }
