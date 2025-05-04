@@ -607,8 +607,13 @@ docker_common_install() {
         bi lazydocker
     fi
 
-    sudo groupadd docker
-    sudo usermod -aG docker "$USER"
+    if ! grep -q docker /etc/group 2>/dev/null; then
+        sudo groupadd docker
+    fi
+
+    if ! groups "$USER" | grep -q docker 2>/dev/null; then
+        sudo usermod -aG docker "$USER"
+    fi
 
     sudo systemctl --now enable docker
     sudo systemctl --now enable containerd
@@ -618,7 +623,12 @@ conan_install() {
     has_cmd conan && return 1
 
     slog "Installing conan"
-    pipx install conan
+    if has_cmd pipx; then
+        pipx install conan
+    else
+        uv tool install conan
+    fi
+
     slog "conan installation done!"
 
     cmd_check conan
@@ -781,7 +791,7 @@ box-default_groupstall() {
     vscode_install
     fonts_install
 
-    si firefox gnome-keyring wl-clipboard kitty
+    si firefox gnome-keyring wl-clipboard kitty libsecret
     gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
     systemctl --user enable --now dbus
 }

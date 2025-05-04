@@ -172,12 +172,17 @@ min_groupstall() {
     min-group_check
 }
 
+slim-shell-group_check() {
+    cmd_check trash rg gum ug tldr starship zoxide bat eza gh fzf
+    cmd_check carapace shellcheck fd delta direnv yq
+}
+
 shell-group_check() {
-    cmd_check gh nvim zsh tmux lazygit sd bat fd
-    cmd_check fzf zoxide gum bat brew btm htop btm rg starship
-    cmd_check eza fd fzf atuin delta gawk
+    slim-shell-group_check
+    cmd_check gh nvim zsh tmux lazygit sd bat brew htop btm atuin gawk
+    cmd_check shellcheck shfmt
     # cmd_check cheat choose curlie direnv doggo dotenv procs
-    # cmd_check duf dust gdu hyperfine jq just shellcheck shfmt yq
+    # cmd_check duf dust gdu hyperfine jq just yq
 }
 
 slim-shell_groupstall() {
@@ -186,6 +191,8 @@ slim-shell_groupstall() {
 
     bash_config_install
     has_cmd zsh && zsh_config_install
+
+    slim-shell-group_check
 }
 
 shell_groupstall() {
