@@ -748,6 +748,22 @@ rofi_config_install() {
     slog "rofi config done!"
 }
 
+dbox-docker-dev_groupstall() {
+    is_ubuntu || err_exit "This script is only for Ubuntu"
+    has_cmd docker || err_exit "This script requires docker"
+
+    docker_common_install
+
+    min_groupstall
+    si firefox gnome-keyring wl-clipboard libsecret
+    sudo apt-get purge fzf
+
+    starship_install
+    vscode_install
+
+    has_cmd zsh && zsh_config_install
+}
+
 github_user_setup() {
     if ! has_cmd gh; then
         warn "gh not installed, skipping github user setup"

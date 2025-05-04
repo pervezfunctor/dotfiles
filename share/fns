@@ -111,7 +111,7 @@ dbox-docker() {
         slog "Docker distrobox ${CONTAINER_NAME} created successfully"
     fi
 
-    distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c usermod -aG docker "\${USER}"
+    distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- dbox-docker-dev starship snap vscode
 }
 
 dbox-incus() {
