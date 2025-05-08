@@ -1,11 +1,11 @@
 arrterian.nix-env-selector
-Catppuccin.catppuccin-vsc
-Catppuccin.catppuccin-vsc-icons
+catppuccin.catppuccin-vsc
+catppuccin.catppuccin-vsc-icons
 charliermarsh.ruff
 codezombiech.gitignore
 docker.docker
 donjayamanne.githistory
-GitHub.github-vscode-theme
+github.github-vscode-theme
 gruntfuggly.todo-tree
 hangxingliu.vscode-systemd-support
 jnoortheen.nix-ide
@@ -40,7 +40,7 @@ sainnhe.everforest
 sclu1034.justfile
 streetsidesoftware.code-spell-checker
 tamasfe.even-better-toml
-TheNuProjectContributors.vscode-nushell-lang
+thenuprojectcontributors.vscode-nushell-lang
 timonwong.shellcheck
 tyriar.lorem-ipsum
 usernamehw.errorlens

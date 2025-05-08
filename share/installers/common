@@ -253,7 +253,7 @@ vscode_extensions_from_file() {
     while read -r extension; do
         [[ -z "$extension" || "$extension" =~ ^# ]] && continue
 
-        if ! grep -Fxq "$extension" <<<"$installed_extensions"; then
+        if ! grep -Fxqi "$extension" <<<"$installed_extensions"; then
             slog "Installing extension: $extension"
             code --install-extension "$extension"
         else
