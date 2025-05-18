@@ -26,6 +26,7 @@ ms-vscode.remote-explorer
 ms-vscode.remote-repositories
 ms-vscode.remote-server
 ms-vscode.vscode-github-issue-notebooks
+ms-ossdata.vscode-pgsql
 mvllow.rose-pine
 pflannery.vscode-versionlens
 pomdtr.excalidraw-editor
