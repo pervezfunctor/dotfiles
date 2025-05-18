@@ -110,7 +110,6 @@ ms-dotnettools.vscode-dotnet-runtime
 ms-dotnettools.vscode-dotnet-sdk
 ms-edgedevtools.vscode-edge-devtools
 ms-kubernetes-tools.vscode-kubernetes-tools
-ms-ossdata.vscode-postgresql
 ms-playwright.playwright
 ms-python.black-formatter
 ms-python.debugpy
