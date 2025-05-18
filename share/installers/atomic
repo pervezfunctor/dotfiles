@@ -685,7 +685,7 @@ jetbrains_nerd_font_install() {
 }
 
 maple_font_install() {
-    file_exists ~/.local/share/fonts/MapleMono-Regular.ttf && return 0
+    file_exists ~/.local/share/fonts/MapleMono-NF-Regular.ttf && return 0
 
     slog "Installing Maple Mono Font"
     smd ~/.local/share/fonts
