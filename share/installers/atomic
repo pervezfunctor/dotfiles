@@ -650,39 +650,51 @@ monaspace_install() {
 }
 
 cascadia_nerd_font_install() {
-    if ! file_exists ~/.local/share/fonts/CaskaydiaMonoNerdFont-Regular.ttf; then
-        smd ~/.local/share/fonts
-        frm /tmp/cascadia /tmp/CascadiaMono.zip
-        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip -O /tmp/CascadiaMono.zip
-        unzip -qq -d /tmp/cascadia -o /tmp/CascadiaMono.zip
-        cp /tmp/cascadia/*.ttf ~/.local/share/fonts
-        frm /tmp/cascadia /tmp/CascadiaMono.zip
-    fi
+    file_exists ~/.local/share/fonts/CaskaydiaMonoNerdFont-Regular.ttf && return 0
+
+    smd ~/.local/share/fonts
+    frm /tmp/cascadia /tmp/CascadiaMono.zip
+    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip -O /tmp/CascadiaMono.zip
+    unzip -qq -d /tmp/cascadia -o /tmp/CascadiaMono.zip
+    cp /tmp/cascadia/*.ttf ~/.local/share/fonts
+    frm /tmp/cascadia /tmp/CascadiaMono.zip
 }
 
 monaspace_nerd_font_install() {
-    if ! file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf; then
-        smd ~/.local/share/fonts
-        frm /tmp/monaspace /tmp/Monaspace.zip
-        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip -O /tmp/Monaspace.zip
-        unzip -qq -d /tmp/monaspace -o /tmp/Monaspace.zip
-        cp /tmp/monaspace/*.otf ~/.local/share/fonts
-        frm /tmp/monaspace /tmp/Monaspace.zip
-    fi
+    file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf && return 0
 
+    smd ~/.local/share/fonts
+    frm /tmp/monaspace /tmp/Monaspace.zip
+    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip -O /tmp/Monaspace.zip
+    unzip -qq -d /tmp/monaspace -o /tmp/Monaspace.zip
+    cp /tmp/monaspace/*.otf ~/.local/share/fonts
+    frm /tmp/monaspace /tmp/Monaspace.zip
 }
 
 jetbrains_nerd_font_install() {
-    if ! file_exists ~/.local/share/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf; then
-        slog "Installing JetBrains Mono Nerd Font"
-        smd ~/.local/share/fonts
-        frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
-        wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
-        unzip -qq -d /tmp/jetbrains-mono -o /tmp/jetbrains-mono.zip
-        cp /tmp/jetbrains-mono/*.ttf ~/.local/share/fonts
-        frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
-        slog "JetBrains Mono Nerd Font installation done!"
-    fi
+    file_exists ~/.local/share/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf && return 0
+
+    slog "Installing JetBrains Mono Nerd Font"
+    smd ~/.local/share/fonts
+    frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
+    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
+    unzip -qq -d /tmp/jetbrains-mono -o /tmp/jetbrains-mono.zip
+    cp /tmp/jetbrains-mono/*.ttf ~/.local/share/fonts
+    frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
+    slog "JetBrains Mono Nerd Font installation done!"
+}
+
+maple_font_install() {
+    file_exists ~/.local/share/fonts/MapleMono-Regular.ttf && return 0
+
+    slog "Installing Maple Mono Font"
+    smd ~/.local/share/fonts
+    frm /tmp/maple-mono/tmp/maple-mono.zip
+    wget -nv https://github.com/subframe7536/maple-font/releases/download/v7.2/MapleMono-NF.zip -O /tmp/maple-mono.zip
+    unzip -qq -d /tmp/maple-mono -o /tmp/maple-mono.zip
+    cp /tmp/maple-mono/*.ttf ~/.local/share/fonts
+    frm /tmp/maple-mono/tmp/maple-mono.zip
+    slog "Maple Mono Font installation done!"
 }
 
 nerd_font_install() {
@@ -703,6 +715,7 @@ fonts_install() {
 
     monaspace_install
     nerd_font_install
+    maple_font_install
 
     # if is_apt; then
     #     si fonts-cascadia-code fonts-jetbrains-mono
