@@ -288,9 +288,9 @@ assign [class="Alacritty"] $ws1
 assign [class="kitty"] $ws1
 assign [class="WezTerm"] $ws1
 assign [class="foot"] $ws1
-assign [app_id="firefox"] $ws2
-assign [class="Chromium"] $ws2
-assign [app_id="code"] $ws3
+assign [app_id="firefox"] $ws3
+assign [class="Chromium"] $ws3
+assign [app_id="code"] $ws2
 assign [app_id="org.telegram.desktop"] $ws5
 
 exec $term
