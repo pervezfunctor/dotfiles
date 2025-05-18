@@ -654,7 +654,7 @@ cascadia_nerd_font_install() {
 
     smd ~/.local/share/fonts
     frm /tmp/cascadia /tmp/CascadiaMono.zip
-    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/CascadiaMono.zip -O /tmp/CascadiaMono.zip
+    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/CascadiaMono.zip -O /tmp/CascadiaMono.zip
     unzip -qq -d /tmp/cascadia -o /tmp/CascadiaMono.zip
     cp /tmp/cascadia/*.ttf ~/.local/share/fonts
     frm /tmp/cascadia /tmp/CascadiaMono.zip
@@ -665,7 +665,7 @@ monaspace_nerd_font_install() {
 
     smd ~/.local/share/fonts
     frm /tmp/monaspace /tmp/Monaspace.zip
-    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Monaspace.zip -O /tmp/Monaspace.zip
+    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Monaspace.zip -O /tmp/Monaspace.zip
     unzip -qq -d /tmp/monaspace -o /tmp/Monaspace.zip
     cp /tmp/monaspace/*.otf ~/.local/share/fonts
     frm /tmp/monaspace /tmp/Monaspace.zip
@@ -677,7 +677,7 @@ jetbrains_nerd_font_install() {
     slog "Installing JetBrains Mono Nerd Font"
     smd ~/.local/share/fonts
     frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
-    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
+    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
     unzip -qq -d /tmp/jetbrains-mono -o /tmp/jetbrains-mono.zip
     cp /tmp/jetbrains-mono/*.ttf ~/.local/share/fonts
     frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
