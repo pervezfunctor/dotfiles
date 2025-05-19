@@ -163,7 +163,7 @@ dbox-toolbox-all() {
     slog "Creating toolbox distroboxes done!"
 }
 
-dbox-apline-edge-init() {
+dbox-alpine-edge-init() {
     local CONTAINER_NAME=${1:-alpine-edge-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
@@ -172,7 +172,7 @@ dbox-apline-edge-init() {
     fi
 }
 
-dbox-apline-init() {
+dbox-alpine-init() {
     local CONTAINER_NAME=${1:-alpine-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
