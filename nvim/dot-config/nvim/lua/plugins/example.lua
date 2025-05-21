@@ -1,6 +1,6 @@
 -- since this is just an example spec, don't actually load anything here and return an empty spec
 -- stylua: ignore
--- if true then return {} end
+if true then return {} end
 
 -- every spec file under the "plugins" directory will be loaded automatically by lazy.nvim
 --
@@ -8,29 +8,30 @@
 -- * add extra plugins
 -- * disable/enabled LazyVim plugins
 -- * override the configuration of LazyVim plugins
-return {
-  -- { "ellisonleao/gruvbox.nvim" },
 
-  -- add everforest
-  { "neanias/everforest-nvim" },
+  -- return {
+  --   -- { "ellisonleao/gruvbox.nvim" },
 
-  -- add catppuccin
-  {
-    "catppuccin/nvim",
-    name = "catppuccin",
-    priority = 1000,
-    opts = {
-      transparent_background = false
-    }
-  },
+  --   -- add everforest
+  --   { "neanias/everforest-nvim" },
 
-  -- Configure LazyVim to load everforest
-  {
-    "LazyVim/LazyVim",
-    opts = {
-      colorscheme = "catppuccin",
-    },
-  },
+  --   -- add catppuccin
+  --   {
+  --     "catppuccin/nvim",
+  --     name = "catppuccin",
+  --     priority = 1000,
+  --     opts = {
+  --       transparent_background = false
+  --     }
+  --   },
+
+  --   -- Configure LazyVim to load everforest
+  --   {
+  --     "LazyVim/LazyVim",
+  --     opts = {
+  --       colorscheme = "catppuccin",
+  --     },
+  --   },
 
   -- -- change trouble config
   -- {
@@ -195,17 +196,17 @@ return {
   -- { import = "lazyvim.plugins.extras.lang.json" },
   --
   -- -- add any tools you want to have installed below
-   {
-     "williamboman/mason.nvim",
-     opts = {
-       ensure_installed = {
-         "stylua",
-         "shellcheck",
-         "shfmt",
-         "clangd",
-          "clang-format",
-         "flake8",
-       },
-     },
-   },
+  --  {
+  --    "williamboman/mason.nvim",
+  --    opts = {
+  --      ensure_installed = {
+  --        "stylua",
+  --        "shellcheck",
+  --        "shfmt",
+  --        "clangd",
+  --         "clang-format",
+  --        "flake8",
+  --      },
+  --    },
+  --  },
 }
