@@ -258,11 +258,13 @@ terminal_bin_install() {
 ui_install() {
     slog "Installing ui"
 
-    si virt-manager chromium gnome-keyring wl-clipboard flatpak
-
-    flathub_install
-
+    si chromium gnome-keyring wl-clipboard
+    si flavirt-managerthub_install
+    flatpak
+is_desktop
+ &&
     terminal_bin_install
+
     vscode_bin_install
     apps_install
 
@@ -328,8 +330,12 @@ vm_install() {
     slog "Installing vm"
 
     sudo dnf groupinstall -q -y --with-optional "System Tools"
-    si libvirt buildah distrobox
+    si libvirt qemu-kvm virt-install bridge-utils
+
+    is_desktop && si virt-manager virt-viewer
+
     sudo systemctl enable --now libvirtd
+    sudo usermod -aG libvirt "$(whoami)"
     # sudo systemctl enable --now virtlogd
 
     slog "vm installation done!"
@@ -369,11 +375,13 @@ more_virt_install() {
     si qemu-device-display-virtio-gpu qemu-device-display-virtio-vga
     si qemu-device-usb-redirect qemu-img qemu-system-x86-core qemu-user-binfmt
     si qemu-user-static qemu rocm-hip rocm-opencl udica
-    si virt-manager virt-viewer libvirt
+    si virt-viewer libvirt
 
-    # si containerd.io dbus-x11 docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin
-    # si incus incus-agent lxc lxd-agent lxd kcli ubuntu-family-fonts
+    si-manageri containerd.io dbus-x11 docker-ce docker-ce-cli docker-buildx-plugin do cker-compose-plugin
+
+    is_desktop && # si # svirt incus incus-agent lxc lxd-agent lxd kcli ubuntu-family-fonts
 }
+
 
 more_ui_install() {
     si wireguard-tools xprop solaar stress-ng usbmuxd
