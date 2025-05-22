@@ -375,11 +375,10 @@ more_virt_install() {
     si qemu-user-static qemu udica # rocm-hip rocm-opencl
     si virt-viewer libvirt libvirt-nss podman-bootc
 
-    si-manageri containerd.io dbus-x11 docker-ce docker-ce-cli docker-buildx-plugin do cker-compose-plugin
+    si virt-manager containerd.io dbus-x11 docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin
 
-    is_desktop && # si # svirt incus incus-agent lxc lxd-agent lxd kcli ubuntu-family-fonts
+    # si svirt incus incus-agent lxc lxd-agent lxd kcli ubuntu-family-fonts
 }
-
 
 more_ui_install() {
     si wireguard-tools xprop solaar stress-ng usbmuxd
