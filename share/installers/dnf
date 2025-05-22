@@ -140,6 +140,7 @@ core_install() {
     si 'dnf-command(copr)'
     si 'dnf-command(config-manager)'
     is_fedora || enable_epel
+    is_fedora && si dnf5-plugins
 
     update_packages
     base_dev_install
@@ -258,11 +259,9 @@ terminal_bin_install() {
 ui_install() {
     slog "Installing ui"
 
-    si chromium gnome-keyring wl-clipboard
-    si flavirt-managerthub_install
-    flatpak
-is_desktop
- &&
+    si flatpak chromium gnome-keyring wl-clipboard flathub_install \
+        virt-manager virt-viewer
+
     terminal_bin_install
 
     vscode_bin_install
@@ -274,10 +273,9 @@ is_desktop
 cockpit_install() {
     has_cmd cockpit && return 1
 
-    slog "Installing cockpit"
-    si cockpit cockpit-machines cockpit-podman cockpit-storaged cockpit-bridge \
-        cockpit-networkmanager cockpit-selinux cockpit-system \
-        firewalld cockpit-packagekit
+    slog "Installing cockpit" si cockpit cockpit-machines cockpit-podman \
+        cockpit-storaged cockpit-bridge cockpit-networkmanager cockpit-selinux \
+        cockpit-system firewalld cockpit-packagekit
 
     sudo systemctl enable --now cockpit.socket
     sudo systemctl enable --now firewalld
@@ -336,7 +334,7 @@ vm_install() {
 
     sudo systemctl enable --now libvirtd
     sudo usermod -aG libvirt "$(whoami)"
-    # sudo systemctl enable --now virtlogd
+    sudo systemctl enable --now virtlogd
 
     slog "vm installation done!"
 }
@@ -369,13 +367,13 @@ virt_install() {
 more_virt_install() {
     si samba-dcerpc samba-ldb-ldap-modules samba-winbind-clients
     si samba-winbind-modules samba
-
+    si cockpit-bridge cockpit-selinux cockpit-storaged cockpit-system
     si cockpit-machines cockpit-networkmanager cockpit-system cockpit-storaged
-    si cockpit-ostree cockpit-pcp cockpit-podman cockpit-selinux-compose podman-tui podmansh powertop qemu-char-spice
-    si qemu-device-display-virtio-gpu qemu-device-display-virtio-vga
+    si cockpit-ostree cockpit-podman podman-tui podmansh powertop
+    si qemu-device-display-virtio-gpu qemu-device-display-virtio-vga qemu-char-spice
     si qemu-device-usb-redirect qemu-img qemu-system-x86-core qemu-user-binfmt
-    si qemu-user-static qemu rocm-hip rocm-opencl udica
-    si virt-viewer libvirt
+    si qemu-user-static qemu udica # rocm-hip rocm-opencl
+    si virt-viewer libvirt libvirt-nss podman-bootc
 
     si-manageri containerd.io dbus-x11 docker-ce docker-ce-cli docker-buildx-plugin do cker-compose-plugin
 
@@ -408,9 +406,9 @@ more_fonts_install() {
 }
 
 more_essential_install() {
-    bi glow gum
-    si rclone restic wl-clipboard
-
+    bi glow gum lm_sensors stress-ng setools-console sysprof
+    si rclone restic wl-clipboard samba tailscale wireguard-tools
+    si git-credential-libsecret jetbrains-mono-fonts-all
     si edk2-ovmf genisoimage iotop p7zip-plugins p7zip
     si bash-color-prompt bcache-tools evtest fastfetch firewall-config
     si hplip ifuse input-remapper libimobiledevice libxcrypt-compat
