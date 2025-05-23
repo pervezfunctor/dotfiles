@@ -133,13 +133,15 @@ terminal_bin_install() {
 ui_install() {
     slog "Installing ui"
 
-    si chromium-browser virt-manager gnome-keyring wl-clipboard flatpak
+    si chromium-browser gnome-keyring wl-clipboard flatpak
 
     flathub_install
 
     terminal_bin_install
     vscode_bin_install
     apps_install
+
+    has_cmd virt-install && si virt-manager virt-viewer
 
     slog "ui installation done!"
 }
@@ -167,7 +169,7 @@ podman_install() {
 }
 
 vm_install() {
-    si buildah libvirt-daemon distrobox
+    si libvirt qemu-kvm virt-install bridge-utils virglrenderer
 
     sudo systemctl enable --now libvirtd
 }

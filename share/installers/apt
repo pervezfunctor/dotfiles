@@ -230,14 +230,12 @@ vm_ui_install() {
 
     fpi org.gnome.Boxes
 
-    if has_cmd virsh && has_cmd virt-install; then
-        si virt-manager
-    fi
+    has_cmd virt-install && si virt-manager virt-viewer
 }
 
 ui_install() {
     slog "Installing ui"
-    si chromium-browser virt-manager gnome-keyring wl-clipboard flatpak
+    si chromium-browser gnome-keyring wl-clipboard flatpak
 
     flathub_install
 
@@ -270,8 +268,9 @@ podman_install() {
 }
 
 vm_install() {
-    si libvirt-daemon
-    sudo systemctl enable --now libvirtd
+    si libvirt-daemon-system qemu-kvm virtinst bridge-utils virglrenderer
+
+    libcirt_config_install
 }
 
 incus_install() {

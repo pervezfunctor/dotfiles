@@ -353,6 +353,12 @@ permissive_selinux() {
     fi
 }
 
+libvirt_config_install() {
+    sudo systemctl enable --now libvirtd
+    sudo usermod -aG libvirt "$(whoami)"
+    sudo systemctl enable --now virtlogd
+}
+
 foot_config_install() {
     slog "foot config"
     stowgf foot

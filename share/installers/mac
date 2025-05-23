@@ -81,6 +81,7 @@ ct_install() {
     bic podman-desktop
     podman machine init
     podman machine start
+    dir_exists /Applications/Docker.app || bic docker
 
     slog "Container tools installation done!"
 }
@@ -89,8 +90,6 @@ vm_install() {
     slog "Installing virtualization packages"
 
     bi orbstack colima lim
-
-    dir_exists /Applications/Docker.app || bic docker
 
     slog "Virtualization packages installation done!"
 }

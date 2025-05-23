@@ -161,8 +161,6 @@ essential_install() {
     si zip p7zip cmake unar gawk readline-devel sqlite-devel libffi-devel \
         bzip2-devel xz-devel gum
 
-    micro_install
-
     slog "Essential packages installation done!"
 }
 
@@ -259,8 +257,9 @@ terminal_bin_install() {
 ui_install() {
     slog "Installing ui"
 
-    si flatpak chromium gnome-keyring wl-clipboard flathub_install \
-        virt-manager virt-viewer
+    si flatpak chromium gnome-keyring wl-clipboard flathub_install
+
+    has_cmd virt-install && si virt-manager virt-viewer
 
     terminal_bin_install
 
@@ -324,19 +323,25 @@ incus_install() {
     slog "incus installation done!"
 }
 
+pm_install() {
+    si lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ \
+        glmark2
+}
+
 vm_install() {
-    slog "Installing vm"
+    slog "Installing libvirt"
 
-    sudo dnf groupinstall -q -y --with-optional "System Tools"
-    si libvirt qemu-kvm virt-install bridge-utils
+    if dnf group list -q | grep -q "System Tools"; then
+        sudo dnf groupinstall -q -y --with-optional "System Tools"
+    elif dnf group list -q | grep -q "system-tools"; then
+        si @system-tools
+    fi
 
-    is_desktop && si virt-manager virt-viewer
+    si libvirt qemu qemu-kvm virt-install bridge-utils virglrenderer
 
-    sudo systemctl enable --now libvirtd
-    sudo usermod -aG libvirt "$(whoami)"
-    sudo systemctl enable --now virtlogd
+    libvirt_config_install
 
-    slog "vm installation done!"
+    slog "libvirt installation done!"
 }
 
 ct_install() {
