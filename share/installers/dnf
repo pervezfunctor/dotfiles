@@ -294,7 +294,7 @@ docker_install() {
     si docker-ce docker-ce-cli containerd.io docker-buildx-plugin \
         docker-compose-plugin
 
-    docker_common_install
+    docker_config_install
 
     slog "docker installation done!"
 }

@@ -67,7 +67,7 @@ brew_shell_install() {
     brew_shell_slim_install
 
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
-        atuin direnv dust procs hyperfine pixi yq yazi htop dysk lsd
+        atuin direnv dust procs hyperfine pixi yq yazi htop dysk lsd whalebrew
 
     has_cmd tv || bi television
 

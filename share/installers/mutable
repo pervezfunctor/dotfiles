@@ -320,7 +320,7 @@ docker_install() {
     sudo sh /tmp/get-docker.sh
     frm /tmp/get-docker.sh
 
-    docker_common_install
+    docker_config_install
 
     slog "Docker installation done!"
 }

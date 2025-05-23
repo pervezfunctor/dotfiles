@@ -180,7 +180,7 @@ docker_install() {
     slog "Installing docker"
 
     si docker docker-compose docker-compose-switch
-    docker_common_install
+    docker_config_install
 
     slog "docker installation done!"
 }
