@@ -24,3 +24,12 @@ Set-VMProcessor -VMName <VMName> -ExposeVirtualizationExtensions $true
 ```bash
 curl -s https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/share/installers/setup | bash
 ```
+
+- Might need to do the following in libvirt vm
+
+```bash
+sudo dnf install mesa-dri-drivers spice-vdagent  # Fedora
+sudo apt install mesa-utils spice-vdagent        # Ubuntu/Debian
+sudo zypper install Mesa-dri                     # openSUSE
+sudo pacman -S mesa spice-vdagent                # Arch
+```
