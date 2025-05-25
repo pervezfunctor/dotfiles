@@ -390,6 +390,27 @@ fedora-atomic-tbox_groupstall() {
     slog "Fedora Atomic Host With default toolbox setup done!"
 }
 
+ublue_groupstall() {
+    is_bluefin || is_aurora || err_exit "This script is only for Bluefin/Aurora"
+
+    slog "ublue setup..."
+
+    dotfiles_install
+    fonts_install
+
+    brew_shell_slim_install
+    apps_slim_install
+
+    vscode-extensions_install
+    vscode_config_install
+    git_config_install
+    bash_config_install
+    tmux_config_install
+    nvim_config_install
+
+    slog "ublue setup done!"
+}
+
 fedora-atomic_groupstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
