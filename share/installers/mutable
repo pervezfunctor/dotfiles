@@ -156,6 +156,8 @@ base-group_check() {
 base_groupstall() {
     has_cmd core_install && core_install
     dotfiles_install
+
+    git_config_install
     bash_config_install
 
     base-group_check
