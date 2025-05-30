@@ -357,8 +357,16 @@ permissive_selinux() {
 
 libvirt_config_install() {
     sudo systemctl enable --now libvirtd
-    sudo usermod -aG libvirt "$(whoami)"
+    sudo systemctl enable --now libvirtd.socket
     sudo systemctl enable --now virtlogd
+
+    sudo usermod -aG libvirt "$(whoami)"
+
+    if has_cmd virsh; then
+        sudo virsh net-autostart default
+    else
+        warn "virsh not installed, libvirt default network might not autostart"
+    fi
 }
 
 foot_config_install() {
