@@ -172,7 +172,7 @@ cli_install() {
 
     local fedora_pkgs=()
     if is_fedora; then
-        fedora_pkgs=(python3-neovim zoxide hyperfine git-delta procscheat navi
+        fedora_pkgs=(python3-neovim zoxide hyperfine git-delta procs cheat navi
             ugrep micro direnv yq)
     fi
 
