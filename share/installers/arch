@@ -130,6 +130,7 @@ ui_install() {
     vscode_bin_install
     apps_install
 
+    si gnome-boxes
     has_cmd virt-install && si virt-manager virt-viewer
 
     slog "ui installation done!"

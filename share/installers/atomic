@@ -510,7 +510,7 @@ apps_slim_install() {
     ptyxis_install
 
     has_cmd distrobox && fpi io.github.dvlv.boxbuddyrs
-    fpi org.gnome.Boxes
+    is_atomic && fpi org.gnome.Boxes
     fpi us.zoom.Zoom # unverified
 }
 

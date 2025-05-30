@@ -228,8 +228,7 @@ vm_ui_install() {
 
     is_desktop || return 0
 
-    fpi org.gnome.Boxes
-
+    si gnome-boxes
     has_cmd virt-install && si virt-manager virt-viewer
 }
 
