@@ -1,0 +1,81 @@
+#!/bin/bash
+
+set -euo pipefail
+
+VM_NAME="docker"
+RAM_MB=16378
+VCPUS=4
+DISK_SIZE="40G"
+SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
+UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/plucky/current/plucky-server-cloudimg-amd64.img"
+WORKDIR="$HOME/${VM_NAME}-vm"
+CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
+SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
+
+mkdir -p "$WORKDIR"
+mkdir -p "$CLOUD_INIT_DIR"
+cd "$WORKDIR"
+
+if [[ ! -f "plucky.img" ]]; then
+  echo "Downloading Ubuntu cloud image..."
+  wget -O plucky.img "$UBUNTU_IMG_URL"
+fi
+
+echo "Creating VM disk..."
+cp plucky.img "$DISK_IMG"
+qemu-img resize "$DISK_IMG" "$DISK_SIZE"
+
+if [[ ! -f "$SSH_KEY" ]]; then
+  echo "SSH key not found at $SSH_KEY"
+  exit 1
+fi
+
+PUB_KEY=$(cat "$SSH_KEY")
+
+cat > "${CLOUD_INIT_DIR}/user-data" <<EOF
+#cloud-config
+hostname: $VM_NAME
+users:
+  - name: ubuntu
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh_authorized_keys:
+      - $PUB_KEY
+
+runcmd:
+  - curl -fsSL https://get.docker.com | sh
+  - usermod -aG docker ubuntu
+  - systemctl enable docker
+EOF
+
+cat > "${CLOUD_INIT_DIR}/meta-data" <<EOF
+instance-id: ${VM_NAME}-01
+local-hostname: $VM_NAME
+EOF
+
+# === Generate seed ISO ===
+echo "Creating cloud-init ISO..."
+# genisoimage -output "$SEED_ISO" -volid cidata -joliet -rock \
+#  "${CLOUD_INIT_DIR}/user-data" "${CLOUD_INIT_DIR}/meta-data"
+mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
+  "${CLOUD_INIT_DIR}/user-data" "${CLOUD_INIT_DIR}/meta-data"
+
+# === Launch VM ===
+echo "Launching VM..."
+virt-install \
+  --name "$VM_NAME" \
+  --memory "$RAM_MB" \
+  --vcpus "$VCPUS" \
+  --disk path="$DISK_IMG",format=qcow2,bus=virtio \
+  --disk path="$SEED_ISO",device=cdrom \
+  --os-type linux \
+  --os-variant ubuntu22.04 \
+  --virt-type kvm \
+  --graphics none \
+  --network bridge=virbr0,model=virtio \
+  --import \
+  --noautoconsole
+
+echo "VM $VM_NAME created. Use 'virsh console $VM_NAME' or SSH to access it."
