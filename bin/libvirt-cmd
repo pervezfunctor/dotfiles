@@ -17,7 +17,7 @@ usage() {
     cat <<EOF
 Usage: $0 <command> [vm-name]
 
-Manage Docker VMs created with create-docker-vm script.
+Manage VMs created with libvirt-* scripts.
 
 COMMANDS:
     list                List all VMs
@@ -35,9 +35,9 @@ COMMANDS:
 
 EXAMPLES:
     $0 list                    # List all VMs
-    $0 status docker           # Show status of 'docker' VM
-    $0 start docker            # Start 'docker' VM
-    $0 ssh docker              # Get SSH command for 'docker' VM
+    $0 status ubuntu           # Show status of 'ubuntu' VM
+    $0 start ubuntu            # Start 'ubuntu' VM
+    $0 ssh ubuntu              # Get SSH command for 'ubuntu' VM
     $0 delete old-vm           # Delete 'old-vm' completely
 
 EOF
