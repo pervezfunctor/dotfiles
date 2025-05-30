@@ -5,7 +5,7 @@
 dbox-ubuntu() {
     local CONTAINER_NAME=${1:-ubuntu}
     slog "Creating Ubuntu distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image ubuntu:latest --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image ubuntu:latest --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "Ubuntu distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -13,7 +13,7 @@ dbox-ubuntu() {
 dbox-arch() {
     local CONTAINER_NAME=${1:-arch}
     slog "Creating Arch distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image archlinux:latest --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image archlinux:latest --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "Arch distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -21,7 +21,7 @@ dbox-arch() {
 dbox-fedora-minimal() {
     local CONTAINER_NAME=${1:-fedora-minimal}
     slog "Creating Fedora minimal distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image registry.fedoraproject.org/fedora-minimal:latest --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image registry.fedoraproject.org/fedora-minimal:latest --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "Fedora minimal distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -29,7 +29,7 @@ dbox-fedora-minimal() {
 dbox-debian-slim() {
     local CONTAINER_NAME=${1:-debian-slim}
     slog "Creating Debian slim distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image debian:booksworm-slim --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image debian:booksworm-slim --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "Debian slim distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -37,7 +37,7 @@ dbox-debian-slim() {
 dbox-fedora() {
     local CONTAINER_NAME=${1:-fedora}
     slog "Creating Fedora distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image fedora:latest --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image fedora:latest --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "Fedora distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -45,7 +45,7 @@ dbox-fedora() {
 dbox-centos() {
     local CONTAINER_NAME=${1:-centos}
     slog "Creating CentOS distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image centos:latest --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image centos:latest --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "CentOS distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -53,7 +53,7 @@ dbox-centos() {
 dbox-debian() {
     local CONTAINER_NAME=${1:-debian}
     slog "Creating Debian distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image debian:latest --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image debian:latest --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "Debian distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -61,7 +61,7 @@ dbox-debian() {
 dbox-rocky() {
     local CONTAINER_NAME=${1:-rocky}
     slog "Creating Rocky Linux distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image quay.io/rockylinux/rockylinux:9 --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image quay.io/rockylinux/rockylinux:9 --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "Rocky Linux distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -69,7 +69,7 @@ dbox-rocky() {
 dbox-tw() {
     local CONTAINER_NAME=${1:-tw}
     slog "Creating OpenSUSE Tumbleweed distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image opensuse/tumbleweed --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image opensuse/tumbleweed --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "OpenSUSE Tumbleweed distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -77,7 +77,7 @@ dbox-tw() {
 dbox-bluefin() {
     local CONTAINER_NAME=${1:-bluefin-cli}
     slog "Creating Bluefin distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image ghcr.io/ublue-os/bluefin-cli --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image ghcr.io/ublue-os/bluefin-cli --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "Bluefin distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -85,7 +85,7 @@ dbox-bluefin() {
 dbox-wolfi() {
     local CONTAINER_NAME=${1:-wolfi-ublue}
     slog "Creating Wolfi distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image ghcr.io/ublue-os/wolfi-toolbox --home "$HOME/boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image ghcr.io/ublue-os/wolfi-toolbox --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "Wolfi distrobox ${CONTAINER_NAME} created successfully"
     fi
 }
@@ -105,7 +105,7 @@ dbox-docker() {
         --no-entry \
         --volume /var/lib/docker \
         --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" \
-        --home "$HOME/boxes/${CONTAINER_NAME}" \
+        --home "$HOME/.boxes/${CONTAINER_NAME}" \
         --name "${CONTAINER_NAME}"; then
 
         slog "Docker distrobox ${CONTAINER_NAME} created successfully"
@@ -129,7 +129,7 @@ dbox-incus() {
         --volume /var/lib/incus:/var/lib/incus \
         --volume /lib/modules:/lib/modules:ro \
         --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" \
-        --home "$HOME/boxes/${CONTAINER_NAME}" \
+        --home "$HOME/.boxes/${CONTAINER_NAME}" \
         --name "${CONTAINER_NAME}"; then
 
         slog "Incus distrobox ${CONTAINER_NAME} created successfully"
@@ -143,9 +143,9 @@ dbox-ublue-all() {
     dbox-docker
     dbox-incus
 
-    distrobox create --yes --image ghcr.io/ublue-os/ubuntu-toolbox --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --home "$HOME"/boxes/ubuntu-ublue --name ubuntu-ublue
-    distrobox create --yes --image ghcr.io/ublue-os/fedora-toolbox --init --additional-packages "systemd" --home "$HOME"/boxes/fedora-ublue --name fedora-ublue
-    distrobox create --yes --image ghcr.io/ublue-os/arch-distrobox --init --additional-packages "systemd" --home "$HOME"/boxes/arch-ublue --name arch-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/ubuntu-toolbox --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --home "$HOME"/.boxes/ubuntu-ublue --name ubuntu-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/fedora-toolbox --init --additional-packages "systemd" --home "$HOME"/.boxes/fedora-ublue --name fedora-ublue
+    distrobox create --yes --image ghcr.io/ublue-os/arch-distrobox --init --additional-packages "systemd" --home "$HOME"/.boxes/arch-ublue --name arch-ublue
 
     slog "Creating Bluefin, Wolfi and Ublue distroboxes done!"
 }
@@ -153,12 +153,12 @@ dbox-ublue-all() {
 dbox-toolbox-all() {
     slog "Creating toolbox distroboxes"
 
-    distrobox create --yes --image ubuntu-toolbox:latest --home "$HOME"/boxes/ubuntu-toolbox --name ubuntu-toolbox
-    distrobox create --yes --image fedora-toolbox:latest --home "$HOME"/boxes/fedora-toolbox --name fedora-toolbox
-    distrobox create --yes --image arch-toolbox:latest --home "$HOME"/boxes/arch-toolbox --name arch-toolbox
-    distrobox create --yes --image centos-toolbox:latest --home "$HOME"/boxes/centos-toolbox --name centos-toolbox
-    distrobox create --yes --image debian-toolbox:latest --home "$HOME"/boxes/debian-toolbox --name debian-toolbox
-    distrobox create --yes --image rockylinux-toolbox:9 --home "$HOME"/boxes/rockylinux-toolbox --name rockylinux-toolbox
+    distrobox create --yes --image ubuntu-toolbox:latest --home "$HOME"/.boxes/ubuntu-toolbox --name ubuntu-toolbox
+    distrobox create --yes --image fedora-toolbox:latest --home "$HOME"/.boxes/fedora-toolbox --name fedora-toolbox
+    distrobox create --yes --image arch-toolbox:latest --home "$HOME"/.boxes/arch-toolbox --name arch-toolbox
+    distrobox create --yes --image centos-toolbox:latest --home "$HOME"/.boxes/centos-toolbox --name centos-toolbox
+    distrobox create --yes --image debian-toolbox:latest --home "$HOME"/.boxes/debian-toolbox --name debian-toolbox
+    distrobox create --yes --image rockylinux-toolbox:9 --home "$HOME"/.boxes/rockylinux-toolbox --name rockylinux-toolbox
 
     slog "Creating toolbox distroboxes done!"
 }
@@ -167,7 +167,7 @@ dbox-alpine-edge-init() {
     local CONTAINER_NAME=${1:-alpine-edge-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
-    if distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:edge --init --additional-packages "openrc" --name "$CONTAINER_NAME" --home "$HOME/boxes/${CONTAINER_NAME}"; then
+    if distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:edge --init --additional-packages "openrc" --name "$CONTAINER_NAME" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
 }
@@ -176,7 +176,7 @@ dbox-alpine-init() {
     local CONTAINER_NAME=${1:-alpine-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
-    if distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:latest --init --additional-packages "openrc" --name "$CONTAINER_NAME" --home "$HOME/boxes/${CONTAINER_NAME}"; then
+    if distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:latest --init --additional-packages "openrc" --name "$CONTAINER_NAME" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
 }
@@ -185,7 +185,7 @@ dbox-debian-init() {
     local CONTAINER_NAME=${1:-debian-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
-    if distrobox create --yes --image debian:stable --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name "$CONTAINER_NAME" --home "$HOME/boxes/${CONTAINER_NAME}"; then
+    if distrobox create --yes --image debian:stable --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name "$CONTAINER_NAME" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
 }
@@ -194,7 +194,7 @@ dbox-ubuntu-init() {
     local CONTAINER_NAME=${1:-ubuntu-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
-    if distrobox create --yes --image ubuntu:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name "$CONTAINER_NAME" --home "$HOME/boxes/${CONTAINER_NAME}"; then
+    if distrobox create --yes --image ubuntu:latest --init --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" --name "$CONTAINER_NAME" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
 }
@@ -203,7 +203,7 @@ dbox-arch-init() {
     local CONTAINER_NAME=${1:-arch-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
-    if distrobox create --yes --image archlinux:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home "$HOME/boxes/${CONTAINER_NAME}"; then
+    if distrobox create --yes --image archlinux:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
 }
@@ -212,7 +212,7 @@ dbox-tw-init() {
     local CONTAINER_NAME=${1:-tw-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
-    if distrobox create --yes --image registry.opensuse.org/opensuse/tumbleweed:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home "$HOME/boxes/${CONTAINER_NAME}"; then
+    if distrobox create --yes --image registry.opensuse.org/opensuse/tumbleweed:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
 }
@@ -221,7 +221,7 @@ dbox-fedora-init() {
     local CONTAINER_NAME=${1:-fedora-init}
     slog "Creating distrobox $CONTAINER_NAME"
 
-    if distrobox create --yes --image registry.fedoraproject.org/fedora:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home "$HOME/boxes/${CONTAINER_NAME}"; then
+    if distrobox create --yes --image registry.fedoraproject.org/fedora:latest --init --additional-packages "systemd" --name "$CONTAINER_NAME" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
 }
@@ -230,7 +230,7 @@ dbox-alpine() {
     local CONTAINER_NAME=${1:-alpine}
     slog "Creating distrobox $CONTAINER_NAME"
 
-    if distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:latest --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli" --name "$CONTAINER_NAME" --home "$HOME/boxes/${CONTAINER_NAME}"; then
+    if distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:latest --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli" --name "$CONTAINER_NAME" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
         distrobox enter -nw --clean-path --name "$CONTAINER_NAME"
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
@@ -240,7 +240,7 @@ dbox-alpine-edge() {
     local CONTAINER_NAME=${1:-alpine-edge}
     slog "Creating distrobox $CONTAINER_NAME"
 
-    if distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:edge --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli" --name "$CONTAINER_NAME" --home "$HOME/boxes/${CONTAINER_NAME}"; then
+    if distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:edge --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli" --name "$CONTAINER_NAME" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
         distrobox enter -nw --clean-path --name "$CONTAINER_NAME"
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
@@ -344,9 +344,9 @@ dbox-nix() {
 
     slog "Creating distrobox $CONTAINER_NAME"
 
-    srm "$HOME/boxes/${CONTAINER_NAME}"
+    srm "$HOME/.boxes/${CONTAINER_NAME}"
 
-    if distrobox create --yes --name "${CONTAINER_NAME}" -i debian:stable --init --additional-packages "systemd libpam-systemd" --home "$HOME/boxes/${CONTAINER_NAME}"; then
+    if distrobox create --yes --name "${CONTAINER_NAME}" -i debian:stable --init --additional-packages "systemd libpam-systemd" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
         distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- nixbox
         slog "Done creating distrobox $CONTAINER_NAME"
     fi

@@ -8,7 +8,7 @@ VCPUS=4
 DISK_SIZE="40G"
 UBUNTU_RELEASE="noble" # 24.04 LTS
 UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
-WORKDIR="$HOME/${VM_NAME}-vm"
+WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
 CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
 BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
 DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
@@ -80,7 +80,7 @@ while [[ $# -gt 0 ]]; do
   case $1 in
   --name)
     VM_NAME="$2"
-    WORKDIR="$HOME/${VM_NAME}-vm"
+    WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
     CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
     DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
     SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"

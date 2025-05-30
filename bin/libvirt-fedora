@@ -9,7 +9,7 @@ DISK_SIZE="40G"
 SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 FEDORA_RELEASE="42"
 FEDORA_IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${FEDORA_RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${FEDORA_RELEASE}-1.1.x86_64.qcow2"
-WORKDIR="$HOME/${VM_NAME}-vm"
+WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
 CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
 BASE_IMG="${WORKDIR}/fedora-${FEDORA_RELEASE}.qcow2"
 DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
@@ -76,7 +76,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
     --name)
         VM_NAME="$2"
-        WORKDIR="$HOME/${VM_NAME}-vm"
+        WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
         CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
         DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
         SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"

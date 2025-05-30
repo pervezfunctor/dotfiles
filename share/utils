@@ -1129,7 +1129,7 @@ environs() {
     smd ~/.local/bin
     smd ~/bin
     smd ~/.bin
-    is_distrobox || is_toolbox || smd ~/boxes
+    is_distrobox || is_toolbox || smd ~/.boxes
 
     export GOPATH="$HOME/go"
     export PNPM_HOME="$HOME/.local/share/pnpm:$PATH"

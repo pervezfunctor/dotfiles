@@ -19,7 +19,7 @@ VCPUS=2
 DISK_SIZE="40G"
 SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 ARCH_IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
-WORKDIR="$HOME/${VM_NAME}-vm"
+WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
 CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
 BASE_IMG="${WORKDIR}/arch-latest.qcow2"
 DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
@@ -87,7 +87,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
     --name)
         VM_NAME="$2"
-        WORKDIR="$HOME/${VM_NAME}-vm"
+        WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
         CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
         DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
         SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
