@@ -159,7 +159,7 @@ essential_install() {
     sys_python_install
 
     si zip p7zip cmake unar gawk readline-devel sqlite-devel libffi-devel \
-        bzip2-devel xz-devel gum
+        bzip2-devel xz-devel gum micro
 
     slog "Essential packages installation done!"
 }
@@ -173,7 +173,7 @@ cli_install() {
     local fedora_pkgs=()
     if is_fedora; then
         fedora_pkgs=(python3-neovim zoxide hyperfine git-delta procs cheat navi
-            ugrep micro direnv yq)
+            ugrep direnv yq)
     fi
 
     si "${base_pkgs[@]}" "${fedora_pkgs[@]}"
