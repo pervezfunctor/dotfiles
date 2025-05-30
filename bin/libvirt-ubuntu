@@ -1,0 +1,412 @@
+#!/bin/bash
+
+set -euo pipefail
+
+VM_NAME="ubuntu"
+RAM_MB=4096
+VCPUS=4
+DISK_SIZE="40G"
+UBUNTU_RELEASE="noble" # 24.04 LTS
+UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
+WORKDIR="$HOME/${VM_NAME}-vm"
+CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
+DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
+SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
+BRIDGE_IF="virbr0"
+USERNAME="ubuntu"
+
+if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
+  SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
+else
+  SSH_KEY="${HOME}/.ssh/id_rsa.pub"
+fi
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+
+cleanup_on_error() {
+  log_warn "Cleaning up due to error..."
+  [[ -f "$DISK_IMG" ]] && rm -f "$DISK_IMG"
+  [[ -f "$SEED_ISO" ]] && rm -f "$SEED_ISO"
+  virsh destroy "$VM_NAME" 2>/dev/null || true
+  virsh undefine "$VM_NAME" 2>/dev/null || true
+}
+
+trap cleanup_on_error ERR
+
+usage() {
+  cat <<EOF
+Usage: $0 [OPTIONS]
+
+Create a Ubuntu VM using virt-install and cloud-init.
+
+OPTIONS:
+    --name NAME         VM name (default: $VM_NAME)
+    --memory MB         RAM in MB (default: $RAM_MB)
+    --vcpus NUM         Number of vCPUs (default: $VCPUS)
+    --disk-size SIZE    Disk size (default: $DISK_SIZE)
+    --ssh-key PATH      SSH public key path (default: $SSH_KEY)
+    --bridge BRIDGE     Network bridge (default: $BRIDGE_IF)
+    --ubuntu-release REL Ubuntu release (default: $UBUNTU_RELEASE)
+    --workdir DIR       Working directory (default: $WORKDIR)
+    --username USER     VM username (default: $USERNAME)
+    --help, -h          Show this help
+
+EXAMPLES:
+    $0                                    # Create VM with defaults
+    $0 --name myvm --memory 8192          # Custom name and memory
+    $0 --disk-size 80G --vcpus 4          # Larger disk and more CPUs
+
+PREREQUISITES:
+    - KVM/QEMU installed and running
+    - libvirt daemon running
+    - virt-install package installed
+    - SSH key pair generated
+    - Network bridge configured (or use default virbr0)
+
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  --name)
+    VM_NAME="$2"
+    WORKDIR="$HOME/${VM_NAME}-vm"
+    CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+    DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
+    SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
+    shift 2
+    ;;
+  --memory)
+    RAM_MB="$2"
+    shift 2
+    ;;
+  --vcpus)
+    VCPUS="$2"
+    shift 2
+    ;;
+  --disk-size)
+    DISK_SIZE="$2"
+    shift 2
+    ;;
+  --ssh-key)
+    SSH_KEY="$2"
+    shift 2
+    ;;
+  --bridge)
+    BRIDGE_IF="$2"
+    shift 2
+    ;;
+  --ubuntu-release)
+    UBUNTU_RELEASE="$2"
+    UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
+    BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
+    shift 2
+    ;;
+  --workdir)
+    WORKDIR="$2"
+    CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+    BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
+    DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
+    SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
+    shift 2
+    ;;
+  --username)
+    USERNAME="$2"
+    shift 2
+    ;;
+  --help | -h)
+    usage
+    exit 0
+    ;;
+  *)
+    log_error "Unknown option: $1"
+    usage
+    exit 1
+    ;;
+  esac
+done
+
+check_prerequisites() {
+  log_info "Checking prerequisites..."
+
+  local missing_tools=()
+  for tool in virsh virt-install qemu-img wget mkisofs; do
+    if ! command -v "$tool" &>/dev/null; then
+      missing_tools+=("$tool")
+    fi
+  done
+
+  if [[ ${#missing_tools[@]} -gt 0 ]]; then
+    log_error "Missing required tools: ${missing_tools[*]}"
+    log_error "Install on ubuntu: sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
+    log_error "or on fedora: sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
+    exit 1
+  fi
+
+  if ! systemctl is-active --quiet libvirtd; then
+    log_error "libvirtd service is not running"
+    log_error "Start with: sudo systemctl start libvirtd"
+    exit 1
+  fi
+
+  if ! groups | grep -q libvirt; then
+    log_warn "User not in libvirt group. You may need sudo for virsh commands"
+    log_warn "Add user to group: sudo usermod -a -G libvirt \$USER"
+  fi
+
+  if [[ ! -f "$SSH_KEY" ]]; then
+    log_error "SSH public key not found at: $SSH_KEY"
+    log_error "Generate with: ssh-keygen -t ed25519 -C 'your_email@example.com'"
+    exit 1
+  fi
+
+  if virsh list --all | grep -q "$VM_NAME"; then
+    log_error "VM '$VM_NAME' already exists"
+    log_error "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
+    exit 1
+  fi
+
+  if ! ip link show "$BRIDGE_IF" &>/dev/null; then
+    log_warn "Bridge '$BRIDGE_IF' not found, will use default libvirt network"
+    BRIDGE_IF="default"
+  fi
+
+  log_success "Prerequisites check passed"
+}
+
+download_ubuntu_image() {
+  log_info "Preparing Ubuntu cloud image..."
+
+  if [[ -f "$BASE_IMG" ]]; then
+    log_info "Using existing Ubuntu image: $BASE_IMG"
+    return 0
+  fi
+
+  log_info "Downloading Ubuntu $UBUNTU_RELEASE cloud image..."
+  log_info "URL: $UBUNTU_IMG_URL"
+
+  mkdir -p "$WORKDIR"
+
+  if ! wget -O "$BASE_IMG" "$UBUNTU_IMG_URL"; then
+    log_error "Failed to download Ubuntu cloud image"
+    rm -f "$BASE_IMG"
+    exit 1
+  fi
+
+  log_success "Ubuntu cloud image downloaded: $BASE_IMG"
+}
+
+create_vm_disk() {
+  log_info "Creating VM disk..."
+
+  if ! cp "$BASE_IMG" "$DISK_IMG"; then
+    log_error "Failed to copy base image"
+    exit 1
+  fi
+
+  if ! qemu-img resize "$DISK_IMG" "$DISK_SIZE"; then
+    log_error "Failed to resize VM disk"
+    exit 1
+  fi
+
+  log_success "VM disk created: $DISK_IMG ($DISK_SIZE)"
+}
+
+generate_cloud_init() {
+  log_info "Generating cloud-init configuration..."
+
+  mkdir -p "$CLOUD_INIT_DIR"
+
+  local pub_key
+  pub_key=$(cat "$SSH_KEY")
+
+  cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
+#cloud-config
+hostname: $VM_NAME
+manage_etc_hosts: true
+
+# User configuration
+users:
+  - name: $USERNAME
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: false
+    ssh_authorized_keys:
+      - $pub_key
+
+# System configuration
+package_update: true
+package_upgrade: true
+
+packages:
+  - qemu-guest-agent
+  - curl
+  - wget
+  - vim
+  - micro
+  - htop
+  - git
+  - unzip
+  - ca-certificates
+  - gnupg
+  - lsb-release
+
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+  - touch /home/$USERNAME/vm-setup-complete
+  - chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete
+  - chown -R $USERNAME:$USERNAME /home/$USERNAME
+
+timezone: UTC
+
+write_files:
+  - path: /etc/motd
+    content: |
+      Welcome to $VM_NAME VM!
+
+      User: $USERNAME (passwordless sudo enabled)
+
+    append: false
+
+final_message: "VM $VM_NAME setup complete!"
+EOF
+
+  cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
+instance-id: ${VM_NAME}-$(date +%s)
+local-hostname: $VM_NAME
+EOF
+
+  cat >"${CLOUD_INIT_DIR}/network-config" <<EOF
+version: 2
+ethernets:
+  enp1s0:
+    dhcp4: true
+EOF
+
+  log_success "Cloud-init configuration generated"
+}
+
+create_cloud_init_iso() {
+  log_info "Creating cloud-init ISO..."
+
+  if ! mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
+    "${CLOUD_INIT_DIR}/user-data" \
+    "${CLOUD_INIT_DIR}/meta-data" \
+    "${CLOUD_INIT_DIR}/network-config" 2>/dev/null; then
+    log_error "Failed to create cloud-init ISO"
+    exit 1
+  fi
+
+  log_success "Cloud-init ISO created: $SEED_ISO"
+}
+
+launch_vm() {
+  log_info "Launching VM '$VM_NAME'..."
+
+  local network_config
+  if [[ "$BRIDGE_IF" == "default" ]]; then
+    network_config="network=default,model=virtio"
+  else
+    network_config="bridge=$BRIDGE_IF,model=virtio"
+  fi
+
+  local os_variant="ubuntu2.04"
+  case "$UBUNTU_RELEASE" in
+  # "plucky") os_variant="ubuntu25.04" ;;
+  "noble") os_variant="ubuntu24.04" ;;
+  "jammy") os_variant="ubuntu22.04" ;;
+  "focal") os_variant="ubuntu20.04" ;;
+  *) log_warn "Unknown Ubuntu release '$UBUNTU_RELEASE', using ubuntu22.04 as os-variant" ;;
+  esac
+
+  log_info "VM Configuration:"
+  log_info "  Name: $VM_NAME"
+  log_info "  Memory: ${RAM_MB}MB"
+  log_info "  vCPUs: $VCPUS"
+  log_info "  Disk: $DISK_IMG ($DISK_SIZE)"
+  log_info "  Network: $network_config"
+  log_info "  OS Variant: $os_variant"
+
+  if ! virt-install \
+    --name "$VM_NAME" \
+    --memory "$RAM_MB" \
+    --vcpus "$VCPUS" \
+    --disk path="$DISK_IMG",format=qcow2,bus=virtio \
+    --disk path="$SEED_ISO",device=cdrom \
+    --os-variant "$os_variant" \
+    --virt-type kvm \
+    --graphics none \
+    --network "$network_config" \
+    --import \
+    --noautoconsole; then
+    log_error "Failed to create VM"
+    exit 1
+  fi
+
+  log_success "VM '$VM_NAME' created successfully!"
+
+  # Add VM to /etc/hosts for easy access
+  log_info "Adding VM to /etc/hosts for name-based access..."
+  sleep 5 # Give VM time to get IP
+  if [[ -x "./bin/vm-hosts" ]]; then
+    ./bin/vm-hosts add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
+  fi
+}
+
+show_completion_info() {
+  log_success "=== VM Creation Complete ==="
+  echo
+  log_info "VM Details:"
+  echo "  Name: $VM_NAME"
+  echo "  Memory: ${RAM_MB}MB"
+  echo "  vCPUs: $VCPUS"
+  echo "  Disk: $DISK_SIZE"
+  echo "  Username: $USERNAME"
+  echo "  SSH Key: $SSH_KEY"
+  echo
+  log_info "Useful Commands:"
+  echo "  Check VM status:    virsh list --all"
+  echo "  Start VM:           virsh start $VM_NAME"
+  echo "  Stop VM:            virsh shutdown $VM_NAME"
+  echo "  Force stop VM:      virsh destroy $VM_NAME"
+  echo "  Delete VM:          virsh undefine $VM_NAME"
+  echo "  Console access:     virsh console $VM_NAME"
+  echo "  Get VM IP:          virsh domifaddr $VM_NAME"
+  echo
+  log_info "SSH Access:"
+  echo "  Wait 2-3 minutes for cloud-init to complete"
+  echo "  Find VM IP:         virsh domifaddr $VM_NAME"
+  echo "  SSH by name:        ssh $USERNAME@$VM_NAME"
+  echo "  SSH by IP:          ssh $USERNAME@<VM_IP>"
+  echo
+  log_warn "Note: Cloud-init setup takes 2-3 minutes. Check /home/$USERNAME/vm-setup-complete for completion."
+}
+
+main() {
+  log_info "Starting VM creation..."
+  log_info "VM Name: $VM_NAME"
+  log_info "Working Directory: $WORKDIR"
+
+  check_prerequisites
+  download_ubuntu_image
+  create_vm_disk
+  generate_cloud_init
+  create_cloud_init_iso
+  launch_vm
+  show_completion_info
+
+  log_success "All done! Your VM is ready."
+}
+
+main "$@"
