@@ -35,6 +35,10 @@ if cat ~/.dotfiles-output.log | grep -i fatal; then
   press_enter
 fi
 
+if cat ~/.dotfiles-output.log | grep -i 'No match'; then
+  press_enter
+fi
+
 if cat ~/.dotfiles-error.log | grep -i fail; then
   press_enter
 fi
@@ -56,5 +60,9 @@ if cat ~/.dotfiles-error.log | grep -i unable; then
 fi
 
 if cat ~/.dotfiles-error.log | grep -i fatal; then
+  press_enter
+fi
+
+if cat ~/.dotfiles-error.log | grep -i 'No match'; then
   press_enter
 fi
