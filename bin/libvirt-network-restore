@@ -1,0 +1,249 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+usage() {
+    cat <<EOF
+Usage: $0 [OPTIONS]
+
+Restore the default libvirt network (virbr0) if it's missing or not working.
+
+OPTIONS:
+    --force     Force recreation of the network even if it appears to be working
+    --help      Show this help message
+
+DESCRIPTION:
+    This script will:
+    1. Check if the default libvirt network exists and is active
+    2. If not, clean up any conflicting interfaces
+    3. Start the default network and enable autostart
+    4. Verify the network is working correctly
+
+EXAMPLES:
+    $0                  # Check and restore if needed
+    $0 --force          # Force recreation of the network
+
+EOF
+}
+
+check_network_status() {
+    log_info "Checking libvirt default network status..."
+
+    # Check if default network exists
+    if ! sudo virsh net-info default &>/dev/null; then
+        log_error "Default network does not exist!"
+        return 1
+    fi
+
+    # Get network info
+    local active autostart
+    active=$(sudo virsh net-info default | grep "Active:" | awk '{print $2}')
+    autostart=$(sudo virsh net-info default | grep "Autostart:" | awk '{print $2}')
+
+    log_info "Network status: Active=$active, Autostart=$autostart"
+
+    # Check if virbr0 interface exists and has correct IP
+    if ip addr show virbr0 &>/dev/null; then
+        local virbr0_ip
+        virbr0_ip=$(ip addr show virbr0 | grep "inet " | awk '{print $2}')
+        log_info "virbr0 interface: $virbr0_ip"
+
+        if [[ "$virbr0_ip" == "192.168.122.1/24" ]]; then
+            log_success "virbr0 interface has correct IP address"
+        else
+            log_warn "virbr0 interface has unexpected IP: $virbr0_ip"
+        fi
+    else
+        log_warn "virbr0 interface not found"
+    fi
+
+    # Return status
+    if [[ "$active" == "yes" && "$autostart" == "yes" ]]; then
+        return 0 # Network is working
+    else
+        return 1 # Network needs fixing
+    fi
+}
+
+clean_conflicting_interfaces() {
+    log_info "Cleaning up conflicting interfaces..."
+
+    # Kill any dnsmasq processes for virbr0
+    if pgrep -f "dnsmasq.*virbr0" &>/dev/null; then
+        log_info "Stopping dnsmasq processes for virbr0..."
+        sudo pkill -f "dnsmasq.*virbr0" || true
+    fi
+
+    # Remove virbr0 interface if it exists
+    if ip link show virbr0 &>/dev/null; then
+        log_info "Removing existing virbr0 interface..."
+        sudo ip link set virbr0 down || true
+        sudo ip link delete virbr0 || true
+    fi
+
+    log_success "Cleanup completed"
+}
+
+restore_network() {
+    log_info "Restoring default libvirt network..."
+
+    # Ensure libvirtd is enabled and running
+    log_info "Ensuring libvirtd service is enabled and running..."
+    sudo systemctl enable --now libvirtd
+    sleep 2
+
+    # Start the default network
+    log_info "Starting default network..."
+    if sudo virsh net-start default; then
+        log_success "Default network started"
+    else
+        log_warn "Failed to start default network, trying with libvirtd restart..."
+        log_info "Restarting libvirtd to clear any conflicts..."
+        sudo systemctl restart libvirtd
+        sleep 3
+
+        if sudo virsh net-start default; then
+            log_success "Default network started after restart"
+        else
+            log_error "Failed to start default network even after restart"
+            return 1
+        fi
+    fi
+
+    # Enable autostart
+    log_info "Enabling autostart for default network..."
+    if sudo virsh net-autostart default; then
+        log_success "Autostart enabled for default network"
+    else
+        log_error "Failed to enable autostart"
+        return 1
+    fi
+
+    # Wait a moment for the interface to come up
+    sleep 3
+
+    log_success "Network restoration completed"
+}
+
+verify_network() {
+    log_info "Verifying network configuration..."
+
+    # Check network status
+    if ! check_network_status; then
+        log_error "Network verification failed"
+        return 1
+    fi
+
+    # Check if virbr0 is up with correct IP
+    if ! ip addr show virbr0 | grep -q "192.168.122.1/24"; then
+        log_error "virbr0 interface does not have the expected IP address"
+        return 1
+    fi
+
+    # Check if dnsmasq is running
+    if ! pgrep -f "dnsmasq.*virbr0" &>/dev/null; then
+        log_warn "dnsmasq is not running for virbr0 (this might be normal)"
+    else
+        log_success "dnsmasq is running for virbr0"
+    fi
+
+    log_success "Network verification passed"
+    return 0
+}
+
+main() {
+    local force=false
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+        --force)
+            force=true
+            shift
+            ;;
+        --help | -h)
+            usage
+            exit 0
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+        esac
+    done
+
+    log_info "Starting libvirt network restoration..."
+
+    # Check if we need to restore the network
+    if ! $force && check_network_status; then
+        log_success "Default network is already working correctly"
+        log_info "Use --force to recreate the network anyway"
+        exit 0
+    fi
+
+    # Clean up any conflicting interfaces
+    clean_conflicting_interfaces
+
+    # Restore the network
+    restore_network
+
+    # Verify everything is working
+    if verify_network; then
+        log_success "Libvirt default network has been successfully restored!"
+        log_info "Your VM automation scripts should now work correctly"
+    else
+        log_error "Network restoration completed but verification failed"
+        exit 1
+    fi
+}
+
+# Check if running as root
+if [[ $EUID -eq 0 ]]; then
+    log_error "This script should not be run as root"
+    log_error "It will use sudo when needed"
+    exit 1
+fi
+
+# Check if libvirtd is installed
+if ! command -v virsh &>/dev/null; then
+    log_error "libvirt is not installed"
+    exit 1
+fi
+
+# Check if libvirtd is running, if not try to start it
+if ! systemctl is-active --quiet libvirtd; then
+    log_warn "libvirtd service is not running, attempting to start it..."
+    if sudo systemctl enable --now libvirtd; then
+        log_success "libvirtd service started"
+        sleep 2
+    else
+        log_error "Failed to start libvirtd service"
+        exit 1
+    fi
+fi
+
+main "$@"
