@@ -376,7 +376,6 @@ launch_vm() {
         --vcpus "$VCPUS" \
         --disk path="$DISK_IMG",format=qcow2,bus=virtio \
         --disk path="$SEED_ISO",device=cdrom \
-        --os-type linux \
         --os-variant "$os_variant" \
         --virt-type kvm \
         --graphics none \
