@@ -11,6 +11,11 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+if ! command -v iptables &>/dev/null; then
+  echo "iptables is not available. You may not need this fix."
+  exit 1
+fi
+
 OUT_IF=$1
 
 echo "Flushing existing FORWARD rules for libvirt and docker chains..."
