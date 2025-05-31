@@ -1,68 +1,31 @@
 #! /usr/bin/env bash
 
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-source $DOT_DIR/share/utils
 
-if cat ~/.dotfiles-output.log | grep -i denied; then
-  press_enter
-fi
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
 
-if cat ~/.dotfiles-output.log | grep -i fail; then
-  press_enter
-fi
+SEARCHES=(
+  "denied"
+  "fail"
+  "warn"
+  "error"
+  "not"
+  "unable"
+  "denied"
+  "fatal"
+  "Unknown"
+  "No match"
+)
 
-if cat ~/.dotfiles-output.log | grep -i warn; then
-  press_enter
-fi
+for search in "${SEARCHES[@]}"; do
+  if grep -i "$search" <~/.dotfiles-output.log; then
+    press_enter
+  fi
+done
 
-if cat ~/.dotfiles-output.log | grep -i error; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-output.log | grep -i not; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-output.log | grep -i unable; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-output.log | grep -i denied; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-output.log | grep -i fatal; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-output.log | grep -i 'No match'; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-error.log | grep -i fail; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-error.log | grep -i warn; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-error.log | grep -i error; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-error.log | grep -i not; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-error.log | grep -i unable; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-error.log | grep -i fatal; then
-  press_enter
-fi
-
-if cat ~/.dotfiles-error.log | grep -i 'No match'; then
-  press_enter
-fi
+for search in "${SEARCHES[@]}"; do
+  if grep -i "$search" <~/.dotfiles-error.log; then
+    press_enter
+  fi
+done

@@ -261,6 +261,7 @@ packages:
   - curl
   - wget
   - vim
+  - micro
   - htop
   - git
   - unzip

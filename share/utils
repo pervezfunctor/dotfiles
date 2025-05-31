@@ -1098,12 +1098,22 @@ fpi() {
 }
 
 pi() {
+    if ! has_cmd pixi; then
+        warn "pixi not installed, skipping pixi packages"
+        return 1
+    fi
+
     for p in "$@"; do
         pixi global install "$p"
     done
 }
 
 pis() {
+    if ! has_cmd pixi; then
+        warn "pixi not installed, skipping pixi packages"
+        return 1
+    fi
+
     for p in "$@"; do
         has_cmd "$p" || pixi global install "$p"
     done
