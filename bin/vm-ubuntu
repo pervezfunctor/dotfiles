@@ -23,7 +23,7 @@ if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
 elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
   SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 else
-  ssh-keygen -t rsa -C "your_email@example.com" -f "${HOME}/.ssh/id_rsa" -N '""'
+  ssh-keygen -t rsa
   SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 fi
 
@@ -40,10 +40,12 @@ log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 
 cleanup_on_error() {
   log_warn "Cleaning up due to error..."
-  [[ -f "$DISK_IMG" ]] && rm -f "$DISK_IMG"
-  [[ -f "$SEED_ISO" ]] && rm -f "$SEED_ISO"
-  virsh destroy "$VM_NAME" 2>/dev/null || true
-  virsh undefine "$VM_NAME" 2>/dev/null || true
+  sudo rm -f "$DISK_IMG" 2>/dev/null || true
+  sudo rm -f "$SEED_ISO" 2>/dev/null || true
+  sudo virsh destroy "$VM_NAME" 2>/dev/null || true
+  sudo virsh undefine "$VM_NAME" 2>/dev/null || true
+
+  stop_sudo_keepalive
 }
 
 trap cleanup_on_error ERR
@@ -169,7 +171,6 @@ check_prerequisites() {
   if [[ ${#missing_tools[@]} -gt 0 ]]; then
     log_error "Missing required tools: ${missing_tools[*]}"
     log_error "Install on ubuntu: sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
-    log_error "or on fedora: sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
     exit 1
   fi
 
@@ -416,8 +417,8 @@ launch_vm() {
   # Add VM to /etc/hosts for easy access
   log_info "Adding VM to /etc/hosts for name-based access..."
   sleep 5 # Give VM time to get IP
-  if [[ -x "./bin/vm-hosts" ]]; then
-    ./bin/vm-hosts add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
+  if [[ -x "$HOME/.ilm/bin/vim-hosts" ]]; then
+    $HOME/.ilm/bin/vim-hosts add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
   fi
 }
 
@@ -462,7 +463,6 @@ main() {
   generate_cloud_init
   create_cloud_init_iso
   launch_vm
-  stop_sudo_keepalive
   show_completion_info
 
   log_success "All done! Your VM is ready."
