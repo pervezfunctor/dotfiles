@@ -8,7 +8,7 @@ VCPUS=4
 DISK_SIZE="40G"
 UBUNTU_RELEASE="noble" # 24.04 LTS
 UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
-WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
+WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
 CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
 BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
 DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
@@ -60,7 +60,6 @@ OPTIONS:
     --ssh-key PATH      SSH public key path (default: $SSH_KEY)
     --bridge BRIDGE     Network bridge (default: $BRIDGE_IF)
     --ubuntu-release REL Ubuntu release (default: $UBUNTU_RELEASE)
-    --workdir DIR       Working directory (default: $WORKDIR)
     --username USER     VM username (default: $USERNAME)
     --help, -h          Show this help
 
@@ -83,7 +82,7 @@ while [[ $# -gt 0 ]]; do
   case $1 in
   --name)
     VM_NAME="$2"
-    WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
+    WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
     CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
     DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
     SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
@@ -115,14 +114,6 @@ while [[ $# -gt 0 ]]; do
     BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
     shift 2
     ;;
-  --workdir)
-    WORKDIR="$2"
-    CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
-    BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
-    DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
-    SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
-    shift 2
-    ;;
   --username)
     USERNAME="$2"
     shift 2
@@ -141,6 +132,30 @@ done
 
 check_prerequisites() {
   log_info "Checking prerequisites..."
+
+  # Check for sudo privileges
+  if ! sudo -v; then
+    log_error "This script requires sudo privileges to create files in system directories"
+    exit 1
+  fi
+
+  # Determine QEMU user and group
+  if getent passwd libvirt-qemu >/dev/null; then
+    QEMU_USER="libvirt-qemu"
+    QEMU_GROUP="libvirt-qemu"
+  elif getent passwd qemu >/dev/null; then
+    QEMU_USER="qemu"
+    QEMU_GROUP="qemu"
+  elif getent passwd libvirt >/dev/null; then
+    QEMU_USER="libvirt"
+    QEMU_GROUP="libvirt"
+  else
+    log_warn "Could not determine QEMU user, using 'root:kvm' as fallback"
+    QEMU_USER="root"
+    QEMU_GROUP="kvm"
+  fi
+
+  log_info "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
 
   local missing_tools=()
   for tool in virsh virt-install qemu-img wget mkisofs; do
@@ -198,42 +213,51 @@ download_ubuntu_image() {
   log_info "Downloading Ubuntu $UBUNTU_RELEASE cloud image..."
   log_info "URL: $UBUNTU_IMG_URL"
 
-  mkdir -p "$WORKDIR"
+  sudo mkdir -p "$WORKDIR"
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$WORKDIR"
+  sudo chmod 755 "$WORKDIR"
 
-  if ! wget -O "$BASE_IMG" "$UBUNTU_IMG_URL"; then
+  if ! sudo wget -O "$BASE_IMG" "$UBUNTU_IMG_URL"; then
     log_error "Failed to download Ubuntu cloud image"
-    rm -f "$BASE_IMG"
+    sudo rm -f "$BASE_IMG"
     exit 1
   fi
 
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$BASE_IMG"
+  sudo chmod 644 "$BASE_IMG"
   log_success "Ubuntu cloud image downloaded: $BASE_IMG"
 }
 
 create_vm_disk() {
   log_info "Creating VM disk..."
 
-  if ! cp "$BASE_IMG" "$DISK_IMG"; then
+  if ! sudo cp "$BASE_IMG" "$DISK_IMG"; then
     log_error "Failed to copy base image"
     exit 1
   fi
 
-  if ! qemu-img resize "$DISK_IMG" "$DISK_SIZE"; then
+  if ! sudo qemu-img resize "$DISK_IMG" "$DISK_SIZE"; then
     log_error "Failed to resize VM disk"
     exit 1
   fi
 
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$DISK_IMG"
+  sudo chmod 644 "$DISK_IMG"
   log_success "VM disk created: $DISK_IMG ($DISK_SIZE)"
 }
 
 generate_cloud_init() {
   log_info "Generating cloud-init configuration..."
 
-  mkdir -p "$CLOUD_INIT_DIR"
+  sudo mkdir -p "$CLOUD_INIT_DIR"
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
+  sudo chmod 755 "$CLOUD_INIT_DIR"
 
   local pub_key
   pub_key=$(cat "$SSH_KEY")
 
-  cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
+  # Create user-data file
+  sudo tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
 hostname: $VM_NAME
 manage_etc_hosts: true
@@ -285,25 +309,30 @@ write_files:
 final_message: "VM $VM_NAME setup complete!"
 EOF
 
-  cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
+  # Create meta-data file
+  sudo tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
 instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
-  cat >"${CLOUD_INIT_DIR}/network-config" <<EOF
+  # Create network-config file
+  sudo tee "${CLOUD_INIT_DIR}/network-config" >/dev/null <<EOF
 version: 2
 ethernets:
   enp1s0:
     dhcp4: true
 EOF
 
+  sudo chown -R "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
+  sudo chmod -R 644 "$CLOUD_INIT_DIR"/*
+  sudo chmod 755 "$CLOUD_INIT_DIR"
   log_success "Cloud-init configuration generated"
 }
 
 create_cloud_init_iso() {
   log_info "Creating cloud-init ISO..."
 
-  if ! mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
+  if ! sudo mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
     "${CLOUD_INIT_DIR}/user-data" \
     "${CLOUD_INIT_DIR}/meta-data" \
     "${CLOUD_INIT_DIR}/network-config" 2>/dev/null; then
@@ -311,6 +340,8 @@ create_cloud_init_iso() {
     exit 1
   fi
 
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$SEED_ISO"
+  sudo chmod 644 "$SEED_ISO"
   log_success "Cloud-init ISO created: $SEED_ISO"
 }
 
@@ -324,7 +355,7 @@ launch_vm() {
     network_config="bridge=$BRIDGE_IF,model=virtio"
   fi
 
-  local os_variant="ubuntu2.04"
+  local os_variant="ubuntu24.04"
   case "$UBUNTU_RELEASE" in
   # "plucky") os_variant="ubuntu25.04" ;;
   "noble") os_variant="ubuntu24.04" ;;
@@ -341,7 +372,7 @@ launch_vm() {
   log_info "  Network: $network_config"
   log_info "  OS Variant: $os_variant"
 
-  if ! sudo virt-install \
+  if ! virt-install \
     --connect qemu:///system \
     --name "$VM_NAME" \
     --memory "$RAM_MB" \

@@ -206,7 +206,7 @@ delete_vm() {
         done <<<"$disks"
     fi
 
-    local workdir="$HOME/${vm_name}-vm"
+    local workdir="/var/lib/libvirt/images/${vm_name}-vm"
     if [[ -d "$workdir" ]]; then
         log_info "Removing working directory: $workdir"
         rm -rf "$workdir"
@@ -328,7 +328,7 @@ cleanup_vms() {
     fi
 
     log_info "Checking for orphaned working directories..."
-    for dir in "$HOME"/*-vm; do
+    for dir in /var/lib/libvirt/images/*-vm; do
         if [[ -d "$dir" ]]; then
             local vm_name
             vm_name=$(basename "$dir" | sed 's/-vm$//')
@@ -336,7 +336,7 @@ cleanup_vms() {
                 log_warn "Found orphaned directory: $dir"
                 read -p "Remove orphaned directory $dir? (y/N): " -r
                 if [[ $REPLY =~ ^[Yy]$ ]]; then
-                    rm -rf "$dir"
+                    sudo rm -rf "$dir"
                     log_success "Removed: $dir"
                 fi
             fi

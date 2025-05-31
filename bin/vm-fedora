@@ -8,13 +8,32 @@ VCPUS=4
 DISK_SIZE="40G"
 FEDORA_RELEASE="42"
 FEDORA_IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${FEDORA_RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${FEDORA_RELEASE}-1.1.x86_64.qcow2"
-WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
+WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
 CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
 BASE_IMG="${WORKDIR}/fedora-${FEDORA_RELEASE}.qcow2"
 DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
 SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
 BRIDGE_IF="virbr0"
 USERNAME="fedora"
+
+# Add sudo keepalive functions
+start_sudo_keepalive() {
+    log_info "Starting sudo keepalive process..."
+    sudo -v
+    (while true; do
+        sudo -v
+        sleep 50
+    done) &
+    SUDO_KEEPALIVE_PID=$!
+}
+
+stop_sudo_keepalive() {
+    if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
+        log_info "Stopping sudo keepalive process..."
+        kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
+    fi
+    SUDO_KEEPALIVE_PID=""
+}
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
     SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
@@ -60,7 +79,6 @@ OPTIONS:
     --ssh-key PATH      SSH public key path (default: $SSH_KEY)
     --bridge BRIDGE     Network bridge (default: $BRIDGE_IF)
     --fedora-release REL Fedora release (default: $FEDORA_RELEASE)
-    --workdir DIR       Working directory (default: $WORKDIR)
     --username USER     VM username (default: $USERNAME)
     --help, -h          Show this help
 
@@ -84,8 +102,9 @@ while [[ $# -gt 0 ]]; do
     case $1 in
     --name)
         VM_NAME="$2"
-        WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
+        WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
         CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+        BASE_IMG="${WORKDIR}/fedora-${FEDORA_RELEASE}.qcow2"
         DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
         SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
         shift 2
@@ -120,14 +139,6 @@ while [[ $# -gt 0 ]]; do
         BASE_IMG="${WORKDIR}/fedora-${FEDORA_RELEASE}.qcow2"
         shift 2
         ;;
-    --workdir)
-        WORKDIR="$2"
-        CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
-        BASE_IMG="${WORKDIR}/fedora-${FEDORA_RELEASE}.qcow2"
-        DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
-        SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
-        shift 2
-        ;;
     --username)
         USERNAME="$2"
         shift 2
@@ -146,6 +157,30 @@ done
 
 check_prerequisites() {
     log_info "Checking prerequisites..."
+
+    # Check for sudo privileges
+    if ! sudo -v; then
+        log_error "This script requires sudo privileges to create files in system directories"
+        exit 1
+    fi
+
+    # Determine QEMU user and group
+    if getent passwd libvirt-qemu >/dev/null; then
+        QEMU_USER="libvirt-qemu"
+        QEMU_GROUP="libvirt-qemu"
+    elif getent passwd qemu >/dev/null; then
+        QEMU_USER="qemu"
+        QEMU_GROUP="qemu"
+    elif getent passwd libvirt >/dev/null; then
+        QEMU_USER="libvirt"
+        QEMU_GROUP="libvirt"
+    else
+        log_warn "Could not determine QEMU user, using 'root:kvm' as fallback"
+        QEMU_USER="root"
+        QEMU_GROUP="kvm"
+    fi
+
+    log_info "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
 
     local missing_tools=()
     for tool in virsh virt-install qemu-img wget mkisofs; do
@@ -202,42 +237,50 @@ download_fedora_image() {
     log_info "Downloading Fedora $FEDORA_RELEASE cloud image..."
     log_info "URL: $FEDORA_IMG_URL"
 
-    mkdir -p "$WORKDIR"
+    sudo mkdir -p "$WORKDIR"
+    sudo chown "$QEMU_USER:$QEMU_GROUP" "$WORKDIR"
+    sudo chmod 755 "$WORKDIR"
 
-    if ! wget -O "$BASE_IMG" "$FEDORA_IMG_URL"; then
+    if ! sudo wget -O "$BASE_IMG" "$FEDORA_IMG_URL"; then
         log_error "Failed to download Fedora cloud image"
-        rm -f "$BASE_IMG"
+        sudo rm -f "$BASE_IMG"
         exit 1
     fi
 
+    sudo chown "$QEMU_USER:$QEMU_GROUP" "$BASE_IMG"
+    sudo chmod 644 "$BASE_IMG"
     log_success "Fedora cloud image downloaded: $BASE_IMG"
 }
 
 create_vm_disk() {
     log_info "Creating VM disk..."
 
-    if ! cp "$BASE_IMG" "$DISK_IMG"; then
+    if ! sudo cp "$BASE_IMG" "$DISK_IMG"; then
         log_error "Failed to copy base image"
         exit 1
     fi
 
-    if ! qemu-img resize "$DISK_IMG" "$DISK_SIZE"; then
+    if ! sudo qemu-img resize "$DISK_IMG" "$DISK_SIZE"; then
         log_error "Failed to resize VM disk"
         exit 1
     fi
 
+    sudo chown "$QEMU_USER:$QEMU_GROUP" "$DISK_IMG"
+    sudo chmod 644 "$DISK_IMG"
     log_success "VM disk created: $DISK_IMG ($DISK_SIZE)"
 }
 
 generate_cloud_init() {
     log_info "Generating cloud-init configuration..."
 
-    mkdir -p "$CLOUD_INIT_DIR"
+    sudo mkdir -p "$CLOUD_INIT_DIR"
+    sudo chown "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
+    sudo chmod 755 "$CLOUD_INIT_DIR"
 
     local pub_key
     pub_key=$(cat "$SSH_KEY")
 
-    cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
+    sudo tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
 hostname: $VM_NAME
 manage_etc_hosts: true
@@ -305,25 +348,28 @@ write_files:
 final_message: "VM $VM_NAME setup complete! Fedora is ready to use."
 EOF
 
-    cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
+    sudo tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
 instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
-    cat >"${CLOUD_INIT_DIR}/network-config" <<EOF
+    sudo tee "${CLOUD_INIT_DIR}/network-config" >/dev/null <<EOF
 version: 2
 ethernets:
   enp1s0:
     dhcp4: true
 EOF
 
+    sudo chown -R "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
+    sudo chmod -R 644 "$CLOUD_INIT_DIR"/*
+    sudo chmod 755 "$CLOUD_INIT_DIR"
     log_success "Cloud-init configuration generated"
 }
 
 create_cloud_init_iso() {
     log_info "Creating cloud-init ISO..."
 
-    if ! mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
+    if ! sudo mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
         "${CLOUD_INIT_DIR}/user-data" \
         "${CLOUD_INIT_DIR}/meta-data" \
         "${CLOUD_INIT_DIR}/network-config" 2>/dev/null; then
@@ -331,6 +377,8 @@ create_cloud_init_iso() {
         exit 1
     fi
 
+    sudo chown "$QEMU_USER:$QEMU_GROUP" "$SEED_ISO"
+    sudo chmod 644 "$SEED_ISO"
     log_success "Cloud-init ISO created: $SEED_ISO"
 }
 
@@ -359,7 +407,7 @@ launch_vm() {
     log_info "  Network: $network_config"
     log_info "  OS Variant: $os_variant"
 
-    if ! sudo virt-install \
+    if ! virt-install \
         --connect qemu:///system \
         --name "$VM_NAME" \
         --memory "$RAM_MB" \
@@ -429,11 +477,13 @@ main() {
     log_info "Fedora Release: $FEDORA_RELEASE"
 
     check_prerequisites
+    start_sudo_keepalive
     download_fedora_image
     create_vm_disk
     generate_cloud_init
     create_cloud_init_iso
     launch_vm
+    stop_sudo_keepalive
     show_completion_info
 
     log_success "All done! Your Fedora VM is ready."
