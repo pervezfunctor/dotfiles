@@ -158,7 +158,8 @@ podman_install() {
 vm_install() {
     slog "Installing vm"
 
-    si libvirt qemu virt-install bridge-utils dnsmasq edk2-ovmf virglrenderer
+    si pipewire-jack libvirt qemu-full virt-install bridge-utils dnsmasq \
+        edk2-ovmf virglrenderer
 
     libvirt_config_install
 

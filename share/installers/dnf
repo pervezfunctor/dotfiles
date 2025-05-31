@@ -338,7 +338,7 @@ vm_install() {
         si @system-tools
     fi
 
-    si libvirt qemu qemu-kvm virt-install bridge-utils virglrenderer
+    si libvirt qemu qemu-kvm virt-install bridge-utils virglrenderer qemu-img
 
     libvirt_config_install
 

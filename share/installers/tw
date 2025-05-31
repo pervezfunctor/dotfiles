@@ -170,7 +170,7 @@ podman_install() {
 }
 
 vm_install() {
-    si libvirt qemu-kvm virt-install bridge-utils virglrenderer
+    si libvirt qemu-kvm virt-install bridge-utils virglrenderer qemu-img
 
     sudo systemctl enable --now libvirtd
 }
