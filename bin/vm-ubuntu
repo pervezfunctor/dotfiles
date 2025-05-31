@@ -389,6 +389,8 @@ launch_vm() {
     exit 1
   fi
 
+  # --channel unix,target.type=virtio,target.name=org.qemu.guest_agent.0 \
+
   log_success "VM '$VM_NAME' created successfully!"
 
   # Add VM to /etc/hosts for easy access

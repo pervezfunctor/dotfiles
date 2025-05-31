@@ -2,12 +2,12 @@
 
 set -euo pipefail
 
+# Initial variable setup
 VM_NAME="debian"
 RAM_MB=4096
 VCPUS=4
 DISK_SIZE="40G"
 DEBIAN_RELEASE="bookworm" # 12
-DEBIAN_IMG_URL="https://cdimage.debian.org/cdimage/cloud/${DEBIAN_RELEASE}/latest/debian-${DEBIAN_RELEASE}-genericcloud-amd64.qcow2"
 WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
 CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
 BASE_IMG="${WORKDIR}/debian-${DEBIAN_RELEASE}.qcow2"
@@ -115,7 +115,6 @@ while [[ $# -gt 0 ]]; do
     ;;
   --debian-release)
     DEBIAN_RELEASE="$2"
-    DEBIAN_IMG_URL="https://cdimage.debian.org/cdimage/cloud/${DEBIAN_RELEASE}/latest/debian-${DEBIAN_RELEASE}-genericcloud-amd64.qcow2"
     BASE_IMG="${WORKDIR}/debian-${DEBIAN_RELEASE}.qcow2"
     shift 2
     ;;
@@ -196,13 +195,29 @@ download_debian_image() {
   fi
 
   log_info "Downloading Debian $DEBIAN_RELEASE cloud image..."
-  log_info "URL: $DEBIAN_IMG_URL"
+
+  # Updated URL format for Debian cloud images
+  local download_url="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+
+  # Handle different Debian releases
+  if [[ "$DEBIAN_RELEASE" == "bookworm" ]]; then
+    download_url="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+  elif [[ "$DEBIAN_RELEASE" == "bullseye" ]]; then
+    download_url="https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2"
+  elif [[ "$DEBIAN_RELEASE" == "trixie" ]]; then
+    download_url="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+  else
+    log_error "Unsupported Debian release: $DEBIAN_RELEASE"
+    exit 1
+  fi
+
+  log_info "URL: $download_url"
 
   sudo mkdir -p "$WORKDIR"
   sudo chown "$QEMU_USER:$QEMU_GROUP" "$WORKDIR"
   sudo chmod 755 "$WORKDIR"
 
-  if ! sudo wget -O "$BASE_IMG" "$DEBIAN_IMG_URL"; then
+  if ! sudo wget -O "$BASE_IMG" "$download_url"; then
     log_error "Failed to download Debian cloud image"
     sudo rm -f "$BASE_IMG"
     exit 1
