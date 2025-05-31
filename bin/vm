@@ -28,16 +28,16 @@ COMMANDS:
     destroy <vm-name>   Force stop a VM
     delete <vm-name>    Delete a VM completely
     console <vm-name>   Connect to VM console
-    ssh <vm-name>       SSH into VM (shows command)
     ip <vm-name>        Get VM IP address
     logs <vm-name>      Show VM logs
     cleanup             Remove stopped VMs and orphaned files
+    ssh <vm-name>       Connect to VM via SSH
 
 EXAMPLES:
     $0 list                    # List all VMs
     $0 status ubuntu           # Show status of 'ubuntu' VM
     $0 start ubuntu            # Start 'ubuntu' VM
-    $0 ssh ubuntu              # Get SSH command for 'ubuntu' VM
+    $0 ssh ubuntu              # Connect to 'ubuntu' VM
     $0 delete old-vm           # Delete 'old-vm' completely
 
 EOF
@@ -201,7 +201,7 @@ delete_vm() {
         while IFS= read -r disk; do
             if [[ -f "$disk" ]]; then
                 log_info "Removing disk: $disk"
-                rm -f "$disk"
+                sudo rm -f "$disk"
             fi
         done <<<"$disks"
     fi
@@ -209,7 +209,7 @@ delete_vm() {
     local workdir="/var/lib/libvirt/images/${vm_name}-vm"
     if [[ -d "$workdir" ]]; then
         log_info "Removing working directory: $workdir"
-        rm -rf "$workdir"
+        sudo rm -rf "$workdir"
     fi
 
     log_success "VM '$vm_name' completely deleted"
@@ -256,30 +256,22 @@ get_vm_ip() {
 
     log_info "Getting IP address for VM '$vm_name'..."
 
-    local ip_info
-    ip_info=$(virsh domifaddr "$vm_name" 2>/dev/null)
+    local ip
+    ip=$(virsh domifaddr "$vm_name" --source agent | awk '/enp/ {sub(/\/.*/, "", $4); print $4}')
 
-    if [[ -z "$ip_info" ]] || ! echo "$ip_info" | grep -q "ipv4"; then
+    if [[ -z "$ip" ]]; then
+        log_info "Checking network DHCP leases..."
+        ip=$(virsh net-dhcp-leases default 2>/dev/null | grep "$vm_name" | awk '{print $5}' | cut -d'/' -f1 | head -1)
+    fi
+
+    if [[ -z "$ip" ]]; then
         log_warn "No IP address found. VM may still be booting."
         log_info "Try again in a few seconds, or check with: virsh domifaddr $vm_name"
         return 1
     fi
 
-    echo "$ip_info"
-
-    local ip
-    ip=$(echo "$ip_info" | awk '/ipv4/ {print $4}' | cut -d'/' -f1 | head -1)
-
-    if [[ -n "$ip" ]]; then
-        echo
-        log_success "VM IP: $ip"
-        log_info "SSH command: ssh ubuntu@$ip"
-    fi
-}
-
-show_ssh_command() {
-    local vm_name="$1"
-    get_vm_ip "$vm_name"
+    echo "$ip"
+    return 0
 }
 
 show_logs() {
@@ -344,6 +336,39 @@ cleanup_vms() {
     done
 
     log_success "Cleanup complete"
+}
+
+ssh_to_vm() {
+    local vm_name="$1"
+    local username="${2:-ubuntu}" # Default username is ubuntu, but allow override
+
+    if ! virsh dominfo "$vm_name" &>/dev/null; then
+        log_error "VM '$vm_name' not found"
+        echo
+        return 1
+    fi
+
+    local state
+    state=$(virsh domstate "$vm_name")
+
+    if [[ "$state" != "running" ]]; then
+        log_error "VM '$vm_name' is not running"
+        log_info "Start it with: $0 start $vm_name"
+        echo
+        return 1
+    fi
+
+    local ip
+    ip=$(virsh domifaddr "$vm_name" 2>/dev/null | awk '/ipv4/ {print $4}' | cut -d'/' -f1 | head -1)
+
+    if [[ -z "$ip" ]]; then
+        log_error "Could not determine IP address for VM '$vm_name'"
+        echo
+        return 1
+    fi
+
+    log_info "Connecting to $vm_name ($ip) as $username..."
+    ssh "$username@$ip"
 }
 
 if [[ $# -eq 0 ]]; then
@@ -414,21 +439,16 @@ console)
     }
     connect_console "$vm_name"
     ;;
-ssh)
-    [[ -z "$vm_name" ]] && {
-        log_error "VM name required"
-        usage
-        exit 1
-    }
-    show_ssh_command "$vm_name"
-    ;;
 ip)
     [[ -z "$vm_name" ]] && {
         log_error "VM name required"
         usage
         exit 1
     }
-    get_vm_ip "$vm_name"
+    ip_address=$(get_vm_ip "$vm_name")
+    if [[ -n "$ip_address" ]]; then
+        echo "$ip_address"
+    fi
     ;;
 logs)
     [[ -z "$vm_name" ]] && {
@@ -440,6 +460,14 @@ logs)
     ;;
 cleanup)
     cleanup_vms
+    ;;
+ssh)
+    [[ -z "$vm_name" ]] && {
+        log_error "VM name required"
+        usage
+        exit 1
+    }
+    ssh_to_vm "$vm_name"
     ;;
 --help | -h)
     usage
