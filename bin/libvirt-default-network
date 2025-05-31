@@ -1,19 +1,19 @@
 #! /bin/bash
 
-if sudo virsh net-info default &>/dev/null; then
+if virsh net-info default &>/dev/null; then
   echo "Default network is already defined"
   read -p "Do you want to delete it and recreate it? (y/n) " -r
   if [[ $REPLY =~ ^[Yy]$ ]]; then
-    sudo virsh net-destroy default
-    sudo virsh net-undefine default
+    virsh net-destroy default
+    virsh net-undefine default
   else
     echo "Default network not touched"
     exit 0
   fi
 fi
 
-sudo virsh net-define /usr/share/libvirt/networks/default.xml
-sudo virsh net-start default
-sudo virsh net-autostart default
+virsh net-define /usr/share/libvirt/networks/default.xml
+virsh net-start default
+virsh net-autostart default
 
 echo "Default network is now defined and started"

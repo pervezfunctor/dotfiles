@@ -363,12 +363,12 @@ libvirt_config_install() {
     sudo usermod -aG libvirt "$(whoami)"
 
     newgrp libvirt <<EOF
-    if ! sudo virsh net-list --all | grep -q default; then
-         sudo virsh net-define /usr/share/libvirt/networks/default.xml
-         sudo virsh net-start default
-         sudo virsh net-autostart default
+    if ! virsh net-list --all | grep -q default; then
+         virsh net-define /usr/share/libvirt/networks/default.xml
+         virsh net-start default
+         virsh net-autostart default
     fi
-    if ! sudo virsh net-list --all | grep -q default; then
+    if ! virsh net-list --all | grep -q default; then
          warn "Failed to create default network"
     fi
 EOF

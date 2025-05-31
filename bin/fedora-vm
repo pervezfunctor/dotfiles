@@ -38,7 +38,7 @@ genisoimage -output "$CLOUD_INIT_ISO" -volid cidata -joliet -rock cloud-init/use
 qemu-img create -f qcow2 -b "$QCOW2_IMAGE" "$DISK_PATH" 10G
 
 # Install the VM
-sudo virt-install \
+virt-install \
   --connect qemu:///system \
   --name "$VM_NAME" \
   --memory "$RAM_MB" \

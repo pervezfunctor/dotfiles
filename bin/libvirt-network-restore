@@ -53,15 +53,15 @@ check_network_status() {
     log_info "Checking libvirt default network status..."
 
     # Check if default network exists
-    if ! sudo virsh net-info default &>/dev/null; then
+    if ! virsh net-info default &>/dev/null; then
         log_error "Default network does not exist!"
         return 1
     fi
 
     # Get network info
     local active autostart
-    active=$(sudo virsh net-info default | grep "Active:" | awk '{print $2}')
-    autostart=$(sudo virsh net-info default | grep "Autostart:" | awk '{print $2}')
+    active=$(virsh net-info default | grep "Active:" | awk '{print $2}')
+    autostart=$(virsh net-info default | grep "Autostart:" | awk '{print $2}')
 
     log_info "Network status: Active=$active, Autostart=$autostart"
 
@@ -117,7 +117,7 @@ restore_network() {
 
     # Start the default network
     log_info "Starting default network..."
-    if sudo virsh net-start default; then
+    if virsh net-start default; then
         log_success "Default network started"
     else
         log_warn "Failed to start default network, trying with libvirtd restart..."
@@ -125,7 +125,7 @@ restore_network() {
         sudo systemctl restart libvirtd
         sleep 3
 
-        if sudo virsh net-start default; then
+        if virsh net-start default; then
             log_success "Default network started after restart"
         else
             log_error "Failed to start default network even after restart"
@@ -135,7 +135,7 @@ restore_network() {
 
     # Enable autostart
     log_info "Enabling autostart for default network..."
-    if sudo virsh net-autostart default; then
+    if virsh net-autostart default; then
         log_success "Autostart enabled for default network"
     else
         log_error "Failed to enable autostart"
@@ -229,7 +229,7 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 # Check if libvirtd is installed
-if ! command -v sudo virsh &>/dev/null; then
+if ! command -v virsh &>/dev/null; then
     log_error "libvirt is not installed"
     exit 1
 fi

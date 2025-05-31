@@ -13,6 +13,8 @@ export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
 
 export ELECTRON_OZONE_PLATFORM_HINT=auto
 
+export LIBVIRT_DEFAULT_URI=qemu:///system
+
 source_if_exists "$HOME/.config/envman/load.sh"
 
 source_if_exists "$HOME/.cargo/env"

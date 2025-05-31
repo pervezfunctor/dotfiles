@@ -40,8 +40,8 @@ cleanup_on_error() {
   log_warn "Cleaning up due to error..."
   [[ -f "$DISK_IMG" ]] && rm -f "$DISK_IMG"
   [[ -f "$SEED_ISO" ]] && rm -f "$SEED_ISO"
-  sudo virsh destroy "$VM_NAME" 2>/dev/null || true
-  sudo virsh undefine "$VM_NAME" 2>/dev/null || true
+  virsh destroy "$VM_NAME" 2>/dev/null || true
+  virsh undefine "$VM_NAME" 2>/dev/null || true
 }
 
 trap cleanup_on_error ERR
@@ -173,9 +173,9 @@ check_prerequisites() {
     exit 1
   fi
 
-  if sudo virsh list --all | grep -q "$VM_NAME"; then
+  if virsh list --all | grep -q "$VM_NAME"; then
     log_error "VM '$VM_NAME' already exists"
-    log_error "Remove with: sudo virsh destroy $VM_NAME && sudo virsh undefine $VM_NAME"
+    log_error "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
     exit 1
   fi
 
@@ -342,6 +342,7 @@ launch_vm() {
   log_info "  OS Variant: $os_variant"
 
   if ! sudo virt-install \
+    --connect qemu:///system \
     --name "$VM_NAME" \
     --memory "$RAM_MB" \
     --vcpus "$VCPUS" \
@@ -379,17 +380,17 @@ show_completion_info() {
   echo "  SSH Key: $SSH_KEY"
   echo
   log_info "Useful Commands:"
-  echo "  Check VM status:    sudo virsh list --all"
-  echo "  Start VM:           sudo virsh start $VM_NAME"
-  echo "  Stop VM:            sudo virsh shutdown $VM_NAME"
-  echo "  Force stop VM:      sudo virsh destroy $VM_NAME"
-  echo "  Delete VM:          sudo virsh undefine $VM_NAME"
-  echo "  Console access:     sudo virsh console $VM_NAME"
-  echo "  Get VM IP:          sudo virsh domifaddr $VM_NAME"
+  echo "  Check VM status:    virsh list --all"
+  echo "  Start VM:           virsh start $VM_NAME"
+  echo "  Stop VM:            virsh shutdown $VM_NAME"
+  echo "  Force stop VM:      virsh destroy $VM_NAME"
+  echo "  Delete VM:          virsh undefine $VM_NAME"
+  echo "  Console access:     virsh console $VM_NAME"
+  echo "  Get VM IP:          virsh domifaddr $VM_NAME"
   echo
   log_info "SSH Access:"
   echo "  Wait 2-3 minutes for cloud-init to complete"
-  echo "  Find VM IP:         sudo virsh domifaddr $VM_NAME"
+  echo "  Find VM IP:         virsh domifaddr $VM_NAME"
   echo "  SSH by name:        ssh $USERNAME@$VM_NAME"
   echo "  SSH by IP:          ssh $USERNAME@<VM_IP>"
   echo
