@@ -16,7 +16,7 @@ BRIDGE_IF="virbr0"
 UBUNTU_RELEASE="noble" # 24.04 LTS
 UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
 BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
-USERNAME="ubuntu"
+USERNAME="docker"
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
   SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
@@ -277,6 +277,9 @@ generate_cloud_init() {
   local pub_key
   pub_key=$(cat "$SSH_KEY")
 
+  log_info "Using SSH key: $SSH_KEY"
+  log_info "Public key: $pub_key"
+
   sudo tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
 hostname: $VM_NAME
@@ -308,31 +311,45 @@ packages:
   - ca-certificates
   - gnupg
   - lsb-release
+  - openssh-server
 
+# Make sure the guest agent starts immediately
 runcmd:
   # Enable and start the QEMU guest agent
   - systemctl enable qemu-guest-agent.service
   - systemctl start qemu-guest-agent.service
 
+  # # Configure SSH
+  # - mkdir -p /home/$USERNAME/.ssh
+  # - echo "$pub_key" > /home/$USERNAME/.ssh/authorized_keys
+  # - chmod 700 /home/$USERNAME/.ssh
+  # - chmod 600 /home/$USERNAME/.ssh/authorized_keys
+  # - chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+
   # Install Docker
   - curl -fsSL https://get.docker.com -o get-docker.sh
   - sh get-docker.sh
   - rm get-docker.sh
-
   - usermod -aG docker $USERNAME
-
   - systemctl enable --now docker
 
+  # Install Docker Compose
   - curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
   - chmod +x /usr/local/bin/docker-compose
 
+  # Create a completion file
   - touch /home/$USERNAME/vm-setup-complete
   - chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete
-
   - chown -R $USERNAME:$USERNAME /home/$USERNAME
 
+# Set timezone
 timezone: UTC
 
+# Enable SSH password authentication and disable root login
+ssh_pwauth: true
+disable_root: false
+
+# Write some useful files
 write_files:
   - path: /etc/motd
     content: |
@@ -348,6 +365,7 @@ write_files:
 
     append: false
 
+# Final message
 final_message: "VM $VM_NAME setup complete! Docker is ready to use."
 EOF
 
@@ -411,22 +429,20 @@ launch_vm() {
   log_info "  Network: $network_config"
   log_info "  OS Variant: $os_variant"
 
-  if
-    ! virt-install \
-      --connect qemu:///system \
-      --name "$VM_NAME" \
-      --memory "$RAM_MB" \
-      --vcpus "$VCPUS" \
-      --disk path="$DISK_IMG",format=qcow2,bus=virtio \
-      --disk path="$SEED_ISO",device=cdrom \
-      --os-variant "$os_variant" \
-      --virt-type kvm \
-      --graphics none \
-      --channel unix,target.type=virtio,target.name=org.qemu.guest_agent.0 \
-      --network "$network_config" \
-      --import \
-      --noautoconsole
-  then
+  if ! virt-install \
+    --connect qemu:///system \
+    --name "$VM_NAME" \
+    --memory "$RAM_MB" \
+    --vcpus "$VCPUS" \
+    --disk path="$DISK_IMG",format=qcow2,bus=virtio \
+    --disk path="$SEED_ISO",device=cdrom \
+    --os-variant "$os_variant" \
+    --virt-type kvm \
+    --graphics none \
+    --channel unix,target.type=virtio,target.name=org.qemu.guest_agent.0 \
+    --network "$network_config" \
+    --import \
+    --noautoconsole; then
     log_error "Failed to create VM"
     exit 1
   fi
