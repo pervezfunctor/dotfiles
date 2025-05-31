@@ -6,7 +6,6 @@ VM_NAME="docker"
 RAM_MB=4096
 VCPUS=4
 DISK_SIZE="40G"
-SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 UBUNTU_RELEASE="noble" # 24.04 LTS
 UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
 WORKDIR="$HOME/.vm-boxes/${VM_NAME}-vm"
@@ -16,6 +15,15 @@ DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
 SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
 BRIDGE_IF="virbr0"
 USERNAME="ubuntu"
+
+if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
+  SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
+elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
+  SSH_KEY="${HOME}/.ssh/id_rsa.pub"
+else
+  ssh-keygen -t rsa -C "your_email@example.com" -f "${HOME}/.ssh/id_rsa" -N '""'
+  SSH_KEY="${HOME}/.ssh/id_rsa.pub"
+fi
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -161,7 +169,7 @@ check_prerequisites() {
 
   if [[ ! -f "$SSH_KEY" ]]; then
     log_error "SSH public key not found at: $SSH_KEY"
-    log_error "Generate with: ssh-keygen -t ed25519 -C 'your_email@example.com'"
+    log_error "Generate with: ssh-keygen -t rsa -C 'your_email@example.com'"
     exit 1
   fi
 
