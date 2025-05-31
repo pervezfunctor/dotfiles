@@ -46,40 +46,40 @@ EOF
 list_vms() {
     log_info "Listing all VMs..."
     echo
-    virsh list --all
+    sudo virsh list --all
 }
 
 vm_status() {
     local vm_name="$1"
 
-    if ! virsh dominfo "$vm_name" &>/dev/null; then
+    if ! sudo virsh dominfo "$vm_name" &>/dev/null; then
         log_error "VM '$vm_name' not found"
         return 1
     fi
 
     log_info "Status for VM '$vm_name':"
     echo
-    virsh dominfo "$vm_name"
+    sudo virsh dominfo "$vm_name"
     echo
 
     log_info "Network interfaces:"
-    virsh domifaddr "$vm_name" || log_warn "Could not get IP address (VM may be stopped)"
+    sudo virsh domifaddr "$vm_name" || log_warn "Could not get IP address (VM may be stopped)"
     echo
 
     log_info "Disk usage:"
-    virsh domblklist "$vm_name"
+    sudo virsh domblklist "$vm_name"
 }
 
 start_vm() {
     local vm_name="$1"
 
-    if ! virsh dominfo "$vm_name" &>/dev/null; then
+    if ! sudo virsh dominfo "$vm_name" &>/dev/null; then
         log_error "VM '$vm_name' not found"
         return 1
     fi
 
     local state
-    state=$(virsh domstate "$vm_name")
+    state=$(sudo virsh domstate "$vm_name")
 
     if [[ "$state" == "running" ]]; then
         log_warn "VM '$vm_name' is already running"
@@ -87,7 +87,7 @@ start_vm() {
     fi
 
     log_info "Starting VM '$vm_name'..."
-    if virsh start "$vm_name"; then
+    if sudo virsh start "$vm_name"; then
         log_success "VM '$vm_name' started"
         sleep 2
         log_info "Waiting for network..."
@@ -102,13 +102,13 @@ start_vm() {
 stop_vm() {
     local vm_name="$1"
 
-    if ! virsh dominfo "$vm_name" &>/dev/null; then
+    if ! sudo virsh dominfo "$vm_name" &>/dev/null; then
         log_error "VM '$vm_name' not found"
         return 1
     fi
 
     local state
-    state=$(virsh domstate "$vm_name")
+    state=$(sudo virsh domstate "$vm_name")
 
     if [[ "$state" != "running" ]]; then
         log_warn "VM '$vm_name' is not running"
@@ -116,14 +116,14 @@ stop_vm() {
     fi
 
     log_info "Gracefully stopping VM '$vm_name'..."
-    if virsh shutdown "$vm_name"; then
+    if sudo virsh shutdown "$vm_name"; then
         log_success "Shutdown command sent to VM '$vm_name'"
         log_info "Waiting for VM to stop..."
 
         # Wait up to 60 seconds for graceful shutdown
         local count=0
         while [[ $count -lt 20 ]]; do
-            state=$(virsh domstate "$vm_name")
+            state=$(sudo virsh domstate "$vm_name")
             if [[ "$state" == "shut off" ]]; then
                 log_success "VM '$vm_name' stopped gracefully"
                 return 0
@@ -133,7 +133,7 @@ stop_vm() {
         done
 
         log_warn "VM didn't stop gracefully, forcing shutdown..."
-        virsh destroy "$vm_name"
+        sudo virsh destroy "$vm_name"
         log_success "VM '$vm_name' force stopped"
     else
         log_error "Failed to stop VM '$vm_name'"
@@ -153,13 +153,13 @@ restart_vm() {
 destroy_vm() {
     local vm_name="$1"
 
-    if ! virsh dominfo "$vm_name" &>/dev/null; then
+    if ! sudo virsh dominfo "$vm_name" &>/dev/null; then
         log_error "VM '$vm_name' not found"
         return 1
     fi
 
     log_warn "Force stopping VM '$vm_name'..."
-    if virsh destroy "$vm_name"; then
+    if sudo virsh destroy "$vm_name"; then
         log_success "VM '$vm_name' force stopped"
     else
         log_warn "VM '$vm_name' was not running or already stopped"
@@ -169,7 +169,7 @@ destroy_vm() {
 delete_vm() {
     local vm_name="$1"
 
-    if ! virsh dominfo "$vm_name" &>/dev/null; then
+    if ! sudo virsh dominfo "$vm_name" &>/dev/null; then
         log_error "VM '$vm_name' not found"
         return 1
     fi
@@ -182,17 +182,17 @@ delete_vm() {
     fi
 
     local state
-    state=$(virsh domstate "$vm_name")
+    state=$(sudo virsh domstate "$vm_name")
     if [[ "$state" == "running" ]]; then
         log_info "Stopping VM first..."
-        virsh destroy "$vm_name"
+        sudo virsh destroy "$vm_name"
     fi
 
     local disks
-    disks=$(virsh domblklist "$vm_name" --details | awk '/file.*disk/ {print $4}')
+    disks=$(sudo virsh domblklist "$vm_name" --details | awk '/file.*disk/ {print $4}')
 
     log_info "Removing VM definition..."
-    if virsh undefine "$vm_name"; then
+    if sudo virsh undefine "$vm_name"; then
         log_success "VM '$vm_name' undefined"
     fi
 
@@ -218,13 +218,13 @@ delete_vm() {
 connect_console() {
     local vm_name="$1"
 
-    if ! virsh dominfo "$vm_name" &>/dev/null; then
+    if ! sudo virsh dominfo "$vm_name" &>/dev/null; then
         log_error "VM '$vm_name' not found"
         return 1
     fi
 
     local state
-    state=$(virsh domstate "$vm_name")
+    state=$(sudo virsh domstate "$vm_name")
 
     if [[ "$state" != "running" ]]; then
         log_error "VM '$vm_name' is not running"
@@ -235,19 +235,19 @@ connect_console() {
     log_info "Connecting to console of VM '$vm_name'..."
     log_info "Press Ctrl+] to exit console"
     echo
-    virsh console "$vm_name"
+    sudo virsh console "$vm_name"
 }
 
 get_vm_ip() {
     local vm_name="$1"
 
-    if ! virsh dominfo "$vm_name" &>/dev/null; then
+    if ! sudo virsh dominfo "$vm_name" &>/dev/null; then
         log_error "VM '$vm_name' not found"
         return 1
     fi
 
     local state
-    state=$(virsh domstate "$vm_name")
+    state=$(sudo virsh domstate "$vm_name")
 
     if [[ "$state" != "running" ]]; then
         log_error "VM '$vm_name' is not running"
@@ -257,11 +257,11 @@ get_vm_ip() {
     log_info "Getting IP address for VM '$vm_name'..."
 
     local ip_info
-    ip_info=$(virsh domifaddr "$vm_name" 2>/dev/null)
+    ip_info=$(sudo virsh domifaddr "$vm_name" 2>/dev/null)
 
     if [[ -z "$ip_info" ]] || ! echo "$ip_info" | grep -q "ipv4"; then
         log_warn "No IP address found. VM may still be booting."
-        log_info "Try again in a few seconds, or check with: virsh domifaddr $vm_name"
+        log_info "Try again in a few seconds, or check with: sudo virsh domifaddr $vm_name"
         return 1
     fi
 
@@ -285,7 +285,7 @@ show_ssh_command() {
 show_logs() {
     local vm_name="$1"
 
-    if ! virsh dominfo "$vm_name" &>/dev/null; then
+    if ! sudo virsh dominfo "$vm_name" &>/dev/null; then
         log_error "VM '$vm_name' not found"
         return 1
     fi
@@ -307,7 +307,7 @@ cleanup_vms() {
 
     # List stopped VMs
     local stopped_vms
-    stopped_vms=$(virsh list --inactive --name)
+    stopped_vms=$(sudo virsh list --inactive --name)
 
     if [[ -n "$stopped_vms" ]]; then
         log_info "Stopped VMs found:"
@@ -332,7 +332,7 @@ cleanup_vms() {
         if [[ -d "$dir" ]]; then
             local vm_name
             vm_name=$(basename "$dir" | sed 's/-vm$//')
-            if ! virsh dominfo "$vm_name" &>/dev/null; then
+            if ! sudo virsh dominfo "$vm_name" &>/dev/null; then
                 log_warn "Found orphaned directory: $dir"
                 read -p "Remove orphaned directory $dir? (y/N): " -r
                 if [[ $REPLY =~ ^[Yy]$ ]]; then

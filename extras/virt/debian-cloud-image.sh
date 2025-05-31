@@ -150,7 +150,7 @@ virt_debian_latest() {
         echo "       Please create/configure the host bridge." >&2
         error_found=1
     fi
-    if virsh dominfo "${VM_NAME}" &>/dev/null; then
+    if sudo virsh dominfo "${VM_NAME}" &>/dev/null; then
         echo "ERROR: A VM with the name '${VM_NAME}' already exists." >&2
         error_found=1
     fi
@@ -266,7 +266,7 @@ virt_debian_latest() {
     echo "  Network: Bridge ${BRIDGE_IF}"
     echo "  Cloud-Init: Meta=${METADATA}, User=${USERDATA}, Net=${NETCONFIG}"
 
-    virt-install \
+    sudo virt-install \
         --connect qemu:///system \
         --virt-type kvm \
         --name "${VM_NAME}" \
@@ -291,9 +291,9 @@ virt_debian_latest() {
         echo "-----------------------------------------------------"
         echo "VM '${VM_NAME}' creation command submitted successfully."
         echo "Wait a minute or two for cloud-init to complete."
-        echo "Check status: virsh list --all"
-        echo "Connect to console: virsh console ${VM_NAME}"
-        echo "Find IP (if DHCP): virsh domifaddr ${VM_NAME}"
+        echo "Check status: sudo virsh list --all"
+        echo "Connect to console: sudo virsh console ${VM_NAME}"
+        echo "Find IP (if DHCP): sudo virsh domifaddr ${VM_NAME}"
         echo "-----------------------------------------------------"
     else
         echo "ERROR: virt-install command failed with exit status ${exit_status}." >&2

@@ -40,8 +40,8 @@ cleanup_on_error() {
   log_warn "Cleaning up due to error..."
   [[ -f "$DISK_IMG" ]] && rm -f "$DISK_IMG"
   [[ -f "$SEED_ISO" ]] && rm -f "$SEED_ISO"
-  virsh destroy "$VM_NAME" 2>/dev/null || true
-  virsh undefine "$VM_NAME" 2>/dev/null || true
+  sudo virsh destroy "$VM_NAME" 2>/dev/null || true
+  sudo virsh undefine "$VM_NAME" 2>/dev/null || true
 }
 
 trap cleanup_on_error ERR
@@ -127,7 +127,7 @@ check_prerequisites() {
   log_info "Checking prerequisites..."
 
   if ! groups | grep -q libvirt; then
-    log_warn "User not in libvirt group. You may need sudo for virsh commands"
+    log_warn "User not in libvirt group. You may need sudo for sudo virsh commands"
     log_warn "Add user to group: sudo usermod -a -G libvirt \$USER"
   fi
 
@@ -137,9 +137,9 @@ check_prerequisites() {
     exit 1
   fi
 
-  if virsh list --all | grep -q "$VM_NAME"; then
+  if sudo virsh list --all | grep -q "$VM_NAME"; then
     log_error "VM '$VM_NAME' already exists"
-    log_error "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
+    log_error "Remove with: sudo virsh destroy $VM_NAME && sudo virsh undefine $VM_NAME"
     exit 1
   fi
 
@@ -261,7 +261,7 @@ launch_vm() {
     network_config="bridge=$BRIDGE_IF,model=virtio"
   fi
 
-  if ! virt-install \
+  if ! sudo virt-install \
     --name "$VM_NAME" \
     --memory "$RAM_MB" \
     --vcpus "$VCPUS" \

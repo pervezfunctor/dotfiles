@@ -40,8 +40,8 @@ cleanup_on_error() {
     log_warn "Cleaning up due to error..."
     [[ -f "$DISK_IMG" ]] && rm -f "$DISK_IMG"
     [[ -f "$SEED_ISO" ]] && rm -f "$SEED_ISO"
-    virsh destroy "$VM_NAME" 2>/dev/null || true
-    virsh undefine "$VM_NAME" 2>/dev/null || true
+    sudo virsh destroy "$VM_NAME" 2>/dev/null || true
+    sudo virsh undefine "$VM_NAME" 2>/dev/null || true
 }
 
 trap cleanup_on_error ERR
@@ -148,7 +148,7 @@ check_prerequisites() {
     log_info "Checking prerequisites..."
 
     local missing_tools=()
-    for tool in virsh virt-install qemu-img wget mkisofs; do
+    for tool in sudo virsh virt-install qemu-img wget mkisofs; do
         if ! command -v "$tool" &>/dev/null; then
             missing_tools+=("$tool")
         fi
@@ -167,7 +167,7 @@ check_prerequisites() {
     fi
 
     if ! groups | grep -q libvirt; then
-        log_warn "User not in libvirt group. You may need sudo for virsh commands"
+        log_warn "User not in libvirt group. You may need sudo for sudo virsh commands"
         log_warn "Add user to group: sudo usermod -a -G libvirt \$USER"
     fi
 
@@ -177,9 +177,9 @@ check_prerequisites() {
         exit 1
     fi
 
-    if virsh list --all | grep -q "$VM_NAME"; then
+    if sudo virsh list --all | grep -q "$VM_NAME"; then
         log_error "VM '$VM_NAME' already exists"
-        log_error "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
+        log_error "Remove with: sudo virsh destroy $VM_NAME && sudo virsh undefine $VM_NAME"
         exit 1
     fi
 
@@ -359,7 +359,7 @@ launch_vm() {
     log_info "  Network: $network_config"
     log_info "  OS Variant: $os_variant"
 
-    if ! virt-install \
+    if ! sudo virt-install \
         --name "$VM_NAME" \
         --memory "$RAM_MB" \
         --vcpus "$VCPUS" \
@@ -398,17 +398,17 @@ show_completion_info() {
     echo "  Fedora Release: $FEDORA_RELEASE"
     echo
     log_info "Useful Commands:"
-    echo "  Check VM status:    virsh list --all"
-    echo "  Start VM:           virsh start $VM_NAME"
-    echo "  Stop VM:            virsh shutdown $VM_NAME"
-    echo "  Force stop VM:      virsh destroy $VM_NAME"
-    echo "  Delete VM:          virsh undefine $VM_NAME"
-    echo "  Console access:     virsh console $VM_NAME"
-    echo "  Get VM IP:          virsh domifaddr $VM_NAME"
+    echo "  Check VM status:    sudo virsh list --all"
+    echo "  Start VM:           sudo virsh start $VM_NAME"
+    echo "  Stop VM:            sudo virsh shutdown $VM_NAME"
+    echo "  Force stop VM:      sudo virsh destroy $VM_NAME"
+    echo "  Delete VM:          sudo virsh undefine $VM_NAME"
+    echo "  Console access:     sudo virsh console $VM_NAME"
+    echo "  Get VM IP:          sudo virsh domifaddr $VM_NAME"
     echo
     log_info "SSH Access:"
     echo "  Wait 2-3 minutes for cloud-init to complete"
-    echo "  Find VM IP:         virsh domifaddr $VM_NAME"
+    echo "  Find VM IP:         sudo virsh domifaddr $VM_NAME"
     echo "  SSH by name:        ssh $USERNAME@$VM_NAME"
     echo "  SSH by IP:          ssh $USERNAME@<VM_IP>"
     echo
