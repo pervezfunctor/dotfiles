@@ -266,8 +266,7 @@ virt_debian_latest() {
     echo "  Network: Bridge ${BRIDGE_IF}"
     echo "  Cloud-Init: Meta=${METADATA}, User=${USERDATA}, Net=${NETCONFIG}"
 
-    # Use sudo for virt-install
-    sudo virt-install \
+    virt-install \
         --connect qemu:///system \
         --virt-type kvm \
         --name "${VM_NAME}" \
