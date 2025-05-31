@@ -3,17 +3,19 @@
 set -euo pipefail
 
 VM_NAME="ubuntu"
-RAM_MB=4096
+
 VCPUS=4
+RAM_MB=4096
 DISK_SIZE="40G"
-UBUNTU_RELEASE="noble" # 24.04 LTS
-UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
 WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
 CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
-BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
 DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
 SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
 BRIDGE_IF="virbr0"
+
+UBUNTU_RELEASE="noble" # 24.04 LTS
+UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
+BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
 USERNAME="ubuntu"
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
@@ -200,6 +202,24 @@ check_prerequisites() {
   fi
 
   log_success "Prerequisites check passed"
+}
+
+start_sudo_keepalive() {
+  log_info "Starting sudo keepalive process..."
+  sudo -v
+  (while true; do
+    sudo -v
+    sleep 50
+  done) &
+  SUDO_KEEPALIVE_PID=$!
+}
+
+stop_sudo_keepalive() {
+  if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
+    log_info "Stopping sudo keepalive process..."
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
+  fi
+  SUDO_KEEPALIVE_PID=""
 }
 
 download_ubuntu_image() {
@@ -436,11 +456,13 @@ main() {
   log_info "Working Directory: $WORKDIR"
 
   check_prerequisites
+  start_sudo_keepalive
   download_ubuntu_image
   create_vm_disk
   generate_cloud_init
   create_cloud_init_iso
   launch_vm
+  stop_sudo_keepalive
   show_completion_info
 
   log_success "All done! Your VM is ready."

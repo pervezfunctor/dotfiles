@@ -242,7 +242,6 @@ get_vm_ip() {
     local vm_name="$1"
 
     if ! virsh dominfo "$vm_name" &>/dev/null; then
-        log_error "VM '$vm_name' not found"
         return 1
     fi
 
@@ -250,24 +249,18 @@ get_vm_ip() {
     state=$(virsh domstate "$vm_name")
 
     if [[ "$state" != "running" ]]; then
-        log_error "VM '$vm_name' is not running"
-        return 1
+        return 2
     fi
-
-    log_info "Getting IP address for VM '$vm_name'..."
 
     local ip
     ip=$(virsh domifaddr "$vm_name" --source agent | awk '/enp/ {sub(/\/.*/, "", $4); print $4}')
 
     if [[ -z "$ip" ]]; then
-        log_info "Checking network DHCP leases..."
         ip=$(virsh net-dhcp-leases default 2>/dev/null | grep "$vm_name" | awk '{print $5}' | cut -d'/' -f1 | head -1)
     fi
 
     if [[ -z "$ip" ]]; then
-        log_warn "No IP address found. VM may still be booting."
-        log_info "Try again in a few seconds, or check with: virsh domifaddr $vm_name"
-        return 1
+        return 3
     fi
 
     echo "$ip"
@@ -338,13 +331,28 @@ cleanup_vms() {
     log_success "Cleanup complete"
 }
 
+ip_errors() {
+    local ret=$1
+    local vm_name=$2
+
+    if [[ $ret -eq 1 ]]; then
+        log_error "VM '$vm_name' not found"
+        return 1
+    elif [[ $ret -eq 2 ]]; then
+        log_error "VM '$vm_name' is not running"
+        return 1
+    elif [[ $ret -eq 3 ]]; then
+        log_error "Could not determine IP address for VM '$vm_name'"
+        return 1
+    fi
+
+}
 ssh_to_vm() {
     local vm_name="$1"
-    local username="${2:-ubuntu}" # Default username is ubuntu, but allow override
+    local username="${2:-ubuntu}"
 
     if ! virsh dominfo "$vm_name" &>/dev/null; then
         log_error "VM '$vm_name' not found"
-        echo
         return 1
     fi
 
@@ -354,21 +362,30 @@ ssh_to_vm() {
     if [[ "$state" != "running" ]]; then
         log_error "VM '$vm_name' is not running"
         log_info "Start it with: $0 start $vm_name"
-        echo
         return 1
     fi
 
     local ip
-    ip=$(virsh domifaddr "$vm_name" 2>/dev/null | awk '/ipv4/ {print $4}' | cut -d'/' -f1 | head -1)
-
-    if [[ -z "$ip" ]]; then
-        log_error "Could not determine IP address for VM '$vm_name'"
-        echo
-        return 1
-    fi
+    ip=$(get_vm_ip "$vm_name")
+    local ret=$?
+    ip_errors "$ret" "$vm_name"
 
     log_info "Connecting to $vm_name ($ip) as $username..."
     ssh "$username@$ip"
+}
+
+show_ip() {
+    local ip
+    ip=$(get_vm_ip "$vm_name")
+    local ret=$?
+    ip_errors "$ret" "$vm_name"
+
+    if [[ -n "$ip" ]]; then
+        echo "$ip"
+    else
+        log_error "Could not determine IP address for VM '$vm_name'"
+        return 1
+    fi
 }
 
 if [[ $# -eq 0 ]]; then
@@ -440,15 +457,7 @@ console)
     connect_console "$vm_name"
     ;;
 ip)
-    [[ -z "$vm_name" ]] && {
-        log_error "VM name required"
-        usage
-        exit 1
-    }
-    ip_address=$(get_vm_ip "$vm_name")
-    if [[ -n "$ip_address" ]]; then
-        echo "$ip_address"
-    fi
+    show_ip "$vm_name"
     ;;
 logs)
     [[ -z "$vm_name" ]] && {
@@ -467,7 +476,7 @@ ssh)
         usage
         exit 1
     }
-    ssh_to_vm "$vm_name"
+    ssh_to_vm "$vm_name" "${3:-$vm_name}"
     ;;
 --help | -h)
     usage

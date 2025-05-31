@@ -4,16 +4,18 @@ set -euo pipefail
 
 # Initial variable setup
 VM_NAME="debian"
-RAM_MB=4096
+
 VCPUS=4
+RAM_MB=4096
 DISK_SIZE="40G"
-DEBIAN_RELEASE="bookworm" # 12
 WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
 CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
-BASE_IMG="${WORKDIR}/debian-${DEBIAN_RELEASE}.qcow2"
 DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
 SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
 BRIDGE_IF="virbr0"
+
+BASE_IMG="${WORKDIR}/debian-${DEBIAN_RELEASE}.qcow2"
+DEBIAN_RELEASE="bookworm" # 12
 USERNAME="debian"
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
@@ -35,25 +37,6 @@ log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
-
-# Add sudo keepalive functions
-start_sudo_keepalive() {
-  log_info "Starting sudo keepalive process..."
-  sudo -v
-  (while true; do
-    sudo -v
-    sleep 50
-  done) &
-  SUDO_KEEPALIVE_PID=$!
-}
-
-stop_sudo_keepalive() {
-  if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
-    log_info "Stopping sudo keepalive process..."
-    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
-  fi
-  SUDO_KEEPALIVE_PID=""
-}
 
 cleanup_on_error() {
   log_warn "Cleaning up due to error..."
@@ -184,6 +167,24 @@ check_prerequisites() {
   fi
 
   log_success "Prerequisites check passed"
+}
+
+start_sudo_keepalive() {
+  log_info "Starting sudo keepalive process..."
+  sudo -v
+  (while true; do
+    sudo -v
+    sleep 50
+  done) &
+  SUDO_KEEPALIVE_PID=$!
+}
+
+stop_sudo_keepalive() {
+  if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
+    log_info "Stopping sudo keepalive process..."
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
+  fi
+  SUDO_KEEPALIVE_PID=""
 }
 
 download_debian_image() {

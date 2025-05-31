@@ -1,29 +1,20 @@
 #!/bin/bash
 
-# Enhanced Arch Linux VM Creation Script
-# Creates Arch Linux VMs using cloud-init and virt-install
-#
-# Features:
-# - Automatic Arch Linux cloud image download
-# - SSH key setup for passwordless access
-# - Configurable VM resources and networking
-# - Robust error handling and cleanup
-# - VM management utilities
-
 set -euo pipefail
 
-# === Default Configuration ===
 VM_NAME="arch"
+
+VCPUS=4
 RAM_MB=4096
-VCPUS=2
 DISK_SIZE="40G"
-ARCH_IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
 WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
 CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
-BASE_IMG="${WORKDIR}/arch-latest.qcow2"
 DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
 SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
 BRIDGE_IF="virbr0"
+
+ARCH_IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
+BASE_IMG="${WORKDIR}/arch-latest.qcow2"
 USERNAME="arch"
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
@@ -35,14 +26,12 @@ else
     SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 fi
 
-# === Color output ===
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# === Utility Functions ===
 log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
@@ -137,7 +126,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# === Validation Functions ===
 check_prerequisites() {
     log_info "Checking prerequisites..."
 
@@ -485,7 +473,6 @@ show_completion_info() {
     log_warn "Note: Cloud-init setup takes 1-2 minutes. Check /home/$USERNAME/vm-setup-complete for completion."
 }
 
-# === Main Execution ===
 main() {
     log_info "Starting Arch Linux VM creation..."
     log_info "VM Name: $VM_NAME"
@@ -504,5 +491,4 @@ main() {
     log_success "All done! Your Arch Linux VM is ready."
 }
 
-# Run main function
 main "$@"
