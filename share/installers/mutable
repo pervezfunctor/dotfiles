@@ -362,11 +362,16 @@ libvirt_config_install() {
 
     sudo usermod -aG libvirt "$(whoami)"
 
-    if has_cmd virsh; then
-        sudo virsh net-autostart default
-    else
-        warn "virsh not installed, libvirt default network might not autostart"
+    newgrp libvirt <<EOF
+    if ! virsh net-list --all | grep -q default; then
+         virsh net-define /usr/share/libvirt/networks/default.xml
+         virsh net-start default
+         virsh net-autostart default
     fi
+    if ! virsh net-list --all | grep -q default; then
+         warn "Failed to create default network"
+    fi
+EOF
 }
 
 foot_config_install() {

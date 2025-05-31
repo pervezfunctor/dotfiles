@@ -48,7 +48,7 @@ get_vm_ip() {
         return 0
     fi
 
-    ip=$(sudo virsh net-dhcp-leases default 2>/dev/null | grep "$vm_name" | awk '{print $5}' | cut -d'/' -f1 | head -1)
+    ip=$(virsh net-dhcp-leases default 2>/dev/null | grep "$vm_name" | awk '{print $5}' | cut -d'/' -f1 | head -1)
 
     if [[ -n "$ip" ]]; then
         echo "$ip"
