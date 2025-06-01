@@ -10,6 +10,8 @@ DISK_SIZE="40G"
 BRIDGE_IF="virbr0"
 USERNAME=""
 RELEASE=""
+INSTALL_DOCKER=false
+INSTALL_BREW=false
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
     SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
@@ -177,6 +179,8 @@ OPTIONS:
     --bridge BRIDGE     Network bridge (default: $BRIDGE_IF)
     --username USER     VM username (default: distribution-specific)
     --release REL       Distribution release (default: distribution-specific)
+    --docker            Install Docker in the VM
+    --brew              Install Homebrew and essential development tools
     --help, -h          Show this help
 
 DISTRIBUTION-SPECIFIC OPTIONS:
@@ -194,6 +198,9 @@ EXAMPLES:
     $0 --distro fedora --name myvm --memory 8192 # Custom Fedora VM
     $0 --distro arch --disk-size 80G --vcpus 4   # Arch VM with larger disk
     $0 --distro debian --release bullseye        # Debian 11 VM
+    $0 --distro ubuntu --docker                  # Ubuntu VM with Docker pre-installed
+    $0 --distro ubuntu --brew                    # Ubuntu VM with Homebrew and dev tools
+    $0 --distro fedora --docker --brew           # Fedora VM with both Docker and Homebrew
 
 PREREQUISITES:
     - KVM/QEMU installed and running
@@ -247,6 +254,14 @@ while [[ $# -gt 0 ]]; do
     --release)
         RELEASE="$2"
         shift 2
+        ;;
+    --docker)
+        INSTALL_DOCKER=true
+        shift
+        ;;
+    --brew)
+        INSTALL_BREW=true
+        shift
         ;;
     --help | -h)
         usage
@@ -448,6 +463,94 @@ Created on $(date)
     local packages="$base_packages"
     local runcmd="$base_runcmd"
 
+    if [[ "$INSTALL_DOCKER" == "true" ]]; then
+        motd_content+="
+Docker is installed and ready to use.
+Quick commands:
+  docker --version
+  docker-compose --version
+  docker run hello-world
+"
+
+        log_info "Adding Docker installation to cloud-init"
+
+        # Add Docker-specific packages based on distro
+        case "$DISTRO" in
+        ubuntu | debian)
+            runcmd+="
+  - curl -fsSL https://get.docker.com -o get-docker.sh
+  - sh get-docker.sh
+  - rm get-docker.sh"
+            ;;
+        fedora)
+            runcmd+="
+            - dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+            - dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+            ;;
+        arch)
+            packages+="
+  - docker
+  - docker-compose"
+            ;;
+        esac
+
+        runcmd+="  - usermod -aG docker $USERNAME
+  - systemctl enable --now docker"
+
+    fi
+
+    if [[ "$INSTALL_BREW" == "true" ]]; then
+        motd_content+="
+Homebrew is installed and ready to use.
+Essential development tools are pre-installed:
+  git, curl, wget, vim, htop, starship, fzf, ripgrep, etc.
+Quick commands:
+  brew --version
+  brew list
+  brew search <package>
+  brew install <package>
+"
+
+        log_info "Adding Homebrew installation to cloud-init"
+
+        # Add build dependencies for homebrew based on distro
+        case "$DISTRO" in
+        ubuntu | debian)
+            packages+="
+  - build-essential
+  - procps
+  - file"
+            ;;
+        fedora)
+            packages+="
+  - gcc
+  - gcc-c++
+  - make
+  - procps-ng
+  - file"
+            ;;
+        arch)
+            # base-devel already included above for arch
+            packages+="
+  - procps-ng
+  - file"
+            ;;
+        esac
+
+        # Add homebrew installation commands
+        runcmd+="
+  # Install Homebrew
+  - su - $USERNAME -c 'NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"'
+  # Set up Homebrew environment
+  - echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.bashrc
+  - echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.profile
+  # Install essential development tools
+  - su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install git curl wget vim htop starship fzf ripgrep eza zoxide fd bat'
+  # Install additional useful tools
+  - su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install gum tmux lazygit git-delta just jq yq'"
+
+    fi
+
     case "$DISTRO" in
     ubuntu | debian)
         packages+="
@@ -459,13 +562,14 @@ Created on $(date)
     fedora)
         packages+="
   - micro
+  - dnf-plugins-core
   - ca-certificates"
         ;;
     arch)
         packages+="
   - base-devel"
         runcmd="  - pacman -Syu --noconfirm
-$base_runcmd"
+$runcmd"
         ;;
     esac
 
@@ -615,6 +719,28 @@ show_completion_info() {
     echo "  Username: $USERNAME"
     echo "  SSH Key: $SSH_KEY"
     echo
+
+    if [[ "$INSTALL_DOCKER" == "true" ]]; then
+        log_info "Docker is pre-installed on this VM"
+        echo "  Docker Commands:"
+        echo "    Test Docker:        docker run hello-world"
+        echo "    Check version:      docker --version"
+        echo "    Check compose:      docker compose version"
+        echo
+    fi
+
+    if [[ "$INSTALL_BREW" == "true" ]]; then
+        log_info "Homebrew is pre-installed on this VM"
+        echo "  Homebrew Commands:"
+        echo "    Check version:      brew --version"
+        echo "    List packages:      brew list"
+        echo "    Search packages:    brew search <term>"
+        echo "    Install package:    brew install <package>"
+        echo "    Update packages:    brew update && brew upgrade"
+        echo "  Pre-installed tools: git, curl, wget, vim, htop, starship, fzf, ripgrep, eza, zoxide, fd, bat, gum, tmux, lazygit, git-delta, just, jq, yq"
+        echo
+    fi
+
     log_info "Useful Commands:"
     echo "  Check VM status:    virsh list --all"
     echo "  Start VM:           virsh start $VM_NAME"
