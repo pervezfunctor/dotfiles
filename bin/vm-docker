@@ -311,45 +311,22 @@ packages:
   - ca-certificates
   - gnupg
   - lsb-release
-  - openssh-server
 
-# Make sure the guest agent starts immediately
 runcmd:
-  # Enable and start the QEMU guest agent
-  - systemctl enable qemu-guest-agent.service
-  - systemctl start qemu-guest-agent.service
+  - systemctl enable --now qemu-guest-agent.service
 
-  # # Configure SSH
-  # - mkdir -p /home/$USERNAME/.ssh
-  # - echo "$pub_key" > /home/$USERNAME/.ssh/authorized_keys
-  # - chmod 700 /home/$USERNAME/.ssh
-  # - chmod 600 /home/$USERNAME/.ssh/authorized_keys
-  # - chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
-
-  # Install Docker
   - curl -fsSL https://get.docker.com -o get-docker.sh
   - sh get-docker.sh
   - rm get-docker.sh
   - usermod -aG docker $USERNAME
   - systemctl enable --now docker
 
-  # Install Docker Compose
-  - curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
-  - chmod +x /usr/local/bin/docker-compose
-
-  # Create a completion file
   - touch /home/$USERNAME/vm-setup-complete
   - chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete
   - chown -R $USERNAME:$USERNAME /home/$USERNAME
 
-# Set timezone
 timezone: UTC
 
-# Enable SSH password authentication and disable root login
-ssh_pwauth: true
-disable_root: false
-
-# Write some useful files
 write_files:
   - path: /etc/motd
     content: |
@@ -365,7 +342,6 @@ write_files:
 
     append: false
 
-# Final message
 final_message: "VM $VM_NAME setup complete! Docker is ready to use."
 EOF
 
@@ -439,7 +415,6 @@ launch_vm() {
     --os-variant "$os_variant" \
     --virt-type kvm \
     --graphics none \
-    --channel unix,target.type=virtio,target.name=org.qemu.guest_agent.0 \
     --network "$network_config" \
     --import \
     --noautoconsole; then
