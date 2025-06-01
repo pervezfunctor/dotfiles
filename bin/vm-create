@@ -43,6 +43,7 @@ cleanup_on_error() {
 }
 
 trap cleanup_on_error ERR
+trap 'cleanup_on_error; exit 1' INT TERM
 
 configure_ubuntu() {
     VM_NAME="${VM_NAME:-ubuntu}"
@@ -133,7 +134,6 @@ configure_debian() {
     INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
 }
 
-# Set distribution-specific configuration
 configure_distribution() {
     case "$DISTRO" in
     ubuntu) configure_ubuntu ;;
@@ -147,7 +147,11 @@ configure_distribution() {
         ;;
     esac
 
-    # Set derived variables after configuration
+    if [[ -z "$VM_NAME" ]]; then
+        log_error "VM name is empty after configuration"
+        exit 1
+    fi
+
     WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
     CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
     DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
@@ -206,7 +210,6 @@ INSTALL COMMANDS BY DISTRIBUTION:
 EOF
 }
 
-# Argument parsing
 while [[ $# -gt 0 ]]; do
     case $1 in
     --distro)
@@ -257,26 +260,22 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate required arguments
 if [[ -z "$DISTRO" ]]; then
     log_error "Distribution is required. Use --distro ubuntu|fedora|arch|debian"
     usage
     exit 1
 fi
 
-# Configure distribution-specific settings
 configure_distribution
 
 check_prerequisites() {
     log_info "Checking prerequisites..."
 
-    # Check for sudo privileges
     if ! sudo -v; then
         log_error "This script requires sudo privileges to create files in system directories"
         exit 1
     fi
 
-    # Determine QEMU user and group
     if getent passwd libvirt-qemu >/dev/null; then
         QEMU_USER="libvirt-qemu"
         QEMU_GROUP="libvirt-qemu"
@@ -368,12 +367,22 @@ download_image() {
     log_info "URL: $IMG_URL"
 
     sudo mkdir -p "$WORKDIR"
+    if [[ ! -d "$WORKDIR" ]]; then
+        log_error "Failed to create working directory: $WORKDIR"
+        exit 1
+    fi
+
     sudo chown "$QEMU_USER:$QEMU_GROUP" "$WORKDIR"
     sudo chmod 755 "$WORKDIR"
 
     if ! sudo wget -O "$BASE_IMG" "$IMG_URL"; then
         log_error "Failed to download $DISTRO cloud image"
         sudo rm -f "$BASE_IMG"
+        exit 1
+    fi
+
+    if [[ ! -f "$BASE_IMG" ]]; then
+        log_error "Image file was not created: $BASE_IMG"
         exit 1
     fi
 
@@ -408,89 +417,58 @@ generate_cloud_init() {
     sudo chmod 755 "$CLOUD_INIT_DIR"
 
     local pub_key
+    if [[ ! -f "$SSH_KEY" ]]; then
+        log_error "SSH public key not found at: $SSH_KEY"
+        exit 1
+    fi
     pub_key=$(cat "$SSH_KEY")
 
-    # Generate distribution-specific packages and commands
-    local packages=""
-    local runcmd=""
-    local motd_content=""
+    local motd_content
+    motd_content="Welcome to your $DISTRO $RELEASE VM ($VM_NAME)!
+Created on $(date)
+--------------------------------------------
+* Documentation: https://github.com/pervezfunctor/dotfiles
+* Support: https://github.com/pervezfunctor/dotfiles/issues
+--------------------------------------------
+"
+
+    local base_packages="  - qemu-guest-agent
+  - curl
+  - wget
+  - vim
+  - git
+  - unzip
+  - htop"
+
+    local base_runcmd="  - systemctl enable --now qemu-guest-agent
+  - touch /home/$USERNAME/vm-setup-complete
+  - chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete
+  - chown -R $USERNAME:$USERNAME /home/$USERNAME"
+
+    local packages="$base_packages"
+    local runcmd="$base_runcmd"
 
     case "$DISTRO" in
     ubuntu | debian)
-        packages="  - qemu-guest-agent
-  - curl
-  - wget
-  - vim
+        packages+="
   - micro
-  - htop
-  - git
-  - unzip
   - ca-certificates
   - gnupg
   - lsb-release"
-        runcmd="  - systemctl enable --now qemu-guest-agent
-  - touch /home/$USERNAME/vm-setup-complete
-  - chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete
-  - chown -R $USERNAME:$USERNAME /home/$USERNAME"
-        motd_content="Welcome to $VM_NAME $DISTRO VM!
-
-      User: $USERNAME (passwordless sudo enabled)"
         ;;
     fedora)
-        packages="  - qemu-guest-agent
-  - curl
-  - wget
-  - vim
+        packages+="
   - micro
-  - htop
-  - git
-  - unzip
   - ca-certificates"
-        runcmd="  - systemctl enable --now qemu-guest-agent
-  - touch /home/$USERNAME/vm-setup-complete
-  - chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete
-  - echo 'alias ll=\"ls -la\"' >> /home/$USERNAME/.bashrc
-  - echo 'alias la=\"ls -la\"' >> /home/$USERNAME/.bashrc
-  - chown -R $USERNAME:$USERNAME /home/$USERNAME"
-        motd_content="Welcome to $VM_NAME Fedora VM!
-
-      Fedora $RELEASE is ready to use.
-      User: $USERNAME (passwordless sudo enabled)
-
-      Quick commands:
-        sudo dnf update
-        sudo dnf install <package>"
         ;;
     arch)
-        packages="  - qemu-guest-agent
-  - curl
-  - wget
-  - vim
-  - htop
-  - git
-  - unzip
+        packages+="
   - base-devel"
-        runcmd="  - systemctl enable --now qemu-guest-agent
-  - pacman -Syu --noconfirm
-  - touch /home/$USERNAME/vm-setup-complete
-  - chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete
-  - echo 'alias ll=\"ls -la\"' >> /home/$USERNAME/.bashrc
-  - echo 'alias la=\"ls -la\"' >> /home/$USERNAME/.bashrc
-  - echo 'alias pac=\"sudo pacman\"' >> /home/$USERNAME/.bashrc
-  - chown -R $USERNAME:$USERNAME /home/$USERNAME"
-        motd_content="Welcome to $VM_NAME Arch Linux VM!
-
-      Arch Linux is ready to use.
-      User: $USERNAME (passwordless sudo enabled)
-
-      Quick commands:
-        sudo pacman -Syu        # Update system
-        sudo pacman -S <pkg>    # Install package
-        pacman -Ss <term>       # Search packages"
+        runcmd="  - pacman -Syu --noconfirm
+$base_runcmd"
         ;;
     esac
 
-    # Create user-data file
     sudo tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
 hostname: $VM_NAME
@@ -522,25 +500,27 @@ write_files:
   - path: /etc/motd
     content: |
       $motd_content
-
     append: false
 
 final_message: "VM $VM_NAME setup complete!"
 EOF
 
-    # Create meta-data file
     sudo tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
 instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
-    # Create network-config file
     sudo tee "${CLOUD_INIT_DIR}/network-config" >/dev/null <<EOF
 version: 2
 ethernets:
   enp1s0:
     dhcp4: true
 EOF
+
+    if [[ ! -f "${CLOUD_INIT_DIR}/user-data" || ! -f "${CLOUD_INIT_DIR}/meta-data" || ! -f "${CLOUD_INIT_DIR}/network-config" ]]; then
+        log_error "Failed to create one or more cloud-init configuration files"
+        exit 1
+    fi
 
     sudo chown -R "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
     sudo chmod -R 644 "$CLOUD_INIT_DIR"/*
@@ -556,6 +536,11 @@ create_cloud_init_iso() {
         "${CLOUD_INIT_DIR}/meta-data" \
         "${CLOUD_INIT_DIR}/network-config" 2>/dev/null; then
         log_error "Failed to create cloud-init ISO"
+        exit 1
+    fi
+
+    if [[ ! -f "$SEED_ISO" ]]; then
+        log_error "Cloud-init ISO was not created: $SEED_ISO"
         exit 1
     fi
 
@@ -600,13 +585,21 @@ launch_vm() {
         exit 1
     fi
 
+    if ! virsh list --all | grep -q "$VM_NAME"; then
+        log_error "VM '$VM_NAME' was not created successfully"
+        exit 1
+    fi
+
     log_success "VM '$VM_NAME' created successfully!"
 
-    # Add VM to /etc/hosts for easy access
     log_info "Adding VM to /etc/hosts for name-based access..."
-    sleep 5 # Give VM time to get IP
+    sleep 5
     if [[ -x "$HOME/.ilm/bin/vm-hosts" ]]; then
         "$HOME/.ilm/bin/vm-hosts" add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
+    elif [[ -x "$(command -v vm-hosts)" ]]; then
+        vm-hosts add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
+    else
+        log_warn "vm-hosts script not found, skipping /etc/hosts update"
     fi
 }
 
@@ -638,7 +631,6 @@ show_completion_info() {
     echo "  SSH by IP:          ssh $USERNAME@<VM_IP>"
     echo
 
-    # Distribution-specific commands
     case "$DISTRO" in
     ubuntu | debian)
         log_info "Package Management:"
@@ -664,7 +656,7 @@ show_completion_info() {
     esac
 
     echo
-    log_warn "Note: Cloud-init setup takes 1-3 minutes. Check /home/$USERNAME/vm-setup-complete for completion."
+    log_warn "Note: Cloud-init setup takes 1-3 minutes."
 }
 
 main() {
