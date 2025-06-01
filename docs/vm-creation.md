@@ -1,0 +1,209 @@
+# VM Creation Script
+
+The unified `vm-create` script allows you to easily create virtual machines for multiple Linux distributions using KVM/QEMU and cloud-init.
+
+## Supported Distributions
+
+- **Ubuntu** (noble, jammy, focal)
+- **Fedora** (40, 41, 42)
+- **Arch Linux** (latest)
+- **Debian** (bookworm, bullseye, trixie)
+
+## Prerequisites
+
+### Install Required Packages
+
+**Ubuntu/Debian:**
+```bash
+sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage
+```
+
+**Fedora:**
+```bash
+sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools
+```
+
+### Setup
+
+1. **Start libvirt service:**
+   ```bash
+   sudo systemctl start libvirtd
+   sudo systemctl enable libvirtd
+   ```
+
+2. **Add user to libvirt group:**
+   ```bash
+   sudo usermod -a -G libvirt $USER
+   # Log out and back in for group changes to take effect
+   ```
+
+3. **Generate SSH key (if not already done):**
+   ```bash
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+   ```
+
+## Usage
+
+### Basic Usage
+
+```bash
+# Create Ubuntu VM with defaults
+./bin/vm-create --distro ubuntu
+
+# Create Fedora VM with custom name and memory
+./bin/vm-create --distro fedora --name myvm --memory 8192
+
+# Create Arch VM with larger disk
+./bin/vm-create --distro arch --disk-size 80G --vcpus 4
+
+# Create Debian 11 VM
+./bin/vm-create --distro debian --release bullseye
+```
+
+### All Options
+
+```bash
+./bin/vm-create --distro DISTRO [OPTIONS]
+
+REQUIRED:
+    --distro DISTRO     Distribution (ubuntu|fedora|arch|debian)
+
+OPTIONS:
+    --name NAME         VM name (default: distribution name)
+    --memory MB         RAM in MB (default: 4096)
+    --vcpus NUM         Number of vCPUs (default: 4)
+    --disk-size SIZE    Disk size (default: 40G)
+    --ssh-key PATH      SSH public key path (auto-detected)
+    --bridge BRIDGE     Network bridge (default: virbr0)
+    --username USER     VM username (default: distribution-specific)
+    --release REL       Distribution release (default: latest stable)
+```
+
+## Distribution-Specific Defaults
+
+| Distribution | Default Release | Default Username | User Groups |
+|--------------|----------------|------------------|-------------|
+| Ubuntu       | noble (24.04)  | ubuntu           | sudo        |
+| Fedora       | 42             | fedora           | wheel       |
+| Arch Linux   | latest         | arch             | wheel       |
+| Debian       | bookworm (12)  | debian           | sudo        |
+
+## VM Management
+
+### Common Commands
+
+```bash
+# List all VMs
+virsh list --all
+
+# Start VM
+virsh start VM_NAME
+
+# Stop VM gracefully
+virsh shutdown VM_NAME
+
+# Force stop VM
+virsh destroy VM_NAME
+
+# Delete VM
+virsh undefine VM_NAME
+
+# Get VM IP address
+virsh domifaddr VM_NAME
+
+# Console access
+virsh console VM_NAME
+```
+
+### SSH Access
+
+After VM creation (wait 2-3 minutes for cloud-init to complete):
+
+```bash
+# SSH by name (if added to /etc/hosts)
+ssh username@vm_name
+
+# SSH by IP
+ssh username@VM_IP
+```
+
+## Features
+
+- **Unified interface** for multiple distributions
+- **Cloud-init integration** for automated setup
+- **Distribution-specific optimizations**
+- **Automatic SSH key injection**
+- **Network bridge support**
+- **Customizable VM specifications**
+- **Error handling and cleanup**
+- **Comprehensive logging**
+
+## Migration from Individual Scripts
+
+The unified script replaces the individual `vm-ubuntu`, `vm-fedora`, `vm-arch`, and `vm-debian` scripts. All functionality has been preserved and enhanced:
+
+```bash
+# Old way
+./bin/vm-ubuntu --name myvm --memory 8192
+
+# New way
+./bin/vm-create --distro ubuntu --name myvm --memory 8192
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **libvirtd not running:**
+   ```bash
+   sudo systemctl start libvirtd
+   ```
+
+2. **Permission denied:**
+   ```bash
+   sudo usermod -a -G libvirt $USER
+   # Log out and back in
+   ```
+
+3. **Network bridge not found:**
+   - Script will automatically fall back to default libvirt network
+   - Or specify `--bridge default` explicitly
+
+4. **VM already exists:**
+   ```bash
+   virsh destroy VM_NAME
+   virsh undefine VM_NAME
+   ```
+
+### Logs and Debugging
+
+- Check VM console: `virsh console VM_NAME`
+- Check cloud-init status: `ssh user@vm` then `cloud-init status`
+- Check setup completion: Look for `/home/username/vm-setup-complete` file
+
+## Advanced Usage
+
+### Custom Network Bridge
+
+```bash
+# Create custom bridge
+sudo ip link add br0 type bridge
+sudo ip link set br0 up
+
+# Use custom bridge
+./bin/vm-create --distro ubuntu --bridge br0
+```
+
+### Multiple VMs
+
+```bash
+# Create multiple VMs with different names
+./bin/vm-create --distro ubuntu --name web-server
+./bin/vm-create --distro fedora --name dev-box
+./bin/vm-create --distro arch --name test-env
+```
