@@ -196,12 +196,25 @@ virsh console VM_NAME
 After VM creation (wait 2-3 minutes for cloud-init to complete):
 
 ```bash
-# SSH by name (if added to /etc/hosts)
+# Using the vm script (recommended - auto-detects username)
+./bin/vm ssh vm_name
+
+# Manual SSH by name (if added to /etc/hosts)
 ssh username@vm_name
 
-# SSH by IP
+# Manual SSH by IP
 ssh username@VM_IP
 ```
+
+**Username Auto-Detection:**
+The `vm ssh` command automatically detects the correct username based on the VM name:
+- **CoreOS VMs**: Uses `coreos` user
+- **Fedora VMs**: Uses `fedora` user
+- **Debian VMs**: Uses `debian` user
+- **Arch VMs**: Uses `arch` user
+- **Other VMs**: Defaults to `ubuntu` user
+
+You can override the username: `./bin/vm ssh vm_name custom_user`
 
 ## Features
 
@@ -209,6 +222,7 @@ ssh username@VM_IP
 - **Cloud-init integration** for automated setup
 - **Distribution-specific optimizations**
 - **Automatic SSH key injection**
+- **Smart SSH access** with username auto-detection
 - **Network bridge support**
 - **Customizable VM specifications**
 - **Pre-installed software options:**

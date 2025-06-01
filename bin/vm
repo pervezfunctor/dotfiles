@@ -37,7 +37,9 @@ EXAMPLES:
     $0 list                    # List all VMs
     $0 status ubuntu           # Show status of 'ubuntu' VM
     $0 start ubuntu            # Start 'ubuntu' VM
-    $0 ssh ubuntu              # Connect to 'ubuntu' VM
+    $0 ssh ubuntu              # Connect to 'ubuntu' VM (auto-detects username)
+    $0 ssh coreos              # Connect to CoreOS VM as 'core' user
+    $0 ssh fedora fedora       # Connect to Fedora VM as 'fedora' user
     $0 delete old-vm           # Delete 'old-vm' completely
 
 EOF
@@ -347,9 +349,46 @@ ip_errors() {
     fi
 
 }
+detect_vm_username() {
+    local vm_name="$1"
+
+    # Try to detect username based on VM name patterns and OS info
+    local os_variant=""
+    if virsh dumpxml "$vm_name" 2>/dev/null | grep -q "os-variant"; then
+        os_variant=$(virsh dumpxml "$vm_name" | grep -o 'os-variant="[^"]*"' | cut -d'"' -f2)
+    fi
+
+    # Check for CoreOS patterns
+    if [[ "$vm_name" == *"coreos"* ]] || [[ "$os_variant" == *"coreos"* ]]; then
+        echo "core"
+        return 0
+    fi
+
+    # Check for Fedora patterns
+    if [[ "$vm_name" == *"fedora"* ]] || [[ "$os_variant" == *"fedora"* ]]; then
+        echo "fedora"
+        return 0
+    fi
+
+    # Check for Debian patterns
+    if [[ "$vm_name" == *"debian"* ]] || [[ "$os_variant" == *"debian"* ]]; then
+        echo "debian"
+        return 0
+    fi
+
+    # Check for Arch patterns
+    if [[ "$vm_name" == *"arch"* ]] || [[ "$os_variant" == *"arch"* ]]; then
+        echo "arch"
+        return 0
+    fi
+
+    # Default to ubuntu for unknown VMs
+    echo "ubuntu"
+}
+
 ssh_to_vm() {
     local vm_name="$1"
-    local username="${2:-ubuntu}"
+    local username="${2:-}"
 
     if ! virsh dominfo "$vm_name" &>/dev/null; then
         log_error "VM '$vm_name' not found"
@@ -363,6 +402,12 @@ ssh_to_vm() {
         log_error "VM '$vm_name' is not running"
         log_info "Start it with: $0 start $vm_name"
         return 1
+    fi
+
+    # Auto-detect username if not provided
+    if [[ -z "$username" ]]; then
+        username=$(detect_vm_username "$vm_name")
+        log_info "Auto-detected username: $username"
     fi
 
     local ip
@@ -476,7 +521,7 @@ ssh)
         usage
         exit 1
     }
-    ssh_to_vm "$vm_name" "${3:-$vm_name}"
+    ssh_to_vm "$vm_name" "${3:-}"
     ;;
 --help | -h)
     usage
