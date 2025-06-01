@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-VM_NAME="docker"
+VM_NAME="ud"
 
 VCPUS=4
 RAM_MB=4096
@@ -16,7 +16,7 @@ BRIDGE_IF="virbr0"
 UBUNTU_RELEASE="noble" # 24.04 LTS
 UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
 BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
-USERNAME="docker"
+USERNAME="ud"
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
   SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
@@ -277,9 +277,7 @@ generate_cloud_init() {
   local pub_key
   pub_key=$(cat "$SSH_KEY")
 
-  log_info "Using SSH key: $SSH_KEY"
-  log_info "Public key: $pub_key"
-
+  # Create user-data file
   sudo tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
 hostname: $VM_NAME
@@ -288,7 +286,7 @@ manage_etc_hosts: true
 # User configuration
 users:
   - name: $USERNAME
-    groups: [sudo, docker]
+    groups: [sudo]
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
@@ -313,7 +311,7 @@ packages:
   - lsb-release
 
 runcmd:
-  - systemctl enable --now qemu-guest-agent.service
+  - systemctl enable --now qemu-guest-agent
 
   - curl -fsSL https://get.docker.com -o get-docker.sh
   - sh get-docker.sh
@@ -345,11 +343,13 @@ write_files:
 final_message: "VM $VM_NAME setup complete! Docker is ready to use."
 EOF
 
+  # Create meta-data file
   sudo tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
 instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
+  # Create network-config file
   sudo tee "${CLOUD_INIT_DIR}/network-config" >/dev/null <<EOF
 version: 2
 ethernets:
@@ -391,10 +391,11 @@ launch_vm() {
 
   local os_variant="ubuntu24.04"
   case "$UBUNTU_RELEASE" in
+  # "plucky") os_variant="ubuntu25.04" ;;
   "noble") os_variant="ubuntu24.04" ;;
   "jammy") os_variant="ubuntu22.04" ;;
   "focal") os_variant="ubuntu20.04" ;;
-  *) log_warn "Unknown Ubuntu release '$UBUNTU_RELEASE', using ubuntu24.04 as os-variant" ;;
+  *) log_warn "Unknown Ubuntu release '$UBUNTU_RELEASE', using ubuntu22.04 as os-variant" ;;
   esac
 
   log_info "VM Configuration:"
@@ -421,6 +422,8 @@ launch_vm() {
     log_error "Failed to create VM"
     exit 1
   fi
+
+  # --channel unix,target.type=virtio,target.name=org.qemu.guest_agent.0 \
 
   log_success "VM '$VM_NAME' created successfully!"
 
