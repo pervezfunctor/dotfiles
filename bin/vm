@@ -22,8 +22,8 @@ Manage VMs created with libvirt-* scripts.
 COMMANDS:
     list                List all VMs
     status <vm-name>    Show VM status and info
-    create <vm-name> <distro>  Create a new VM
-    autostart <vm-name>  Set VM to start on boot
+    create  ARGS        Create a new VM, with same ARGS as vm-create
+    autostart <vm-name> Set VM to start on boot
     start <vm-name>     Start a VM
     stop <vm-name>      Gracefully stop a VM
     restart <vm-name>   Restart a VM
@@ -38,7 +38,7 @@ COMMANDS:
 EXAMPLES:
     $0 list                    # List all VMs
     $0 status ubuntu           # Show status of 'ubuntu' VM
-    $0 create ubuntu ubuntu   # Create Ubuntu VM
+    $0 create --distro ubuntu  # Create Ubuntu VM
     $0 start ubuntu            # Start 'ubuntu' VM
     $0 ssh ubuntu              # Connect to 'ubuntu' VM (auto-detects username)
     $0 ssh coreos              # Connect to CoreOS VM as 'core' user
@@ -76,20 +76,7 @@ vm_status() {
 }
 
 create_vm() {
-    local vm_name="$1"
-    local distro="$2"
-
-    if [[ -z "$vm_name" ]]; then
-        log_error "VM name is required"
-        return 1
-    fi
-
-    if [[ -z "$distro" ]]; then
-        log_error "Distribution is required"
-        return 1
-    fi
-
-    vm-create --distro "$distro" --name "$vm_name"
+    vm-create "$@"
 }
 
 # start vm on boot
@@ -438,7 +425,6 @@ fi
 
 command="$1"
 vm_name="${2:-}"
-distro="${3:-}"
 
 case "$command" in
 list)
@@ -453,17 +439,7 @@ status)
     vm_status "$vm_name"
     ;;
 create)
-    [[ -z "$vm_name" ]] && {
-        log_error "VM name required"
-        usage
-        exit 1
-    }
-    [[ -z "$distro" ]] && {
-        log_error "Distribution required"
-        usage
-        exit 1
-    }
-    create_vm "$vm_name" "$distro"
+    vm-create "${@:2}"
     ;;
 autostart)
     [[ -z "$vm_name" ]] && {
