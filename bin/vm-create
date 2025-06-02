@@ -459,10 +459,12 @@ generate_cloud_init() {
 
     local -a packages=(
         "qemu-guest-agent"
+        "git"
+        "trash-cli"
+        "micro"
+        "tree"
         "curl"
         "wget"
-        "vim"
-        "git"
         "unzip"
         "htop"
     )
@@ -477,7 +479,6 @@ generate_cloud_init() {
     case "$DISTRO" in
     ubuntu | debian)
         packages+=(
-            "micro"
             "ca-certificates"
             "gnupg"
             "lsb-release"
@@ -486,7 +487,7 @@ generate_cloud_init() {
         ;;
     fedora)
         packages+=(
-            "micro"
+            "stow"
             "dnf-plugins-core"
             "ca-certificates"
             "policycoreutils-python-utils"
@@ -500,6 +501,7 @@ generate_cloud_init() {
 
     arch)
         packages+=(
+            "stow"
             "base-devel"
         )
         ;;
