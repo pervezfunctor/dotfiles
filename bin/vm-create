@@ -2,16 +2,18 @@
 
 set -euo pipefail
 
-VM_NAME=""
-DISTRO=""
 VCPUS=4
 RAM_MB=4096
 DISK_SIZE="40G"
 BRIDGE_IF="virbr0"
-USERNAME=""
-RELEASE=""
 INSTALL_DOCKER=false
 INSTALL_BREW=false
+
+unset VM_NAME
+unset USERNAME
+unset RELEASE
+unset DISTRO
+unset PASSWORD
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
     SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
@@ -48,13 +50,13 @@ trap cleanup_on_error ERR
 trap 'cleanup_on_error; exit 1' INT TERM
 
 configure_ubuntu() {
-    VM_NAME="${VM_NAME:-ubuntu}"
-    USERNAME="${USERNAME:-ubuntu}"
-    RELEASE="${RELEASE:-noble}" # 24.04 LTS
+    VM_NAME=${VM_NAME:=ubuntu}
+    USERNAME=${USERNAME:=$VM_NAME}
+    RELEASE=${RELEASE:=noble} # 24.04 LTS
 
     IMG_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${RELEASE}-server-cloudimg-amd64.img"
     BASE_IMG_NAME="${RELEASE}.img"
-    USER_GROUPS="[sudo]"
+    USER_GROUPS=("adm" "sudo")
     INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
 
     case "$RELEASE" in
@@ -69,9 +71,9 @@ configure_ubuntu() {
 }
 
 configure_fedora() {
-    VM_NAME="${VM_NAME:-fedora}"
-    USERNAME="${USERNAME:-fedora}"
-    RELEASE="${RELEASE:-42}"
+    VM_NAME=${VM_NAME:=fedora}
+    USERNAME=${USERNAME:=$VM_NAME}
+    RELEASE=${RELEASE:=42}
 
     if [[ "$RELEASE" -ge 42 ]]; then
         IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${RELEASE}-1.1.x86_64.qcow2"
@@ -80,7 +82,7 @@ configure_fedora() {
     fi
 
     BASE_IMG_NAME="fedora-${RELEASE}.qcow2"
-    USER_GROUPS="[wheel]"
+    USER_GROUPS=("wheel")
     INSTALL_CMD="sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
     OS_VARIANT="fedora${RELEASE}"
 
@@ -91,13 +93,13 @@ configure_fedora() {
 }
 
 configure_arch() {
-    VM_NAME="${VM_NAME:-arch}"
-    USERNAME="${USERNAME:-arch}"
-    RELEASE="${RELEASE:-latest}"
+    VM_NAME=${VM_NAME:=arch}
+    USERNAME=${USERNAME:=$VM_NAME}
+    RELEASE=${RELEASE:=latest}
 
     IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
     BASE_IMG_NAME="arch-latest.qcow2"
-    USER_GROUPS="[wheel]"
+    USER_GROUPS=("wheel")
     INSTALL_CMD="sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools"
     OS_VARIANT="archlinux"
 
@@ -108,9 +110,9 @@ configure_arch() {
 }
 
 configure_debian() {
-    VM_NAME="${VM_NAME:-debian}"
-    USERNAME="${USERNAME:-debian}"
-    RELEASE="${RELEASE:-bookworm}" # 12
+    VM_NAME=${VM_NAME:=debian}
+    USERNAME=${USERNAME:=$VM_NAME}
+    RELEASE=${RELEASE:=bookworm} # 12
 
     case "$RELEASE" in
     "bookworm")
@@ -132,7 +134,7 @@ configure_debian() {
     esac
 
     BASE_IMG_NAME="debian-${RELEASE}.qcow2"
-    USER_GROUPS="sudo"
+    USER_GROUPS=("sudo")
     INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
 }
 
@@ -159,6 +161,9 @@ configure_distribution() {
     DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
     SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
     BASE_IMG="${WORKDIR}/${BASE_IMG_NAME}"
+    PASSWORD=${PASSWORD:=$USERNAME}
+
+    PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 }
 
 usage() {
@@ -181,6 +186,7 @@ OPTIONS:
     --release REL       Distribution release (default: distribution-specific)
     --docker            Install Docker in the VM
     --brew              Install Homebrew and essential development tools
+    --password PASS     Set password for VM user (default: same as VM name)
     --help, -h          Show this help
 
 DISTRIBUTION-SPECIFIC OPTIONS:
@@ -263,6 +269,10 @@ while [[ $# -gt 0 ]]; do
         INSTALL_BREW=true
         shift
         ;;
+    --password)
+        shift
+        PASSWORD="$1"
+        ;;
     --help | -h)
         usage
         exit 0
@@ -280,8 +290,6 @@ if [[ -z "$DISTRO" ]]; then
     usage
     exit 1
 fi
-
-configure_distribution
 
 check_prerequisites() {
     log_info "Checking prerequisites..."
@@ -431,147 +439,166 @@ generate_cloud_init() {
     sudo chown "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
     sudo chmod 755 "$CLOUD_INIT_DIR"
 
-    local pub_key
     if [[ ! -f "$SSH_KEY" ]]; then
         log_error "SSH public key not found at: $SSH_KEY"
         exit 1
     fi
+
+    local pub_key
     pub_key=$(cat "$SSH_KEY")
 
     local motd_content
-    motd_content="Welcome to your $DISTRO $RELEASE VM ($VM_NAME)!
-Created on $(date)
---------------------------------------------
-* Documentation: https://github.com/pervezfunctor/dotfiles
-* Support: https://github.com/pervezfunctor/dotfiles/issues
---------------------------------------------
+    motd_content="
+      Welcome to your $DISTRO $RELEASE VM ($VM_NAME)!
+      Created on $(date)
+      --------------------------------------------
+      * Documentation: https://github.com/pervezfunctor/dotfiles
+      * Support: https://github.com/pervezfunctor/dotfiles/issues
+      --------------------------------------------
 "
 
-    local base_packages="  - qemu-guest-agent
-  - curl
-  - wget
-  - vim
-  - git
-  - unzip
-  - htop"
+    local -a packages=(
+        "qemu-guest-agent"
+        "curl"
+        "wget"
+        "vim"
+        "git"
+        "unzip"
+        "htop"
+    )
 
-    local base_runcmd="  - systemctl enable --now qemu-guest-agent
-  - touch /home/$USERNAME/vm-setup-complete
-  - chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete
-  - chown -R $USERNAME:$USERNAME /home/$USERNAME"
+    local -a runcmd=(
+        "systemctl enable --now qemu-guest-agent"
+        "touch /home/$USERNAME/vm-setup-complete"
+        "chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete"
+        "chown -R $USERNAME:$USERNAME /home/$USERNAME"
+    )
 
-    local packages="$base_packages"
-    local runcmd="$base_runcmd"
+    case "$DISTRO" in
+    ubuntu | debian)
+        packages+=(
+            "micro"
+            "ca-certificates"
+            "gnupg"
+            "lsb-release"
+        )
+
+        ;;
+    fedora)
+        packages+=(
+            "micro"
+            "dnf-plugins-core"
+            "ca-certificates"
+            "policycoreutils-python-utils"
+        )
+        runcmd+=(
+            "systemctl enable --now firewalld || true"
+            "firewall-cmd --permanent --add-service=ssh || true"
+            "firewall-cmd --reload || true"
+        )
+        ;;
+
+    arch)
+        packages+=(
+            "base-devel"
+        )
+        ;;
+    esac
 
     if [[ "$INSTALL_DOCKER" == "true" ]]; then
         motd_content+="
-Docker is installed and ready to use.
-Quick commands:
-  docker --version
-  docker-compose --version
-  docker run hello-world
+      Docker is installed and ready to use.
+      Quick commands:
+      docker --version
+      docker-compose --version
+      docker run hello-world
 "
 
         log_info "Adding Docker installation to cloud-init"
 
-        # Add Docker-specific packages based on distro
         case "$DISTRO" in
         ubuntu | debian)
-            runcmd+="
-  - curl -fsSL https://get.docker.com -o get-docker.sh
-  - sh get-docker.sh
-  - rm get-docker.sh"
+            runcmd+=(
+                "curl -fsSL https://get.docker.com -o get-docker.sh"
+                "sh get-docker.sh"
+                "rm get-docker.sh"
+            )
             ;;
+
         fedora)
-            runcmd+="
-            - dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
-            - dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+            runcmd+=(
+                "dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo"
+                "dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+            )
             ;;
+
         arch)
-            packages+="
-  - docker
-  - docker-compose"
+            packages+=(
+                "docker"
+                "docker-compose"
+            )
             ;;
         esac
 
-        runcmd+="  - usermod -aG docker $USERNAME
-  - systemctl enable --now docker"
-
+        runcmd+=(
+            "usermod -aG docker $USERNAME"
+            "systemctl enable --now docker"
+        )
     fi
 
     if [[ "$INSTALL_BREW" == "true" ]]; then
         motd_content+="
-Homebrew is installed and ready to use.
-Essential development tools are pre-installed:
-  git, curl, wget, vim, htop, starship, fzf, ripgrep, etc.
-Quick commands:
-  brew --version
-  brew list
-  brew search <package>
-  brew install <package>
+      Homebrew is installed and ready to use.
+      Essential development tools are pre-installed:
+      git, curl, wget, vim, htop, starship, fzf, ripgrep, etc.
+      Quick commands:
+      brew --version
+      brew list
+      brew search <package>
+      brew install <package>
 "
 
         log_info "Adding Homebrew installation to cloud-init"
 
-        # Add build dependencies for homebrew based on distro
         case "$DISTRO" in
         ubuntu | debian)
-            packages+="
-  - build-essential
-  - procps
-  - file"
+            packages+=(
+                "build-essential"
+                "procps"
+                "file"
+            )
             ;;
+
         fedora)
-            packages+="
-  - gcc
-  - gcc-c++
-  - make
-  - procps-ng
-  - file"
+            packages+=(
+                "gcc"
+                "gcc-c++"
+                "make"
+                "procps-ng"
+                "file"
+            )
             ;;
+
         arch)
-            # base-devel already included above for arch
-            packages+="
-  - procps-ng
-  - file"
+            packages+=(
+                "procps-ng"
+                "file"
+            )
             ;;
         esac
 
-        # Add homebrew installation commands
-        runcmd+="
-  # Install Homebrew
-  - su - $USERNAME -c 'NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"'
-  # Set up Homebrew environment
-  - echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.bashrc
-  - echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.profile
-  # Install essential development tools
-  - su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install git curl wget vim htop starship fzf ripgrep eza zoxide fd bat'
-  # Install additional useful tools
-  - su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install gum tmux lazygit git-delta just jq yq'"
-
+        runcmd+=(
+            "su - $USERNAME -c 'NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"'"
+            "echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.bashrc"
+            "echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.profile"
+            "su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install git curl wget vim htop starship fzf ripgrep eza zoxide fd bat'"
+            "su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install gum tmux lazygit git-delta just jq yq'"
+        )
     fi
 
-    case "$DISTRO" in
-    ubuntu | debian)
-        packages+="
-  - micro
-  - ca-certificates
-  - gnupg
-  - lsb-release"
-        ;;
-    fedora)
-        packages+="
-  - micro
-  - dnf-plugins-core
-  - ca-certificates"
-        ;;
-    arch)
-        packages+="
-  - base-devel"
-        runcmd="  - pacman -Syu --noconfirm
-$runcmd"
-        ;;
-    esac
+    runcmd+=(
+        "systemctl enable --now sshd"
+    )
 
     sudo tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
@@ -581,10 +608,12 @@ manage_etc_hosts: true
 # User configuration
 users:
   - name: $USERNAME
-    groups: $USER_GROUPS
+    groups:
+$(printf "      - %s\n" "${USER_GROUPS[@]}")
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
+    passwd: "$PASSWORD_HASH"
     ssh_authorized_keys:
       - $pub_key
 
@@ -593,10 +622,14 @@ package_update: true
 package_upgrade: true
 
 packages:
-$packages
+$(printf "  - %s\n" "${packages[@]}")
 
 runcmd:
-$runcmd
+$(printf "  - %s\n" "${runcmd[@]}")
+
+# Ensure SSH service is enabled
+ssh_pwauth: true
+disable_root: false
 
 timezone: UTC
 
@@ -621,7 +654,9 @@ ethernets:
     dhcp4: true
 EOF
 
-    if [[ ! -f "${CLOUD_INIT_DIR}/user-data" || ! -f "${CLOUD_INIT_DIR}/meta-data" || ! -f "${CLOUD_INIT_DIR}/network-config" ]]; then
+    if [[ ! -f "${CLOUD_INIT_DIR}/user-data" ||
+        ! -f "${CLOUD_INIT_DIR}/meta-data" ||
+        ! -f "${CLOUD_INIT_DIR}/network-config" ]]; then
         log_error "Failed to create one or more cloud-init configuration files"
         exit 1
     fi
@@ -629,6 +664,11 @@ EOF
     sudo chown -R "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
     sudo chmod -R 644 "$CLOUD_INIT_DIR"/*
     sudo chmod 755 "$CLOUD_INIT_DIR"
+
+    echo "HELLO WORLD FOO BAR"
+    cat "${CLOUD_INIT_DIR}/user-data"
+    echo press enter
+    read -r
     log_success "Cloud-init configuration generated"
 }
 
@@ -785,7 +825,37 @@ show_completion_info() {
     log_warn "Note: Cloud-init setup takes 1-3 minutes."
 }
 
+echo_all_vars() {
+    log_info "All variables:"
+    echo "  VM_NAME: $VM_NAME"
+    echo "  DISTRO: $DISTRO"
+    echo "  RELEASE: $RELEASE"
+    echo "  USERNAME: $USERNAME"
+    echo "  PASSWORD: $PASSWORD"
+    echo "  SSH_KEY: $SSH_KEY"
+    echo "  RAM_MB: $RAM_MB"
+    echo "  VCPUS: $VCPUS"
+    echo "  DISK_SIZE: $DISK_SIZE"
+    echo "  BRIDGE_IF: $BRIDGE_IF"
+    echo "  INSTALL_DOCKER: $INSTALL_DOCKER"
+    echo "  INSTALL_BREW: $INSTALL_BREW"
+    echo "  OS_VARIANT: $OS_VARIANT"
+    echo "  BASE_IMG_NAME: $BASE_IMG_NAME"
+    echo "  BASE_IMG: $BASE_IMG"
+    echo "  PASSWORD_HASH: $PASSWORD_HASH"
+    echo "  WORKDIR: $WORKDIR"
+    echo "  CLOUD_INIT_DIR: $CLOUD_INIT_DIR"
+    echo "  DISK_IMG: $DISK_IMG"
+    echo "  SEED_ISO: $SEED_ISO"
+
+    echo "  Check the above variables for any issues before proceeding."
+    echo "  Press enter to continue..."
+    read -r
+}
+
 main() {
+    configure_distribution
+
     log_info "Starting $DISTRO VM creation..."
     log_info "VM Name: $VM_NAME"
     log_info "Distribution: $DISTRO $RELEASE"
@@ -793,6 +863,7 @@ main() {
 
     check_prerequisites
     start_sudo_keepalive
+    echo_all_vars
     download_image
     create_vm_disk
     generate_cloud_init
