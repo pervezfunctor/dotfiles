@@ -17,6 +17,7 @@ UBUNTU_RELEASE="noble" # 24.04 LTS
 UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
 BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
 USERNAME="ubuntu"
+DEFAULT_PASSWORD="$VM_NAME"
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
   SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
@@ -37,6 +38,9 @@ log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+
+PASSWORD_HASH=$(openssl passwd -6 "$DEFAULT_PASSWORD")
+log_info "Generated password hash for user '$USERNAME'"
 
 cleanup_on_error() {
   log_warn "Cleaning up due to error..."
@@ -290,6 +294,7 @@ users:
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
+    passwd: "$PASSWORD_HASH"
     ssh_authorized_keys:
       - $pub_key
 

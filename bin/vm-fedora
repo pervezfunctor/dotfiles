@@ -17,6 +17,7 @@ FEDORA_RELEASE="42"
 FEDORA_IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${FEDORA_RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${FEDORA_RELEASE}-1.1.x86_64.qcow2"
 BASE_IMG="${WORKDIR}/fedora-${FEDORA_RELEASE}.qcow2"
 USERNAME="fedora"
+DEFAULT_PASSWORD="$VM_NAME"
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
     SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
@@ -37,6 +38,9 @@ log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+
+PASSWORD_HASH=$(openssl passwd -6 "$DEFAULT_PASSWORD")
+log_info "Generated password hash for user '$USERNAME'"
 
 cleanup_on_error() {
     log_warn "Cleaning up due to error..."
@@ -295,6 +299,7 @@ users:
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
+    passwd: "$PASSWORD_HASH"
     ssh_authorized_keys:
       - $pub_key
 
