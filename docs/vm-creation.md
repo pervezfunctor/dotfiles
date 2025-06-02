@@ -208,7 +208,7 @@ ssh username@VM_IP
 
 **Username Auto-Detection:**
 The `vm ssh` command automatically detects the correct username based on the VM name:
-- **CoreOS VMs**: Uses `coreos` user
+- **CoreOS VMs**: Uses `coreos` user (previously `core`)
 - **Fedora VMs**: Uses `fedora` user
 - **Debian VMs**: Uses `debian` user
 - **Arch VMs**: Uses `arch` user

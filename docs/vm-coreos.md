@@ -142,10 +142,10 @@ After VM creation (wait 2-3 minutes for Ignition to complete):
 
 ```bash
 # SSH by name (if added to /etc/hosts)
-ssh core@vm_name
+ssh coreos@vm_name
 
 # SSH by IP
-ssh core@VM_IP
+ssh coreos@VM_IP
 ```
 
 ## CoreOS-Specific Commands

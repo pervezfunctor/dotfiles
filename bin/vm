@@ -383,42 +383,6 @@ ip_errors() {
     fi
 
 }
-detect_vm_username() {
-    local vm_name="$1"
-
-    # Try to detect username based on VM name patterns and OS info
-    local os_variant=""
-    if virsh dumpxml "$vm_name" 2>/dev/null | grep -q "os-variant"; then
-        os_variant=$(virsh dumpxml "$vm_name" | grep -o 'os-variant="[^"]*"' | cut -d'"' -f2)
-    fi
-
-    # Check for CoreOS patterns
-    if [[ "$vm_name" == *"coreos"* ]] || [[ "$os_variant" == *"coreos"* ]]; then
-        echo "core"
-        return 0
-    fi
-
-    # Check for Fedora patterns
-    if [[ "$vm_name" == *"fedora"* ]] || [[ "$os_variant" == *"fedora"* ]]; then
-        echo "fedora"
-        return 0
-    fi
-
-    # Check for Debian patterns
-    if [[ "$vm_name" == *"debian"* ]] || [[ "$os_variant" == *"debian"* ]]; then
-        echo "debian"
-        return 0
-    fi
-
-    # Check for Arch patterns
-    if [[ "$vm_name" == *"arch"* ]] || [[ "$os_variant" == *"arch"* ]]; then
-        echo "arch"
-        return 0
-    fi
-
-    # Default to ubuntu for unknown VMs
-    echo "ubuntu"
-}
 
 ssh_to_vm() {
     local vm_name="$1"
@@ -440,8 +404,8 @@ ssh_to_vm() {
 
     # Auto-detect username if not provided
     if [[ -z "$username" ]]; then
-        username=$(detect_vm_username "$vm_name")
-        log_info "Auto-detected username: $username"
+        username="$vm_name"
+        log_info "Auto-detected username: $username (override with: $0 ssh $vm_name <username>)"
     fi
 
     local ip
