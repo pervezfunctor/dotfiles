@@ -72,6 +72,9 @@ sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools
 
 # Create Fedora VM with both Docker and Homebrew
 ./bin/vm-create --distro fedora --docker --brew
+
+# Create Ubuntu VM with dotfiles pre-installed
+./bin/vm-create --distro ubuntu --dotfiles slim-shell
 ```
 
 ### All Options
@@ -93,6 +96,7 @@ OPTIONS:
     --release REL       Distribution release (default: latest stable)
     --docker            Install Docker in the VM
     --brew              Install Homebrew and essential development tools
+    --dotfiles GROUP      Install dotfiles from https://github.com/pervezfunctor/dotfiles with GROUP
 ```
 
 ## Distribution-Specific Defaults
@@ -156,12 +160,49 @@ brew install <package>
 brew update && brew upgrade
 ```
 
+### Dotfiles Installation (`--dotfiles GROUP`)
+
+When using the `--dotfiles` flag with an argument, the VM will have your personal dotfiles pre-installed and configured:
+
+**Installation Process:**
+- Downloads and executes the installation script from `https://dub.sh/aPKPT8V`
+- Uses the provided argument to customize the installation
+- Some of the available options are min, slim-shell, shell, dev.
+- Installs dotfiles to `/home/username/.ilm`
+- Provides `ilm-installer` and `ilm-config` commands for environment management
+
+**Usage:**
+```bash
+./bin/vm-create --distro ubuntu --dotfiles shell
+./bin/vm-create --distro fedora --dotfiles slim-shell
+```
+
+**Available commands after VM creation:**
+```bash
+# Install additional components
+ilm-installer shell
+ilm-installer docker
+ilm-installer python
+
+# Configure applications
+ilm-config zsh
+ilm-config tmux
+ilm-config nvim
+
+# Update dotfiles
+cd ~/.ilm && git pull
+```
+
 ### Combined Installation
 
-Both options can be used together for a complete development environment:
+All options can be used together for a complete development environment:
 
 ```bash
-./bin/vm-create --distro fedora --docker --brew --name dev-vm
+# Full development environment with Docker, Homebrew, and dotfiles
+./bin/vm-create --distro fedora --docker --brew --dotfiles shell --name dev-vm
+
+# Development environment with just Homebrew and dotfiles
+./bin/vm-create --distro ubuntu --brew --dotfiles myconfig --name code-vm
 ```
 
 ## VM Management
@@ -228,6 +269,7 @@ You can override the username: `./bin/vm ssh vm_name custom_user`
 - **Pre-installed software options:**
   - **Docker** - Container platform with Docker Compose
   - **Homebrew** - Package manager with development tools
+  - **Dotfiles** - Personal configuration and environment setup
 - **Error handling and cleanup**
 - **Comprehensive logging**
 - **Cross-distribution compatibility**
@@ -237,19 +279,15 @@ You can override the username: `./bin/vm ssh vm_name custom_user`
 The unified script replaces the individual `vm-ubuntu`, `vm-fedora`, `vm-arch`, and `vm-debian` scripts. All functionality has been preserved and enhanced with new features:
 
 ```bash
-# Old way
 ./bin/vm-ubuntu --name myvm --memory 8192
-
-# New way (basic)
 ./bin/vm-create --distro ubuntu --name myvm --memory 8192
-
-# New way (with enhanced features)
-./bin/vm-create --distro ubuntu --name myvm --memory 8192 --docker --brew
+./bin/vm-create --distro ubuntu --name myvm --memory 8192 --docker --brew --dotfiles min
 ```
 
 **New capabilities not available in individual scripts:**
 - Pre-installed Docker with Docker Compose
 - Pre-installed Homebrew with development tools
+- Pre-installed dotfiles with personal configuration
 - Cross-distribution consistency
 - Enhanced error handling and logging
 
@@ -289,9 +327,11 @@ The unified script replaces the individual `vm-ubuntu`, `vm-fedora`, `vm-arch`, 
 - **Basic VM:** 2-3 minutes for cloud-init completion
 - **With Docker:** 4-6 minutes (includes Docker installation)
 - **With Homebrew:** 5-8 minutes (includes Homebrew and tools installation)
-- **With both Docker and Homebrew:** 8-12 minutes
+- **With Dotfiles:** 3-5 minutes (includes dotfiles download and setup)
+- **With Docker and Homebrew:** 8-12 minutes
+- **With all options (Docker, Homebrew, Dotfiles):** 10-15 minutes
 
-**Note:** Homebrew installation includes compiling some packages, which may take longer on systems with limited CPU/memory.
+**Note:** Homebrew installation includes compiling some packages, which may take longer on systems with limited CPU/memory. Dotfiles installation time depends on the complexity of your configuration.
 
 ## Advanced Usage
 
@@ -318,28 +358,31 @@ sudo ip link set br0 up
 ### Development Environment Setup
 
 ```bash
-# Full development environment with Docker and Homebrew
-./bin/vm-create --distro ubuntu --name dev-env --memory 8192 --vcpus 4 --docker --brew
+# Full development environment with Docker, Homebrew, and dotfiles
+./bin/vm-create --distro ubuntu --name dev-env --memory 8192 --vcpus 4 --docker --brew --dotfiles box
 
-# Lightweight development VM with just Homebrew tools
-./bin/vm-create --distro arch --name code-vm --brew
+# Lightweight development VM with Homebrew and dotfiles
+./bin/vm-create --distro arch --name code-vm --brew --dotfiles myconfig
 
-# Container-focused VM with Docker
-./bin/vm-create --distro fedora --name container-vm --docker --memory 6144
+# Container-focused VM with Docker and dotfiles
+./bin/vm-create --distro fedora --name container-vm --docker --dotfiles box --memory 6144
+
+# Personal development environment with just dotfiles
+./bin/vm-create --distro ubuntu --name personal-vm --dotfiles box
 ```
 
 ### Distribution-Specific Examples
 
 ```bash
-# Ubuntu development server
-./bin/vm-create --distro ubuntu --release noble --name ubuntu-dev --docker --brew
+# Ubuntu development server with full setup
+./bin/vm-create --distro ubuntu --release noble --name ubuntu-dev --docker --brew --dotfiles box
 
-# Fedora testing environment
-./bin/vm-create --distro fedora --release 42 --name fedora-test --brew
+# Fedora testing environment with dotfiles
+./bin/vm-create --distro fedora --release 42 --name fedora-test --brew --dotfiles myconfig
 
-# Arch Linux minimal development setup
-./bin/vm-create --distro arch --name arch-dev --disk-size 60G --brew
+# Arch Linux minimal development setup with dotfiles
+./bin/vm-create --distro arch --name arch-dev --disk-size 60G --brew --dotfiles box
 
-# Debian stable server
-./bin/vm-create --distro debian --release bookworm --name debian-server --docker
+# Debian stable server with Docker and dotfiles
+./bin/vm-create --distro debian --release bookworm --name debian-server --docker --dotfiles box
 ```
