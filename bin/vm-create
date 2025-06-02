@@ -8,6 +8,7 @@ DISK_SIZE="40G"
 BRIDGE_IF="virbr0"
 INSTALL_DOCKER=false
 INSTALL_BREW=false
+DOTFILES_GROUP=""
 
 unset VM_NAME
 unset USERNAME
@@ -186,6 +187,7 @@ OPTIONS:
     --release REL       Distribution release (default: distribution-specific)
     --docker            Install Docker in the VM
     --brew              Install Homebrew and essential development tools
+    --dotfiles GROUP      Install dotfiles from https://github.com/pervezfunctor/dotfiles with GROUP
     --password PASS     Set password for VM user (default: same as VM name)
     --help, -h          Show this help
 
@@ -207,6 +209,7 @@ EXAMPLES:
     $0 --distro ubuntu --docker                  # Ubuntu VM with Docker pre-installed
     $0 --distro ubuntu --brew                    # Ubuntu VM with Homebrew and dev tools
     $0 --distro fedora --docker --brew           # Fedora VM with both Docker and Homebrew
+    $0 --distro ubuntu --dotfiles shell          # Ubuntu VM with dotfiles pre-installed
 
 PREREQUISITES:
     - KVM/QEMU installed and running
@@ -268,6 +271,10 @@ while [[ $# -gt 0 ]]; do
     --brew)
         INSTALL_BREW=true
         shift
+        ;;
+    --dotfiles)
+        DOTFILES_GROUP="$2"
+        shift 2
         ;;
     --password)
         shift
@@ -598,6 +605,26 @@ generate_cloud_init() {
         )
     fi
 
+    if [[ -n "$DOTFILES_GROUP" ]]; then
+        motd_content+="
+      Dotfiles are installed and ready to use.
+      Location: /home/$USERNAME/.ilm
+      Quick commands:
+        ilm-installer shell
+        ilm-installer docker
+        ilm-installer python
+        ilm-config zsh
+        ilm-config tmux
+        ilm-config nvim
+"
+
+        log_info "Adding dotfiles installation to cloud-init"
+
+        runcmd+=(
+            "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)\" -- $DOTFILES_GROUP'"
+        )
+    fi
+
     runcmd+=(
         "systemctl enable --now sshd"
     )
@@ -667,10 +694,6 @@ EOF
     sudo chmod -R 644 "$CLOUD_INIT_DIR"/*
     sudo chmod 755 "$CLOUD_INIT_DIR"
 
-    echo "HELLO WORLD FOO BAR"
-    cat "${CLOUD_INIT_DIR}/user-data"
-    echo press enter
-    read -r
     log_success "Cloud-init configuration generated"
 }
 
@@ -783,6 +806,20 @@ show_completion_info() {
         echo
     fi
 
+    if [[ -n "$DOTFILES_GROUP" ]]; then
+        log_info "Dotfiles are pre-installed on this VM"
+        echo "  Dotfiles Commands:"
+        echo "    Location:           ~/.ilm"
+        echo "    Install shell:      ilm-installer shell"
+        echo "    Install Docker:     ilm-installer docker"
+        echo "    Install Python:     ilm-installer python"
+        echo "    Config zsh:         ilm-config zsh"
+        echo "    Config tmux:        ilm-config tmux"
+        echo "    Config nvim:        ilm-config nvim"
+        echo "  Repository: https://github.com/pervezfunctor/dotfiles"
+        echo
+    fi
+
     log_info "Useful Commands:"
     echo "  Check VM status:    virsh list --all"
     echo "  Start VM:           virsh start $VM_NAME"
@@ -841,6 +878,7 @@ echo_all_vars() {
     echo "  BRIDGE_IF: $BRIDGE_IF"
     echo "  INSTALL_DOCKER: $INSTALL_DOCKER"
     echo "  INSTALL_BREW: $INSTALL_BREW"
+    echo "  DOTFILES_GROUP: $DOTFILES_GROUP"
     echo "  OS_VARIANT: $OS_VARIANT"
     echo "  BASE_IMG_NAME: $BASE_IMG_NAME"
     echo "  BASE_IMG: $BASE_IMG"
