@@ -2,26 +2,8 @@
 
 set -euo pipefail
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
-log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
-
-# Check if distrobox is installed and running
-if command -v distrobox >/dev/null 2>&1; then
-    distrobox list || true
-else
-    echo
-    log_error "distrobox command not found. Please install distrobox first."
-    log_info "You can install it with: $0 install"
-    exit 1
-fi
+# shellcheck disable=SC1090
+source ~/.ilm/share/utils
 
 usage() {
     cat <<EOF
@@ -44,6 +26,7 @@ COMMANDS:
     unexport <app>          Unexport application
     upgrade <name>          Upgrade container packages
     logs <name>             Show container logs
+    logs-tail <name>        Follow container logs (like tail -f)
     cleanup                 Remove stopped containers and orphaned files
 
 SUPPORTED DISTROS:
@@ -59,56 +42,76 @@ EXAMPLES:
     $0 enter ubuntu                 # Enter 'ubuntu' container
     $0 run ubuntu "ls -la"          # Run command in 'ubuntu' container
     $0 export ubuntu firefox        # Export firefox from ubuntu container
+    $0 logs ubuntu                  # Show logs for 'ubuntu' container
+    $0 logs-tail ubuntu             # Follow logs for 'ubuntu' container
     $0 delete old-container         # Delete 'old-container' completely
 
 EOF
 }
 
+has_container() {
+    local container_name="$1"
+    distrobox list | grep -q "\b${container_name}\b" || return 1
+}
+
+check_container() {
+    local container_name="$1"
+
+    if ! has_container "$container_name"; then
+        fail "Container '$container_name' not found"
+        exit 1
+    fi
+}
+
 list_containers() {
-    log_info "Listing all distrobox containers..."
+    slog "Listing all distrobox containers..."
+
+    echo
+    distrobox list
+
+    if has_cmd podman; then
+        echo
+        echo
+        echo
+        slog "Podman container details:"
+        podman ps -a --filter "label=manager=distrobox" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedHuman}}" 2>/dev/null || true
+    elif has_cmd docker; then
+        echo
+        echo
+        echo
+        slog "Docker container details:"
+        docker ps -a --filter "label=manager=distrobox" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}" 2>/dev/null || true
+    fi
 }
 
 install_distrobox() {
-    log_info "Installing distrobox using ilmi..."
+    slog "Installing distrobox using ilmi..."
 
-    # Check if ilmi is available
-    if ! command -v ilmi >/dev/null 2>&1; then
-        log_error "ilmi not found. Installing it first..."
+    has_cmd ilmi || err_exit "ilmi not found. Quitting"
 
-        # Install ilmi
-        if command -v curl >/dev/null 2>&1; then
-            bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- ct
-        elif command -v wget >/dev/null 2>&1; then
-            bash -c "$(wget -qO- https://dub.sh/aPKPT8V)" -- ct
-        else
-            log_error "Neither curl nor wget found. Please install one of them first."
-            return 1
+    ilmi ct
+
+    if has_cmd distrobox; then
+        success "Container tools installed successfully!"
+        echo
+        slog "Installed tools include:"
+        has_cmd distrobox && slog "  ✓ distrobox"
+        has_cmd podman && slog "  ✓ podman"
+        has_cmd docker && slog "  ✓ docker"
+        has_cmd incus && slog "  ✓ incus"
+        echo
+        slog "You can now use:"
+        slog "  $0 list                    # List containers"
+        slog "  $0 create ubuntu           # Create Ubuntu distrobox container"
+        slog "  $0 enter ubuntu            # Enter distrobox container"
+        echo
+
+        if ! has_cmd podman && ! has_cmd docker; then
+            warn "Neither Podman nor Docker found. Distrobox requires one of them."
+            slog "The installation should have included Podman. Try logging out and back in."
         fi
     else
-        # Use existing ilmi
-        ilmi ct
-    fi
-
-    if command -v distrobox >/dev/null 2>&1; then
-        log_success "Container tools installed successfully!"
-        echo
-        log_info "Installed tools include:"
-        command -v distrobox >/dev/null 2>&1 && log_info "  ✓ distrobox"
-        command -v podman >/dev/null 2>&1 && log_info "  ✓ podman"
-        command -v docker >/dev/null 2>&1 && log_info "  ✓ docker"
-        command -v incus >/dev/null 2>&1 && log_info "  ✓ incus"
-        echo
-        log_info "You can now use:"
-        log_info "  $0 list                    # List containers"
-        log_info "  $0 create ubuntu           # Create Ubuntu container"
-        log_info "  $0 enter ubuntu            # Enter container"
-        echo
-        if ! command -v podman >/dev/null 2>&1 && ! command -v docker >/dev/null 2>&1; then
-            log_warn "Neither Podman nor Docker found. Distrobox requires one of them."
-            log_info "The installation should have included Podman. Try logging out and back in."
-        fi
-    else
-        log_error "Container tools installation failed. Please check the output above for errors."
+        fail "Container tools installation failed. Please check the output above for errors."
         return 1
     fi
 }
@@ -116,24 +119,17 @@ install_distrobox() {
 container_status() {
     local container_name="$1"
 
-    if ! distrobox list | grep -q "^${container_name}"; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name"
 
-    log_info "Status for container '$container_name':"
-    echo
-    distrobox list | grep "^${container_name}" || true
-    echo
+    slog "Status for container '$container_name':"
 
-    # Get podman/docker container info
     local engine
-    engine=$(distrobox list | grep "^${container_name}" | awk '{print $NF}' | head -1)
+    engine=$(distrobox list | grep "\b${container_name}\b" | awk '{print $NF}' | head -1)
     if [[ -n "$engine" ]]; then
-        log_info "Container engine details:"
-        if command -v podman >/dev/null 2>&1; then
+        slog "Container engine details:"
+        if has_cmd podman; then
             podman ps -a --filter "name=${container_name}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedHuman}}" 2>/dev/null || true
-        elif command -v docker >/dev/null 2>&1; then
+        elif has_cmd docker; then
             docker ps -a --filter "name=${container_name}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}" 2>/dev/null || true
         fi
     fi
@@ -143,7 +139,12 @@ create_container() {
     local distro="$1"
     local container_name="${2:-$distro}"
 
-    log_info "Creating $distro distrobox container: $container_name"
+    if has_container "$container_name"; then
+        fail "Container '$container_name' already exists"
+        return 1
+    fi
+
+    slog "Creating $distro distrobox container: $container_name"
 
     case "$distro" in
     ubuntu)
@@ -167,18 +168,30 @@ create_container() {
     alpine)
         distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
         ;;
+    bluefin)
+        distrobox create --yes --image ghcr.io/ublue-os/bluefin-cli:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
+    docker)
+        distrobox create --yes --image ghcr.io/ublue-os/docker-distrobox:latest --init --unshare-all --root --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
+    wolfi)
+        distrobox create --yes --image ghcr.io/wolfi-dev/sdk:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
+    nix)
+        distrobox create --yes --image nixos/nix:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
     *)
-        log_error "Unsupported distro: $distro"
-        log_info "Supported distros: ubuntu, debian, arch, fedora, rocky, tumbleweed, alpine"
+        fail "Unsupported distro: $distro"
+        slog "Supported distros: ubuntu, debian, arch, fedora, rocky, tumbleweed, alpine, bluefin, docker, wolfi, nix"
         return 1
         ;;
     esac
 
     # shellcheck disable=SC2181
     if [[ $? -eq 0 ]]; then
-        log_success "Container '$container_name' created successfully"
+        success "Container '$container_name' created successfully"
     else
-        log_error "Failed to create container '$container_name'"
+        fail "Failed to create container '$container_name'"
         return 1
     fi
 }
@@ -186,85 +199,81 @@ create_container() {
 start_container() {
     local container_name="$1"
 
-    if ! distrobox list | grep -q "^${container_name}"; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name"
 
-    log_info "Starting container '$container_name'..."
+    slog "Starting container '$container_name'..."
 
     # Distrobox containers are typically started when entered
     # But we can check if the underlying podman/docker container is running
     local container_id
-    if command -v podman >/dev/null 2>&1; then
+    if has_cmd podman; then
         container_id=$(podman ps -a --filter "name=${container_name}" --format "{{.ID}}" | head -1)
         if [[ -n "$container_id" ]]; then
             podman start "$container_id" >/dev/null 2>&1 || true
         fi
-    elif command -v docker >/dev/null 2>&1; then
+    elif has_cmd docker; then
         container_id=$(docker ps -a --filter "name=${container_name}" --format "{{.ID}}" | head -1)
         if [[ -n "$container_id" ]]; then
             docker start "$container_id" >/dev/null 2>&1 || true
         fi
     fi
 
-    log_success "Container '$container_name' started (will be fully initialized on first enter)"
+    success "Container '$container_name' started (will be fully initialized on first enter)"
 }
 
 stop_container() {
     local container_name="$1"
 
-    if ! distrobox list | grep -q "^${container_name}"; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name"
 
-    log_info "Stopping container '$container_name'..."
+    slog "Stopping container '$container_name'..."
 
     if distrobox stop "$container_name"; then
-        log_success "Container '$container_name' stopped"
+        success "Container '$container_name' stopped"
     else
-        log_error "Failed to stop container '$container_name'"
+        fail "Failed to stop container '$container_name'"
         return 1
     fi
 }
 
 restart_container() {
     local container_name="$1"
+    check_container "$container_name"
 
-    log_info "Restarting container '$container_name'..."
+    slog "Restarting container '$container_name'..."
     stop_container "$container_name"
-    sleep 2
+
+    while distrobox list | grep -q "\b${container_name}\b"; do
+        sleep 1
+    done
+
     start_container "$container_name"
 }
 
 delete_container() {
     local container_name="$1"
 
-    if ! distrobox list | grep -q "^${container_name}"; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name"
 
-    log_warn "This will permanently delete container '$container_name' and all its data!"
+    warn "This will permanently delete container '$container_name' and all its data!"
     read -p "Are you sure? (y/N): " -r
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_info "Deletion cancelled"
+        slog "Deletion cancelled"
         return 0
     fi
 
-    log_info "Deleting container '$container_name'..."
+    slog "Deleting container '$container_name'..."
     if distrobox rm --force "$container_name"; then
-        log_success "Container '$container_name' deleted"
+        success "Container '$container_name' deleted"
 
         # Clean up home directory if it exists
         local home_dir="$HOME/.boxes/${container_name}"
         if [[ -d "$home_dir" ]]; then
-            log_info "Removing container home directory: $home_dir"
+            slog "Removing container home directory: $home_dir"
             rm -rf "$home_dir"
         fi
     else
-        log_error "Failed to delete container '$container_name'"
+        fail "Failed to delete container '$container_name'"
         return 1
     fi
 }
@@ -272,12 +281,9 @@ delete_container() {
 enter_container() {
     local container_name="$1"
 
-    if ! distrobox list | grep -q "^${container_name}"; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name"
 
-    log_info "Entering container '$container_name'..."
+    slog "Entering container '$container_name'..."
     distrobox enter -nw --clean-path --name "$container_name"
 }
 
@@ -286,12 +292,9 @@ run_in_container() {
     shift
     local command="$*"
 
-    if ! distrobox list | grep -q "^${container_name}"; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name"
 
-    log_info "Running command in container '$container_name': $command"
+    slog "Running command in container '$container_name': $command"
     distrobox enter -nw --clean-path --name "$container_name" -- "$@"
 }
 
@@ -299,16 +302,13 @@ export_app() {
     local container_name="$1"
     local app_name="$2"
 
-    if ! distrobox list | grep -q "^${container_name}"; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name"
 
-    log_info "Exporting '$app_name' from container '$container_name'..."
+    slog "Exporting '$app_name' from container '$container_name'..."
     if distrobox-export --app "$app_name" --container "$container_name"; then
-        log_success "Application '$app_name' exported successfully"
+        success "Application '$app_name' exported successfully"
     else
-        log_error "Failed to export application '$app_name'"
+        fail "Failed to export application '$app_name'"
         return 1
     fi
 }
@@ -316,11 +316,11 @@ export_app() {
 unexport_app() {
     local app_name="$1"
 
-    log_info "Unexporting application '$app_name'..."
+    slog "Unexporting application '$app_name'..."
     if distrobox-export --app "$app_name" --delete; then
-        log_success "Application '$app_name' unexported successfully"
+        success "Application '$app_name' unexported successfully"
     else
-        log_error "Failed to unexport application '$app_name'"
+        fail "Failed to unexport application '$app_name'"
         return 1
     fi
 }
@@ -328,16 +328,13 @@ unexport_app() {
 upgrade_container() {
     local container_name="$1"
 
-    if ! distrobox list | grep -q "^${container_name}"; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name"
 
-    log_info "Upgrading packages in container '$container_name'..."
+    slog "Upgrading packages in container '$container_name'..."
     if distrobox upgrade "$container_name"; then
-        log_success "Container '$container_name' upgraded successfully"
+        success "Container '$container_name' upgraded successfully"
     else
-        log_error "Failed to upgrade container '$container_name'"
+        fail "Failed to upgrade container '$container_name'"
         return 1
     fi
 }
@@ -345,44 +342,70 @@ upgrade_container() {
 show_logs() {
     local container_name="$1"
 
-    if ! distrobox list | grep -q "^${container_name}"; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name"
 
-    log_info "Showing logs for container '$container_name'..."
+    slog "Showing logs for container '$container_name'..."
     echo
 
     # Get container ID and show logs
     local container_id
-    if command -v podman >/dev/null 2>&1; then
+    if has_cmd podman; then
         container_id=$(podman ps -a --filter "name=${container_name}" --format "{{.ID}}" | head -1)
         if [[ -n "$container_id" ]]; then
-            podman logs "$container_id" 2>/dev/null || log_warn "No logs available"
+            podman logs "$container_id" 2>/dev/null || warn "No logs available"
         fi
-    elif command -v docker >/dev/null 2>&1; then
+    elif has_cmd docker; then
         container_id=$(docker ps -a --filter "name=${container_name}" --format "{{.ID}}" | head -1)
         if [[ -n "$container_id" ]]; then
-            docker logs "$container_id" 2>/dev/null || log_warn "No logs available"
+            docker logs "$container_id" 2>/dev/null || warn "No logs available"
         fi
     else
-        log_warn "No container engine (podman/docker) found"
+        warn "No container engine (podman/docker) found"
+    fi
+}
+
+tail_logs() {
+    local container_name="$1"
+
+    check_container "$container_name"
+
+    slog "Following logs for container '$container_name' (Press Ctrl+C to stop)..."
+    echo
+
+    # Get container ID and follow logs
+    local container_id
+    if has_cmd podman; then
+        container_id=$(podman ps -a --filter "name=${container_name}" --format "{{.ID}}" | head -1)
+        if [[ -n "$container_id" ]]; then
+            podman logs -f "$container_id" 2>/dev/null || warn "No logs available or container not running"
+        else
+            warn "Container not found in podman"
+        fi
+    elif has_cmd docker; then
+        container_id=$(docker ps -a --filter "name=${container_name}" --format "{{.ID}}" | head -1)
+        if [[ -n "$container_id" ]]; then
+            docker logs -f "$container_id" 2>/dev/null || warn "No logs available or container not running"
+        else
+            warn "Container not found in docker"
+        fi
+    else
+        warn "No container engine (podman/docker) found"
     fi
 }
 
 cleanup_containers() {
-    log_info "Cleaning up stopped containers and orphaned files..."
+    slog "Cleaning up stopped containers and orphaned files..."
 
     # List stopped containers
     local stopped_containers
-    if command -v podman >/dev/null 2>&1; then
+    if has_cmd podman; then
         stopped_containers=$(podman ps -a --filter "status=exited" --filter "label=manager=distrobox" --format "{{.Names}}")
-    elif command -v docker >/dev/null 2>&1; then
+    elif has_cmd docker; then
         stopped_containers=$(docker ps -a --filter "status=exited" --filter "label=manager=distrobox" --format "{{.Names}}")
     fi
 
     if [[ -n "$stopped_containers" ]]; then
-        log_info "Stopped distrobox containers found:"
+        slog "Stopped distrobox containers found:"
         echo "$stopped_containers"
         echo
 
@@ -390,35 +413,35 @@ cleanup_containers() {
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             while IFS= read -r container; do
                 if [[ -n "$container" ]]; then
-                    log_info "Removing stopped container: $container"
+                    slog "Removing stopped container: $container"
                     distrobox rm --force "$container" 2>/dev/null || true
                 fi
             done <<<"$stopped_containers"
         fi
     else
-        log_info "No stopped distrobox containers found"
+        slog "No stopped distrobox containers found"
     fi
 
     # Clean up orphaned home directories
-    log_info "Checking for orphaned container home directories..."
+    slog "Checking for orphaned container home directories..."
     if [[ -d "$HOME/.boxes" ]]; then
         for dir in "$HOME/.boxes"/*; do
             if [[ -d "$dir" ]]; then
                 local container_name
                 container_name=$(basename "$dir")
-                if ! distrobox list | grep -q "^${container_name}"; then
-                    log_warn "Found orphaned directory: $dir"
+                if ! distrobox list | grep -q "\b${container_name}\b"; then
+                    warn "Found orphaned directory: $dir"
                     read -p "Remove orphaned directory $dir? (y/N): " -r
                     if [[ $REPLY =~ ^[Yy]$ ]]; then
                         rm -rf "$dir"
-                        log_success "Removed: $dir"
+                        success "Removed: $dir"
                     fi
                 fi
             fi
         done
     fi
 
-    log_success "Cleanup complete"
+    success "Cleanup complete"
 }
 
 # Main command handling
@@ -430,6 +453,14 @@ fi
 command="$1"
 container_name="${2:-}"
 
+if [[ "$command" != "install" ]]; then
+    if ! has_cmd distrobox; then
+        fail "distrobox command not found. Please install distrobox first."
+        slog "You can install it with: $0 install"
+        exit 1
+    fi
+fi
+
 case "$command" in
 install)
     install_distrobox
@@ -438,110 +469,53 @@ list)
     list_containers
     ;;
 status)
-    [[ -z "$container_name" ]] && {
-        log_error "Container name required"
-        usage
-        exit 1
-    }
     container_status "$container_name"
     ;;
 create)
-    [[ -z "$container_name" ]] && {
-        log_error "Distro name required"
-        usage
-        exit 1
-    }
-    create_container "$container_name" "${3:-}"
+    create_container "${2:-}"
     ;;
 start)
-    [[ -z "$container_name" ]] && {
-        log_error "Container name required"
-        usage
-        exit 1
-    }
-    start_container "$container_name"
+    start_container "${2:-}"
     ;;
 stop)
-    [[ -z "$container_name" ]] && {
-        log_error "Container name required"
-        usage
-        exit 1
-    }
     stop_container "$container_name"
     ;;
 restart)
-    [[ -z "$container_name" ]] && {
-        log_error "Container name required"
-        usage
-        exit 1
-    }
     restart_container "$container_name"
     ;;
 delete)
-    [[ -z "$container_name" ]] && {
-        log_error "Container name required"
-        usage
-        exit 1
-    }
     delete_container "$container_name"
     ;;
 enter)
-    [[ -z "$container_name" ]] && {
-        log_error "Container name required"
-        usage
-        exit 1
-    }
     enter_container "$container_name"
     ;;
 run)
-    [[ -z "$container_name" ]] && {
-        log_error "Container name required"
-        usage
-        exit 1
-    }
     [[ $# -lt 3 ]] && {
-        log_error "Command required"
+        fail "Command required"
         usage
         exit 1
     }
     run_in_container "$container_name" "${@:3}"
     ;;
 export)
-    [[ -z "$container_name" ]] && {
-        log_error "Container name required"
-        usage
-        exit 1
-    }
     [[ -z "${3:-}" ]] && {
-        log_error "Application name required"
+        fail "Application name required"
         usage
         exit 1
     }
     export_app "$container_name" "$3"
     ;;
 unexport)
-    [[ -z "$container_name" ]] && {
-        log_error "Application name required"
-        usage
-        exit 1
-    }
     unexport_app "$container_name"
     ;;
 upgrade)
-    [[ -z "$container_name" ]] && {
-        log_error "Container name required"
-        usage
-        exit 1
-    }
     upgrade_container "$container_name"
     ;;
 logs)
-    [[ -z "$container_name" ]] && {
-        log_error "Container name required"
-        usage
-        exit 1
-    }
     show_logs "$container_name"
+    ;;
+logs-tail)
+    tail_logs "$container_name"
     ;;
 cleanup)
     cleanup_containers
@@ -550,7 +524,7 @@ cleanup)
     usage
     ;;
 *)
-    log_error "Unknown command: $command"
+    fail "Unknown command: $command"
     usage
     exit 1
     ;;
