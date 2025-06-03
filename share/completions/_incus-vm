@@ -1,0 +1,121 @@
+#compdef incus-vm
+
+# Zsh completion for incus-vm script
+
+_incus_vm_get_vms() {
+    local vms
+    if (( $+commands[incus] )); then
+        vms=(${(f)"$(incus list --format csv --columns n 2>/dev/null | grep -v '^$')"})
+        _describe 'incus virtual machines' vms
+    fi
+}
+
+_incus_vm_get_distros() {
+    local distros=(
+        'ubuntu:Ubuntu Linux'
+        'fedora:Fedora Linux'
+        'arch:Arch Linux'
+        'debian:Debian Linux'
+        'centos:CentOS Linux'
+        'alpine:Alpine Linux'
+    )
+    _describe 'distributions' distros
+}
+
+_incus_vm_get_snapshots() {
+    local vm_name="$1"
+    local snapshots
+    if (( $+commands[incus] )) && [[ -n "$vm_name" ]]; then
+        snapshots=(${(f)"$(incus info "$vm_name" 2>/dev/null | grep -A 100 "Snapshots:" | grep "^  " | awk '{print $1}' | grep -v "^$")"})
+        _describe 'snapshots' snapshots
+    fi
+}
+
+_incus_vm() {
+    local context state line
+    typeset -A opt_args
+
+    _arguments \
+        '1:command:->commands' \
+        '*::arg:->args'
+
+    case $state in
+        commands)
+            local commands=(
+                'install:Install Incus using ilm-installer'
+                'list:List all Incus VMs'
+                'status:Show VM status and info'
+                'create:Create a new Incus VM'
+                'start:Start a VM'
+                'stop:Stop a VM'
+                'restart:Restart a VM'
+                'delete:Delete a VM completely'
+                'console:Connect to VM console'
+                'exec:Execute command in VM'
+                'ip:Get VM IP address'
+                'ssh:Connect to VM via SSH'
+                'info:Show detailed VM information'
+                'config:Show VM configuration'
+                'snapshot:Create VM snapshot'
+                'restore:Restore VM from snapshot'
+                'copy:Copy VM'
+                'cleanup:Remove stopped VMs and orphaned files'
+            )
+            _describe 'commands' commands
+            ;;
+        args)
+            case $words[1] in
+                create)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_vm_get_distros
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _message 'VM name'
+                    fi
+                    ;;
+                status|start|stop|restart|delete|console|ip|info|config)
+                    _incus_vm_get_vms
+                    ;;
+                exec)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_vm_get_vms
+                    else
+                        _command_names
+                    fi
+                    ;;
+                ssh)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_vm_get_vms
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _message 'username'
+                    fi
+                    ;;
+                snapshot)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_vm_get_vms
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _message 'snapshot name'
+                    fi
+                    ;;
+                restore)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_vm_get_vms
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _incus_vm_get_snapshots "$words[2]"
+                    fi
+                    ;;
+                copy)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_vm_get_vms
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _message 'destination name'
+                    fi
+                    ;;
+                install|list|cleanup)
+                    # No additional arguments
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_incus_vm "$@"

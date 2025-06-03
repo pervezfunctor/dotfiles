@@ -1,0 +1,44 @@
+#compdef vm-create
+
+# Zsh completion for vm-create script
+
+_vm_create_get_distros() {
+    local distros=(
+        'ubuntu:Ubuntu Linux'
+        'fedora:Fedora Linux'
+        'arch:Arch Linux'
+        'debian:Debian Linux'
+    )
+    _describe 'distributions' distros
+}
+
+_vm_create_get_dotfiles_groups() {
+    local groups=(
+        'min:Minimal dotfiles'
+        'slim-shell:Slim shell configuration'
+        'shell:Full shell configuration'
+        'dev:Development environment'
+        'box:Complete desktop environment'
+    )
+    _describe 'dotfiles groups' groups
+}
+
+_vm_create() {
+    _arguments \
+        '--distro[Distribution (required)]:distribution:_vm_create_get_distros' \
+        '--name[VM name]:name:' \
+        '--memory[RAM in MB]:memory:(1024 2048 4096 8192 16384)' \
+        '--vcpus[Number of vCPUs]:vcpus:(1 2 4 8)' \
+        '--disk-size[Disk size]:size:(20G 40G 80G 100G)' \
+        '--ssh-key[SSH public key path]:file:_files' \
+        '--bridge[Network bridge]:bridge:(virbr0 br0)' \
+        '--username[VM username]:username:' \
+        '--release[Distribution release]:release:(noble jammy focal bullseye bookworm current latest)' \
+        '--docker[Install Docker in the VM]' \
+        '--brew[Install Homebrew and development tools]' \
+        '--dotfiles[Install dotfiles]:group:_vm_create_get_dotfiles_groups' \
+        '--password[Set password for VM user]:password:' \
+        '(--help -h)'{--help,-h}'[Show help and exit]'
+}
+
+_vm_create "$@"

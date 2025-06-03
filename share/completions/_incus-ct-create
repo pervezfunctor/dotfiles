@@ -1,0 +1,32 @@
+#compdef incus-ct-create
+
+# Zsh completion for incus-ct-create script
+
+_incus_ct_create_get_distros() {
+    local distros=(
+        'ubuntu:Ubuntu Linux'
+        'fedora:Fedora Linux'
+        'arch:Arch Linux'
+        'debian:Debian Linux'
+        'centos:CentOS Linux'
+        'alpine:Alpine Linux'
+    )
+    _describe 'distributions' distros
+}
+
+_incus_ct_create() {
+    _arguments \
+        '--distro[Distribution (required)]:distribution:_incus_ct_create_get_distros' \
+        '--name[Container name]:name:' \
+        '--release[Distribution release]:release:(24.04 22.04 20.04 42 41 40 current latest 12 11 9-Stream 8-Stream 3.19 3.18)' \
+        '--username[Container username]:username:' \
+        '--password[Set password for container user]:password:' \
+        '--vcpus[Number of vCPUs]:vcpus:(1 2 4 8 16)' \
+        '--ram[RAM in MB]:memory:(512 1024 2048 4096 8192)' \
+        '--ssh-key[SSH public key path]:file:_files' \
+        '--bridge[Network bridge]:bridge:(incusbr0 br0 lxdbr0)' \
+        '--privileged[Create privileged container]' \
+        '(--help -h)'{--help,-h}'[Show help]'
+}
+
+_incus_ct_create "$@"

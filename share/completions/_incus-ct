@@ -1,0 +1,121 @@
+#compdef incus-ct
+
+# Zsh completion for incus-ct script
+
+_incus_ct_get_containers() {
+    local containers
+    if (( $+commands[incus] )); then
+        containers=(${(f)"$(incus list --format csv --columns n 2>/dev/null | grep -v '^$')"})
+        _describe 'incus containers' containers
+    fi
+}
+
+_incus_ct_get_distros() {
+    local distros=(
+        'ubuntu:Ubuntu Linux'
+        'fedora:Fedora Linux'
+        'arch:Arch Linux'
+        'debian:Debian Linux'
+        'centos:CentOS Linux'
+        'alpine:Alpine Linux'
+    )
+    _describe 'distributions' distros
+}
+
+_incus_ct_get_snapshots() {
+    local container_name="$1"
+    local snapshots
+    if (( $+commands[incus] )) && [[ -n "$container_name" ]]; then
+        snapshots=(${(f)"$(incus info "$container_name" 2>/dev/null | grep -A 100 "Snapshots:" | grep "^  " | awk '{print $1}' | grep -v "^$")"})
+        _describe 'snapshots' snapshots
+    fi
+}
+
+_incus_ct() {
+    local context state line
+    typeset -A opt_args
+
+    _arguments \
+        '1:command:->commands' \
+        '*::arg:->args'
+
+    case $state in
+        commands)
+            local commands=(
+                'install:Install Incus using ilm-installer'
+                'list:List all Incus containers'
+                'status:Show container status and info'
+                'create:Create a new Incus container'
+                'start:Start a container'
+                'stop:Stop a container'
+                'restart:Restart a container'
+                'delete:Delete a container completely'
+                'shell:Connect to container shell'
+                'exec:Execute command in container'
+                'ip:Get container IP address'
+                'ssh:Connect to container via SSH'
+                'info:Show detailed container information'
+                'config:Show container configuration'
+                'snapshot:Create container snapshot'
+                'restore:Restore container from snapshot'
+                'copy:Copy container'
+                'cleanup:Remove stopped containers and orphaned files'
+            )
+            _describe 'commands' commands
+            ;;
+        args)
+            case $words[1] in
+                create)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_ct_get_distros
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _message 'container name'
+                    fi
+                    ;;
+                status|start|stop|restart|delete|shell|ip|info|config)
+                    _incus_ct_get_containers
+                    ;;
+                exec)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_ct_get_containers
+                    else
+                        _command_names
+                    fi
+                    ;;
+                ssh)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_ct_get_containers
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _message 'username'
+                    fi
+                    ;;
+                snapshot)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_ct_get_containers
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _message 'snapshot name'
+                    fi
+                    ;;
+                restore)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_ct_get_containers
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _incus_ct_get_snapshots "$words[2]"
+                    fi
+                    ;;
+                copy)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _incus_ct_get_containers
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _message 'destination name'
+                    fi
+                    ;;
+                install|list|cleanup)
+                    # No additional arguments
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_incus_ct "$@"

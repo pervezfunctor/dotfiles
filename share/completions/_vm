@@ -1,0 +1,93 @@
+#compdef vm
+
+# Zsh completion for vm script
+
+_vm_get_vms() {
+    local vms
+    if (( $+commands[virsh] )); then
+        vms=(${(f)"$(virsh list --all --name 2>/dev/null | grep -v '^$')"})
+        _describe 'virtual machines' vms
+    fi
+}
+
+_vm_get_distros() {
+    local distros=(
+        'ubuntu:Ubuntu Linux'
+        'fedora:Fedora Linux'
+        'arch:Arch Linux'
+        'debian:Debian Linux'
+    )
+    _describe 'distributions' distros
+}
+
+_vm_create_args() {
+    _arguments \
+        '--distro[Distribution]:distribution:_vm_get_distros' \
+        '--name[VM name]:name:' \
+        '--memory[RAM in MB]:memory:(1024 2048 4096 8192 16384)' \
+        '--vcpus[Number of vCPUs]:vcpus:(1 2 4 8)' \
+        '--disk-size[Disk size]:size:(20G 40G 80G 100G)' \
+        '--ssh-key[SSH public key path]:file:_files' \
+        '--bridge[Network bridge]:bridge:(virbr0 br0)' \
+        '--username[VM username]:username:' \
+        '--release[Distribution release]:release:(noble jammy focal bullseye bookworm current latest)' \
+        '--docker[Install Docker]' \
+        '--brew[Install Homebrew]' \
+        '--dotfiles[Install dotfiles]:group:(min slim-shell shell dev box)' \
+        '--password[Set password]:password:' \
+        '(--help -h)'{--help,-h}'[Show help]'
+}
+
+_vm() {
+    local context state line
+    typeset -A opt_args
+
+    _arguments \
+        '1:command:->commands' \
+        '*::arg:->args'
+
+    case $state in
+        commands)
+            local commands=(
+                'install:Install virtualization tools'
+                'list:List all VMs'
+                'status:Show VM status and info'
+                'create:Create a new VM'
+                'autostart:Set VM to start on boot'
+                'start:Start a VM'
+                'stop:Gracefully stop a VM'
+                'restart:Restart a VM'
+                'destroy:Force stop a VM'
+                'delete:Delete a VM completely'
+                'console:Connect to VM console'
+                'ip:Get VM IP address'
+                'logs:Show VM logs'
+                'cleanup:Remove stopped VMs and orphaned files'
+                'ssh:Connect to VM via SSH'
+            )
+            _describe 'commands' commands
+            ;;
+        args)
+            case $words[1] in
+                create)
+                    _vm_create_args
+                    ;;
+                status|autostart|start|stop|restart|destroy|delete|console|ip|logs)
+                    _vm_get_vms
+                    ;;
+                ssh)
+                    if [[ $CURRENT -eq 2 ]]; then
+                        _vm_get_vms
+                    elif [[ $CURRENT -eq 3 ]]; then
+                        _message 'username (optional)'
+                    fi
+                    ;;
+                install|list|cleanup)
+                    # No additional arguments
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_vm "$@"

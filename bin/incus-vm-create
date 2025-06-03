@@ -191,8 +191,12 @@ packages:
 
 # Enable SSH service and ensure proper configuration
 runcmd:
+  - systemctl stop ssh.socket || true
+  - systemctl disable ssh.socket || true
   - systemctl enable --now ssh || systemctl enable --now sshd
   - systemctl enable --now qemu-guest-agent || true
+  - sleep 2
+  - systemctl restart ssh || systemctl restart sshd
 
 # Network configuration
 write_files:
