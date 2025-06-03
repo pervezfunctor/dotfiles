@@ -150,7 +150,7 @@ source_dotfile() {
 }
 
 slog() {
-    printf '\r\033[2K  [ \033[00;32mINFO\033[0m ] %s\n' "$*"
+    printf '\r\033[2K  [ \033[00;34mINFO\033[0m ] %s\n' "$*"
 }
 
 fail() {
@@ -159,6 +159,10 @@ fail() {
 
 warn() {
     printf '\r\033[2K  [ \033[00;33mWARN\033[0m ] %s\n' "$*"
+}
+
+success() {
+    printf '\r\033[2K  [ \033[00;32mOK\033[0m ] %s\n' "$*"
 }
 
 err_exit() {

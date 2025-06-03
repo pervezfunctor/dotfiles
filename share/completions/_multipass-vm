@@ -1,0 +1,135 @@
+#compdef multipass-vm
+
+# Zsh completion for multipass-vm script
+
+_multipass_vm_get_vms() {
+    local vms
+    if (( $+commands[multipass] )); then
+        vms=(${(f)"$(multipass list --format csv 2>/dev/null | tail -n +2 | cut -d',' -f1 | grep -v '^$')"})
+        _describe 'multipass virtual machines' vms
+    fi
+}
+
+_multipass_vm_get_distros() {
+    local distros=(
+        'ubuntu:Ubuntu Linux (latest)'
+        'lts:Ubuntu (latest LTS alias)'
+        'jammy:Ubuntu 22.04 LTS'
+        'noble:Ubuntu 24.04 LTS'
+        'oracular:Ubuntu 24.10'
+        'plucky:Ubuntu 25.04'
+    )
+    _describe 'distributions' distros
+}
+
+_multipass_vm_get_usernames() {
+    local usernames=(
+        'ubuntu:Ubuntu default user (primary for Multipass)'
+    )
+    _describe 'usernames' usernames
+}
+
+_multipass_vm() {
+    local context state line
+    typeset -A opt_args
+
+    _arguments \
+        '1:command:->commands' \
+        '*::arg:->args'
+
+    case $state in
+        commands)
+            local commands=(
+                'install:Install Multipass using ilm-installer'
+                'list:List all Multipass VMs'
+                'status:Show VM status and info'
+                'create:Create a new Multipass VM'
+                'start:Start a VM'
+                'stop:Stop a VM'
+                'restart:Restart a VM'
+                'delete:Delete a VM completely'
+                'shell:Connect to VM shell'
+                'exec:Execute command in VM'
+                'ip:Get VM IP address'
+                'ssh:Connect to VM via SSH'
+                'info:Show detailed VM information'
+                'mount:Mount host directory in VM'
+                'umount:Unmount directory from VM'
+            )
+            _describe 'commands' commands
+            ;;
+        args)
+            case $words[1] in
+                create)
+                    case $CURRENT in
+                        2)
+                            _multipass_vm_get_distros
+                            ;;
+                        3)
+                            _message 'VM name (optional)'
+                            ;;
+                    esac
+                    ;;
+                status|start|stop|restart|delete|shell|info)
+                    case $CURRENT in
+                        2)
+                            _multipass_vm_get_vms
+                            ;;
+                    esac
+                    ;;
+                exec)
+                    case $CURRENT in
+                        2)
+                            _multipass_vm_get_vms
+                            ;;
+                        *)
+                            _message 'command to execute'
+                            ;;
+                    esac
+                    ;;
+                ip)
+                    case $CURRENT in
+                        2)
+                            _multipass_vm_get_vms
+                            ;;
+                    esac
+                    ;;
+                ssh)
+                    case $CURRENT in
+                        2)
+                            _multipass_vm_get_vms
+                            ;;
+                        3)
+                            _multipass_vm_get_usernames
+                            ;;
+                    esac
+                    ;;
+                mount)
+                    case $CURRENT in
+                        2)
+                            _multipass_vm_get_vms
+                            ;;
+                        3)
+                            _path_files -/
+                            ;;
+                        4)
+                            _message 'target path in VM'
+                            ;;
+                    esac
+                    ;;
+                umount)
+                    case $CURRENT in
+                        2)
+                            _multipass_vm_get_vms
+                            ;;
+                        3)
+                            _message 'mount path to unmount'
+                            ;;
+                    esac
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_multipass_vm "$@"
