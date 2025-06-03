@@ -143,6 +143,7 @@ configure_distribution() {
     log_info "  Username: $USERNAME"
     log_info "  Image: $IMAGE"
     log_info "  Resources: ${VCPUS} vCPUs, ${RAM_MB}MB RAM, ${DISK_SIZE} disk"
+    log_info "  Network Bridge: $BRIDGE_IF"
 }
 
 generate_cloud_init_config() {
@@ -162,19 +163,23 @@ manage_etc_hosts: true
 # User configuration
 users:
   - name: $USERNAME
-    groups: [sudo, wheel, adm]
+    groups:
+      - sudo
+      - wheel
+      - adm
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
     passwd: $(openssl passwd -6 "$PASSWORD")
     ssh_authorized_keys:
-      - $pub_key
+      - "$pub_key"
 
 # System configuration
 package_update: true
 package_upgrade: true
 
 packages:
+  - qemu-guest-agent
   - openssh-server
   - curl
   - wget
@@ -224,7 +229,8 @@ create_vm() {
         --config limits.cpu="$VCPUS" \
         --config limits.memory="${RAM_MB}MB" \
         --config user.user-data="$cloud_init_config" \
-        --device root,size="$DISK_SIZE"; then
+        --device root,size="$DISK_SIZE" \
+        --network "$BRIDGE_IF"; then
         log_error "Failed to create VM '$VM_NAME'"
         exit 1
     fi

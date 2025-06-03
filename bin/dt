@@ -13,11 +13,14 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 
-# Source distrobox functions if available
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-if [[ -f "$DOT_DIR/share/fns" ]]; then
-    # shellcheck disable=SC1091
-    source "$DOT_DIR/share/fns"
+# Check if distrobox is installed and running
+if command -v distrobox >/dev/null 2>&1; then
+    distrobox list || true
+else
+    echo
+    log_error "distrobox command not found. Please install distrobox first."
+    log_info "You can install it with: $0 install"
+    exit 1
 fi
 
 usage() {
@@ -63,14 +66,6 @@ EOF
 
 list_containers() {
     log_info "Listing all distrobox containers..."
-    echo
-    if command -v distrobox >/dev/null 2>&1; then
-        distrobox list
-    else
-        log_error "distrobox command not found. Please install distrobox first."
-        log_info "You can install it with: $0 install"
-        return 1
-    fi
 }
 
 install_distrobox() {
@@ -150,41 +145,36 @@ create_container() {
 
     log_info "Creating $distro distrobox container: $container_name"
 
-    # Check if function exists for the distro
-    if declare -f "dbox-${distro}" >/dev/null 2>&1; then
-        "dbox-${distro}" "$container_name"
-    else
-        # Fallback to direct distrobox create
-        case "$distro" in
-        ubuntu)
-            distrobox create --yes --image ubuntu:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-            ;;
-        debian)
-            distrobox create --yes --image debian:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-            ;;
-        arch)
-            distrobox create --yes --image archlinux:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-            ;;
-        fedora)
-            distrobox create --yes --image fedora:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-            ;;
-        rocky)
-            distrobox create --yes --image quay.io/rockylinux/rockylinux:9 --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-            ;;
-        tumbleweed | tw)
-            distrobox create --yes --image opensuse/tumbleweed --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-            ;;
-        alpine)
-            distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-            ;;
-        *)
-            log_error "Unsupported distro: $distro"
-            log_info "Supported distros: ubuntu, debian, arch, fedora, rocky, tumbleweed, alpine"
-            return 1
-            ;;
-        esac
-    fi
+    case "$distro" in
+    ubuntu)
+        distrobox create --yes --image ubuntu:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
+    debian)
+        distrobox create --yes --image debian:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
+    arch)
+        distrobox create --yes --image archlinux:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
+    fedora)
+        distrobox create --yes --image fedora:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
+    rocky)
+        distrobox create --yes --image quay.io/rockylinux/rockylinux:9 --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
+    tumbleweed | tw)
+        distrobox create --yes --image opensuse/tumbleweed --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
+    alpine)
+        distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
+        ;;
+    *)
+        log_error "Unsupported distro: $distro"
+        log_info "Supported distros: ubuntu, debian, arch, fedora, rocky, tumbleweed, alpine"
+        return 1
+        ;;
+    esac
 
+    # shellcheck disable=SC2181
     if [[ $? -eq 0 ]]; then
         log_success "Container '$container_name' created successfully"
     else

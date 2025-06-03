@@ -278,7 +278,7 @@ incus_install() {
 
     slog "Installing incus"
 
-    si incus
+    si incus qemu-system-x86 qemu-utils
     incus_config_install
 
     slog "incus installation done!"
