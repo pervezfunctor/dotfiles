@@ -8,4 +8,4 @@ if ! multipass list | grep -q "${VM_NAME}"; then
   exit 1
 fi
 
-ssh ${USERNAME}@"$(multipass info ${VM_NAME} | awk '/IPv4/ {print $2}')"
+ssh "${USERNAME}"@"$(multipass info "${VM_NAME}" | awk '/IPv4/ {print $2}')"
