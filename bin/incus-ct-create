@@ -31,7 +31,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create Incus LXC containers with cloud-init and SSH access.
 
 REQUIRED:
-    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine)
+    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine, nixos)
 
 OPTIONS:
     --name NAME             Container name (default: distro name)
@@ -128,9 +128,14 @@ configure_distribution() {
         USERNAME=${USERNAME:-"alpine"}
         IMAGE="images:alpine/${RELEASE}"
         ;;
+    nixos)
+        RELEASE=${RELEASE:-"24.11"}
+        USERNAME=${USERNAME:-"nixos"}
+        IMAGE="images:nixos/${RELEASE}"
+        ;;
     *)
         log_error "Unsupported distribution: $DISTRO"
-        log_error "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine"
+        log_error "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine, nixos"
         exit 1
         ;;
     esac
@@ -234,6 +239,12 @@ create_container() {
     if [[ "$PRIVILEGED" == "true" ]]; then
         launch_args+=(--config "security.privileged=true")
         log_info "Creating privileged container"
+    fi
+
+    # Add NixOS-specific settings
+    if [[ "$DISTRO" == "nixos" ]]; then
+        launch_args+=(--config "security.nesting=true")
+        log_info "Enabling nesting for NixOS container"
     fi
 
     if ! incus launch "${launch_args[@]}"; then

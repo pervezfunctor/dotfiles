@@ -32,7 +32,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create Incus virtual machines with cloud-init and SSH access.
 
 REQUIRED:
-    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine)
+    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine, nixos)
 
 OPTIONS:
     --name NAME             VM name (default: distro name)
@@ -127,9 +127,14 @@ configure_distribution() {
         USERNAME=${USERNAME:-"alpine"}
         IMAGE="images:alpine/${RELEASE}/cloud"
         ;;
+    nixos)
+        RELEASE=${RELEASE:-"24.11"}
+        USERNAME=${USERNAME:-"nixos"}
+        IMAGE="images:nixos/${RELEASE}/cloud"
+        ;;
     *)
         log_error "Unsupported distribution: $DISTRO"
-        log_error "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine"
+        log_error "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine, nixos"
         exit 1
         ;;
     esac
@@ -234,13 +239,23 @@ create_vm() {
     # Create the VM with cloud-init configuration
     log_info "Launching VM with image: $IMAGE"
 
-    if ! incus launch "$IMAGE" "$VM_NAME" --vm \
-        --config limits.cpu="$VCPUS" \
-        --config limits.memory="${RAM_MB}MB" \
-        --config user.user-data="$(cat "${CLOUD_INIT_DIR}/user-data")" \
-        --config user.meta-data="$(cat "${CLOUD_INIT_DIR}/meta-data")" \
-        --device root,size="$DISK_SIZE" \
-        --network "$BRIDGE_IF"; then
+    # Build launch command with distribution-specific settings
+    local launch_cmd=(
+        incus launch "$IMAGE" "$VM_NAME" --vm
+        --config limits.cpu="$VCPUS"
+        --config limits.memory="${RAM_MB}MB"
+        --config user.user-data="$(cat "${CLOUD_INIT_DIR}/user-data")"
+        --config user.meta-data="$(cat "${CLOUD_INIT_DIR}/meta-data")"
+        --device root size="$DISK_SIZE"
+        --network "$BRIDGE_IF"
+    )
+
+    # Add NixOS-specific settings
+    if [[ "$DISTRO" == "nixos" ]]; then
+        launch_cmd+=(--config security.secureboot=false)
+    fi
+
+    if ! "${launch_cmd[@]}"; then
         log_error "Failed to create VM '$VM_NAME'"
         exit 1
     fi

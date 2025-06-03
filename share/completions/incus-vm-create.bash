@@ -3,7 +3,7 @@
 # shellcheck disable=SC2207  # Standard pattern for bash completions
 
 _incus_vm_create_get_distros() {
-    echo "ubuntu fedora arch debian centos alpine"
+    echo "ubuntu fedora arch debian centos alpine nixos"
 }
 
 _incus_vm_create_completion() {

@@ -10,6 +10,7 @@ _incus_ct_create_get_distros() {
         'debian:Debian Linux'
         'centos:CentOS Linux'
         'alpine:Alpine Linux'
+        'nixos:NixOS Linux'
     )
     _describe 'distributions' distros
 }

@@ -139,9 +139,12 @@ create_container() {
         alpine)
             incus launch images:alpine/3.19 "$container_name"
             ;;
+        nixos)
+            incus launch images:nixos/24.11 "$container_name" --config security.nesting=true
+            ;;
         *)
             log_error "Unsupported distro: $distro"
-            log_info "Supported distros: ubuntu, fedora, arch, tumbleweed, debian, centos, alpine"
+            log_info "Supported distros: ubuntu, fedora, arch, tumbleweed, debian, centos, alpine, nixos"
             return 1
             ;;
         esac

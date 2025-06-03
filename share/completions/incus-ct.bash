@@ -9,7 +9,7 @@ _incus_ct_get_containers() {
 }
 
 _incus_ct_get_distros() {
-    echo "ubuntu fedora arch debian centos alpine"
+    echo "ubuntu fedora arch debian centos alpine nixos"
 }
 
 _incus_ct_get_snapshots() {

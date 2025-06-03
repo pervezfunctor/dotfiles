@@ -9,7 +9,7 @@ _incus_vm_get_vms() {
 }
 
 _incus_vm_get_distros() {
-    echo "ubuntu fedora arch debian centos alpine"
+    echo "ubuntu fedora arch debian centos alpine nixos"
 }
 
 _incus_vm_get_snapshots() {

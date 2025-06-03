@@ -90,17 +90,17 @@ incus_list_vms() {
     # Try with --type flag first, fallback if not supported
     if [[ -n "$vm_name" ]]; then
         # For specific VM
-        if incus list "$vm_name" --type=virtual-machine ${extra_args} >/dev/null 2>&1; then
-            incus list "$vm_name" --type=virtual-machine ${extra_args}
+        if incus list "$vm_name" --type=virtual-machine "${extra_args}" >/dev/null 2>&1; then
+            incus list "$vm_name" --type=virtual-machine "${extra_args}"
         else
-            incus list "$vm_name" ${extra_args}
+            incus list "$vm_name" "${extra_args}"
         fi
     else
         # For all VMs
-        if incus list --type=virtual-machine ${extra_args} >/dev/null 2>&1; then
-            incus list --type=virtual-machine ${extra_args}
+        if incus list --type=virtual-machine "${extra_args}" >/dev/null 2>&1; then
+            incus list --type=virtual-machine "${extra_args}"
         else
-            incus list ${extra_args}
+            incus list "${extra_args}"
         fi
     fi
 }
@@ -209,9 +209,12 @@ create_vm() {
         alpine)
             incus launch images:alpine/3.19 "$vm_name" --vm
             ;;
+        nixos)
+            incus launch images:nixos/24.11 "$vm_name" --vm --config security.secureboot=false
+            ;;
         *)
             log_error "Unsupported distro: $distro"
-            log_info "Supported distros: ubuntu, fedora, arch, tumbleweed, debian, centos, alpine"
+            log_info "Supported distros: ubuntu, fedora, arch, tumbleweed, debian, centos, alpine, nixos"
             return 1
             ;;
         esac
