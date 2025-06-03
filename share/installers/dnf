@@ -318,7 +318,7 @@ incus_install() {
         sudo dnf -y copr enable neil/incus
     fi
 
-    si incus
+    si incus qemu-kvm qemu-img bridge-utils
     incus_config_install
 
     slog "incus installation done!"

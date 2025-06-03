@@ -149,13 +149,14 @@ configure_distribution() {
 generate_cloud_init_config() {
     log_info "Generating cloud-init configuration..."
 
+    # Create temporary directory for cloud-init files
+    CLOUD_INIT_DIR=$(mktemp -d)
+
     local pub_key
     pub_key=$(cat "$SSH_KEY")
 
-    # Create cloud-init user-data
-    local user_data
-    user_data=$(
-        cat <<EOF
+    # Create cloud-init user-data file using tee
+    tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
 hostname: $VM_NAME
 manage_etc_hosts: true
@@ -188,7 +189,7 @@ packages:
   - git
   - unzip
 
-# Enable SSH service
+# Enable SSH service and ensure proper configuration
 runcmd:
   - systemctl enable --now ssh || systemctl enable --now sshd
   - systemctl enable --now qemu-guest-agent || true
@@ -204,9 +205,14 @@ write_files:
 
 final_message: "VM $VM_NAME setup complete! SSH access is ready."
 EOF
-    )
 
-    echo "$user_data"
+    # Create meta-data file
+    tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
+instance-id: ${VM_NAME}-$(date +%s)
+local-hostname: $VM_NAME
+EOF
+
+    log_success "Cloud-init configuration files created in: $CLOUD_INIT_DIR"
 }
 
 create_vm() {
@@ -218,9 +224,8 @@ create_vm() {
         exit 1
     fi
 
-    # Generate cloud-init configuration
-    local cloud_init_config
-    cloud_init_config=$(generate_cloud_init_config)
+    # Generate cloud-init configuration files
+    generate_cloud_init_config
 
     # Create the VM with cloud-init configuration
     log_info "Launching VM with image: $IMAGE"
@@ -228,7 +233,8 @@ create_vm() {
     if ! incus launch "$IMAGE" "$VM_NAME" --vm \
         --config limits.cpu="$VCPUS" \
         --config limits.memory="${RAM_MB}MB" \
-        --config user.user-data="$cloud_init_config" \
+        --config user.user-data="$(cat "${CLOUD_INIT_DIR}/user-data")" \
+        --config user.meta-data="$(cat "${CLOUD_INIT_DIR}/meta-data")" \
         --device root,size="$DISK_SIZE" \
         --network "$BRIDGE_IF"; then
         log_error "Failed to create VM '$VM_NAME'"
@@ -236,6 +242,12 @@ create_vm() {
     fi
 
     log_success "VM '$VM_NAME' created successfully"
+
+    # Clean up temporary cloud-init directory
+    if [[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]]; then
+        rm -rf "$CLOUD_INIT_DIR"
+        log_info "Cleaned up temporary cloud-init files"
+    fi
 }
 
 wait_for_vm() {

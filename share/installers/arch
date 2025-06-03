@@ -182,7 +182,7 @@ incus_install() {
 
     slog "Installing incus"
 
-    si incus
+    si incus qemu-full bridge-utils
     incus_config_install
 
     slog "incus installation done!"

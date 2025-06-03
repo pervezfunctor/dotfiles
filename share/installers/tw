@@ -191,7 +191,7 @@ incus_install() {
 
     slog "Installing incus"
 
-    si incus
+    si incus qemu-kvm qemu-tools bridge-utils
     incus_config_install
 
     slog "incus installation done!"
