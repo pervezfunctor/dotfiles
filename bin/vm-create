@@ -610,12 +610,12 @@ generate_cloud_init() {
       Dotfiles are installed and ready to use.
       Location: /home/$USERNAME/.ilm
       Quick commands:
-        ilm-installer shell
-        ilm-installer docker
-        ilm-installer python
-        ilm-config zsh
-        ilm-config tmux
-        ilm-config nvim
+        ilmi shell
+        ilmi docker
+        ilmi python
+        ilmc zsh
+        ilmc tmux
+        ilmc nvim
 "
 
         log_info "Adding dotfiles installation to cloud-init"
@@ -810,12 +810,12 @@ show_completion_info() {
         log_info "Dotfiles are pre-installed on this VM"
         echo "  Dotfiles Commands:"
         echo "    Location:           ~/.ilm"
-        echo "    Install shell:      ilm-installer shell"
-        echo "    Install Docker:     ilm-installer docker"
-        echo "    Install Python:     ilm-installer python"
-        echo "    Config zsh:         ilm-config zsh"
-        echo "    Config tmux:        ilm-config tmux"
-        echo "    Config nvim:        ilm-config nvim"
+        echo "    Install shell:      ilmi shell"
+        echo "    Install Docker:     ilmi docker"
+        echo "    Install Python:     ilmi python"
+        echo "    Config zsh:         ilmc zsh"
+        echo "    Config tmux:        ilmc tmux"
+        echo "    Config nvim:        ilmc nvim"
         echo "  Repository: https://github.com/pervezfunctor/dotfiles"
         echo
     fi

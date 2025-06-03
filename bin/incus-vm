@@ -27,7 +27,7 @@ Usage: $0 <command> [vm-name] [args...]
 Manage Incus virtual machines similar to libvirt VM management.
 
 COMMANDS:
-    install                 Install Incus using ilm-installer
+    install                 Install Incus using ilmi
     list                    List all Incus VMs
     status <name>           Show VM status and info
     create <distro> [name]  Create a new Incus VM
@@ -106,13 +106,13 @@ incus_list_vms() {
 }
 
 install_incus() {
-    log_info "Installing Incus using ilm-installer..."
+    log_info "Installing Incus using ilmi..."
 
-    # Check if ilm-installer is available
-    if ! command -v ilm-installer >/dev/null 2>&1; then
-        log_error "ilm-installer not found. Installing it first..."
+    # Check if ilmi is available
+    if ! command -v ilmi >/dev/null 2>&1; then
+        log_error "ilmi not found. Installing it first..."
 
-        # Install ilm-installer
+        # Install ilmi
         if command -v curl >/dev/null 2>&1; then
             bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- incus
         elif command -v wget >/dev/null 2>&1; then
@@ -122,8 +122,8 @@ install_incus() {
             return 1
         fi
     else
-        # Use existing ilm-installer
-        ilm-installer incus
+        # Use existing ilmi
+        ilmi incus
     fi
 
     if command -v incus >/dev/null 2>&1; then

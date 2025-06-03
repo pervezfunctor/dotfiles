@@ -13,7 +13,7 @@ The `incus-vm` script provides a unified interface for managing Incus virtual ma
 ## Commands
 
 ### Installation
-- `incus-vm install` - Install Incus using ilm-installer
+- `incus-vm install` - Install Incus using ilmi
 
 ### Basic Operations
 - `incus-vm list` - List all Incus VMs
@@ -165,7 +165,7 @@ The script includes comprehensive error handling:
 
 ## Installation
 
-The script includes a built-in installation command that uses `ilm-installer` to install and configure Incus:
+The script includes a built-in installation command that uses `ilmi` to install and configure Incus:
 
 ```bash
 # Install Incus automatically

@@ -28,7 +28,7 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 Exit and enter WSL again(or reboot) to install more development tools.
 
 ```bash
-ilm-installer tmux nvim emacs # pick any
+ilmi tmux nvim emacs # pick any
 ```
 
 If you want to setup vscode and other development tools on Windows, run the following command in powershell **as administrator**.
@@ -121,17 +121,17 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 You could later install additional development tools with
 
 ```bash
-ilm-installer zsh tmux nvim emacs # pick any
+ilmi zsh tmux nvim emacs # pick any
 ```
 
 If you are in distrobox or a virtual machine with desktop environment, you could install terminal with
 
 ```bash
-ilm-installer terminal
+ilmi terminal
 ```
 
 You might be able to install vscode with
 
 ```bash
-ilm-installer vscode
+ilmi vscode
 ```

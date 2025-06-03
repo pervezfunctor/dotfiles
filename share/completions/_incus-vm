@@ -43,7 +43,7 @@ _incus_vm() {
     case $state in
         commands)
             local commands=(
-                'install:Install Incus using ilm-installer'
+                'install:Install Incus using ilmi'
                 'list:List all Incus VMs'
                 'status:Show VM status and info'
                 'create:Create a new Incus VM'

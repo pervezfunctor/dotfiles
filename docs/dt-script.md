@@ -13,7 +13,7 @@ The `dt` script provides a unified interface for managing distrobox containers, 
 ## Commands
 
 ### Installation
-- `dt install` - Install container tools (distrobox, podman, docker, etc.) using ilm-installer
+- `dt install` - Install container tools (distrobox, podman, docker, etc.) using ilmi
 
 ### Basic Operations
 - `dt list` - List all distrobox containers
@@ -82,7 +82,7 @@ dt delete old-container
 
 ## Installation
 
-The script includes a built-in installation command that uses `ilm-installer` to install container tools:
+The script includes a built-in installation command that uses `ilmi` to install container tools:
 
 ```bash
 # Install container tools automatically

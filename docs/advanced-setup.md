@@ -10,19 +10,19 @@ You could also install necessary tools and libraries for rust, go, c++ developme
 Installer rust tools
 
 ```bash
-ilm-installer rust
+ilmi rust
 ```
 
 Install go tools
 
 ```bash
-ilm-installer go
+ilmi go
 ```
 
 Install c++ tools
 
 ```bash
-ilm-installer cpp
+ilmi cpp
 ```
 
 ## Only dotfiles(Advanced)

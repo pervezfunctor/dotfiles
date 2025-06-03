@@ -43,7 +43,7 @@ _incus_ct() {
     case $state in
         commands)
             local commands=(
-                'install:Install Incus using ilm-installer'
+                'install:Install Incus using ilmi'
                 'list:List all Incus containers'
                 'status:Show container status and info'
                 'create:Create a new Incus container'

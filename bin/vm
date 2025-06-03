@@ -20,7 +20,7 @@ Usage: $0 <command> [vm-name]
 Manage VMs created with libvirt-* scripts.
 
 COMMANDS:
-    install             Install virtualization tools using ilm-installer
+    install             Install virtualization tools using ilmi
     list                List all VMs
     status <vm-name>    Show VM status and info
     create  ARGS        Create a new VM, with same ARGS as vm-create
@@ -63,13 +63,13 @@ list_vms() {
 }
 
 install_vm() {
-    log_info "Installing virtualization tools using ilm-installer..."
+    log_info "Installing virtualization tools using ilmi..."
 
-    # Check if ilm-installer is available
-    if ! command -v ilm-installer >/dev/null 2>&1; then
-        log_error "ilm-installer not found. Installing it first..."
+    # Check if ilmi is available
+    if ! command -v ilmi >/dev/null 2>&1; then
+        log_error "ilmi not found. Installing it first..."
 
-        # Install ilm-installer
+        # Install ilmi
         if command -v curl >/dev/null 2>&1; then
             bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- vm
         elif command -v wget >/dev/null 2>&1; then
@@ -79,8 +79,8 @@ install_vm() {
             return 1
         fi
     else
-        # Use existing ilm-installer
-        ilm-installer vm
+        # Use existing ilmi
+        ilmi vm
     fi
 
     if command -v virsh >/dev/null 2>&1; then

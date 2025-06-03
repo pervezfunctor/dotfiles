@@ -9,12 +9,12 @@ The `multipass-vm` script provides a unified interface for managing Multipass vi
 - **SSH Support**: Automatic SSH setup with cloud-init and username detection
 - **Directory Mounting**: Mount host directories in VMs for easy file sharing
 - **Multi-Distribution Support**: Ubuntu, Fedora with version-specific options
-- **Integration**: Works with existing ilm-installer for Multipass installation
+- **Integration**: Works with existing ilmi for Multipass installation
 
 ## Commands
 
 ### Installation
-- `multipass-vm install` - Install Multipass using ilm-installer
+- `multipass-vm install` - Install Multipass using ilmi
 
 ### Basic Operations
 - `multipass-vm list` - List all Multipass VMs
@@ -199,12 +199,12 @@ The script provides comprehensive error handling:
 The script can install Multipass automatically:
 
 ```bash
-# Install Multipass using ilm-installer
+# Install Multipass using ilmi
 multipass-vm install
 ```
 
 This will:
-- Download and install Multipass using the ilm-installer
+- Download and install Multipass using the ilmi
 - Set up the Multipass daemon
 - Verify installation success
 - Provide usage examples

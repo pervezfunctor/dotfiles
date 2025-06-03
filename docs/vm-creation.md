@@ -169,7 +169,7 @@ When using the `--dotfiles` flag with an argument, the VM will have your persona
 - Uses the provided argument to customize the installation
 - Some of the available options are min, slim-shell, shell, dev.
 - Installs dotfiles to `/home/username/.ilm`
-- Provides `ilm-installer` and `ilm-config` commands for environment management
+- Provides `ilmi` and `ilmc` commands for environment management
 
 **Usage:**
 ```bash
@@ -180,14 +180,14 @@ When using the `--dotfiles` flag with an argument, the VM will have your persona
 **Available commands after VM creation:**
 ```bash
 # Install additional components
-ilm-installer shell
-ilm-installer docker
-ilm-installer python
+ilmi shell
+ilmi docker
+ilmi python
 
 # Configure applications
-ilm-config zsh
-ilm-config tmux
-ilm-config nvim
+ilmc zsh
+ilmc tmux
+ilmc nvim
 
 # Update dotfiles
 cd ~/.ilm && git pull

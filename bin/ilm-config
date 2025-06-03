@@ -24,7 +24,7 @@ help() {
     echo ""
 }
 
-ilm-config() {
+ilmc() {
     while [[ "$#" -gt 0 ]]; do
         if fn_exists "${1}_config_install"; then
             "${1}_config_install"
@@ -37,7 +37,7 @@ ilm-config() {
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        ilm-config "$@"
+        ilmc "$@"
         return 0
     fi
 
@@ -52,7 +52,7 @@ main() {
         echo ""
         slog "Selected: ${SELECTED_OPTIONS}. Configuring..."
         echo ""
-        ilm-config "$SELECTED_OPTIONS"
+        ilmc "$SELECTED_OPTIONS"
         slog "Configuration complete."
     else
         slog "No options selected."

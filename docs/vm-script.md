@@ -13,7 +13,7 @@ The `vm` script provides a unified interface for managing virtual machines creat
 ## Commands
 
 ### Installation
-- `vm install` - Install virtualization tools (libvirt, QEMU, virt-install) using ilm-installer
+- `vm install` - Install virtualization tools (libvirt, QEMU, virt-install) using ilmi
 
 ### Basic Operations
 - `vm list` - List all VMs
@@ -74,7 +74,7 @@ vm cleanup
 
 ## Installation
 
-The script includes a built-in installation command that uses `ilm-installer` to install virtualization tools:
+The script includes a built-in installation command that uses `ilmi` to install virtualization tools:
 
 ```bash
 # Install virtualization tools automatically
@@ -164,15 +164,15 @@ vm stop myvm
 
 ## Comparison with Other Management Scripts
 
-| Feature | `vm` (libvirt) | `incus-vm` (Incus) | `dt` (Distrobox) | `incus-ct` (Incus LXC) |
-|---------|----------------|-------------------|------------------|------------------------|
-| Install | `vm install` | `incus-vm install` | `dt install` | `incus-ct install` |
-| List | `vm list` | `incus-vm list` | `dt list` | `incus-ct list` |
-| Create | `vm create --distro <distro>` | `incus-vm create <distro>` | `dt create <distro>` | `incus-ct create <distro>` |
-| Start | `vm start <name>` | `incus-vm start <name>` | `dt start <name>` | `incus-ct start <name>` |
-| Connect | `vm ssh <name>` | `incus-vm console <name>` | `dt enter <name>` | `incus-ct shell <name>` |
-| Execute | `vm ssh <name> "cmd"` | `incus-vm exec <name> "cmd"` | `dt run <name> "cmd"` | `incus-ct exec <name> "cmd"` |
-| Unique Features | SSH auto-detection, IP detection | Snapshots, Copy | App export/import | Snapshots, Privileged mode |
+| Feature         | `vm` (libvirt)                   | `incus-vm` (Incus)           | `dt` (Distrobox)      | `incus-ct` (Incus LXC)       |
+| --------------- | -------------------------------- | ---------------------------- | --------------------- | ---------------------------- |
+| Install         | `vm install`                     | `incus-vm install`           | `dt install`          | `incus-ct install`           |
+| List            | `vm list`                        | `incus-vm list`              | `dt list`             | `incus-ct list`              |
+| Create          | `vm create --distro <distro>`    | `incus-vm create <distro>`   | `dt create <distro>`  | `incus-ct create <distro>`   |
+| Start           | `vm start <name>`                | `incus-vm start <name>`      | `dt start <name>`     | `incus-ct start <name>`      |
+| Connect         | `vm ssh <name>`                  | `incus-vm console <name>`    | `dt enter <name>`     | `incus-ct shell <name>`      |
+| Execute         | `vm ssh <name> "cmd"`            | `incus-vm exec <name> "cmd"` | `dt run <name> "cmd"` | `incus-ct exec <name> "cmd"` |
+| Unique Features | SSH auto-detection, IP detection | Snapshots, Copy              | App export/import     | Snapshots, Privileged mode   |
 
 ## Performance and Use Cases
 

@@ -30,7 +30,7 @@ Usage: $0 <command> [container-name] [args...]
 Manage distrobox containers similar to VM management.
 
 COMMANDS:
-    install                 Install container tools (distrobox, podman, etc.) using ilm-installer
+    install                 Install container tools (distrobox, podman, etc.) using ilmi
     list                    List all distrobox containers
     status <name>           Show container status and info
     create <distro> [name]  Create a new distrobox container
@@ -69,13 +69,13 @@ list_containers() {
 }
 
 install_distrobox() {
-    log_info "Installing distrobox using ilm-installer..."
+    log_info "Installing distrobox using ilmi..."
 
-    # Check if ilm-installer is available
-    if ! command -v ilm-installer >/dev/null 2>&1; then
-        log_error "ilm-installer not found. Installing it first..."
+    # Check if ilmi is available
+    if ! command -v ilmi >/dev/null 2>&1; then
+        log_error "ilmi not found. Installing it first..."
 
-        # Install ilm-installer
+        # Install ilmi
         if command -v curl >/dev/null 2>&1; then
             bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- ct
         elif command -v wget >/dev/null 2>&1; then
@@ -85,8 +85,8 @@ install_distrobox() {
             return 1
         fi
     else
-        # Use existing ilm-installer
-        ilm-installer ct
+        # Use existing ilmi
+        ilmi ct
     fi
 
     if command -v distrobox >/dev/null 2>&1; then

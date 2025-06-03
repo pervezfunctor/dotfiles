@@ -16,7 +16,7 @@ Usage: $0 <command> [vm-name] [args...]
 Manage Multipass virtual machines similar to libvirt VM management.
 
 COMMANDS:
-    install                 Install Multipass using ilm-installer
+    install                 Install Multipass using ilmi
     list                    List all Multipass VMs
     status <name>           Show VM status and info
     create <distro> [name]  Create a new Multipass VM
@@ -77,13 +77,13 @@ multipass_list_vms() {
 }
 
 install_multipass() {
-    slog "Installing Multipass using ilm-installer..."
+    slog "Installing Multipass using ilmi..."
 
-    # Check if ilm-installer is available
-    if has_cmd ilm-installer; then
-        ilm-installer multipass
+    # Check if ilmi is available
+    if has_cmd ilmi; then
+        ilmi multipass
     else
-        fail "ilm-installer not found. Installing it first..."
+        fail "ilmi not found. Installing it first..."
     fi
 
     if has_cmd multipass; then

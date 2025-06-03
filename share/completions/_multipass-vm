@@ -40,7 +40,7 @@ _multipass_vm() {
     case $state in
         commands)
             local commands=(
-                'install:Install Multipass using ilm-installer'
+                'install:Install Multipass using ilmi'
                 'list:List all Multipass VMs'
                 'status:Show VM status and info'
                 'create:Create a new Multipass VM'

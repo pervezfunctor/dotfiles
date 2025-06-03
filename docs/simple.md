@@ -11,7 +11,7 @@ Install base system packages and configure this repository using the following c
 To install vscode
 
 ```bash
-ilm-installer vscode
+ilmi vscode
 
 To install tmux
 
@@ -21,16 +21,16 @@ ilm-install tmux
 To install neovim
 
 ```bash
-ilm-installer nvim
+ilmi nvim
 ```
 
 To install terminal application(ghostty or kitty and/or ptyxis)
 
 ```bash
-ilm-installer terminal
+ilmi terminal
 ```
 
 To install emacs
 
 ```bash
-ilm-installer emacs
+ilmi emacs

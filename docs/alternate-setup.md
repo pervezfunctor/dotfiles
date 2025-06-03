@@ -30,11 +30,11 @@ You could also, first install the base setup
 bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)"
 ```
 
-and then at any point(after reboot), use `ilm-group-installer`.
+and then at any point(after reboot), use `ilmg`.
 
 ```bash
-ilm-group-installer
-ilm-group-installer help
+ilmg
+ilmg help
 ```
 
 You could pick from `shell`, `ct`, `vm`, `desktop` and `dev` groups.
@@ -78,11 +78,11 @@ Following optional utilities might also be installed
 In addition to the above group installs, you could also use `installer` to setup various tools like `emacs`.
 
 ```bash
-ilm-installer
+ilmi
 ```
 
 Pass `help` to get all options and short descriptions, run
 
 ```bash
-ilm-installer help
+ilmi help
 ```

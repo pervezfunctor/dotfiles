@@ -32,4 +32,4 @@ fi
 
 bootstrap "$@"
 
-slog "Installation done! Once you reboot you can use 'ilm-group-installer' command to install more packages"
+slog "Installation done! Once you reboot you can use 'ilmg' command to install more packages"
