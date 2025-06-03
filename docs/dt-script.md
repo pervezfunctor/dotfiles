@@ -8,7 +8,8 @@ The `dt` script provides a unified interface for managing distrobox containers, 
 - **Interactive Operations**: Enter containers, run commands, view status and logs
 - **Application Export**: Export and unexport applications from containers
 - **Cleanup Operations**: Remove stopped containers and orphaned files
-- **Integration**: Works with existing distrobox functions from `share/fns`
+- **Integration**: Works with existing distrobox functions
+- **Fallback Mechanism**: Gracefully handles missing utility functions
 
 ## Commands
 
@@ -28,6 +29,7 @@ The `dt` script provides a unified interface for managing distrobox containers, 
 - `dt enter <name>` - Enter container shell
 - `dt run <name> <command>` - Run command in container
 - `dt logs <name>` - Show container logs
+- `dt logs-tail <name>` - Follow container logs (like tail -f)
 
 ### Application Management
 - `dt export <name> <app>` - Export application from container to host
@@ -40,8 +42,17 @@ The `dt` script provides a unified interface for managing distrobox containers, 
 ## Supported Distributions
 
 The script supports creating containers for the following distributions:
-- ubuntu, debian, arch, fedora, rocky, tumbleweed, alpine
-- bluefin, docker, wolfi, nix
+- **Ubuntu**: Latest Ubuntu release
+- **Debian**: Latest Debian release
+- **Arch Linux**: Latest Arch Linux release
+- **Fedora**: Latest Fedora release
+- **Rocky Linux**: Rocky Linux 9
+- **openSUSE Tumbleweed**: Latest rolling release
+- **Alpine**: Latest Alpine Linux release
+- **Bluefin**: UBlue OS Bluefin CLI image
+- **Docker**: Container with Docker-in-Docker support
+- **Wolfi**: Wolfi SDK container
+- **Nix**: NixOS container
 
 ## Examples
 
@@ -73,6 +84,9 @@ dt status ubuntu
 # Upgrade packages in container
 dt upgrade ubuntu
 
+# Follow container logs
+dt logs-tail ubuntu
+
 # Clean up stopped containers
 dt cleanup
 
@@ -92,24 +106,7 @@ dt install
 This command will:
 - Install distrobox package for your distribution
 - Install container engines (Podman, Docker)
-- Install additional container tools (Incus, Buildah)
 - Configure services and user permissions
-- Set up container management tools (Cockpit, Portainer)
-
-The installation includes:
-- **distrobox** - Main container management tool
-- **podman** - Rootless container engine
-- **docker** - Traditional container engine
-- **incus** - System containers and VMs
-- **buildah** - Container image building
-- **cockpit** - Web-based container management
-- **portainer** - Docker container management UI
-
-## Integration with Existing Functions
-
-The script automatically sources and uses existing distrobox creation functions from `share/fns` when available, including:
-- `dbox-ubuntu`, `dbox-debian`, `dbox-arch`, etc.
-- Special containers like `dbox-docker`, `dbox-bluefin`, `dbox-nix`
 
 ## Container Storage
 
@@ -122,20 +119,22 @@ The script includes comprehensive error handling:
 - Provides clear error messages and usage information
 - Handles missing dependencies gracefully
 - Confirms destructive operations
+- Gracefully handles missing utility functions
 
-## Comparison with VM Script
+## Comparison with Other Container/VM Scripts
 
-| Feature         | `vm` (Virtual Machines)       | `dt` (Distrobox)              |
-| --------------- | ----------------------------- | ----------------------------- |
-| List            | `vm list`                     | `dt list`                     |
-| Status          | `vm status <name>`            | `dt status <name>`            |
-| Create          | `vm create --distro <distro>` | `dt create <distro> [name]`   |
-| Start           | `vm start <name>`             | `dt start <name>`             |
-| Stop            | `vm stop <name>`              | `dt stop <name>`              |
-| Delete          | `vm delete <name>`            | `dt delete <name>`            |
-| Connect         | `vm ssh <name>`               | `dt enter <name>`             |
-| Run Command     | `vm ssh <name> "command"`     | `dt run <name> "command"`     |
-| Cleanup         | `vm cleanup`                  | `dt cleanup`                  |
-| Unique Features | Console, IP, Autostart        | Export/Unexport apps, Upgrade |
+| Feature         | `dt` (Distrobox)              | `vm` (Virtual Machines)       | `incus-ct` (Incus)           | `incus-vm` (Incus)           |
+| --------------- | ----------------------------- | ----------------------------- | ---------------------------- | ---------------------------- |
+| List            | `dt list`                     | `vm list`                     | `incus-ct list`              | `incus-vm list`              |
+| Status          | `dt status <name>`            | `vm status <name>`            | `incus-ct status <name>`     | `incus-vm status <name>`     |
+| Create          | `dt create <distro> [name]`   | `vm create --distro <distro>` | `incus-ct create <distro>`   | `incus-vm create <distro>`   |
+| Start           | `dt start <name>`             | `vm start <name>`             | `incus-ct start <name>`      | `incus-vm start <name>`      |
+| Stop            | `dt stop <name>`              | `vm stop <name>`              | `incus-ct stop <name>`       | `incus-vm stop <name>`       |
+| Delete          | `dt delete <name>`            | `vm delete <name>`            | `incus-ct delete <name>`     | `incus-vm delete <name>`     |
+| Connect         | `dt enter <name>`             | `vm ssh <name>`               | `incus-ct shell <name>`      | `incus-vm console <name>`    |
+| Run Command     | `dt run <name> "command"`     | `vm ssh <name> "command"`     | `incus-ct exec <name> "cmd"` | `incus-vm exec <name> "cmd"` |
+| Logs            | `dt logs <name>`              | `vm logs <name>`              | `incus-ct logs <name>`       | `incus-vm logs <name>`       |
+| Cleanup         | `dt cleanup`                  | `vm cleanup`                  | `incus-ct cleanup`           | `incus-vm cleanup`           |
+| Unique Features | Export/Unexport apps, Upgrade | Console, IP, Autostart        | Snapshots, Copy, Config      | Snapshots, Copy, Config      |
 
-This provides a consistent interface across both virtualization technologies while respecting their unique capabilities.
+This provides a consistent interface across different containerization and virtualization technologies while respecting their unique capabilities.
