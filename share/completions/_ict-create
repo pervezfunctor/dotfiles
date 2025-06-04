@@ -1,6 +1,6 @@
-#compdef incus-ct-create
+#compdef ict-create
 
-# Zsh completion for incus-ct-create script
+# Zsh completion for ict-create script
 
 _incus_ct_create_get_distros() {
     local distros=(

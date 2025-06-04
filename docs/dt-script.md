@@ -123,18 +123,18 @@ The script includes comprehensive error handling:
 
 ## Comparison with Other Container/VM Scripts
 
-| Feature         | `dt` (Distrobox)              | `vm` (Virtual Machines)       | `incus-ct` (Incus)           | `incus-vm` (Incus)           |
-| --------------- | ----------------------------- | ----------------------------- | ---------------------------- | ---------------------------- |
-| List            | `dt list`                     | `vm list`                     | `incus-ct list`              | `incus-vm list`              |
-| Status          | `dt status <name>`            | `vm status <name>`            | `incus-ct status <name>`     | `incus-vm status <name>`     |
-| Create          | `dt create <distro> [name]`   | `vm create --distro <distro>` | `incus-ct create <distro>`   | `incus-vm create <distro>`   |
-| Start           | `dt start <name>`             | `vm start <name>`             | `incus-ct start <name>`      | `incus-vm start <name>`      |
-| Stop            | `dt stop <name>`              | `vm stop <name>`              | `incus-ct stop <name>`       | `incus-vm stop <name>`       |
-| Delete          | `dt delete <name>`            | `vm delete <name>`            | `incus-ct delete <name>`     | `incus-vm delete <name>`     |
-| Connect         | `dt enter <name>`             | `vm ssh <name>`               | `incus-ct shell <name>`      | `incus-vm console <name>`    |
-| Run Command     | `dt run <name> "command"`     | `vm ssh <name> "command"`     | `incus-ct exec <name> "cmd"` | `incus-vm exec <name> "cmd"` |
-| Logs            | `dt logs <name>`              | `vm logs <name>`              | `incus-ct logs <name>`       | `incus-vm logs <name>`       |
-| Cleanup         | `dt cleanup`                  | `vm cleanup`                  | `incus-ct cleanup`           | `incus-vm cleanup`           |
-| Unique Features | Export/Unexport apps, Upgrade | Console, IP, Autostart        | Snapshots, Copy, Config      | Snapshots, Copy, Config      |
+| Feature         | `dt` (Distrobox)              | `vm` (Virtual Machines)       | `ict` (Incus)           | `ivm` (Incus)           |
+| --------------- | ----------------------------- | ----------------------------- | ----------------------- | ----------------------- |
+| List            | `dt list`                     | `vm list`                     | `ict list`              | `ivm list`              |
+| Status          | `dt status <name>`            | `vm status <name>`            | `ict status <name>`     | `ivm status <name>`     |
+| Create          | `dt create <distro> [name]`   | `vm create --distro <distro>` | `ict create <distro>`   | `ivm create <distro>`   |
+| Start           | `dt start <name>`             | `vm start <name>`             | `ict start <name>`      | `ivm start <name>`      |
+| Stop            | `dt stop <name>`              | `vm stop <name>`              | `ict stop <name>`       | `ivm stop <name>`       |
+| Delete          | `dt delete <name>`            | `vm delete <name>`            | `ict delete <name>`     | `ivm delete <name>`     |
+| Connect         | `dt enter <name>`             | `vm ssh <name>`               | `ict shell <name>`      | `ivm console <name>`    |
+| Run Command     | `dt run <name> "command"`     | `vm ssh <name> "command"`     | `ict exec <name> "cmd"` | `ivm exec <name> "cmd"` |
+| Logs            | `dt logs <name>`              | `vm logs <name>`              | `ict logs <name>`       | `ivm logs <name>`       |
+| Cleanup         | `dt cleanup`                  | `vm cleanup`                  | `ict cleanup`           | `ivm cleanup`           |
+| Unique Features | Export/Unexport apps, Upgrade | Console, IP, Autostart        | Snapshots, Copy, Config | Snapshots, Copy, Config |
 
 This provides a consistent interface across different containerization and virtualization technologies while respecting their unique capabilities.

@@ -479,7 +479,7 @@ incus-arch-vm() {
     incus launch images:archlinux/current archlinux-vm --vm
 }
 
-incus-vms() {
+ivms() {
     slog "Creating incus vms"
 
     incus-ubuntu-vm

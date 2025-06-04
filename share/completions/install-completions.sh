@@ -64,10 +64,10 @@ install_bash_completions() {
 
         sudo cp "$script_dir/vm.bash" /etc/bash_completion.d/vm
         sudo cp "$script_dir/vm-create.bash" /etc/bash_completion.d/vm-create
-        sudo cp "$script_dir/incus-vm.bash" /etc/bash_completion.d/incus-vm
-        sudo cp "$script_dir/incus-vm-create.bash" /etc/bash_completion.d/incus-vm-create
-        sudo cp "$script_dir/incus-ct.bash" /etc/bash_completion.d/incus-ct
-        sudo cp "$script_dir/incus-ct-create.bash" /etc/bash_completion.d/incus-ct-create
+        sudo cp "$script_dir/ivm.bash" /etc/bash_completion.d/ivm
+        sudo cp "$script_dir/ivm-create.bash" /etc/bash_completion.d/ivm-create
+        sudo cp "$script_dir/ict.bash" /etc/bash_completion.d/ict
+        sudo cp "$script_dir/ict-create.bash" /etc/bash_completion.d/ict-create
 
         log_success "Bash completions installed system-wide"
         log_info "Run 'source /etc/bash_completion' or restart your shell"
@@ -80,10 +80,10 @@ install_bash_completions() {
 
         cp "$script_dir/vm.bash" "$completion_dir/vm"
         cp "$script_dir/vm-create.bash" "$completion_dir/vm-create"
-        cp "$script_dir/incus-vm.bash" "$completion_dir/incus-vm"
-        cp "$script_dir/incus-vm-create.bash" "$completion_dir/incus-vm-create"
-        cp "$script_dir/incus-ct.bash" "$completion_dir/incus-ct"
-        cp "$script_dir/incus-ct-create.bash" "$completion_dir/incus-ct-create"
+        cp "$script_dir/ivm.bash" "$completion_dir/ivm"
+        cp "$script_dir/ivm-create.bash" "$completion_dir/ivm-create"
+        cp "$script_dir/ict.bash" "$completion_dir/ict"
+        cp "$script_dir/ict-create.bash" "$completion_dir/ict-create"
 
         # Add to bashrc if not already present
         local bashrc="$HOME/.bashrc"
@@ -94,10 +94,10 @@ install_bash_completions() {
                     echo "# VM and container script completions"
                     echo "source ~/.local/share/bash-completion/completions/vm"
                     echo "source ~/.local/share/bash-completion/completions/vm-create"
-                    echo "source ~/.local/share/bash-completion/completions/incus-vm"
-                    echo "source ~/.local/share/bash-completion/completions/incus-vm-create"
-                    echo "source ~/.local/share/bash-completion/completions/incus-ct"
-                    echo "source ~/.local/share/bash-completion/completions/incus-ct-create"
+                    echo "source ~/.local/share/bash-completion/completions/ivm"
+                    echo "source ~/.local/share/bash-completion/completions/ivm-create"
+                    echo "source ~/.local/share/bash-completion/completions/ict"
+                    echo "source ~/.local/share/bash-completion/completions/ict-create"
                 } >>"$bashrc"
                 log_info "Added completion sources to ~/.bashrc"
             fi
@@ -124,10 +124,10 @@ install_zsh_completions() {
 
         sudo cp "$script_dir/_vm" "$system_dir/_vm"
         sudo cp "$script_dir/_vm-create" "$system_dir/_vm-create"
-        sudo cp "$script_dir/_incus-vm" "$system_dir/_incus-vm"
-        sudo cp "$script_dir/_incus-vm-create" "$system_dir/_incus-vm-create"
-        sudo cp "$script_dir/_incus-ct" "$system_dir/_incus-ct"
-        sudo cp "$script_dir/_incus-ct-create" "$system_dir/_incus-ct-create"
+        sudo cp "$script_dir/_ivm" "$system_dir/_ivm"
+        sudo cp "$script_dir/_ivm-create" "$system_dir/_ivm-create"
+        sudo cp "$script_dir/_ict" "$system_dir/_ict"
+        sudo cp "$script_dir/_ict-create" "$system_dir/_ict-create"
 
         log_success "Zsh completions installed system-wide"
         log_info "Run 'autoload -U compinit && compinit' or restart your shell"
@@ -140,10 +140,10 @@ install_zsh_completions() {
 
         cp "$script_dir/_vm" "$completion_dir/_vm"
         cp "$script_dir/_vm-create" "$completion_dir/_vm-create"
-        cp "$script_dir/_incus-vm" "$completion_dir/_incus-vm"
-        cp "$script_dir/_incus-vm-create" "$completion_dir/_incus-vm-create"
-        cp "$script_dir/_incus-ct" "$completion_dir/_incus-ct"
-        cp "$script_dir/_incus-ct-create" "$completion_dir/_incus-ct-create"
+        cp "$script_dir/_ivm" "$completion_dir/_ivm"
+        cp "$script_dir/_ivm-create" "$completion_dir/_ivm-create"
+        cp "$script_dir/_ict" "$completion_dir/_ict"
+        cp "$script_dir/_ict-create" "$completion_dir/_ict-create"
 
         # Add to zshrc if not already present
         local zshrc="$HOME/.zshrc"
@@ -206,7 +206,7 @@ main() {
         install_zsh=true
     fi
 
-    log_info "Installing completions for vm, vm-create, incus-vm, incus-vm-create, incus-ct, and incus-ct-create scripts..."
+    log_info "Installing completions for vm, vm-create, ivm, ivm-create, ict, and ict-create scripts..."
 
     if [[ "$install_bash" == true ]]; then
         install_bash_completions "$install_type"
@@ -218,7 +218,7 @@ main() {
 
     echo
     log_success "Installation complete!"
-    log_info "Test the completions by typing 'vm <TAB>', 'incus-vm <TAB>', or 'incus-vm-create --<TAB>'"
+    log_info "Test the completions by typing 'vm <TAB>', 'ivm <TAB>', or 'ivm-create --<TAB>'"
 }
 
 main "$@"

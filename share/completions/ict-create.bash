@@ -1,22 +1,22 @@
 #!/bin/bash
-# Bash completion for incus-vm-create script
+# Bash completion for ict-create script
 # shellcheck disable=SC2207  # Standard pattern for bash completions
 
-_incus_vm_create_get_distros() {
+_incus_ct_create_get_distros() {
     echo "ubuntu fedora arch debian centos alpine nixos"
 }
 
-_incus_vm_create_completion() {
+_incus_ct_create_completion() {
     local cur prev opts
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD - 1]}"
 
-    # All incus-vm-create options
-    opts="--distro --name --release --username --password --vcpus --ram --disk --ssh-key --bridge --help -h"
+    # All ict-create options
+    opts="--distro --name --release --username --password --vcpus --ram --ssh-key --bridge --privileged --help -h"
 
     case "$prev" in
     --distro)
-        COMPREPLY=($(compgen -W "$(_incus_vm_create_get_distros)" -- "$cur"))
+        COMPREPLY=($(compgen -W "$(_incus_ct_create_get_distros)" -- "$cur"))
         return 0
         ;;
     --name | --username | --password)
@@ -35,12 +35,7 @@ _incus_vm_create_completion() {
         ;;
     --ram)
         # RAM in MB
-        COMPREPLY=($(compgen -W "1024 2048 4096 8192 16384" -- "$cur"))
-        return 0
-        ;;
-    --disk)
-        # Disk size
-        COMPREPLY=($(compgen -W "10GB 20GB 40GB 80GB 100GB" -- "$cur"))
+        COMPREPLY=($(compgen -W "512 1024 2048 4096 8192" -- "$cur"))
         return 0
         ;;
     --ssh-key)
@@ -62,4 +57,4 @@ _incus_vm_create_completion() {
 }
 
 # Register the completion function
-complete -F _incus_vm_create_completion incus-vm-create
+complete -F _incus_ct_create_completion ict-create

@@ -30,7 +30,7 @@ iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components multipass }"
 Install multipass vm.
 
 ```powershell
-iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components multipass-vm }"
+iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components mp-vm }"
 ```
 
 Install nerd fonts. Without this most modern linux/wsl tools won't work.

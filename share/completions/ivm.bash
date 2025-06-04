@@ -1,34 +1,34 @@
 #!/bin/bash
-# Bash completion for incus-ct script
+# Bash completion for ivm script
 # shellcheck disable=SC2207  # Standard pattern for bash completions
 
-_incus_ct_get_containers() {
+_incus_vm_get_vms() {
     if command -v incus >/dev/null 2>&1; then
         incus list --format csv --columns n 2>/dev/null | grep -v '^$'
     fi
 }
 
-_incus_ct_get_distros() {
+_incus_vm_get_distros() {
     echo "ubuntu fedora arch debian centos alpine nixos"
 }
 
-_incus_ct_get_snapshots() {
-    local container_name="$1"
-    if command -v incus >/dev/null 2>&1 && [[ -n "$container_name" ]]; then
-        incus info "$container_name" 2>/dev/null | grep -A 100 "Snapshots:" | grep "^  " | awk '{print $1}' | grep -v "^$"
+_incus_vm_get_snapshots() {
+    local vm_name="$1"
+    if command -v incus >/dev/null 2>&1 && [[ -n "$vm_name" ]]; then
+        incus info "$vm_name" 2>/dev/null | grep -A 100 "Snapshots:" | grep "^  " | awk '{print $1}' | grep -v "^$"
     fi
 }
 
-_incus_ct_completion() {
-    local cur ct_commands
+_incus_vm_completion() {
+    local cur vm_commands
     cur="${COMP_WORDS[COMP_CWORD]}"
 
-    # Available incus-ct commands
-    ct_commands="install list status create start stop restart delete shell exec ip ssh info config snapshot restore copy cleanup"
+    # Available ivm commands
+    vm_commands="install list status create start stop restart delete console exec ip ssh info config snapshot restore copy cleanup"
 
     # If we're completing the first argument (command)
     if [[ $COMP_CWORD -eq 1 ]]; then
-        COMPREPLY=($(compgen -W "$ct_commands" -- "$cur"))
+        COMPREPLY=($(compgen -W "$vm_commands" -- "$cur"))
         return 0
     fi
 
@@ -37,26 +37,26 @@ _incus_ct_completion() {
 
     case "$command" in
     create)
-        # For 'incus-ct create', second argument is distro, third is optional name
+        # For 'ivm create', second argument is distro, third is optional name
         if [[ $COMP_CWORD -eq 2 ]]; then
-            COMPREPLY=($(compgen -W "$(_incus_ct_get_distros)" -- "$cur"))
+            COMPREPLY=($(compgen -W "$(_incus_vm_get_distros)" -- "$cur"))
             return 0
         elif [[ $COMP_CWORD -eq 3 ]]; then
-            # Container name - no specific completion
+            # VM name - no specific completion
             return 0
         fi
         ;;
-    status | start | stop | restart | delete | shell | ip | info | config)
-        # These commands require a container name
+    status | start | stop | restart | delete | console | ip | info | config)
+        # These commands require a VM name
         if [[ $COMP_CWORD -eq 2 ]]; then
-            COMPREPLY=($(compgen -W "$(_incus_ct_get_containers)" -- "$cur"))
+            COMPREPLY=($(compgen -W "$(_incus_vm_get_vms)" -- "$cur"))
             return 0
         fi
         ;;
     exec)
-        # exec requires container name, then command
+        # exec requires VM name, then command
         if [[ $COMP_CWORD -eq 2 ]]; then
-            COMPREPLY=($(compgen -W "$(_incus_ct_get_containers)" -- "$cur"))
+            COMPREPLY=($(compgen -W "$(_incus_vm_get_vms)" -- "$cur"))
             return 0
         elif [[ $COMP_CWORD -ge 3 ]]; then
             # Command completion - basic commands
@@ -65,9 +65,9 @@ _incus_ct_completion() {
         fi
         ;;
     ssh)
-        # ssh requires container name, optional username
+        # ssh requires VM name, optional username
         if [[ $COMP_CWORD -eq 2 ]]; then
-            COMPREPLY=($(compgen -W "$(_incus_ct_get_containers)" -- "$cur"))
+            COMPREPLY=($(compgen -W "$(_incus_vm_get_vms)" -- "$cur"))
             return 0
         elif [[ $COMP_CWORD -eq 3 ]]; then
             # Username - no specific completion
@@ -75,9 +75,9 @@ _incus_ct_completion() {
         fi
         ;;
     snapshot)
-        # snapshot requires container name, optional snapshot name
+        # snapshot requires VM name, optional snapshot name
         if [[ $COMP_CWORD -eq 2 ]]; then
-            COMPREPLY=($(compgen -W "$(_incus_ct_get_containers)" -- "$cur"))
+            COMPREPLY=($(compgen -W "$(_incus_vm_get_vms)" -- "$cur"))
             return 0
         elif [[ $COMP_CWORD -eq 3 ]]; then
             # Snapshot name - no specific completion
@@ -85,21 +85,21 @@ _incus_ct_completion() {
         fi
         ;;
     restore)
-        # restore requires container name, then snapshot name
+        # restore requires VM name, then snapshot name
         if [[ $COMP_CWORD -eq 2 ]]; then
-            COMPREPLY=($(compgen -W "$(_incus_ct_get_containers)" -- "$cur"))
+            COMPREPLY=($(compgen -W "$(_incus_vm_get_vms)" -- "$cur"))
             return 0
         elif [[ $COMP_CWORD -eq 3 ]]; then
-            # Get snapshots for the specified container
-            local container_name="${COMP_WORDS[2]}"
-            COMPREPLY=($(compgen -W "$(_incus_ct_get_snapshots "$container_name")" -- "$cur"))
+            # Get snapshots for the specified VM
+            local vm_name="${COMP_WORDS[2]}"
+            COMPREPLY=($(compgen -W "$(_incus_vm_get_snapshots "$vm_name")" -- "$cur"))
             return 0
         fi
         ;;
     copy)
-        # copy requires source container name, then destination name
+        # copy requires source VM name, then destination name
         if [[ $COMP_CWORD -eq 2 ]]; then
-            COMPREPLY=($(compgen -W "$(_incus_ct_get_containers)" -- "$cur"))
+            COMPREPLY=($(compgen -W "$(_incus_vm_get_vms)" -- "$cur"))
             return 0
         elif [[ $COMP_CWORD -eq 3 ]]; then
             # Destination name - no specific completion
@@ -117,4 +117,4 @@ _incus_ct_completion() {
 }
 
 # Register the completion function
-complete -F _incus_ct_completion incus-ct
+complete -F _incus_vm_completion ivm

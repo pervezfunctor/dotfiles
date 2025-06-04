@@ -1,6 +1,6 @@
-#compdef incus-ct
+#compdef ict
 
-# Zsh completion for incus-ct script
+# Zsh completion for ict script
 
 _incus_ct_get_containers() {
     local containers

@@ -23,8 +23,8 @@ Unified script to manage /etc/hosts entries for different VM types.
 
 VM TYPES:
     vm          Manage libvirt VMs (using vm-hosts)
-    incus       Manage Incus VMs (using incus-vm-hosts)
-    multipass   Manage Multipass VMs (using multipass-vm-hosts)
+    incus       Manage Incus VMs (using ivm-hosts)
+    multipass   Manage Multipass VMs (using mp-vm-hosts)
 
 COMMANDS:
     add <vm-name>           Add VM to /etc/hosts (auto-detect IP)
@@ -66,12 +66,12 @@ vm)
     "$script" "$@"
     ;;
 incus)
-    script="incus-vm-hosts"
+    script="ivm-hosts"
     check_script_exists "$script"
     "$script" "$@"
     ;;
 multipass)
-    script="multipass-vm-hosts"
+    script="mp-vm-hosts"
     check_script_exists "$script"
     "$script" "$@"
     ;;

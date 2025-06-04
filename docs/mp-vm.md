@@ -1,6 +1,6 @@
-# multipass-vm - Multipass Virtual Machine Management Script
+# mp-vm - Multipass Virtual Machine Management Script
 
-The `multipass-vm` script provides a unified interface for managing Multipass virtual machines, similar to how the `vm` script manages libvirt VMs and the `incus-vm` script manages Incus VMs. It offers a consistent command-line experience for creating, managing, and interacting with Multipass VMs with SSH support.
+The `mp-vm` script provides a unified interface for managing Multipass virtual machines, similar to how the `vm` script manages libvirt VMs and the `ivm` script manages Incus VMs. It offers a consistent command-line experience for creating, managing, and interacting with Multipass VMs with SSH support.
 
 ## Features
 
@@ -14,31 +14,31 @@ The `multipass-vm` script provides a unified interface for managing Multipass vi
 ## Commands
 
 ### Installation
-- `multipass-vm install` - Install Multipass using ilmi
+- `mp-vm install` - Install Multipass using ilmi
 
 ### Basic Operations
-- `multipass-vm list` - List all Multipass VMs
-- `multipass-vm status <name>` - Show VM status and basic info
-- `multipass-vm create <distro> [name]` - Create a new Multipass VM
-- `multipass-vm start <name>` - Start a VM
-- `multipass-vm stop <name>` - Stop a VM
-- `multipass-vm restart <name>` - Restart a VM
-- `multipass-vm delete <name>` - Delete a VM completely (with confirmation)
+- `mp-vm list` - List all Multipass VMs
+- `mp-vm status <name>` - Show VM status and basic info
+- `mp-vm create <distro> [name]` - Create a new Multipass VM
+- `mp-vm start <name>` - Start a VM
+- `mp-vm stop <name>` - Stop a VM
+- `mp-vm restart <name>` - Restart a VM
+- `mp-vm delete <name>` - Delete a VM completely (with confirmation)
 
 ### Interactive Operations
-- `multipass-vm shell <name>` - Connect to VM shell (multipass shell)
-- `multipass-vm exec <name> <command>` - Execute command in VM
+- `mp-vm shell <name>` - Connect to VM shell (multipass shell)
+- `mp-vm exec <name> <command>` - Execute command in VM
 
 ### Network Operations
-- `multipass-vm ip <name>` - Get VM IP address
-- `multipass-vm ssh <name> [username]` - Connect to VM via SSH
+- `mp-vm ip <name>` - Get VM IP address
+- `mp-vm ssh <name> [username]` - Connect to VM via SSH
 
 ### Information
-- `multipass-vm info <name>` - Show detailed VM information
+- `mp-vm info <name>` - Show detailed VM information
 
 ### File System Operations
-- `multipass-vm mount <name> <src> <dst>` - Mount host directory in VM
-- `multipass-vm umount <name> <path>` - Unmount directory from VM
+- `mp-vm mount <name> <src> <dst>` - Mount host directory in VM
+- `mp-vm umount <name> <path>` - Unmount directory from VM
 
 ## Supported Distributions
 
@@ -57,55 +57,55 @@ Note: The script uses Multipass image names directly (codenames and aliases) for
 
 ```bash
 # Install Multipass
-multipass-vm install
+mp-vm install
 
 # List all VMs
-multipass-vm list
+mp-vm list
 
 # Create an Ubuntu VM with default name
-multipass-vm create ubuntu
+mp-vm create ubuntu
 
 # Create an Ubuntu 24.10 VM with custom name
-multipass-vm create oracular my-ubuntu-vm
+mp-vm create oracular my-ubuntu-vm
 
 # Create an Ubuntu 22.04 LTS VM
-multipass-vm create jammy
+mp-vm create jammy
 
 # Create latest LTS VM
-multipass-vm create lts
+mp-vm create lts
 
 # Start a VM
-multipass-vm start ubuntu-vm
+mp-vm start ubuntu-vm
 
 # Connect to VM shell
-multipass-vm shell ubuntu-vm
+mp-vm shell ubuntu-vm
 
 # Execute a command in VM
-multipass-vm exec ubuntu-vm "apt update && apt install -y vim"
+mp-vm exec ubuntu-vm "apt update && apt install -y vim"
 
 # Get VM IP address
-multipass-vm ip ubuntu-vm
+mp-vm ip ubuntu-vm
 
 # SSH to VM (auto-detect username)
-multipass-vm ssh ubuntu-vm
+mp-vm ssh ubuntu-vm
 
 # SSH to VM with specific username
-multipass-vm ssh ubuntu-vm ubuntu
+mp-vm ssh ubuntu-vm ubuntu
 
 # Mount host directory in VM
-multipass-vm mount ubuntu-vm ~/code /home/ubuntu/code
+mp-vm mount ubuntu-vm ~/code /home/ubuntu/code
 
 # Show detailed VM information
-multipass-vm info ubuntu-vm
+mp-vm info ubuntu-vm
 
 # Unmount directory from VM
-multipass-vm umount ubuntu-vm /home/ubuntu/code
+mp-vm umount ubuntu-vm /home/ubuntu/code
 
 # Stop a VM
-multipass-vm stop ubuntu-vm
+mp-vm stop ubuntu-vm
 
 # Delete a VM (with confirmation)
-multipass-vm delete old-vm
+mp-vm delete old-vm
 ```
 
 ## SSH Access
@@ -126,13 +126,13 @@ Since Multipass primarily supports Ubuntu, the script uses the `ubuntu` user for
 ### SSH Connection Methods
 ```bash
 # Direct SSH with auto-detected username
-multipass-vm ssh vm-name
+mp-vm ssh vm-name
 
 # SSH with specific username (though ubuntu is standard)
-multipass-vm ssh vm-name ubuntu
+mp-vm ssh vm-name ubuntu
 
 # Get IP for manual SSH
-IP=$(multipass-vm ip vm-name)
+IP=$(mp-vm ip vm-name)
 ssh ubuntu@$IP
 ```
 
@@ -142,15 +142,15 @@ Multipass provides seamless directory mounting between host and VM:
 
 ```bash
 # Mount host directory to VM
-multipass-vm mount ubuntu-vm ~/projects /home/ubuntu/projects
+mp-vm mount ubuntu-vm ~/projects /home/ubuntu/projects
 
 # Access files in VM
-multipass-vm shell ubuntu-vm
+mp-vm shell ubuntu-vm
 cd /home/ubuntu/projects
 ls -la
 
 # Unmount when done
-multipass-vm umount ubuntu-vm /home/ubuntu/projects
+mp-vm umount ubuntu-vm /home/ubuntu/projects
 ```
 
 ## VM Creation Process
@@ -181,18 +181,18 @@ The script provides comprehensive error handling:
 
 ### Comparison with Other VM Management Scripts
 
-| Feature         | `vm` (libvirt)         | `multipass-vm`                   | `incus-vm`                   |
-| --------------- | ---------------------- | -------------------------------- | ---------------------------- |
-| Installation    | `vm install`           | `multipass-vm install`           | `incus-vm install`           |
-| List VMs        | `vm list`              | `multipass-vm list`              | `incus-vm list`              |
-| Create VM       | `vm create <distro>`   | `multipass-vm create <distro>`   | `incus-vm create <distro>`   |
-| Start/Stop      | `vm start/stop <name>` | `multipass-vm start/stop <name>` | `incus-vm start/stop <name>` |
-| Connect         | `vm ssh <name>`        | `multipass-vm shell <name>`      | `incus-vm console <name>`    |
-| Execute         | `vm ssh <name> "cmd"`  | `multipass-vm exec <name> "cmd"` | `incus-vm exec <name> "cmd"` |
-| IP Address      | `vm ip <name>`         | `multipass-vm ip <name>`         | `incus-vm ip <name>`         |
-| SSH Access      | `vm ssh <name>`        | `multipass-vm ssh <name>`        | `incus-vm ssh <name>`        |
-| Delete          | `vm delete <name>`     | `multipass-vm delete <name>`     | `incus-vm delete <name>`     |
-| Unique Features | Advanced networking    | Directory mounting               | Snapshots, Copy, Config      |
+| Feature         | `vm` (libvirt)         | `mp-vm`                   | `ivm`                   |
+| --------------- | ---------------------- | ------------------------- | ----------------------- |
+| Installation    | `vm install`           | `mp-vm install`           | `ivm install`           |
+| List VMs        | `vm list`              | `mp-vm list`              | `ivm list`              |
+| Create VM       | `vm create <distro>`   | `mp-vm create <distro>`   | `ivm create <distro>`   |
+| Start/Stop      | `vm start/stop <name>` | `mp-vm start/stop <name>` | `ivm start/stop <name>` |
+| Connect         | `vm ssh <name>`        | `mp-vm shell <name>`      | `ivm console <name>`    |
+| Execute         | `vm ssh <name> "cmd"`  | `mp-vm exec <name> "cmd"` | `ivm exec <name> "cmd"` |
+| IP Address      | `vm ip <name>`         | `mp-vm ip <name>`         | `ivm ip <name>`         |
+| SSH Access      | `vm ssh <name>`        | `mp-vm ssh <name>`        | `ivm ssh <name>`        |
+| Delete          | `vm delete <name>`     | `mp-vm delete <name>`     | `ivm delete <name>`     |
+| Unique Features | Advanced networking    | Directory mounting        | Snapshots, Copy, Config |
 
 ## Installation
 
@@ -200,7 +200,7 @@ The script can install Multipass automatically:
 
 ```bash
 # Install Multipass using ilmi
-multipass-vm install
+mp-vm install
 ```
 
 This will:
@@ -220,7 +220,7 @@ This will:
 
 ### Common Issues
 
-1. **Multipass not found**: Run `multipass-vm install` to install
+1. **Multipass not found**: Run `mp-vm install` to install
 2. **VM creation fails**: Check internet connection and disk space
 3. **SSH connection fails**: Ensure VM is running and SSH is configured
 4. **Mount fails**: Verify source directory exists and VM is running
@@ -229,23 +229,23 @@ This will:
 
 ```bash
 # Check VM status
-multipass-vm status vm-name
+mp-vm status vm-name
 
 # Get detailed VM information
-multipass-vm info vm-name
+mp-vm info vm-name
 
 # Check VM IP address
-multipass-vm ip vm-name
+mp-vm ip vm-name
 
 # Test direct shell access
-multipass-vm shell vm-name
+mp-vm shell vm-name
 ```
 
 ## Completion Support
 
 The script includes bash and zsh completion support:
-- **Bash**: `share/completions/multipass-vm.bash`
-- **Zsh**: `share/completions/_multipass-vm`
+- **Bash**: `share/completions/mp-vm.bash`
+- **Zsh**: `share/completions/_mp-vm`
 
 Completions provide:
 - Command completion

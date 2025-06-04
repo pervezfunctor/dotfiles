@@ -1,6 +1,6 @@
-#compdef incus-vm
+#compdef ivm
 
-# Zsh completion for incus-vm script
+# Zsh completion for ivm script
 
 _incus_vm_get_vms() {
     local vms

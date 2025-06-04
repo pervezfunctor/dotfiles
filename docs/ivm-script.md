@@ -1,6 +1,6 @@
-# incus-vm - Incus Virtual Machine Management Script
+# ivm - Incus Virtual Machine Management Script
 
-The `incus-vm` script provides a unified interface for managing Incus virtual machines, similar to how the `vm` script manages libvirt VMs and the `dt` script manages distrobox containers. It offers a consistent command-line experience for creating, managing, and interacting with Incus VMs.
+The `ivm` script provides a unified interface for managing Incus virtual machines, similar to how the `vm` script manages libvirt VMs and the `dt` script manages distrobox containers. It offers a consistent command-line experience for creating, managing, and interacting with Incus VMs.
 
 ## Features
 
@@ -13,36 +13,36 @@ The `incus-vm` script provides a unified interface for managing Incus virtual ma
 ## Commands
 
 ### Installation
-- `incus-vm install` - Install Incus using ilmi
+- `ivm install` - Install Incus using ilmi
 
 ### Basic Operations
-- `incus-vm list` - List all Incus VMs
-- `incus-vm status <name>` - Show VM status and basic info
-- `incus-vm create <distro> [name]` - Create a new Incus VM
-- `incus-vm start <name>` - Start a VM
-- `incus-vm stop <name>` - Stop a VM
-- `incus-vm restart <name>` - Restart a VM
-- `incus-vm delete <name>` - Delete a VM completely (with confirmation)
+- `ivm list` - List all Incus VMs
+- `ivm status <name>` - Show VM status and basic info
+- `ivm create <distro> [name]` - Create a new Incus VM
+- `ivm start <name>` - Start a VM
+- `ivm stop <name>` - Stop a VM
+- `ivm restart <name>` - Restart a VM
+- `ivm delete <name>` - Delete a VM completely (with confirmation)
 
 ### Interactive Operations
-- `incus-vm console <name>` - Connect to VM console
-- `incus-vm exec <name> <command>` - Execute command in VM
+- `ivm console <name>` - Connect to VM console
+- `ivm exec <name> <command>` - Execute command in VM
 
 ### Network Operations
-- `incus-vm ip <name>` - Get VM IP address
-- `incus-vm ssh <name> [username]` - Connect to VM via SSH
+- `ivm ip <name>` - Get VM IP address
+- `ivm ssh <name> [username]` - Connect to VM via SSH
 
 ### Information and Configuration
-- `incus-vm info <name>` - Show detailed VM information
-- `incus-vm config <name>` - Show VM configuration
+- `ivm info <name>` - Show detailed VM information
+- `ivm config <name>` - Show VM configuration
 
 ### Snapshot Management
-- `incus-vm snapshot <name> [snapshot-name]` - Create VM snapshot
-- `incus-vm restore <name> <snapshot-name>` - Restore VM from snapshot
+- `ivm snapshot <name> [snapshot-name]` - Create VM snapshot
+- `ivm restore <name> <snapshot-name>` - Restore VM from snapshot
 
 ### Advanced Operations
-- `incus-vm copy <source> <destination>` - Copy VM
-- `incus-vm cleanup` - Remove stopped VMs
+- `ivm copy <source> <destination>` - Copy VM
+- `ivm cleanup` - Remove stopped VMs
 
 ## Supported Distributions
 
@@ -53,55 +53,55 @@ The script supports creating VMs for the following distributions:
 
 ```bash
 # Install Incus
-incus-vm install
+ivm install
 
 # List all VMs
-incus-vm list
+ivm list
 
 # Create an Ubuntu VM with default name
-incus-vm create ubuntu
+ivm create ubuntu
 
 # Create a Fedora VM with custom name
-incus-vm create fedora my-fedora-vm
+ivm create fedora my-fedora-vm
 
 # Start a VM
-incus-vm start ubuntu-vm
+ivm start ubuntu-vm
 
 # Connect to VM console
-incus-vm console ubuntu-vm
+ivm console ubuntu-vm
 
 # Execute a command in VM
-incus-vm exec ubuntu-vm "apt update && apt install -y vim"
+ivm exec ubuntu-vm "apt update && apt install -y vim"
 
 # Get VM IP address
-incus-vm ip ubuntu-vm
+ivm ip ubuntu-vm
 
 # SSH to VM (auto-detect username)
-incus-vm ssh ubuntu-vm
+ivm ssh ubuntu-vm
 
 # SSH to VM with specific username
-incus-vm ssh ubuntu-vm ubuntu
+ivm ssh ubuntu-vm ubuntu
 
 # Show detailed VM information
-incus-vm info ubuntu-vm
+ivm info ubuntu-vm
 
 # Create a snapshot
-incus-vm snapshot ubuntu-vm before-update
+ivm snapshot ubuntu-vm before-update
 
 # Restore from snapshot
-incus-vm restore ubuntu-vm before-update
+ivm restore ubuntu-vm before-update
 
 # Copy a VM
-incus-vm copy ubuntu-vm ubuntu-vm-backup
+ivm copy ubuntu-vm ubuntu-vm-backup
 
 # Show VM configuration
-incus-vm config ubuntu-vm
+ivm config ubuntu-vm
 
 # Clean up stopped VMs
-incus-vm cleanup
+ivm cleanup
 
 # Delete a VM (with confirmation)
-incus-vm delete old-vm
+ivm delete old-vm
 ```
 
 ## Integration with Existing Functions
@@ -121,20 +121,20 @@ Unlike traditional VMs, Incus provides excellent snapshot capabilities:
 
 ### Console Access
 Direct console access without SSH setup:
-- `incus-vm console <name>` connects directly to VM console
+- `ivm console <name>` connects directly to VM console
 - No network configuration required
 - Works immediately after VM creation
 
 ### Command Execution
 Execute commands directly in VMs:
-- `incus-vm exec <name> <command>` runs commands without SSH
+- `ivm exec <name> <command>` runs commands without SSH
 - Useful for automation and quick tasks
 - No authentication setup required
 
 ### Network Access
 IP discovery and SSH connectivity:
-- `incus-vm ip <name>` gets VM IP address using multiple detection methods
-- `incus-vm ssh <name>` connects via SSH with automatic username detection
+- `ivm ip <name>` gets VM IP address using multiple detection methods
+- `ivm ssh <name>` connects via SSH with automatic username detection
 - Supports distro-specific users (ubuntu, fedora, etc.)
 - Fallback to ubuntu for unknown VM patterns
 
@@ -149,19 +149,19 @@ The script includes comprehensive error handling:
 
 ## Comparison with Other VM Scripts
 
-| Feature         | `vm` (libvirt)                | `incus-vm` (Incus)           | `dt` (Distrobox)      |
-| --------------- | ----------------------------- | ---------------------------- | --------------------- |
-| List            | `vm list`                     | `incus-vm list`              | `dt list`             |
-| Status          | `vm status <name>`            | `incus-vm status <name>`     | `dt status <name>`    |
-| Create          | `vm create --distro <distro>` | `incus-vm create <distro>`   | `dt create <distro>`  |
-| Start           | `vm start <name>`             | `incus-vm start <name>`      | `dt start <name>`     |
-| Stop            | `vm stop <name>`              | `incus-vm stop <name>`       | `dt stop <name>`      |
-| Connect         | `vm ssh <name>`               | `incus-vm console <name>`    | `dt enter <name>`     |
-| Execute         | `vm ssh <name> "cmd"`         | `incus-vm exec <name> "cmd"` | `dt run <name> "cmd"` |
-| IP Address      | `vm ip <name>`                | `incus-vm ip <name>`         | N/A                   |
-| SSH Access      | `vm ssh <name>`               | `incus-vm ssh <name>`        | N/A                   |
-| Delete          | `vm delete <name>`            | `incus-vm delete <name>`     | `dt delete <name>`    |
-| Unique Features | Advanced SSH features         | Snapshots, Copy, Config      | App export/import     |
+| Feature         | `vm` (libvirt)                | `ivm` (Incus)           | `dt` (Distrobox)      |
+| --------------- | ----------------------------- | ----------------------- | --------------------- |
+| List            | `vm list`                     | `ivm list`              | `dt list`             |
+| Status          | `vm status <name>`            | `ivm status <name>`     | `dt status <name>`    |
+| Create          | `vm create --distro <distro>` | `ivm create <distro>`   | `dt create <distro>`  |
+| Start           | `vm start <name>`             | `ivm start <name>`      | `dt start <name>`     |
+| Stop            | `vm stop <name>`              | `ivm stop <name>`       | `dt stop <name>`      |
+| Connect         | `vm ssh <name>`               | `ivm console <name>`    | `dt enter <name>`     |
+| Execute         | `vm ssh <name> "cmd"`         | `ivm exec <name> "cmd"` | `dt run <name> "cmd"` |
+| IP Address      | `vm ip <name>`                | `ivm ip <name>`         | N/A                   |
+| SSH Access      | `vm ssh <name>`               | `ivm ssh <name>`        | N/A                   |
+| Delete          | `vm delete <name>`            | `ivm delete <name>`     | `dt delete <name>`    |
+| Unique Features | Advanced SSH features         | Snapshots, Copy, Config | App export/import     |
 
 ## Installation
 
@@ -169,7 +169,7 @@ The script includes a built-in installation command that uses `ilmi` to install 
 
 ```bash
 # Install Incus automatically
-incus-vm install
+ivm install
 ```
 
 This command will:
@@ -183,7 +183,7 @@ After installation, you may need to log out and back in, or run `newgrp incus` f
 
 ## Prerequisites
 
-- Incus installed and configured (use `incus-vm install` if not installed)
+- Incus installed and configured (use `ivm install` if not installed)
 - User added to `incus` and `incus-admin` groups
 - Incus daemon running
 

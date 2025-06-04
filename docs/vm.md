@@ -164,15 +164,15 @@ vm stop myvm
 
 ## Comparison with Other Management Scripts
 
-| Feature         | `vm` (libvirt)                   | `incus-vm` (Incus)           | `dt` (Distrobox)      | `incus-ct` (Incus LXC)       |
-| --------------- | -------------------------------- | ---------------------------- | --------------------- | ---------------------------- |
-| Install         | `vm install`                     | `incus-vm install`           | `dt install`          | `incus-ct install`           |
-| List            | `vm list`                        | `incus-vm list`              | `dt list`             | `incus-ct list`              |
-| Create          | `vm create --distro <distro>`    | `incus-vm create <distro>`   | `dt create <distro>`  | `incus-ct create <distro>`   |
-| Start           | `vm start <name>`                | `incus-vm start <name>`      | `dt start <name>`     | `incus-ct start <name>`      |
-| Connect         | `vm ssh <name>`                  | `incus-vm console <name>`    | `dt enter <name>`     | `incus-ct shell <name>`      |
-| Execute         | `vm ssh <name> "cmd"`            | `incus-vm exec <name> "cmd"` | `dt run <name> "cmd"` | `incus-ct exec <name> "cmd"` |
-| Unique Features | SSH auto-detection, IP detection | Snapshots, Copy              | App export/import     | Snapshots, Privileged mode   |
+| Feature         | `vm` (libvirt)                   | `ivm` (Incus)           | `dt` (Distrobox)      | `ict` (Incus LXC)          |
+| --------------- | -------------------------------- | ----------------------- | --------------------- | -------------------------- |
+| Install         | `vm install`                     | `ivm install`           | `dt install`          | `ict install`              |
+| List            | `vm list`                        | `ivm list`              | `dt list`             | `ict list`                 |
+| Create          | `vm create --distro <distro>`    | `ivm create <distro>`   | `dt create <distro>`  | `ict create <distro>`      |
+| Start           | `vm start <name>`                | `ivm start <name>`      | `dt start <name>`     | `ict start <name>`         |
+| Connect         | `vm ssh <name>`                  | `ivm console <name>`    | `dt enter <name>`     | `ict shell <name>`         |
+| Execute         | `vm ssh <name> "cmd"`            | `ivm exec <name> "cmd"` | `dt run <name> "cmd"` | `ict exec <name> "cmd"`    |
+| Unique Features | SSH auto-detection, IP detection | Snapshots, Copy         | App export/import     | Snapshots, Privileged mode |
 
 ## Performance and Use Cases
 

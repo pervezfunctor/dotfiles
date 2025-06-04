@@ -1,6 +1,6 @@
-# incus-ct-create - Incus LXC Container Creation Script
+# ict-create - Incus LXC Container Creation Script
 
-The `incus-ct-create` script creates Incus LXC containers with cloud-init configuration and SSH access enabled. It provides a streamlined way to create lightweight containers with proper user setup, SSH key authentication, and essential packages pre-installed.
+The `ict-create` script creates Incus LXC containers with cloud-init configuration and SSH access enabled. It provides a streamlined way to create lightweight containers with proper user setup, SSH key authentication, and essential packages pre-installed.
 
 ## Features
 
@@ -16,7 +16,7 @@ The `incus-ct-create` script creates Incus LXC containers with cloud-init config
 ## Usage
 
 ```bash
-incus-ct-create --distro DISTRO [OPTIONS]
+ict-create --distro DISTRO [OPTIONS]
 ```
 
 ### Required Arguments
@@ -39,46 +39,46 @@ incus-ct-create --distro DISTRO [OPTIONS]
 ### Basic Container Creation
 ```bash
 # Create Ubuntu container with defaults
-incus-ct-create --distro ubuntu
+ict-create --distro ubuntu
 
 # Create Fedora container with custom name
-incus-ct-create --distro fedora --name my-fedora
+ict-create --distro fedora --name my-fedora
 
 # Create Debian container with custom user
-incus-ct-create --distro debian --username admin --password mypass
+ict-create --distro debian --username admin --password mypass
 ```
 
 ### Resource Customization
 ```bash
 # Create container with more resources
-incus-ct-create --distro ubuntu --vcpus 4 --ram 2048
+ict-create --distro ubuntu --vcpus 4 --ram 2048
 
 # Create minimal container
-incus-ct-create --distro alpine --vcpus 1 --ram 512
+ict-create --distro alpine --vcpus 1 --ram 512
 ```
 
 ### Advanced Configuration
 ```bash
 # Create privileged container (for Docker, etc.)
-incus-ct-create --distro ubuntu --privileged
+ict-create --distro ubuntu --privileged
 
 # Use specific release
-incus-ct-create --distro ubuntu --release 22.04
+ict-create --distro ubuntu --release 22.04
 
 # Use custom SSH key
-incus-ct-create --distro arch --ssh-key ~/.ssh/my_key.pub
+ict-create --distro arch --ssh-key ~/.ssh/my_key.pub
 ```
 
 ## Supported Distributions
 
-| Distribution | Default Release | Default User | Image Source |
-|--------------|----------------|--------------|--------------|
-| Ubuntu | 24.04 | ubuntu | images:ubuntu/24.04 |
-| Fedora | 42 | fedora | images:fedora/42 |
-| Arch Linux | current | arch | images:archlinux/current |
-| Debian | 12 | debian | images:debian/12 |
-| CentOS | 9-Stream | centos | images:centos/9-Stream |
-| Alpine | 3.19 | alpine | images:alpine/3.19 |
+| Distribution | Default Release | Default User | Image Source             |
+| ------------ | --------------- | ------------ | ------------------------ |
+| Ubuntu       | 24.04           | ubuntu       | images:ubuntu/24.04      |
+| Fedora       | 42              | fedora       | images:fedora/42         |
+| Arch Linux   | current         | arch         | images:archlinux/current |
+| Debian       | 12              | debian       | images:debian/12         |
+| CentOS       | 9-Stream        | centos       | images:centos/9-Stream   |
+| Alpine       | 3.19            | alpine       | images:alpine/3.19       |
 
 ## Cloud-init Configuration
 
@@ -152,44 +152,44 @@ incus exec CONTAINER_NAME -- command
 
 ## Integration with Management Scripts
 
-The created containers can be managed using the `incus-ct` script:
+The created containers can be managed using the `ict` script:
 
 ```bash
 # List containers
-incus-ct list
+ict list
 
 # Check container status
-incus-ct status CONTAINER_NAME
+ict status CONTAINER_NAME
 
 # Start/stop container
-incus-ct start CONTAINER_NAME
-incus-ct stop CONTAINER_NAME
+ict start CONTAINER_NAME
+ict stop CONTAINER_NAME
 
 # Access container shell
-incus-ct shell CONTAINER_NAME
+ict shell CONTAINER_NAME
 
 # Execute commands
-incus-ct exec CONTAINER_NAME "command"
+ict exec CONTAINER_NAME "command"
 
 # Create snapshots
-incus-ct snapshot CONTAINER_NAME backup
+ict snapshot CONTAINER_NAME backup
 
 # Delete container
-incus-ct delete CONTAINER_NAME
+ict delete CONTAINER_NAME
 ```
 
 ## Performance Characteristics
 
 ### Container vs VM Comparison
 
-| Aspect | LXC Container | Virtual Machine |
-|--------|---------------|-----------------|
-| **Startup Time** | 1-3 seconds | 30-60 seconds |
-| **Memory Overhead** | ~10-50MB | ~500MB+ |
-| **Disk Usage** | Shared with host | Separate disk image |
-| **Performance** | Near-native | Virtualization overhead |
-| **Isolation** | Process-level | Hardware-level |
-| **Kernel** | Shared with host | Separate kernel |
+| Aspect              | LXC Container    | Virtual Machine         |
+| ------------------- | ---------------- | ----------------------- |
+| **Startup Time**    | 1-3 seconds      | 30-60 seconds           |
+| **Memory Overhead** | ~10-50MB         | ~500MB+                 |
+| **Disk Usage**      | Shared with host | Separate disk image     |
+| **Performance**     | Near-native      | Virtualization overhead |
+| **Isolation**       | Process-level    | Hardware-level          |
+| **Kernel**          | Shared with host | Separate kernel         |
 
 ### Resource Efficiency
 - **CPU**: Direct access to host CPU, no virtualization overhead
@@ -216,17 +216,17 @@ incus-ct delete CONTAINER_NAME
 
 ## Comparison with Other Container Creation Scripts
 
-| Feature | `incus-ct-create` | `incus-vm-create` | `dt` (Distrobox) |
-|---------|-------------------|-------------------|------------------|
-| Backend | Incus LXC | Incus VM | Podman/Docker |
-| Cloud-init | ✓ | ✓ | ✗ |
-| SSH Setup | ✓ | ✓ | ✗ |
-| Multi-distro | ✓ | ✓ | ✓ |
-| Snapshots | ✓ (via incus-ct) | ✓ (via incus-vm) | ✗ |
-| Resource Limits | ✓ | ✓ | ✓ |
-| Privileged Mode | ✓ | N/A | ✓ |
-| Desktop Integration | ✗ | ✗ | ✓ |
-| Startup Time | Fast (1-3s) | Medium (30s) | Fast (1-3s) |
+| Feature             | `ict-create` | `ivm-create` | `dt` (Distrobox) |
+| ------------------- | ------------ | ------------ | ---------------- |
+| Backend             | Incus LXC    | Incus VM     | Podman/Docker    |
+| Cloud-init          | ✓            | ✓            | ✗                |
+| SSH Setup           | ✓            | ✓            | ✗                |
+| Multi-distro        | ✓            | ✓            | ✓                |
+| Snapshots           | ✓ (via ict)  | ✓ (via ivm)  | ✗                |
+| Resource Limits     | ✓            | ✓            | ✓                |
+| Privileged Mode     | ✓            | N/A          | ✓                |
+| Desktop Integration | ✗            | ✗            | ✓                |
+| Startup Time        | Fast (1-3s)  | Medium (30s) | Fast (1-3s)      |
 
 ## Security Considerations
 
@@ -241,28 +241,28 @@ incus-ct delete CONTAINER_NAME
 ### Development Environments
 ```bash
 # Create development container
-incus-ct-create --distro ubuntu --name dev --vcpus 4 --ram 2048
+ict-create --distro ubuntu --name dev --vcpus 4 --ram 2048
 
 # Install development tools
-incus-ct exec dev -- apt update && apt install -y build-essential nodejs python3
+ict exec dev -- apt update && apt install -y build-essential nodejs python3
 ```
 
 ### Service Testing
 ```bash
 # Create service container
-incus-ct-create --distro debian --name webserver --ram 1024
+ict-create --distro debian --name webserver --ram 1024
 
 # Deploy and test services
-incus-ct exec webserver -- apt install -y nginx
+ict exec webserver -- apt install -y nginx
 ```
 
 ### Docker Host
 ```bash
 # Create privileged container for Docker
-incus-ct-create --distro ubuntu --name docker-host --privileged
+ict-create --distro ubuntu --name docker-host --privileged
 
 # Install Docker inside container
-incus-ct exec docker-host -- curl -fsSL https://get.docker.com | sh
+ict exec docker-host -- curl -fsSL https://get.docker.com | sh
 ```
 
 This script provides a quick and reliable way to create development and testing containers with Incus, offering the benefits of lightweight containerization with proper SSH access and cloud-init configuration.

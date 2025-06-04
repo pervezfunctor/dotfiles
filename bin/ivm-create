@@ -208,7 +208,7 @@ write_files:
   - path: /etc/motd
     content: |
       Welcome to $VM_NAME ($DISTRO $RELEASE)!
-      Created with incus-vm-create
+      Created with ivm-create
 
       SSH access configured for user: $USERNAME
 
@@ -349,10 +349,10 @@ show_completion_info() {
 
     echo
     log_info "VM Management:"
-    log_info "  Status: incus-vm status $VM_NAME"
-    log_info "  Stop: incus-vm stop $VM_NAME"
-    log_info "  Start: incus-vm start $VM_NAME"
-    log_info "  Delete: incus-vm delete $VM_NAME"
+    log_info "  Status: ivm status $VM_NAME"
+    log_info "  Stop: ivm stop $VM_NAME"
+    log_info "  Start: ivm start $VM_NAME"
+    log_info "  Delete: ivm delete $VM_NAME"
 }
 
 # Parse command line arguments

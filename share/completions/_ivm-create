@@ -1,6 +1,6 @@
-#compdef incus-vm-create
+#compdef ivm-create
 
-# Zsh completion for incus-vm-create script
+# Zsh completion for ivm-create script
 
 _incus_vm_create_get_distros() {
     local distros=(

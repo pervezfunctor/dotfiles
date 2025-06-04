@@ -2,8 +2,8 @@
 
 This directory contains bash and zsh completion scripts for VM and container management commands:
 - `vm` and `vm-create` (libvirt/QEMU VMs)
-- `incus-vm` and `incus-vm-create` (Incus VMs)
-- `incus-ct` and `incus-ct-create` (Incus containers)
+- `ivm` and `ivm-create` (Incus VMs)
+- `ict` and `ict-create` (Incus containers)
 
 ## Features
 
@@ -20,27 +20,27 @@ This directory contains bash and zsh completion scripts for VM and container man
 - **Predefined Values**: Suggest common values for memory, vCPUs, disk size
 - **Dotfiles Groups**: Complete available dotfiles groups
 
-### `incus-vm` Command Completions
-- **Commands**: Complete all available incus-vm commands (install, list, status, create, etc.)
+### `ivm` Command Completions
+- **Commands**: Complete all available ivm commands (install, list, status, create, etc.)
 - **VM Names**: Dynamically complete VM names from `incus list`
 - **Distributions**: Complete distributions for create command
 - **Snapshots**: Complete snapshot names for restore command
 - **Context-Aware**: Different completions based on the command
 
-### `incus-vm-create` Command Completions
+### `ivm-create` Command Completions
 - **Options**: Complete all command-line options (--distro, --name, --vcpus, etc.)
 - **Distributions**: Complete available distributions (ubuntu, fedora, arch, debian, centos, alpine)
 - **Values**: Context-aware completion for specific option values
 - **File Paths**: Complete file paths for SSH keys
 
-### `incus-ct` Command Completions
-- **Commands**: Complete all available incus-ct commands (install, list, status, create, etc.)
+### `ict` Command Completions
+- **Commands**: Complete all available ict commands (install, list, status, create, etc.)
 - **Container Names**: Dynamically complete container names from `incus list`
 - **Distributions**: Complete distributions for create command
 - **Snapshots**: Complete snapshot names for restore command
 - **Context-Aware**: Different completions based on the command
 
-### `incus-ct-create` Command Completions
+### `ict-create` Command Completions
 - **Options**: Complete all command-line options (--distro, --name, --vcpus, --privileged, etc.)
 - **Distributions**: Complete available distributions (ubuntu, fedora, arch, debian, centos, alpine)
 - **Values**: Context-aware completion for specific option values

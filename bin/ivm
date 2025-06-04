@@ -134,7 +134,7 @@ install_incus() {
         log_info "You can now use:"
         log_info "  $0 list                    # List VMs"
         log_info "  $0 create ubuntu           # Create Ubuntu VM"
-        log_info "  incus-vm-create --distro ubuntu  # Create VM with cloud-init and SSH"
+        log_info "  ivm-create --distro ubuntu  # Create VM with cloud-init and SSH"
     else
         log_error "Incus installation failed. Please check the output above for errors."
         return 1

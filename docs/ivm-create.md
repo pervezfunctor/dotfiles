@@ -1,6 +1,6 @@
-# incus-vm-create - Incus Virtual Machine Creation Script
+# ivm-create - Incus Virtual Machine Creation Script
 
-The `incus-vm-create` script creates Incus virtual machines with cloud-init configuration and SSH access enabled. It provides a streamlined way to create VMs with proper user setup, SSH key authentication, and essential packages pre-installed.
+The `ivm-create` script creates Incus virtual machines with cloud-init configuration and SSH access enabled. It provides a streamlined way to create VMs with proper user setup, SSH key authentication, and essential packages pre-installed.
 
 ## Features
 
@@ -15,7 +15,7 @@ The `incus-vm-create` script creates Incus virtual machines with cloud-init conf
 ## Usage
 
 ```bash
-incus-vm-create --distro DISTRO [OPTIONS]
+ivm-create --distro DISTRO [OPTIONS]
 ```
 
 ### Required Arguments
@@ -39,43 +39,43 @@ incus-vm-create --distro DISTRO [OPTIONS]
 ### Basic VM Creation
 ```bash
 # Create Ubuntu VM with defaults
-incus-vm-create --distro ubuntu
+ivm-create --distro ubuntu
 
 # Create Fedora VM with custom name
-incus-vm-create --distro fedora --name my-fedora
+ivm-create --distro fedora --name my-fedora
 
 # Create Debian VM with custom user
-incus-vm-create --distro debian --username admin --password mypass
+ivm-create --distro debian --username admin --password mypass
 ```
 
 ### Resource Customization
 ```bash
 # Create VM with more resources
-incus-vm-create --distro ubuntu --vcpus 4 --ram 4096 --disk 40GB
+ivm-create --distro ubuntu --vcpus 4 --ram 4096 --disk 40GB
 
 # Create minimal VM
-incus-vm-create --distro alpine --vcpus 1 --ram 1024 --disk 10GB
+ivm-create --distro alpine --vcpus 1 --ram 1024 --disk 10GB
 ```
 
 ### Advanced Configuration
 ```bash
 # Use specific release
-incus-vm-create --distro ubuntu --release 22.04
+ivm-create --distro ubuntu --release 22.04
 
 # Use custom SSH key
-incus-vm-create --distro arch --ssh-key ~/.ssh/my_key.pub
+ivm-create --distro arch --ssh-key ~/.ssh/my_key.pub
 ```
 
 ## Supported Distributions
 
-| Distribution | Default Release | Default User | Image Source |
-|--------------|----------------|--------------|--------------|
-| Ubuntu | 24.04 | ubuntu | images:ubuntu/24.04/cloud |
-| Fedora | 42 | fedora | images:fedora/42/cloud |
-| Arch Linux | current | arch | images:archlinux/current/cloud |
-| Debian | 12 | debian | images:debian/12/cloud |
-| CentOS | 9-Stream | centos | images:centos/9-Stream/cloud |
-| Alpine | 3.19 | alpine | images:alpine/3.19/cloud |
+| Distribution | Default Release | Default User | Image Source                   |
+| ------------ | --------------- | ------------ | ------------------------------ |
+| Ubuntu       | 24.04           | ubuntu       | images:ubuntu/24.04/cloud      |
+| Fedora       | 42              | fedora       | images:fedora/42/cloud         |
+| Arch Linux   | current         | arch         | images:archlinux/current/cloud |
+| Debian       | 12              | debian       | images:debian/12/cloud         |
+| CentOS       | 9-Stream        | centos       | images:centos/9-Stream/cloud   |
+| Alpine       | 3.19            | alpine       | images:alpine/3.19/cloud       |
 
 ## Cloud-init Configuration
 
@@ -140,30 +140,30 @@ incus exec VM_NAME -- /bin/bash
 
 ## Integration with Management Scripts
 
-The created VMs can be managed using the `incus-vm` script:
+The created VMs can be managed using the `ivm` script:
 
 ```bash
 # List VMs
-incus-vm list
+ivm list
 
 # Check VM status
-incus-vm status VM_NAME
+ivm status VM_NAME
 
 # Start/stop VM
-incus-vm start VM_NAME
-incus-vm stop VM_NAME
+ivm start VM_NAME
+ivm stop VM_NAME
 
 # Access VM console
-incus-vm console VM_NAME
+ivm console VM_NAME
 
 # Execute commands
-incus-vm exec VM_NAME "command"
+ivm exec VM_NAME "command"
 
 # Create snapshots
-incus-vm snapshot VM_NAME backup
+ivm snapshot VM_NAME backup
 
 # Delete VM
-incus-vm delete VM_NAME
+ivm delete VM_NAME
 ```
 
 ## Troubleshooting
@@ -184,16 +184,16 @@ incus-vm delete VM_NAME
 
 ## Comparison with Other VM Creation Scripts
 
-| Feature | `incus-vm-create` | `vm-create` (libvirt) | `vm-fedora` |
-|---------|-------------------|----------------------|-------------|
-| Backend | Incus | libvirt/KVM | libvirt/KVM |
-| Cloud-init | ✓ | ✓ | ✓ |
-| SSH Setup | ✓ | ✓ | ✓ |
-| Multi-distro | ✓ | ✓ | ✗ (Fedora only) |
-| Snapshots | ✓ (via incus-vm) | ✗ | ✗ |
-| Resource Limits | ✓ | ✓ | ✓ |
-| Network Config | Auto (DHCP) | Configurable | Bridge |
-| Image Source | Remote images | Downloaded | Downloaded |
+| Feature         | `ivm-create`  | `vm-create` (libvirt) | `vm-fedora`     |
+| --------------- | ------------- | --------------------- | --------------- |
+| Backend         | Incus         | libvirt/KVM           | libvirt/KVM     |
+| Cloud-init      | ✓             | ✓                     | ✓               |
+| SSH Setup       | ✓             | ✓                     | ✓               |
+| Multi-distro    | ✓             | ✓                     | ✗ (Fedora only) |
+| Snapshots       | ✓ (via ivm)   | ✗                     | ✗               |
+| Resource Limits | ✓             | ✓                     | ✓               |
+| Network Config  | Auto (DHCP)   | Configurable          | Bridge          |
+| Image Source    | Remote images | Downloaded            | Downloaded      |
 
 ## Security Considerations
 
