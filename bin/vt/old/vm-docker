@@ -431,7 +431,7 @@ launch_vm() {
   log_info "Adding VM to /etc/hosts for name-based access..."
   sleep 5 # Give VM time to get IP
   if [[ -x "$HOME/.ilm/bin/vim-hosts" ]]; then
-    $HOME/.ilm/bin/vim-hosts add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
+    "$HOME"/.ilm/bin/vim-hosts add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
   fi
 }
 
