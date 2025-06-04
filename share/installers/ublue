@@ -41,7 +41,7 @@ ublue_apps_setup() {
     fi
 
     slog "Installing apps for ublue"
-    apps_slim_install
+    slim-apps_install
     slog "apps installation done!"
 }
 
