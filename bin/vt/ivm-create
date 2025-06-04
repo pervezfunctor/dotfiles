@@ -2,27 +2,22 @@
 
 set -euo pipefail
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
-log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
 
 # Default values
-VM_NAME=""
-DISTRO=""
-RELEASE=""
-USERNAME=""
-PASSWORD=""
+unset VM_NAME
+unset DISTRO
+unset RELEASE
+unset USERNAME
+unset PASSWORD
+unset SSH_KEY
+unset IMAGE
+
 VCPUS="2"
 RAM_MB="2048"
 DISK_SIZE="20GB"
-SSH_KEY=""
 BRIDGE_IF="incusbr0"
 
 usage() {
@@ -63,36 +58,37 @@ SUPPORTED DISTRIBUTIONS:
 EOF
 }
 
+init_ssh() {
+    if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
+        SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
+    elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
+        SSH_KEY="${HOME}/.ssh/id_rsa.pub"
+    else
+        warn "No SSH key found. Generating new RSA key pair..."
+        ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
+        SSH_KEY="${HOME}/.ssh/id_rsa.pub"
+    fi
+}
+
 check_prerequisites() {
-    if ! command -v incus >/dev/null 2>&1; then
-        log_error "incus command not found. Please install Incus first."
+    if ! has_cmd incus; then
+        fail "incus command not found. Please install Incus first."
         exit 1
     fi
 
     if ! incus info >/dev/null 2>&1; then
-        log_error "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
+        fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
         exit 1
     fi
 
-    # Auto-detect SSH key if not specified
-    if [[ -z "$SSH_KEY" ]]; then
-        if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
-            SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
-        elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
-            SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-        else
-            log_warn "No SSH key found. Generating new RSA key pair..."
-            ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
-            SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-        fi
-    fi
+    init_ssh
 
     if [[ ! -f "$SSH_KEY" ]]; then
-        log_error "SSH public key not found at: $SSH_KEY"
+        fail "SSH public key not found at: $SSH_KEY"
         exit 1
     fi
 
-    log_info "Using SSH key: $SSH_KEY"
+    slog "Using SSH key: $SSH_KEY"
 }
 
 configure_distribution() {
@@ -133,26 +129,26 @@ configure_distribution() {
         IMAGE="images:nixos/${RELEASE}/cloud"
         ;;
     *)
-        log_error "Unsupported distribution: $DISTRO"
-        log_error "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine, nixos"
+        fail "Unsupported distribution: $DISTRO"
+        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine, nixos"
         exit 1
         ;;
     esac
 
     VM_NAME=${VM_NAME:-"$DISTRO"}
-    PASSWORD=${PASSWORD:-"$VM_NAME"}
+    PASSWORD=${PASSWORD:-"$USERNAME"}
 
-    log_info "Configuration:"
-    log_info "  Distribution: $DISTRO $RELEASE"
-    log_info "  VM Name: $VM_NAME"
-    log_info "  Username: $USERNAME"
-    log_info "  Image: $IMAGE"
-    log_info "  Resources: ${VCPUS} vCPUs, ${RAM_MB}MB RAM, ${DISK_SIZE} disk"
-    log_info "  Network Bridge: $BRIDGE_IF"
+    slog "Configuration:"
+    slog "  Distribution: $DISTRO $RELEASE"
+    slog "  VM Name: $VM_NAME"
+    slog "  Username: $USERNAME"
+    slog "  Image: $IMAGE"
+    slog "  Resources: ${VCPUS} vCPUs, ${RAM_MB}MB RAM, ${DISK_SIZE} disk"
+    slog "  Network Bridge: $BRIDGE_IF"
 }
 
 generate_cloud_init_config() {
-    log_info "Generating cloud-init configuration..."
+    slog "Generating cloud-init configuration..."
 
     # Create temporary directory for cloud-init files
     CLOUD_INIT_DIR=$(mktemp -d)
@@ -196,12 +192,8 @@ packages:
 
 # Enable SSH service and ensure proper configuration
 runcmd:
-  - systemctl stop ssh.socket || true
-  - systemctl disable ssh.socket || true
   - systemctl enable --now ssh || systemctl enable --now sshd
   - systemctl enable --now qemu-guest-agent || true
-  - sleep 2
-  - systemctl restart ssh || systemctl restart sshd
 
 # Network configuration
 write_files:
@@ -221,15 +213,15 @@ instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
-    log_success "Cloud-init configuration files created in: $CLOUD_INIT_DIR"
+    success "Cloud-init configuration files created in: $CLOUD_INIT_DIR"
 }
 
 create_vm() {
-    log_info "Creating Incus VM '$VM_NAME'..."
+    slog "Creating Incus VM '$VM_NAME'..."
 
     # Check if VM already exists
     if incus info "$VM_NAME" >/dev/null 2>&1; then
-        log_error "VM '$VM_NAME' already exists"
+        fail "VM '$VM_NAME' already exists"
         exit 1
     fi
 
@@ -237,70 +229,40 @@ create_vm() {
     generate_cloud_init_config
 
     # Create the VM with cloud-init configuration
-    log_info "Launching VM with image: $IMAGE"
+    slog "Launching VM with image: $IMAGE"
 
     # Build launch command with distribution-specific settings
     local launch_cmd=(
         incus launch "$IMAGE" "$VM_NAME" --vm
-        --config limits.cpu="$VCPUS"
-        --config limits.memory="${RAM_MB}MB"
-        --config user.user-data="$(cat "${CLOUD_INIT_DIR}/user-data")"
-        --config user.meta-data="$(cat "${CLOUD_INIT_DIR}/meta-data")"
-        --device root size="$DISK_SIZE"
+        --config "limits.cpu=$VCPUS"
+        --config "limits.memory=${RAM_MB}MB"
+        --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
+        --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
+        --disk "root,size=$DISK_SIZE"
         --network "$BRIDGE_IF"
     )
 
     # Add NixOS-specific settings
     if [[ "$DISTRO" == "nixos" ]]; then
-        launch_cmd+=(--config security.secureboot=false)
+        launch_cmd+=(--config "security.secureboot=false")
     fi
 
     if ! "${launch_cmd[@]}"; then
-        log_error "Failed to create VM '$VM_NAME'"
+        fail "Failed to create VM '$VM_NAME'"
         exit 1
     fi
 
-    log_success "VM '$VM_NAME' created successfully"
+    success "VM '$VM_NAME' created successfully"
 
     # Clean up temporary cloud-init directory
     if [[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]]; then
         rm -rf "$CLOUD_INIT_DIR"
-        log_info "Cleaned up temporary cloud-init files"
+        slog "Cleaned up temporary cloud-init files"
     fi
 }
 
-wait_for_vm() {
-    log_info "Waiting for VM to be ready..."
-
-    local max_attempts=60
-    local attempt=0
-
-    while [[ $attempt -lt $max_attempts ]]; do
-        local state
-        state=$(incus list "$VM_NAME" --format csv --columns s | head -1)
-
-        if [[ "$state" == "RUNNING" ]]; then
-            log_info "VM is running, waiting for cloud-init to complete..."
-            sleep 10
-
-            # Check if cloud-init has finished
-            if incus exec "$VM_NAME" -- cloud-init status --wait >/dev/null 2>&1; then
-                log_success "Cloud-init completed successfully"
-                return 0
-            fi
-        fi
-
-        sleep 5
-        ((attempt++))
-        echo -n "."
-    done
-
-    echo
-    log_warn "VM may not be fully ready yet, but continuing..."
-}
-
 get_vm_ip() {
-    log_info "Getting VM IP address..."
+    slog "Getting VM IP address..."
 
     local ip
     local max_attempts=30
@@ -318,41 +280,41 @@ get_vm_ip() {
         ((attempt++))
     done
 
-    log_warn "Could not determine VM IP address"
+    warn "Could not determine VM IP address"
     return 1
 }
 
 show_completion_info() {
-    log_success "VM '$VM_NAME' is ready!"
+    success "VM '$VM_NAME' is ready!"
     echo
-    log_info "VM Details:"
+    slog "VM Details:"
     incus list "$VM_NAME"
     echo
 
     local ip
     if ip=$(get_vm_ip); then
-        log_info "SSH Access:"
-        log_info "  IP Address: $ip"
-        log_info "  Username: $USERNAME"
-        log_info "  SSH Command: ssh $USERNAME@$ip"
+        slog "SSH Access:"
+        slog "  IP Address: $ip"
+        slog "  Username: $USERNAME"
+        slog "  SSH Command: ssh $USERNAME@$ip"
         echo
-        log_info "You can also use Incus commands:"
-        log_info "  Console: incus console $VM_NAME"
-        log_info "  Execute: incus exec $VM_NAME -- <command>"
-        log_info "  Shell: incus exec $VM_NAME -- /bin/bash"
+        slog "You can also use Incus commands:"
+        slog "  Console: incus console $VM_NAME"
+        slog "  Execute: incus exec $VM_NAME -- <command>"
+        slog "  Shell: incus exec $VM_NAME -- /bin/bash"
     else
-        log_info "Use Incus commands to access the VM:"
-        log_info "  Console: incus console $VM_NAME"
-        log_info "  Execute: incus exec $VM_NAME -- <command>"
-        log_info "  Shell: incus exec $VM_NAME -- /bin/bash"
+        slog "Use Incus commands to access the VM:"
+        slog "  Console: incus console $VM_NAME"
+        slog "  Execute: incus exec $VM_NAME -- <command>"
+        slog "  Shell: incus exec $VM_NAME -- /bin/bash"
     fi
 
     echo
-    log_info "VM Management:"
-    log_info "  Status: ivm status $VM_NAME"
-    log_info "  Stop: ivm stop $VM_NAME"
-    log_info "  Start: ivm start $VM_NAME"
-    log_info "  Delete: ivm delete $VM_NAME"
+    slog "VM Management:"
+    slog "  Status: ivm status $VM_NAME"
+    slog "  Stop: ivm stop $VM_NAME"
+    slog "  Start: ivm start $VM_NAME"
+    slog "  Delete: ivm delete $VM_NAME"
 }
 
 # Parse command line arguments
@@ -404,7 +366,7 @@ parse_args() {
             exit 0
             ;;
         *)
-            log_error "Unknown option: $1"
+            fail "Unknown option: $1"
             usage
             exit 1
             ;;
@@ -413,23 +375,22 @@ parse_args() {
 
     # Validate required arguments
     if [[ -z "$DISTRO" ]]; then
-        log_error "Distribution is required. Use --distro option."
+        fail "Distribution is required. Use --distro option."
         usage
         exit 1
     fi
 }
 
 main() {
-    log_info "Starting Incus VM creation..."
+    slog "Starting Incus VM creation..."
 
     parse_args "$@"
     check_prerequisites
     configure_distribution
     create_vm
-    wait_for_vm
     show_completion_info
 
-    log_success "All done! Your $DISTRO VM '$VM_NAME' is ready to use."
+    success "All done! Your $DISTRO VM '$VM_NAME' is ready to use."
 }
 
 # Only run main if script is executed directly

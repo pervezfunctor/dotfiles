@@ -23,7 +23,7 @@ if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
 elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
   SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 else
-  ssh-keygen -t rsa
+  ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
   SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 fi
 

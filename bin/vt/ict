@@ -2,23 +2,13 @@
 
 set -euo pipefail
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
-log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
-
-# Source Incus functions if available
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-if [[ -f "$DOT_DIR/share/fns" ]]; then
-    # shellcheck disable=SC1091
-    source "$DOT_DIR/share/fns"
-fi
+
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/fns"
 
 usage() {
     cat <<EOF
@@ -65,35 +55,49 @@ EOF
 }
 
 check_incus() {
-    if ! command -v incus >/dev/null 2>&1; then
-        log_error "incus command not found. Please install Incus first."
-        return 1
+    if ! has_cmd incus; then
+        fail "incus command not found. Please install Incus first."
+        exit 1
     fi
 }
 
 list_containers() {
     check_incus || return 1
 
-    log_info "Listing all Incus containers..."
+    slog "Listing all Incus containers..."
     echo
-    incus list --type=container
+
+    incus list type=container
+}
+
+get_container_state() {
+    incus list type=container "$container_name" --format csv --columns s | head -1
+}
+
+has_container() {
+    local container_name="$1"
+    incus list type=container --format csv --columns n | grep -q "^${container_name}$" || return 1
+}
+
+check_container() {
+    local container_name="$1"
+    if ! has_container "$container_name"; then
+        fail "Container '$container_name' not found"
+        return 1
+    fi
 }
 
 container_status() {
     local container_name="$1"
     check_incus || return 1
+    check_container "$container_name"
 
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
-
-    log_info "Status for container '$container_name':"
+    slog "Status for container '$container_name':"
     echo
-    incus list "$container_name" --type=container
+    incus list type=container "$container_name"
     echo
 
-    log_info "Detailed information:"
+    slog "Detailed information:"
     incus info "$container_name" | head -20
 }
 
@@ -101,8 +105,9 @@ create_container() {
     local distro="$1"
     local container_name="${2:-$distro}"
     check_incus || return 1
+    check_container "$container_name" || return 1
 
-    log_info "Creating $distro Incus container: $container_name"
+    slog "Creating $distro Incus container: $container_name"
 
     # Check if function exists for the distro
     if declare -f "incus-${distro}-lxc" >/dev/null 2>&1; then
@@ -112,7 +117,7 @@ create_container() {
 
         # Rename if custom name provided and different from default
         if [[ "$container_name" != "$distro" ]]; then
-            log_info "Renaming container from '$temp_name' to '$container_name'..."
+            slog "Renaming container from '$temp_name' to '$container_name'..."
             incus move "$temp_name" "$container_name" 2>/dev/null || true
         fi
     else
@@ -143,22 +148,22 @@ create_container() {
             incus launch images:nixos/24.11 "$container_name" --config security.nesting=true
             ;;
         *)
-            log_error "Unsupported distro: $distro"
-            log_info "Supported distros: ubuntu, fedora, arch, tumbleweed, debian, centos, alpine, nixos"
+            fail "Unsupported distro: $distro"
+            slog "Supported distros: ubuntu, fedora, arch, tumbleweed, debian, centos, alpine, nixos"
             return 1
             ;;
         esac
     fi
 
     if incus info "$container_name" >/dev/null 2>&1; then
-        log_success "Container '$container_name' created successfully"
-        log_info "Starting container..."
+        success "Container '$container_name' created successfully"
+        slog "Starting container..."
         incus start "$container_name" 2>/dev/null || true
         sleep 2
-        log_info "Container status:"
-        incus list "$container_name" --type=container
+        slog "Container status:"
+        incus list type=container "$container_name"
     else
-        log_error "Failed to create container '$container_name'"
+        fail "Failed to create container '$container_name'"
         return 1
     fi
 }
@@ -166,27 +171,23 @@ create_container() {
 start_container() {
     local container_name="$1"
     check_incus || return 1
-
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name" || return 1
 
     local state
-    state=$(incus list "$container_name" --format csv --columns s | head -1)
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" == "RUNNING" ]]; then
-        log_warn "Container '$container_name' is already running"
+        warn "Container '$container_name' is already running"
         return 0
     fi
 
-    log_info "Starting container '$container_name'..."
+    slog "Starting container '$container_name'..."
     if incus start "$container_name"; then
-        log_success "Container '$container_name' started"
+        success "Container '$container_name' started"
         sleep 1
-        incus list "$container_name" --type=container
+        incus list type=container "$container_name"
     else
-        log_error "Failed to start container '$container_name'"
+        fail "Failed to start container '$container_name'"
         return 1
     fi
 }
@@ -194,25 +195,21 @@ start_container() {
 stop_container() {
     local container_name="$1"
     check_incus || return 1
-
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name" || return 1
 
     local state
-    state=$(incus list "$container_name" --format csv --columns s | head -1)
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" != "RUNNING" ]]; then
-        log_warn "Container '$container_name' is not running"
+        warn "Container '$container_name' is not running"
         return 0
     fi
 
-    log_info "Stopping container '$container_name'..."
+    slog "Stopping container '$container_name'..."
     if incus stop "$container_name"; then
-        log_success "Container '$container_name' stopped"
+        success "Container '$container_name' stopped"
     else
-        log_error "Failed to stop container '$container_name'"
+        fail "Failed to stop container '$container_name'"
         return 1
     fi
 }
@@ -220,14 +217,15 @@ stop_container() {
 restart_container() {
     local container_name="$1"
     check_incus || return 1
+    check_container "$container_name" || return 1
 
-    log_info "Restarting container '$container_name'..."
+    slog "Restarting container '$container_name'..."
     if incus restart "$container_name"; then
-        log_success "Container '$container_name' restarted"
+        success "Container '$container_name' restarted"
         sleep 2
-        incus list "$container_name" --type=container
+        incus list type=container "$container_name"
     else
-        log_error "Failed to restart container '$container_name'"
+        fail "Failed to restart container '$container_name'"
         return 1
     fi
 }
@@ -235,31 +233,27 @@ restart_container() {
 delete_container() {
     local container_name="$1"
     check_incus || return 1
+    check_container "$container_name" || return 1
 
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
-
-    log_warn "This will permanently delete container '$container_name' and all its data!"
+    warn "This will permanently delete container '$container_name' and all its data!"
     read -p "Are you sure? (y/N): " -r
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_info "Deletion cancelled"
+        slog "Deletion cancelled"
         return 0
     fi
 
     local state
-    state=$(incus list "$container_name" --format csv --columns s | head -1)
+    state=$(get_container_state "$container_name")
     if [[ "$state" == "RUNNING" ]]; then
-        log_info "Stopping container first..."
+        slog "Stopping container first..."
         incus stop "$container_name" --force
     fi
 
-    log_info "Deleting container '$container_name'..."
+    slog "Deleting container '$container_name'..."
     if incus delete "$container_name"; then
-        log_success "Container '$container_name' deleted successfully"
+        success "Container '$container_name' deleted successfully"
     else
-        log_error "Failed to delete container '$container_name'"
+        fail "Failed to delete container '$container_name'"
         return 1
     fi
 }
@@ -267,22 +261,18 @@ delete_container() {
 enter_shell() {
     local container_name="$1"
     check_incus || return 1
-
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name" || return 1
 
     local state
-    state=$(incus list "$container_name" --format csv --columns s | head -1)
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" != "RUNNING" ]]; then
-        log_error "Container '$container_name' is not running"
-        log_info "Start it with: $0 start $container_name"
+        fail "Container '$container_name' is not running"
+        slog "Start it with: $0 start $container_name"
         return 1
     fi
 
-    log_info "Entering shell of container '$container_name'..."
+    slog "Entering shell of container '$container_name'..."
     incus exec "$container_name" -- /bin/bash -l
 }
 
@@ -291,35 +281,27 @@ exec_in_container() {
     shift
     local command="$*"
     check_incus || return 1
-
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name" || return 1
 
     local state
-    state=$(incus list "$container_name" --format csv --columns s | head -1)
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" != "RUNNING" ]]; then
-        log_error "Container '$container_name' is not running"
-        log_info "Start it with: $0 start $container_name"
+        fail "Container '$container_name' is not running"
+        slog "Start it with: $0 start $container_name"
         return 1
     fi
 
-    log_info "Executing command in container '$container_name': $command"
+    slog "Executing command in container '$container_name': $command"
     incus exec "$container_name" -- "$@"
 }
 
 show_container_info() {
     local container_name="$1"
     check_incus || return 1
+    check_container "$container_name" || return 1
 
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
-
-    log_info "Detailed information for container '$container_name':"
+    slog "Detailed information for container '$container_name':"
     echo
     incus info "$container_name"
 }
@@ -327,13 +309,9 @@ show_container_info() {
 show_container_config() {
     local container_name="$1"
     check_incus || return 1
+    check_container "$container_name" || return 1
 
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
-
-    log_info "Configuration for container '$container_name':"
+    slog "Configuration for container '$container_name':"
     echo
     incus config show "$container_name"
 }
@@ -342,17 +320,13 @@ create_snapshot() {
     local container_name="$1"
     local snapshot_name="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
     check_incus || return 1
+    check_container "$container_name" || return 1
 
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
-
-    log_info "Creating snapshot '$snapshot_name' for container '$container_name'..."
+    slog "Creating snapshot '$snapshot_name' for container '$container_name'..."
     if incus snapshot "$container_name" "$snapshot_name"; then
-        log_success "Snapshot '$snapshot_name' created successfully"
+        success "Snapshot '$snapshot_name' created successfully"
     else
-        log_error "Failed to create snapshot '$snapshot_name'"
+        fail "Failed to create snapshot '$snapshot_name'"
         return 1
     fi
 }
@@ -361,30 +335,26 @@ restore_snapshot() {
     local container_name="$1"
     local snapshot_name="$2"
     check_incus || return 1
+    check_container "$container_name" || return 1
 
     if [[ -z "$snapshot_name" ]]; then
-        log_error "Snapshot name required"
+        fail "Snapshot name required"
         return 1
     fi
 
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
-
-    log_warn "This will restore container '$container_name' to snapshot '$snapshot_name'"
-    log_warn "All changes since the snapshot will be lost!"
+    warn "This will restore container '$container_name' to snapshot '$snapshot_name'"
+    warn "All changes since the snapshot will be lost!"
     read -p "Are you sure? (y/N): " -r
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_info "Restore cancelled"
+        slog "Restore cancelled"
         return 0
     fi
 
-    log_info "Restoring container '$container_name' from snapshot '$snapshot_name'..."
+    slog "Restoring container '$container_name' from snapshot '$snapshot_name'..."
     if incus restore "$container_name" "$snapshot_name"; then
-        log_success "Container '$container_name' restored from snapshot '$snapshot_name'"
+        success "Container '$container_name' restored from snapshot '$snapshot_name'"
     else
-        log_error "Failed to restore container '$container_name' from snapshot '$snapshot_name'"
+        fail "Failed to restore container '$container_name' from snapshot '$snapshot_name'"
         return 1
     fi
 }
@@ -393,27 +363,32 @@ copy_container() {
     local source_container="$1"
     local dest_container="$2"
     check_incus || return 1
+    check_container "$source_container" || return 1
+    check_container "$dest_container" && {
+        fail "Destination container '$dest_container' already exists"
+        return 1
+    }
 
     if [[ -z "$dest_container" ]]; then
-        log_error "Destination container name required"
+        fail "Destination container name required"
         return 1
     fi
 
     if ! incus info "$source_container" >/dev/null 2>&1; then
-        log_error "Source container '$source_container' not found"
+        fail "Source container '$source_container' not found"
         return 1
     fi
 
     if incus info "$dest_container" >/dev/null 2>&1; then
-        log_error "Destination container '$dest_container' already exists"
+        fail "Destination container '$dest_container' already exists"
         return 1
     fi
 
-    log_info "Copying container '$source_container' to '$dest_container'..."
+    slog "Copying container '$source_container' to '$dest_container'..."
     if incus copy "$source_container" "$dest_container"; then
-        log_success "Container '$source_container' copied to '$dest_container'"
+        success "Container '$source_container' copied to '$dest_container'"
     else
-        log_error "Failed to copy container '$source_container' to '$dest_container'"
+        fail "Failed to copy container '$source_container' to '$dest_container'"
         return 1
     fi
 }
@@ -421,14 +396,14 @@ copy_container() {
 cleanup_containers() {
     check_incus || return 1
 
-    log_info "Cleaning up stopped containers..."
+    slog "Cleaning up stopped containers..."
 
     # List stopped containers
     local stopped_containers
-    stopped_containers=$(incus list --type=container --format csv --columns n,s | grep ",STOPPED$" | cut -d',' -f1)
+    stopped_containers=$(incus list --format csv --columns n,s | grep ",STOPPED$" | cut -d',' -f1)
 
     if [[ -n "$stopped_containers" ]]; then
-        log_info "Stopped containers found:"
+        slog "Stopped containers found:"
         echo "$stopped_containers"
         echo
 
@@ -436,16 +411,16 @@ cleanup_containers() {
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             while IFS= read -r container; do
                 if [[ -n "$container" ]]; then
-                    log_info "Removing stopped container: $container"
+                    slog "Removing stopped container: $container"
                     incus delete "$container" 2>/dev/null || true
                 fi
             done <<<"$stopped_containers"
         fi
     else
-        log_info "No stopped containers found"
+        slog "No stopped containers found"
     fi
 
-    log_success "Cleanup complete"
+    success "Cleanup complete"
 }
 
 get_container_ip() {
@@ -456,7 +431,7 @@ get_container_ip() {
     fi
 
     local state
-    state=$(incus list "$container_name" --format csv --columns s | head -1)
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" != "RUNNING" ]]; then
         return 2
@@ -464,7 +439,7 @@ get_container_ip() {
 
     # Try to get IP from incus list with network info
     local ip
-    ip=$(incus list "$container_name" --format csv --columns 4 | head -1 | cut -d',' -f1 | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1)
+    ip=$(incus list "^${container_name}$" --format csv --columns 4 | head -1 | cut -d',' -f1 | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1)
 
     # If that fails, try getting it from incus info
     if [[ -z "$ip" ]]; then
@@ -487,11 +462,7 @@ get_container_ip() {
 show_container_ip() {
     local container_name="$1"
     check_incus || return 1
-
-    if [[ -z "$container_name" ]]; then
-        log_error "Container name required"
-        return 1
-    fi
+    check_container "$container_name" || return 1
 
     local ip
     ip=$(get_container_ip "$container_name")
@@ -499,17 +470,17 @@ show_container_ip() {
 
     case $ret in
     1)
-        log_error "Container '$container_name' not found"
+        fail "Container '$container_name' not found"
         return 1
         ;;
     2)
-        log_error "Container '$container_name' is not running"
-        log_info "Start it with: $0 start $container_name"
+        fail "Container '$container_name' is not running"
+        slog "Start it with: $0 start $container_name"
         return 1
         ;;
     3)
-        log_error "Could not determine IP address for container '$container_name'"
-        log_info "Container may still be starting up. Try again in a few moments."
+        fail "Could not determine IP address for container '$container_name'"
+        slog "Container may still be starting up. Try again in a few moments."
         return 1
         ;;
     0)
@@ -523,18 +494,14 @@ ssh_to_container() {
     local container_name="$1"
     local username="${2:-}"
     check_incus || return 1
-
-    if ! incus info "$container_name" >/dev/null 2>&1; then
-        log_error "Container '$container_name' not found"
-        return 1
-    fi
+    check_container "$container_name" || return 1
 
     local state
-    state=$(incus list "$container_name" --format csv --columns s | head -1)
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" != "RUNNING" ]]; then
-        log_error "Container '$container_name' is not running"
-        log_info "Start it with: $0 start $container_name"
+        fail "Container '$container_name' is not running"
+        slog "Start it with: $0 start $container_name"
         return 1
     fi
 
@@ -556,7 +523,7 @@ ssh_to_container() {
             ;;
         esac
 
-        log_info "Auto-detected username: $username (override with: $0 ssh $container_name <username>)"
+        slog "Auto-detected username: $username (override with: $0 ssh $container_name <username>)"
     fi
 
     local ip
@@ -565,21 +532,21 @@ ssh_to_container() {
 
     case $ret in
     1)
-        log_error "Container '$container_name' not found"
+        fail "Container '$container_name' not found"
         return 1
         ;;
     2)
-        log_error "Container '$container_name' is not running"
-        log_info "Start it with: $0 start $container_name"
+        fail "Container '$container_name' is not running"
+        slog "Start it with: $0 start $container_name"
         return 1
         ;;
     3)
-        log_error "Could not determine IP address for container '$container_name'"
-        log_info "Container may still be starting up. Try again in a few moments."
+        fail "Could not determine IP address for container '$container_name'"
+        slog "Container may still be starting up. Try again in a few moments."
         return 1
         ;;
     0)
-        log_info "Connecting to $container_name ($ip) as $username..."
+        slog "Connecting to $container_name ($ip) as $username..."
         ssh "$username@$ip"
         ;;
     esac
@@ -600,7 +567,7 @@ list)
     ;;
 status)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -608,7 +575,7 @@ status)
     ;;
 create)
     [[ -z "$container_name" ]] && {
-        log_error "Distro name required"
+        fail "Distro name required"
         usage
         exit 1
     }
@@ -616,7 +583,7 @@ create)
     ;;
 start)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -624,7 +591,7 @@ start)
     ;;
 stop)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -632,7 +599,7 @@ stop)
     ;;
 restart)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -640,7 +607,7 @@ restart)
     ;;
 delete)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -648,7 +615,7 @@ delete)
     ;;
 shell)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -656,12 +623,12 @@ shell)
     ;;
 exec)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
     [[ $# -lt 3 ]] && {
-        log_error "Command required"
+        fail "Command required"
         usage
         exit 1
     }
@@ -669,7 +636,7 @@ exec)
     ;;
 ip)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -677,7 +644,7 @@ ip)
     ;;
 ssh)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -685,7 +652,7 @@ ssh)
     ;;
 info)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -693,7 +660,7 @@ info)
     ;;
 config)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -701,7 +668,7 @@ config)
     ;;
 snapshot)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
@@ -709,12 +676,12 @@ snapshot)
     ;;
 restore)
     [[ -z "$container_name" ]] && {
-        log_error "Container name required"
+        fail "Container name required"
         usage
         exit 1
     }
     [[ -z "${3:-}" ]] && {
-        log_error "Snapshot name required"
+        fail "Snapshot name required"
         usage
         exit 1
     }
@@ -722,12 +689,12 @@ restore)
     ;;
 copy)
     [[ -z "$container_name" ]] && {
-        log_error "Source container name required"
+        fail "Source container name required"
         usage
         exit 1
     }
     [[ -z "${3:-}" ]] && {
-        log_error "Destination container name required"
+        fail "Destination container name required"
         usage
         exit 1
     }
@@ -740,7 +707,7 @@ cleanup)
     usage
     ;;
 *)
-    log_error "Unknown command: $command"
+    fail "Unknown command: $command"
     usage
     exit 1
     ;;

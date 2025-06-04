@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-VM_NAME="ubuntu"
+# Initial variable setup
+VM_NAME="debian"
 
 VCPUS=4
 RAM_MB=4096
@@ -13,10 +14,9 @@ DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
 SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
 BRIDGE_IF="virbr0"
 
-UBUNTU_RELEASE="noble" # 24.04 LTS
-UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
-BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
-USERNAME="ubuntu"
+BASE_IMG="${WORKDIR}/debian-${DEBIAN_RELEASE}.qcow2"
+DEBIAN_RELEASE="bookworm" # 12
+USERNAME="debian"
 DEFAULT_PASSWORD="$VM_NAME"
 
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
@@ -24,7 +24,7 @@ if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
 elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
   SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 else
-  ssh-keygen -t rsa
+  ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
   SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 fi
 
@@ -57,31 +57,15 @@ trap cleanup_on_error ERR
 usage() {
   cat <<EOF
 Usage: $0 [OPTIONS]
-
-Create a Ubuntu VM using virt-install and cloud-init.
-
-OPTIONS:
-    --name NAME         VM name (default: $VM_NAME)
-    --memory MB         RAM in MB (default: $RAM_MB)
-    --vcpus NUM         Number of vCPUs (default: $VCPUS)
-    --disk-size SIZE    Disk size (default: $DISK_SIZE)
-    --ssh-key PATH      SSH public key path (default: $SSH_KEY)
-    --bridge BRIDGE     Network bridge (default: $BRIDGE_IF)
-    --ubuntu-release REL Ubuntu release (default: $UBUNTU_RELEASE)
-    --username USER     VM username (default: $USERNAME)
-    --help, -h          Show this help
-
-EXAMPLES:
-    $0                                    # Create VM with defaults
-    $0 --name myvm --memory 8192          # Custom name and memory
-    $0 --disk-size 80G --vcpus 4          # Larger disk and more CPUs
-
-PREREQUISITES:
-    - KVM/QEMU installed and running
-    - libvirt daemon running
-    - virt-install package installed
-    - SSH key pair generated
-    - Network bridge configured (or use default virbr0)
+  --name NAME         VM name (default: $VM_NAME)
+  --memory MB         VM memory in MB (default: $RAM_MB)
+  --vcpus VCPUS       Number of vCPUs (default: $VCPUS)
+  --disk-size SIZE    Disk size (default: $DISK_SIZE)
+  --ssh-key PATH      SSH public key path (default: $SSH_KEY)
+  --bridge BRIDGE     Network bridge (default: $BRIDGE_IF)
+  --debian-release REL Debian release (default: $DEBIAN_RELEASE)
+  --username USER     VM username (default: $USERNAME)
+  --help, -h          Show this help
 
 EOF
 }
@@ -92,6 +76,7 @@ while [[ $# -gt 0 ]]; do
     VM_NAME="$2"
     WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
     CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+    BASE_IMG="${WORKDIR}/debian-${DEBIAN_RELEASE}.qcow2"
     DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
     SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
     shift 2
@@ -116,10 +101,9 @@ while [[ $# -gt 0 ]]; do
     BRIDGE_IF="$2"
     shift 2
     ;;
-  --ubuntu-release)
-    UBUNTU_RELEASE="$2"
-    UBUNTU_IMG_URL="https://cloud-images.ubuntu.com/${UBUNTU_RELEASE}/current/${UBUNTU_RELEASE}-server-cloudimg-amd64.img"
-    BASE_IMG="${WORKDIR}/${UBUNTU_RELEASE}.img"
+  --debian-release)
+    DEBIAN_RELEASE="$2"
+    BASE_IMG="${WORKDIR}/debian-${DEBIAN_RELEASE}.qcow2"
     shift 2
     ;;
   --username)
@@ -165,25 +149,6 @@ check_prerequisites() {
 
   log_info "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
 
-  local missing_tools=()
-  for tool in virsh virt-install qemu-img wget mkisofs; do
-    if ! command -v "$tool" &>/dev/null; then
-      missing_tools+=("$tool")
-    fi
-  done
-
-  if [[ ${#missing_tools[@]} -gt 0 ]]; then
-    log_error "Missing required tools: ${missing_tools[*]}"
-    log_error "Install on ubuntu: sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
-    exit 1
-  fi
-
-  if ! systemctl is-active --quiet libvirtd; then
-    log_error "libvirtd service is not running"
-    log_error "Start with: sudo systemctl start libvirtd"
-    exit 1
-  fi
-
   if ! groups | grep -q libvirt; then
     log_warn "User not in libvirt group. You may need sudo for virsh commands"
     log_warn "Add user to group: sudo usermod -a -G libvirt \$USER"
@@ -227,30 +192,46 @@ stop_sudo_keepalive() {
   SUDO_KEEPALIVE_PID=""
 }
 
-download_ubuntu_image() {
-  log_info "Preparing Ubuntu cloud image..."
+download_debian_image() {
+  log_info "Preparing Debian cloud image..."
 
   if [[ -f "$BASE_IMG" ]]; then
-    log_info "Using existing Ubuntu image: $BASE_IMG"
+    log_info "Using existing Debian image: $BASE_IMG"
     return 0
   fi
 
-  log_info "Downloading Ubuntu $UBUNTU_RELEASE cloud image..."
-  log_info "URL: $UBUNTU_IMG_URL"
+  log_info "Downloading Debian $DEBIAN_RELEASE cloud image..."
+
+  # Updated URL format for Debian cloud images
+  local download_url="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+
+  # Handle different Debian releases
+  if [[ "$DEBIAN_RELEASE" == "bookworm" ]]; then
+    download_url="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+  elif [[ "$DEBIAN_RELEASE" == "bullseye" ]]; then
+    download_url="https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2"
+  elif [[ "$DEBIAN_RELEASE" == "trixie" ]]; then
+    download_url="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+  else
+    log_error "Unsupported Debian release: $DEBIAN_RELEASE"
+    exit 1
+  fi
+
+  log_info "URL: $download_url"
 
   sudo mkdir -p "$WORKDIR"
   sudo chown "$QEMU_USER:$QEMU_GROUP" "$WORKDIR"
   sudo chmod 755 "$WORKDIR"
 
-  if ! sudo wget -O "$BASE_IMG" "$UBUNTU_IMG_URL"; then
-    log_error "Failed to download Ubuntu cloud image"
+  if ! sudo wget -O "$BASE_IMG" "$download_url"; then
+    log_error "Failed to download Debian cloud image"
     sudo rm -f "$BASE_IMG"
     exit 1
   fi
 
   sudo chown "$QEMU_USER:$QEMU_GROUP" "$BASE_IMG"
   sudo chmod 644 "$BASE_IMG"
-  log_success "Ubuntu cloud image downloaded: $BASE_IMG"
+  log_success "Debian cloud image downloaded: $BASE_IMG"
 }
 
 create_vm_disk() {
@@ -281,7 +262,6 @@ generate_cloud_init() {
   local pub_key
   pub_key=$(cat "$SSH_KEY")
 
-  # Create user-data file
   sudo tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
 hostname: $VM_NAME
@@ -290,7 +270,7 @@ manage_etc_hosts: true
 # User configuration
 users:
   - name: $USERNAME
-    groups: [sudo]
+    groups: sudo
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
@@ -307,7 +287,6 @@ packages:
   - curl
   - wget
   - vim
-  - micro
   - htop
   - git
   - unzip
@@ -335,13 +314,11 @@ write_files:
 final_message: "VM $VM_NAME setup complete!"
 EOF
 
-  # Create meta-data file
   sudo tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
 instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
-  # Create network-config file
   sudo tee "${CLOUD_INIT_DIR}/network-config" >/dev/null <<EOF
 version: 2
 ethernets:
@@ -381,41 +358,34 @@ launch_vm() {
     network_config="bridge=$BRIDGE_IF,model=virtio"
   fi
 
-  local os_variant="ubuntu24.04"
-  case "$UBUNTU_RELEASE" in
-  # "plucky") os_variant="ubuntu25.04" ;;
-  "noble") os_variant="ubuntu24.04" ;;
-  "jammy") os_variant="ubuntu22.04" ;;
-  "focal") os_variant="ubuntu20.04" ;;
-  *) log_warn "Unknown Ubuntu release '$UBUNTU_RELEASE', using ubuntu22.04 as os-variant" ;;
-  esac
+  # Determine OS variant
+  local os_variant="debian12"
+  if [[ "$DEBIAN_RELEASE" == "bullseye" ]]; then
+    os_variant="debian11"
+  elif [[ "$DEBIAN_RELEASE" == "bookworm" ]]; then
+    os_variant="debian12"
+  elif [[ "$DEBIAN_RELEASE" == "trixie" ]]; then
+    os_variant="debian12" # Use debian12 for now until trixie is recognized
+  fi
 
-  log_info "VM Configuration:"
-  log_info "  Name: $VM_NAME"
-  log_info "  Memory: ${RAM_MB}MB"
-  log_info "  vCPUs: $VCPUS"
-  log_info "  Disk: $DISK_IMG ($DISK_SIZE)"
-  log_info "  Network: $network_config"
-  log_info "  OS Variant: $os_variant"
-
-  if ! virt-install \
-    --connect qemu:///system \
-    --name "$VM_NAME" \
-    --memory "$RAM_MB" \
-    --vcpus "$VCPUS" \
-    --disk path="$DISK_IMG",format=qcow2,bus=virtio \
-    --disk path="$SEED_ISO",device=cdrom \
-    --os-variant "$os_variant" \
-    --virt-type kvm \
-    --graphics none \
-    --network "$network_config" \
-    --import \
-    --noautoconsole; then
+  if
+    ! virt-install \
+      --connect qemu:///system \
+      --name "$VM_NAME" \
+      --memory "$RAM_MB" \
+      --vcpus "$VCPUS" \
+      --disk path="$DISK_IMG",format=qcow2,bus=virtio \
+      --disk path="$SEED_ISO",device=cdrom \
+      --os-variant "$os_variant" \
+      --virt-type kvm \
+      --graphics none \
+      --network "$network_config" \
+      --import \
+      --noautoconsole
+  then
     log_error "Failed to create VM"
     exit 1
   fi
-
-  # --channel unix,target.type=virtio,target.name=org.qemu.guest_agent.0 \
 
   log_success "VM '$VM_NAME' created successfully!"
 
@@ -428,27 +398,23 @@ launch_vm() {
 }
 
 show_completion_info() {
-  log_success "=== VM Creation Complete ==="
+  log_info "VM creation complete!"
+  log_info "VM Name: $VM_NAME"
+  log_info "Working Directory: $WORKDIR"
+  log_info "Cloud-init Directory: $CLOUD_INIT_DIR"
+  log_info "Base Image: $BASE_IMG"
+  log_info "VM Disk: $DISK_IMG"
+  log_info "Cloud-init ISO: $SEED_ISO"
+  log_info "Bridge Interface: $BRIDGE_IF"
+  log_info "Username: $USERNAME"
+  log_info "SSH Key: $SSH_KEY"
+  log_info "Debian Release: $DEBIAN_RELEASE"
+  log_info "Disk Size: $DISK_SIZE"
+  log_info "RAM: $RAM_MB MB"
+  log_info "vCPUs: $VCPUS"
+
   echo
-  log_info "VM Details:"
-  echo "  Name: $VM_NAME"
-  echo "  Memory: ${RAM_MB}MB"
-  echo "  vCPUs: $VCPUS"
-  echo "  Disk: $DISK_SIZE"
-  echo "  Username: $USERNAME"
-  echo "  SSH Key: $SSH_KEY"
-  echo
-  log_info "Useful Commands:"
-  echo "  Check VM status:    virsh list --all"
-  echo "  Start VM:           virsh start $VM_NAME"
-  echo "  Stop VM:            virsh shutdown $VM_NAME"
-  echo "  Force stop VM:      virsh destroy $VM_NAME"
-  echo "  Delete VM:          virsh undefine $VM_NAME"
-  echo "  Console access:     virsh console $VM_NAME"
-  echo "  Get VM IP:          virsh domifaddr $VM_NAME"
-  echo
-  log_info "SSH Access:"
-  echo "  Wait 2-3 minutes for cloud-init to complete"
+  echo "  Connect to console: virsh console $VM_NAME"
   echo "  Find VM IP:         virsh domifaddr $VM_NAME"
   echo "  SSH by name:        ssh $USERNAME@$VM_NAME"
   echo "  SSH by IP:          ssh $USERNAME@<VM_IP>"
@@ -457,20 +423,20 @@ show_completion_info() {
 }
 
 main() {
-  log_info "Starting VM creation..."
+  log_info "Starting Debian VM creation..."
   log_info "VM Name: $VM_NAME"
   log_info "Working Directory: $WORKDIR"
 
   check_prerequisites
   start_sudo_keepalive
-  download_ubuntu_image
+  download_debian_image
   create_vm_disk
   generate_cloud_init
   create_cloud_init_iso
   launch_vm
   show_completion_info
 
-  log_success "All done! Your VM is ready."
+  log_success "All done! Your Debian VM is ready."
 }
 
 main "$@"

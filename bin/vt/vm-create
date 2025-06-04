@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
 VCPUS=4
 RAM_MB=4096
 DISK_SIZE="40G"
@@ -21,25 +25,32 @@ if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
 elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
     SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 else
-    ssh-keygen -t rsa
+    ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
     SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 fi
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
-log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
-
 SUDO_KEEPALIVE_PID=""
 
+start_sudo_keepalive() {
+    slog "Starting sudo keepalive process..."
+    sudo -v
+    (while true; do
+        sudo -v
+        sleep 50
+    done) &
+    SUDO_KEEPALIVE_PID=$!
+}
+
+stop_sudo_keepalive() {
+    if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
+        slog "Stopping sudo keepalive process..."
+        kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
+    fi
+    SUDO_KEEPALIVE_PID=""
+}
+
 cleanup_on_error() {
-    log_warn "Cleaning up due to error..."
+    warn "Cleaning up due to error..."
     sudo rm -f "$DISK_IMG" 2>/dev/null || true
     sudo rm -f "$SEED_ISO" 2>/dev/null || true
     sudo virsh destroy "$VM_NAME" 2>/dev/null || true
@@ -65,7 +76,7 @@ configure_ubuntu() {
     "jammy") OS_VARIANT="ubuntu22.04" ;;
     "focal") OS_VARIANT="ubuntu20.04" ;;
     *)
-        log_warn "Unknown Ubuntu release '$RELEASE', using ubuntu24.04 as os-variant"
+        warn "Unknown Ubuntu release '$RELEASE', using ubuntu24.04 as os-variant"
         OS_VARIANT="ubuntu24.04"
         ;;
     esac
@@ -88,7 +99,7 @@ configure_fedora() {
     OS_VARIANT="fedora${RELEASE}"
 
     if ! osinfo-query os 2>/dev/null | grep -q "fedora${RELEASE}"; then
-        log_warn "OS variant 'fedora${RELEASE}' not found, using 'fedora41'"
+        warn "OS variant 'fedora${RELEASE}' not found, using 'fedora41'"
         OS_VARIANT="fedora41"
     fi
 }
@@ -105,7 +116,7 @@ configure_arch() {
     OS_VARIANT="archlinux"
 
     if ! osinfo-query os 2>/dev/null | grep -q "archlinux"; then
-        log_warn "OS variant 'archlinux' not found, using 'linux'"
+        warn "OS variant 'archlinux' not found, using 'linux'"
         OS_VARIANT="linux"
     fi
 }
@@ -129,7 +140,7 @@ configure_debian() {
         OS_VARIANT="debian12" # Use debian12 for now until trixie is recognized
         ;;
     *)
-        log_error "Unsupported Debian release: $RELEASE"
+        fail "Unsupported Debian release: $RELEASE"
         exit 1
         ;;
     esac
@@ -146,14 +157,14 @@ configure_distribution() {
     arch) configure_arch ;;
     debian) configure_debian ;;
     *)
-        log_error "Unsupported distribution: $DISTRO"
-        log_error "Supported distributions: ubuntu, fedora, arch, debian"
+        fail "Unsupported distribution: $DISTRO"
+        fail "Supported distributions: ubuntu, fedora, arch, debian"
         exit 1
         ;;
     esac
 
     if [[ -z "$VM_NAME" ]]; then
-        log_error "VM name is empty after configuration"
+        fail "VM name is empty after configuration"
         exit 1
     fi
 
@@ -285,7 +296,7 @@ while [[ $# -gt 0 ]]; do
         exit 0
         ;;
     *)
-        log_error "Unknown option: $1"
+        fail "Unknown option: $1"
         usage
         exit 1
         ;;
@@ -293,16 +304,16 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$DISTRO" ]]; then
-    log_error "Distribution is required. Use --distro ubuntu|fedora|arch|debian"
+    fail "Distribution is required. Use --distro ubuntu|fedora|arch|debian"
     usage
     exit 1
 fi
 
 check_prerequisites() {
-    log_info "Checking prerequisites..."
+    slog "Checking prerequisites..."
 
     if ! sudo -v; then
-        log_error "This script requires sudo privileges to create files in system directories"
+        fail "This script requires sudo privileges to create files in system directories"
         exit 1
     fi
 
@@ -316,89 +327,71 @@ check_prerequisites() {
         QEMU_USER="libvirt"
         QEMU_GROUP="libvirt"
     else
-        log_warn "Could not determine QEMU user, using 'root:kvm' as fallback"
+        warn "Could not determine QEMU user, using 'root:kvm' as fallback"
         QEMU_USER="root"
         QEMU_GROUP="kvm"
     fi
 
-    log_info "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
+    slog "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
 
     local missing_tools=()
     for tool in virsh virt-install qemu-img wget mkisofs; do
-        if ! command -v "$tool" &>/dev/null; then
+        if ! has_cmd "$tool"; then
             missing_tools+=("$tool")
         fi
     done
 
     if [[ ${#missing_tools[@]} -gt 0 ]]; then
-        log_error "Missing required tools: ${missing_tools[*]}"
-        log_error "Install with: $INSTALL_CMD"
+        fail "Missing required tools: ${missing_tools[*]}"
+        fail "Install with: $INSTALL_CMD"
         exit 1
     fi
 
     if ! systemctl is-active --quiet libvirtd; then
-        log_error "libvirtd service is not running"
-        log_error "Start with: sudo systemctl start libvirtd"
+        fail "libvirtd service is not running"
+        fail "Start with: sudo systemctl start libvirtd"
         exit 1
     fi
 
     if ! groups | grep -q libvirt; then
-        log_warn "User not in libvirt group. You may need sudo for virsh commands"
-        log_warn "Add user to group: sudo usermod -a -G libvirt \$USER"
+        warn "User not in libvirt group. You may need sudo for virsh commands"
+        warn "Add user to group: sudo usermod -a -G libvirt \$USER"
     fi
 
     if [[ ! -f "$SSH_KEY" ]]; then
-        log_error "SSH public key not found at: $SSH_KEY"
-        log_error "Generate with: ssh-keygen -t rsa -C 'your_email@example.com'"
+        fail "SSH public key not found at: $SSH_KEY"
+        fail "Generate with: ssh-keygen -t rsa -C 'your_email@example.com'"
         exit 1
     fi
 
     if virsh list --all | grep -q "$VM_NAME"; then
-        log_error "VM '$VM_NAME' already exists"
-        log_error "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
+        fail "VM '$VM_NAME' already exists"
+        fail "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
         exit 1
     fi
 
     if ! ip link show "$BRIDGE_IF" &>/dev/null; then
-        log_warn "Bridge '$BRIDGE_IF' not found, will use default libvirt network"
+        warn "Bridge '$BRIDGE_IF' not found, will use default libvirt network"
         BRIDGE_IF="default"
     fi
 
-    log_success "Prerequisites check passed"
-}
-
-start_sudo_keepalive() {
-    log_info "Starting sudo keepalive process..."
-    sudo -v
-    (while true; do
-        sudo -v
-        sleep 50
-    done) &
-    SUDO_KEEPALIVE_PID=$!
-}
-
-stop_sudo_keepalive() {
-    if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
-        log_info "Stopping sudo keepalive process..."
-        kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
-    fi
-    SUDO_KEEPALIVE_PID=""
+    success "Prerequisites check passed"
 }
 
 download_image() {
-    log_info "Preparing $DISTRO cloud image..."
+    slog "Preparing $DISTRO cloud image..."
 
     if [[ -f "$BASE_IMG" ]]; then
-        log_info "Using existing $DISTRO image: $BASE_IMG"
+        slog "Using existing $DISTRO image: $BASE_IMG"
         return 0
     fi
 
-    log_info "Downloading $DISTRO $RELEASE cloud image..."
-    log_info "URL: $IMG_URL"
+    slog "Downloading $DISTRO $RELEASE cloud image..."
+    slog "URL: $IMG_URL"
 
     sudo mkdir -p "$WORKDIR"
     if [[ ! -d "$WORKDIR" ]]; then
-        log_error "Failed to create working directory: $WORKDIR"
+        fail "Failed to create working directory: $WORKDIR"
         exit 1
     fi
 
@@ -406,48 +399,48 @@ download_image() {
     sudo chmod 755 "$WORKDIR"
 
     if ! sudo wget -O "$BASE_IMG" "$IMG_URL"; then
-        log_error "Failed to download $DISTRO cloud image"
+        fail "Failed to download $DISTRO cloud image"
         sudo rm -f "$BASE_IMG"
         exit 1
     fi
 
     if [[ ! -f "$BASE_IMG" ]]; then
-        log_error "Image file was not created: $BASE_IMG"
+        fail "Image file was not created: $BASE_IMG"
         exit 1
     fi
 
     sudo chown "$QEMU_USER:$QEMU_GROUP" "$BASE_IMG"
     sudo chmod 644 "$BASE_IMG"
-    log_success "$DISTRO cloud image downloaded: $BASE_IMG"
+    success "$DISTRO cloud image downloaded: $BASE_IMG"
 }
 
 create_vm_disk() {
-    log_info "Creating VM disk..."
+    slog "Creating VM disk..."
 
     if ! sudo cp "$BASE_IMG" "$DISK_IMG"; then
-        log_error "Failed to copy base image"
+        fail "Failed to copy base image"
         exit 1
     fi
 
     if ! sudo qemu-img resize "$DISK_IMG" "$DISK_SIZE"; then
-        log_error "Failed to resize VM disk"
+        fail "Failed to resize VM disk"
         exit 1
     fi
 
     sudo chown "$QEMU_USER:$QEMU_GROUP" "$DISK_IMG"
     sudo chmod 644 "$DISK_IMG"
-    log_success "VM disk created: $DISK_IMG ($DISK_SIZE)"
+    success "VM disk created: $DISK_IMG ($DISK_SIZE)"
 }
 
 generate_cloud_init() {
-    log_info "Generating cloud-init configuration..."
+    slog "Generating cloud-init configuration..."
 
     sudo mkdir -p "$CLOUD_INIT_DIR"
     sudo chown "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
     sudo chmod 755 "$CLOUD_INIT_DIR"
 
     if [[ ! -f "$SSH_KEY" ]]; then
-        log_error "SSH public key not found at: $SSH_KEY"
+        fail "SSH public key not found at: $SSH_KEY"
         exit 1
     fi
 
@@ -523,7 +516,7 @@ generate_cloud_init() {
       docker run hello-world
 "
 
-        log_info "Adding Docker installation to cloud-init"
+        slog "Adding Docker installation to cloud-init"
 
         case "$DISTRO" in
         ubuntu | debian)
@@ -567,7 +560,7 @@ generate_cloud_init() {
       brew install <package>
 "
 
-        log_info "Adding Homebrew installation to cloud-init"
+        slog "Adding Homebrew installation to cloud-init"
 
         case "$DISTRO" in
         ubuntu | debian)
@@ -618,7 +611,7 @@ generate_cloud_init() {
         ilmc nvim
 "
 
-        log_info "Adding dotfiles installation to cloud-init"
+        slog "Adding dotfiles installation to cloud-init"
 
         runcmd+=(
             "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)\" -- $DOTFILES_GROUP'"
@@ -686,7 +679,7 @@ EOF
     if [[ ! -f "${CLOUD_INIT_DIR}/user-data" ||
         ! -f "${CLOUD_INIT_DIR}/meta-data" ||
         ! -f "${CLOUD_INIT_DIR}/network-config" ]]; then
-        log_error "Failed to create one or more cloud-init configuration files"
+        fail "Failed to create one or more cloud-init configuration files"
         exit 1
     fi
 
@@ -694,32 +687,32 @@ EOF
     sudo chmod -R 644 "$CLOUD_INIT_DIR"/*
     sudo chmod 755 "$CLOUD_INIT_DIR"
 
-    log_success "Cloud-init configuration generated"
+    success "Cloud-init configuration generated"
 }
 
 create_cloud_init_iso() {
-    log_info "Creating cloud-init ISO..."
+    slog "Creating cloud-init ISO..."
 
     if ! sudo mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
         "${CLOUD_INIT_DIR}/user-data" \
         "${CLOUD_INIT_DIR}/meta-data" \
         "${CLOUD_INIT_DIR}/network-config" 2>/dev/null; then
-        log_error "Failed to create cloud-init ISO"
+        fail "Failed to create cloud-init ISO"
         exit 1
     fi
 
     if [[ ! -f "$SEED_ISO" ]]; then
-        log_error "Cloud-init ISO was not created: $SEED_ISO"
+        fail "Cloud-init ISO was not created: $SEED_ISO"
         exit 1
     fi
 
     sudo chown "$QEMU_USER:$QEMU_GROUP" "$SEED_ISO"
     sudo chmod 644 "$SEED_ISO"
-    log_success "Cloud-init ISO created: $SEED_ISO"
+    success "Cloud-init ISO created: $SEED_ISO"
 }
 
 launch_vm() {
-    log_info "Launching VM '$VM_NAME'..."
+    slog "Launching VM '$VM_NAME'..."
 
     local network_config
     if [[ "$BRIDGE_IF" == "default" ]]; then
@@ -728,14 +721,14 @@ launch_vm() {
         network_config="bridge=$BRIDGE_IF,model=virtio"
     fi
 
-    log_info "VM Configuration:"
-    log_info "  Name: $VM_NAME"
-    log_info "  Distribution: $DISTRO $RELEASE"
-    log_info "  Memory: ${RAM_MB}MB"
-    log_info "  vCPUs: $VCPUS"
-    log_info "  Disk: $DISK_IMG ($DISK_SIZE)"
-    log_info "  Network: $network_config"
-    log_info "  OS Variant: $OS_VARIANT"
+    slog "VM Configuration:"
+    slog "  Name: $VM_NAME"
+    slog "  Distribution: $DISTRO $RELEASE"
+    slog "  Memory: ${RAM_MB}MB"
+    slog "  vCPUs: $VCPUS"
+    slog "  Disk: $DISK_IMG ($DISK_SIZE)"
+    slog "  Network: $network_config"
+    slog "  OS Variant: $OS_VARIANT"
 
     if ! virt-install \
         --connect qemu:///system \
@@ -750,32 +743,32 @@ launch_vm() {
         --network "$network_config" \
         --import \
         --noautoconsole; then
-        log_error "Failed to create VM"
+        fail "Failed to create VM"
         exit 1
     fi
 
     if ! virsh list --all | grep -q "$VM_NAME"; then
-        log_error "VM '$VM_NAME' was not created successfully"
+        fail "VM '$VM_NAME' was not created successfully"
         exit 1
     fi
 
-    log_success "VM '$VM_NAME' created successfully!"
+    success "VM '$VM_NAME' created successfully!"
 
-    log_info "Adding VM to /etc/hosts for name-based access..."
+    slog "Adding VM to /etc/hosts for name-based access..."
     sleep 5
     if [[ -x "$HOME/.ilm/bin/vm-hosts" ]]; then
-        "$HOME/.ilm/bin/vm-hosts" add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
-    elif [[ -x "$(command -v vm-hosts)" ]]; then
-        vm-hosts add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
+        "$HOME/.ilm/bin/vm-hosts" add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
+    elif [[ -x "$(has_cmd vm-hosts)" ]]; then
+        vm-hosts add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
     else
-        log_warn "vm-hosts script not found, skipping /etc/hosts update"
+        warn "vm-hosts script not found, skipping /etc/hosts update"
     fi
 }
 
 show_completion_info() {
-    log_success "=== VM Creation Complete ==="
+    success "=== VM Creation Complete ==="
     echo
-    log_info "VM Details:"
+    slog "VM Details:"
     echo "  Name: $VM_NAME"
     echo "  Distribution: $DISTRO $RELEASE"
     echo "  Memory: ${RAM_MB}MB"
@@ -786,7 +779,7 @@ show_completion_info() {
     echo
 
     if [[ "$INSTALL_DOCKER" == "true" ]]; then
-        log_info "Docker is pre-installed on this VM"
+        slog "Docker is pre-installed on this VM"
         echo "  Docker Commands:"
         echo "    Test Docker:        docker run hello-world"
         echo "    Check version:      docker --version"
@@ -795,7 +788,7 @@ show_completion_info() {
     fi
 
     if [[ "$INSTALL_BREW" == "true" ]]; then
-        log_info "Homebrew is pre-installed on this VM"
+        slog "Homebrew is pre-installed on this VM"
         echo "  Homebrew Commands:"
         echo "    Check version:      brew --version"
         echo "    List packages:      brew list"
@@ -807,7 +800,7 @@ show_completion_info() {
     fi
 
     if [[ -n "$DOTFILES_GROUP" ]]; then
-        log_info "Dotfiles are pre-installed on this VM"
+        slog "Dotfiles are pre-installed on this VM"
         echo "  Dotfiles Commands:"
         echo "    Location:           ~/.ilm"
         echo "    Install shell:      ilmi shell"
@@ -820,7 +813,7 @@ show_completion_info() {
         echo
     fi
 
-    log_info "Useful Commands:"
+    slog "Useful Commands:"
     echo "  Check VM status:    virsh list --all"
     echo "  Start VM:           virsh start $VM_NAME"
     echo "  Stop VM:            virsh shutdown $VM_NAME"
@@ -829,7 +822,7 @@ show_completion_info() {
     echo "  Console access:     virsh console $VM_NAME"
     echo "  Get VM IP:          virsh domifaddr $VM_NAME"
     echo
-    log_info "SSH Access:"
+    slog "SSH Access:"
     echo "  Wait 2-3 minutes for cloud-init to complete"
     echo "  Find VM IP:         virsh domifaddr $VM_NAME"
     echo "  SSH by name:        ssh $USERNAME@$VM_NAME"
@@ -838,20 +831,20 @@ show_completion_info() {
 
     case "$DISTRO" in
     ubuntu | debian)
-        log_info "Package Management:"
+        slog "Package Management:"
         echo "  Update system:      sudo apt update && sudo apt upgrade"
         echo "  Install packages:   sudo apt install <package>"
         echo "  Search packages:    apt search <term>"
         ;;
     fedora)
-        log_info "Fedora Commands:"
+        slog "Fedora Commands:"
         echo "  Update system:      sudo dnf update"
         echo "  Install packages:   sudo dnf install <package>"
         echo "  Search packages:    dnf search <term>"
         echo "  List installed:     dnf list installed"
         ;;
     arch)
-        log_info "Arch Linux Commands:"
+        slog "Arch Linux Commands:"
         echo "  Update system:      sudo pacman -Syu"
         echo "  Install packages:   sudo pacman -S <package>"
         echo "  Search packages:    pacman -Ss <term>"
@@ -861,11 +854,11 @@ show_completion_info() {
     esac
 
     echo
-    log_warn "Note: Cloud-init setup takes 1-3 minutes."
+    warn "Note: Cloud-init setup takes 1-3 minutes."
 }
 
 echo_all_vars() {
-    log_info "All variables:"
+    slog "All variables:"
     echo "  VM_NAME: $VM_NAME"
     echo "  DISTRO: $DISTRO"
     echo "  RELEASE: $RELEASE"
@@ -896,10 +889,10 @@ echo_all_vars() {
 main() {
     configure_distribution
 
-    log_info "Starting $DISTRO VM creation..."
-    log_info "VM Name: $VM_NAME"
-    log_info "Distribution: $DISTRO $RELEASE"
-    log_info "Working Directory: $WORKDIR"
+    slog "Starting $DISTRO VM creation..."
+    slog "VM Name: $VM_NAME"
+    slog "Distribution: $DISTRO $RELEASE"
+    slog "Working Directory: $WORKDIR"
 
     check_prerequisites
     start_sudo_keepalive
@@ -912,7 +905,7 @@ main() {
     show_completion_info
     stop_sudo_keepalive
 
-    log_success "All done! Your $DISTRO VM is ready."
+    success "All done! Your $DISTRO VM is ready."
 }
 
 main "$@"
