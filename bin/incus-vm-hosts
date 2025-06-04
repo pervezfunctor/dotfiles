@@ -1,0 +1,217 @@
+#!/bin/bash
+
+# Script manages /etc/hosts entries for Incus VMs
+
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+
+usage() {
+    cat <<EOF
+Usage: $0 <command> [options]
+
+Manage /etc/hosts entries for Incus VMs automatically.
+
+COMMANDS:
+    add <vm-name>           Add Incus VM to /etc/hosts (auto-detect IP)
+    remove <vm-name>        Remove Incus VM from /etc/hosts
+    list                    List all Incus VM entries in /etc/hosts
+    update                  Update all running Incus VMs in /etc/hosts
+    clean                   Remove entries for non-existent Incus VMs
+
+EXAMPLES:
+    $0 add ubuntu-vm        # Add ubuntu-vm to /etc/hosts
+    $0 remove old-vm        # Remove old-vm from /etc/hosts
+    $0 update               # Update all running Incus VMs
+    $0 list                 # Show all Incus VM entries
+
+EOF
+}
+
+get_vm_ip() {
+    local vm_name="$1"
+
+    if ! incus info "$vm_name" &>/dev/null; then
+        return 1
+    fi
+
+    local state
+    state=$(incus info "$vm_name" | grep "Status:" | awk '{print $2}')
+
+    if [[ "$state" != "Running" ]]; then
+        return 2
+    fi
+
+    local ip
+    ip=$(incus list "$vm_name" --format csv -c 4 | cut -d' ' -f1)
+
+    if [[ -z "$ip" || "$ip" == "-" ]]; then
+        return 3
+    fi
+
+    echo "$ip"
+    return 0
+}
+
+add_vm_to_hosts() {
+    local vm_name="$1"
+
+    local ip
+    ip=$(get_vm_ip "$vm_name")
+    local ret=$?
+    if [[ $ret -ne 0 ]]; then
+        log_error "Could not get IP for Incus VM '$vm_name'. Is it running?"
+        return 1
+    fi
+
+    # Check if entry already exists
+    if grep -q "^[0-9.]* .*$vm_name" /etc/hosts; then
+        log_warn "Entry for '$vm_name' already exists in /etc/hosts"
+        # Update existing entry
+        sudo sed -i "/^[0-9.]* .*$vm_name/d" /etc/hosts
+    fi
+
+    echo "$ip $vm_name" | sudo tee -a /etc/hosts >/dev/null
+    log_success "Added $vm_name ($ip) to /etc/hosts"
+}
+
+remove_vm_from_hosts() {
+    local vm_name="$1"
+
+    if grep -q "^[0-9.]* .*$vm_name" /etc/hosts; then
+        sudo sed -i "/^[0-9.]* .*$vm_name/d" /etc/hosts
+        log_success "Removed $vm_name from /etc/hosts"
+    else
+        log_warn "No entry found for '$vm_name' in /etc/hosts"
+    fi
+}
+
+list_vm_hosts() {
+    log_info "Incus VM entries in /etc/hosts:"
+    echo
+
+    # Get all Incus VM names
+    local vm_names
+    vm_names=$(incus list --format csv -c n | grep -v NAME)
+
+    if [[ -z "$vm_names" ]]; then
+        log_warn "No Incus VMs found"
+        return 0
+    fi
+
+    # Find entries in /etc/hosts for these VMs
+    local found=false
+    while IFS= read -r vm; do
+        if grep -q "^[0-9.]* .*$vm" /etc/hosts; then
+            grep "^[0-9.]* .*$vm" /etc/hosts
+            found=true
+        fi
+    done <<<"$vm_names"
+
+    if [[ "$found" == "false" ]]; then
+        log_warn "No Incus VM entries found in /etc/hosts"
+    fi
+}
+
+update_all_vms() {
+    log_info "Updating /etc/hosts for all running Incus VMs..."
+
+    local vms
+    vms=$(incus list --format csv -c n,s | grep RUNNING | cut -d',' -f1)
+
+    if [[ -z "$vms" ]]; then
+        log_warn "No running Incus VMs found"
+        return 0
+    fi
+
+    while IFS= read -r vm; do
+        if [[ -n "$vm" ]]; then
+            log_info "Processing VM: $vm"
+            add_vm_to_hosts "$vm"
+        fi
+    done <<<"$vms"
+
+    log_success "Updated /etc/hosts for all running Incus VMs"
+}
+
+clean_vm_hosts() {
+    log_info "Cleaning up /etc/hosts entries for non-existent Incus VMs..."
+
+    # Get all VM names from /etc/hosts
+    local host_vms
+    host_vms=$(grep -E "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" /etc/hosts | awk '{print $2}' || true)
+
+    if [[ -z "$host_vms" ]]; then
+        log_info "No VM entries found in /etc/hosts"
+        return 0
+    fi
+
+    # Get all existing Incus VM names
+    local incus_vms
+    incus_vms=$(incus list --format csv -c n | grep -v NAME)
+
+    while IFS= read -r vm; do
+        if [[ -n "$vm" ]]; then
+            # Check if this VM exists in Incus
+            if ! echo "$incus_vms" | grep -q "^$vm$"; then
+                log_warn "VM '$vm' no longer exists in Incus, removing from /etc/hosts"
+                remove_vm_from_hosts "$vm"
+            fi
+        fi
+    done <<<"$host_vms"
+
+    log_success "Cleanup complete"
+}
+
+if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+fi
+
+command="$1"
+vm_name="${2:-}"
+
+case "$command" in
+add)
+    [[ -z "$vm_name" ]] && {
+        log_error "VM name required"
+        usage
+        exit 1
+    }
+    add_vm_to_hosts "$vm_name"
+    ;;
+remove)
+    [[ -z "$vm_name" ]] && {
+        log_error "VM name required"
+        usage
+        exit 1
+    }
+    remove_vm_from_hosts "$vm_name"
+    ;;
+list)
+    list_vm_hosts
+    ;;
+update)
+    update_all_vms
+    ;;
+clean)
+    clean_vm_hosts
+    ;;
+--help | -h)
+    usage
+    ;;
+*)
+    log_error "Unknown command: $command"
+    usage
+    exit 1
+    ;;
+esac
