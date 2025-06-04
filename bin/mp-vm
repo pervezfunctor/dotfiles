@@ -4,10 +4,12 @@ set -euo pipefail
 
 # Source shared functions if available
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-if [[ -f "$DOT_DIR/share/fns" ]]; then
-    # shellcheck disable=SC1091
-    source "$DOT_DIR/share/fns"
-fi
+
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/fns"
 
 usage() {
     cat <<EOF
