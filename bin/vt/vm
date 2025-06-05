@@ -29,6 +29,10 @@ COMMANDS:
     logs <vm-name>      Show VM logs
     cleanup             Remove stopped VMs and orphaned files
     ssh <vm-name>       Connect to VM via SSH
+    usb-list            List all available USB devices on host
+    usb-attached <vm>   List USB devices attached to VM
+    usb-attach <vm> <device> [name]  Attach USB device to VM
+    usb-detach <vm> <device>         Detach USB device from VM
 
 EXAMPLES:
     $0 install                 # Install virtualization tools
@@ -40,6 +44,9 @@ EXAMPLES:
     $0 ssh coreos              # Connect to CoreOS VM as 'core' user
     $0 ssh fedora fedora       # Connect to Fedora VM as 'fedora' user
     $0 delete old-vm           # Delete 'old-vm' completely
+    $0 usb-list                # List available USB devices
+    $0 usb-attach ubuntu 1234:5678  # Attach USB device to VM
+    $0 usb-detach ubuntu my-usb      # Detach USB device from VM
 
 EOF
 }
@@ -435,6 +442,250 @@ show_ip() {
     fi
 }
 
+# USB Device Management Functions
+list_host_usb_devices() {
+    slog "USB devices available on host:"
+    echo
+
+    if ! command -v lsusb >/dev/null; then
+        fail "lsusb command not found. Please install usbutils package."
+        return 1
+    fi
+
+    echo "Format: Bus Device ID: Vendor:Product Description"
+    echo "────────────────────────────────────────────────────────────────"
+    lsusb | while read -r line; do
+        # Parse lsusb output: Bus 001 Device 002: ID 1234:5678 Description
+        if [[ $line =~ Bus\ ([0-9]+)\ Device\ ([0-9]+):\ ID\ ([0-9a-fA-F]+):([0-9a-fA-F]+)\ (.+) ]]; then
+            bus="${BASH_REMATCH[1]}"
+            device="${BASH_REMATCH[2]}"
+            vendor="${BASH_REMATCH[3]}"
+            product="${BASH_REMATCH[4]}"
+            description="${BASH_REMATCH[5]}"
+
+            printf "%-3s %-6s %s:%s %s\n" "$bus" "$device" "$vendor" "$product" "$description"
+        fi
+    done
+    echo
+    slog "Usage examples:"
+    slog "  By USB ID: $0 usb-attach VM_NAME vendor:product"
+    slog "  By Bus/Device: $0 usb-attach VM_NAME bus.device"
+}
+
+list_vm_usb_devices() {
+    local vm_name="$1"
+    check_vm "$vm_name" || return 1
+
+    slog "USB devices attached to VM '$vm_name':"
+    echo
+
+    # Get USB devices from VM XML configuration
+    local usb_devices
+    usb_devices=$(virsh dumpxml "$vm_name" | grep -A 5 "hostdev.*usb" | grep -E "(vendor|product|bus|device)" || true)
+
+    if [[ -z "$usb_devices" ]]; then
+        slog "No USB devices currently attached to VM '$vm_name'"
+        return 0
+    fi
+
+    echo "USB devices found in VM configuration:"
+    echo "─────────────────────────────────────────────"
+
+    # Parse and display USB device information
+    virsh dumpxml "$vm_name" | grep -A 10 "hostdev.*usb" | while IFS= read -r line; do
+        if [[ $line =~ vendor.*id=.0x([0-9a-fA-F]+). ]]; then
+            vendor_id="${BASH_REMATCH[1]}"
+        elif [[ $line =~ product.*id=.0x([0-9a-fA-F]+). ]]; then
+            product_id="${BASH_REMATCH[1]}"
+            if [[ -n "$vendor_id" ]]; then
+                printf "USB Device: %s:%s\n" "$vendor_id" "$product_id"
+                vendor_id=""
+                product_id=""
+            fi
+        fi
+    done
+}
+
+parse_usb_device() {
+    local device_spec="$1"
+
+    # Parse different device specification formats
+    if [[ "$device_spec" =~ ^([0-9a-fA-F]+):([0-9a-fA-F]+)$ ]]; then
+        # Format: vendorid:productid (e.g., 1234:5678)
+        echo "vendor"
+        echo "${BASH_REMATCH[1]}"
+        echo "product"
+        echo "${BASH_REMATCH[2]}"
+    elif [[ "$device_spec" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+        # Format: bus.device (e.g., 001.002)
+        echo "bus"
+        echo "${BASH_REMATCH[1]}"
+        echo "device"
+        echo "${BASH_REMATCH[2]}"
+    else
+        fail "Invalid device specification: $device_spec"
+        fail "Supported formats:"
+        fail "  vendorid:productid (e.g., 1234:5678)"
+        fail "  bus.device (e.g., 001.002)"
+        return 1
+    fi
+}
+
+attach_usb_device() {
+    local vm_name="$1"
+    local device_spec="$2"
+    local device_name="${3:-usb-$(date +%s)}"
+
+    check_vm "$vm_name" || return 1
+
+    local state
+    state=$(virsh domstate "$vm_name")
+    if [[ "$state" != "running" ]]; then
+        fail "VM '$vm_name' is not running (state: $state)"
+        slog "Start the VM with: $0 start $vm_name"
+        return 1
+    fi
+
+    # Parse device specification
+    local device_config
+    device_config=$(parse_usb_device "$device_spec") || return 1
+
+    slog "Attaching USB device to VM '$vm_name'..."
+    slog "  Device: $device_spec"
+    slog "  Name: $device_name"
+
+    # Parse the device configuration
+    local lines=()
+    while IFS= read -r line; do
+        if [[ -n "$line" ]]; then
+            lines+=("$line")
+        fi
+    done <<<"$device_config"
+
+    # Create temporary XML file for USB device
+    local temp_xml
+    temp_xml=$(mktemp)
+
+    if [[ "${lines[0]}" == "vendor" ]]; then
+        # Vendor:Product ID format
+        local vendor_id="${lines[1]}"
+        local product_id="${lines[3]}"
+
+        cat >"$temp_xml" <<EOF
+<hostdev mode='subsystem' type='usb' managed='yes'>
+  <source>
+    <vendor id='0x$vendor_id'/>
+    <product id='0x$product_id'/>
+  </source>
+</hostdev>
+EOF
+    elif [[ "${lines[0]}" == "bus" ]]; then
+        # Bus.Device format
+        local bus_num="${lines[1]}"
+        local dev_num="${lines[3]}"
+
+        cat >"$temp_xml" <<EOF
+<hostdev mode='subsystem' type='usb' managed='yes'>
+  <source>
+    <address bus='$bus_num' device='$dev_num'/>
+  </source>
+</hostdev>
+EOF
+    else
+        fail "Invalid device configuration"
+        rm -f "$temp_xml"
+        return 1
+    fi
+
+    # Attach the USB device
+    if virsh attach-device "$vm_name" "$temp_xml" --live; then
+        success "USB device '$device_spec' attached to VM '$vm_name'"
+        slog "The device should now be available inside the VM"
+    else
+        fail "Failed to attach USB device '$device_spec' to VM '$vm_name'"
+        rm -f "$temp_xml"
+        return 1
+    fi
+
+    rm -f "$temp_xml"
+}
+
+detach_usb_device() {
+    local vm_name="$1"
+    local device_spec="$2"
+
+    check_vm "$vm_name" || return 1
+
+    local state
+    state=$(virsh domstate "$vm_name")
+    if [[ "$state" != "running" ]]; then
+        fail "VM '$vm_name' is not running (state: $state)"
+        slog "Start the VM with: $0 start $vm_name"
+        return 1
+    fi
+
+    # Parse device specification to create matching XML
+    local device_config
+    device_config=$(parse_usb_device "$device_spec") || return 1
+
+    slog "Detaching USB device '$device_spec' from VM '$vm_name'..."
+
+    # Parse the device configuration
+    local lines=()
+    while IFS= read -r line; do
+        if [[ -n "$line" ]]; then
+            lines+=("$line")
+        fi
+    done <<<"$device_config"
+
+    # Create temporary XML file for USB device
+    local temp_xml
+    temp_xml=$(mktemp)
+
+    if [[ "${lines[0]}" == "vendor" ]]; then
+        # Vendor:Product ID format
+        local vendor_id="${lines[1]}"
+        local product_id="${lines[3]}"
+
+        cat >"$temp_xml" <<EOF
+<hostdev mode='subsystem' type='usb' managed='yes'>
+  <source>
+    <vendor id='0x$vendor_id'/>
+    <product id='0x$product_id'/>
+  </source>
+</hostdev>
+EOF
+    elif [[ "${lines[0]}" == "bus" ]]; then
+        # Bus.Device format
+        local bus_num="${lines[1]}"
+        local dev_num="${lines[3]}"
+
+        cat >"$temp_xml" <<EOF
+<hostdev mode='subsystem' type='usb' managed='yes'>
+  <source>
+    <address bus='$bus_num' device='$dev_num'/>
+  </source>
+</hostdev>
+EOF
+    else
+        fail "Invalid device configuration"
+        rm -f "$temp_xml"
+        return 1
+    fi
+
+    # Detach the USB device
+    if virsh detach-device "$vm_name" "$temp_xml" --live; then
+        success "USB device '$device_spec' detached from VM '$vm_name'"
+    else
+        fail "Failed to detach USB device '$device_spec' from VM '$vm_name'"
+        fail "The device may not be attached or the specification may be incorrect"
+        rm -f "$temp_xml"
+        return 1
+    fi
+
+    rm -f "$temp_xml"
+}
+
 if [[ $# -eq 0 ]]; then
     usage
     exit 1
@@ -538,6 +789,45 @@ ssh)
         exit 1
     }
     ssh_to_vm "$vm_name" "${3:-}"
+    ;;
+usb-list)
+    list_host_usb_devices
+    ;;
+usb-attached)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    list_vm_usb_devices "$vm_name"
+    ;;
+usb-attach)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    device_spec="${3:-}"
+    [[ -z "$device_spec" ]] && {
+        fail "Device specification required"
+        usage
+        exit 1
+    }
+    attach_usb_device "$vm_name" "$device_spec" "${4:-}"
+    ;;
+usb-detach)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    device_spec="${3:-}"
+    [[ -z "$device_spec" ]] && {
+        fail "Device specification required"
+        usage
+        exit 1
+    }
+    detach_usb_device "$vm_name" "$device_spec"
     ;;
 --help | -h)
     usage
