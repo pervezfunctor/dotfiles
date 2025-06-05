@@ -270,7 +270,7 @@ vm_install() {
     si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils \
         virgl-server qemu-utils
 
-    libcirt_config_install
+    libvirt_config_install
 }
 
 incus_install() {
