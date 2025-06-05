@@ -14,8 +14,8 @@ update_packages() {
 
 alpine_packages() {
     sudo apk add --no-cache curl wget gcc libc-dev make gzip zsh git unzip \
-        neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat \
-        trash-cli starship stow just file tree fd htop sd
+        neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat nmap \
+        trash-cli starship stow just file tree fd htop sd net-tools iproute2
 }
 
 core_install() {
@@ -43,7 +43,7 @@ essential_install() {
 
     sys_python_install
 
-    si zip micro p7zip gawk
+    si zip micro p7zip gawk net-tools iproute2 nmap
 
     slog "Essential packages installation done!"
 }

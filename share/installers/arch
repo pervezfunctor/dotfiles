@@ -24,7 +24,8 @@ arch_packages() {
 
     si git-core github-cli git-delta unzip wget curl trash-cli tar stow \
         gcc make file starship gum wl-clipboard tree bat eza fzf ripgrep \
-        zoxide fd htop sd yazi bat tealdeer lazygit libsecret
+        zoxide fd htop sd yazi bat tealdeer lazygit libsecret net-tools \
+        iproute2 nmap
 
     slog "Installing packages done!"
 }
@@ -69,7 +70,7 @@ essential_install() {
 
     sys_python_install
 
-    si unarchiver zip gawk tmux pkg-config \
+    si unarchiver zip gawk tmux pkg-config net-tools iproute2 nmap \
         p7zip cmake readline sqlite libffi zlib xz pkgfile gum
     sudo pkgfile --update
 

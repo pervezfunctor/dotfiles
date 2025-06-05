@@ -68,7 +68,7 @@ fedora_packages() {
 
     si git-core gh git-delta unzip wget curl trash-cli tar stow gcc make file \
         gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate \
-        cheat libsecret
+        cheat libsecret net-tools iproute2 nmap
 
     slog "Installing packages done!"
 }
@@ -113,7 +113,8 @@ centos_packages() {
     slog "Installing packages"
 
     si git unzip wget curl tar gcc make gum tree bat ripgrep \
-        htop bat plocate file just emacs-nox neovim tmux zsh libsecret
+        htop bat plocate file just emacs-nox neovim tmux zsh libsecret \
+        net-tools iproute2 nmap
 
     slog "Installing packages done!"
 }
@@ -159,7 +160,7 @@ essential_install() {
     sys_python_install
 
     si zip p7zip cmake unar gawk readline-devel sqlite-devel libffi-devel \
-        bzip2-devel xz-devel gum micro
+        bzip2-devel xz-devel gum micro net-tools iproute2 nmap
 
     slog "Essential packages installation done!"
 }

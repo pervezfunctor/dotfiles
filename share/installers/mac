@@ -43,7 +43,8 @@ core_install() {
     xcode-select --install
     brew_install
 
-    bi mas coreutils bash curl wget trash tree unzip coreutils gum stow
+    bi mas coreutils bash curl wget trash tree unzip coreutils gum stow \
+        nmap
 }
 
 essential_install() {
