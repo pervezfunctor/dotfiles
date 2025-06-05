@@ -1151,9 +1151,10 @@ environs() {
     export PATH="$GOPATH/bin:$HOME/.pixi/bin:$PATH"
     export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
     export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.bin:$PATH"
-    export PATH="$PNPM_HOME:$HOME/.ilm/bin:$HOME/Applications:$PATH"
+    export PATH="$PNPM_HOME:$HOME/Applications:$PATH"
     export PATH="$HOME/.local/opt/brew/bin:/home/linuxbrew/.linuxbrew/bin:$PATH"
     export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
+    export PATH="$DOT_DIR/bin:$DOT_DIR/bin/vt:$PATH"
 
     export HOMEBREW_NO_ENV_HINTS=1
     export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
