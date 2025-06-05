@@ -145,7 +145,7 @@ create_container() {
             incus launch images:alpine/3.19 "$container_name"
             ;;
         nixos)
-            incus launch images:nixos/24.11 "$container_name" --config security.nesting=true
+            incus launch images:nixos/unstable "$container_name" --config security.nesting=true
             ;;
         *)
             fail "Unsupported distro: $distro"

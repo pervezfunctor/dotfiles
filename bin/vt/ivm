@@ -160,7 +160,7 @@ create_vm() {
         "incus-${distro}-vm" "$vm_name"
     else
         fail "Unsupported distro: $distro"
-        slog "Supported distros: ubuntu, fedora, arch, tumbleweed, debian, centos, alpine, nixos"
+        slog "Supported distros: ubuntu, fedora, arch, tumbleweed, debian, centos, alpine"
         return 1
     fi
 

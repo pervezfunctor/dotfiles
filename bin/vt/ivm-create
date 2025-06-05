@@ -27,7 +27,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create Incus virtual machines with cloud-init and SSH access.
 
 REQUIRED:
-    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine, nixos)
+    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine)
 
 OPTIONS:
     --name NAME             VM name (default: distro name)
@@ -123,14 +123,9 @@ configure_distribution() {
         USERNAME=${USERNAME:-"alpine"}
         IMAGE="images:alpine/${RELEASE}/cloud"
         ;;
-    nixos)
-        RELEASE=${RELEASE:-"24.11"}
-        USERNAME=${USERNAME:-"nixos"}
-        IMAGE="images:nixos/${RELEASE}/cloud"
-        ;;
     *)
         fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine, nixos"
+        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine"
         exit 1
         ;;
     esac
@@ -155,6 +150,15 @@ generate_cloud_init_config() {
 
     local pub_key
     pub_key=$(cat "$SSH_KEY")
+
+    local packages_common="qemu-guest-agent curl wget vim htop git unzip"
+    local openssh_pkg
+
+    if [[ "$DISTRO" == "arch" ]]; then
+        openssh_pkg="openssh"
+    else
+        openssh_pkg="openssh-server"
+    fi
 
     # Create cloud-init user-data file using tee
     tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
@@ -181,14 +185,8 @@ package_update: true
 package_upgrade: true
 
 packages:
-  - qemu-guest-agent
-  - openssh-server
-  - curl
-  - wget
-  - vim
-  - htop
-  - git
-  - unzip
+  - $openssh_pkg
+$(for pkg in $packages_common; do echo "  - $pkg"; done)
 
 # Enable SSH service and ensure proper configuration
 runcmd:
@@ -238,12 +236,11 @@ create_vm() {
         --config "limits.memory=${RAM_MB}MB"
         --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
         --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
-        --disk "root,size=$DISK_SIZE"
+        --device "root,size=$DISK_SIZE"
         --network "$BRIDGE_IF"
     )
 
-    # Add NixOS-specific settings
-    if [[ "$DISTRO" == "nixos" ]]; then
+    if [[ "$DISTRO" == "arch" ]]; then
         launch_cmd+=(--config "security.secureboot=false")
     fi
 
