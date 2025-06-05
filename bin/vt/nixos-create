@@ -188,6 +188,15 @@ show_final_info() {
     slog "  Stop: incus stop $name"
     slog "  Start: incus start $name"
     slog "  Delete: incus delete $name --force"
+
+    if [[ "$INSTANCE_TYPE" == "vm" ]]; then
+        echo
+        slog "USB Device Management (VMs only):"
+        slog "  List host USB: $DOT_DIR/bin/vt/vm-usb list"
+        slog "  List attached: $DOT_DIR/bin/vt/vm-usb list-attached $name"
+        slog "  Attach USB: $DOT_DIR/bin/vt/vm-usb attach $name DEVICE"
+        slog "  Detach USB: $DOT_DIR/bin/vt/vm-usb detach $name DEVICE_NAME"
+    fi
     echo
 
     if [[ "$AUTO_SETUP" == "true" ]]; then

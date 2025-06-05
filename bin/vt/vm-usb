@@ -1,0 +1,389 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+usage() {
+    cat <<EOF
+Usage: $0 COMMAND VM_NAME [OPTIONS]
+
+Manage USB devices for Incus VMs.
+
+COMMANDS:
+    list                    List all available USB devices on host
+    list-attached VM_NAME   List USB devices attached to VM
+    attach VM_NAME DEVICE   Attach USB device to VM
+    detach VM_NAME DEVICE   Detach USB device from VM
+    help                    Show this help message
+
+DEVICE FORMATS:
+    By USB ID:              vendorid:productid (e.g., 1234:5678)
+    By Bus/Device:          bus.device (e.g., 001.002)
+    By Device Path:         /dev/bus/usb/BUS/DEVICE (e.g., /dev/bus/usb/001/002)
+
+OPTIONS:
+    --name NAME             Custom device name in VM (default: auto-generated)
+    --help, -h              Show this help message
+
+EXAMPLES:
+    # List all USB devices on host
+
+    $0 list
+
+    # List USB devices attached to VM
+    $0 list-attached my-vm
+
+    # Attach USB device by vendor:product ID
+    $0 attach my-vm 1234:5678
+
+    # Attach USB device by bus.device with custom name
+    $0 attach my-vm 001.002 --name my-usb-drive
+
+    # Detach USB device
+    $0 detach my-vm my-usb-drive
+
+DESCRIPTION:
+    This script provides easy USB device management for Incus VMs:
+    - List available USB devices on the host system
+    - Attach USB devices to running VMs
+    - Detach USB devices from VMs
+    - Support multiple device identification formats
+    - Automatic device name generation
+
+REQUIREMENTS:
+    - Incus VM must be running
+    - USB device must be available on host
+    - Proper permissions to access USB devices
+
+EOF
+}
+
+check_prerequisites() {
+    if ! command -v incus >/dev/null; then
+        fail "incus is not installed or not in PATH"
+        exit 1
+    fi
+
+    if ! incus info >/dev/null 2>&1; then
+        fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
+        exit 1
+    fi
+
+    if ! command -v lsusb >/dev/null; then
+        fail "lsusb command not found. Please install usbutils package."
+        exit 1
+    fi
+}
+
+check_vm() {
+    local vm_name="$1"
+
+    if ! incus info "$vm_name" >/dev/null 2>&1; then
+        fail "VM '$vm_name' not found"
+        exit 1
+    fi
+
+    local vm_type
+    vm_type=$(incus info "$vm_name" | grep "^Type:" | awk '{print $2}')
+    if [[ "$vm_type" != "virtual-machine" ]]; then
+        fail "'$vm_name' is not a virtual machine (type: $vm_type)"
+        exit 1
+    fi
+
+    local vm_state
+    vm_state=$(incus list "$vm_name" --format csv --columns s)
+    if [[ "$vm_state" != "RUNNING" ]]; then
+        fail "VM '$vm_name' is not running (state: $vm_state)"
+        slog "Start the VM with: incus start $vm_name"
+        exit 1
+    fi
+}
+
+list_host_usb_devices() {
+    slog "USB devices available on host:"
+    echo
+
+    # Enhanced lsusb output with more details
+    if command -v lsusb >/dev/null; then
+        echo "Format: Bus Device ID: Vendor:Product Description"
+        echo "────────────────────────────────────────────────────────────────"
+        lsusb | while read -r line; do
+            # Parse lsusb output: Bus 001 Device 002: ID 1234:5678 Description
+            if [[ $line =~ Bus\ ([0-9]+)\ Device\ ([0-9]+):\ ID\ ([0-9a-fA-F]+):([0-9a-fA-F]+)\ (.+) ]]; then
+                bus="${BASH_REMATCH[1]}"
+                device="${BASH_REMATCH[2]}"
+                vendor="${BASH_REMATCH[3]}"
+                product="${BASH_REMATCH[4]}"
+                description="${BASH_REMATCH[5]}"
+
+                printf "%-3s %-6s %s:%s %s\n" "$bus" "$device" "$vendor" "$product" "$description"
+            fi
+        done
+        echo
+        slog "Usage examples:"
+        slog "  By USB ID: $0 attach VM_NAME vendor:product"
+        slog "  By Bus/Device: $0 attach VM_NAME bus.device"
+    else
+        fail "lsusb command not available"
+        exit 1
+    fi
+}
+
+list_vm_usb_devices() {
+    local vm_name="$1"
+    check_vm "$vm_name"
+
+    slog "USB devices attached to VM '$vm_name':"
+    echo
+
+    # Get all devices from incus config and filter for USB devices
+    local all_devices usb_devices=""
+    all_devices=$(incus config device list "$vm_name")
+
+    # Check each device to see if it's a USB device
+    while IFS= read -r device_name; do
+        if [[ -n "$device_name" ]]; then
+            local device_info
+            device_info=$(incus config device show "$vm_name" "$device_name" 2>/dev/null || echo "")
+            if echo "$device_info" | grep -q "type: usb"; then
+                usb_devices+="$device_name"$'\n'
+            fi
+        fi
+    done <<<"$all_devices"
+
+    if [[ -z "$usb_devices" ]]; then
+        slog "No USB devices currently attached to VM '$vm_name'"
+        return 0
+    fi
+
+    echo "Device Name    Type    Configuration"
+    echo "─────────────────────────────────────────────"
+
+    while IFS= read -r device_name; do
+        if [[ -n "$device_name" ]]; then
+            local device_info
+            device_info=$(incus config device show "$vm_name" "$device_name" 2>/dev/null || echo "type: unknown")
+            local device_type
+            device_type=$(echo "$device_info" | grep "type:" | cut -d: -f2 | xargs)
+
+            if [[ "$device_type" == "usb" ]]; then
+                local vendor_id product_id bus_num dev_num
+                vendor_id=$(echo "$device_info" | grep "vendorid:" | cut -d: -f2 | xargs || echo "")
+                product_id=$(echo "$device_info" | grep "productid:" | cut -d: -f2 | xargs || echo "")
+                bus_num=$(echo "$device_info" | grep "busnum:" | cut -d: -f2 | xargs || echo "")
+                dev_num=$(echo "$device_info" | grep "devnum:" | cut -d: -f2 | xargs || echo "")
+
+                printf "%-14s %-7s " "$device_name" "$device_type"
+                if [[ -n "$vendor_id" && -n "$product_id" ]]; then
+                    printf "USB ID: %s:%s" "$vendor_id" "$product_id"
+                elif [[ -n "$bus_num" && -n "$dev_num" ]]; then
+                    printf "Bus/Dev: %s.%s" "$bus_num" "$dev_num"
+                fi
+                echo
+            fi
+        fi
+    done <<<"$usb_devices"
+}
+
+parse_usb_device() {
+    local device_spec="$1"
+    local vendor_id="" product_id="" bus_num="" dev_num=""
+
+    # Parse different device specification formats
+    if [[ "$device_spec" =~ ^([0-9a-fA-F]+):([0-9a-fA-F]+)$ ]]; then
+        # Format: vendorid:productid (e.g., 1234:5678)
+        vendor_id="${BASH_REMATCH[1]}"
+        product_id="${BASH_REMATCH[2]}"
+        echo "vendorid"
+        echo "$vendor_id"
+        echo "productid"
+        echo "$product_id"
+    elif [[ "$device_spec" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+        # Format: bus.device (e.g., 001.002)
+        bus_num="${BASH_REMATCH[1]}"
+        dev_num="${BASH_REMATCH[2]}"
+        echo "busnum"
+        echo "$bus_num"
+        echo "devnum"
+        echo "$dev_num"
+    elif [[ "$device_spec" =~ ^/dev/bus/usb/([0-9]+)/([0-9]+)$ ]]; then
+        # Format: /dev/bus/usb/BUS/DEVICE
+        bus_num="${BASH_REMATCH[1]}"
+        dev_num="${BASH_REMATCH[2]}"
+        echo "busnum"
+        echo "$bus_num"
+        echo "devnum"
+        echo "$dev_num"
+    else
+        fail "Invalid device specification: $device_spec"
+        fail "Supported formats:"
+        fail "  vendorid:productid (e.g., 1234:5678)"
+        fail "  bus.device (e.g., 001.002)"
+        fail "  /dev/bus/usb/BUS/DEVICE (e.g., /dev/bus/usb/001/002)"
+        exit 1
+    fi
+}
+
+attach_usb_device() {
+    local vm_name="$1"
+    local device_spec="$2"
+    local device_name="${3:-}"
+
+    check_vm "$vm_name"
+
+    # Parse device specification
+    local device_config
+    device_config=$(parse_usb_device "$device_spec")
+
+    # Generate device name if not provided
+    if [[ -z "$device_name" ]]; then
+        device_name="usb-$(date +%s)"
+    fi
+
+    # Check if device name already exists
+    if incus config device show "$vm_name" "$device_name" >/dev/null 2>&1; then
+        fail "Device name '$device_name' already exists in VM '$vm_name'"
+        fail "Use a different name or detach the existing device first"
+        exit 1
+    fi
+
+    slog "Attaching USB device to VM '$vm_name'..."
+    slog "  Device: $device_spec"
+    slog "  Name: $device_name"
+
+    # Create the USB device configuration
+    local config_args=()
+    local lines=()
+    while IFS= read -r line; do
+        if [[ -n "$line" ]]; then
+            lines+=("$line")
+        fi
+    done <<<"$device_config"
+
+    # Process pairs of lines (key, value)
+    for ((i = 0; i < ${#lines[@]}; i += 2)); do
+        if [[ $((i + 1)) -lt ${#lines[@]} ]]; then
+            key="${lines[i]}"
+            value="${lines[i + 1]}"
+            config_args+=("$key=$value")
+        fi
+    done
+
+    # Attach the USB device
+    if incus config device add "$vm_name" "$device_name" usb "${config_args[@]}"; then
+        success "USB device '$device_spec' attached to VM '$vm_name' as '$device_name'"
+        slog "The device should now be available inside the VM"
+    else
+        fail "Failed to attach USB device '$device_spec' to VM '$vm_name'"
+        exit 1
+    fi
+}
+
+detach_usb_device() {
+    local vm_name="$1"
+    local device_name="$2"
+
+    check_vm "$vm_name"
+
+    # Check if device exists
+    if ! incus config device show "$vm_name" "$device_name" >/dev/null 2>&1; then
+        fail "Device '$device_name' not found in VM '$vm_name'"
+        slog "List attached devices with: $0 list-attached $vm_name"
+        exit 1
+    fi
+
+    # Verify it's a USB device
+    local device_type
+    device_type=$(incus config device show "$vm_name" "$device_name" | grep "type:" | cut -d: -f2 | xargs)
+    if [[ "$device_type" != "usb" ]]; then
+        fail "Device '$device_name' is not a USB device (type: $device_type)"
+        exit 1
+    fi
+
+    slog "Detaching USB device '$device_name' from VM '$vm_name'..."
+
+    if incus config device remove "$vm_name" "$device_name"; then
+        success "USB device '$device_name' detached from VM '$vm_name'"
+    else
+        fail "Failed to detach USB device '$device_name' from VM '$vm_name'"
+        exit 1
+    fi
+}
+
+main() {
+    if [[ $# -eq 0 ]]; then
+        usage
+        exit 1
+    fi
+
+    check_prerequisites
+
+    local command="$1"
+    shift
+
+    case "$command" in
+    list)
+        list_host_usb_devices
+        ;;
+    list-attached)
+        if [[ $# -lt 1 ]]; then
+            fail "VM name required for list-attached command"
+            usage
+            exit 1
+        fi
+        list_vm_usb_devices "$1"
+        ;;
+    attach)
+        if [[ $# -lt 2 ]]; then
+            fail "VM name and device specification required for attach command"
+            usage
+            exit 1
+        fi
+        local vm_name="$1"
+        local device_spec="$2"
+        local device_name=""
+
+        # Parse optional device name
+        shift 2
+        while [[ $# -gt 0 ]]; do
+            case $1 in
+            --name)
+                device_name="$2"
+                shift 2
+                ;;
+            *)
+                fail "Unknown option: $1"
+                usage
+                exit 1
+                ;;
+            esac
+        done
+
+        attach_usb_device "$vm_name" "$device_spec" "$device_name"
+        ;;
+    detach)
+        if [[ $# -lt 2 ]]; then
+            fail "VM name and device name required for detach command"
+            usage
+            exit 1
+        fi
+        detach_usb_device "$1" "$2"
+        ;;
+    help | --help | -h)
+        usage
+        ;;
+    *)
+        fail "Unknown command: $command"
+        usage
+        exit 1
+        ;;
+    esac
+}
+
+# Only run main if script is executed directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
