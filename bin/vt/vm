@@ -33,6 +33,10 @@ COMMANDS:
     usb-attached <vm>   List USB devices attached to VM
     usb-attach <vm> <device> [name]  Attach USB device to VM
     usb-detach <vm> <device>         Detach USB device from VM
+    disk-list           List all available block devices on host
+    disk-attached <vm>  List disk devices attached to VM
+    disk-attach <vm> <device> [name] Attach raw disk device to VM
+    disk-detach <vm> <device>        Detach disk device from VM
 
 EXAMPLES:
     $0 install                 # Install virtualization tools
@@ -47,6 +51,9 @@ EXAMPLES:
     $0 usb-list                # List available USB devices
     $0 usb-attach ubuntu 1234:5678  # Attach USB device to VM
     $0 usb-detach ubuntu my-usb      # Detach USB device from VM
+    $0 disk-list               # List available disk devices
+    $0 disk-attach ubuntu /dev/sdb   # Attach raw disk to VM
+    $0 disk-detach ubuntu /dev/sdb   # Detach disk from VM
 
 EOF
 }
@@ -686,6 +693,243 @@ EOF
     rm -f "$temp_xml"
 }
 
+# Disk Device Management Functions
+list_host_disks() {
+    slog "Block devices available on host:"
+    echo
+
+    if ! command -v lsblk >/dev/null; then
+        fail "lsblk command not found. Please install util-linux package."
+        return 1
+    fi
+
+    echo "Format: NAME SIZE TYPE MOUNTPOINT MODEL"
+    echo "────────────────────────────────────────────────────────────────"
+
+    # List block devices with useful information
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,MODEL -d -e 7,11 | while IFS= read -r line; do
+        # Skip header line and loop devices
+        if [[ "$line" =~ ^NAME ]] || [[ "$line" =~ loop ]]; then
+            continue
+        fi
+        echo "$line"
+    done
+
+    echo
+    slog "Usage examples:"
+    slog "  Attach disk: $0 disk-attach VM_NAME /dev/sdX"
+    slog "  Attach NVMe: $0 disk-attach VM_NAME /dev/nvme0n1"
+    echo
+    warn "WARNING: Only attach unmounted disks to avoid data corruption!"
+    slog "Check mount status with: lsblk -f /dev/DEVICE"
+}
+
+list_vm_disks() {
+    local vm_name="$1"
+    check_vm "$vm_name" || return 1
+
+    slog "Disk devices attached to VM '$vm_name':"
+    echo
+
+    # Get disk devices from VM XML configuration
+    local disk_devices
+    disk_devices=$(virsh dumpxml "$vm_name" | grep -A 5 "disk.*type.*block" | grep -E "(source.*dev|target.*dev)" || true)
+
+    if [[ -z "$disk_devices" ]]; then
+        slog "No raw disk devices currently attached to VM '$vm_name'"
+        echo
+        slog "Standard VM disks:"
+        virsh domblklist "$vm_name" --details | grep -v "^Type"
+        return 0
+    fi
+
+    echo "Raw disk devices found in VM configuration:"
+    echo "─────────────────────────────────────────────"
+
+    # Parse and display disk device information
+    virsh dumpxml "$vm_name" | grep -A 10 "disk.*type.*block" | while IFS= read -r line; do
+        if [[ $line =~ source.*dev=.([^\'\"]+). ]]; then
+            source_dev="${BASH_REMATCH[1]}"
+        elif [[ $line =~ target.*dev=.([^\'\"]+). ]]; then
+            target_dev="${BASH_REMATCH[1]}"
+            if [[ -n "$source_dev" ]]; then
+                printf "Host Device: %s -> Guest Device: %s\n" "$source_dev" "$target_dev"
+                source_dev=""
+                target_dev=""
+            fi
+        fi
+    done
+
+    echo
+    slog "All VM disks:"
+    virsh domblklist "$vm_name" --details | grep -v "^Type"
+}
+
+parse_disk_device() {
+    local device_path="$1"
+
+    # Validate device path format
+    if [[ ! "$device_path" =~ ^/dev/ ]]; then
+        fail "Invalid device path: $device_path"
+        fail "Device path must start with /dev/"
+        return 1
+    fi
+
+    # Check if device exists
+    if [[ ! -b "$device_path" ]]; then
+        fail "Block device not found: $device_path"
+        fail "Use 'lsblk' to list available block devices"
+        return 1
+    fi
+
+    # Check if device is mounted
+    if mount | grep -q "^$device_path"; then
+        fail "Device $device_path is currently mounted!"
+        fail "Unmount the device before attaching to VM:"
+        fail "  sudo umount $device_path"
+        return 1
+    fi
+
+    # Check for mounted partitions
+    local mounted_partitions
+    mounted_partitions=$(mount | grep "^${device_path}[0-9]" || true)
+    if [[ -n "$mounted_partitions" ]]; then
+        fail "Device $device_path has mounted partitions:"
+        echo "$mounted_partitions"
+        fail "Unmount all partitions before attaching to VM"
+        return 1
+    fi
+
+    echo "valid"
+    return 0
+}
+
+attach_disk_device() {
+    local vm_name="$1"
+    local device_path="$2"
+    local device_name="${3:-disk-$(date +%s)}"
+
+    check_vm "$vm_name" || return 1
+
+    local state
+    state=$(virsh domstate "$vm_name")
+    if [[ "$state" != "running" ]]; then
+        fail "VM '$vm_name' is not running (state: $state)"
+        slog "Start the VM with: $0 start $vm_name"
+        return 1
+    fi
+
+    # Validate device
+    if ! parse_disk_device "$device_path" >/dev/null; then
+        return 1
+    fi
+
+    slog "Attaching disk device to VM '$vm_name'..."
+    slog "  Host Device: $device_path"
+    slog "  Guest Name: $device_name"
+
+    # Find next available target device (vdb, vdc, etc.)
+    local target_dev
+    local existing_targets
+    existing_targets=$(virsh domblklist "$vm_name" | awk 'NR>2 {print $1}' | grep -E '^vd[a-z]$' | sort || true)
+
+    # Start from vdb (vda is usually the main disk)
+    local next_letter="b"
+    while [[ "$existing_targets" =~ vd${next_letter} ]]; do
+        next_letter=$(echo "$next_letter" | tr 'a-y' 'b-z')
+        if [[ "$next_letter" > "z" ]]; then
+            fail "No available target devices (vda-vdz all in use)"
+            return 1
+        fi
+    done
+    target_dev="vd${next_letter}"
+
+    # Create temporary XML file for disk device
+    local temp_xml
+    temp_xml=$(mktemp)
+
+    cat >"$temp_xml" <<EOF
+<disk type='block' device='disk'>
+  <driver name='qemu' type='raw' cache='none' io='native'/>
+  <source dev='$device_path'/>
+  <target dev='$target_dev' bus='virtio'/>
+</disk>
+EOF
+
+    # Attach the disk device
+    if virsh attach-device "$vm_name" "$temp_xml" --live; then
+        success "Disk device '$device_path' attached to VM '$vm_name' as '$target_dev'"
+        slog "The device should now be available inside the VM as /dev/$target_dev"
+        echo
+        slog "Inside the VM, you can:"
+        slog "  - Check device: lsblk | grep $target_dev"
+        slog "  - Create filesystem: sudo mkfs.ext4 /dev/$target_dev"
+        slog "  - Mount device: sudo mount /dev/$target_dev /mnt"
+    else
+        fail "Failed to attach disk device '$device_path' to VM '$vm_name'"
+        rm -f "$temp_xml"
+        return 1
+    fi
+
+    rm -f "$temp_xml"
+}
+
+detach_disk_device() {
+    local vm_name="$1"
+    local device_path="$2"
+
+    check_vm "$vm_name" || return 1
+
+    local state
+    state=$(virsh domstate "$vm_name")
+    if [[ "$state" != "running" ]]; then
+        fail "VM '$vm_name' is not running (state: $state)"
+        slog "Start the VM with: $0 start $vm_name"
+        return 1
+    fi
+
+    # Validate device path format
+    if [[ ! "$device_path" =~ ^/dev/ ]]; then
+        fail "Invalid device path: $device_path"
+        fail "Device path must start with /dev/"
+        return 1
+    fi
+
+    slog "Detaching disk device '$device_path' from VM '$vm_name'..."
+
+    # Create temporary XML file for disk device
+    local temp_xml
+    temp_xml=$(mktemp)
+
+    cat >"$temp_xml" <<EOF
+<disk type='block' device='disk'>
+  <driver name='qemu' type='raw'/>
+  <source dev='$device_path'/>
+</disk>
+EOF
+
+    # Detach the disk device
+    if virsh detach-device "$vm_name" "$temp_xml" --live; then
+        success "Disk device '$device_path' detached from VM '$vm_name'"
+        echo
+        warn "Make sure to unmount the device inside the VM before detaching!"
+        slog "If the device was mounted, unmount it first:"
+        slog "  sudo umount /dev/vdX  # (inside VM)"
+    else
+        fail "Failed to detach disk device '$device_path' from VM '$vm_name'"
+        fail "The device may not be attached or may be in use"
+        echo
+        slog "Troubleshooting:"
+        slog "  1. Check if device is attached: $0 disk-attached $vm_name"
+        slog "  2. Unmount device inside VM: sudo umount /dev/vdX"
+        slog "  3. Check for processes using device: sudo lsof /dev/vdX"
+        rm -f "$temp_xml"
+        return 1
+    fi
+
+    rm -f "$temp_xml"
+}
+
 if [[ $# -eq 0 ]]; then
     usage
     exit 1
@@ -828,6 +1072,45 @@ usb-detach)
         exit 1
     }
     detach_usb_device "$vm_name" "$device_spec"
+    ;;
+disk-list)
+    list_host_disks
+    ;;
+disk-attached)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    list_vm_disks "$vm_name"
+    ;;
+disk-attach)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    device_path="${3:-}"
+    [[ -z "$device_path" ]] && {
+        fail "Device path required"
+        usage
+        exit 1
+    }
+    attach_disk_device "$vm_name" "$device_path" "${4:-}"
+    ;;
+disk-detach)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    device_path="${3:-}"
+    [[ -z "$device_path" ]] && {
+        fail "Device path required"
+        usage
+        exit 1
+    }
+    detach_disk_device "$vm_name" "$device_path"
     ;;
 --help | -h)
     usage
