@@ -130,7 +130,7 @@ configure_distribution() {
         ;;
     esac
 
-    VM_NAME=${VM_NAME:-"$DISTRO"}
+    VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
     PASSWORD=${PASSWORD:-"$USERNAME"}
 
     slog "Configuration:"
