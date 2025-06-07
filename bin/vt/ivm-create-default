@@ -3,52 +3,30 @@
 set -euo pipefail
 
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils" 2>/dev/null || source "$HOME/.local/share/ilm/utils"
-
-check_incus() {
-    if ! command -v incus &>/dev/null; then
-        fail "Incus is not installed. Please install it first."
-        exit 1
-    fi
-}
-
-create_ubuntu_vm() {
-    local name="${1}"
-    slog "Creating Ubuntu VM: $name"
-    incus launch images:ubuntu/24.04 "$name" --vm
-}
-
-create_fedora_vm() {
-    local name="${1}"
-    slog "Creating Fedora VM: $name"
-    incus launch images:fedora/42 "$name" --vm
-}
-
-create_arch_vm() {
-    local name="${1}"
-    slog "Creating Arch VM: $name"
-    incus launch images:archlinux/current "$name" --vm
-}
-
-create_tw_vm() {
-    local name="${1}"
-    slog "Creating openSUSE Tumbleweed VM: $name"
-    incus launch images:opensuse/tumbleweed "$name" --vm
-}
+source "$DOT_DIR/share/utils"
 
 main() {
-    check_incus
+
+    has_cmd incus || fail "Incus is not installed. Please install it first."
 
     slog "Creating 4 Incus VMs (Ubuntu, Fedora, Arch, Tumbleweed)..."
 
-    create_ubuntu_vm ubuntu-vm
-    create_fedora_vm fedora-vm
-    create_arch_vm archlinux-vm
-    create_tw_vm tw-vm
+    slog "Creating Ubuntu VM: ubuntu-vm"
+    ivm-create --distro ubuntu --name ubuntu-vm
+
+    slog "Creating Fedora VM: fedora-vm"
+    ivm-create --distro fedora --name fedora-vm
+
+    slog "Creating Arch VM: arch-vm"
+    ivm-create --distro fedora --name arch-vm
+
+    slog "Creating openSUSE Tumbleweed VM: tw-vm"
+    ivm-create --distro fedora --name tw-vm
 
     slog "Listing created VMs:"
-    incus list
+    ivm list
 
     success "All VMs created successfully!"
     slog "You can access them using: incus console <vm-name>"
