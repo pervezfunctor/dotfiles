@@ -35,6 +35,6 @@ ujust aurora-cli # on Aurora
 Install and configure shell tools and common applications using the following command. This is optional.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/Hr0YTqp)"
+bash -c "$(curl -sSL https://is.gd/hurace)"
 ```
 

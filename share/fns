@@ -111,7 +111,7 @@ dbox-docker() {
         slog "Docker distrobox ${CONTAINER_NAME} created successfully"
     fi
 
-    distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- dbox-docker-dev starship snap vscode
+    distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://is.gd/egitif)" -- dbox-docker-dev starship snap vscode
 }
 
 dbox-incus() {
@@ -427,7 +427,7 @@ dbox-nix() {
     srm "$HOME/.boxes/${CONTAINER_NAME}"
 
     if distrobox create --yes --name "${CONTAINER_NAME}" -i debian:stable --init --additional-packages "systemd libpam-systemd" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
-        distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- nixbox
+        distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- nixbox
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
 }

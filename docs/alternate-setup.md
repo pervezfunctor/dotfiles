@@ -9,25 +9,25 @@ If you are an experienced linux developer, but don't want to use immutable distr
 Install and configure shell tools with the following command.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- shell
 ```
 
 Install container and virtualization tools(in addition to above shell tools and configuration), with following command.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- vm
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- vm
 ```
 
 Install desktop apps including vscode(in addition to above), with the following command.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- desktop
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- desktop
 ```
 
 You could also, first install the base setup
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)"
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)"
 ```
 
 and then at any point(after reboot), use `ilmg`.

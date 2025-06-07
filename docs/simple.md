@@ -5,7 +5,7 @@
 Install base system packages and configure this repository using the following command on linux or macos.
 
    ```bash
-   bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- min
+   bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- min
    ```
 
 To install vscode

@@ -165,7 +165,7 @@ brew update && brew upgrade
 When using the `--dotfiles` flag with an argument, the VM will have your personal dotfiles pre-installed and configured:
 
 **Installation Process:**
-- Downloads and executes the installation script from `https://dub.sh/aPKPT8V`
+- Downloads and executes the installation script from `https://is.gd/egitif`
 - Uses the provided argument to customize the installation
 - Some of the available options are min, slim-shell, shell, dev.
 - Installs dotfiles to `/home/username/.ilm`

@@ -6,55 +6,55 @@
 Install windows updates first. This might require reboot.
 
 ```powershell
-iex "& { $(iwr -useb https://dub.sh/NDyiu7a) } -Components windows-update"
+iex "& { $(iwr -useb https://is.gd/vefawu) } -Components windows-update"
 ```
 
 Install WSL next. You might have to reboot again.
 
 ```powershell
-iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components wsl }"
+iex "& { $(iwr -useb https://is.gd/vefawu) -Components wsl }"
 ```
 
 Install ubuntu wsl.
 
 ```powershell
-iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components wsl-ubuntu }"
+iex "& { $(iwr -useb https://is.gd/vefawu) -Components wsl-ubuntu }"
 ```
 
 Install multipass. You need to reboot again, unless you installed wsl using the above script.
 
 ```powershell
-iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components multipass }"
+iex "& { $(iwr -useb https://is.gd/vefawu) -Components multipass }"
 ```
 
 Install multipass vm.
 
 ```powershell
-iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components mp-vm }"
+iex "& { $(iwr -useb https://is.gd/vefawu) -Components mp-vm }"
 ```
 
 Install nerd fonts. Without this most modern linux/wsl tools won't work.
 
 ```powershell
-iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components nerd-fonts }"
+iex "& { $(iwr -useb https://is.gd/vefawu) -Components nerd-fonts }"
 ```
 
 Install vscode.
 
 ```powershell
-iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components vscode }"
+iex "& { $(iwr -useb https://is.gd/vefawu) -Components vscode }"
 ```
 
 If you want to install everything.
 
 ```
-iex "& { $(iwr -useb https://dub.sh/NDyiu7a) -Components all }"
+iex "& { $(iwr -useb https://is.gd/vefawu) -Components all }"
 ```
 
 Or pick and choose.
 
 ```powershell
-iwr -useb https://dub.sh/NDyiu7a | iex
+iwr -useb https://is.gd/vefawu | iex
 ```
 
 ## Centos WSL Based Setup
@@ -111,5 +111,5 @@ Reboot your computer. Then use the following commands.
 
     wsl -d Ubuntu-24.04
     # run the following within wsl
-    bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
+    bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- shell
 ```

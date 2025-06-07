@@ -614,7 +614,7 @@ generate_cloud_init() {
         slog "Adding dotfiles installation to cloud-init"
 
         runcmd+=(
-            "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)\" -- $DOTFILES_GROUP'"
+            "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)\" -- $DOTFILES_GROUP'"
         )
     fi
 

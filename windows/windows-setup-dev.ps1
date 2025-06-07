@@ -713,7 +713,7 @@ function Install-MultipassVM {
     Start-Sleep -Seconds 5
 
     Write-Host "Running shell installer script..." -ForegroundColor Cyan
-    multipass exec ubuntu-ilm -- bash -c "curl -sSL https://dub.sh/aPKPT8V | bash -s -- shell"
+    multipass exec ubuntu-ilm -- bash -c "curl -sSL https://is.gd/egitif | bash -s -- shell"
 
     Write-Host "Ubuntu 24.10 VM setup complete!" -ForegroundColor Green
     multipass info ubuntu-ilm
@@ -1002,7 +1002,7 @@ function Install-NixOSWSL {
     Write-Host "To start NixOS, open a terminal and type: wsl -d NixOS" -ForegroundColor Cyan
 
     Write-Host "Running shell setup script..." -ForegroundColor Cyan
-    wsl -d NixOS -u nixos -- bash -c "nix-shell -p curl --run 'curl -sSL https://dub.sh/aPKPT8V | bash -s -- nixos-wslbox'"
+    wsl -d NixOS -u nixos -- bash -c "nix-shell -p curl --run 'curl -sSL https://is.gd/egitif | bash -s -- nixos-wslbox'"
     Write-Host "nixos setup completed!" -ForegroundColor Green
 }
 

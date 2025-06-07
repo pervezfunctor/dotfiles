@@ -22,7 +22,7 @@ wsl -d FedoraLinux-42 # Create user and set a password.
 Run the following command in WSL for installing basic tools and a nice shell prompt. Make sure you are not root.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- wslbox
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- wslbox
 ```
 
 Exit and enter WSL again(or reboot) to install more development tools.
@@ -34,7 +34,7 @@ ilmi tmux nvim emacs # pick any
 If you want to setup vscode and other development tools on Windows, run the following command in powershell **as administrator**.
 
 ```powershell
-iwr -useb https://dub.sh/NDyiu7a | iex
+iwr -useb https://is.gd/vefawu | iex
 ```
 
 You will be presented with a menu, pick what you want to install.
@@ -45,13 +45,13 @@ You will be presented with a menu, pick what you want to install.
 On macos, install applications(vscode, ghostty terminal, fonts etc) along with shell tools. Works on linux too.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- desktop
+bash -c "$(curl -sSL https://is.gd/egitif)" -- desktop
 ```
 
 If you just want homebrew and basic unix tools, run the following command.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
+bash -c "$(curl -sSL https://is.gd/egitif)"
 ```
 
 ### Linux
@@ -59,19 +59,19 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V)"
 On linux desktop(Ubuntu 25.04 for eg), install shell tools, vscode and docker with the following command. Works on Ubuntu 25.04, Fedora 42, OpenSUSE Tumbleweed, CentOS Stream 10 and Arch.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- dev
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- dev
 ```
 
 If you only want to install modern unix tools in a development container/vm/desktop, use the following command instead. Works on linux and macos.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- shell
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- shell
 ```
 
 Or just install the very basic packages(gcc, make, tar, git etc)
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)"
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)"
 ```
 
 
@@ -86,7 +86,7 @@ If ublue is not stable enough or if you prefer an official Fedora distribution, 
   - [Fedora Sway Atomic](https://fedoraproject.org/atomic-desktops/sway) if you prefer a tiling window manager
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V)" -- fedora-atomic
+bash -c "$(curl -sSL https://is.gd/egitif)" -- fedora-atomic
 ```
 
 #### Recommendations
@@ -106,7 +106,7 @@ In future, I will add a distrobox container for docker, incus and libvirt. Curre
 This should work on almost any linux system/container even without sudo privilege; You should have curl/wget and bash installed. Not recommended on macos.
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- generic
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- generic
 ```
 
 
@@ -115,7 +115,7 @@ bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)
 Install essential tools and bash config with
 
 ```bash
-bash -c "$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)" -- slimbox
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- slimbox
 ```
 
 You could later install additional development tools with
