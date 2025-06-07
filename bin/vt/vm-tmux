@@ -1,0 +1,198 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+UBUNTU_VM="ubuntu-vm"
+FEDORA_VM="fedora-vm"
+ARCH_VM="arch-vm"
+DEBIAN_VM="debian-vm"
+
+UBUNTU_USER="ubuntu"
+FEDORA_USER="fedora"
+ARCH_USER="arch"
+DEBIAN_USER="debian"
+
+SESSION_NAME="libvirt-vms"
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTION]
+
+Manage a tmux session with SSH connections to libvirt VMs.
+
+Options:
+  create    Create a new tmux session with SSH connections to VMs (default if no option)
+  attach    Attach to an existing session
+  detach    Detach from the current session
+  destroy   Kill the tmux session
+  help      Display this help message
+
+Examples:
+  $(basename "$0")           # Create session or attach if exists
+  $(basename "$0") create    # Force create a new session
+  $(basename "$0") attach    # Attach to existing session
+  $(basename "$0") detach    # Detach from current session
+  $(basename "$0") destroy   # Kill the session
+EOF
+}
+
+check_libvirt() {
+    if ! has_cmd virsh; then
+        fail "libvirt is not installed. Please install it first."
+        exit 1
+    fi
+}
+
+check_tmux() {
+    if ! has_cmd tmux; then
+        fail "tmux is not installed. Please install it first."
+        exit 1
+    fi
+}
+
+get_vm_ip() {
+    local vm_name="$1"
+
+    if ! virsh dominfo "$vm_name" &>/dev/null; then
+        echo "VM '$vm_name' not found"
+        return 1
+    fi
+
+    local state
+    state=$(virsh domstate "$vm_name")
+    if [[ "$state" != "running" ]]; then
+        echo "VM '$vm_name' is not running"
+        return 2
+    fi
+
+    local ip
+    ip=$(virsh domifaddr "$vm_name" | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | head -1)
+
+    if [[ -z "$ip" ]]; then
+        echo "Could not determine IP address for VM '$vm_name'"
+        return 3
+    fi
+
+    echo "$ip"
+}
+
+create_ssh_cmd() {
+    local vm_name="$1"
+    local username="$2"
+
+    local ip
+    ip=$(get_vm_ip "$vm_name")
+    local ret=$?
+
+    if [[ $ret -ne 0 ]]; then
+        echo "echo 'Cannot connect to $vm_name: $(get_vm_ip "$vm_name")'; sleep infinity"
+        return
+    fi
+
+    echo "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $username@$ip"
+}
+
+create_session() {
+    local force="${1:-false}"
+
+    if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+        if [[ "$force" == "true" ]]; then
+            slog "Killing existing session and creating a new one..."
+            tmux kill-session -t "$SESSION_NAME"
+        else
+            slog "Session '$SESSION_NAME' already exists, attaching..."
+            tmux attach-session -t "$SESSION_NAME"
+            return
+        fi
+    fi
+
+    slog "Creating tmux session with SSH connections to 4 libvirt VMs..."
+
+    UBUNTU_CMD=$(create_ssh_cmd "$UBUNTU_VM" "$UBUNTU_USER")
+    FEDORA_CMD=$(create_ssh_cmd "$FEDORA_VM" "$FEDORA_USER")
+    ARCH_CMD=$(create_ssh_cmd "$ARCH_VM" "$ARCH_USER")
+    DEBIAN_CMD=$(create_ssh_cmd "$DEBIAN_VM" "$DEBIAN_USER")
+
+    tmux new-session -d -s "$SESSION_NAME" -n "VMs" "$UBUNTU_CMD"
+
+    tmux split-window -h -t "$SESSION_NAME:0.0" "$FEDORA_CMD"
+    tmux split-window -v -t "$SESSION_NAME:0.0" "$ARCH_CMD"
+    tmux split-window -v -t "$SESSION_NAME:0.1" "$DEBIAN_CMD"
+
+    tmux select-layout -t "$SESSION_NAME:0" tiled
+
+    tmux attach-session -t "$SESSION_NAME"
+
+    success "Connected to all VMs in tmux session"
+}
+
+attach_session() {
+    if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+        warn "Session '$SESSION_NAME' does not exist. Creating it..."
+        create_session
+        return
+    fi
+
+    slog "Attaching to session '$SESSION_NAME'..."
+    tmux attach-session -t "$SESSION_NAME"
+}
+
+detach_session() {
+    if [[ -z "${TMUX:-}" ]]; then
+        fail "Not currently in a tmux session"
+        exit 1
+    fi
+
+    slog "Detaching from tmux session..."
+    tmux detach-client
+}
+
+destroy_session() {
+    if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+        warn "Session '$SESSION_NAME' does not exist"
+        return
+    fi
+
+    slog "Destroying session '$SESSION_NAME'..."
+    tmux kill-session -t "$SESSION_NAME"
+    success "Session destroyed"
+}
+
+main() {
+    check_libvirt
+    check_tmux
+
+    local command="${1:-}"
+
+    case "$command" in
+    create)
+        create_session "true"
+        ;;
+    attach)
+        attach_session
+        ;;
+    detach)
+        detach_session
+        ;;
+    destroy)
+        destroy_session
+        ;;
+    help | --help | -h)
+        usage
+        ;;
+    "")
+        create_session
+        ;;
+    *)
+        fail "Unknown option: $command"
+        usage
+        exit 1
+        ;;
+    esac
+}
+
+main "$@"
