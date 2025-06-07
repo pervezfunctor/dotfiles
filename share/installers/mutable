@@ -355,25 +355,6 @@ permissive_selinux() {
     fi
 }
 
-libvirt_config_install() {
-    sudo systemctl enable --now libvirtd
-    sudo systemctl enable --now libvirtd.socket
-    sudo systemctl enable --now virtlogd
-
-    sudo usermod -aG libvirt "$(whoami)"
-
-    newgrp libvirt <<EOF
-    if ! virsh net-list --all | grep -q default; then
-         virsh net-define /usr/share/libvirt/networks/default.xml
-         virsh net-start default
-         virsh net-autostart default
-    fi
-    if ! virsh net-list --all | grep -q default; then
-         warn "Failed to create default network"
-    fi
-EOF
-}
-
 foot_config_install() {
     slog "foot config"
     stowgf foot

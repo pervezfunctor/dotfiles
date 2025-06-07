@@ -558,6 +558,8 @@ incus_config_install() {
     sudo usermod -aG incus-admin "$USER"
     sudo systemctl enable --now incus.socket
     sudo systemctl enable --now incus.service
+    sudo systemctl enable --now libvirtd
+
 
     if has_cmd firewalld; then
         sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
@@ -569,6 +571,25 @@ incus_config_install() {
 EOF
 
     slog "incus config done!"
+}
+
+libvirt_config_install() {
+    sudo systemctl enable --now libvirtd
+    sudo systemctl enable --now libvirtd.socket
+    sudo systemctl enable --now virtlogd
+
+    sudo usermod -aG libvirt "$(whoami)"
+
+    newgrp libvirt <<EOF
+    if ! virsh net-list --all | grep -q default; then
+         virsh net-define /usr/share/libvirt/networks/default.xml
+         virsh net-start default
+         virsh net-autostart default
+    fi
+    if ! virsh net-list --all | grep -q default; then
+         warn "Failed to create default network"
+    fi
+EOF
 }
 
 atomic_nvim_install() {
