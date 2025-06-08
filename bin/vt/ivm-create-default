@@ -20,10 +20,10 @@ main() {
     ivm-create --distro fedora --name fedora-vm
 
     slog "Creating Arch VM: arch-vm"
-    ivm-create --distro fedora --name arch-vm
+    ivm-create --distro arch --name arch-vm
 
     slog "Creating openSUSE Tumbleweed VM: tw-vm"
-    ivm-create --distro fedora --name tw-vm
+    ivm-create --distro tw --name tw-vm
 
     slog "Listing created VMs:"
     ivm list

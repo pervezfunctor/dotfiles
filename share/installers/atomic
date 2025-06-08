@@ -552,24 +552,29 @@ incus_config_install() {
         warn "incus not installed, skipping incus config"
         return 0
     fi
-    slog "incus config"
 
     sudo usermod -aG incus "$USER"
     sudo usermod -aG incus-admin "$USER"
+
     sudo systemctl enable --now incus.socket
     sudo systemctl enable --now incus.service
     sudo systemctl enable --now libvirtd
 
+    sudo incus admin init --minimal
+    sudo incus network set incusbr0 ipv4.dhcp true
+    sudo incus network set incusbr0 ipv4.dns.mode managed
+    sudo incus config set core.https_address=127.0.0.1:8443
+
     if has_cmd firewalld; then
         sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
         sudo firewall-cmd --reload
+    elif has_cmd ufw; then
+        sudo ufw allow in on incusbr0
+        sudo ufw route allow in on incusbr0
+        sudo ufw route allow out on incusbr0
     fi
 
-    newgrp incus-admin <<EOF
-    sudo incus admin init --minimal
-EOF
-
-    slog "incus config done!"
+    slog "incus config done! Re-login or reboot for group changes to apply."
 }
 
 libvirt_config_install() {

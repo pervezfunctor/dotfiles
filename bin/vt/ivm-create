@@ -20,6 +20,7 @@ RAM_MB="2048"
 DISK_SIZE="20GB"
 BRIDGE_IF="incusbr0"
 DOTFILES_OPTIONS=""
+INSTALL_NIX=false
 
 usage() {
     cat <<EOF
@@ -447,9 +448,9 @@ parse_args() {
             shift
             ;;
         --dotfiles)
-            shift # Remove --dotfiles from arguments
+            shift                 # Remove --dotfiles from arguments
             DOTFILES_OPTIONS="$*" # Capture all remaining arguments
-            break # Exit the loop since --dotfiles must be last
+            break                 # Exit the loop since --dotfiles must be last
             ;;
         --help | -h)
             usage

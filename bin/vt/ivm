@@ -27,10 +27,12 @@ COMMANDS:
     delete <name>           Delete a VM completely
     console <name>          Connect to VM console
     exec <name> <cmd>       Execute command in VM
+    shell <n>            Get interactive shell in VM
     ip <name>               Get VM IP address
     ssh <name> [username]   Connect to VM via SSH
     info <name>             Show detailed VM information
     config <name>           Show VM configuration
+    logs <n> [type]      Show VM logs (instance, console, or cloud-init-logs)
     snapshot <name> [snap]  Create VM snapshot
     restore <name> <snap>   Restore VM from snapshot
     copy <src> <dest>       Copy VM
@@ -47,9 +49,13 @@ EXAMPLES:
     $0 create fedora                # Create Fedora VM with default name
     $0 console ubuntu-vm            # Connect to VM console
     $0 exec ubuntu-vm "ls -la"      # Run command in VM
+    $0 shell ubuntu-vm              # Get interactive shell in 'ubuntu-vm'
     $0 ip ubuntu-vm                 # Get IP address of 'ubuntu-vm'
     $0 ssh ubuntu-vm                # SSH to 'ubuntu-vm' (auto-detect username)
     $0 ssh ubuntu-vm ubuntu         # SSH to 'ubuntu-vm' as 'ubuntu' user
+    $0 logs ubuntu-vm               # Show instance logs for 'ubuntu-vm'
+    $0 logs ubuntu-vm console       # Show console logs for 'ubuntu-vm'
+    $0 logs ubuntu-vm cloud-init-logs # Show cloud-init logs for 'ubuntu-vm'
     $0 snapshot ubuntu-vm backup    # Create snapshot named 'backup'
     $0 delete old-vm                # Delete 'old-vm' completely
 
@@ -324,6 +330,55 @@ show_vm_config() {
     incus config show "$vm_name"
 }
 
+show_logs() {
+    local vm_name="$1"
+    local log_type="${2:-instance}"
+    check_incus || return 1
+    check_vm "$vm_name" || return 1
+
+    local state
+    state=$(get_vm_state "$vm_name")
+
+    case "$log_type" in
+    instance)
+        slog "Showing instance logs for VM '$vm_name'..."
+        echo
+        incus info "$vm_name" --show-log
+        ;;
+    console)
+        slog "Showing console logs for VM '$vm_name'..."
+        echo
+        incus console "$vm_name" --show-log
+        ;;
+    cloud-init-logs)
+        if [[ "$state" != "RUNNING" ]]; then
+            fail "VM '$vm_name' is not running"
+            slog "Start it with: $0 start $vm_name"
+            return 1
+        fi
+
+        slog "Showing cloud-init logs for VM '$vm_name'..."
+        echo
+
+        slog "=== Cloud-init main log (/var/log/cloud-init.log) ==="
+        incus exec "$vm_name" -- tail -50 /var/log/cloud-init.log 2>/dev/null || {
+            warn "Could not read /var/log/cloud-init.log"
+        }
+
+        echo
+        slog "=== Cloud-init output log (/var/log/cloud-init-output.log) ==="
+        incus exec "$vm_name" -- tail -50 /var/log/cloud-init-output.log 2>/dev/null || {
+            warn "Could not read /var/log/cloud-init-output.log"
+        }
+        ;;
+    *)
+        fail "Invalid log type: $log_type"
+        slog "Valid log types: instance, console, cloud-init-logs"
+        return 1
+        ;;
+    esac
+}
+
 create_snapshot() {
     local vm_name="$1"
     local snapshot_name="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
@@ -520,29 +575,7 @@ ssh_to_vm() {
 
     # Auto-detect username if not provided
     if [[ -z "$username" ]]; then
-        # Extract base name from VM name (remove -vm suffix if present)
-        username="${vm_name%-vm}"
-
-        # Handle special cases for common distros
-        case "$username" in
-        ubuntu*) username="ubuntu" ;;
-        fedora*) username="fedora" ;;
-        centos*) username="centos" ;;
-        debian*) username="debian" ;;
-        arch*) username="arch" ;;
-        alpine*) username="alpine" ;;
-        tumbleweed* | tw*) username="opensuse" ;;
-        *)
-            # Default to the VM name or common default
-            if [[ "$username" =~ ^(ubuntu|fedora|centos|debian|arch|alpine|opensuse)$ ]]; then
-                # Keep as is
-                :
-            else
-                username="ubuntu" # Default fallback
-            fi
-            ;;
-        esac
-
+        username=$(detect_vm_user "$vm_name")
         slog "Auto-detected username: $username (override with: $0 ssh $vm_name <username>)"
     fi
 
@@ -570,6 +603,68 @@ ssh_to_vm() {
         ssh "$username@$ip"
         ;;
     esac
+}
+
+detect_vm_user() {
+    local vm_name="$1"
+
+    # Extract base name from VM name (remove -vm suffix if present)
+    local username="${vm_name%-vm}"
+
+    # Handle special cases for common distros
+    case "$username" in
+    ubuntu*) username="ubuntu" ;;
+    fedora*) username="fedora" ;;
+    centos*) username="centos" ;;
+    debian*) username="debian" ;;
+    arch*) username="arch" ;;
+    alpine*) username="alpine" ;;
+    tumbleweed* | tw*) username="opensuse" ;;
+    *)
+        # Default to the VM name or common default
+        if [[ "$username" =~ ^(ubuntu|fedora|centos|debian|arch|alpine|opensuse)$ ]]; then
+            # Keep as is
+            :
+        else
+            username="ubuntu" # Default fallback
+        fi
+        ;;
+    esac
+
+    echo "$username"
+}
+
+shell_to_vm() {
+    local vm_name="$1"
+    check_incus || return 1
+    check_vm "$vm_name" || return 1
+
+    local state
+    state=$(get_vm_state "$vm_name")
+
+    if [[ "$state" != "RUNNING" ]]; then
+        fail "VM '$vm_name' is not running"
+        slog "Start it with: $0 start $vm_name"
+        return 1
+    fi
+
+    # Try to find an appropriate user for this VM
+    local username
+    username=$(detect_vm_user "$vm_name")
+
+    # Check if the detected user exists in the VM
+    if incus exec "$vm_name" -- id "$username" >/dev/null 2>&1; then
+        slog "Entering shell of VM '$vm_name' as user '$username'..."
+        incus exec "$vm_name" -- su - "$username"
+    elif [[ "$username" != "ubuntu" ]] && incus exec "$vm_name" -- id "ubuntu" >/dev/null 2>&1; then
+        # If the detected user doesn't exist, try ubuntu as fallback
+        slog "User '$username' not found, entering shell of VM '$vm_name' as user 'ubuntu'..."
+        incus exec "$vm_name" -- su - "ubuntu"
+    else
+        # Fall back to root if no suitable user found
+        slog "No suitable user found, entering shell of VM '$vm_name' as root..."
+        incus shell "$vm_name"
+    fi
 }
 
 # Main command handling
@@ -657,6 +752,14 @@ exec)
     }
     exec_in_vm "$vm_name" "${@:3}"
     ;;
+shell)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    shell_to_vm "$vm_name"
+    ;;
 ip)
     [[ -z "$vm_name" ]] && {
         fail "VM name required"
@@ -688,6 +791,14 @@ config)
         exit 1
     }
     show_vm_config "$vm_name"
+    ;;
+logs)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    show_logs "$vm_name" "${3:-}"
     ;;
 snapshot)
     [[ -z "$vm_name" ]] && {

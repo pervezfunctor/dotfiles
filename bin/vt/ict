@@ -30,6 +30,7 @@ COMMANDS:
     ssh <name> [username]   Connect to container via SSH
     info <name>             Show detailed container information
     config <name>           Show container configuration
+    logs <n> [type]      Show container logs (instance, console, or system)
     snapshot <name> [snap]  Create container snapshot
     restore <name> <snap>   Restore container from snapshot
     copy <src> <dest>       Copy container
@@ -48,6 +49,9 @@ EXAMPLES:
     $0 ip ubuntu                    # Get IP address of 'ubuntu' container
     $0 ssh ubuntu                   # SSH to 'ubuntu' container (auto-detect username)
     $0 ssh ubuntu root              # SSH to 'ubuntu' container as 'root' user
+    $0 logs ubuntu                  # Show instance logs for 'ubuntu' container
+    $0 logs ubuntu console          # Show console logs for 'ubuntu' container
+    $0 logs ubuntu system           # Show system logs for 'ubuntu' container
     $0 snapshot ubuntu backup       # Create snapshot named 'backup'
     $0 delete old-container         # Delete 'old-container' completely
 
@@ -258,6 +262,25 @@ delete_container() {
     fi
 }
 
+detect_container_user() {
+    local container_name="$1"
+
+    # Auto-detect username based on container name patterns
+    case "$container_name" in
+    ubuntu*) echo "ubuntu" ;;
+    fedora*) echo "fedora" ;;
+    centos*) echo "centos" ;;
+    debian*) echo "debian" ;;
+    arch*) echo "arch" ;;
+    alpine*) echo "alpine" ;;
+    tumbleweed* | tw*) echo "opensuse" ;;
+    *)
+        # For containers, try ubuntu as default
+        echo "ubuntu"
+        ;;
+    esac
+}
+
 enter_shell() {
     local container_name="$1"
     check_incus || return 1
@@ -272,8 +295,23 @@ enter_shell() {
         return 1
     fi
 
-    slog "Entering shell of container '$container_name'..."
-    incus exec "$container_name" -- /bin/bash -l
+    # Try to find an appropriate user for this container
+    local username
+    username=$(detect_container_user "$container_name")
+
+    # Check if the detected user exists in the container
+    if incus exec "$container_name" -- id "$username" >/dev/null 2>&1; then
+        slog "Entering shell of container '$container_name' as user '$username'..."
+        incus exec "$container_name" -- su - "$username"
+    elif [[ "$username" != "ubuntu" ]] && incus exec "$container_name" -- id "ubuntu" >/dev/null 2>&1; then
+        # If the detected user doesn't exist, try ubuntu as fallback
+        slog "User '$username' not found, entering shell of container '$container_name' as user 'ubuntu'..."
+        incus exec "$container_name" -- su - "ubuntu"
+    else
+        # Fall back to root if no suitable user found
+        slog "No suitable user found, entering shell of container '$container_name' as root..."
+        incus shell "$container_name"
+    fi
 }
 
 exec_in_container() {
@@ -314,6 +352,55 @@ show_container_config() {
     slog "Configuration for container '$container_name':"
     echo
     incus config show "$container_name"
+}
+
+show_logs() {
+    local container_name="$1"
+    local log_type="${2:-instance}"
+    check_incus || return 1
+    check_container "$container_name" || return 1
+
+    local state
+    state=$(get_container_state "$container_name")
+
+    case "$log_type" in
+    instance)
+        slog "Showing instance logs for container '$container_name'..."
+        echo
+        incus info "$container_name" --show-log
+        ;;
+    console)
+        slog "Showing console logs for container '$container_name'..."
+        echo
+        incus console "$container_name" --show-log
+        ;;
+    system)
+        if [[ "$state" != "RUNNING" ]]; then
+            fail "Container '$container_name' is not running"
+            slog "Start it with: $0 start $container_name"
+            return 1
+        fi
+
+        slog "Showing system logs for container '$container_name'..."
+        echo
+
+        slog "=== Recent system messages (journalctl) ==="
+        incus exec "$container_name" -- journalctl --no-pager -n 50 2>/dev/null || {
+            slog "=== System log (/var/log/syslog) ==="
+            incus exec "$container_name" -- tail -50 /var/log/syslog 2>/dev/null || {
+                slog "=== System messages (/var/log/messages) ==="
+                incus exec "$container_name" -- tail -50 /var/log/messages 2>/dev/null || {
+                    warn "Could not read system logs - container may not have systemd or standard log files"
+                }
+            }
+        }
+        ;;
+    *)
+        fail "Unknown log type: $log_type"
+        slog "Available log types: instance, console, system"
+        return 1
+        ;;
+    esac
 }
 
 create_snapshot() {
@@ -507,22 +594,7 @@ ssh_to_container() {
 
     # Auto-detect username if not provided
     if [[ -z "$username" ]]; then
-        # For containers, default to root since they typically don't have cloud-init
-        # but also try to detect based on distro patterns
-        case "$container_name" in
-        ubuntu*) username="ubuntu" ;;
-        fedora*) username="fedora" ;;
-        centos*) username="centos" ;;
-        debian*) username="debian" ;;
-        arch*) username="arch" ;;
-        alpine*) username="alpine" ;;
-        tumbleweed* | tw*) username="opensuse" ;;
-        *)
-            # For containers, root is often the default
-            username="root"
-            ;;
-        esac
-
+        username=$(detect_container_user "$container_name")
         slog "Auto-detected username: $username (override with: $0 ssh $container_name <username>)"
     fi
 
@@ -665,6 +737,14 @@ config)
         exit 1
     }
     show_container_config "$container_name"
+    ;;
+logs)
+    [[ -z "$container_name" ]] && {
+        fail "Container name required"
+        usage
+        exit 1
+    }
+    show_logs "$container_name" "${3:-}"
     ;;
 snapshot)
     [[ -z "$container_name" ]] && {
