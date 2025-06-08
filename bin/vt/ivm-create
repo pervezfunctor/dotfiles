@@ -16,7 +16,7 @@ unset SSH_KEY
 unset IMAGE
 
 VCPUS="2"
-RAM_MB="2048"
+MEMORY_MB="2048"
 DISK_SIZE="20GB"
 BRIDGE_IF="incusbr0"
 DOTFILES_OPTIONS=""
@@ -29,7 +29,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create Incus virtual machines with cloud-init and SSH access.
 
 REQUIRED:
-    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine)
+    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine, tumbleweed)
 
 OPTIONS:
     --name NAME             VM name (default: distro name)
@@ -37,8 +37,8 @@ OPTIONS:
     --username USER         Username for VM (default: distro default)
     --password PASS         User password (default: vm name)
     --vcpus NUM             Number of vCPUs (default: 2)
-    --ram MB                RAM in MB (default: 2048)
-    --disk SIZE             Disk size (default: 20GB)
+    --memory MB             RAM in MB (default: 2048)
+    --disk-size SIZE        Disk size (default: 20GB)
     --ssh-key PATH          SSH public key path (default: auto-detect)
     --bridge BRIDGE         Network bridge (default: incusbr0)
     --nix                   Install Nix using Determinate Systems installer
@@ -47,19 +47,21 @@ OPTIONS:
 
 EXAMPLES:
     $0 --distro ubuntu
-    $0 --distro fedora --name my-fedora --vcpus 4 --ram 4096
+    $0 --distro fedora --name my-fedora --vcpus 4 --memory 4096
     $0 --distro debian --username admin --password mypass
-    $0 --distro arch --release current --disk 40GB
+    $0 --distro arch --release current --disk-size 40GB
+    $0 --distro tumbleweed --name opensuse-vm --vcpus 2 --memory 4096
     $0 --distro ubuntu --nix            # Ubuntu VM with Nix package manager
-    $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --ram 8192 --dotfiles slim-shell docker code-server
+    $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --memory 8192 --dotfiles slim-shell docker code-server
 
 SUPPORTED DISTRIBUTIONS:
-    ubuntu    - Ubuntu LTS (24.04) or specified release
-    fedora    - Fedora (latest) or specified release
-    arch      - Arch Linux (current)
-    debian    - Debian (12/bookworm) or specified release
-    centos    - CentOS Stream (9) or specified release
-    alpine    - Alpine Linux (3.19) or specified release
+    ubuntu      - Ubuntu LTS (24.04) or specified release
+    fedora      - Fedora (latest) or specified release
+    arch        - Arch Linux (current)
+    debian      - Debian (12/bookworm) or specified release
+    centos      - CentOS Stream (9) or specified release
+    alpine      - Alpine Linux (3.19) or specified release
+    tumbleweed  - openSUSE Tumbleweed (rolling release)
 
 EOF
 }
@@ -129,9 +131,14 @@ configure_distribution() {
         USERNAME=${USERNAME:-"alpine"}
         IMAGE="images:alpine/${RELEASE}/cloud"
         ;;
+    tumbleweed)
+        RELEASE=${RELEASE:-"current"}
+        USERNAME=${USERNAME:-"opensuse"}
+        IMAGE="images:opensuse/tumbleweed/cloud"
+        ;;
     *)
         fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine"
+        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine, tumbleweed"
         exit 1
         ;;
     esac
@@ -144,7 +151,7 @@ configure_distribution() {
     slog "  VM Name: $VM_NAME"
     slog "  Username: $USERNAME"
     slog "  Image: $IMAGE"
-    slog "  Resources: ${VCPUS} vCPUs, ${RAM_MB}MB RAM, ${DISK_SIZE} disk"
+    slog "  Resources: ${VCPUS} vCPUs, ${MEMORY_MB}MB RAM, ${DISK_SIZE} disk"
     slog "  Network Bridge: $BRIDGE_IF"
     if [[ -n "$DOTFILES_OPTIONS" ]]; then
         slog "  Dotfiles: $DOTFILES_OPTIONS"
@@ -291,7 +298,7 @@ create_vm() {
     local launch_cmd=(
         incus launch "$IMAGE" "$VM_NAME" --vm
         --config "limits.cpu=$VCPUS"
-        --config "limits.memory=${RAM_MB}MB"
+        --config "limits.memory=${MEMORY_MB}MB"
         --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
         --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
         --device "root,size=$DISK_SIZE"
@@ -427,11 +434,11 @@ parse_args() {
             VCPUS="$2"
             shift 2
             ;;
-        --ram)
-            RAM_MB="$2"
+        --memory)
+            MEMORY_MB="$2"
             shift 2
             ;;
-        --disk)
+        --disk-size)
             DISK_SIZE="$2"
             shift 2
             ;;

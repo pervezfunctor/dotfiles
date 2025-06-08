@@ -17,7 +17,7 @@ unset SSH_KEY
 unset IMAGE
 
 VCPUS="2"
-RAM_MB="1024"
+MEMORY_MB="1024"
 PRIVILEGED="false"
 
 usage() {
@@ -27,7 +27,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create Incus LXC containers with cloud-init and SSH access.
 
 REQUIRED:
-    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine)
+    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine, tumbleweed)
 
 OPTIONS:
     --name NAME             Container name (default: distro name)
@@ -35,24 +35,26 @@ OPTIONS:
     --username USER         Username for container (default: distro default)
     --password PASS         User password (default: container name)
     --vcpus NUM             Number of vCPUs (default: 2)
-    --ram MB                RAM in MB (default: 1024)
+    --memory MB             RAM in MB (default: 1024)
     --ssh-key PATH          SSH public key path (default: auto-detect)
     --privileged            Create privileged container (default: false)
     --help, -h              Show this help
 
 EXAMPLES:
     $0 --distro ubuntu
-    $0 --distro fedora --name my-fedora --vcpus 4 --ram 2048
+    $0 --distro fedora --name my-fedora --vcpus 4 --memory 2048
     $0 --distro debian --username admin --password mypass
     $0 --distro arch --release current --privileged
+    $0 --distro tumbleweed --name opensuse-container --vcpus 2 --memory 2048
 
 SUPPORTED DISTRIBUTIONS:
-    ubuntu    - Ubuntu LTS (24.04) or specified release
-    fedora    - Fedora (latest) or specified release
-    arch      - Arch Linux (current)
-    debian    - Debian (12/bookworm) or specified release
-    centos    - CentOS Stream (9) or specified release
-    alpine    - Alpine Linux (3.19) or specified release
+    ubuntu      - Ubuntu LTS (24.04) or specified release
+    fedora      - Fedora (latest) or specified release
+    arch        - Arch Linux (current)
+    debian      - Debian (12/bookworm) or specified release
+    centos      - CentOS Stream (9) or specified release
+    alpine      - Alpine Linux (3.19) or specified release
+    tumbleweed  - openSUSE Tumbleweed (rolling release)
 
 NOTE: LXC containers are lightweight and share the host kernel.
       They start faster and use fewer resources than VMs.
@@ -125,9 +127,14 @@ configure_distribution() {
         USERNAME=${USERNAME:-"alpine"}
         IMAGE="images:alpine/${RELEASE}/cloud"
         ;;
+    tumbleweed)
+        RELEASE=${RELEASE:-"current"}
+        USERNAME=${USERNAME:-"opensuse"}
+        IMAGE="images:opensuse/tumbleweed/cloud"
+        ;;
     *)
         fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine"
+        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine, tumbleweed"
         exit 1
         ;;
     esac
@@ -140,7 +147,7 @@ configure_distribution() {
     slog "  Container Name: $CONTAINER_NAME"
     slog "  Username: $USERNAME"
     slog "  Image: $IMAGE"
-    slog "  Resources: ${VCPUS} vCPUs, ${RAM_MB}MB RAM"
+    slog "  Resources: ${VCPUS} vCPUs, ${MEMORY_MB}MB RAM"
     slog "  Privileged: $PRIVILEGED"
 }
 
@@ -152,6 +159,15 @@ generate_cloud_init_config() {
 
     local pub_key
     pub_key=$(cat "$SSH_KEY")
+
+    local packages_common="curl wget vim htop git unzip"
+    local openssh_pkg
+
+    if [[ "$DISTRO" == "arch" ]]; then
+        openssh_pkg="openssh"
+    else
+        openssh_pkg="openssh-server"
+    fi
 
     # Create cloud-init user-data file using tee
     tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
@@ -178,13 +194,8 @@ package_update: true
 package_upgrade: true
 
 packages:
-  - openssh-server
-  - curl
-  - wget
-  - vim
-  - htop
-  - git
-  - unzip
+  - $openssh_pkg
+$(for pkg in $packages_common; do echo "  - $pkg"; done)
 
 # Enable SSH service and ensure proper configuration
 runcmd:
@@ -231,7 +242,7 @@ create_container() {
     local launch_args=(
         "$IMAGE" "$CONTAINER_NAME"
         --config "limits.cpu=$VCPUS"
-        --config "limits.memory=${RAM_MB}MB"
+        --config "limits.memory=${MEMORY_MB}MB"
         --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
         --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
     )
@@ -338,8 +349,8 @@ parse_args() {
             VCPUS="$2"
             shift 2
             ;;
-        --ram)
-            RAM_MB="$2"
+        --memory)
+            MEMORY_MB="$2"
             shift 2
             ;;
         --ssh-key)

@@ -23,8 +23,8 @@ _incus_vm_create() {
         '--username[VM username]:username:' \
         '--password[Set password for VM user]:password:' \
         '--vcpus[Number of vCPUs]:vcpus:(1 2 4 8 16)' \
-        '--ram[RAM in MB]:memory:(1024 2048 4096 8192 16384)' \
-        '--disk[Disk size]:size:(10GB 20GB 40GB 80GB 100GB)' \
+        '--memory[RAM in MB]:memory:(1024 2048 4096 8192 16384)' \
+        '--disk-size[Disk size]:size:(10GB 20GB 40GB 80GB 100GB)' \
         '--ssh-key[SSH public key path]:file:_files' \
         '--bridge[Network bridge]:bridge:(incusbr0 br0 lxdbr0)' \
         '--nix[Install Nix using Determinate Systems installer]' \

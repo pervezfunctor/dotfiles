@@ -9,7 +9,7 @@ source "$DOT_DIR/share/utils"
 
 main() {
 
-    has_cmd virt-install || fail "virt-install is not installed. Please install libvirt and virt-install first."
+    has_cmd virt-install || fail "virt-install is not installed. Please install libvirt and virt-install first. You can use: vm install"
 
     slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
 

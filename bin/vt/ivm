@@ -37,6 +37,14 @@ COMMANDS:
     restore <name> <snap>   Restore VM from snapshot
     copy <src> <dest>       Copy VM
     cleanup                 Remove stopped VMs
+    usb-list                List all available USB devices on host
+    usb-attached <n>        List USB devices attached to VM
+    usb-attach <n> <device> [name]  Attach USB device to VM
+    usb-detach <n> <device>         Detach USB device from VM
+    disk-list               List all available block devices on host
+    disk-attached <n>       List disk devices attached to VM
+    disk-attach <n> <device> [name] Attach raw disk device to VM
+    disk-detach <n> <device>        Detach disk device from VM
 
 SUPPORTED DISTROS:
     ubuntu, fedora, arch, tumbleweed, debian, centos, alpine
@@ -58,6 +66,12 @@ EXAMPLES:
     $0 logs ubuntu-vm cloud-init-logs # Show cloud-init logs for 'ubuntu-vm'
     $0 snapshot ubuntu-vm backup    # Create snapshot named 'backup'
     $0 delete old-vm                # Delete 'old-vm' completely
+    $0 usb-list                     # List available USB devices
+    $0 usb-attach ubuntu-vm 1234:5678  # Attach USB device to VM
+    $0 usb-detach ubuntu-vm my-usb      # Detach USB device from VM
+    $0 disk-list                    # List available disk devices
+    $0 disk-attach ubuntu-vm /dev/sdb   # Attach raw disk to VM
+    $0 disk-detach ubuntu-vm /dev/sdb   # Detach disk from VM
 
 EOF
 }
@@ -668,6 +682,166 @@ shell_to_vm() {
 }
 
 # Main command handling
+# USB device management functions
+list_host_usb_devices() {
+    slog "Available USB devices on host:"
+    echo
+    printf "%-3s %-6s %-9s %s\n" "Bus" "Device" "ID" "Description"
+    printf "%-3s %-6s %-9s %s\n" "---" "------" "---------" "-----------"
+
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^Bus\ ([0-9]+)\ Device\ ([0-9]+):\ ID\ ([0-9a-f]{4}):([0-9a-f]{4})\ (.*)$ ]]; then
+            local bus="${BASH_REMATCH[1]}"
+            local device="${BASH_REMATCH[2]}"
+            local vendor="${BASH_REMATCH[3]}"
+            local product="${BASH_REMATCH[4]}"
+            local description="${BASH_REMATCH[5]}"
+            printf "%-3s %-6s %s:%s %s\n" "$bus" "$device" "$vendor" "$product" "$description"
+        fi
+    done < <(lsusb)
+    echo
+    slog "Usage examples:"
+    slog "  By USB ID: $0 usb-attach VM_NAME vendor:product"
+    slog "  By Bus/Device: $0 usb-attach VM_NAME bus.device"
+}
+
+list_vm_usb_devices() {
+    local vm_name="$1"
+    check_vm "$vm_name" || return 1
+
+    slog "USB devices attached to VM '$vm_name':"
+    echo
+    incus config device list "$vm_name" | grep -E "^usb" || {
+        slog "No USB devices attached to VM '$vm_name'"
+    }
+}
+
+attach_usb_device() {
+    local vm_name="$1"
+    local device_spec="$2"
+    local device_name="${3:-usb-$(date +%s)}"
+
+    check_vm "$vm_name" || return 1
+
+    local state
+    state=$(get_vm_state "$vm_name")
+
+    if [[ "$state" != "RUNNING" ]]; then
+        fail "VM '$vm_name' must be running to attach USB devices"
+        slog "Start it with: $0 start $vm_name"
+        return 1
+    fi
+
+    # Parse device specification
+    local vendor_id product_id bus device
+    if [[ "$device_spec" =~ ^([0-9a-f]{4}):([0-9a-f]{4})$ ]]; then
+        vendor_id="${BASH_REMATCH[1]}"
+        product_id="${BASH_REMATCH[2]}"
+        slog "Attaching USB device $vendor_id:$product_id to VM '$vm_name' as '$device_name'..."
+        incus config device add "$vm_name" "$device_name" usb vendorid="$vendor_id" productid="$product_id"
+    elif [[ "$device_spec" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+        bus="${BASH_REMATCH[1]}"
+        device="${BASH_REMATCH[2]}"
+        slog "Attaching USB device bus $bus device $device to VM '$vm_name' as '$device_name'..."
+        incus config device add "$vm_name" "$device_name" usb busnum="$bus" devnum="$device"
+    else
+        fail "Invalid device specification: $device_spec"
+        slog "Use format: vendor:product (e.g., 1234:5678) or bus.device (e.g., 1.2)"
+        return 1
+    fi
+
+    if [[ $? -eq 0 ]]; then
+        success "USB device attached successfully as '$device_name'"
+    else
+        fail "Failed to attach USB device"
+        return 1
+    fi
+}
+
+detach_usb_device() {
+    local vm_name="$1"
+    local device_name="$2"
+
+    check_vm "$vm_name" || return 1
+
+    slog "Detaching USB device '$device_name' from VM '$vm_name'..."
+    if incus config device remove "$vm_name" "$device_name"; then
+        success "USB device '$device_name' detached successfully"
+    else
+        fail "Failed to detach USB device '$device_name'"
+        return 1
+    fi
+}
+
+# Disk device management functions
+list_host_disk_devices() {
+    slog "Available block devices on host:"
+    echo
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,MODEL | grep -E "(disk|part)" || {
+        warn "No block devices found"
+    }
+    echo
+    slog "Usage examples:"
+    slog "  $0 disk-attach VM_NAME /dev/sdb"
+    slog "  $0 disk-attach VM_NAME /dev/sdb1 my-disk"
+}
+
+list_vm_disk_devices() {
+    local vm_name="$1"
+    check_vm "$vm_name" || return 1
+
+    slog "Disk devices attached to VM '$vm_name':"
+    echo
+    incus config device list "$vm_name" | grep -E "^disk" || {
+        slog "No additional disk devices attached to VM '$vm_name'"
+    }
+}
+
+attach_disk_device() {
+    local vm_name="$1"
+    local device_path="$2"
+    local device_name="${3:-disk-$(basename "$device_path")}"
+
+    check_vm "$vm_name" || return 1
+
+    if [[ ! -b "$device_path" ]]; then
+        fail "Device '$device_path' is not a valid block device"
+        return 1
+    fi
+
+    local state
+    state=$(get_vm_state "$vm_name")
+
+    if [[ "$state" != "RUNNING" ]]; then
+        fail "VM '$vm_name' must be running to attach disk devices"
+        slog "Start it with: $0 start $vm_name"
+        return 1
+    fi
+
+    slog "Attaching disk device '$device_path' to VM '$vm_name' as '$device_name'..."
+    if incus config device add "$vm_name" "$device_name" disk source="$device_path"; then
+        success "Disk device attached successfully as '$device_name'"
+    else
+        fail "Failed to attach disk device"
+        return 1
+    fi
+}
+
+detach_disk_device() {
+    local vm_name="$1"
+    local device_name="$2"
+
+    check_vm "$vm_name" || return 1
+
+    slog "Detaching disk device '$device_name' from VM '$vm_name'..."
+    if incus config device remove "$vm_name" "$device_name"; then
+        success "Disk device '$device_name' detached successfully"
+    else
+        fail "Failed to detach disk device '$device_name'"
+        return 1
+    fi
+}
+
 if [[ $# -eq 0 ]]; then
     usage
     exit 1
@@ -836,6 +1010,84 @@ copy)
     ;;
 cleanup)
     cleanup_vms
+    ;;
+usb-list)
+    list_host_usb_devices
+    ;;
+usb-attached)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    list_vm_usb_devices "$vm_name"
+    ;;
+usb-attach)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    device_spec="${3:-}"
+    [[ -z "$device_spec" ]] && {
+        fail "Device specification required"
+        usage
+        exit 1
+    }
+    attach_usb_device "$vm_name" "$device_spec" "${4:-}"
+    ;;
+usb-detach)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    device_name="${3:-}"
+    [[ -z "$device_name" ]] && {
+        fail "Device name required"
+        usage
+        exit 1
+    }
+    detach_usb_device "$vm_name" "$device_name"
+    ;;
+disk-list)
+    list_host_disk_devices
+    ;;
+disk-attached)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    list_vm_disk_devices "$vm_name"
+    ;;
+disk-attach)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    device_path="${3:-}"
+    [[ -z "$device_path" ]] && {
+        fail "Device path required"
+        usage
+        exit 1
+    }
+    attach_disk_device "$vm_name" "$device_path" "${4:-}"
+    ;;
+disk-detach)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    device_name="${3:-}"
+    [[ -z "$device_name" ]] && {
+        fail "Device name required"
+        usage
+        exit 1
+    }
+    detach_disk_device "$vm_name" "$device_name"
     ;;
 --help | -h)
     usage

@@ -35,7 +35,7 @@ create <distro> [name] [options]  Create a new Multipass VM
     umount <name> <path>    Unmount directory from VM
 
 CREATE OPTIONS:
-    --cpu N, --vcpus N      Number of CPUs (default: 2)
+    --vcpus N, --cpu N      Number of CPUs (default: 2)
     --memory XG             Memory size (default: 4G)
     --disk-size XG          Disk size (default: 20G)
     --nix                   Install Nix using Determinate Systems installer
@@ -53,7 +53,7 @@ EXAMPLES:
     $0 list                         # List all VMs
     $0 status ubuntu-vm             # Show status of 'ubuntu-vm'
     $0 create ubuntu myubuntu       # Create Ubuntu VM named 'myubuntu'
-    $0 create ubuntu --cpu 4 --memory 8G --disk-size 40G  # Create with custom specs
+    $0 create ubuntu --vcpus 4 --memory 8G --disk-size 40G  # Create with custom specs
     $0 create ubuntu --nix          # Create Ubuntu VM with Nix pre-installed
     $0 create oracular              # Create Ubuntu 24.10 VM with default name
     $0 create jammy my-jammy --vcpus 1 --memory 2G        # Create with custom CPU/memory
@@ -156,36 +156,36 @@ create_vm() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --cpu|--vcpus)
-                cpus="$2"
-                shift 2
-                ;;
-            --memory)
-                memory="$2"
-                shift 2
-                ;;
-            --disk-size)
-                disk_size="$2"
-                shift 2
-                ;;
-            --nix)
-                install_nix=true
-                shift
-                ;;
-            -*)
-                fail "Unknown option: $1"
+        --vcpus | --cpu)
+            cpus="$2"
+            shift 2
+            ;;
+        --memory)
+            memory="$2"
+            shift 2
+            ;;
+        --disk-size)
+            disk_size="$2"
+            shift 2
+            ;;
+        --nix)
+            install_nix=true
+            shift
+            ;;
+        -*)
+            fail "Unknown option: $1"
+            return 1
+            ;;
+        *)
+            # First non-option argument is the VM name
+            if [[ -z "$vm_name" ]]; then
+                vm_name="$1"
+            else
+                fail "Unexpected argument: $1"
                 return 1
-                ;;
-            *)
-                # First non-option argument is the VM name
-                if [[ -z "$vm_name" ]]; then
-                    vm_name="$1"
-                else
-                    fail "Unexpected argument: $1"
-                    return 1
-                fi
-                shift
-                ;;
+            fi
+            shift
+            ;;
         esac
     done
 

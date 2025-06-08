@@ -9,7 +9,7 @@ source "$DOT_DIR/share/utils"
 
 main() {
 
-    has_cmd incus || fail "Incus is not installed. Please install it first."
+    has_cmd incus || fail "Incus is not installed. Please install it first. You can use: ivm install"
 
     slog "Creating 4 Incus VMs (Ubuntu, Fedora, Arch, Tumbleweed)..."
 
