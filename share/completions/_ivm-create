@@ -27,6 +27,7 @@ _incus_vm_create() {
         '--disk[Disk size]:size:(10GB 20GB 40GB 80GB 100GB)' \
         '--ssh-key[SSH public key path]:file:_files' \
         '--bridge[Network bridge]:bridge:(incusbr0 br0 lxdbr0)' \
+        '--nix[Install Nix using Determinate Systems installer]' \
         '(--help -h)'{--help,-h}'[Show help]'
 }
 

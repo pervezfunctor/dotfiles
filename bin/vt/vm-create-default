@@ -13,17 +13,17 @@ main() {
 
     slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
 
-    slog "Creating Ubuntu VM: ubuntu-vm"
-    vm-create --distro ubuntu --name ubuntu-vm
+    slog "Creating Ubuntu VM: ubuntu-dev"
+    vm-create --distro ubuntu --name ubuntu-dev --release plucky --docker --brew --dotfiles min
 
-    slog "Creating Fedora VM: fedora-vm"
-    vm-create --distro fedora --name fedora-vm
+    slog "Creating Fedora VM: fedora-dt"
+    vm-create --distro fedora --name fedora-dt --dotfiles min
 
-    slog "Creating Arch VM: arch-vm"
-    vm-create --distro arch --name arch-vm
+    slog "Creating Arch VM: arch-dt"
+    vm-create --distro arch --name arch-dt --dotfiles min
 
-    slog "Creating Debian VM: debian-vm"
-    vm-create --distro debian --name debian-vm
+    slog "Creating Debian VM: debian-box"
+    vm-create --distro debian --name debian-dt --dotfiles box
 
     slog "Listing created VMs:"
     virsh list --all

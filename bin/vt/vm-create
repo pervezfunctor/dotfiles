@@ -12,7 +12,7 @@ DISK_SIZE="40G"
 BRIDGE_IF="virbr0"
 INSTALL_DOCKER=false
 INSTALL_BREW=false
-DOTFILES_GROUP=""
+DOTFILES_OPTIONS=""
 
 unset VM_NAME
 unset USERNAME
@@ -198,7 +198,8 @@ OPTIONS:
     --release REL       Distribution release (default: distribution-specific)
     --docker            Install Docker in the VM
     --brew              Install Homebrew and essential development tools
-    --dotfiles GROUP      Install dotfiles from https://github.com/pervezfunctor/dotfiles with GROUP
+    --nix               Install Nix using Determinate Systems installer
+    --dotfiles OPTIONS...   Install dotfiles with specified options (must be last)
     --password PASS     Set password for VM user (default: same as VM name)
     --help, -h          Show this help
 
@@ -219,8 +220,9 @@ EXAMPLES:
     $0 --distro debian --release bullseye        # Debian 11 VM
     $0 --distro ubuntu --docker                  # Ubuntu VM with Docker pre-installed
     $0 --distro ubuntu --brew                    # Ubuntu VM with Homebrew and dev tools
+    $0 --distro ubuntu --nix                     # Ubuntu VM with Nix package manager
     $0 --distro fedora --docker --brew           # Fedora VM with both Docker and Homebrew
-    $0 --distro ubuntu --dotfiles shell          # Ubuntu VM with dotfiles pre-installed
+    $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --memory 8192 --dotfiles slim-shell docker code-server
 
 PREREQUISITES:
     - KVM/QEMU installed and running
@@ -283,9 +285,14 @@ while [[ $# -gt 0 ]]; do
         INSTALL_BREW=true
         shift
         ;;
+    --nix)
+        INSTALL_NIX=true
+        shift
+        ;;
     --dotfiles)
-        DOTFILES_GROUP="$2"
-        shift 2
+        shift # Remove --dotfiles from arguments
+        DOTFILES_OPTIONS="$*" # Capture all remaining arguments
+        break # Exit the loop since --dotfiles must be last
         ;;
     --password)
         shift
@@ -598,7 +605,33 @@ generate_cloud_init() {
         )
     fi
 
-    if [[ -n "$DOTFILES_GROUP" ]]; then
+    if [[ "$INSTALL_NIX" == "true" ]]; then
+        motd_content+="
+      Nix package manager is installed and ready to use.
+      Quick commands:
+        nix --version
+        nix search <package>
+        nix-env -iA nixpkgs.<package>
+        nix-shell -p <package>
+"
+
+        slog "Adding Nix installation to cloud-init"
+
+        packages+=(
+            "curl"
+            "ca-certificates"
+        )
+
+        runcmd+=(
+            "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm"
+            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/bash.bashrc"
+            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/profile"
+            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /home/$USERNAME/.bashrc"
+            "systemctl enable --now nix-daemon || true"
+        )
+    fi
+
+    if [[ -n "$DOTFILES_OPTIONS" ]]; then
         motd_content+="
       Dotfiles are installed and ready to use.
       Location: /home/$USERNAME/.ilm
@@ -611,7 +644,7 @@ generate_cloud_init() {
         ilmc nvim
 "
 
-        slog "Adding dotfiles installation to cloud-init"
+        slog "Adding dotfiles installation to cloud-init with options: $DOTFILES_OPTIONS"
 
         runcmd+=(
             "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)\" -- $DOTFILES_GROUP'"
@@ -799,8 +832,8 @@ show_completion_info() {
         echo
     fi
 
-    if [[ -n "$DOTFILES_GROUP" ]]; then
-        slog "Dotfiles are pre-installed on this VM"
+    if [[ -n "$DOTFILES_OPTIONS" ]]; then
+        slog "Dotfiles are pre-installed on this VM with options: $DOTFILES_OPTIONS"
         echo "  Dotfiles Commands:"
         echo "    Location:           ~/.ilm"
         echo "    Install shell:      ilmi shell"
@@ -871,7 +904,7 @@ echo_all_vars() {
     echo "  BRIDGE_IF: $BRIDGE_IF"
     echo "  INSTALL_DOCKER: $INSTALL_DOCKER"
     echo "  INSTALL_BREW: $INSTALL_BREW"
-    echo "  DOTFILES_GROUP: $DOTFILES_GROUP"
+    echo "  DOTFILES_OPTIONS: $DOTFILES_OPTIONS"
     echo "  OS_VARIANT: $OS_VARIANT"
     echo "  BASE_IMG_NAME: $BASE_IMG_NAME"
     echo "  BASE_IMG: $BASE_IMG"

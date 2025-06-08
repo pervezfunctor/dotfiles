@@ -21,7 +21,7 @@ COMMANDS:
     install                 Install Multipass using ilmi
     list                    List all Multipass VMs
     status <name>           Show VM status and info
-    create <distro> [name]  Create a new Multipass VM
+create <distro> [name] [options]  Create a new Multipass VM
     start <name>            Start a VM
     stop <name>             Stop a VM
     restart <name>          Restart a VM
@@ -33,6 +33,12 @@ COMMANDS:
     info <name>             Show detailed VM information
     mount <name> <src> <dst> Mount host directory in VM
     umount <name> <path>    Unmount directory from VM
+
+CREATE OPTIONS:
+    --cpu N, --vcpus N      Number of CPUs (default: 2)
+    --memory XG             Memory size (default: 4G)
+    --disk-size XG          Disk size (default: 20G)
+    --nix                   Install Nix using Determinate Systems installer
 
 SUPPORTED DISTRIBUTIONS:
     ubuntu                  Ubuntu (latest LTS)
@@ -47,8 +53,10 @@ EXAMPLES:
     $0 list                         # List all VMs
     $0 status ubuntu-vm             # Show status of 'ubuntu-vm'
     $0 create ubuntu myubuntu       # Create Ubuntu VM named 'myubuntu'
+    $0 create ubuntu --cpu 4 --memory 8G --disk-size 40G  # Create with custom specs
+    $0 create ubuntu --nix          # Create Ubuntu VM with Nix pre-installed
     $0 create oracular              # Create Ubuntu 24.10 VM with default name
-    $0 create jammy my-jammy        # Create Ubuntu 22.04 VM named 'my-jammy'
+    $0 create jammy my-jammy --vcpus 1 --memory 2G        # Create with custom CPU/memory
     $0 shell ubuntu-vm              # Connect to VM shell
     $0 exec ubuntu-vm "ls -la"      # Run command in VM
     $0 ip ubuntu-vm                 # Get IP address of 'ubuntu-vm'
@@ -136,10 +144,63 @@ detect_username_from_vm_name() {
 
 create_vm() {
     local distro="$1"
-    local vm_name="${2:-${distro}-vm}"
+    shift
+
+    # Default values
+    local vm_name=""
+    local cpus="2"
+    local memory="4G"
+    local disk_size="20G"
+    local install_nix=false
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --cpu|--vcpus)
+                cpus="$2"
+                shift 2
+                ;;
+            --memory)
+                memory="$2"
+                shift 2
+                ;;
+            --disk-size)
+                disk_size="$2"
+                shift 2
+                ;;
+            --nix)
+                install_nix=true
+                shift
+                ;;
+            -*)
+                fail "Unknown option: $1"
+                return 1
+                ;;
+            *)
+                # First non-option argument is the VM name
+                if [[ -z "$vm_name" ]]; then
+                    vm_name="$1"
+                else
+                    fail "Unexpected argument: $1"
+                    return 1
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    # Set default VM name if not provided
+    if [[ -z "$vm_name" ]]; then
+        vm_name="${distro}-vm"
+    fi
+
     check_multipass || return 1
 
-    slog "Creating $distro Multipass VM: $vm_name"
+    local nix_info=""
+    if [[ "$install_nix" == "true" ]]; then
+        nix_info=" with Nix"
+    fi
+    slog "Creating $distro Multipass VM: $vm_name (CPUs: $cpus, Memory: $memory, Disk: $disk_size)$nix_info"
 
     # Check if VM already exists
     if multipass info "$vm_name" >/dev/null 2>&1; then
@@ -153,20 +214,52 @@ create_vm() {
         ssh-keygen -t rsa -b 4096 -f "$HOME/.ssh/id_rsa" -N "" -C "$(whoami)@$(hostname)"
     fi
 
-    # Create cloud-init config for SSH setup
+    # Create cloud-init config for SSH setup in user's home directory (accessible to Multipass)
     local cloud_init_file
-    cloud_init_file=$(mktemp)
+    cloud_init_file="$HOME/.multipass-cloud-init-$vm_name-$(date +%s).yaml"
 
     local username="ubuntu" # Multipass primarily supports Ubuntu
 
-    cat >"$cloud_init_file" <<EOF
-#cloud-config
+    # Build cloud-init configuration
+    local cloud_init_content
+    cloud_init_content="#cloud-config
 users:
   - name: $username
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     ssh-authorized-keys:
-      - $(cat ~/.ssh/id_rsa.pub)
+      - $(cat ~/.ssh/id_rsa.pub)"
+
+    # Add Nix installation if requested
+    if [[ "$install_nix" == "true" ]]; then
+        cloud_init_content+="
+
+packages:
+  - curl
+  - ca-certificates
+
+runcmd:
+  - |
+    # Install Nix using Determinate Systems installer
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
+    # Source Nix for all users
+    echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/bash.bashrc
+    echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/profile
+    # Add Nix to PATH for the user
+    echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /home/$username/.bashrc
+    # Enable nix-daemon
+    systemctl enable --now nix-daemon || true
+
+final_message: \"VM setup complete! Nix package manager is installed and ready to use.\""
+    else
+        cloud_init_content+="
+
+final_message: \"VM setup complete!\""
+    fi
+
+    # Write the cloud-init configuration
+    tee "$cloud_init_file" >/dev/null <<EOF
+$cloud_init_content
 EOF
 
     # Use distro name directly as image name - Multipass supports Ubuntu variants
@@ -189,9 +282,9 @@ EOF
     slog "Launching VM with image: $image_name"
     if multipass launch \
         --name "$vm_name" \
-        --cpus 2 \
-        --memory 4G \
-        --disk 20G \
+        --cpus "$cpus" \
+        --memory "$memory" \
+        --disk "$disk_size" \
         --cloud-init "$cloud_init_file" \
         "$image_name"; then
 
@@ -578,8 +671,8 @@ create)
         exit 1
     }
     distro="$vm_name"
-    vm_name="${3:-${distro}-vm}"
-    create_vm "$distro" "$vm_name"
+    # Pass all remaining arguments to create_vm
+    create_vm "$distro" "${@:3}"
     ;;
 start)
     [[ -z "$vm_name" ]] && {

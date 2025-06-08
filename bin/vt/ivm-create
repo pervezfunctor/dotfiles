@@ -19,6 +19,7 @@ VCPUS="2"
 RAM_MB="2048"
 DISK_SIZE="20GB"
 BRIDGE_IF="incusbr0"
+DOTFILES_OPTIONS=""
 
 usage() {
     cat <<EOF
@@ -39,6 +40,8 @@ OPTIONS:
     --disk SIZE             Disk size (default: 20GB)
     --ssh-key PATH          SSH public key path (default: auto-detect)
     --bridge BRIDGE         Network bridge (default: incusbr0)
+    --nix                   Install Nix using Determinate Systems installer
+    --dotfiles OPTIONS...   Install dotfiles with specified options (must be last)
     --help, -h              Show this help
 
 EXAMPLES:
@@ -46,6 +49,8 @@ EXAMPLES:
     $0 --distro fedora --name my-fedora --vcpus 4 --ram 4096
     $0 --distro debian --username admin --password mypass
     $0 --distro arch --release current --disk 40GB
+    $0 --distro ubuntu --nix            # Ubuntu VM with Nix package manager
+    $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --ram 8192 --dotfiles slim-shell docker code-server
 
 SUPPORTED DISTRIBUTIONS:
     ubuntu    - Ubuntu LTS (24.04) or specified release
@@ -140,6 +145,9 @@ configure_distribution() {
     slog "  Image: $IMAGE"
     slog "  Resources: ${VCPUS} vCPUs, ${RAM_MB}MB RAM, ${DISK_SIZE} disk"
     slog "  Network Bridge: $BRIDGE_IF"
+    if [[ -n "$DOTFILES_OPTIONS" ]]; then
+        slog "  Dotfiles: $DOTFILES_OPTIONS"
+    fi
 }
 
 generate_cloud_init_config() {
@@ -158,6 +166,59 @@ generate_cloud_init_config() {
         openssh_pkg="openssh"
     else
         openssh_pkg="openssh-server"
+    fi
+
+    # Prepare MOTD content
+    local motd_content="Welcome to $VM_NAME ($DISTRO $RELEASE)!
+      Created with ivm-create
+
+      SSH access configured for user: $USERNAME"
+
+    # Prepare runcmd array
+    local runcmd_lines=(
+        "systemctl enable --now ssh || systemctl enable --now sshd"
+        "systemctl enable --now qemu-guest-agent || true"
+    )
+
+    # Add Nix installation if specified
+    if [[ "$INSTALL_NIX" == "true" ]]; then
+        slog "Adding Nix installation to cloud-init"
+        motd_content+="
+
+      Nix package manager is installed and ready to use.
+      Quick commands:
+        nix --version
+        nix search <package>
+        nix-env -iA nixpkgs.<package>
+        nix-shell -p <package>"
+
+        runcmd_lines+=(
+            "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm"
+            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/bash.bashrc"
+            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/profile"
+            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /home/$USERNAME/.bashrc"
+            "systemctl enable --now nix-daemon || true"
+        )
+    fi
+
+    # Add dotfiles installation if specified
+    if [[ -n "$DOTFILES_OPTIONS" ]]; then
+        slog "Adding dotfiles installation to cloud-init with options: $DOTFILES_OPTIONS"
+        motd_content+="
+
+      Dotfiles are installed and ready to use.
+      Location: /home/$USERNAME/.ilm
+      Quick commands:
+        ilmi shell
+        ilmi docker
+        ilmi python
+        ilmc zsh
+        ilmc tmux
+        ilmc nvim"
+
+        runcmd_lines+=(
+            "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)\" -- $DOTFILES_OPTIONS'"
+        )
     fi
 
     # Create cloud-init user-data file using tee
@@ -190,17 +251,13 @@ $(for pkg in $packages_common; do echo "  - $pkg"; done)
 
 # Enable SSH service and ensure proper configuration
 runcmd:
-  - systemctl enable --now ssh || systemctl enable --now sshd
-  - systemctl enable --now qemu-guest-agent || true
+$(printf "  - %s\n" "${runcmd_lines[@]}")
 
 # Network configuration
 write_files:
   - path: /etc/motd
     content: |
-      Welcome to $VM_NAME ($DISTRO $RELEASE)!
-      Created with ivm-create
-
-      SSH access configured for user: $USERNAME
+      $motd_content
 
 final_message: "VM $VM_NAME setup complete! SSH access is ready."
 EOF
@@ -306,6 +363,33 @@ show_completion_info() {
         slog "  Shell: incus exec $VM_NAME -- /bin/bash"
     fi
 
+    # Show Nix information if installed
+    if [[ "$INSTALL_NIX" == "true" ]]; then
+        echo
+        slog "Nix Package Manager Information:"
+        slog "  Nix is pre-installed on this VM"
+        slog "  Check version:      nix --version"
+        slog "  Search packages:    nix search <package>"
+        slog "  Install package:    nix-env -iA nixpkgs.<package>"
+        slog "  Temporary shell:    nix-shell -p <package>"
+        slog "  Documentation: https://nixos.org/manual/nix/stable/"
+    fi
+
+    # Show dotfiles information if installed
+    if [[ -n "$DOTFILES_OPTIONS" ]]; then
+        echo
+        slog "Dotfiles Information:"
+        slog "  Dotfiles are pre-installed on this VM with options: $DOTFILES_OPTIONS"
+        slog "  Location: ~/.ilm"
+        slog "  Install shell:      ilmi shell"
+        slog "  Install Docker:     ilmi docker"
+        slog "  Install Python:     ilmi python"
+        slog "  Config zsh:         ilmc zsh"
+        slog "  Config tmux:        ilmc tmux"
+        slog "  Config nvim:        ilmc nvim"
+        slog "  Repository: https://github.com/pervezfunctor/dotfiles"
+    fi
+
     echo
     slog "VM Management:"
     slog "  Status: ivm status $VM_NAME"
@@ -357,6 +441,15 @@ parse_args() {
         --bridge)
             BRIDGE_IF="$2"
             shift 2
+            ;;
+        --nix)
+            INSTALL_NIX=true
+            shift
+            ;;
+        --dotfiles)
+            shift # Remove --dotfiles from arguments
+            DOTFILES_OPTIONS="$*" # Capture all remaining arguments
+            break # Exit the loop since --dotfiles must be last
             ;;
         --help | -h)
             usage
