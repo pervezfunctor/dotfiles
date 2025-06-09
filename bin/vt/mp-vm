@@ -153,6 +153,18 @@ create_vm() {
     local disk_size="20G"
     local install_nix=false
 
+    # SSH key detection: prefer ed25519, fallback to rsa
+    local ssh_pubkey=""
+    if [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
+        ssh_pubkey="$HOME/.ssh/id_ed25519.pub"
+    elif [[ -f "$HOME/.ssh/id_rsa.pub" ]]; then
+        ssh_pubkey="$HOME/.ssh/id_rsa.pub"
+    else
+        slog "Generating SSH key pair..."
+        ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "$(whoami)@$(hostname)"
+        ssh_pubkey="$HOME/.ssh/id_ed25519.pub"
+    fi
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -208,15 +220,10 @@ create_vm() {
         return 1
     fi
 
-    # Generate SSH key if it doesn't exist
-    if [[ ! -f "$HOME/.ssh/id_rsa.pub" ]]; then
-        slog "Generating SSH key pair..."
-        ssh-keygen -t rsa -b 4096 -f "$HOME/.ssh/id_rsa" -N "" -C "$(whoami)@$(hostname)"
-    fi
-
     # Create cloud-init config for SSH setup in user's home directory (accessible to Multipass)
     local cloud_init_file
     cloud_init_file="$HOME/.multipass-cloud-init-$vm_name-$(date +%s).yaml"
+    trap 'rm -f "$cloud_init_file"' EXIT
 
     local username="ubuntu" # Multipass primarily supports Ubuntu
 
@@ -228,7 +235,7 @@ users:
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     ssh-authorized-keys:
-      - $(cat ~/.ssh/id_rsa.pub)"
+      - $(cat "$ssh_pubkey")"
 
     # Add Nix installation if requested
     if [[ "$install_nix" == "true" ]]; then
@@ -325,7 +332,7 @@ start_vm() {
     state=$(multipass list --format csv | grep "^$vm_name," | cut -d',' -f2)
 
     if [[ "$state" == "Running" ]]; then
-        log_warn "VM '$vm_name' is already running"
+        warn "VM '$vm_name' is already running"
         return 0
     fi
 
@@ -354,7 +361,7 @@ stop_vm() {
     state=$(multipass list --format csv | grep "^$vm_name," | cut -d',' -f2)
 
     if [[ "$state" == "Stopped" ]]; then
-        log_warn "VM '$vm_name' is already stopped"
+        warn "VM '$vm_name' is already stopped"
         return 0
     fi
 
@@ -397,7 +404,7 @@ delete_vm() {
         return 1
     fi
 
-    log_warn "This will permanently delete VM '$vm_name' and all its data!"
+    warn "This will permanently delete VM '$vm_name' and all its data!"
     read -p "Are you sure? (y/N): " -r
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         slog "Deletion cancelled"

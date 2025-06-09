@@ -66,10 +66,10 @@ add_vm_to_hosts() {
     fi
 
     # Check if entry already exists
-    if grep -q "^[0-9.]* .*$vm_name" /etc/hosts; then
+    if grep -qE "^[0-9.]+\s+$vm_name(\s|$)" /etc/hosts; then
         warn "Entry for '$vm_name' already exists in /etc/hosts"
         # Update existing entry
-        sudo sed -i "/^[0-9.]* .*$vm_name/d" /etc/hosts
+        sudo sed -i "/^[0-9.]+\s\+$vm_name(\s|$)/d" /etc/hosts
     fi
 
     echo "$ip $vm_name" | sudo tee -a /etc/hosts >/dev/null
@@ -172,38 +172,51 @@ fi
 command="$1"
 vm_name="${2:-}"
 
-case "$command" in
-add)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
+check_prerequisites() {
+    if ! command -v incus &>/dev/null; then
+        fail "Incus CLI not found. Please install it first."
+        exit 1
+    fi
+}
+
+main() {
+    check_prerequisites
+
+    case "$command" in
+    add)
+        [[ -z "$vm_name" ]] && {
+            fail "VM name required"
+            usage
+            exit 1
+        }
+        add_vm_to_hosts "$vm_name"
+        ;;
+    remove)
+        [[ -z "$vm_name" ]] && {
+            fail "VM name required"
+            usage
+            exit 1
+        }
+        remove_vm_from_hosts "$vm_name"
+        ;;
+    list)
+        list_vm_hosts
+        ;;
+    update)
+        update_all_vms
+        ;;
+    clean)
+        clean_vm_hosts
+        ;;
+    --help | -h)
+        usage
+        ;;
+    *)
+        fail "Unknown command: $command"
         usage
         exit 1
-    }
-    add_vm_to_hosts "$vm_name"
-    ;;
-remove)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    remove_vm_from_hosts "$vm_name"
-    ;;
-list)
-    list_vm_hosts
-    ;;
-update)
-    update_all_vms
-    ;;
-clean)
-    clean_vm_hosts
-    ;;
---help | -h)
-    usage
-    ;;
-*)
-    fail "Unknown command: $command"
-    usage
-    exit 1
-    ;;
-esac
+        ;;
+    esac
+}
+
+main "$@"

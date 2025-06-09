@@ -7,7 +7,7 @@ DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 source "$DOT_DIR/share/utils"
 
 VCPUS=4
-RAM_MB=4096
+RAM_MB=8192
 DISK_SIZE="40G"
 BRIDGE_IF="virbr0"
 INSTALL_DOCKER=false
@@ -21,14 +21,16 @@ unset RELEASE
 unset DISTRO
 unset PASSWORD
 
-if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
-    SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
-elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
-    SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-else
-    ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
-    SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-fi
+setup_ssh_key() {
+    if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
+        SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
+    elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
+        SSH_KEY="${HOME}/.ssh/id_rsa.pub"
+    else
+        ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
+        SSH_KEY="${HOME}/.ssh/id_rsa.pub"
+    fi
+}
 
 SUDO_KEEPALIVE_PID=""
 
@@ -323,14 +325,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ -z "$DISTRO" ]]; then
-    fail "Distribution is required. Use --distro ubuntu|fedora|arch|debian"
-    usage
-    exit 1
-fi
-
 check_prerequisites() {
     slog "Checking prerequisites..."
+
+    if [[ -z "$DISTRO" ]]; then
+        fail "Distribution is required. Use --distro ubuntu|fedora|arch|debian"
+        usage
+        exit 1
+    fi
 
     if ! sudo -v; then
         fail "This script requires sudo privileges to create files in system directories"
@@ -374,9 +376,12 @@ check_prerequisites() {
     fi
 
     if ! groups | grep -q libvirt; then
-        warn "User not in libvirt group. You may need sudo for virsh commands"
-        warn "Add user to group: sudo usermod -a -G libvirt \$USER"
+        fail "User not in libvirt group. You may need sudo for virsh commands"
+        fail "Add user to group: sudo usermod -a -G libvirt \$USER"
+        exit 1
     fi
+
+    setup_ssh_key
 
     if [[ ! -f "$SSH_KEY" ]]; then
         fail "SSH public key not found at: $SSH_KEY"
@@ -487,6 +492,8 @@ generate_cloud_init() {
         "wget"
         "unzip"
         "htop"
+        "zsh"
+        "tmux"
     )
 
     local -a runcmd=(
@@ -503,8 +510,8 @@ generate_cloud_init() {
             "gnupg"
             "lsb-release"
         )
-
         ;;
+
     fedora)
         packages+=(
             "stow"
@@ -573,7 +580,7 @@ generate_cloud_init() {
         motd_content+="
       Homebrew is installed and ready to use.
       Essential development tools are pre-installed:
-      git, curl, wget, vim, htop, starship, fzf, ripgrep, etc.
+
       Quick commands:
       brew --version
       brew list
@@ -614,8 +621,7 @@ generate_cloud_init() {
             "su - $USERNAME -c 'NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"'"
             "echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.bashrc"
             "echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.profile"
-            "su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install stow git curl wget vim htop starship fzf ripgrep eza zoxide fd bat'"
-            "su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install gum tmux lazygit git-delta just jq yq'"
+            "su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install stow starship fzf ripgrep eza zoxide fd bat'"
         )
     fi
 
@@ -650,6 +656,7 @@ generate_cloud_init() {
       Dotfiles are installed and ready to use.
       Location: /home/$USERNAME/.ilm
       Quick commands:
+        ilmi slim-shell
         ilmi shell
         ilmi docker
         ilmi python
@@ -684,7 +691,7 @@ $(printf "      - %s\n" "${USER_GROUPS[@]}")
     lock_passwd: false
     passwd: "$PASSWORD_HASH"
     ssh_authorized_keys:
-      - $pub_key
+      - "$pub_key"
 
 # System configuration
 package_update: true
@@ -803,10 +810,10 @@ launch_vm() {
 
     slog "Adding VM to /etc/hosts for name-based access..."
     sleep 5
-    if [[ -x "$HOME/.ilm/bin/vm-hosts" ]]; then
-        "$HOME/.ilm/bin/vm-hosts" add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
-    elif [[ -x "$(has_cmd vm-hosts)" ]]; then
+    if [[ -x "$(has_cmd vm-hosts)" ]]; then
         vm-hosts add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
+    elif [[ -x "$HOME/.ilm/bin/vm-hosts" ]]; then
+        "$HOME/.ilm/bin/vm-hosts" add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
     else
         warn "vm-hosts script not found, skipping /etc/hosts update"
     fi
@@ -822,7 +829,6 @@ show_completion_info() {
     echo "  vCPUs: $VCPUS"
     echo "  Disk: $DISK_SIZE"
     echo "  Username: $USERNAME"
-    echo "  SSH Key: $SSH_KEY"
     echo
 
     if [[ "$INSTALL_DOCKER" == "true" ]]; then
@@ -842,7 +848,6 @@ show_completion_info() {
         echo "    Search packages:    brew search <term>"
         echo "    Install package:    brew install <package>"
         echo "    Update packages:    brew update && brew upgrade"
-        echo "  Pre-installed tools: git, curl, wget, vim, htop, starship, fzf, ripgrep, eza, zoxide, fd, bat, gum, tmux, lazygit, git-delta, just, jq, yq"
         echo
     fi
 
@@ -943,7 +948,7 @@ main() {
 
     check_prerequisites
     start_sudo_keepalive
-    echo_all_vars
+    # echo_all_vars
     download_image
     create_vm_disk
     generate_cloud_init

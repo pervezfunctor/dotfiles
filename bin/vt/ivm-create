@@ -15,11 +15,11 @@ unset PASSWORD
 unset SSH_KEY
 unset IMAGE
 
-VCPUS="2"
-MEMORY_MB="2048"
+VCPUS="4"
+MEMORY_MB="4096"
 DISK_SIZE="20GB"
 BRIDGE_IF="incusbr0"
-DOTFILES_OPTIONS=""
+DOTFILES_OPTIONS="min"
 INSTALL_NIX=false
 
 usage() {
@@ -36,13 +36,13 @@ OPTIONS:
     --release RELEASE       Distribution release (default: latest)
     --username USER         Username for VM (default: distro default)
     --password PASS         User password (default: vm name)
-    --vcpus NUM             Number of vCPUs (default: 2)
-    --memory MB             RAM in MB (default: 2048)
+    --vcpus NUM             Number of vCPUs (default: 4)
+    --memory MB             RAM in MB (default: 4096)
     --disk-size SIZE        Disk size (default: 20GB)
     --ssh-key PATH          SSH public key path (default: auto-detect)
     --bridge BRIDGE         Network bridge (default: incusbr0)
     --nix                   Install Nix using Determinate Systems installer
-    --dotfiles OPTIONS...   Install dotfiles with specified options (must be last)
+    --dotfiles OPTIONS...   Install dotfiles with specified options (must be last; all following arguments are passed to dotfiles)
     --help, -h              Show this help
 
 EXAMPLES:
@@ -66,7 +66,7 @@ SUPPORTED DISTRIBUTIONS:
 EOF
 }
 
-init_ssh() {
+setup_ssh_key() {
     if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
         SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
     elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
@@ -79,8 +79,14 @@ init_ssh() {
 }
 
 check_prerequisites() {
-    if ! has_cmd incus; then
-        fail "incus command not found. Please install Incus first."
+    local missing=()
+    for cmd in incus openssl curl wget tee mktemp; do
+        if ! has_cmd "$cmd"; then
+            missing+=("$cmd")
+        fi
+    done
+    if ((${#missing[@]})); then
+        fail "Missing required commands: ${missing[*]}"
         exit 1
     fi
 
@@ -89,7 +95,7 @@ check_prerequisites() {
         exit 1
     fi
 
-    init_ssh
+    setup_ssh_key
 
     if [[ ! -f "$SSH_KEY" ]]; then
         fail "SSH public key not found at: $SSH_KEY"
@@ -145,6 +151,7 @@ configure_distribution() {
 
     VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
     PASSWORD=${PASSWORD:-"$USERNAME"}
+    PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
     slog "Configuration:"
     slog "  Distribution: $DISTRO $RELEASE"
@@ -163,11 +170,13 @@ generate_cloud_init_config() {
 
     # Create temporary directory for cloud-init files
     CLOUD_INIT_DIR=$(mktemp -d)
+    trap '[[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]] && rm -rf "$CLOUD_INIT_DIR"' EXIT
 
     local pub_key
     pub_key=$(cat "$SSH_KEY")
 
-    local packages_common="qemu-guest-agent curl wget vim htop git unzip"
+    local packages_common="qemu-guest-agent git trash-cli micro tree curl wget unzip htop zsh tmux"
+
     local openssh_pkg
 
     if [[ "$DISTRO" == "arch" ]]; then
@@ -245,7 +254,7 @@ users:
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
-    passwd: $(openssl passwd -6 "$PASSWORD")
+    passwd: "$PASSWORD_HASH"
     ssh_authorized_keys:
       - "$pub_key"
 
@@ -260,6 +269,10 @@ $(for pkg in $packages_common; do echo "  - $pkg"; done)
 # Enable SSH service and ensure proper configuration
 runcmd:
 $(printf "  - %s\n" "${runcmd_lines[@]}")
+
+# Ensure SSH service is enabled
+ssh_pwauth: true
+disable_root: false
 
 # Network configuration
 write_files:
