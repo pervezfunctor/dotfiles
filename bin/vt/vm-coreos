@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
 # Default values
 VM_NAME=""
 VCPUS=2
@@ -18,25 +22,15 @@ DOWNLOAD_IMAGE=true
 FORCE_DOWNLOAD=false
 INSTALL_K3S=false
 
-# Color codes for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
-log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
-
-# Auto-detect SSH key
 if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
     SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
 elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
     SSH_KEY="${HOME}/.ssh/id_rsa.pub"
 else
-    SSH_KEY=""
+    warn "No SSH public key found. Please generate one with:"
+    ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
+    SSH_KEY="${HOME}/.ssh/id_rsa.pub"
+    slog "Generated SSH key: $SSH_KEY"
 fi
 
 usage() {
@@ -139,7 +133,7 @@ while [[ $# -gt 0 ]]; do
         exit 0
         ;;
     *)
-        log_error "Unknown option: $1"
+        fail "Unknown option: $1"
         usage
         exit 1
         ;;
@@ -147,7 +141,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$VM_NAME" ]]; then
-    log_error "VM name is required. Use --name VM_NAME"
+    fail "VM name is required. Use --name VM_NAME"
     usage
     exit 1
 fi
@@ -163,7 +157,7 @@ BUTANE_CONFIG="${VM_WORKDIR}/${VM_NAME}.bu"
 GENERATED_IGNITION="${VM_WORKDIR}/${VM_NAME}.ign"
 
 cleanup_on_error() {
-    log_warn "Cleaning up due to error..."
+    warn "Cleaning up due to error..."
     sudo rm -f "$VM_DISK" 2>/dev/null || true
     sudo rm -f "$GENERATED_IGNITION" 2>/dev/null || true
     sudo virsh destroy "$VM_NAME" 2>/dev/null || true
@@ -174,78 +168,78 @@ trap cleanup_on_error ERR
 trap 'cleanup_on_error; exit 1' INT TERM
 
 check_prerequisites() {
-    log_info "Checking prerequisites..."
+    slog "Checking prerequisites..."
 
     if ! sudo -v; then
-        log_error "This script requires sudo privileges"
+        fail "This script requires sudo privileges"
         exit 1
     fi
 
     local missing_tools=()
     for tool in virsh virt-install; do
-        if ! command -v "$tool" &>/dev/null; then
+        if ! has_cmd "$tool"; then
             missing_tools+=("$tool")
         fi
     done
 
     if [[ ${#missing_tools[@]} -gt 0 ]]; then
-        log_error "Missing required tools: ${missing_tools[*]}"
-        log_error "Install with distribution package manager"
+        fail "Missing required tools: ${missing_tools[*]}"
+        fail "Install with distribution package manager"
         exit 1
     fi
 
     if ! systemctl is-active --quiet libvirtd; then
-        log_error "libvirtd service is not running"
-        log_error "Start with: sudo systemctl start libvirtd"
+        fail "libvirtd service is not running"
+        fail "Start with: sudo systemctl start libvirtd"
         exit 1
     fi
 
     if [[ -z "$SSH_KEY" ]] || [[ ! -f "$SSH_KEY" ]]; then
-        log_error "SSH public key not found. Please specify with --ssh-key or generate one:"
-        log_error "ssh-keygen -t ed25519 -C 'your_email@example.com'"
+        fail "SSH public key not found. Please specify with --ssh-key or generate one:"
+        fail "ssh-keygen -t ed25519 -C 'your_email@example.com'"
         exit 1
     fi
 
     if virsh list --all | grep -q "$VM_NAME"; then
-        log_error "VM '$VM_NAME' already exists"
-        log_error "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
+        fail "VM '$VM_NAME' already exists"
+        fail "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
         exit 1
     fi
 
     if ! ip link show "$BRIDGE_IF" &>/dev/null; then
-        log_warn "Bridge '$BRIDGE_IF' not found, will use default libvirt network"
+        warn "Bridge '$BRIDGE_IF' not found, will use default libvirt network"
         BRIDGE_IF="default"
     fi
 
-    log_success "Prerequisites check passed"
+    success "Prerequisites check passed"
 }
 
 download_coreos_image() {
     # Check if we should skip download
     if [[ "$DOWNLOAD_IMAGE" == "false" ]] && [[ -f "$COREOS_IMAGE" ]]; then
-        log_info "Using existing CoreOS image: $COREOS_IMAGE"
+        slog "Using existing CoreOS image: $COREOS_IMAGE"
         return 0
     fi
 
     # Check if image already exists and we're not forcing download
     if [[ "$DOWNLOAD_IMAGE" == "true" ]] && [[ "$FORCE_DOWNLOAD" == "false" ]] && [[ -f "$COREOS_IMAGE" ]]; then
-        log_info "CoreOS image already exists: $COREOS_IMAGE"
-        log_info "Use --no-download to skip download, or --force-download to re-download"
+        slog "CoreOS image already exists: $COREOS_IMAGE"
+        slog "Use --no-download to skip download, or --force-download to re-download"
         return 0
     fi
 
-    log_info "Setting up CoreOS image for stream: $STREAM"
+    slog "Setting up CoreOS image for stream: $STREAM"
 
     if [[ "$FORCE_DOWNLOAD" == "true" ]]; then
-        log_info "Force download requested, will re-download image"
+        slog "Force download requested, will re-download image"
     fi
 
     sudo mkdir -p "$VM_WORKDIR"
     sudo chown "$USER:$USER" "$VM_WORKDIR"
     chmod 755 "$VM_WORKDIR"
 
-    if command -v coreos-installer &>/dev/null; then
-        log_info "Downloading CoreOS image using coreos-installer..."
+    if has_cmd coreos-installer; then
+        slog "Downloading CoreOS image using coreos-installer..."
 
         # Remove existing files to avoid conflicts
         rm -f "$COREOS_IMAGE"
@@ -259,76 +253,76 @@ download_coreos_image() {
         if [[ -n "$downloaded_image" ]]; then
             mv "$downloaded_image" "$COREOS_IMAGE"
         else
-            log_error "Failed to find downloaded CoreOS image"
+            fail "Failed to find downloaded CoreOS image"
             exit 1
         fi
     else
-        log_warn "coreos-installer not found, attempting direct download..."
+        warn "coreos-installer not found, attempting direct download..."
 
         # Get the download URL from the stream metadata
         local stream_url="https://builds.coreos.fedoraproject.org/streams/${STREAM}.json"
         local download_url
 
-        if command -v jq &>/dev/null; then
+        if has_cmd jq; then
             download_url=$(curl -s "$stream_url" | jq -r '.architectures.x86_64.artifacts.qemu.formats["qcow2.xz"].disk.location')
         else
-            log_error "Neither coreos-installer nor jq found. Please install one of them:"
-            log_error "  Fedora: sudo dnf install coreos-installer"
-            log_error "  Ubuntu: sudo apt install jq"
+            fail "Neither coreos-installer nor jq found. Please install one of them:"
+            fail "  Fedora: sudo dnf install coreos-installer"
+            fail "  Ubuntu: sudo apt install jq"
             exit 1
         fi
 
         if [[ "$download_url" == "null" ]] || [[ -z "$download_url" ]]; then
-            log_error "Failed to get download URL for CoreOS $STREAM stream"
+            fail "Failed to get download URL for CoreOS $STREAM stream"
             exit 1
         fi
 
-        log_info "Downloading from: $download_url"
+        slog "Downloading from: $download_url"
 
         # Remove existing files if they exist
         rm -f "${COREOS_IMAGE}.xz" "$COREOS_IMAGE"
 
         if ! curl -L -o "${COREOS_IMAGE}.xz" "$download_url"; then
-            log_error "Failed to download CoreOS image"
+            fail "Failed to download CoreOS image"
             exit 1
         fi
 
-        log_info "Decompressing image..."
+        slog "Decompressing image..."
         if ! xz -d "${COREOS_IMAGE}.xz"; then
-            log_error "Failed to decompress CoreOS image"
-            log_error "You may need to remove existing files manually:"
-            log_error "  rm -f '${COREOS_IMAGE}' '${COREOS_IMAGE}.xz'"
+            fail "Failed to decompress CoreOS image"
+            fail "You may need to remove existing files manually:"
+            fail "  rm -f '${COREOS_IMAGE}' '${COREOS_IMAGE}.xz'"
             exit 1
         fi
     fi
 
     if [[ ! -f "$COREOS_IMAGE" ]]; then
-        log_error "CoreOS image not found after download: $COREOS_IMAGE"
+        fail "CoreOS image not found after download: $COREOS_IMAGE"
         exit 1
     fi
 
-    log_success "CoreOS image ready: $COREOS_IMAGE"
+    success "CoreOS image ready: $COREOS_IMAGE"
 }
 
 generate_ignition_config() {
     if [[ -n "$IGNITION_CONFIG" ]]; then
         if [[ ! -f "$IGNITION_CONFIG" ]]; then
-            log_error "Custom Ignition config file not found: $IGNITION_CONFIG"
+            fail "Custom Ignition config file not found: $IGNITION_CONFIG"
             exit 1
         fi
-        log_info "Using custom Ignition config: $IGNITION_CONFIG"
+        slog "Using custom Ignition config: $IGNITION_CONFIG"
         cp "$IGNITION_CONFIG" "$GENERATED_IGNITION"
         return 0
     fi
 
-    log_info "Generating Ignition configuration..."
+    slog "Generating Ignition configuration..."
 
     local ssh_key_content
     ssh_key_content=$(cat "$SSH_KEY")
 
-    log_info "Working directory: $VM_WORKDIR"
-    log_info "Butane config will be: $BUTANE_CONFIG"
-    log_info "Ignition config will be: $GENERATED_IGNITION"
+    slog "Working directory: $VM_WORKDIR"
+    slog "Butane config will be: $BUTANE_CONFIG"
+    slog "Ignition config will be: $GENERATED_IGNITION"
 
     # Create Butane config
     cat >"$BUTANE_CONFIG" <<EOF
@@ -352,15 +346,15 @@ EOF
 
     # Verify Butane config was created and set proper permissions
     if [[ ! -f "$BUTANE_CONFIG" ]]; then
-        log_error "Failed to create Butane config file: $BUTANE_CONFIG"
+        fail "Failed to create Butane config file: $BUTANE_CONFIG"
         exit 1
     fi
     chmod 644 "$BUTANE_CONFIG"
-    log_info "Butane config created successfully"
+    slog "Butane config created successfully"
 
     # Add k3s installation if requested
     if [[ "$INSTALL_K3S" == "true" ]]; then
-        log_info "Adding k3s Kubernetes installation to config"
+        slog "Adding k3s Kubernetes installation to config"
         cat >>"$BUTANE_CONFIG" <<EOF
 systemd:
   units:
@@ -402,74 +396,72 @@ EOF
     fi
 
     # Convert Butane config to Ignition
-    if command -v butane &>/dev/null; then
-        log_info "Converting Butane config to Ignition using butane..."
+    if has_cmd butane; then
+        slog "Converting Butane config to Ignition using butane..."
         if ! butane --pretty --strict "$BUTANE_CONFIG" >"$GENERATED_IGNITION"; then
-            log_error "Failed to convert Butane config to Ignition"
+            fail "Failed to convert Butane config to Ignition"
             exit 1
         fi
-    elif command -v podman &>/dev/null; then
-        log_info "Converting Butane config to Ignition using podman..."
+    elif has_cmd podman; then
+        slog "Converting Butane config to Ignition using podman..."
         # Try using stdin method first (more reliable with permissions)
         if ! podman run --rm -i quay.io/coreos/butane:release --pretty --strict <"$BUTANE_CONFIG" >"$GENERATED_IGNITION"; then
-            log_warn "Stdin method failed, trying volume mount method..."
+            warn "Stdin method failed, trying volume mount method..."
             # Fallback to volume mount with SELinux disabled
             if ! podman run --rm -i --security-opt label=disable \
                 --volume "${VM_WORKDIR}:/pwd" --workdir /pwd \
                 quay.io/coreos/butane:release --pretty --strict "${VM_NAME}.bu" >"$GENERATED_IGNITION"; then
-                log_error "Failed to convert Butane config to Ignition using podman"
+                fail "Failed to convert Butane config to Ignition using podman"
                 exit 1
             fi
         fi
-    elif command -v docker &>/dev/null; then
-        log_info "Converting Butane config to Ignition using docker..."
+    elif has_cmd docker; then
+        slog "Converting Butane config to Ignition using docker..."
         # Try using stdin method first (more reliable with permissions)
         if ! docker run --rm -i quay.io/coreos/butane:release --pretty --strict <"$BUTANE_CONFIG" >"$GENERATED_IGNITION"; then
-            log_warn "Stdin method failed, trying volume mount method..."
+            warn "Stdin method failed, trying volume mount method..."
             # Fallback to volume mount
             if ! docker run --rm -i --volume "${VM_WORKDIR}:/pwd" --workdir /pwd \
                 quay.io/coreos/butane:release --pretty --strict "${VM_NAME}.bu" >"$GENERATED_IGNITION"; then
-                log_error "Failed to convert Butane config to Ignition using docker"
+                fail "Failed to convert Butane config to Ignition using docker"
                 exit 1
             fi
         fi
     else
-        log_error "No tool found to convert Butane config. Please install one of:"
-        log_error "  - butane (recommended): sudo dnf install butane"
-        log_error "  - podman: sudo dnf install podman"
-        log_error "  - docker: sudo dnf install docker"
+        fail "No tool found to convert Butane config. Please install one of:"
+        fail "  - butane (recommended): sudo dnf install butane"
+        fail "  - podman: sudo dnf install podman"
+        fail "  - docker: sudo dnf install docker"
         exit 1
     fi
 
     if [[ ! -f "$GENERATED_IGNITION" ]]; then
-        log_error "Failed to generate Ignition config"
+        fail "Failed to generate Ignition config"
         exit 1
     fi
 
-    log_success "Ignition configuration generated: $GENERATED_IGNITION"
+    success "Ignition configuration generated: $GENERATED_IGNITION"
 }
 
 create_vm_disk() {
-    log_info "Creating VM disk..."
+    slog "Creating VM disk..."
 
     if ! cp "$COREOS_IMAGE" "$VM_DISK"; then
-        log_error "Failed to copy CoreOS image"
+        fail "Failed to copy CoreOS image"
         exit 1
     fi
 
-    if ! qemu-img resize "$VM_DISK" "${DISK_GB}G"; then
-        log_error "Failed to resize VM disk"
-        exit 1
-    fi
+    qemu-img create -f qcow2 -b "$COREOS_IMAGE" "$VM_DISK"
+    qemu-img resize "$VM_DISK" "${DISK_GB}G"
 
-    log_success "VM disk created: $VM_DISK (${DISK_GB}G)"
+    success "VM disk created: $VM_DISK (${DISK_GB}G)"
 }
 
 launch_vm() {
-    log_info "Launching Fedora CoreOS VM '$VM_NAME'..."
+    slog "Launching Fedora CoreOS VM '$VM_NAME'..."
 
     # Set up SELinux context for Ignition file
-    if command -v chcon &>/dev/null; then
+    if has_cmd chcon; then
         chcon --verbose --type svirt_home_t "$GENERATED_IGNITION" 2>/dev/null || true
     fi
 
@@ -493,20 +485,20 @@ launch_vm() {
         ignition_device_args=("--disk" "path=${GENERATED_IGNITION},format=raw,readonly=on,serial=ignition,startup_policy=optional")
         ;;
     *)
-        log_warn "Unknown architecture $arch, using x86_64 method"
+        warn "Unknown architecture $arch, using x86_64 method"
         ignition_device_args=("--qemu-commandline=-fw_cfg name=opt/com.coreos/config,file=${GENERATED_IGNITION}")
         ;;
     esac
 
-    log_info "VM Configuration:"
-    log_info "  Name: $VM_NAME"
-    log_info "  Hostname: $HOSTNAME"
-    log_info "  Stream: $STREAM"
-    log_info "  Memory: ${RAM_MB}MB"
-    log_info "  vCPUs: $VCPUS"
-    log_info "  Disk: $VM_DISK (${DISK_GB}G)"
-    log_info "  Network: $network_config"
-    log_info "  Ignition: $GENERATED_IGNITION"
+    slog "VM Configuration:"
+    slog "  Name: $VM_NAME"
+    slog "  Hostname: $HOSTNAME"
+    slog "  Stream: $STREAM"
+    slog "  Memory: ${RAM_MB}MB"
+    slog "  vCPUs: $VCPUS"
+    slog "  Disk: $VM_DISK (${DISK_GB}G)"
+    slog "  Network: $network_config"
+    slog "  Ignition: $GENERATED_IGNITION"
 
     if ! virt-install \
         --connect="qemu:///system" \
@@ -516,37 +508,37 @@ launch_vm() {
         --os-variant="fedora-coreos-$STREAM" \
         --import \
         --graphics=none \
-        --disk="size=${DISK_GB},backing_store=${COREOS_IMAGE}" \
+        --disk "path=${VM_DISK},format=qcow2,bus=virtio" \
         --network="$network_config" \
         "${ignition_device_args[@]}" \
         --noautoconsole; then
-        log_error "Failed to create VM"
+        fail "Failed to create VM"
         exit 1
     fi
 
     if ! virsh list --all | grep -q "$VM_NAME"; then
-        log_error "VM '$VM_NAME' was not created successfully"
+        fail "VM '$VM_NAME' was not created successfully"
         exit 1
     fi
 
-    log_success "VM '$VM_NAME' created successfully!"
+    success "VM '$VM_NAME' created successfully!"
 
     # Add VM to /etc/hosts if vm-hosts script is available
-    log_info "Adding VM to /etc/hosts for name-based access..."
+    slog "Adding VM to /etc/hosts for name-based access..."
     sleep 5
     if [[ -x "$HOME/.ilm/bin/vm-hosts" ]]; then
-        "$HOME/.ilm/bin/vm-hosts" add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
+        "$HOME/.ilm/bin/vm-hosts" add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
     elif [[ -x "$(command -v vm-hosts)" ]]; then
-        vm-hosts add "$VM_NAME" || log_warn "Could not add VM to /etc/hosts automatically"
+        vm-hosts add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
     else
-        log_warn "vm-hosts script not found, skipping /etc/hosts update"
+        warn "vm-hosts script not found, skipping /etc/hosts update"
     fi
 }
 
 show_completion_info() {
-    log_success "=== Fedora CoreOS VM Creation Complete ==="
+    success "=== Fedora CoreOS VM Creation Complete ==="
     echo
-    log_info "VM Details:"
+    slog "VM Details:"
     echo "  Name: $VM_NAME"
     echo "  Hostname: $HOSTNAME"
     echo "  Stream: $STREAM"
@@ -558,7 +550,7 @@ show_completion_info() {
     echo
 
     if [[ "$INSTALL_K3S" == "true" ]]; then
-        log_info "k3s Kubernetes will be installed on first boot"
+        slog "k3s Kubernetes will be installed on first boot"
         echo "  Note: k3s installation takes 2-3 minutes after Ignition completes"
         echo "  k3s Commands (after installation):"
         echo "    Check status:       sudo systemctl status k3s"
@@ -569,7 +561,7 @@ show_completion_info() {
         echo
     fi
 
-    log_info "Useful Commands:"
+    slog "Useful Commands:"
     echo "  Check VM status:    virsh list --all"
     echo "  Start VM:           virsh start $VM_NAME"
     echo "  Stop VM:            virsh shutdown $VM_NAME"
@@ -578,20 +570,20 @@ show_completion_info() {
     echo "  Console access:     virsh console $VM_NAME"
     echo "  Get VM IP:          virsh domifaddr $VM_NAME"
     echo
-    log_info "SSH Access:"
+    slog "SSH Access:"
     echo "  Wait 2-3 minutes for Ignition to complete"
     echo "  Find VM IP:         virsh domifaddr $VM_NAME"
     echo "  SSH by name:        ssh $USERNAME@$VM_NAME"
     echo "  SSH by IP:          ssh $USERNAME@<VM_IP>"
     echo
-    log_info "CoreOS Commands:"
+    slog "CoreOS Commands:"
     echo "  Update system:      rpm-ostree upgrade"
     echo "  Install packages:   rpm-ostree install <package>"
     echo "  Reboot to apply:    systemctl reboot"
     echo "  Check status:       rpm-ostree status"
     echo "  Rollback:           rpm-ostree rollback"
     echo
-    log_info "Container Commands (Podman is pre-installed):"
+    slog "Container Commands (Podman is pre-installed):"
     echo "  Run container:      podman run <image>"
     echo "  List containers:    podman ps"
     echo "  List images:        podman images"
@@ -599,7 +591,7 @@ show_completion_info() {
     echo
 
     if [[ "$INSTALL_K3S" == "true" ]]; then
-        log_info "k3s Kubernetes Commands:"
+        slog "k3s Kubernetes Commands:"
         echo "  Check cluster:      kubectl cluster-info"
         echo "  Get nodes:          kubectl get nodes"
         echo "  Get all pods:       kubectl get pods -A"
@@ -614,17 +606,17 @@ show_completion_info() {
 
     echo
     if [[ "$INSTALL_K3S" == "true" ]]; then
-        log_warn "Note: Ignition runs first (2-3 min), then k3s installs (2-3 min)."
+        warn "Note: Ignition runs first (2-3 min), then k3s installs (2-3 min)."
     else
-        log_warn "Note: Ignition configuration runs on first boot (2-3 minutes)."
+        warn "Note: Ignition configuration runs on first boot (2-3 minutes)."
     fi
 }
 
 main() {
-    log_info "Starting Fedora CoreOS VM creation..."
-    log_info "VM Name: $VM_NAME"
-    log_info "Stream: $STREAM"
-    log_info "Working Directory: $VM_WORKDIR"
+    slog "Starting Fedora CoreOS VM creation..."
+    slog "VM Name: $VM_NAME"
+    slog "Stream: $STREAM"
+    slog "Working Directory: $VM_WORKDIR"
 
     check_prerequisites
     download_coreos_image
@@ -633,7 +625,7 @@ main() {
     launch_vm
     show_completion_info
 
-    log_success "All done! Your Fedora CoreOS VM is ready."
+    success "All done! Your Fedora CoreOS VM is ready."
 }
 
 main "$@"
