@@ -13,6 +13,7 @@ BRIDGE_IF="virbr0"
 INSTALL_DOCKER=false
 INSTALL_BREW=false
 DOTFILES_OPTIONS=""
+INSTALL_NIX=""
 
 unset VM_NAME
 unset USERNAME
@@ -98,8 +99,14 @@ configure_fedora() {
     INSTALL_CMD="sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
     OS_VARIANT="fedora${RELEASE}"
 
-    if ! osinfo-query os 2>/dev/null | grep -q "fedora${RELEASE}"; then
-        warn "OS variant 'fedora${RELEASE}' not found, using 'fedora41'"
+    # Get the osinfo list once and reuse it
+    local osinfo_list
+    osinfo_list=$(virt-install --osinfo list 2>/dev/null)
+
+    if ! echo "$osinfo_list" | grep -q "fedora${RELEASE}"; then
+        warn "OS variant 'fedora${RELEASE}' not found in virt-install osinfo list, using 'fedora41'"
+        slog "Available fedora variants:"
+        echo "$osinfo_list" | grep -i fedora | head -5 || true
         OS_VARIANT="fedora41"
     fi
 }
@@ -115,8 +122,14 @@ configure_arch() {
     INSTALL_CMD="sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools"
     OS_VARIANT="archlinux"
 
-    if ! osinfo-query os 2>/dev/null | grep -q "archlinux"; then
-        warn "OS variant 'archlinux' not found, using 'linux'"
+    # Get the osinfo list once and reuse it
+    local osinfo_list
+    osinfo_list=$(virt-install --osinfo list 2>/dev/null)
+
+    if ! echo "$osinfo_list" | grep -q "archlinux"; then
+        warn "OS variant 'archlinux' not found in virt-install osinfo list, using 'linux'"
+        slog "Available arch-related variants:"
+        echo "$osinfo_list" | grep -i arch || true
         OS_VARIANT="linux"
     fi
 }
@@ -290,9 +303,9 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     --dotfiles)
-        shift # Remove --dotfiles from arguments
+        shift                 # Remove --dotfiles from arguments
         DOTFILES_OPTIONS="$*" # Capture all remaining arguments
-        break # Exit the loop since --dotfiles must be last
+        break                 # Exit the loop since --dotfiles must be last
         ;;
     --password)
         shift
@@ -508,6 +521,7 @@ generate_cloud_init() {
 
     arch)
         packages+=(
+            "openssh"
             "stow"
             "base-devel"
         )
@@ -600,7 +614,7 @@ generate_cloud_init() {
             "su - $USERNAME -c 'NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"'"
             "echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.bashrc"
             "echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.profile"
-            "su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install git curl wget vim htop starship fzf ripgrep eza zoxide fd bat'"
+            "su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install stow git curl wget vim htop starship fzf ripgrep eza zoxide fd bat'"
             "su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install gum tmux lazygit git-delta just jq yq'"
         )
     fi
@@ -647,7 +661,7 @@ generate_cloud_init() {
         slog "Adding dotfiles installation to cloud-init with options: $DOTFILES_OPTIONS"
 
         runcmd+=(
-            "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)\" -- $DOTFILES_GROUP'"
+            "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)\" -- $DOTFILES_OPTIONS'"
         )
     fi
 
@@ -916,7 +930,7 @@ echo_all_vars() {
 
     echo "  Check the above variables for any issues before proceeding."
     echo "  Press enter to continue..."
-    read -r
+    # read -r
 }
 
 main() {

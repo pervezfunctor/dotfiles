@@ -268,7 +268,7 @@ podman_install() {
 
 vm_install() {
     si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils \
-        virgl-server qemu-utils
+        virgl-server qemu-utils spice-client-gtk spice-vdagent
 
     libvirt_config_install
 }

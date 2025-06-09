@@ -339,7 +339,9 @@ vm_install() {
         si @system-tools
     fi
 
-    si libvirt qemu qemu-kvm virt-install bridge-utils virglrenderer qemu-img
+    si libvirt qemu qemu-kvm virt-install bridge-utils virglrenderer qemu-img \
+        qemu-ui-spice-core qemu-ui-spice-app qemu-char-spice qemu-audio-spice \
+        qemu-device-usb-redirect qemu-device-display-virtio-vga
 
     libvirt_config_install
 
@@ -377,8 +379,7 @@ more_virt_install() {
     si cockpit-bridge cockpit-selinux cockpit-storaged cockpit-system
     si cockpit-machines cockpit-networkmanager cockpit-system cockpit-storaged
     si cockpit-ostree cockpit-podman podman-tui podmansh powertop
-    si qemu-device-display-virtio-gpu qemu-device-display-virtio-vga qemu-char-spice
-    si qemu-device-usb-redirect qemu-img qemu-system-x86-core qemu-user-binfmt
+    si qemu-device-display-virtio-gpu qemu-img qemu-system-x86-core qemu-user-binfmt
     si qemu-user-static qemu udica # rocm-hip rocm-opencl
     si virt-viewer libvirt libvirt-nss podman-bootc
 

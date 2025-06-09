@@ -402,8 +402,12 @@ launch_vm() {
 
     local os_variant="fedora${FEDORA_RELEASE}"
 
-    if ! osinfo-query os | grep -q "fedora${FEDORA_RELEASE}"; then
-        log_warn "OS variant 'fedora${FEDORA_RELEASE}' not found, using 'fedora41'"
+    # Get the osinfo list once and reuse it
+    local osinfo_list
+    osinfo_list=$(virt-install --osinfo list 2>/dev/null)
+
+    if ! echo "$osinfo_list" | grep -q "fedora${FEDORA_RELEASE}"; then
+        log_warn "OS variant 'fedora${FEDORA_RELEASE}' not found in virt-install osinfo list, using 'fedora41'"
         os_variant="fedora41"
     fi
 

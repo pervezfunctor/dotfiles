@@ -302,6 +302,7 @@ package_update: true
 package_upgrade: true
 
 packages:
+  - openssh
   - qemu-guest-agent
   - curl
   - wget
@@ -313,6 +314,9 @@ packages:
 
 # System setup
 runcmd:
+  # Enable and start SSH service
+  - systemctl enable --now sshd
+
   # Enable and start qemu-guest-agent
   - systemctl enable --now qemu-guest-agent
 
@@ -403,9 +407,13 @@ launch_vm() {
     # Use archlinux as os-variant (generic Linux fallback)
     local os_variant="archlinux"
 
+    # Get the osinfo list once and reuse it
+    local osinfo_list
+    osinfo_list=$(virt-install --osinfo list 2>/dev/null)
+
     # Check if archlinux variant is available, fallback to generic
-    if ! osinfo-query os | grep -q "archlinux"; then
-        log_warn "OS variant 'archlinux' not found, using 'linux'"
+    if ! echo "$osinfo_list" | grep -q "archlinux"; then
+        log_warn "OS variant 'archlinux' not found in virt-install osinfo list, using 'linux'"
         os_variant="linux"
     fi
 
