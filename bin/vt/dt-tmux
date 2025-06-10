@@ -61,7 +61,7 @@ create_container_cmd() {
     local container_name="$1"
 
     if ! container_exists "$container_name"; then
-        echo "echo 'Container $container_name does not exist. Create it with: dt create $container_name $container_name'; sleep infinity"
+        echo "echo 'Container $container_name does not exist. Create it with: dt create $container_name $container_name'"
         return
     fi
 

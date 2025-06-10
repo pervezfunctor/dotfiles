@@ -1,0 +1,79 @@
+#! /bin/bash
+
+# A robust wait_for function.
+#
+# Arguments:
+#   $1: The expected output string.
+#   $2: The total timeout in seconds.
+#   $3: The polling interval in seconds.
+#   $@: The command and its arguments to execute.
+#
+# Returns:
+#   0 on success (output matched).
+#   1 on failure (timeout exceeded).
+#
+
+wait_for() {
+  local expected="$1"
+  local timeout="$2"
+  local interval="$3"
+  shift 3
+  local cmd=("$@")
+
+  # Declare all variables used in the loop as local
+  local count=0
+  local output=""
+  local max_attempts
+
+  # Edge case: prevent division by zero and tight loops
+  if ((interval <= 0)); then
+    echo "Error: wait_for() interval must be greater than 0." >&2
+    return 1
+  fi
+
+  max_attempts=$((timeout / interval))
+
+  while ((count < max_attempts)); do
+    # Capture stdout and stderr separately to provide better debug info on failure
+    # We still hide stderr during the loop by redirecting it to a variable.
+    output=$("${cmd[@]}" 2>/dev/null)
+
+    if [[ "$output" == "$expected" ]]; then
+      return 0
+    fi
+
+    sleep "$interval"
+    ((count++))
+  done
+
+  # On failure, print a more informative error message
+  echo "Timeout exceeded waiting for command: ${cmd[*]}" >&2
+  echo "Last received output: '$output'" >&2
+  echo "Expected output: '$expected'" >&2
+  return 1
+}
+
+# --- Usage Example ---
+#
+# vm_name="my-test-vm"
+#
+# # Simulate a command that will eventually succeed
+# # (This part is just for testing the function)
+# _counter=0
+# mock_virsh() {
+#   ((_counter++))
+#   if ((_counter < 4)); then
+#     echo "running"
+#   else
+#     echo "shut off"
+#   fi
+# }
+#
+# echo "Waiting for VM to stop..."
+# if wait_for "shut off" 10 2 mock_virsh domstate "$vm_name"; then
+#     echo "Success: VM '$vm_name' stopped gracefully"
+# else
+#     # The error message is now printed by the function itself
+#     echo "Error: Failed to stop VM '$vm_name'."
+#     exit 1
+# fi

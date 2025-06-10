@@ -2,14 +2,8 @@
 
 set -euo pipefail
 
-# Source shared functions if available
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
-
-# shellcheck disable=SC1091
-source "$DOT_DIR/share/fns"
+source "$(dirname "$0")/vt-utils"
 
 usage() {
     cat <<EOF
@@ -153,17 +147,8 @@ create_vm() {
     local disk_size="20G"
     local install_nix=false
 
-    # SSH key detection: prefer ed25519, fallback to rsa
-    local ssh_pubkey=""
-    if [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
-        ssh_pubkey="$HOME/.ssh/id_ed25519.pub"
-    elif [[ -f "$HOME/.ssh/id_rsa.pub" ]]; then
-        ssh_pubkey="$HOME/.ssh/id_rsa.pub"
-    else
-        slog "Generating SSH key pair..."
-        ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "$(whoami)@$(hostname)"
-        ssh_pubkey="$HOME/.ssh/id_ed25519.pub"
-    fi
+    local ssh_pubkey
+    ssh_pubkey=$(setup_ssh_key)
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do

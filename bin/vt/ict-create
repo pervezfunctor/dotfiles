@@ -2,10 +2,8 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/vt-utils"
 
 # Default values
 unset CONTAINER_NAME
@@ -62,18 +60,6 @@ NOTE: LXC containers are lightweight and share the host kernel.
 EOF
 }
 
-init_ssh() {
-    if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
-        SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
-    elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
-        SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-    else
-        warn "No SSH key found. Generating new RSA key pair..."
-        ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
-        SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-    fi
-}
-
 check_prerequisites() {
     if ! has_cmd incus; then
         fail "incus command not found. Please install Incus first."
@@ -85,8 +71,7 @@ check_prerequisites() {
         exit 1
     fi
 
-    init_ssh
-
+    SSH_KEY=$(setup_ssh_key)
     if [[ ! -f "$SSH_KEY" ]]; then
         fail "SSH public key not found at: $SSH_KEY"
         exit 1

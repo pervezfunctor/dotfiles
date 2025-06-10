@@ -1,10 +1,11 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-# shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/ivm-utils"
 
 # Default values
 unset VM_NAME
@@ -66,36 +67,10 @@ SUPPORTED DISTRIBUTIONS:
 EOF
 }
 
-setup_ssh_key() {
-    if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
-        SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
-    elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
-        SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-    else
-        warn "No SSH key found. Generating new RSA key pair..."
-        ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
-        SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-    fi
-}
+check_ivm_prerequisites() {
+    check_prerequisites
 
-check_prerequisites() {
-    local missing=()
-    for cmd in incus openssl curl wget tee mktemp; do
-        if ! has_cmd "$cmd"; then
-            missing+=("$cmd")
-        fi
-    done
-    if ((${#missing[@]})); then
-        fail "Missing required commands: ${missing[*]}"
-        exit 1
-    fi
-
-    if ! incus info >/dev/null 2>&1; then
-        fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
-        exit 1
-    fi
-
-    setup_ssh_key
+    SSH_KEY=$(setup_ssh_key)
 
     if [[ ! -f "$SSH_KEY" ]]; then
         fail "SSH public key not found at: $SSH_KEY"
@@ -336,29 +311,6 @@ create_vm() {
     fi
 }
 
-get_vm_ip() {
-    slog "Getting VM IP address..."
-
-    local ip
-    local max_attempts=30
-    local attempt=0
-
-    while [[ $attempt -lt $max_attempts ]]; do
-        ip=$(incus list "$VM_NAME" --format csv --columns 4 | head -1 | cut -d' ' -f1)
-
-        if [[ -n "$ip" && "$ip" != "-" ]]; then
-            echo "$ip"
-            return 0
-        fi
-
-        sleep 2
-        ((attempt++))
-    done
-
-    warn "Could not determine VM IP address"
-    return 1
-}
-
 show_completion_info() {
     success "VM '$VM_NAME' is ready!"
     echo
@@ -367,7 +319,7 @@ show_completion_info() {
     echo
 
     local ip
-    if ip=$(get_vm_ip); then
+    if ip=$(get_vm_ip "$VM_NAME"); then
         slog "SSH Access:"
         slog "  IP Address: $ip"
         slog "  Username: $USERNAME"
@@ -495,8 +447,8 @@ parse_args() {
 main() {
     slog "Starting Incus VM creation..."
 
+    check_ivm_prerequisites
     parse_args "$@"
-    check_prerequisites
     configure_distribution
     create_vm
     show_completion_info

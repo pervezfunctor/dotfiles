@@ -377,7 +377,6 @@ one-shell-tmux() {
 
     tmux start-server
 
-    # Check and create session if not exists
     if ! tmux has-session -t "$tmux_session" 2>/dev/null; then
         tmux new-session -d -s "$tmux_session"
     fi

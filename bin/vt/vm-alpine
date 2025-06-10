@@ -14,15 +14,7 @@ MEMORY=8192
 VCPUS=4
 DISK_SIZE="20G"
 
-# SSH key detection
-if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
-    SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
-elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
-    SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-else
-    ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
-    SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-fi
+setup_ssh_key
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do

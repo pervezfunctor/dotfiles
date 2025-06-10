@@ -1,60 +1,44 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-
-# shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
-
-vm_exists() {
-    incus list | grep -q "$1" >/dev/null
-}
-
-check_prerequisites() {
-    if ! has_cmd incus; then
-        fail "Incus is not installed. Please install it first."
-        exit 1
-    fi
-
-    if ! has_cmd ivm-create; then
-        fail "ivm-create is not in PATH."
-        exit 1
-    fi
-}
+source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/ivm-utils"
 
 create_all() {
     slog "Creating Incus VMs (Ubuntu, Fedora, Arch, Tumbleweed, Alpine)..."
 
-    if vm_exists "ubuntu-vm"; then
+    if has_vm "ubuntu-vm"; then
         slog "Ubuntu VM already exists, skipping..."
     else
         slog "Creating Ubuntu VM: ubuntu-vm"
         ivm-create --distro ubuntu --name ubuntu-vm
     fi
 
-    if vm_exists "fedora-vm"; then
+    if has_vm "fedora-vm"; then
         slog "Fedora VM already exists, skipping..."
     else
         slog "Creating Fedora VM: fedora-vm"
         ivm-create --distro fedora --name fedora-vm
     fi
 
-    if vm_exists "arch-vm"; then
+    if has_vm "arch-vm"; then
         slog "Arch VM already exists, skipping..."
     else
         slog "Creating Arch VM: arch-vm"
         ivm-create --distro arch --name arch-vm
     fi
 
-    if vm_exists "tw-vm"; then
+    if has_vm "tw-vm"; then
         slog "Tumbleweed VM already exists, skipping..."
     else
         slog "Creating openSUSE Tumbleweed VM: tw-vm"
         ivm-create --distro tw --name tw-vm
     fi
 
-    if vm_exists "alpine-vm"; then
+    if has_vm "alpine-vm"; then
         slog "Alpine VM already exists, skipping..."
     else
         slog "Creating Alpine VM: alpine-vm"
@@ -71,7 +55,7 @@ create_all() {
 delete_all() {
     slog "Deleting all VMs..."
     for vm in ubuntu-vm fedora-vm arch-vm tw-vm alpine-vm; do
-        if vm_exists "$vm"; then
+        if has_vm "$vm"; then
             slog "Deleting VM: $vm"
             ivm delete "$vm"
         fi
@@ -82,7 +66,7 @@ delete_all() {
 start_all() {
     slog "Starting all VMs..."
     for vm in ubuntu-vm fedora-vm arch-vm tw-vm alpine-vm; do
-        if vm_exists "$vm"; then
+        if has_vm "$vm"; then
             slog "Starting VM: $vm"
             ivm start "$vm"
         fi
@@ -93,7 +77,7 @@ start_all() {
 stop_all() {
     slog "Stopping all VMs..."
     for vm in ubuntu-vm fedora-vm arch-vm tw-vm alpine-vm; do
-        if vm_exists "$vm"; then
+        if has_vm "$vm"; then
             slog "Stopping VM: $vm"
             ivm stop "$vm"
         fi
@@ -104,7 +88,7 @@ stop_all() {
 restart_all() {
     slog "Restarting all VMs..."
     for vm in ubuntu-vm fedora-vm arch-vm tw-vm alpine-vm; do
-        if vm_exists "$vm"; then
+        if has_vm "$vm"; then
             slog "Restarting VM: $vm"
             ivm restart "$vm"
         fi
@@ -113,7 +97,7 @@ restart_all() {
 }
 
 main() {
-    check_prerequisites
+    check_incus
 
     if [[ "$1" == "--delete-all" ]]; then
         delete_all

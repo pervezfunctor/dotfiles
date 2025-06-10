@@ -1186,6 +1186,26 @@ common-installer() {
     done
 }
 
+wait_for() {
+    local expected="$1"
+    local timeout="$2"
+    local interval="$3"
+    shift 3
+    local cmd=("$@")
+    local count=0
+    local max_attempts=$((timeout / interval))
+
+    while ((count < max_attempts)); do
+        output=$("${cmd[@]}" 2>/dev/null)
+        if [[ "$output" == "$expected" ]]; then
+            return 0
+        fi
+        sleep "$interval"
+        ((count++))
+    done
+    return 1
+}
+
 bootstrap() {
     if [[ $EUID -eq 0 ]]; then
         echo "This script must not be run as root. DO NOT use sudo." >&2

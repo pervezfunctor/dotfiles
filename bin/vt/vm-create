@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/vm-utils"
 
 VCPUS=4
 RAM_MB=8192
@@ -20,37 +19,6 @@ unset USERNAME
 unset RELEASE
 unset DISTRO
 unset PASSWORD
-
-setup_ssh_key() {
-    if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
-        SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
-    elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
-        SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-    else
-        ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
-        SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-    fi
-}
-
-SUDO_KEEPALIVE_PID=""
-
-start_sudo_keepalive() {
-    slog "Starting sudo keepalive process..."
-    sudo -v
-    (while true; do
-        sudo -v
-        sleep 50
-    done) &
-    SUDO_KEEPALIVE_PID=$!
-}
-
-stop_sudo_keepalive() {
-    if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
-        slog "Stopping sudo keepalive process..."
-        kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
-    fi
-    SUDO_KEEPALIVE_PID=""
-}
 
 cleanup_on_error() {
     warn "Cleaning up due to error..."
@@ -72,7 +40,7 @@ configure_ubuntu() {
     IMG_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${RELEASE}-server-cloudimg-amd64.img"
     BASE_IMG_NAME="${RELEASE}.img"
     USER_GROUPS=("adm" "sudo")
-    INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
+    # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
 
     case "$RELEASE" in
     "noble") OS_VARIANT="ubuntu24.04" ;;
@@ -98,8 +66,8 @@ configure_fedora() {
 
     BASE_IMG_NAME="fedora-${RELEASE}.qcow2"
     USER_GROUPS=("wheel")
-    INSTALL_CMD="sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
     OS_VARIANT="fedora${RELEASE}"
+    # INSTALL_CMD="sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
 
     # Get the osinfo list once and reuse it
     local osinfo_list
@@ -121,8 +89,8 @@ configure_arch() {
     IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
     BASE_IMG_NAME="arch-latest.qcow2"
     USER_GROUPS=("wheel")
-    INSTALL_CMD="sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools"
     OS_VARIANT="archlinux"
+    # INSTALL_CMD="sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools"
 
     # Get the osinfo list once and reuse it
     local osinfo_list
@@ -162,7 +130,7 @@ configure_debian() {
 
     BASE_IMG_NAME="debian-${RELEASE}.qcow2"
     USER_GROUPS=("sudo")
-    INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
+    # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
 }
 
 configure_distribution() {
@@ -207,7 +175,7 @@ OPTIONS:
     --memory MB         RAM in MB (default: $RAM_MB)
     --vcpus NUM         Number of vCPUs (default: $VCPUS)
     --disk-size SIZE    Disk size (default: $DISK_SIZE)
-    --ssh-key PATH      SSH public key path (default: $SSH_KEY)
+    --ssh-key PATH      SSH public key path (default: auto-detect)
     --bridge BRIDGE     Network bridge (default: $BRIDGE_IF)
     --username USER     VM username (default: distribution-specific)
     --release REL       Distribution release (default: distribution-specific)
@@ -356,40 +324,17 @@ check_prerequisites() {
 
     slog "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
 
-    local missing_tools=()
-    for tool in virsh virt-install qemu-img wget mkisofs; do
-        if ! has_cmd "$tool"; then
-            missing_tools+=("$tool")
-        fi
-    done
+    check_vm_prerequisites
 
-    if [[ ${#missing_tools[@]} -gt 0 ]]; then
-        fail "Missing required tools: ${missing_tools[*]}"
-        fail "Install with: $INSTALL_CMD"
-        exit 1
-    fi
-
-    if ! systemctl is-active --quiet libvirtd; then
-        fail "libvirtd service is not running"
-        fail "Start with: sudo systemctl start libvirtd"
-        exit 1
-    fi
-
-    if ! groups | grep -q libvirt; then
-        fail "User not in libvirt group. You may need sudo for virsh commands"
-        fail "Add user to group: sudo usermod -a -G libvirt \$USER"
-        exit 1
-    fi
-
-    setup_ssh_key
+    SSH_KEY=$(setup_ssh_key)
 
     if [[ ! -f "$SSH_KEY" ]]; then
         fail "SSH public key not found at: $SSH_KEY"
-        fail "Generate with: ssh-keygen -t rsa -C 'your_email@example.com'"
+        fail "Generate with: ssh-keygen -t ed25519 -f $HOME/.ssh/id_ed25519 -N "" -C 'your_email@example.com'"
         exit 1
     fi
 
-    if virsh list --all | grep -q "$VM_NAME"; then
+    if vm_exists "$VM_NAME"; then
         fail "VM '$VM_NAME' already exists"
         fail "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
         exit 1
@@ -801,7 +746,7 @@ launch_vm() {
         exit 1
     fi
 
-    if ! virsh list --all | grep -q "$VM_NAME"; then
+    if ! vm_exists "$VM_NAME"; then
         fail "VM '$VM_NAME' was not created successfully"
         exit 1
     fi

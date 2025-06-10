@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/vt-utils"
 
 # Default values
 VM_NAME=""
@@ -12,7 +11,7 @@ VCPUS=2
 RAM_MB=2048
 DISK_GB=20
 BRIDGE_IF="virbr0"
-SSH_KEY=""
+SSH_KEY=$(setup_ssh_key)
 STREAM="stable"
 HOSTNAME=""
 IGNITION_CONFIG=""
@@ -21,17 +20,6 @@ USERNAME="coreos" # CoreOS default user
 DOWNLOAD_IMAGE=true
 FORCE_DOWNLOAD=false
 INSTALL_K3S=false
-
-if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
-    SSH_KEY="${HOME}/.ssh/id_ed25519.pub"
-elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
-    SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-else
-    warn "No SSH public key found. Please generate one with:"
-    ssh-keygen -t rsa -b 4096 -f "${HOME}/.ssh/id_rsa" -N ""
-    SSH_KEY="${HOME}/.ssh/id_rsa.pub"
-    slog "Generated SSH key: $SSH_KEY"
-fi
 
 usage() {
     cat <<EOF

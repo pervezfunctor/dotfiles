@@ -2,29 +2,13 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/vm-utils"
 
-vm_exists() {
-    virsh list --all | grep -q "$1" >/dev/null
-}
-
-check_prerequisites() {
-    if ! has_cmd virt-install; then
-        fail "virt-install is not installed. Please install libvirt and virt-install first. You can use: vm install"
-        exit 1
-    fi
-
-    if ! has_cmd vm-create; then
-        fail "vm-create is not in PATH."
-        exit 1
-    fi
-}
+check_vm_prerequisites
 
 create_all() {
-    slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
+    slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Alpine, Debian)..."
 
     if vm_exists "dev"; then
         slog "Ubuntu VM already exists, skipping..."
@@ -43,7 +27,7 @@ create_all() {
     if vm_exists "incus"; then
         slog "Alpine VM already exists, skipping..."
     else
-        slog "Creating Arch VM: incus"
+        slog "Creating Alpine VM: incus"
         vm-create --distro alpine --name incus --dotfiles min
     fi
 
@@ -55,13 +39,11 @@ create_all() {
     fi
 
     slog "Listing created VMs:"
-    virsh list --all
+    list_vms
 
     success "All VMs created successfully!"
     slog "You can access them using: virsh console <vm-name>"
 }
-
-# add options --delete-all --start-all --stop-all --restart-all
 
 usage() {
     cat <<EOF
@@ -76,7 +58,6 @@ Options:
   --restart-all Restart all VMs created by vm-create
   --help        Display this help message
 EOF
-
 }
 
 delete_all() {
@@ -88,7 +69,6 @@ delete_all() {
         fi
     done
     success "All VMs deleted successfully!"
-
 }
 
 start_all() {

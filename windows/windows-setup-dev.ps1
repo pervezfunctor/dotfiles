@@ -1564,7 +1564,7 @@ function Initialize-SSHKey {
     }
 
     Write-Host "Generating new SSH key..." -ForegroundColor Cyan
-    ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\.ssh\id_rsa" -N '""'
+    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "$(whoami)@$(hostname)"
     Write-Host "SSH key generated successfully!" -ForegroundColor Green
 }
 

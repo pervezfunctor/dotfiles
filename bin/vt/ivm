@@ -1,14 +1,11 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-
-# shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
-
-# shellcheck disable=SC1091
-source "$DOT_DIR/share/fns"
+source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/ivm-utils"
 
 usage() {
     cat <<EOF
@@ -58,54 +55,8 @@ All arguments after 'create' are forwarded directly to ivm-create.
 EOF
 }
 
-check_incus() {
-    if ! has_cmd incus; then
-        fail "incus command not found. Please install Incus first."
-        slog "You can install it with: $0 install"
-        return 1
-    fi
-}
-
-get_vm_state() {
-    incus list "$1" --format csv --columns s | head -1
-}
-
-has_vm() {
-    incus info "$1" >/dev/null 2>&1
-}
-
-check_vm() {
-    if ! has_vm "$1"; then
-        fail "VM '$1' not found"
-        return 1
-    fi
-}
-
-incus_list_vms() {
-    local vm_name="${1:-}"
-    local extra_args="${2:-}"
-
-    if ! incus info >/dev/null 2>&1; then
-        fail "Incus server is not reachable. Please initialize it first:"
-        slog "  sudo incus admin init --minimal"
-        slog "  newgrp incus"
-        return 1
-    fi
-
-    if [[ -n "$vm_name" ]]; then
-        incus list type=virtual-machine "$vm_name" "${extra_args}"
-    else
-        incus list type=virtual-machine "${extra_args}"
-    fi
-}
-
 install_incus() {
     slog "Installing Incus using ilmi..."
-
-    if has_cmd incus; then
-        success "Incus already installed"
-        return 0
-    fi
 
     if has_cmd ilmi; then
         ilmi incus
@@ -129,7 +80,6 @@ install_incus() {
 }
 
 list_vms() {
-    check_incus || return 1
 
     slog "Listing all Incus VMs..."
     echo
@@ -138,7 +88,6 @@ list_vms() {
 
 vm_status() {
     local vm_name="$1"
-    check_incus || return 1
     check_vm "$vm_name"
 
     slog "Status for VM '$vm_name':"
@@ -147,31 +96,22 @@ vm_status() {
     echo
 
     slog "Detailed information:"
-    incus info "$vm_name" | head -20
+    incus info "$vm_name"
 }
 
 create_vm() {
-    if ! command -v ivm-create >/dev/null 2>&1; then
-        fail "ivm-create not found in PATH"
-        return 1
-    fi
-    slog "Forwarding to: ivm-create $*"
     ivm-create "$@"
 }
 
 start_vm() {
     local vm_name="$1"
-    check_incus || return 1
 
     check_vm "$vm_name" || return 1
 
-    local state
-    state=$(get_vm_state "$vm_name")
-
-    if [[ "$state" == "RUNNING" ]]; then
+    check_running "$vm_name" && {
         warn "VM '$vm_name' is already running"
         return 0
-    fi
+    }
 
     slog "Starting VM '$vm_name'..."
     if incus start "$vm_name"; then
@@ -184,17 +124,13 @@ start_vm() {
 
 stop_vm() {
     local vm_name="$1"
-    check_incus || return 1
 
     check_vm "$vm_name" || return 1
 
-    local state
-    state=$(get_vm_state "$vm_name")
-
-    if [[ "$state" != "RUNNING" ]]; then
-        warn "VM '$vm_name' is not running"
+    check_stopped "$vm_name" && {
+        warn "VM '$vm_name' is already stopped"
         return 0
-    fi
+    }
 
     slog "Gracefully stopping VM '$vm_name'..."
     if incus stop "$vm_name"; then
@@ -207,7 +143,6 @@ stop_vm() {
 
 restart_vm() {
     local vm_name="$1"
-    check_incus || return 1
     check_vm "$vm_name" || return 1
 
     slog "Restarting VM '$vm_name'..."
@@ -221,7 +156,6 @@ restart_vm() {
 
 delete_vm() {
     local vm_name="$1"
-    check_incus || return 1
     check_vm "$vm_name" || return 1
 
     warn "This will permanently delete VM '$vm_name' and all its data!"
@@ -249,21 +183,10 @@ delete_vm() {
 
 connect_console() {
     local vm_name="$1"
-    check_incus || return 1
     check_vm "$vm_name" || return 1
 
-    local state
-    state=$(get_vm_state "$vm_name")
+    check_running "$vm_name" || return 1
 
-    if [[ "$state" != "RUNNING" ]]; then
-        fail "VM '$vm_name' is not running"
-        slog "Start it with: $0 start $vm_name"
-        return 1
-    fi
-
-    slog "Connecting to console of VM '$vm_name'..."
-    slog "Press Ctrl+a q to exit console"
-    echo
     incus console "$vm_name"
 }
 
@@ -271,21 +194,13 @@ exec_in_vm() {
     local vm_name="$1"
     shift
     local command="$*"
-    check_incus || return 1
 
     if ! has_vm "$vm_name"; then
         fail "VM '$vm_name' not found"
         return 1
     fi
 
-    local state
-    state=$(get_vm_state "$vm_name")
-
-    if [[ "$state" != "RUNNING" ]]; then
-        fail "VM '$vm_name' is not running"
-        slog "Start it with: $0 start $vm_name"
-        return 1
-    fi
+    check_running "$vm_name" || return 1
 
     slog "Executing command in VM '$vm_name': $command"
     incus exec "$vm_name" -- "$@"
@@ -293,7 +208,6 @@ exec_in_vm() {
 
 show_vm_info() {
     local vm_name="$1"
-    check_incus || return 1
     check_vm "$vm_name" || return 1
 
     slog "Detailed information for VM '$vm_name':"
@@ -303,7 +217,6 @@ show_vm_info() {
 
 show_vm_config() {
     local vm_name="$1"
-    check_incus || return 1
     check_vm "$vm_name" || return 1
 
     slog "Configuration for VM '$vm_name':"
@@ -314,7 +227,6 @@ show_vm_config() {
 show_logs() {
     local vm_name="$1"
     local log_type="${2:-instance}"
-    check_incus || return 1
     check_vm "$vm_name" || return 1
 
     local state
@@ -363,7 +275,6 @@ show_logs() {
 create_snapshot() {
     local vm_name="$1"
     local snapshot_name="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
-    check_incus || return 1
     check_vm "$vm_name" || return 1
 
     slog "Creating snapshot '$snapshot_name' for VM '$vm_name'..."
@@ -378,7 +289,6 @@ create_snapshot() {
 restore_snapshot() {
     local vm_name="$1"
     local snapshot_name="$2"
-    check_incus || return 1
     check_vm "$vm_name" || return 1
 
     if [[ -z "$snapshot_name" ]]; then
@@ -411,27 +321,18 @@ restore_snapshot() {
 copy_vm() {
     local source_vm="$1"
     local dest_vm="$2"
-    check_incus || return 1
-    check_vm "$source_vm" || return 1
-    check_vm "$dest_vm" && {
-        fail "Destination VM '$dest_vm' already exists"
-        return 1
-    }
 
     if [[ -z "$dest_vm" ]]; then
         fail "Destination VM name required"
         return 1
     fi
 
-    if ! incus info "$source_vm" >/dev/null 2>&1; then
-        fail "Source VM '$source_vm' not found"
-        return 1
-    fi
+    check_vm "$source_vm" || return 1
 
-    if incus info "$dest_vm" >/dev/null 2>&1; then
+    check_vm "$dest_vm" && {
         fail "Destination VM '$dest_vm' already exists"
         return 1
-    fi
+    }
 
     slog "Copying VM '$source_vm' to '$dest_vm'..."
     if incus copy "$source_vm" "$dest_vm"; then
@@ -443,8 +344,6 @@ copy_vm() {
 }
 
 cleanup_vms() {
-    check_incus || return 1
-
     slog "Cleaning up stopped VMs..."
 
     # List stopped VMs
@@ -472,175 +371,22 @@ cleanup_vms() {
     success "Cleanup complete"
 }
 
-get_vm_ip() {
-    local vm_name="$1"
-
-    if ! incus info "$vm_name" >/dev/null 2>&1; then
-        return 1
-    fi
-
-    local state
-    state=$(get_vm_state "$vm_name")
-
-    if [[ "$state" != "RUNNING" ]]; then
-        return 2
-    fi
-
-    # Try to get IP from incus list with network info
-    local ip
-    ip=$(incus list "^${vm_name}$" --format csv --columns 4 | head -1 | cut -d',' -f1 | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1)
-
-    # If that fails, try getting it from incus info
-    if [[ -z "$ip" ]]; then
-        ip=$(incus info "$vm_name" | grep -A 20 "Network usage:" | grep -oE 'inet ([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1 | cut -d' ' -f2)
-    fi
-
-    # If still no IP, try alternative method
-    if [[ -z "$ip" ]]; then
-        ip=$(incus exec "$vm_name" -- ip -4 addr show | grep -oE 'inet ([0-9]{1,3}\.){3}[0-9]{1,3}' | grep -v '127.0.0.1' | head -1 | cut -d' ' -f2 2>/dev/null)
-    fi
-
-    if [[ -z "$ip" ]]; then
-        return 3
-    fi
-
-    echo "$ip"
-    return 0
-}
-
-show_ip() {
-    local vm_name="$1"
-    check_incus || return 1
-    check_vm "$vm_name" || return 1
-
-    local ip
-    ip=$(get_vm_ip "$vm_name")
-    local ret=$?
-
-    case $ret in
-    1)
-        fail "VM '$vm_name' not found"
-        return 1
-        ;;
-    2)
-        fail "VM '$vm_name' is not running"
-        slog "Start it with: $0 start $vm_name"
-        return 1
-        ;;
-    3)
-        fail "Could not determine IP address for VM '$vm_name'"
-        slog "VM may still be starting up. Try again in a few moments."
-        return 1
-        ;;
-    0)
-        echo "$ip"
-        return 0
-        ;;
-    esac
-}
-
-ssh_to_vm() {
-    local vm_name="$1"
-    local username="${2:-}"
-    check_incus || return 1
-    check_vm "$vm_name" || return 1
-
-    local state
-    state=$(get_vm_state "$vm_name")
-
-    if [[ "$state" != "RUNNING" ]]; then
-        fail "VM '$vm_name' is not running"
-        slog "Start it with: $0 start $vm_name"
-        return 1
-    fi
-
-    # Auto-detect username if not provided
-    if [[ -z "$username" ]]; then
-        username=$(detect_vm_user "$vm_name")
-        slog "Auto-detected username: $username (override with: $0 ssh $vm_name <username>)"
-    fi
-
-    local ip
-    ip=$(get_vm_ip "$vm_name")
-    local ret=$?
-
-    case $ret in
-    1)
-        fail "VM '$vm_name' not found"
-        return 1
-        ;;
-    2)
-        fail "VM '$vm_name' is not running"
-        slog "Start it with: $0 start $vm_name"
-        return 1
-        ;;
-    3)
-        fail "Could not determine IP address for VM '$vm_name'"
-        slog "VM may still be starting up. Try again in a few moments."
-        return 1
-        ;;
-    0)
-        slog "Connecting to $vm_name ($ip) as $username..."
-        ssh "$username@$ip"
-        ;;
-    esac
-}
-
-detect_vm_user() {
-    local vm_name="$1"
-
-    # Extract base name from VM name (remove -vm suffix if present)
-    local username="${vm_name%-vm}"
-
-    # Handle special cases for common distros
-    case "$username" in
-    ubuntu*) username="ubuntu" ;;
-    fedora*) username="fedora" ;;
-    centos*) username="centos" ;;
-    debian*) username="debian" ;;
-    arch*) username="arch" ;;
-    alpine*) username="alpine" ;;
-    tumbleweed* | tw*) username="opensuse" ;;
-    *)
-        # Default to the VM name or common default
-        if [[ "$username" =~ ^(ubuntu|fedora|centos|debian|arch|alpine|opensuse)$ ]]; then
-            # Keep as is
-            :
-        else
-            username="ubuntu" # Default fallback
-        fi
-        ;;
-    esac
-
-    echo "$username"
-}
-
 shell_to_vm() {
     local vm_name="$1"
-    check_incus || return 1
     check_vm "$vm_name" || return 1
+    check_running "$vm_name" || return 1
 
-    local state
-    state=$(get_vm_state "$vm_name")
+    local username="${2:-}"
 
-    if [[ "$state" != "RUNNING" ]]; then
-        fail "VM '$vm_name' is not running"
-        slog "Start it with: $0 start $vm_name"
-        return 1
+    if [[ -z "$username" ]]; then
+        username=$(detect_vm_user "$vm_name")
+        slog "Auto-detected username: $username (override with: $0 shell $vm_name <username>)"
     fi
-
-    # Try to find an appropriate user for this VM
-    local username
-    username=$(detect_vm_user "$vm_name")
 
     # Check if the detected user exists in the VM
     if incus exec "$vm_name" -- id "$username" >/dev/null 2>&1; then
         slog "Entering shell of VM '$vm_name' as user '$username'..."
         incus exec "$vm_name" -- su - "$username"
-    elif [[ "$username" != "ubuntu" ]] && incus exec "$vm_name" -- id "ubuntu" >/dev/null 2>&1; then
-        # If the detected user doesn't exist, try ubuntu as fallback
-        slog "User '$username' not found, entering shell of VM '$vm_name' as user 'ubuntu'..."
-        incus exec "$vm_name" -- su - "ubuntu"
     else
         # Fall back to root if no suitable user found
         slog "No suitable user found, entering shell of VM '$vm_name' as root..."
@@ -818,6 +564,10 @@ fi
 command="$1"
 vm_name="${2:-}"
 
+if [[ "$command" != "install" ]]; then
+    check_prerequisites
+fi
+
 case "$command" in
 install)
     install_incus
@@ -900,7 +650,8 @@ shell)
         usage
         exit 1
     }
-    shell_to_vm "$vm_name"
+
+    shell_to_vm "$vm_name" "${3:-}"
     ;;
 ip)
     [[ -z "$vm_name" ]] && {

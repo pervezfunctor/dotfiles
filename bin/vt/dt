@@ -146,49 +146,7 @@ create_container() {
 
     slog "Creating $distro distrobox container: $container_name"
 
-    case "$distro" in
-    ubuntu)
-        distrobox create --yes --image ubuntu:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    debian)
-        distrobox create --yes --image debian:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    arch)
-        distrobox create --yes --image archlinux:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    fedora)
-        distrobox create --yes --image fedora:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    rocky)
-        distrobox create --yes --image quay.io/rockylinux/rockylinux:9 --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    tumbleweed | tw)
-        distrobox create --yes --image opensuse/tumbleweed --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    alpine)
-        distrobox create --yes --image quay.io/toolbx-images/alpine-toolbox:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    bluefin)
-        distrobox create --yes --image ghcr.io/ublue-os/bluefin-cli:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    docker)
-        distrobox create --yes --image ghcr.io/ublue-os/docker-distrobox:latest --init --unshare-all --root --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    wolfi)
-        distrobox create --yes --image ghcr.io/wolfi-dev/sdk:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    nix)
-        distrobox create --yes --image nixos/nix:latest --home "$HOME/.boxes/${container_name}" --name "${container_name}"
-        ;;
-    *)
-        fail "Unsupported distro: $distro"
-        slog "Supported distros: ubuntu, debian, arch, fedora, rocky, tumbleweed, alpine, bluefin, docker, wolfi, nix"
-        return 1
-        ;;
-    esac
-
-    # shellcheck disable=SC2181
-    if [[ $? -eq 0 ]]; then
+    if dbox-"$distro" "$container_name"; then
         success "Container '$container_name' created successfully"
     else
         fail "Failed to create container '$container_name'"
@@ -203,8 +161,6 @@ start_container() {
 
     slog "Starting container '$container_name'..."
 
-    # Distrobox containers are typically started when entered
-    # But we can check if the underlying podman/docker container is running
     local container_id
     if has_cmd podman; then
         container_id=$(podman ps -a --filter "name=${container_name}" --format "{{.ID}}" | head -1)
@@ -266,7 +222,6 @@ delete_container() {
     if distrobox rm --force "$container_name"; then
         success "Container '$container_name' deleted"
 
-        # Clean up home directory if it exists
         local home_dir="$HOME/.boxes/${container_name}"
         if [[ -d "$home_dir" ]]; then
             slog "Removing container home directory: $home_dir"
@@ -347,7 +302,6 @@ show_logs() {
     slog "Showing logs for container '$container_name'..."
     echo
 
-    # Get container ID and show logs
     local container_id
     if has_cmd podman; then
         container_id=$(podman ps -a --filter "name=${container_name}" --format "{{.ID}}" | head -1)
@@ -372,7 +326,6 @@ tail_logs() {
     slog "Following logs for container '$container_name' (Press Ctrl+C to stop)..."
     echo
 
-    # Get container ID and follow logs
     local container_id
     if has_cmd podman; then
         container_id=$(podman ps -a --filter "name=${container_name}" --format "{{.ID}}" | head -1)
@@ -396,7 +349,6 @@ tail_logs() {
 cleanup_containers() {
     slog "Cleaning up stopped containers and orphaned files..."
 
-    # List stopped containers
     local stopped_containers
     if has_cmd podman; then
         stopped_containers=$(podman ps -a --filter "status=exited" --filter "label=manager=distrobox" --format "{{.Names}}")
@@ -422,7 +374,6 @@ cleanup_containers() {
         slog "No stopped distrobox containers found"
     fi
 
-    # Clean up orphaned home directories
     slog "Checking for orphaned container home directories..."
     if [[ -d "$HOME/.boxes" ]]; then
         for dir in "$HOME/.boxes"/*; do

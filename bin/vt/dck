@@ -7,7 +7,6 @@ DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
 source "$DOT_DIR/share/utils"
 
-# Check if Docker is installed and running
 check_docker() {
     if ! has_cmd docker; then
         fail "docker command not found. Please install Docker first."
@@ -199,7 +198,6 @@ create_container() {
 
     slog "Creating container with interactive shell..."
 
-    # Try bash first, then sh as fallback
     if docker run -dit --name "$container_name" "$image_name" /bin/bash >/dev/null 2>&1; then
         success "Container '$container_name' created successfully with bash"
     else
@@ -337,7 +335,7 @@ enter_shell() {
     fi
 
     slog "Entering shell of container '$container_name'..."
-    # Try bash first, then sh as fallback
+
     if ! docker exec -it "$container_name" /bin/bash 2>/dev/null; then
         docker exec -it "$container_name" /bin/sh
     fi
@@ -418,7 +416,6 @@ cleanup_containers() {
         slog "No stopped containers found"
     fi
 
-    # Clean up dangling images
     slog "Checking for dangling images..."
     local dangling_images
     dangling_images=$(docker images -f "dangling=true" -q)
@@ -435,7 +432,6 @@ cleanup_containers() {
         slog "No dangling images found"
     fi
 
-    # Clean up unused volumes
     slog "Checking for unused volumes..."
     read -p "Remove unused volumes? (y/N): " -r
     if [[ $REPLY =~ ^[Yy]$ ]]; then

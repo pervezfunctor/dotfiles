@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# Script manages /etc/hosts entries for Incus VMs
-
-# shellcheck disable=SC1090
-source ~/.ilm/share/utils
+# shellcheck disable=SC1091
+source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/ivm-utils"
 
 set -euo pipefail
 
@@ -18,7 +17,6 @@ COMMANDS:
     remove <vm-name>        Remove Incus VM from /etc/hosts
     list                    List all Incus VM entries in /etc/hosts
     update                  Update all running Incus VMs in /etc/hosts
-    clean                   Remove entries for non-existent Incus VMs
 
 EXAMPLES:
     $0 add ubuntu-vm        # Add ubuntu-vm to /etc/hosts
@@ -27,31 +25,6 @@ EXAMPLES:
     $0 list                 # Show all Incus VM entries
 
 EOF
-}
-
-get_vm_ip() {
-    local vm_name="$1"
-
-    if ! incus info "$vm_name" &>/dev/null; then
-        return 1
-    fi
-
-    local state
-    state=$(incus info "$vm_name" | grep "Status:" | awk '{print $2}')
-
-    if [[ "$state" != "Running" ]]; then
-        return 2
-    fi
-
-    local ip
-    ip=$(incus list "$vm_name" --format csv -c 4 | cut -d' ' -f1)
-
-    if [[ -z "$ip" || "$ip" == "-" ]]; then
-        return 3
-    fi
-
-    echo "$ip"
-    return 0
 }
 
 add_vm_to_hosts() {
@@ -65,25 +38,25 @@ add_vm_to_hosts() {
         return 1
     fi
 
-    # Check if entry already exists
-    if grep -qE "^[0-9.]+\s+$vm_name(\s|$)" /etc/hosts; then
+    # Check if entry already exists, detect also Added vm ivm-hosts
+    if grep -q "^[0-9.]* .*$vm_name # Added by ivm-hosts" /etc/hosts; then
         warn "Entry for '$vm_name' already exists in /etc/hosts"
         # Update existing entry
-        sudo sed -i "/^[0-9.]+\s\+$vm_name(\s|$)/d" /etc/hosts
+        sudo sed -i "/^[0-9.]* .*$vm_name # Added by ivm-hosts/d" /etc/hosts
     fi
 
-    echo "$ip $vm_name" | sudo tee -a /etc/hosts >/dev/null
+    echo "$ip $vm_name # Added by ivm-hosts" | sudo tee -a /etc/hosts >/dev/null
     success "Added $vm_name ($ip) to /etc/hosts"
 }
 
 remove_vm_from_hosts() {
     local vm_name="$1"
 
-    if grep -q "^[0-9.]* .*$vm_name" /etc/hosts; then
-        sudo sed -i "/^[0-9.]* .*$vm_name/d" /etc/hosts
+    if grep -q "^[0-9.]* .*$vm_name # Added by ivm-hosts" /etc/hosts; then
+        sudo sed -i "/^[0-9.]* .*$vm_name # Added by ivm-hosts/d" /etc/hosts
         success "Removed $vm_name from /etc/hosts"
     else
-        warn "No entry found for '$vm_name' in /etc/hosts"
+        warn "No entry found for '$vm_name' in /etc/hosts that was added by ivm-hosts"
     fi
 }
 
@@ -103,8 +76,8 @@ list_vm_hosts() {
     # Find entries in /etc/hosts for these VMs
     local found=false
     while IFS= read -r vm; do
-        if grep -q "^[0-9.]* .*$vm" /etc/hosts; then
-            grep "^[0-9.]* .*$vm" /etc/hosts
+        if grep -q "^[0-9.]* .*$vm # Added by ivm-hosts" /etc/hosts; then
+            grep "^[0-9.]* .*$vm # Added by ivm-hosts" /etc/hosts
             found=true
         fi
     done <<<"$vm_names"
@@ -135,35 +108,6 @@ update_all_vms() {
     success "Updated /etc/hosts for all running Incus VMs"
 }
 
-clean_vm_hosts() {
-    slog "Cleaning up /etc/hosts entries for non-existent Incus VMs..."
-
-    # Get all VM names from /etc/hosts
-    local host_vms
-    host_vms=$(grep -E "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" /etc/hosts | awk '{print $2}' || true)
-
-    if [[ -z "$host_vms" ]]; then
-        slog "No VM entries found in /etc/hosts"
-        return 0
-    fi
-
-    # Get all existing Incus VM names
-    local incus_vms
-    incus_vms=$(incus list --format csv -c n | grep -v NAME)
-
-    while IFS= read -r vm; do
-        if [[ -n "$vm" ]]; then
-            # Check if this VM exists in Incus
-            if ! echo "$incus_vms" | grep -q "^$vm$"; then
-                warn "VM '$vm' no longer exists in Incus, removing from /etc/hosts"
-                remove_vm_from_hosts "$vm"
-            fi
-        fi
-    done <<<"$host_vms"
-
-    success "Cleanup complete"
-}
-
 if [[ $# -eq 0 ]]; then
     usage
     exit 1
@@ -171,13 +115,6 @@ fi
 
 command="$1"
 vm_name="${2:-}"
-
-check_prerequisites() {
-    if ! command -v incus &>/dev/null; then
-        fail "Incus CLI not found. Please install it first."
-        exit 1
-    fi
-}
 
 main() {
     check_prerequisites
@@ -204,9 +141,6 @@ main() {
         ;;
     update)
         update_all_vms
-        ;;
-    clean)
-        clean_vm_hosts
         ;;
     --help | -h)
         usage

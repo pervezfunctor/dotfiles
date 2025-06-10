@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/vt-utils"
 
 # Default values
 DEFAULT_USERNAME="nixos"
@@ -49,7 +48,7 @@ EOF
 
 detect_setup_type() {
     local name="$1"
-    
+
     if incus info "$name" >/dev/null 2>&1; then
         local type
         type=$(incus info "$name" | grep "Type:" | awk '{print $2}')
@@ -69,31 +68,13 @@ detect_setup_type() {
     fi
 }
 
-find_ssh_key() {
-    if [[ -n "$DEFAULT_SSH_KEY" && -f "$DEFAULT_SSH_KEY" ]]; then
-        return 0
-    fi
-    
-    # Try common SSH key locations
-    for key in ~/.ssh/id_ed25519.pub ~/.ssh/id_rsa.pub ~/.ssh/id_ecdsa.pub; do
-        if [[ -f "$key" ]]; then
-            DEFAULT_SSH_KEY="$key"
-            return 0
-        fi
-    done
-    
-    warn "No SSH public key found. SSH key authentication will be skipped."
-    warn "You can generate one with: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519"
-    return 1
-}
-
 create_nixos_configuration() {
     local instance_name="$1"
     local username="$2"
     local ssh_key_content="$3"
-    
+
     slog "Creating NixOS configuration.nix..."
-    
+
     # Create the configuration.nix content
     local config_content
     read -r -d '' config_content <<EOF || true
@@ -115,16 +96,16 @@ create_nixos_configuration() {
     tree
     unzip
     tar
-    
+
     # Network tools
     net-tools
     iproute2
     nmap
-    
+
     # Development tools
     gcc
     gnumake
-    
+
     # System utilities
     sudo
     openssh
@@ -158,10 +139,10 @@ create_nixos_configuration() {
     shell = pkgs.bash;
     password = "$DEFAULT_PASSWORD";  # This will be hashed automatically
 $(if [[ -n "$ssh_key_content" ]]; then
-    echo "    openssh.authorizedKeys.keys = ["
-    echo "      \"$ssh_key_content\""
-    echo "    ];"
-fi)
+        echo "    openssh.authorizedKeys.keys = ["
+        echo "      \"$ssh_key_content\""
+        echo "    ];"
+    fi)
   };
 
   # Enable sudo for wheel group
@@ -172,19 +153,19 @@ fi)
 
   # System configuration
   system.stateVersion = "24.11";
-  
+
   # Enable nix flakes and new command
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  
+
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
-  
+
   # Time zone
   time.timeZone = "UTC";
-  
+
   # Locale
   i18n.defaultLocale = "en_US.UTF-8";
-  
+
   # Enable systemd services
   systemd.services.sshd.enable = true;
 }
@@ -193,15 +174,15 @@ EOF
     # Write configuration to temporary file
     local temp_config
     temp_config=$(mktemp)
-    echo "$config_content" > "$temp_config"
-    
+    echo "$config_content" >"$temp_config"
+
     # Copy configuration to the instance
     slog "Copying configuration.nix to $instance_name..."
     incus file push "$temp_config" "$instance_name/etc/nixos/configuration.nix"
-    
+
     # Clean up
     rm -f "$temp_config"
-    
+
     success "NixOS configuration.nix created and installed"
 }
 
@@ -210,16 +191,16 @@ configure_nixos_instance() {
     local username="$2"
     local password="$3"
     local ssh_key_path="$4"
-    
+
     slog "Configuring NixOS instance: $instance_name"
-    
+
     # Check if instance is running
     if ! incus list "$instance_name" --format csv | grep -q "RUNNING"; then
         slog "Starting instance $instance_name..."
         incus start "$instance_name"
         sleep 5
     fi
-    
+
     # Wait for instance to be ready
     slog "Waiting for instance to be ready..."
     local max_attempts=30
@@ -231,22 +212,22 @@ configure_nixos_instance() {
         sleep 2
         ((attempt++))
     done
-    
+
     if [[ $attempt -eq $max_attempts ]]; then
         fail "Instance $instance_name did not become ready in time"
         exit 1
     fi
-    
+
     # Read SSH key content if provided
     local ssh_key_content=""
     if [[ -n "$ssh_key_path" && -f "$ssh_key_path" ]]; then
         ssh_key_content=$(cat "$ssh_key_path")
         slog "Using SSH key: $ssh_key_path"
     fi
-    
+
     # Create and apply NixOS configuration
     create_nixos_configuration "$instance_name" "$username" "$ssh_key_content"
-    
+
     # Apply the configuration
     slog "Applying NixOS configuration (this may take a few minutes)..."
     if incus exec "$instance_name" -- nixos-rebuild switch; then
@@ -254,12 +235,12 @@ configure_nixos_instance() {
     else
         warn "NixOS configuration application had issues, but continuing..."
     fi
-    
+
     # Ensure user exists and has correct password
     slog "Setting up user: $username"
     incus exec "$instance_name" -- useradd -m -G wheel,sudo -s /bin/bash "$username" 2>/dev/null || true
     echo "$username:$password" | incus exec "$instance_name" -- chpasswd
-    
+
     # Set up SSH directory and keys
     if [[ -n "$ssh_key_content" ]]; then
         slog "Setting up SSH access for $username..."
@@ -269,28 +250,28 @@ configure_nixos_instance() {
         incus exec "$instance_name" -- chmod 700 "/home/$username/.ssh"
         incus exec "$instance_name" -- chmod 600 "/home/$username/.ssh/authorized_keys"
     fi
-    
+
     # Ensure SSH service is running
     slog "Starting SSH service..."
     incus exec "$instance_name" -- systemctl enable --now sshd 2>/dev/null || true
     incus exec "$instance_name" -- systemctl enable --now ssh 2>/dev/null || true
-    
+
     success "NixOS instance $instance_name configured successfully!"
 }
 
 show_completion_info() {
     local instance_name="$1"
     local username="$2"
-    
+
     success "NixOS $SETUP_TYPE '$instance_name' is ready!"
     echo
     slog "Instance Details:"
     incus list "$instance_name"
     echo
-    
+
     local ip
     ip=$(incus list "$instance_name" --format csv --columns 4 | head -1 | cut -d' ' -f1)
-    
+
     if [[ -n "$ip" && "$ip" != "-" ]]; then
         slog "Access Information:"
         slog "  IP Address: $ip"
@@ -305,12 +286,12 @@ show_completion_info() {
         slog "  Password authentication: ENABLED"
         echo
     fi
-    
+
     slog "Direct Access:"
     slog "  Shell: incus exec $instance_name -- /bin/bash"
     slog "  User shell: incus exec $instance_name -- su - $username"
     echo
-    
+
     slog "Instance Management:"
     slog "  Status: incus list $instance_name"
     slog "  Stop: incus stop $instance_name"
@@ -369,7 +350,7 @@ parse_args() {
             ;;
         esac
     done
-    
+
     # Validate required arguments
     if [[ -z "$CONTAINER_NAME" && -z "$VM_NAME" ]]; then
         fail "Instance name is required"
@@ -380,9 +361,9 @@ parse_args() {
 
 main() {
     slog "Starting NixOS instance configuration..."
-    
+
     parse_args "$@"
-    
+
     # Determine instance name
     local instance_name
     if [[ -n "$CONTAINER_NAME" ]]; then
@@ -390,16 +371,13 @@ main() {
     else
         instance_name="$VM_NAME"
     fi
-    
-    # Find SSH key if not specified
-    find_ssh_key || true
-    
+
     # Configure the instance
-    configure_nixos_instance "$instance_name" "$DEFAULT_USERNAME" "$DEFAULT_PASSWORD" "$DEFAULT_SSH_KEY"
-    
+    configure_nixos_instance "$instance_name" "$DEFAULT_USERNAME" "$DEFAULT_PASSWORD" "$(setup_ssh_key)"
+
     # Show completion information
     show_completion_info "$instance_name" "$DEFAULT_USERNAME"
-    
+
     success "All done! Your NixOS $SETUP_TYPE '$instance_name' is ready to use."
 }
 
