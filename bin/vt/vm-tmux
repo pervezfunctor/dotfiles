@@ -41,11 +41,7 @@ EOF
 
 check_prerequisites() {
     check_vm_prerequisites
-
-    if ! has_cmd tmux; then
-        fail "tmux is not installed. Please install it first."
-        exit 1
-    fi
+    check_tmux
 }
 
 check_prerequisites
@@ -63,6 +59,10 @@ create_session() {
             return
         fi
     fi
+
+    for vm in "$UBUNTU_VM" "$FEDORA_VM" "$ARCH_VM" "$DEBIAN_VM"; do
+        check_vm "$vm" || return 1
+    done
 
     slog "Creating tmux session with SSH connections to 4 libvirt VMs..."
 

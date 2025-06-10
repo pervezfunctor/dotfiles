@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/vt-utils"
 
 UBUNTU_CT="ubuntu"
 FEDORA_CT="fedora"
@@ -37,32 +36,40 @@ check_docker() {
   fi
 }
 
-check_tmux() {
-  if ! has_cmd tmux; then
-    fail "tmux is not installed. Please install it first."
-    exit 1
-  fi
-}
-
 container_exists() {
   local container_name="$1"
   docker ps -a --format "{{.Names}}" | grep -q "^$container_name$"
   return $?
 }
 
+check_container() {
+  local container_name="$1"
+  if ! container_exists "$container_name"; then
+    fail "Container '$container_name' does not exist"
+    return 1
+  fi
+  return 0
+}
+
+check_container_running() {
+  local container_name="$1"
+  if ! docker ps --format "{{.Names}}" | grep -q "^$container_name$"; then
+    fail "Container '$container_name' is not running"
+    return 1
+  fi
+  return 0
+}
+
 create_container_cmd() {
   local container_name="$1"
 
-  if ! container_exists "$container_name"; then
-    echo "echo 'Container $container_name does not exist. Create it with: dck create $container_name $container_name'"
-    return
+  check_container "$container_name" || return 1
+
+  if ! check_container_running "$container_name"; then
+    docker start "$container_name"
   fi
 
-  if ! docker ps --format "{{.Names}}" | grep -q "^$container_name$"; then
-    echo "echo 'Container $container_name is not running. Starting it...'; docker start $container_name"
-  else
-    echo "docker exec -it $container_name /bin/bash"
-  fi
+  echo "docker exec -it $container_name /bin/bash"
 }
 
 create_session() {
@@ -78,6 +85,10 @@ create_session() {
       return
     fi
   fi
+
+  for container in "$UBUNTU_CT" "$FEDORA_CT" "$ARCH_CT" "$DEBIAN_CT" "$ALPINE_CT" "$NIX_CT"; do
+    check_container "$container" || return 1
+  done
 
   slog "Creating tmux session with connections to 6 Docker containers..."
 

@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/ivm-utils"
 
 UBUNTU_VM="ubuntu-vm"
 FEDORA_VM="fedora-vm"
@@ -40,20 +39,6 @@ Examples:
 EOF
 }
 
-check_incus() {
-    if ! has_cmd incus; then
-        fail "Incus is not installed. Please install it first."
-        exit 1
-    fi
-}
-
-check_tmux() {
-    if ! has_cmd tmux; then
-        fail "tmux is not installed. Please install it first."
-        exit 1
-    fi
-}
-
 create_session() {
     local force="${1:-false}"
 
@@ -67,6 +52,10 @@ create_session() {
             return
         fi
     fi
+
+    for vm in "$UBUNTU_VM" "$FEDORA_VM" "$ARCH_VM" "$TW_VM"; do
+        check_vm "$vm" || return 1
+    done
 
     slog "Creating tmux session with SSH connections to 4 Incus VMs..."
 
@@ -121,7 +110,7 @@ destroy_session() {
 }
 
 main() {
-    check_incus
+    check_prerequisites
     check_tmux
 
     local command="${1:-}"

@@ -36,3 +36,10 @@ stop_sudo_keepalive() {
   fi
   SUDO_KEEPALIVE_PID=""
 }
+
+check_tmux() {
+  if ! has_cmd tmux; then
+    fail "tmux is not installed. Please install it first."
+    exit 1
+  fi
+}
