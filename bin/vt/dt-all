@@ -1,0 +1,146 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+dt_exists() {
+  distrobox list | grep -q "$1" >/dev/null
+}
+
+check_prerequisites() {
+  if ! has_cmd distrobox; then
+    fail "distrobox is not installed. Please install it first."
+    exit 1
+  fi
+
+  if ! has_cmd dt-create; then
+    fail "dt-create is not in PATH."
+    exit 1
+  fi
+}
+
+create_all() {
+  slog "Creating Distrobox containers (Ubuntu, Fedora, Arch, Debian, Alpine, Tumbleweed, NixOS)..."
+
+  if dt_exists "ubuntu"; then
+    slog "Ubuntu container already exists, skipping..."
+  else
+    slog "Creating Ubuntu container: ubuntu"
+    dt create ubuntu ubuntu
+  fi
+
+  if dt_exists "fedora"; then
+    slog "Fedora container already exists, skipping..."
+  else
+    slog "Creating Fedora container: fedora"
+    dt create fedora fedora
+  fi
+
+  if dt_exists "arch"; then
+    slog "Arch container already exists, skipping..."
+  else
+    slog "Creating Arch container: arch"
+    dt create arch arch
+  fi
+
+  if dt_exists "debian"; then
+    slog "Debian container already exists, skipping..."
+  else
+    slog "Creating Debian container: debian"
+    dt create debian debian
+  fi
+
+  if dt_exists "alpine"; then
+    slog "Alpine container already exists, skipping..."
+  else
+    slog "Creating Alpine container: alpine"
+    dt create alpine alpine
+  fi
+
+  if dt_exists "tumbleweed"; then
+    slog "Tumbleweed container already exists, skipping..."
+  else
+    slog "Creating Tumbleweed container: tumbleweed"
+    dt create tumbleweed tumbleweed
+  fi
+
+  if dt_exists "nix"; then
+    slog "NixOS container already exists, skipping..."
+  else
+    slog "Creating NixOS container: nix"
+    dt create nix nix
+  fi
+
+  slog "Listing created containers:"
+  dt list
+
+  success "All containers created successfully!"
+  slog "You can access them using: dt enter <container-name>"
+}
+
+delete_all() {
+  slog "Deleting all containers..."
+  for ct in alpine debian ubuntu fedora arch nix tumbleweed; do
+    if dt_exists "$ct"; then
+      slog "Deleting container: $ct"
+      dt delete "$ct"
+    fi
+  done
+  success "All containers deleted successfully!"
+}
+
+start_all() {
+  slog "Starting all containers..."
+  for ct in alpine debian ubuntu fedora arch nix tumbleweed; do
+    if dt_exists "$ct"; then
+      slog "Starting container: $ct"
+      dt start "$ct"
+    fi
+  done
+  success "All containers started successfully!"
+}
+
+stop_all() {
+  slog "Stopping all containers..."
+  for ct in alpine debian ubuntu fedora arch nix tumbleweed; do
+    if dt_exists "$ct"; then
+      slog "Stopping container: $ct"
+      dt stop "$ct"
+    fi
+  done
+  success "All containers stopped successfully!"
+}
+
+restart_all() {
+  slog "Restarting all containers..."
+  for ct in alpine debian ubuntu fedora arch nix tumbleweed; do
+    if dt_exists "$ct"; then
+      slog "Restarting container: $ct"
+      dt restart "$ct"
+      sleep 1
+    fi
+  done
+  success "All containers restarted successfully!"
+}
+
+main() {
+  check_prerequisites
+
+  if [[ "$1" == "--delete-all" ]]; then
+    delete_all
+  elif [[ "$1" == "--start-all" ]]; then
+    start_all
+  elif [[ "$1" == "--stop-all" ]]; then
+    stop_all
+  elif [[ "$1" == "--restart-all" ]]; then
+    restart_all
+  else
+    create_all "$@"
+  fi
+}
+
+main "$@"

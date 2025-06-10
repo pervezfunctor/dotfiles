@@ -1,0 +1,143 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+vm_exists() {
+    virsh list --all | grep -q "$1" >/dev/null
+}
+
+check_prerequisites() {
+    if ! has_cmd virt-install; then
+        fail "virt-install is not installed. Please install libvirt and virt-install first. You can use: vm install"
+        exit 1
+    fi
+
+    if ! has_cmd vm-create; then
+        fail "vm-create is not in PATH."
+        exit 1
+    fi
+}
+
+create_all() {
+    slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
+
+    if vm_exists "dev"; then
+        slog "Ubuntu VM already exists, skipping..."
+    else
+        slog "Creating Ubuntu VM: dev"
+        vm-create --distro ubuntu --name dev --release noble --docker --brew --dotfiles min
+    fi
+
+    if vm_exists "min"; then
+        slog "Fedora VM already exists, skipping..."
+    else
+        slog "Creating Fedora VM: min"
+        vm-create --distro fedora --name min --dotfiles min
+    fi
+
+    if vm_exists "incus"; then
+        slog "Alpine VM already exists, skipping..."
+    else
+        slog "Creating Arch VM: incus"
+        vm-create --distro alpine --name incus --dotfiles min
+    fi
+
+    if vm_exists "nix"; then
+        slog "Debian VM already exists, skipping..."
+    else
+        slog "Creating Debian VM: nix"
+        vm-create --distro debian --name nix --nix
+    fi
+
+    slog "Listing created VMs:"
+    virsh list --all
+
+    success "All VMs created successfully!"
+    slog "You can access them using: virsh console <vm-name>"
+}
+
+# add options --delete-all --start-all --stop-all --restart-all
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTION]
+
+Manage all VMs created by vm-create.
+
+Options:
+  --delete-all  Delete all VMs created by vm-create
+  --start-all   Start all VMs created by vm-create
+  --stop-all    Stop all VMs created by vm-create
+  --restart-all Restart all VMs created by vm-create
+  --help        Display this help message
+EOF
+
+}
+
+delete_all() {
+    slog "Deleting all VMs..."
+    for vm in dev min incus nix; do
+        if vm_exists "$vm"; then
+            slog "Deleting VM: $vm"
+            vm delete "$vm"
+        fi
+    done
+    success "All VMs deleted successfully!"
+
+}
+
+start_all() {
+    slog "Starting all VMs..."
+    for vm in dev min incus nix; do
+        if vm_exists "$vm"; then
+            slog "Starting VM: $vm"
+            vm start "$vm"
+        fi
+    done
+    success "All VMs started successfully!"
+}
+
+stop_all() {
+    slog "Stopping all VMs..."
+    for vm in dev min incus nix; do
+        if vm_exists "$vm"; then
+            slog "Stopping VM: $vm"
+            vm stop "$vm"
+        fi
+    done
+    success "All VMs stopped successfully!"
+}
+
+restart_all() {
+    slog "Restarting all VMs..."
+    for vm in dev min incus nix; do
+        if vm_exists "$vm"; then
+            slog "Restarting VM: $vm"
+            vm restart "$vm"
+        fi
+    done
+    success "All VMs restarted successfully!"
+}
+
+main() {
+    check_prerequisites
+
+    if [[ "$1" == "--delete-all" ]]; then
+        delete_all
+    elif [[ "$1" == "--start-all" ]]; then
+        start_all
+    elif [[ "$1" == "--stop-all" ]]; then
+        stop_all
+    elif [[ "$1" == "--restart-all" ]]; then
+        restart_all
+    else
+        create_all "$@"
+    fi
+}
+
+main "$@"

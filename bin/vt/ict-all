@@ -1,0 +1,139 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+ct_exists() {
+    incus list | grep -q "$1" >/dev/null
+}
+
+check_prerequisites() {
+    if ! has_cmd incus; then
+        fail "Incus is not installed. Please install it first."
+        exit 1
+    fi
+
+    if ! has_cmd ict-create; then
+        fail "ict-create is not in PATH."
+        exit 1
+    fi
+}
+
+create_all() {
+    slog "Creating Incus LXC containers (Ubuntu, Fedora, Arch, Debian, Alpine, Tumbleweed)..."
+
+    if ct_exists "ubuntu"; then
+        slog "Ubuntu container already exists, skipping..."
+    else
+        slog "Creating Ubuntu container: ubuntu"
+        ict-create --distro ubuntu --name ubuntu
+    fi
+
+    if ct_exists "fedora"; then
+        slog "Fedora container already exists, skipping..."
+    else
+        slog "Creating Fedora container: fedora"
+        ict-create --distro fedora --name fedora
+    fi
+
+    if ct_exists "arch"; then
+        slog "Arch container already exists, skipping..."
+    else
+        slog "Creating Arch container: arch"
+        ict-create --distro arch --name arch
+    fi
+
+    if ct_exists "debian"; then
+        slog "Debian container already exists, skipping..."
+    else
+        slog "Creating Debian container: debian"
+        ict-create --distro debian --name debian
+    fi
+
+    if ct_exists "alpine"; then
+        slog "Alpine container already exists, skipping..."
+    else
+        slog "Creating Alpine container: alpine"
+        ict-create --distro alpine --name alpine
+    fi
+
+    if ct_exists "tumbleweed"; then
+        slog "Tumbleweed container already exists, skipping..."
+    else
+        slog "Creating Tumbleweed container: tumbleweed"
+        ict-create --distro tumbleweed --name tumbleweed
+    fi
+
+    slog "Listing created containers:"
+    incus list type=container
+
+    success "All containers created successfully!"
+    slog "You can access them using: incus exec <container-name> -- bash"
+}
+
+delete_all() {
+    slog "Deleting all containers..."
+    for ct in alpine debian ubuntu fedora arch tumbleweed; do
+        if ct_exists "$ct"; then
+            slog "Deleting container: $ct"
+            ict delete "$ct"
+        fi
+    done
+    success "All containers deleted successfully!"
+}
+
+start_all() {
+    slog "Starting all containers..."
+    for ct in alpine debian ubuntu fedora arch tumbleweed; do
+        if ct_exists "$ct"; then
+            slog "Starting container: $ct"
+            ict start "$ct"
+        fi
+    done
+    success "All containers started successfully!"
+}
+
+stop_all() {
+    slog "Stopping all containers..."
+    for ct in alpine debian ubuntu fedora arch tumbleweed; do
+        if ct_exists "$ct"; then
+            slog "Stopping container: $ct"
+            ict stop "$ct"
+        fi
+    done
+    success "All containers stopped successfully!"
+}
+
+restart_all() {
+    slog "Restarting all containers..."
+    for ct in alpine debian ubuntu fedora arch tumbleweed; do
+        if ct_exists "$ct"; then
+            slog "Restarting container: $ct"
+            ict restart "$ct"
+            sleep 1
+        fi
+    done
+    success "All containers restarted successfully!"
+}
+
+main() {
+    check_prerequisites
+
+    if [[ "$1" == "--delete-all" ]]; then
+        delete_all
+    elif [[ "$1" == "--start-all" ]]; then
+        start_all
+    elif [[ "$1" == "--stop-all" ]]; then
+        stop_all
+    elif [[ "$1" == "--restart-all" ]]; then
+        restart_all
+    else
+        create_all "$@"
+    fi
+}
+
+main "$@"
