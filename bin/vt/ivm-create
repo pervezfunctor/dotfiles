@@ -148,7 +148,7 @@ generate_cloud_init_config() {
 
     # Prepare runcmd array
     local runcmd_lines=(
-        "systemctl enable --now ssh || systemctl enable --now sshd"
+        "systemctl enable --now ssh || systemctl enable --now sshd || true"
     )
 
     # Add Nix installation if specified

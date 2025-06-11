@@ -108,7 +108,7 @@ start_vm() {
 
     check_vm "$vm_name" || return 1
 
-    check_running "$vm_name" && {
+    is_running "$vm_name" && {
         warn "VM '$vm_name' is already running"
         return 0
     }
@@ -127,7 +127,7 @@ stop_vm() {
 
     check_vm "$vm_name" || return 1
 
-    check_stopped "$vm_name" && {
+    is_running "$vm_name" || {
         warn "VM '$vm_name' is already stopped"
         return 0
     }
