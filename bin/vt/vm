@@ -835,7 +835,7 @@ command="$1"
 vm_name="${2:-}"
 
 if [[ "$command" != "install" ]]; then
-    check_prerequisites
+    check_libvirt
 fi
 
 case "$command" in

@@ -34,7 +34,7 @@ trap 'cleanup_on_error; exit 1' INT TERM
 
 configure_ubuntu() {
     VM_NAME=${VM_NAME:=ubuntu}
-    USERNAME=${USERNAME:=$VM_NAME}
+    USERNAME=${USERNAME:=$DISTRO}
     RELEASE=${RELEASE:=noble} # 24.04 LTS
 
     IMG_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${RELEASE}-server-cloudimg-amd64.img"
@@ -55,7 +55,7 @@ configure_ubuntu() {
 
 configure_fedora() {
     VM_NAME=${VM_NAME:=fedora}
-    USERNAME=${USERNAME:=$VM_NAME}
+    USERNAME=${USERNAME:=$DISTRO}
     RELEASE=${RELEASE:=42}
 
     if [[ "$RELEASE" -ge 42 ]]; then
@@ -83,7 +83,7 @@ configure_fedora() {
 
 configure_arch() {
     VM_NAME=${VM_NAME:=arch}
-    USERNAME=${USERNAME:=$VM_NAME}
+    USERNAME=${USERNAME:=$DISTRO}
     RELEASE=${RELEASE:=latest}
 
     IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
@@ -106,7 +106,7 @@ configure_arch() {
 
 configure_debian() {
     VM_NAME=${VM_NAME:=debian}
-    USERNAME=${USERNAME:=$VM_NAME}
+    USERNAME=${USERNAME:=$DISTRO}
     RELEASE=${RELEASE:=bookworm} # 12
 
     case "$RELEASE" in
@@ -295,16 +295,17 @@ parse_args() {
             ;;
         esac
     done
-}
-
-check_prerequisites() {
-    slog "Checking prerequisites..."
 
     if [[ -z "$DISTRO" ]]; then
         fail "Distribution is required. Use --distro ubuntu|fedora|arch|debian"
         usage
         exit 1
     fi
+
+}
+
+check_prerequisites() {
+    slog "Checking prerequisites..."
 
     if ! sudo -v; then
         fail "This script requires sudo privileges to create files in system directories"
@@ -328,7 +329,7 @@ check_prerequisites() {
 
     slog "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
 
-    check_vm_prerequisites
+    check_libvirt
 
     if vm_exists "$VM_NAME"; then
         fail "VM '$VM_NAME' already exists"
@@ -659,16 +660,8 @@ instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
-    sudo tee "${CLOUD_INIT_DIR}/network-config" >/dev/null <<EOF
-version: 2
-ethernets:
-  enp1s0:
-    dhcp4: true
-EOF
-
     if [[ ! -f "${CLOUD_INIT_DIR}/user-data" ||
-        ! -f "${CLOUD_INIT_DIR}/meta-data" ||
-        ! -f "${CLOUD_INIT_DIR}/network-config" ]]; then
+        ! -f "${CLOUD_INIT_DIR}/meta-data" ]]; then
         fail "Failed to create one or more cloud-init configuration files"
         exit 1
     fi
@@ -685,8 +678,7 @@ create_cloud_init_iso() {
 
     if ! sudo mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
         "${CLOUD_INIT_DIR}/user-data" \
-        "${CLOUD_INIT_DIR}/meta-data" \
-        "${CLOUD_INIT_DIR}/network-config" 2>/dev/null; then
+        "${CLOUD_INIT_DIR}/meta-data" 2>/dev/null; then
         fail "Failed to create cloud-init ISO"
         exit 1
     fi
@@ -875,16 +867,16 @@ echo_all_vars() {
 }
 
 main() {
+    parse_args "$@"
     configure_distribution
+
+    check_prerequisites
 
     slog "Starting $DISTRO VM creation..."
     slog "VM Name: $VM_NAME"
     slog "Distribution: $DISTRO $RELEASE"
     slog "Working Directory: $WORKDIR"
 
-    check_prerequisites
-
-    parse_args "$@"
     [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)
     if [[ ! -f "$SSH_KEY" ]]; then
         fail "SSH public key not found at: $SSH_KEY"

@@ -5,8 +5,6 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vm-utils"
 
-check_vm_prerequisites
-
 create_all() {
     slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Alpine, Debian)..."
 
@@ -52,10 +50,10 @@ Usage: $(basename "$0") [OPTION]
 Manage all VMs created by vm-create.
 
 Options:
-  --delete-all  Delete all VMs created by vm-create
-  --start-all   Start all VMs created by vm-create
-  --stop-all    Stop all VMs created by vm-create
-  --restart-all Restart all VMs created by vm-create
+  --delete  Delete all VMs created by vm-create
+  --start   Start all VMs created by vm-create
+  --stop    Stop all VMs created by vm-create
+  --restart Restart all VMs created by vm-create
   --help        Display this help message
 EOF
 }
@@ -105,18 +103,26 @@ restart_all() {
 }
 
 main() {
-    check_prerequisites
+    check_libvirt
 
-    if [[ "$1" == "--delete-all" ]]; then
+    if [[ $# -eq 0 ]]; then
+        create_all "$@"
+        exit 0
+    fi
+
+    if [[ "$1" == "--delete" ]]; then
         delete_all
-    elif [[ "$1" == "--start-all" ]]; then
+    elif [[ "$1" == "--start" ]]; then
         start_all
-    elif [[ "$1" == "--stop-all" ]]; then
+    elif [[ "$1" == "--stop" ]]; then
         stop_all
-    elif [[ "$1" == "--restart-all" ]]; then
+    elif [[ "$1" == "--restart" ]]; then
         restart_all
     else
-        create_all "$@"
+        slog "Invalid option: $1"
+        slog "Use --help for usage information."
+        usage
+        exit 1
     fi
 }
 
