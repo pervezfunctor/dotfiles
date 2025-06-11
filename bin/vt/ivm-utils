@@ -3,7 +3,7 @@
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vt-utils"
 
-check_prerequisites() {
+check_ivm_prerequisites() {
   local missing=()
   for cmd in incus openssl curl wget tee mktemp; do
     if ! has_cmd "$cmd"; then
@@ -255,11 +255,10 @@ detect_vm_user() {
   centos*) username="centos" ;;
   debian*) username="debian" ;;
   arch*) username="arch" ;;
-  alpine*) username="alpine" ;;
   tumbleweed* | tw*) username="opensuse" ;;
   *)
     # Default to the VM name or common default
-    if [[ "$username" =~ ^(ubuntu|fedora|centos|debian|arch|alpine|opensuse)$ ]]; then
+    if [[ "$username" =~ ^(ubuntu|fedora|centos|debian|arch|opensuse)$ ]]; then
       # Keep as is
       :
     else

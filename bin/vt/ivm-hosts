@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # shellcheck disable=SC1091
-source "$(dirname "$0")/vt-utils"
 source "$(dirname "$0")/ivm-utils"
 
 set -euo pipefail
@@ -117,7 +116,7 @@ command="$1"
 vm_name="${2:-}"
 
 main() {
-    check_prerequisites
+    check_ivm_prerequisites
 
     case "$command" in
     add)

@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/ivm-utils"
 
 usage() {
     cat <<EOF
@@ -62,15 +61,7 @@ EOF
 }
 
 check_prerequisites() {
-    if ! command -v incus >/dev/null; then
-        fail "incus is not installed or not in PATH"
-        exit 1
-    fi
-
-    if ! incus info >/dev/null 2>&1; then
-        fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
-        exit 1
-    fi
+    check_ivm_prerequisites
 
     if ! command -v lsusb >/dev/null; then
         fail "lsusb command not found. Please install usbutils package."

@@ -222,76 +222,80 @@ INSTALL COMMANDS BY DISTRIBUTION:
 EOF
 }
 
-while [[ $# -gt 0 ]]; do
-    case $1 in
-    --distro)
-        DISTRO="$2"
-        shift 2
-        ;;
-    --name)
-        VM_NAME="$2"
-        shift 2
-        ;;
-    --memory)
-        RAM_MB="$2"
-        shift 2
-        ;;
-    --vcpus)
-        VCPUS="$2"
-        shift 2
-        ;;
-    --disk-size)
-        DISK_SIZE="$2"
-        shift 2
-        ;;
-    --ssh-key)
-        SSH_KEY="$2"
-        shift 2
-        ;;
-    --bridge)
-        BRIDGE_IF="$2"
-        shift 2
-        ;;
-    --username)
-        USERNAME="$2"
-        shift 2
-        ;;
-    --release)
-        RELEASE="$2"
-        shift 2
-        ;;
-    --docker)
-        INSTALL_DOCKER=true
-        shift
-        ;;
-    --brew)
-        INSTALL_BREW=true
-        shift
-        ;;
-    --nix)
-        INSTALL_NIX=true
-        shift
-        ;;
-    --dotfiles)
-        shift                 # Remove --dotfiles from arguments
-        DOTFILES_OPTIONS="$*" # Capture all remaining arguments
-        break                 # Exit the loop since --dotfiles must be last
-        ;;
-    --password)
-        shift
-        PASSWORD="$1"
-        ;;
-    --help | -h)
-        usage
-        exit 0
-        ;;
-    *)
-        fail "Unknown option: $1"
-        usage
-        exit 1
-        ;;
-    esac
-done
+# Parse command line arguments
+parse_args() {
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+        --distro)
+            DISTRO="$2"
+            shift 2
+            ;;
+        --name)
+            VM_NAME="$2"
+            shift 2
+            ;;
+        --memory)
+            RAM_MB="$2"
+            shift 2
+            ;;
+        --vcpus)
+            VCPUS="$2"
+            shift 2
+            ;;
+        --disk-size)
+            DISK_SIZE="$2"
+            shift 2
+            ;;
+        --ssh-key)
+            SSH_KEY="$2"
+            shift 2
+            ;;
+        --bridge)
+            BRIDGE_IF="$2"
+            shift 2
+            ;;
+        --username)
+            USERNAME="$2"
+            shift 2
+            ;;
+        --release)
+            RELEASE="$2"
+            shift 2
+            ;;
+        --docker)
+            INSTALL_DOCKER=true
+            shift
+            ;;
+        --brew)
+            INSTALL_BREW=true
+            shift
+            ;;
+        --nix)
+            INSTALL_NIX=true
+            shift
+            ;;
+        --dotfiles)
+            shift                 # Remove --dotfiles from arguments
+            DOTFILES_OPTIONS="$*" # Capture all remaining arguments
+            break                 # Exit the loop since --dotfiles must be last
+            ;;
+        --password)
+            shift
+            PASSWORD="$1"
+            ;;
+        --help | -h)
+            usage
+            exit 0
+            ;;
+        *)
+            fail "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+        esac
+    done
+}
 
 check_prerequisites() {
     slog "Checking prerequisites..."
@@ -325,14 +329,6 @@ check_prerequisites() {
     slog "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
 
     check_vm_prerequisites
-
-    SSH_KEY=$(setup_ssh_key)
-
-    if [[ ! -f "$SSH_KEY" ]]; then
-        fail "SSH public key not found at: $SSH_KEY"
-        fail "Generate with: ssh-keygen -t ed25519 -f $HOME/.ssh/id_ed25519 -N "" -C 'your_email@example.com'"
-        exit 1
-    fi
 
     if vm_exists "$VM_NAME"; then
         fail "VM '$VM_NAME' already exists"
@@ -408,11 +404,6 @@ generate_cloud_init() {
     sudo mkdir -p "$CLOUD_INIT_DIR"
     sudo chown "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
     sudo chmod 755 "$CLOUD_INIT_DIR"
-
-    if [[ ! -f "$SSH_KEY" ]]; then
-        fail "SSH public key not found at: $SSH_KEY"
-        exit 1
-    fi
 
     local pub_key
     pub_key=$(cat "$SSH_KEY")
@@ -892,6 +883,14 @@ main() {
     slog "Working Directory: $WORKDIR"
 
     check_prerequisites
+
+    parse_args "$@"
+    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)
+    if [[ ! -f "$SSH_KEY" ]]; then
+        fail "SSH public key not found at: $SSH_KEY"
+        exit 1
+    fi
+
     start_sudo_keepalive
     # echo_all_vars
     download_image

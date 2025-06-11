@@ -8,6 +8,11 @@ check_incus() {
     fail "incus command not found. Please install Incus first."
     exit 1
   fi
+
+  if ! incus info >/dev/null 2>&1; then
+    fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
+    exit 1
+  fi
 }
 
 list_containers() {
@@ -19,23 +24,32 @@ list_containers() {
   incus list type=container
 }
 
+ct_exists() {
+  incus list type=container --format csv --columns n | grep -q "^${1}$"
+}
+
 get_container_state() {
   local container_name="$1"
   incus list type=container "$container_name" --format csv --columns s | head -1
 }
 
-check_container_running() {
+is_container_running() {
   local container_name="$1"
   local state
   state=$(get_container_state "$container_name")
-  if [[ "$state" != "RUNNING" ]]; then
-    fail "Container '$container_name' is not running (state: $state)"
+  [[ "$state" == "RUNNING" ]]
+}
+
+check_container_running() {
+  local container_name="$1"
+  if ! is_container_running "$container_name"; then
+    fail "Container '$container_name' is not running (state: $(get_container_state "$container_name"))"
     return 1
   fi
 }
 
 has_container() {
-  incus list type=container --format csv --columns n | grep -q "^$1$" || return 1
+  incus list type=container --format csv --columns n | grep -q "^${1}$" || return 1
 }
 
 check_container() {
@@ -78,30 +92,16 @@ check_prerequisites() {
 get_container_ip() {
   local container_name="$1"
 
-  if ! incus info "$container_name" >/dev/null 2>&1; then
+  if ! ct_exists "$container_name"; then
     return 1
   fi
 
-  local state
-  state=$(get_container_state "$container_name")
-
-  if [[ "$state" != "RUNNING" ]]; then
+  if ! is_container_running "$container_name"; then
     return 2
   fi
 
-  # Try to get IP from incus list with network info
   local ip
   ip=$(incus list "^${container_name}$" --format csv --columns 4 | head -1 | cut -d',' -f1 | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1)
-
-  # If that fails, try getting it from incus info
-  if [[ -z "$ip" ]]; then
-    ip=$(incus info "$container_name" | grep -A 20 "Network usage:" | grep -oE 'inet ([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1 | cut -d' ' -f2)
-  fi
-
-  # If still no IP, try alternative method
-  if [[ -z "$ip" ]]; then
-    ip=$(incus exec "$container_name" -- ip -4 addr show | grep -oE 'inet ([0-9]{1,3}\.){3}[0-9]{1,3}' | grep -v '127.0.0.1' | head -1 | cut -d' ' -f2 2>/dev/null)
-  fi
 
   if [[ -z "$ip" ]]; then
     return 3
@@ -116,10 +116,7 @@ ssh_to_container() {
   local username="${2:-}"
   check_container "$container_name" || return 1
 
-  local state
-  state=$(get_container_state "$container_name")
-
-  if [[ "$state" != "RUNNING" ]]; then
+  if ! is_container_running "$container_name"; then
     fail "Container '$container_name' is not running"
     slog "Start it with: $0 start $container_name"
     return 1
@@ -132,27 +129,32 @@ ssh_to_container() {
   fi
 
   local ip
-  ip=$(get_container_ip "$container_name")
-  local ret=$?
-
-  case $ret in
-  1)
-    fail "Container '$container_name' not found"
-    return 1
-    ;;
-  2)
-    fail "Container '$container_name' is not running"
-    slog "Start it with: $0 start $container_name"
-    return 1
-    ;;
-  3)
-    fail "Could not determine IP address for container '$container_name'"
-    slog "Container may still be starting up. Try again in a few moments."
-    return 1
-    ;;
-  0)
+  if ip=$(get_container_ip "$container_name"); then
     slog "Connecting to $container_name ($ip) as $username..."
     ssh "$username@$ip"
-    ;;
-  esac
+    return 0
+  else
+    local ret=$?
+
+    case $ret in
+    1)
+      fail "Container '$container_name' not found"
+      ;;
+    2)
+      fail "Container '$container_name' is not running"
+      slog "Start it with: $0 start $container_name"
+      ;;
+    3)
+      fail "Could not determine IP address for container '$container_name'"
+      slog "Container may still be starting up. Try again in a few moments."
+      ;;
+    *)
+      fail "Unexpected error retrieving IP for container '$container_name'"
+      return 1
+      ;;
+    esac
+
+    return 1
+  fi
+
 }

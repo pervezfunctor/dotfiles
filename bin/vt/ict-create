@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # shellcheck disable=SC1091
-source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/ict-utils"
 
 # Default values
 unset CONTAINER_NAME
@@ -25,7 +25,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create Incus LXC containers with cloud-init and SSH access.
 
 REQUIRED:
-    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine, tumbleweed)
+    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, tumbleweed)
 
 OPTIONS:
     --name NAME             Container name (default: distro name)
@@ -51,33 +51,12 @@ SUPPORTED DISTRIBUTIONS:
     arch        - Arch Linux (current)
     debian      - Debian (12/bookworm) or specified release
     centos      - CentOS Stream (9) or specified release
-    alpine      - Alpine Linux (3.19) or specified release
     tumbleweed  - openSUSE Tumbleweed (rolling release)
 
 NOTE: LXC containers are lightweight and share the host kernel.
       They start faster and use fewer resources than VMs.
 
 EOF
-}
-
-check_prerequisites() {
-    if ! has_cmd incus; then
-        fail "incus command not found. Please install Incus first."
-        exit 1
-    fi
-
-    if ! incus info >/dev/null 2>&1; then
-        fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
-        exit 1
-    fi
-
-    SSH_KEY=$(setup_ssh_key)
-    if [[ ! -f "$SSH_KEY" ]]; then
-        fail "SSH public key not found at: $SSH_KEY"
-        exit 1
-    fi
-
-    slog "Using SSH key: $SSH_KEY"
 }
 
 configure_distribution() {
@@ -107,11 +86,6 @@ configure_distribution() {
         USERNAME=${USERNAME:-"centos"}
         IMAGE="images:centos/${RELEASE}/cloud"
         ;;
-    alpine)
-        RELEASE=${RELEASE:-"3.19"}
-        USERNAME=${USERNAME:-"alpine"}
-        IMAGE="images:alpine/${RELEASE}/cloud"
-        ;;
     tumbleweed)
         RELEASE=${RELEASE:-"current"}
         USERNAME=${USERNAME:-"opensuse"}
@@ -119,13 +93,14 @@ configure_distribution() {
         ;;
     *)
         fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine, tumbleweed"
+        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed"
         exit 1
         ;;
     esac
 
-    CONTAINER_NAME=${CONTAINER_NAME:-"$DISTRO"}
+    CONTAINER_NAME=${CONTAINER_NAME:-"$DISTRO-ct"}
     PASSWORD=${PASSWORD:-"$USERNAME"}
+    PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
     slog "Configuration:"
     slog "  Distribution: $DISTRO $RELEASE"
@@ -141,6 +116,7 @@ generate_cloud_init_config() {
 
     # Create temporary directory for cloud-init files
     CLOUD_INIT_DIR=$(mktemp -d)
+    trap '[[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]] && rm -rf "$CLOUD_INIT_DIR"' EXIT
 
     local pub_key
     pub_key=$(cat "$SSH_KEY")
@@ -170,7 +146,7 @@ users:
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
-    passwd: $(openssl passwd -6 "$PASSWORD")
+    passwd: "$PASSWORD_HASH"
     ssh_authorized_keys:
       - "$pub_key"
 
@@ -184,10 +160,9 @@ $(for pkg in $packages_common; do echo "  - $pkg"; done)
 
 # Enable SSH service and ensure proper configuration
 runcmd:
-  - systemctl enable --now ssh || systemctl enable --now sshd
-  - systemctl enable --now systemd-resolved || true
+  - "systemctl enable --now ssh || systemctl enable --now sshd"
+  - "systemctl enable --now systemd-resolved || netplan apply || true"
 
-# Network configuration
 write_files:
   - path: /etc/motd
     content: |
@@ -200,7 +175,6 @@ write_files:
 final_message: "Container $CONTAINER_NAME setup complete! SSH access is ready."
 EOF
 
-    # Create meta-data file
     tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
 instance-id: ${CONTAINER_NAME}-$(date +%s)
 local-hostname: $CONTAINER_NAME
@@ -210,18 +184,15 @@ EOF
 }
 
 create_container() {
-    slog "Creating Incus LXC container '$CONTAINER_NAME'..."
-
-    # Check if container already exists
-    if incus info "$CONTAINER_NAME" >/dev/null 2>&1; then
-        fail "Container '$CONTAINER_NAME' already exists"
+    if incus_instance_exists "$CONTAINER_NAME"; then
+        fail "instance '$CONTAINER_NAME' already exists"
         exit 1
     fi
 
-    # Generate cloud-init configuration files
+    slog "Creating Incus LXC container '$CONTAINER_NAME'..."
+
     generate_cloud_init_config
 
-    # Create the container with cloud-init configuration
     slog "Launching container with image: $IMAGE"
 
     local launch_args=(
@@ -232,7 +203,6 @@ create_container() {
         --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
     )
 
-    # Add privileged flag if requested
     if [[ "$PRIVILEGED" == "true" ]]; then
         launch_args+=(--config "security.privileged=true")
         slog "Creating privileged container"
@@ -252,29 +222,6 @@ create_container() {
     fi
 }
 
-get_container_ip() {
-    slog "Getting container IP address..."
-
-    local ip
-    local max_attempts=30
-    local attempt=0
-
-    while [[ $attempt -lt $max_attempts ]]; do
-        ip=$(incus list "$CONTAINER_NAME" --format csv --columns 4 | head -1 | cut -d' ' -f1)
-
-        if [[ -n "$ip" && "$ip" != "-" ]]; then
-            echo "$ip"
-            return 0
-        fi
-
-        sleep 2
-        ((attempt++))
-    done
-
-    warn "Could not determine container IP address"
-    return 1
-}
-
 show_completion_info() {
     success "Container '$CONTAINER_NAME' is ready!"
     echo
@@ -283,7 +230,7 @@ show_completion_info() {
     echo
 
     local ip
-    if ip=$(get_container_ip); then
+    if ip=$(get_container_ip "$CONTAINER_NAME"); then
         slog "SSH Access:"
         slog "  IP Address: $ip"
         slog "  Username: $USERNAME"
@@ -306,7 +253,6 @@ show_completion_info() {
     slog "  Delete: ict delete $CONTAINER_NAME"
 }
 
-# Parse command line arguments
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -358,7 +304,6 @@ parse_args() {
         esac
     done
 
-    # Validate required arguments
     if [[ -z "$DISTRO" ]]; then
         fail "Distribution is required. Use --distro option."
         usage
@@ -369,8 +314,15 @@ parse_args() {
 main() {
     slog "Starting Incus LXC container creation..."
 
+    check_incus
+
     parse_args "$@"
-    check_prerequisites
+    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)
+    if [[ ! -f "$SSH_KEY" ]]; then
+        fail "SSH public key not found at: $SSH_KEY"
+        exit 1
+    fi
+
     configure_distribution
     create_container
     show_completion_info

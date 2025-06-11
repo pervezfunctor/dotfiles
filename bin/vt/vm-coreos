@@ -11,7 +11,6 @@ VCPUS=2
 RAM_MB=2048
 DISK_GB=20
 BRIDGE_IF="virbr0"
-SSH_KEY=$(setup_ssh_key)
 STREAM="stable"
 HOSTNAME=""
 IGNITION_CONFIG=""
@@ -66,67 +65,69 @@ INSTALL COMMANDS:
 EOF
 }
 
-while [[ $# -gt 0 ]]; do
-    case $1 in
-    --name)
-        VM_NAME="$2"
-        shift 2
-        ;;
-    --memory)
-        RAM_MB="$2"
-        shift 2
-        ;;
-    --vcpus)
-        VCPUS="$2"
-        shift 2
-        ;;
-    --disk-size)
-        DISK_GB="$2"
-        shift 2
-        ;;
-    --ssh-key)
-        SSH_KEY="$2"
-        shift 2
-        ;;
-    --bridge)
-        BRIDGE_IF="$2"
-        shift 2
-        ;;
-    --stream)
-        STREAM="$2"
-        shift 2
-        ;;
-    --hostname)
-        HOSTNAME="$2"
-        shift 2
-        ;;
-    --ignition)
-        IGNITION_CONFIG="$2"
-        shift 2
-        ;;
-    --no-download)
-        DOWNLOAD_IMAGE=false
-        shift
-        ;;
-    --force-download)
-        FORCE_DOWNLOAD=true
-        shift
-        ;;
-    --k3s)
-        INSTALL_K3S=true
-        shift
-        ;;
-    --help | -h)
-        usage
-        exit 0
-        ;;
-    *)
-        fail "Unknown option: $1"
-        usage
-        exit 1
-        ;;
-    esac
-done
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+        --name)
+            VM_NAME="$2"
+            shift 2
+            ;;
+        --memory)
+            RAM_MB="$2"
+            shift 2
+            ;;
+        --vcpus)
+            VCPUS="$2"
+            shift 2
+            ;;
+        --disk-size)
+            DISK_GB="$2"
+            shift 2
+            ;;
+        --ssh-key)
+            SSH_KEY="$2"
+            shift 2
+            ;;
+        --bridge)
+            BRIDGE_IF="$2"
+            shift 2
+            ;;
+        --stream)
+            STREAM="$2"
+            shift 2
+            ;;
+        --hostname)
+            HOSTNAME="$2"
+            shift 2
+            ;;
+        --ignition)
+            IGNITION_CONFIG="$2"
+            shift 2
+            ;;
+        --no-download)
+            DOWNLOAD_IMAGE=false
+            shift
+            ;;
+        --force-download)
+            FORCE_DOWNLOAD=true
+            shift
+            ;;
+        --k3s)
+            INSTALL_K3S=true
+            shift
+            ;;
+        --help | -h)
+            usage
+            exit 0
+            ;;
+        *)
+            fail "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+        esac
+    done
+}
 
 if [[ -z "$VM_NAME" ]]; then
     fail "VM name is required. Use --name VM_NAME"
@@ -607,6 +608,14 @@ main() {
     slog "Working Directory: $VM_WORKDIR"
 
     check_prerequisites
+
+    parse_args "$@"
+    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)
+    if [[ ! -f "$SSH_KEY" ]]; then
+        fail "SSH public key not found at: $SSH_KEY"
+        exit 1
+    fi
+
     download_coreos_image
     generate_ignition_config
     create_vm_disk

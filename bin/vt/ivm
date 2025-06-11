@@ -565,7 +565,7 @@ command="$1"
 vm_name="${2:-}"
 
 if [[ "$command" != "install" ]]; then
-    check_prerequisites
+    check_ivm_prerequisites
 fi
 
 case "$command" in

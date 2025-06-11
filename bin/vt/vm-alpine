@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/vm-utils"
 
 # Default values
 VM_NAME="alpine"
@@ -14,60 +13,60 @@ MEMORY=8192
 VCPUS=4
 DISK_SIZE="20G"
 
-setup_ssh_key
-
 # Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-    --name)
-        VM_NAME="$2"
-        shift 2
-        ;;
-    --username)
-        USERNAME="$2"
-        shift 2
-        ;;
-    --release)
-        RELEASE="$2"
-        shift 2
-        ;;
-    --memory)
-        MEMORY="$2"
-        shift 2
-        ;;
-    --vcpus)
-        VCPUS="$2"
-        shift 2
-        ;;
-    --disk-size)
-        DISK_SIZE="$2"
-        shift 2
-        ;;
-    --ssh-key)
-        SSH_KEY="$2"
-        shift 2
-        ;;
-    --help | -h)
-        echo "Usage: $0 [OPTIONS]"
-        echo "Options:"
-        echo "  --name NAME         VM name (default: alpine)"
-        echo "  --username USER     Username (default: alpine)"
-        echo "  --release REL       Alpine version (default: 3.22)"
-        echo "  --memory MB         Memory in MB (default: 8192)"
-        echo "  --vcpus NUM         Number of vCPUs (default: 4)"
-        echo "  --disk-size SIZE    Disk size (default: 20G)"
-        echo "  --docker            Install Docker"
-        echo "  --brew             Install Homebrew and dev tools"
-        echo "  --nix              Install Nix package manager"
-        echo "  --ssh-key PATH      SSH public key path (default: auto-detect)"
-        echo "  --help, -h          Show this help"
-        exit 0
-        ;;
-    *)
-        fail "Unknown option: $1"
-        ;;
-    esac
-done
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+        --name)
+            VM_NAME="$2"
+            shift 2
+            ;;
+        --username)
+            USERNAME="$2"
+            shift 2
+            ;;
+        --release)
+            RELEASE="$2"
+            shift 2
+            ;;
+        --memory)
+            MEMORY="$2"
+            shift 2
+            ;;
+        --vcpus)
+            VCPUS="$2"
+            shift 2
+            ;;
+        --disk-size)
+            DISK_SIZE="$2"
+            shift 2
+            ;;
+        --ssh-key)
+            SSH_KEY="$2"
+            shift 2
+            ;;
+        --help | -h)
+            echo "Usage: $0 [OPTIONS]"
+            echo "Options:"
+            echo "  --name NAME         VM name (default: alpine)"
+            echo "  --username USER     Username (default: alpine)"
+            echo "  --release REL       Alpine version (default: 3.22)"
+            echo "  --memory MB         Memory in MB (default: 8192)"
+            echo "  --vcpus NUM         Number of vCPUs (default: 4)"
+            echo "  --disk-size SIZE    Disk size (default: 20G)"
+            echo "  --docker            Install Docker"
+            echo "  --brew             Install Homebrew and dev tools"
+            echo "  --nix              Install Nix package manager"
+            echo "  --ssh-key PATH      SSH public key path (default: auto-detect)"
+            echo "  --help, -h          Show this help"
+            exit 0
+            ;;
+        *)
+            fail "Unknown option: $1"
+            ;;
+        esac
+    done
+}
 
 configure_alpine() {
     case "$RELEASE" in
@@ -106,9 +105,11 @@ configure_alpine() {
 }
 
 main() {
-    if ! systemctl is-active --quiet libvirtd; then
-        fail "libvirtd service is not running"
-        fail "Start with: sudo systemctl start libvirtd"
+    check_libvirt
+    parse_args "$@"
+    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)
+    if [[ ! -f "$SSH_KEY" ]]; then
+        fail "SSH public key not found at: $SSH_KEY"
         exit 1
     fi
 
@@ -128,19 +129,6 @@ main() {
     fi
 
     slog "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
-
-    local missing_tools=()
-    for tool in virt-install qemu-img wget mkisofs; do
-        if ! has_cmd "$tool"; then
-            missing_tools+=("$tool")
-        fi
-    done
-
-    if [[ ${#missing_tools[@]} -gt 0 ]]; then
-        fail "Missing required tools: ${missing_tools[*]}"
-        fail "Install with: $INSTALL_CMD"
-        exit 1
-    fi
 
     configure_alpine
 

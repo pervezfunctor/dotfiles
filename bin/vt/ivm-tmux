@@ -110,7 +110,7 @@ destroy_session() {
 }
 
 main() {
-    check_prerequisites
+    check_ivm_prerequisites
     check_tmux
 
     local command="${1:-}"

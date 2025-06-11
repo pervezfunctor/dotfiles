@@ -2,82 +2,64 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
-
-ct_exists() {
-    incus list | grep -q "$1" >/dev/null
-}
-
-check_prerequisites() {
-    if ! has_cmd incus; then
-        fail "Incus is not installed. Please install it first."
-        exit 1
-    fi
-
-    if ! has_cmd ict-create; then
-        fail "ict-create is not in PATH."
-        exit 1
-    fi
-}
+source "$(dirname "$0")/ict-utils"
 
 create_all() {
-    slog "Creating Incus LXC containers (Ubuntu, Fedora, Arch, Debian, Alpine, Tumbleweed)..."
+    slog "Creating Incus LXC containers (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
 
-    if ct_exists "ubuntu"; then
-        slog "Ubuntu container already exists, skipping..."
+    if ct_exists "debian-ct"; then
+        slog "Instance 'debian-ct' already exists, skipping..."
     else
-        slog "Creating Ubuntu container: ubuntu"
-        ict-create --distro ubuntu --name ubuntu
+        slog "Creating Debian container: debian-ct"
+        ict-create --distro debian --name debian-ct || return 1
     fi
 
-    if ct_exists "fedora"; then
-        slog "Fedora container already exists, skipping..."
+    if ct_exists "ubuntu-ct"; then
+        slog "Instance 'ubuntu-ct' already exists, skipping..."
     else
-        slog "Creating Fedora container: fedora"
-        ict-create --distro fedora --name fedora
+        slog "Creating Ubuntu container: ubuntu-ct"
+        ict-create --distro ubuntu --name ubuntu-ct || return 1
     fi
 
-    if ct_exists "arch"; then
-        slog "Arch container already exists, skipping..."
+    if ct_exists "fedora-ct"; then
+        slog "Instance 'fedora-ct' already exists, skipping..."
     else
-        slog "Creating Arch container: arch"
-        ict-create --distro arch --name arch
+        slog "Creating Fedora container: fedora-ct"
+        ict-create --distro fedora --name fedora-ct || return 1
     fi
 
-    if ct_exists "debian"; then
-        slog "Debian container already exists, skipping..."
+    if ct_exists "arch-ct"; then
+        slog "Instance 'arch-ct' already exists, skipping..."
     else
-        slog "Creating Debian container: debian"
-        ict-create --distro debian --name debian
+        slog "Creating Arch container: arch-ct"
+        ict-create --distro arch --name arch-ct || return 1
     fi
 
-    if ct_exists "alpine"; then
-        slog "Alpine container already exists, skipping..."
+    if ct_exists "debian-ct"; then
+        slog "Instance 'debian-ct' already exists, skipping..."
     else
-        slog "Creating Alpine container: alpine"
-        ict-create --distro alpine --name alpine
+        slog "Creating Debian container: debian-ct"
+        ict-create --distro debian --name debian-ct || return 1
     fi
 
-    if ct_exists "tumbleweed"; then
-        slog "Tumbleweed container already exists, skipping..."
+    if ct_exists "tumbleweed-ct"; then
+        slog "Instance 'tumbleweed-ct' already exists, skipping..."
     else
-        slog "Creating Tumbleweed container: tumbleweed"
-        ict-create --distro tumbleweed --name tumbleweed
+        slog "Creating Tumbleweed container: tumbleweed-ct"
+        ict-create --distro tumbleweed --name tumbleweed-ct || return 1
     fi
 
     slog "Listing created containers:"
     incus list type=container
 
     success "All containers created successfully!"
-    slog "You can access them using: incus exec <container-name> -- bash"
+    slog "You can access them using: ict ssh <container-name>"
 }
 
 delete_all() {
     slog "Deleting all containers..."
-    for ct in alpine debian ubuntu fedora arch tumbleweed; do
+    for ct in debian-ct ubuntu-ct fedora-ct arch-ct tumbleweed-ct; do
         if ct_exists "$ct"; then
             slog "Deleting container: $ct"
             ict delete "$ct"
@@ -88,7 +70,7 @@ delete_all() {
 
 start_all() {
     slog "Starting all containers..."
-    for ct in alpine debian ubuntu fedora arch tumbleweed; do
+    for ct in debian-ct ubuntu-ct fedora-ct arch-ct tumbleweed-ct; do
         if ct_exists "$ct"; then
             slog "Starting container: $ct"
             ict start "$ct"
@@ -99,7 +81,7 @@ start_all() {
 
 stop_all() {
     slog "Stopping all containers..."
-    for ct in alpine debian ubuntu fedora arch tumbleweed; do
+    for ct in debian-ct ubuntu-ct fedora-ct arch-ct tumbleweed-ct; do
         if ct_exists "$ct"; then
             slog "Stopping container: $ct"
             ict stop "$ct"
@@ -110,7 +92,7 @@ stop_all() {
 
 restart_all() {
     slog "Restarting all containers..."
-    for ct in alpine debian ubuntu fedora arch tumbleweed; do
+    for ct in debian-ct ubuntu-ct fedora-ct arch-ct tumbleweed-ct; do
         if ct_exists "$ct"; then
             slog "Restarting container: $ct"
             ict restart "$ct"
@@ -120,19 +102,41 @@ restart_all() {
     success "All containers restarted successfully!"
 }
 
-main() {
-    check_prerequisites
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTION]
 
-    if [[ "$1" == "--delete-all" ]]; then
+Manage all Incus LXC containers created by ict-create.
+
+Options:
+  --delete  Delete all containers created by ict-create
+  --start   Start all containers created by ict-create
+  --stop    Stop all containers created by ict-create
+  --restart Restart all containers created by ict-create
+  --help    Display this help message
+EOF
+}
+
+main() {
+    check_incus
+
+    if [[ $# -eq 0 ]]; then
+        create_all
+        exit 0
+    fi
+
+    if [[ "$1" == "--delete" ]]; then
         delete_all
-    elif [[ "$1" == "--start-all" ]]; then
+    elif [[ "$1" == "--start" ]]; then
         start_all
-    elif [[ "$1" == "--stop-all" ]]; then
+    elif [[ "$1" == "--stop" ]]; then
         stop_all
-    elif [[ "$1" == "--restart-all" ]]; then
+    elif [[ "$1" == "--restart" ]]; then
         restart_all
     else
-        create_all "$@"
+        fail "Unknown option: $1"
+        usage
+        exit 1
     fi
 }
 

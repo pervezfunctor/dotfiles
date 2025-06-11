@@ -2,7 +2,7 @@
 
 # shellcheck disable=SC1091
 
-set -euo pipefail
+# set -euo pipefail
 
 source "$(dirname "$0")/ict-utils"
 
@@ -14,6 +14,7 @@ Manage Incus LXC containers similar to other container management tools.
 
 COMMANDS:
     list                    List all Incus containers
+    list-remote-images      List all remote images available for container creation
     status <name>           Show container status and info
     create [ict-create args]  Create a new Incus container (forwards all args to ict-create)
     start <name>            Start a container
@@ -136,7 +137,10 @@ delete_container() {
         return 0
     fi
 
-    check_container_running "$container_name" && incus stop "$container_name" --force
+    if is_container_running "$container_name"; then
+        slog "Stopping container first..."
+        incus stop "$container_name" --force
+    fi
 
     slog "Deleting container '$container_name'..."
     if incus delete "$container_name"; then
@@ -157,7 +161,6 @@ detect_container_user() {
     centos*) echo "centos" ;;
     debian*) echo "debian" ;;
     arch*) echo "arch" ;;
-    alpine*) echo "alpine" ;;
     tumbleweed* | tw*) echo "opensuse" ;;
     *)
         fail "Could not auto-detect username for container '$container_name'. Use 'ict shell $container_name <username>' instead."
@@ -343,29 +346,32 @@ show_container_ip() {
     check_container "$container_name" || return 1
 
     local ip
-    ip=$(get_container_ip "$container_name")
-    local ret=$?
-
-    case $ret in
-    1)
-        fail "Container '$container_name' not found"
-        return 1
-        ;;
-    2)
-        fail "Container '$container_name' is not running"
-        slog "Start it with: $0 start $container_name"
-        return 1
-        ;;
-    3)
-        fail "Could not determine IP address for container '$container_name'"
-        slog "Container may still be starting up. Try again in a few moments."
-        return 1
-        ;;
-    0)
-        echo "$ip"
+    if ip=$(get_container_ip "$container_name"); then
+        echo "IP: $ip"
         return 0
-        ;;
-    esac
+    else
+        local ret=$?
+        case $ret in
+        1)
+            fail "Container '$container_name' not found"
+            return 1
+            ;;
+        2)
+            fail "Container '$container_name' is not running"
+            slog "Start it with: $0 start $container_name"
+            return 1
+            ;;
+        3)
+            fail "Could not determine IP address for container '$container_name'"
+            slog "Container may still be starting up. Try again in a few moments."
+            return 1
+            ;;
+        *)
+            fail "Unexpected error retrieving IP for container '$container_name'"
+            return 1
+            ;;
+        esac
+    fi
 }
 
 # Main command handling
@@ -460,6 +466,12 @@ detach_usb_device() {
     fi
 }
 
+list_remote_images() {
+    slog "Listing all remote images available for container creation..."
+    echo
+    incus image list images: --format csv | grep cloud | cut -d',' -f1
+}
+
 if [[ $# -eq 0 ]]; then
     usage
     exit 1
@@ -468,11 +480,14 @@ fi
 command="$1"
 container_name="${2:-}"
 
-check_prerequisites
+check_incus
 
 case "$command" in
 list)
     list_containers
+    ;;
+list-remote-images)
+    list_remote_images
     ;;
 status)
     [[ -z "$container_name" ]] && {

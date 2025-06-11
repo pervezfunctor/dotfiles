@@ -4,8 +4,7 @@
 
 set -euo pipefail
 
-source "$(dirname "$0")/vt-utils"
-source "$(dirname "$0")/ivm-utils"
+source "$(dirname "$0")/ict-utils"
 
 # Default values
 unset VM_NAME
@@ -30,7 +29,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create Incus virtual machines with cloud-init and SSH access.
 
 REQUIRED:
-    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, alpine, tumbleweed)
+    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, tumbleweed)
 
 OPTIONS:
     --name NAME             VM name (default: distro name)
@@ -56,34 +55,20 @@ EXAMPLES:
     $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --memory 8192 --dotfiles slim-shell docker code-server
 
 SUPPORTED DISTRIBUTIONS:
-    ubuntu      - Ubuntu LTS (24.04) or specified release
+    ubuntu      - Ubuntu LTS (25.04) or specified release
     fedora      - Fedora (latest) or specified release
     arch        - Arch Linux (current)
     debian      - Debian (12/bookworm) or specified release
     centos      - CentOS Stream (9) or specified release
-    alpine      - Alpine Linux (3.19) or specified release
     tumbleweed  - openSUSE Tumbleweed (rolling release)
 
 EOF
 }
 
-check_ivm_prerequisites() {
-    check_prerequisites
-
-    SSH_KEY=$(setup_ssh_key)
-
-    if [[ ! -f "$SSH_KEY" ]]; then
-        fail "SSH public key not found at: $SSH_KEY"
-        exit 1
-    fi
-
-    slog "Using SSH key: $SSH_KEY"
-}
-
 configure_distribution() {
     case "$DISTRO" in
     ubuntu)
-        RELEASE=${RELEASE:-"24.04"}
+        RELEASE=${RELEASE:-"25.04"}
         USERNAME=${USERNAME:-"ubuntu"}
         IMAGE="images:ubuntu/${RELEASE}/cloud"
         ;;
@@ -107,19 +92,14 @@ configure_distribution() {
         USERNAME=${USERNAME:-"centos"}
         IMAGE="images:centos/${RELEASE}/cloud"
         ;;
-    alpine)
-        RELEASE=${RELEASE:-"3.19"}
-        USERNAME=${USERNAME:-"alpine"}
-        IMAGE="images:alpine/${RELEASE}/cloud"
-        ;;
-    tumbleweed)
+    tumbleweed | tw)
         RELEASE=${RELEASE:-"current"}
         USERNAME=${USERNAME:-"opensuse"}
         IMAGE="images:opensuse/tumbleweed/cloud"
         ;;
     *)
         fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, alpine, tumbleweed"
+        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed"
         exit 1
         ;;
     esac
@@ -150,7 +130,7 @@ generate_cloud_init_config() {
     local pub_key
     pub_key=$(cat "$SSH_KEY")
 
-    local packages_common="qemu-guest-agent git trash-cli micro tree curl wget unzip htop zsh tmux"
+    local packages_common="git trash-cli micro tree curl wget unzip htop zsh tmux"
 
     local openssh_pkg
 
@@ -169,7 +149,6 @@ generate_cloud_init_config() {
     # Prepare runcmd array
     local runcmd_lines=(
         "systemctl enable --now ssh || systemctl enable --now sshd"
-        "systemctl enable --now qemu-guest-agent || true"
     )
 
     # Add Nix installation if specified
@@ -249,7 +228,6 @@ $(printf "  - %s\n" "${runcmd_lines[@]}")
 ssh_pwauth: true
 disable_root: false
 
-# Network configuration
 write_files:
   - path: /etc/motd
     content: |
@@ -271,8 +249,8 @@ create_vm() {
     slog "Creating Incus VM '$VM_NAME'..."
 
     # Check if VM already exists
-    if incus info "$VM_NAME" >/dev/null 2>&1; then
-        fail "VM '$VM_NAME' already exists"
+    if incus_instance_exists "$VM_NAME"; then
+        fail "instance '$VM_NAME' already exists"
         exit 1
     fi
 
@@ -446,9 +424,16 @@ parse_args() {
 
 main() {
     slog "Starting Incus VM creation..."
-
-    check_ivm_prerequisites
+    check_incus
     parse_args "$@"
+
+    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)
+
+    if [[ ! -f "$SSH_KEY" ]]; then
+        fail "SSH public key not found at: $SSH_KEY"
+        exit 1
+    fi
+
     configure_distribution
     create_vm
     show_completion_info
