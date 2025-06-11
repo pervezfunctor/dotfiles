@@ -42,39 +42,43 @@ EOF
 create_session() {
     local force="${1:-false}"
 
+    # Check if session exists
     if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
         if [[ "$force" == "true" ]]; then
-            slog "Killing existing session and creating a new one..."
+            echo "Session '$SESSION_NAME' exists. Recreating..."
             tmux kill-session -t "$SESSION_NAME"
         else
-            slog "Session '$SESSION_NAME' already exists, attaching..."
+            echo "Session '$SESSION_NAME' already exists. Attaching..."
             tmux attach-session -t "$SESSION_NAME"
-            return
+            return 0
         fi
     fi
 
+    # Check all VMs are running
     for vm in "$UBUNTU_VM" "$FEDORA_VM" "$ARCH_VM" "$TW_VM"; do
-        check_vm "$vm" || return 1
+        if ! check_vm "$vm"; then
+            echo "VM '$vm' is not running or reachable." >&2
+            return 1
+        fi
     done
 
-    slog "Creating tmux session with SSH connections to 4 Incus VMs..."
+    echo "Creating tmux session '$SESSION_NAME' with SSH connections to 4 Incus VMs..."
 
-    UBUNTU_CMD=$(ivm ssh "$UBUNTU_VM" "$UBUNTU_USER")
-    FEDORA_CMD=$(ivm ssh "$FEDORA_VM" "$FEDORA_USER")
-    ARCH_CMD=$(ivm ssh "$ARCH_VM" "$ARCH_USER")
-    TW_CMD=$(ivm ssh "$TW_VM" "$TW_USER")
+    local UBUNTU_CMD="ivm ssh $UBUNTU_VM $UBUNTU_USER"
+    local FEDORA_CMD="ivm ssh $FEDORA_VM $FEDORA_USER"
+    local ARCH_CMD="ivm ssh $ARCH_VM $ARCH_USER"
+    local TW_CMD="ivm ssh $TW_VM $TW_USER"
 
     tmux new-session -d -s "$SESSION_NAME" -n "VMs" "$UBUNTU_CMD"
-
     tmux split-window -h -t "$SESSION_NAME:0.0" "$FEDORA_CMD"
     tmux split-window -v -t "$SESSION_NAME:0.0" "$ARCH_CMD"
     tmux split-window -v -t "$SESSION_NAME:0.1" "$TW_CMD"
-
     tmux select-layout -t "$SESSION_NAME:0" tiled
 
+    # Attach
     tmux attach-session -t "$SESSION_NAME"
 
-    success "Connected to all VMs in tmux session"
+    echo "✅ Connected to all VMs in tmux session '$SESSION_NAME'"
 }
 
 attach_session() {

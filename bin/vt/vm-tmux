@@ -66,17 +66,15 @@ create_session() {
 
     slog "Creating tmux session with SSH connections to 4 libvirt VMs..."
 
-    UBUNTU_CMD=$(vm ssh "$UBUNTU_VM" "$UBUNTU_USER")
-    FEDORA_CMD=$(vm ssh "$FEDORA_VM" "$FEDORA_USER")
-    ARCH_CMD=$(vm ssh "$ARCH_VM" "$ARCH_USER")
-    DEBIAN_CMD=$(vm ssh "$DEBIAN_VM" "$DEBIAN_USER")
+    UBUNTU_CMD="vm ssh $UBUNTU_VM $UBUNTU_USER"
+    FEDORA_CMD="vm ssh $FEDORA_VM $FEDORA_USER"
+    ARCH_CMD="vm ssh $ARCH_VM $ARCH_USER"
+    DEBIAN_CMD="vm ssh $DEBIAN_VM $DEBIAN_USER"
 
     tmux new-session -d -s "$SESSION_NAME" -n "VMs" "$UBUNTU_CMD"
-
     tmux split-window -h -t "$SESSION_NAME:0.0" "$FEDORA_CMD"
     tmux split-window -v -t "$SESSION_NAME:0.0" "$ARCH_CMD"
     tmux split-window -v -t "$SESSION_NAME:0.1" "$DEBIAN_CMD"
-
     tmux select-layout -t "$SESSION_NAME:0" tiled
 
     tmux attach-session -t "$SESSION_NAME"

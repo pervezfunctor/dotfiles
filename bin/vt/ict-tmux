@@ -8,13 +8,11 @@ source "$(dirname "$0")/ict-utils"
 UBUNTU_CT="ubuntu-ct"
 FEDORA_CT="fedora-ct"
 ARCH_CT="arch-ct"
-DEBIAN_CT="debian-ct"
 TUMBLEWEED_CT="tumbleweed-ct"
 
 UBUNTU_USER="ubuntu"
 FEDORA_USER="fedora"
 ARCH_USER="arch"
-DEBIAN_USER="debian"
 TUMBLEWEED_USER="opensuse"
 
 SESSION_NAME="incus-containers"
@@ -51,39 +49,29 @@ create_session() {
         else
             slog "Session '$SESSION_NAME' already exists, attaching..."
             tmux attach-session -t "$SESSION_NAME"
-            return
+            return 0
         fi
     fi
 
-    for container in "$UBUNTU_CT" "$FEDORA_CT" "$ARCH_CT" "$DEBIAN_CT" "$TUMBLEWEED_CT"; do
+    for container in "$UBUNTU_CT" "$FEDORA_CT" "$ARCH_CT" "$TUMBLEWEED_CT"; do
         check_container "$container" || return 1
     done
 
     slog "Creating tmux session with SSH connections to Incus LXC containers..."
 
-    UBUNTU_CMD=$(ict ssh "$UBUNTU_CT" "$UBUNTU_USER")
-    FEDORA_CMD=$(ict ssh "$FEDORA_CT" "$FEDORA_USER")
-    ARCH_CMD=$(ict ssh "$ARCH_CT" "$ARCH_USER")
-    DEBIAN_CMD=$(ict ssh "$DEBIAN_CT" "$DEBIAN_USER")
-    TUMBLEWEED_CMD=$(ict ssh "$TUMBLEWEED_CT" "$TUMBLEWEED_USER")
+    UBUNTU_CMD="ict ssh $UBUNTU_CT $UBUNTU_USER"
+    FEDORA_CMD="ict ssh $FEDORA_CT $FEDORA_USER"
+    ARCH_CMD="ict ssh $ARCH_CT $ARCH_USER"
+    TUMBLEWEED_CMD="ict ssh $TUMBLEWEED_CT $TUMBLEWEED_USER"
 
     # Create a new session with the first container
     tmux new-session -d -s "$SESSION_NAME" -n "Containers" "$UBUNTU_CMD"
 
-    # Split the window for the remaining containers
+    tmux new-session -d -s "$SESSION_NAME" -n "VMs" "$UBUNTU_CMD"
     tmux split-window -h -t "$SESSION_NAME:0.0" "$FEDORA_CMD"
     tmux split-window -v -t "$SESSION_NAME:0.0" "$ARCH_CMD"
-    tmux split-window -v -t "$SESSION_NAME:0.1" "$DEBIAN_CMD"
-
-    # Create a second window for the remaining containers
-    tmux new-window -t "$SESSION_NAME:1" -n "More" "$TUMBLEWEED_CMD"
-
-    # Set layout for both windows
+    tmux split-window -v -t "$SESSION_NAME:0.1" "$TUMBLEWEED_CMD"
     tmux select-layout -t "$SESSION_NAME:0" tiled
-    tmux select-layout -t "$SESSION_NAME:1" even-horizontal
-
-    # Start with the first window
-    tmux select-window -t "$SESSION_NAME:0"
 
     tmux attach-session -t "$SESSION_NAME"
 
@@ -94,7 +82,7 @@ attach_session() {
     if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
         warn "Session '$SESSION_NAME' does not exist. Creating it..."
         create_session
-        return
+        return 0
     fi
 
     slog "Attaching to session '$SESSION_NAME'..."
@@ -114,7 +102,7 @@ detach_session() {
 destroy_session() {
     if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
         warn "Session '$SESSION_NAME' does not exist"
-        return
+        return 0
     fi
 
     slog "Destroying session '$SESSION_NAME'..."
