@@ -25,7 +25,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create Incus LXC containers with cloud-init and SSH access.
 
 REQUIRED:
-    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, tumbleweed)
+    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, tumbleweed, alpine)
 
 OPTIONS:
     --name NAME             Container name (default: distro name)
@@ -52,6 +52,7 @@ SUPPORTED DISTRIBUTIONS:
     debian      - Debian (12/bookworm) or specified release
     centos      - CentOS Stream (9) or specified release
     tumbleweed  - openSUSE Tumbleweed (rolling release)
+    alpine      - Alpine Linux (latest) or specified release
 
 NOTE: LXC containers are lightweight and share the host kernel.
       They start faster and use fewer resources than VMs.
@@ -91,9 +92,14 @@ configure_distribution() {
         USERNAME=${USERNAME:-"opensuse"}
         IMAGE="images:opensuse/tumbleweed/cloud"
         ;;
+    alpine)
+        RELEASE=${RELEASE:-"3.22"}
+        USERNAME=${USERNAME:-"alpine"}
+        IMAGE="images:alpine/${RELEASE}/cloud"
+        ;;
     *)
         fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed"
+        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed, alpine"
         exit 1
         ;;
     esac
@@ -130,6 +136,18 @@ generate_cloud_init_config() {
         openssh_pkg="openssh-server"
     fi
 
+    local runcmd_lines=(
+        "systemctl enable --now ssh || systemctl enable --now sshd || true"
+        "systemctl enable --now systemd-resolved || netplan apply || true"
+    )
+
+    if [[ "$DISTRO" == "alpine" ]]; then
+        runcmd_lines=(
+            "rc-update add sshd default"
+            "service sshd start"
+        )
+    fi
+
     # Create cloud-init user-data file using tee
     tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
@@ -160,8 +178,7 @@ $(for pkg in $packages_common; do echo "  - $pkg"; done)
 
 # Enable SSH service and ensure proper configuration
 runcmd:
-  - "systemctl enable --now ssh || systemctl enable --now sshd"
-  - "systemctl enable --now systemd-resolved || netplan apply || true"
+$(for line in "${runcmd_lines[@]}"; do echo "  - $line"; done)
 
 write_files:
   - path: /etc/motd

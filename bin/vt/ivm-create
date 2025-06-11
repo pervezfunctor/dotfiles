@@ -29,7 +29,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create Incus virtual machines with cloud-init and SSH access.
 
 REQUIRED:
-    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, tumbleweed)
+    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, tumbleweed, alpine)
 
 OPTIONS:
     --name NAME             VM name (default: distro name)
@@ -61,6 +61,7 @@ SUPPORTED DISTRIBUTIONS:
     debian      - Debian (12/bookworm) or specified release
     centos      - CentOS Stream (9) or specified release
     tumbleweed  - openSUSE Tumbleweed (rolling release)
+    alpine      - Alpine Linux (latest) or specified release
 
 EOF
 }
@@ -97,9 +98,14 @@ configure_distribution() {
         USERNAME=${USERNAME:-"opensuse"}
         IMAGE="images:opensuse/tumbleweed/cloud"
         ;;
+    alpine)
+        RELEASE=${RELEASE:-"3.22"}
+        USERNAME=${USERNAME:-"alpine"}
+        IMAGE="images:alpine/${RELEASE}/cloud"
+        ;;
     *)
         fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed"
+        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed, alpine"
         exit 1
         ;;
     esac
@@ -146,10 +152,18 @@ generate_cloud_init_config() {
 
       SSH access configured for user: $USERNAME"
 
-    # Prepare runcmd array
-    local runcmd_lines=(
-        "systemctl enable --now ssh || systemctl enable --now sshd || true"
-    )
+    local runcmd_lines
+
+    if [[ "$DISTRO" == "alpine" ]]; then
+        runcmd_lines=(
+            "rc-update add sshd default"
+            "service sshd start"
+        )
+    else
+        runcmd_lines=(
+            "systemctl enable --now ssh || systemctl enable --now sshd || true"
+        )
+    fi
 
     # Add Nix installation if specified
     if [[ "$INSTALL_NIX" == "true" ]]; then

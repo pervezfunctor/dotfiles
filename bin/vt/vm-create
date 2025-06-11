@@ -32,6 +32,27 @@ cleanup_on_error() {
 trap cleanup_on_error ERR
 trap 'cleanup_on_error; exit 1' INT TERM
 
+configure_alpine() {
+    VM_NAME=${VM_NAME:=alpine}
+    USERNAME=${USERNAME:=$DISTRO}
+    RELEASE=${RELEASE:=3.22}
+
+    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v${RELEASE}/releases/x86_64/alpine-virt-3.22-x86_64.qcow2"
+    BASE_IMG_NAME="alpine-virt-3.22-x86_64.qcow2"
+    USER_GROUPS=("wheel")
+    # INSTALL_CMD="sudo apk add qemu libvirt qemu-img wget genisoimage"
+
+    local osinfo_list
+    osinfo_list=$(virt-install --osinfo list 2>/dev/null)
+
+    if ! echo "$osinfo_list" | grep -q "alpinelinux${RELEASE}"; then
+        warn "OS variant 'fedora${RELEASE}' not found in virt-install osinfo list, using 'fedora41'"
+        slog "Available fedora variants:"
+        echo "$osinfo_list" | grep -i fedora | head -5 || true
+        OS_VARIANT="alpinelinux3.21"
+    fi
+}
+
 configure_ubuntu() {
     VM_NAME=${VM_NAME:=ubuntu}
     USERNAME=${USERNAME:=$DISTRO}
@@ -139,9 +160,10 @@ configure_distribution() {
     fedora) configure_fedora ;;
     arch) configure_arch ;;
     debian) configure_debian ;;
+    alpine) configure_alpine ;;
     *)
         fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian"
+        fail "Supported distributions: ubuntu, fedora, arch, debian, alpine"
         exit 1
         ;;
     esac
@@ -195,6 +217,8 @@ DISTRIBUTION-SPECIFIC OPTIONS:
         --release latest               (default: latest)
     Debian:
         --release bookworm|bullseye|trixie  (default: bookworm - 12)
+    Alpine:
+        --release 3.19|3.20|3.21|3.22|  (default: 3.22)
 
 EXAMPLES:
     $0 --distro ubuntu                           # Create Ubuntu VM with defaults
@@ -218,6 +242,7 @@ INSTALL COMMANDS BY DISTRIBUTION:
     Ubuntu/Debian: sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage
     Fedora:        sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage
     Arch:          sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools
+    Alpine:        sudo apk add qemu libvirt virt-install qemu-img wget
 
 EOF
 }
@@ -465,9 +490,17 @@ generate_cloud_init() {
 
     arch)
         packages+=(
-            "openssh"
+            "openssh-server"
             "stow"
             "base-devel"
+        )
+        ;;
+
+    alpine)
+        packages+=(
+            "openssh-server"
+            "stow"
+            "alpine-sdk"
         )
         ;;
     esac
@@ -505,12 +538,26 @@ generate_cloud_init() {
                 "docker-compose"
             )
             ;;
+
+        alpine)
+            packages+=(
+                "docker"
+                "docker-cli-compose"
+            )
+            ;;
         esac
 
-        runcmd+=(
-            "usermod -aG docker $USERNAME"
-            "systemctl enable --now docker"
-        )
+        if [[ "$DISTRO" == "alpine" ]]; then
+            runcmd+=(
+                "rc-update add docker default"
+                "service docker start"
+            )
+        else
+            runcmd+=(
+                "usermod -aG docker $USERNAME"
+                "systemctl enable --now docker"
+            )
+        fi
     fi
 
     if [[ "$INSTALL_BREW" == "true" ]]; then
