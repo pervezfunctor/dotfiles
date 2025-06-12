@@ -13,7 +13,7 @@ check_libvirt() {
 
   if [[ ${#missing_tools[@]} -gt 0 ]]; then
     fail "Missing required tools: ${missing_tools[*]}"
-    fail "Install with: $INSTALL_CMD"
+    slog "Install with: vm install"
     exit 1
   fi
 
@@ -38,7 +38,7 @@ list_vms() {
     virsh list --all
   else
     fail "virsh command not found. Please install virtualization tools first."
-    slog "You can install them with: $0 install"
+    slog "You can install them with: vm install"
     return 1
   fi
 }
