@@ -1,0 +1,235 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# shellcheck disable=SC1091
+source "$(dirname "$0")/vm-utils"
+
+VCPUS="4"
+MEMORY="8192"
+DISK_SIZE="30G"
+
+cleanup_on_error() {
+  warn "Cleaning up due to error..."
+  sudo rm -f "$VM_DISK" 2>/dev/null || true
+  rm -rf "$WORKDIR" 2>/dev/null || true
+  stop_sudo_keepalive
+}
+
+trap cleanup_on_error ERR
+trap 'cleanup_on_error; exit 1' INT TERM
+
+configure_arch() {
+  VM_NAME=${VM_NAME:-"arch-vm"}
+  RELEASE=${RELEASE:-"latest"}
+  BASE_IMAGE_NAME="Arch-Linux-x86_64-cloudimg.qcow2"
+  DOWNLOAD_URL="https://archlinux.org/releng/releases/latest/${BASE_IMAGE_NAME}"
+  USER_GROUPS=("wheel" "network" "storage")
+}
+
+configure_ubuntu() {
+  VM_NAME=${VM_NAME:-"ubuntu-vm"}
+  RELEASE=${RELEASE:-"latest"}
+  BASE_IMAGE_NAME="Ubuntu-20.04-Server-cloudimg-amd64-disk-kvm.img"
+  DOWNLOAD_URL="https://cloud-images.ubuntu.com/releases/focal/release/${BASE_IMAGE_NAME}"
+  USER_GROUPS=("sudo" "adm" "sambashare")
+}
+
+configure_distribution() {
+  configure_arch
+
+  USERNAME=${USER:-"arch"}
+  PASSWORD=${PASSWORD:=$USERNAME}
+  PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
+
+  VTDIR="${VTDIR:-"$HOME/.virts"}"
+  IMGDIR="${VTDIR}/images"
+  WORKDIR="${VTDIR}/${VM_NAME}-vm"
+
+  CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+  BASE_IMAGE="${IMGDIR}/${BASE_IMAGE_NAME}"
+
+  USER_DATA="${CLOUD_INIT_DIR}/user-data"
+  META_DATA="${CLOUD_INIT_DIR}/meta-data"
+  VM_DISK="/var/lib/libvirt/images/${VM_NAME}.qcow2"
+
+  SSH_KEY=$(setup_ssh_key)
+  mkdir -p "$CLOUD_INIT_DIR" "$IMGDIR" "$WORKDIR"
+  sudo mkdir -p /var/lib/libvirt/images
+}
+
+download_base_image() {
+  if [ -f "${BASE_IMAGE}" ]; then
+    echo "Base image '${BASE_IMAGE}' already exists. Skipping download."
+    return 0
+  fi
+
+  echo "Downloading base image from $DOWNLOAD_URL..."
+  if ! wget -q --show-progress "$DOWNLOAD_URL" -O "${BASE_IMAGE}"; then
+    echo "Error: Failed to download base image." >&2
+  else
+    echo "Base image downloaded successfully."
+  fi
+}
+
+generate_cloud_init() {
+  slog "Generating cloud-init configuration..."
+
+  local pub_key
+  pub_key=$(cat "$SSH_KEY")
+
+  local -a packages=(
+    "git"
+    "micro"
+    "tree"
+    "curl"
+    "wget"
+    "unzip"
+  )
+
+  local -a runcmd=(
+    "systemctl enable --now sshd || systemctl enable --now ssh || true"
+  )
+
+  cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
+hostname: $VM_NAME
+manage_etc_hosts: true
+
+users:
+  - name: $USERNAME
+    groups:
+$(printf "      - %s\n" "${USER_GROUPS[@]}")
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: false
+    passwd: "$PASSWORD_HASH"
+    ssh_authorized_keys:
+      - "$pub_key"
+
+# System configuration
+package_update: true
+package_upgrade: true
+
+packages:
+$(printf "  - %s\n" "${packages[@]}")
+
+runcmd:
+$(printf "  - %s\n" "${runcmd[@]}")
+
+# Ensure SSH service is enabled
+ssh_pwauth: true
+disable_root: false
+EOF
+
+  cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
+instance-id: ${VM_NAME}-$(date +%s)
+local-hostname: $VM_NAME
+EOF
+
+  if [[ ! -f "${CLOUD_INIT_DIR}/user-data" ||
+    ! -f "${CLOUD_INIT_DIR}/meta-data" ]]; then
+    fail "Failed to create one or more cloud-init configuration files"
+    exit 1
+  fi
+
+  success "Cloud-init configuration generated"
+}
+
+check_prerequisites() {
+
+  check_libvirt
+
+  if ! groups "$USER" | grep -q '\blibvirt\b'; then
+    echo "Error: User '$USER' is not in the 'libvirt' group." >&2
+    echo "Please run: 'sudo usermod -aG libvirt \$USER' and then log out and back in." >&2
+    exit 1
+  fi
+
+  if [ ! -f "$BASE_IMAGE" ] || [ ! -f "$USER_DATA" ] || [ ! -f "$META_DATA" ]; then
+    echo "Error: Missing required files." >&2
+    echo "Please ensure '$BASE_IMAGE', '$USER_DATA', '$META_DATA' exist in the current directory." >&2
+    exit 1
+  fi
+
+  if virsh dominfo "${VM_NAME}" &>/dev/null; then
+    echo "Warning: A VM named '${VM_NAME}' already exists. Destroying and undefining it." >&2
+    virsh destroy "${VM_NAME}" || true
+    virsh undefine "${VM_NAME}" --remove-all-storage
+  fi
+  if [ -f "${VM_DISK}" ]; then
+    echo "Warning: A disk file at '${VM_DISK}' already exists. Deleting it." >&2
+    sudo rm -f "${VM_DISK}"
+  fi
+}
+
+create_disk() {
+  echo "Creating and resizing disk for ${VM_NAME} at ${VM_DISK}..."
+  sudo qemu-img create -f qcow2 -b "${BASE_IMAGE}" -F qcow2 "${VM_DISK}" "${DISK_SIZE}"
+  echo "Disk created successfully."
+}
+
+create_vm() {
+  echo "Creating VM '${VM_NAME}'..."
+  virt-install \
+    --connect qemu:///system \
+    --name "${VM_NAME}" \
+    --memory "${MEMORY}" \
+    --vcpus "${VCPUS}" \
+    --os-variant archlinux \
+    --import \
+    --disk path="${VM_DISK}",device=disk,bus=virtio,format=qcow2 \
+    --network network=default,model=virtio \
+    --cloud-init user-data="${USER_DATA}",meta-data="${META_DATA}" \
+    --graphics none \
+    --console pty,target_type=serial \
+    --noautoconsole
+
+  echo "✅ VM creation process started for '${VM_NAME}'."
+  echo "Waiting for cloud-init to complete and the VM to get an IP address..."
+  echo "The system upgrade (pacman -Syu) can take a few minutes."
+  echo
+
+  IP=""
+  echo "Waiting for IP address..."
+  while [ -z "$IP" ]; do
+    IP=$(virsh domifaddr "${VM_NAME}" | awk '/ipv4/ {print $4}' | cut -d'/' -f1)
+    sleep 2
+  done
+
+  echo "✅ VM is up! IP Address: ${IP}"
+  echo
+  echo "To connect via SSH, run:"
+  echo "  ssh ${USERNAME}@${IP}"
+  echo
+  echo "The password is the one you set in the '${USER_DATA}' file."
+  echo
+  echo "To access the serial console, run:"
+  echo "  virsh console ${VM_NAME}"
+}
+
+main() {
+  check_prerequisites
+  configure_distribution
+  download_base_image
+  generate_cloud_init
+
+  slog "Starting VM creation process for '${VM_NAME}'..."
+  echo
+
+  echo "Using vCPUs: ${VCPUS}"
+  echo "Using memory: ${MEMORY} MB"
+  echo "Using disk size: ${DISK_SIZE}"
+  echo
+
+  slog "Using username: ${USERNAME}"
+  slog "Using password: ${PASSWORD}"
+  echo "Using user groups: ${USER_GROUPS[*]}"
+  echo
+
+  echo "Using base image: ${BASE_IMAGE}"
+  echo "Using cloud-init directory: ${CLOUD_INIT_DIR}"
+  echo "Using VM disk: ${VM_DISK}"
+  echo
+
+  create_disk
+  create_vm
+}

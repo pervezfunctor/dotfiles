@@ -78,32 +78,6 @@ get_vm_state() {
   virsh domstate "$vm_name"
 }
 
-# get_vm_ip() {
-#   local vm_name="$1"
-#   check_vm "$vm_name" || return 1
-
-#   local state
-#   state=$(virsh domstate "$vm_name")
-
-#   if [[ "$state" != "running" ]]; then
-#     return 2
-#   fi
-
-#   local ip
-#   ip=$(virsh domifaddr "$vm_name" --source agent | awk '/enp/ {sub(/\/.*/, "", $4); print $4}')
-
-#   if [[ -z "$ip" ]]; then
-#     ip=$(virsh net-dhcp-leases default 2>/dev/null | grep "$vm_name" | awk '{print $5}' | cut -d'/' -f1 | head -1)
-#   fi
-
-#   if [[ -z "$ip" ]]; then
-#     return 3
-#   fi
-
-#   echo "$ip"
-#   return 0
-# }
-
 get_vm_ip() {
   local vm_name="$1"
 
@@ -119,7 +93,7 @@ get_vm_ip() {
   fi
 
   local ip
-  ip=$(virsh domifaddr "$vm_name" --source agent | awk '/enp/ {sub(/\/.*/, "", $4); print $4}')
+  ip=$(virsh domifaddr "$vm_name" --source agent | awk '/enp|eth/ {sub(/\/.*/, "", $4); print $4}')
 
   if [[ -z "$ip" ]]; then
     ip=$(virsh net-dhcp-leases default 2>/dev/null | grep "$vm_name" | awk '{print $5}' | cut -d'/' -f1 | head -1)
@@ -155,6 +129,16 @@ ssh_to_vm() {
   local username="${2:-}"
   check_vm "$vm_name" || return 1
 
+  if [[ -z "$vm_name" ]]; then
+    fail "VM name not provided. Usage: vm ssh <vm_name> [username]"
+    return 1
+  fi
+
+  if [[ -z "$username" ]]; then
+    fail "Username not provided. Usage: vm ssh $vm_name <username>"
+    return 1
+  fi
+
   local state
   state=$(virsh domstate "$vm_name")
 
@@ -162,11 +146,6 @@ ssh_to_vm() {
     fail "VM '$vm_name' is not running"
     slog "Start it with: $0 start $vm_name"
     return 1
-  fi
-
-  if [[ -z "$username" ]]; then
-    username="$vm_name"
-    slog "Auto-detected username: $username (override with: $0 ssh $vm_name <username>)"
   fi
 
   local ip
