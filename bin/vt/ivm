@@ -29,7 +29,7 @@ COMMANDS:
     ssh <name> [username]   Connect to VM via SSH
     info <name>             Show detailed VM information
     config <name>           Show VM configuration
-    logs <name> [type]      Show VM logs (instance, console, or cloud-init-logs)
+    logs <name> [type]      Show VM logs (instance, console, or cloud-init)
     snapshot <name> [snap]  Create VM snapshot
     restore <name> <snap>   Restore VM from snapshot
     copy <src> <dest>       Copy VM
@@ -243,7 +243,7 @@ show_logs() {
         echo
         incus console "$vm_name" --show-log
         ;;
-    cloud-init-logs)
+    cloud-init)
         if [[ "$state" != "RUNNING" ]]; then
             fail "VM '$vm_name' is not running"
             slog "Start it with: $0 start $vm_name"
@@ -266,7 +266,7 @@ show_logs() {
         ;;
     *)
         fail "Invalid log type: $log_type"
-        slog "Valid log types: instance, console, cloud-init-logs"
+        slog "Valid log types: instance, console, cloud-init"
         return 1
         ;;
     esac

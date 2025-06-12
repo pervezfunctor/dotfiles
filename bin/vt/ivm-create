@@ -152,7 +152,7 @@ generate_cloud_init_config() {
 
       SSH access configured for user: $USERNAME"
 
-    local runcmd_lines
+    local -a runcmd_lines
 
     if [[ "$DISTRO" == "alpine" ]]; then
         runcmd_lines=(
