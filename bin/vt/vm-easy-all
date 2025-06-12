@@ -1,0 +1,126 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# shellcheck disable=SC1091
+source "$(dirname "$0")/vm-utils"
+
+create_all() {
+  slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
+
+  if vm_exists "ubuntu-vt"; then
+    slog "Ubuntu VM already exists, skipping..."
+  else
+    slog "Creating Ubuntu VM: ubuntu-vt"
+    vm-easy --distro ubuntu
+  fi
+
+  if vm_exists "fedora-vt"; then
+    slog "Fedora VM already exists, skipping..."
+  else
+    slog "Creating Fedora VM: fedora-vt"
+    vm-easy --distro fedora
+  fi
+
+  if vm_exists "debian-vt"; then
+    slog "Debian VM already exists, skipping..."
+  else
+    slog "Creating Debian VM: debian-vt"
+    vm-easy --distro debian
+  fi
+
+  if vm_exists "arch-vt"; then
+    slog "Arch Linux VM already exists, skipping..."
+  else
+    slog "Creating Arch Linux VM: arch-vt"
+    vm-easy --distro arch
+  fi
+
+  success "All VMs created successfully!"
+  slog "You can access them using: virsh console <vm-name>"
+}
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [OPTION]
+
+Manage all VMs created by vm-create.
+
+Options:
+  --delete  Delete all VMs created by vm-create
+  --start   Start all VMs created by vm-create
+  --stop    Stop all VMs created by vm-create
+  --restart Restart all VMs created by vm-create
+  --help        Display this help message
+EOF
+}
+
+delete_all() {
+  slog "Deleting all VMs..."
+  for vm in dev min incus nix; do
+    if vm_exists "$vm"; then
+      slog "Deleting VM: $vm"
+      vm delete "$vm"
+    fi
+  done
+  success "All VMs deleted successfully!"
+}
+
+start_all() {
+  slog "Starting all VMs..."
+  for vm in dev min incus nix; do
+    if vm_exists "$vm"; then
+      slog "Starting VM: $vm"
+      vm start "$vm"
+    fi
+  done
+  success "All VMs started successfully!"
+}
+
+stop_all() {
+  slog "Stopping all VMs..."
+  for vm in dev min incus nix; do
+    if vm_exists "$vm"; then
+      slog "Stopping VM: $vm"
+      vm stop "$vm"
+    fi
+  done
+  success "All VMs stopped successfully!"
+}
+
+restart_all() {
+  slog "Restarting all VMs..."
+  for vm in dev min incus nix; do
+    if vm_exists "$vm"; then
+      slog "Restarting VM: $vm"
+      vm restart "$vm"
+    fi
+  done
+  success "All VMs restarted successfully!"
+}
+
+main() {
+  check_libvirt
+
+  if [[ $# -eq 0 ]]; then
+    create_all "$@"
+    exit 0
+  fi
+
+  if [[ "$1" == "--delete" ]]; then
+    delete_all
+  elif [[ "$1" == "--start" ]]; then
+    start_all
+  elif [[ "$1" == "--stop" ]]; then
+    stop_all
+  elif [[ "$1" == "--restart" ]]; then
+    restart_all
+  else
+    slog "Invalid option: $1"
+    slog "Use --help for usage information."
+    usage
+    exit 1
+  fi
+}
+
+main "$@"

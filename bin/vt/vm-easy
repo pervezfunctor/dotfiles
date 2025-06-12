@@ -25,7 +25,7 @@ trap cleanup_on_error ERR
 trap 'cleanup_on_error; exit 1' INT TERM
 
 configure_arch() {
-  VM_NAME=${VM_NAME:-"arch-vm"}
+  VM_NAME=${VM_NAME:-"arch-vt"}
   RELEASE=${RELEASE:="latest"}
   BASE_IMAGE_NAME="Arch-Linux-x86_64-cloudimg.qcow2"
   DOWNLOAD_URL="https://geo.mirror.pkgbuild.com/images/latest/${BASE_IMAGE_NAME}"
@@ -34,7 +34,7 @@ configure_arch() {
 }
 
 configure_ubuntu() {
-  VM_NAME=${VM_NAME:-"ubuntu-vm"}
+  VM_NAME=${VM_NAME:-"ubuntu-vt"}
   RELEASE=${RELEASE:="noble"}
   BASE_IMAGE_NAME="${RELEASE}-server-cloudimg-amd64.img"
   DOWNLOAD_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${BASE_IMAGE_NAME}"
@@ -43,7 +43,7 @@ configure_ubuntu() {
 }
 
 configure_debian() {
-  VM_NAME=${VM_NAME:="debian-vm"}
+  VM_NAME=${VM_NAME:="debian-vt"}
   RELEASE=${RELEASE:="bookworm"}
   BASE_IMAGE_NAME="debian-12-generic-amd64.qcow2"
   DOWNLOAD_URL="https://cloud.debian.org/images/cloud/bookworm/latest/${BASE_IMAGE_NAME}"
@@ -52,7 +52,7 @@ configure_debian() {
 }
 
 configure_fedora() {
-  VM_NAME=${VM_NAME:="fedora-vm"}
+  VM_NAME=${VM_NAME:="fedora-vt"}
   RELEASE=${RELEASE:=42}
   BASE_IMAGE_NAME="Fedora-Cloud-Base-Generic-${RELEASE}-1.1.x86_64.qcow2"
   DOWNLOAD_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/${BASE_IMAGE_NAME}"
