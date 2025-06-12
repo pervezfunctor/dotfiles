@@ -19,6 +19,8 @@ MEMORY_MB="8192"
 DISK_SIZE="30GB"
 BRIDGE_IF="incusbr0"
 
+# add support for tumbleweed
+
 usage() {
   cat <<EOF
 Usage: $0 --distro DISTRO [OPTIONS]
@@ -42,11 +44,13 @@ EXAMPLES:
     $0 --distro ubuntu
     $0 --distro fedora --name my-fedora --vcpus 4 --memory 4096
     $0 --distro debian --username admin --password mypass
+    $0 --distro tumbleweed --name opensuse-vm --vcpus 2 --memory 4096
 
 SUPPORTED DISTRIBUTIONS:
     ubuntu      - Ubuntu LTS (24.04) or specified release
     fedora      - Fedora (latest) or specified release
     debian      - Debian (12/bookworm) or specified release
+    tumbleweed  - openSUSE Tumbleweed (rolling release)
 EOF
 }
 
@@ -65,9 +69,13 @@ configure_distribution() {
     RELEASE=${RELEASE:-"12"}
     IMAGE="images:debian/${RELEASE}/cloud"
     ;;
+  tumbleweed | tw)
+    RELEASE=${RELEASE:-"current"}
+    IMAGE="images:opensuse/tumbleweed/cloud"
+    ;;
   *)
     fail "Unsupported distribution: $DISTRO"
-    fail "Supported distributions: ubuntu, fedora, debian"
+    fail "Supported distributions: ubuntu, fedora, tumbleweed"
     exit 1
     ;;
   esac
