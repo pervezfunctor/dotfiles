@@ -26,9 +26,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create Incus virtual machines with cloud-init and SSH access.
 
 REQUIRED:
-    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, tumbleweed, alpine)
-
-OPTIONS:
+    --distro DISTRO         Distribution (ubuntu, fedora, debian:
     --name NAME             VM name (default: distro name)
     --release RELEASE       Distribution release (default: latest)
     --username USER         Username for VM (default: distro default)
@@ -44,61 +42,32 @@ EXAMPLES:
     $0 --distro ubuntu
     $0 --distro fedora --name my-fedora --vcpus 4 --memory 4096
     $0 --distro debian --username admin --password mypass
-    $0 --distro arch --release current --disk-size 40GB
-    $0 --distro tumbleweed --name opensuse-vm --vcpus 2 --memory 4096
 
 SUPPORTED DISTRIBUTIONS:
     ubuntu      - Ubuntu LTS (24.04) or specified release
     fedora      - Fedora (latest) or specified release
-    arch        - Arch Linux (current)
     debian      - Debian (12/bookworm) or specified release
-    centos      - CentOS Stream (9) or specified release
-    tumbleweed  - openSUSE Tumbleweed (rolling release)
-    alpine      - Alpine Linux (latest) or specified release
-
 EOF
 }
 
 configure_distribution() {
+  USERNAME=${USERNAME:-"user"}
   case "$DISTRO" in
   ubuntu)
     RELEASE=${RELEASE:-"24.04"}
-    USERNAME=${USERNAME:-"ubuntu"}
     IMAGE="images:ubuntu/${RELEASE}/cloud"
     ;;
   fedora)
     RELEASE=${RELEASE:-"42"}
-    USERNAME=${USERNAME:-"fedora"}
     IMAGE="images:fedora/${RELEASE}/cloud"
-    ;;
-  arch)
-    RELEASE=${RELEASE:-"current"}
-    USERNAME=${USERNAME:-"arch"}
-    IMAGE="images:archlinux/${RELEASE}/cloud"
     ;;
   debian)
     RELEASE=${RELEASE:-"12"}
-    USERNAME=${USERNAME:-"debian"}
     IMAGE="images:debian/${RELEASE}/cloud"
-    ;;
-  centos)
-    RELEASE=${RELEASE:-"9-Stream"}
-    USERNAME=${USERNAME:-"centos"}
-    IMAGE="images:centos/${RELEASE}/cloud"
-    ;;
-  tumbleweed | tw)
-    RELEASE=${RELEASE:-"current"}
-    USERNAME=${USERNAME:-"opensuse"}
-    IMAGE="images:opensuse/tumbleweed/cloud"
-    ;;
-  alpine)
-    RELEASE=${RELEASE:-"3.22"}
-    USERNAME=${USERNAME:-"alpine"}
-    IMAGE="images:alpine/${RELEASE}/cloud"
     ;;
   *)
     fail "Unsupported distribution: $DISTRO"
-    fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed, alpine"
+    fail "Supported distributions: ubuntu, fedora, debian"
     exit 1
     ;;
   esac
@@ -126,8 +95,7 @@ generate_cloud_init_config() {
   local pub_key
   pub_key=$(cat "$SSH_KEY")
 
-  # Create cloud-init user-data file using tee
-  tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
+  cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
 #cloud-config
 hostname: $VM_NAME
 manage_etc_hosts: true
@@ -148,12 +116,18 @@ users:
 
 package_update: true
 
-# Ensure SSH service is enabled
-ssh_pwauth: true
+packages:
+  - openssh-server
+
+runcmd:
+  - sleep 2
+  - "systemctl enable --now ssh || systemctl enable --now sshd || true"
+
+ssh_pwauth: false
 disable_root: false
 EOF
 
-  tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
+  cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
 instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
@@ -173,21 +147,13 @@ create_vm() {
 
   slog "Launching VM with image: $IMAGE"
 
-  local launch_cmd=(
-    incus launch "$IMAGE" "$VM_NAME" --vm
-    --config "limits.cpu=$VCPUS"
-    --config "limits.memory=${MEMORY_MB}MB"
-    --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
-    --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
-    --device "root,size=$DISK_SIZE"
-    --network "$BRIDGE_IF"
-  )
-
-  if [[ "$DISTRO" == "arch" ]]; then
-    launch_cmd+=(--config "security.secureboot=false")
-  fi
-
-  if ! "${launch_cmd[@]}"; then
+  if ! incus launch "$IMAGE" "$VM_NAME" --vm \
+    --config "limits.cpu=$VCPUS" \
+    --config "limits.memory=${MEMORY_MB}MB" \
+    --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")" \
+    --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")" \
+    --device "root,size=$DISK_SIZE" \
+    --network "$BRIDGE_IF"; then
     fail "Failed to create VM '$VM_NAME'"
     exit 1
   fi
