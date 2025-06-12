@@ -12,6 +12,7 @@ VCPUS="4"
 MEMORY="8192"
 DISK_SIZE="30G"
 BRIDGE="default"
+OS_VARIANT="linux"
 
 cleanup_on_error() {
   warn "Cleaning up due to error..."
@@ -24,19 +25,39 @@ trap cleanup_on_error ERR
 trap 'cleanup_on_error; exit 1' INT TERM
 
 configure_arch() {
-  VM_NAME=${VM_NAME:-"arch"}
-  RELEASE=${RELEASE:-"latest"}
+  VM_NAME=${VM_NAME:-"arch-vm"}
+  RELEASE=${RELEASE:="latest"}
   BASE_IMAGE_NAME="Arch-Linux-x86_64-cloudimg.qcow2"
   DOWNLOAD_URL="https://geo.mirror.pkgbuild.com/images/latest/${BASE_IMAGE_NAME}"
   USER_GROUPS=("wheel" "network" "storage")
+  OS_VARIANT="archlinux"
 }
 
 configure_ubuntu() {
   VM_NAME=${VM_NAME:-"ubuntu-vm"}
-  RELEASE=${RELEASE:-"latest"}
+  RELEASE=${RELEASE:="noble"}
   BASE_IMAGE_NAME="Ubuntu-20.04-Server-cloudimg-amd64-disk-kvm.img"
   DOWNLOAD_URL="https://cloud-images.ubuntu.com/releases/focal/release/${BASE_IMAGE_NAME}"
   USER_GROUPS=("sudo" "adm" "sambashare")
+  OS_VARIANT="ubuntu24.04"
+}
+
+configure_debian() {
+  VM_NAME=${VM_NAME:="debian-vm"}
+  RELEASE=${RELEASE:="bookworm"}
+  BASE_IMAGE_NAME="debian-11-genericcloud-amd64.qcow2"
+  DOWNLOAD_URL="https://cloud.debian.org/images/cloud/bullseye/latest/${BASE_IMAGE_NAME}"
+  USER_GROUPS=("sudo" "adm")
+  OS_VARIANT="debian12"
+}
+
+configure_fedora() {
+  VM_NAME=${VM_NAME:="fedora-vm"}
+  RELEASE=${RELEASE:=42}
+  BASE_IMAGE_NAME="Fedora-Cloud-Base-36-1.5.x86_64.qcow2"
+  DOWNLOAD_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${RELEASE}-1.1.x86_64.qcow2"
+  USER_GROUPS=("wheel" "network" "storage")
+  OS_VARIANT="fedora41"
 }
 
 configure_distribution() {
@@ -47,6 +68,12 @@ configure_distribution() {
   ubuntu)
     configure_ubuntu
     ;;
+  debian)
+    configure_debian
+    ;;
+  fedora)
+    configure_fedora
+    ;;
   *)
     echo "Unknown distribution: $DISTRO"
     usage
@@ -54,7 +81,7 @@ configure_distribution() {
     ;;
   esac
 
-  USERNAME=${USERNAME:-"arch"}
+  USERNAME=${USERNAME:-"$DISTRO"}
   PASSWORD=${PASSWORD:=$USERNAME}
   PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
@@ -188,12 +215,13 @@ create_disk() {
 
 create_vm() {
   echo "Creating VM '${VM_NAME}'..."
+
   virt-install \
     --connect qemu:///system \
     --name "${VM_NAME}" \
     --memory "${MEMORY}" \
+    --os-variant "${OS_VARIANT}" \
     --vcpus "${VCPUS}" \
-    --os-variant archlinux \
     --import \
     --disk path="${VM_DISK}",device=disk,bus=virtio,format=qcow2 \
     --network network="${BRIDGE}",model=virtio \
