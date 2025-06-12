@@ -5,6 +5,9 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vm-utils"
 
+unset USERNAME
+unset PASSWORD
+
 VCPUS="4"
 MEMORY="8192"
 DISK_SIZE="30G"
@@ -20,10 +23,10 @@ trap cleanup_on_error ERR
 trap 'cleanup_on_error; exit 1' INT TERM
 
 configure_arch() {
-  VM_NAME=${VM_NAME:-"arch-vm"}
+  VM_NAME=${VM_NAME:-"arch"}
   RELEASE=${RELEASE:-"latest"}
   BASE_IMAGE_NAME="Arch-Linux-x86_64-cloudimg.qcow2"
-  DOWNLOAD_URL="https://archlinux.org/releng/releases/latest/${BASE_IMAGE_NAME}"
+  DOWNLOAD_URL="https://geo.mirror.pkgbuild.com/images/latest/${BASE_IMAGE_NAME}"
   USER_GROUPS=("wheel" "network" "storage")
 }
 
@@ -38,13 +41,13 @@ configure_ubuntu() {
 configure_distribution() {
   configure_arch
 
-  USERNAME=${USER:-"arch"}
+  USERNAME=${USERNAME:-"arch"}
   PASSWORD=${PASSWORD:=$USERNAME}
   PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
   VTDIR="${VTDIR:-"$HOME/.virts"}"
   IMGDIR="${VTDIR}/images"
-  WORKDIR="${VTDIR}/${VM_NAME}-vm"
+  WORKDIR="${VTDIR}/${VM_NAME}"
 
   CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
   BASE_IMAGE="${IMGDIR}/${BASE_IMAGE_NAME}"
@@ -87,11 +90,8 @@ generate_cloud_init() {
     "unzip"
   )
 
-  local -a runcmd=(
-    "systemctl enable --now sshd || systemctl enable --now ssh || true"
-  )
-
   cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
+#cloud-config
 hostname: $VM_NAME
 manage_etc_hosts: true
 
@@ -105,19 +105,15 @@ $(printf "      - %s\n" "${USER_GROUPS[@]}")
     ssh_authorized_keys:
       - "$pub_key"
 
-# System configuration
 package_update: true
-package_upgrade: true
-
 packages:
 $(printf "  - %s\n" "${packages[@]}")
 
-runcmd:
-$(printf "  - %s\n" "${runcmd[@]}")
-
-# Ensure SSH service is enabled
-ssh_pwauth: true
+ssh_pwauth: false
 disable_root: false
+
+runcmd:
+  - systemctl enable --now sshd
 EOF
 
   cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
@@ -135,23 +131,33 @@ EOF
 }
 
 check_prerequisites() {
-
-  check_libvirt
+  slog "Starting VM creation process for '${VM_NAME}'..."
 
   if ! groups "$USER" | grep -q '\blibvirt\b'; then
-    echo "Error: User '$USER' is not in the 'libvirt' group." >&2
-    echo "Please run: 'sudo usermod -aG libvirt \$USER' and then log out and back in." >&2
+    fail "Error: User '$USER' is not in the 'libvirt' group." >&2
+    fail "Please run: 'sudo usermod -aG libvirt \$USER' and then log out and back in." >&2
     exit 1
   fi
 
-  if [ ! -f "$BASE_IMAGE" ] || [ ! -f "$USER_DATA" ] || [ ! -f "$META_DATA" ]; then
-    echo "Error: Missing required files." >&2
-    echo "Please ensure '$BASE_IMAGE', '$USER_DATA', '$META_DATA' exist in the current directory." >&2
+  if [ ! -f "$BASE_IMAGE" ]; then
+    fail "Error: Base image '$BASE_IMAGE' not found." >&2
+    fail "Please ensure it exists in the directory '$IMGDIR'." >&2
+    exit 1
+  fi
+
+  if [ ! -f "$USER_DATA" ]; then
+    fail "Error: User data file '$USER_DATA' not found." >&2
+    fail "Please ensure it exists in the directory '$CLOUD_INIT_DIR'." >&2
+    exit 1
+  fi
+  if [ ! -f "$META_DATA" ]; then
+    fail "Error: Meta data file '$META_DATA' not found." >&2
+    fail "Please ensure it exists in the directory '$CLOUD_INIT_DIR'." >&2
     exit 1
   fi
 
   if virsh dominfo "${VM_NAME}" &>/dev/null; then
-    echo "Warning: A VM named '${VM_NAME}' already exists. Destroying and undefining it." >&2
+    fail "Warning: A VM named '${VM_NAME}' already exists. Destroying and undefining it." >&2
     virsh destroy "${VM_NAME}" || true
     virsh undefine "${VM_NAME}" --remove-all-storage
   fi
@@ -207,10 +213,8 @@ create_vm() {
 }
 
 main() {
-  check_prerequisites
+  check_libvirt
   configure_distribution
-  download_base_image
-  generate_cloud_init
 
   slog "Starting VM creation process for '${VM_NAME}'..."
   echo
@@ -222,14 +226,15 @@ main() {
 
   slog "Using username: ${USERNAME}"
   slog "Using password: ${PASSWORD}"
-  echo "Using user groups: ${USER_GROUPS[*]}"
-  echo
+  echo "Press Enter to continue or Ctrl+C to cancel..."
+  read -r
 
-  echo "Using base image: ${BASE_IMAGE}"
-  echo "Using cloud-init directory: ${CLOUD_INIT_DIR}"
-  echo "Using VM disk: ${VM_DISK}"
-  echo
+  download_base_image
+  generate_cloud_init
+  check_prerequisites
 
   create_disk
   create_vm
 }
+
+main "$@"
