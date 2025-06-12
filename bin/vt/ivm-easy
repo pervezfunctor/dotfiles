@@ -1,0 +1,292 @@
+#!/bin/bash
+
+# shellcheck disable=SC1091
+
+set -euo pipefail
+
+source "$(dirname "$0")/ict-utils"
+
+unset VM_NAME
+unset DISTRO
+unset RELEASE
+unset USERNAME
+unset PASSWORD
+unset SSH_KEY
+unset IMAGE
+
+VCPUS="4"
+MEMORY_MB="8192"
+DISK_SIZE="30GB"
+BRIDGE_IF="incusbr0"
+
+usage() {
+  cat <<EOF
+Usage: $0 --distro DISTRO [OPTIONS]
+
+Create Incus virtual machines with cloud-init and SSH access.
+
+REQUIRED:
+    --distro DISTRO         Distribution (ubuntu, fedora, arch, debian, centos, tumbleweed, alpine)
+
+OPTIONS:
+    --name NAME             VM name (default: distro name)
+    --release RELEASE       Distribution release (default: latest)
+    --username USER         Username for VM (default: distro default)
+    --password PASS         User password (default: vm name)
+    --vcpus NUM             Number of vCPUs (default: 4)
+    --memory MB             RAM in MB (default: 4096)
+    --disk-size SIZE        Disk size (default: 20GB)
+    --ssh-key PATH          SSH public key path (default: auto-detect)
+    --bridge BRIDGE         Network bridge (default: incusbr0)
+    --help, -h              Show this help
+
+EXAMPLES:
+    $0 --distro ubuntu
+    $0 --distro fedora --name my-fedora --vcpus 4 --memory 4096
+    $0 --distro debian --username admin --password mypass
+    $0 --distro arch --release current --disk-size 40GB
+    $0 --distro tumbleweed --name opensuse-vm --vcpus 2 --memory 4096
+
+SUPPORTED DISTRIBUTIONS:
+    ubuntu      - Ubuntu LTS (25.04) or specified release
+    fedora      - Fedora (latest) or specified release
+    arch        - Arch Linux (current)
+    debian      - Debian (12/bookworm) or specified release
+    centos      - CentOS Stream (9) or specified release
+    tumbleweed  - openSUSE Tumbleweed (rolling release)
+    alpine      - Alpine Linux (latest) or specified release
+
+EOF
+}
+
+configure_distribution() {
+  case "$DISTRO" in
+  ubuntu)
+    RELEASE=${RELEASE:-"25.04"}
+    USERNAME=${USERNAME:-"ubuntu"}
+    IMAGE="images:ubuntu/${RELEASE}/cloud"
+    ;;
+  fedora)
+    RELEASE=${RELEASE:-"42"}
+    USERNAME=${USERNAME:-"fedora"}
+    IMAGE="images:fedora/${RELEASE}/cloud"
+    ;;
+  arch)
+    RELEASE=${RELEASE:-"current"}
+    USERNAME=${USERNAME:-"arch"}
+    IMAGE="images:archlinux/${RELEASE}/cloud"
+    ;;
+  debian)
+    RELEASE=${RELEASE:-"12"}
+    USERNAME=${USERNAME:-"debian"}
+    IMAGE="images:debian/${RELEASE}/cloud"
+    ;;
+  centos)
+    RELEASE=${RELEASE:-"9-Stream"}
+    USERNAME=${USERNAME:-"centos"}
+    IMAGE="images:centos/${RELEASE}/cloud"
+    ;;
+  tumbleweed | tw)
+    RELEASE=${RELEASE:-"current"}
+    USERNAME=${USERNAME:-"opensuse"}
+    IMAGE="images:opensuse/tumbleweed/cloud"
+    ;;
+  alpine)
+    RELEASE=${RELEASE:-"3.22"}
+    USERNAME=${USERNAME:-"alpine"}
+    IMAGE="images:alpine/${RELEASE}/cloud"
+    ;;
+  *)
+    fail "Unsupported distribution: $DISTRO"
+    fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed, alpine"
+    exit 1
+    ;;
+  esac
+
+  VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
+  PASSWORD=${PASSWORD:-"$USERNAME"}
+  PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
+
+  slog "Configuration:"
+  slog "  Distribution: $DISTRO $RELEASE"
+  slog "  VM Name: $VM_NAME"
+  slog "  Username: $USERNAME"
+  slog "  Image: $IMAGE"
+  slog "  Resources: ${VCPUS} vCPUs, ${MEMORY_MB}MB RAM, ${DISK_SIZE} disk"
+  slog "  Network Bridge: $BRIDGE_IF"
+}
+
+generate_cloud_init_config() {
+  slog "Generating cloud-init configuration..."
+
+  # Create temporary directory for cloud-init files
+  CLOUD_INIT_DIR=$(mktemp -d)
+  trap '[[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]] && rm -rf "$CLOUD_INIT_DIR"' EXIT
+
+  local pub_key
+  pub_key=$(cat "$SSH_KEY")
+
+  # Create cloud-init user-data file using tee
+  tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
+#cloud-config
+hostname: $VM_NAME
+manage_etc_hosts: true
+
+# User configuration
+users:
+  - name: $USERNAME
+    groups:
+      - sudo
+      - wheel
+      - adm
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: false
+    passwd: "$PASSWORD_HASH"
+    ssh_authorized_keys:
+      - "$pub_key"
+
+package_update: true
+
+# Ensure SSH service is enabled
+ssh_pwauth: true
+disable_root: false
+EOF
+
+  tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
+instance-id: ${VM_NAME}-$(date +%s)
+local-hostname: $VM_NAME
+EOF
+
+  success "Cloud-init configuration files created in: $CLOUD_INIT_DIR"
+}
+
+create_vm() {
+  slog "Creating Incus VM '$VM_NAME'..."
+
+  if incus_instance_exists "$VM_NAME"; then
+    fail "instance '$VM_NAME' already exists"
+    exit 1
+  fi
+
+  generate_cloud_init_config
+
+  slog "Launching VM with image: $IMAGE"
+
+  local launch_cmd=(
+    incus launch "$IMAGE" "$VM_NAME" --vm
+    --config "limits.cpu=$VCPUS"
+    --config "limits.memory=${MEMORY_MB}MB"
+    --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
+    --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
+    --device "root,size=$DISK_SIZE"
+    --network "$BRIDGE_IF"
+  )
+
+  if [[ "$DISTRO" == "arch" ]]; then
+    launch_cmd+=(--config "security.secureboot=false")
+  fi
+
+  if ! "${launch_cmd[@]}"; then
+    fail "Failed to create VM '$VM_NAME'"
+    exit 1
+  fi
+
+  success "VM '$VM_NAME' created successfully"
+
+  if [[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]]; then
+    rm -rf "$CLOUD_INIT_DIR"
+    slog "Cleaned up temporary cloud-init files"
+  fi
+}
+
+show_completion_info() {
+  success "VM '$VM_NAME' is ready!"
+  echo
+  slog "VM Details:"
+  incus list "$VM_NAME"
+  echo
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --distro)
+      DISTRO="$2"
+      shift 2
+      ;;
+    --name)
+      VM_NAME="$2"
+      shift 2
+      ;;
+    --release)
+      RELEASE="$2"
+      shift 2
+      ;;
+    --username)
+      USERNAME="$2"
+      shift 2
+      ;;
+    --password)
+      PASSWORD="$2"
+      shift 2
+      ;;
+    --vcpus)
+      VCPUS="$2"
+      shift 2
+      ;;
+    --memory)
+      MEMORY_MB="$2"
+      shift 2
+      ;;
+    --disk-size)
+      DISK_SIZE="$2"
+      shift 2
+      ;;
+    --ssh-key)
+      SSH_KEY="$2"
+      shift 2
+      ;;
+    --bridge)
+      BRIDGE_IF="$2"
+      shift 2
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    esac
+  done
+
+  if [[ -z "$DISTRO" ]]; then
+    fail "Distribution is required. Use --distro option."
+    usage
+    exit 1
+  fi
+}
+
+main() {
+  slog "Starting Incus VM creation..."
+  check_incus
+  parse_args "$@"
+
+  [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)
+
+  if [[ ! -f "$SSH_KEY" ]]; then
+    fail "SSH public key not found at: $SSH_KEY"
+    exit 1
+  fi
+
+  configure_distribution
+  create_vm
+  show_completion_info
+
+  success "All done! Your $DISTRO VM '$VM_NAME' should be ready to use in a few minutes."
+}
+
+main "$@"
