@@ -11,6 +11,7 @@ unset PASSWORD
 VCPUS="4"
 MEMORY="8192"
 DISK_SIZE="30G"
+BRIDGE="default"
 
 cleanup_on_error() {
   warn "Cleaning up due to error..."
@@ -39,7 +40,19 @@ configure_ubuntu() {
 }
 
 configure_distribution() {
-  configure_arch
+  case "$DISTRO" in
+  arch | "")
+    configure_arch
+    ;;
+  ubuntu)
+    configure_ubuntu
+    ;;
+  *)
+    echo "Unknown distribution: $DISTRO"
+    usage
+    exit 1
+    ;;
+  esac
 
   USERNAME=${USERNAME:-"arch"}
   PASSWORD=${PASSWORD:=$USERNAME}
@@ -183,7 +196,7 @@ create_vm() {
     --os-variant archlinux \
     --import \
     --disk path="${VM_DISK}",device=disk,bus=virtio,format=qcow2 \
-    --network network=default,model=virtio \
+    --network network="${BRIDGE}",model=virtio \
     --cloud-init user-data="${USER_DATA}",meta-data="${META_DATA}" \
     --graphics none \
     --console pty,target_type=serial \
@@ -191,7 +204,6 @@ create_vm() {
 
   echo "✅ VM creation process started for '${VM_NAME}'."
   echo "Waiting for cloud-init to complete and the VM to get an IP address..."
-  echo "The system upgrade (pacman -Syu) can take a few minutes."
   echo
 
   IP=""
@@ -212,8 +224,77 @@ create_vm() {
   echo "  virsh console ${VM_NAME}"
 }
 
+usage() {
+  echo "Usage: $0 [options]"
+  echo "Options:"
+  echo "  --name USERNAME   Set the username for the VM (default: 'arch')"
+  echo "  --password PASSWORD   Set the password for the VM (default: same as username)"
+  echo "  --vcpus VCPUS         Set the number of vCPUs (default: 4)"
+  echo "  --memory MEMORY       Set the amount of memory in MB (default: 8192)"
+  echo "  --distro DISTRO       Set the distribution (arch or ubuntu, default: arch)"
+  echo "  --name VM_NAME        Set the name of the VM (default: 'arch')"
+  echo "  --release RELEASE     Set the release version (default: 'latest')"
+  echo "  --bridge BRIDGE       Set the network bridge (default: 'default')"
+  echo "  --disk-size SIZE      Set the disk size (default: '30G')"
+  echo "  --help                Show this help message"
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    --distro)
+      DISTRO="$2"
+      shift 2
+      ;;
+    --name)
+      VM_NAME="$2"
+      shift 2
+      ;;
+    --release)
+      RELEASE="$2"
+      shift 2
+      ;;
+    --username)
+      USERNAME="$2"
+      shift 2
+      ;;
+    --password)
+      PASSWORD="$2"
+      shift 2
+      ;;
+    --vcpus)
+      VCPUS="$2"
+      shift 2
+      ;;
+    --memory)
+      MEMORY="$2"
+      shift 2
+      ;;
+    --disk-size)
+      DISK_SIZE="$2"
+      shift 2
+      ;;
+    --bridge)
+      BRIDGE="$2"
+      shift 2
+      ;;
+    --help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    esac
+  done
+}
+
 main() {
   check_libvirt
+
+  parse_args "$@"
   configure_distribution
 
   slog "Starting VM creation process for '${VM_NAME}'..."
