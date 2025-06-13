@@ -235,8 +235,8 @@ tmux_config_install() {
 }
 
 vscode_extensions_from_file() {
-    if ! command -v code &>/dev/null; then
-        warn "'code' not found, skipping vscode extensions installation."
+    if ! has_cmd code && ! has_cmd code-insiders; then
+        warn "'code' or 'code-insiders' not found, skipping vscode extensions installation."
         return 1
     fi
 
@@ -255,7 +255,8 @@ vscode_extensions_from_file() {
 
         if ! grep -Fxqi "$extension" <<<"$installed_extensions"; then
             slog "Installing extension: $extension"
-            code --install-extension "$extension"
+            has_cmd code && code --install-extension "$extension"
+            has_cmd code-insiders && code-insiders --install-extension "$extension"
         else
             slog "Extension already installed: $extension"
         fi
@@ -380,6 +381,11 @@ vscode_config_install() {
         smd "$XDG_CONFIG_HOME/Code/User"
         fmv "$XDG_CONFIG_HOME/Code/User/settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json.bak"
         safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json"
+        # support code-insiders
+        if dir_exists "$XDG_CONFIG_HOME/Code - Insiders/User"; then
+            fmv "$XDG_CONFIG_HOME/Code - Insiders/User/settings.json" "$XDG_CONFIG_HOME/Code - Insiders/User/settings.json.bak"
+            safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code - Insiders/User/settings.json"
+        fi
     fi
 
     slog "vscode config done!"
