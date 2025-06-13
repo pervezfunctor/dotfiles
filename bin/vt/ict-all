@@ -106,14 +106,22 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTION]
 
-Manage all Incus LXC containers created by ict-create.
+Incus LXC containers created by ict-create.
 
 Options:
-  --delete  Delete all containers created by ict-create
-  --start   Start all containers created by ict-create
-  --stop    Stop all containers created by ict-create
-  --restart Restart all containers created by ict-create
+  delete  Delete all containers created by ict-create
+  start   Start all containers created by ict-create
+  stop    Stop all containers created by ict-create
+  restart Restart all containers created by ict-create
   --help    Display this help message
+
+Examples:
+  $(basename "$0")          # Create all containers (default if no option)
+  $(basename "$0") delete   # Delete all containers
+  $(basename "$0") start    # Start all containers
+  $(basename "$0") stop     # Stop all containers
+  $(basename "$0") restart  # Restart all containers
+  $(basename "$0") --help   # Display help message
 EOF
 }
 
@@ -125,14 +133,19 @@ main() {
         exit 0
     fi
 
-    if [[ "$1" == "--delete" ]]; then
+    if [[ "$1" == "delete" ]]; then
         delete_all
-    elif [[ "$1" == "--start" ]]; then
+    elif [[ "$1" == "start" ]]; then
         start_all
-    elif [[ "$1" == "--stop" ]]; then
+    elif [[ "$1" == "stop" ]]; then
         stop_all
-    elif [[ "$1" == "--restart" ]]; then
+    elif [[ "$1" == "restart" ]]; then
         restart_all
+    elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
+        usage
+        exit 0
+    elif [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
+        create_all
     else
         fail "Unknown option: $1"
         usage

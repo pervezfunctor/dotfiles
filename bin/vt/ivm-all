@@ -7,7 +7,7 @@ set -euo pipefail
 source "$(dirname "$0")/ivm-utils"
 
 create_all() {
-    slog "Creating Incus VMs (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
+    slog "Creating Incus VMs (Debian, Ubuntu, Fedora, Arch, Tumbleweed, Alpine)..."
 
     if has_vm "debian-vm"; then
         slog "Debian VM already exists, skipping..."
@@ -95,19 +95,40 @@ restart_all() {
     success "All VMs restarted successfully!"
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTION]
+
+Incus VMs created by ivm-create.
+
+Options:
+  create       # Create all VMs (default if no option)
+  delete       # Delete all VMs
+  start        # Start all VMs
+  stop         # Stop all VMs
+  restart      # Restart all VMs
+  --help       # Display this help message
+EOF
+}
+
 main() {
     check_ivm_prerequisites
 
     if [[ $# -eq 0 ]]; then
         create_all
-    elif [[ "$1" == "--delete-all" ]]; then
+    elif [[ "$1" == "delete" ]]; then
         delete_all
-    elif [[ "$1" == "--start-all" ]]; then
+    elif [[ "$1" == "start" ]]; then
         start_all
-    elif [[ "$1" == "--stop-all" ]]; then
+    elif [[ "$1" == "stop" ]]; then
         stop_all
-    elif [[ "$1" == "--restart-all" ]]; then
+    elif [[ "$1" == "restart" ]]; then
         restart_all
+    elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
+        usage
+        exit 0
+    elif [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
+        create_all
     else
         fail "Unknown option: $1"
         usage

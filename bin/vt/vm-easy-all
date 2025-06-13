@@ -47,10 +47,10 @@ Usage: $(basename "$0") [OPTION]
 Manage all VMs created by vm-create.
 
 Options:
-  --delete  Delete all VMs created by vm-create
-  --start   Start all VMs created by vm-create
-  --stop    Stop all VMs created by vm-create
-  --restart Restart all VMs created by vm-create
+  delete  Delete all VMs created by vm-create
+  start   Start all VMs created by vm-create
+  stop    Stop all VMs created by vm-create
+  restart Restart all VMs created by vm-create
   --help        Display this help message
 EOF
 }
@@ -99,6 +99,22 @@ restart_all() {
   success "All VMs restarted successfully!"
 }
 
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [OPTION]
+
+Manage VMs created by vm-easy.
+
+Options:
+  create       # Create all VMs (default if no option)
+  delete       # Delete all VMs
+  start        # Start all VMs
+  stop         # Stop all VMs
+  restart      # Restart all VMs
+  --help       # Display this help message
+EOF
+}
+
 main() {
   check_libvirt
 
@@ -107,14 +123,17 @@ main() {
     exit 0
   fi
 
-  if [[ "$1" == "--delete" ]]; then
+  if [[ "$1" == "delete" ]]; then
     delete_all
-  elif [[ "$1" == "--start" ]]; then
+  elif [[ "$1" == "start" ]]; then
     start_all
-  elif [[ "$1" == "--stop" ]]; then
+  elif [[ "$1" == "stop" ]]; then
     stop_all
-  elif [[ "$1" == "--restart" ]]; then
+  elif [[ "$1" == "restart" ]]; then
     restart_all
+  elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
+    usage
+    exit 0
   else
     slog "Invalid option: $1"
     slog "Use --help for usage information."

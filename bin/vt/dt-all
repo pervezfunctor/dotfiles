@@ -127,19 +127,49 @@ restart_all() {
   success "All containers restarted successfully!"
 }
 
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [OPTION]
+
+Distrobox containers for various Linux distributions.
+
+Options:
+  create    # Create all Distrobox containers (default if no option)
+  delete    # Delete all Distrobox containers
+  start     # Start all Distrobox containers
+  stop      # Stop all Distrobox containers
+  restart   # Restart all Distrobox containers
+  --help    # Display this help message
+
+Examples:
+  $(basename "$0")           # Create containers or attach if exists
+  $(basename "$0") create    # Force create a new set of containers
+  $(basename "$0") delete    # Delete all containers
+  $(basename "$0") start     # Start all containers
+  $(basename "$0") stop      # Stop all containers
+  $(basename "$0") restart   # Restart all containers
+EOF
+}
+
 main() {
   check_prerequisites
 
-  if [[ "$1" == "--delete-all" ]]; then
+  if [[ "$1" == "delete" ]]; then
     delete_all
-  elif [[ "$1" == "--start-all" ]]; then
+  elif [[ "$1" == "start" ]]; then
     start_all
-  elif [[ "$1" == "--stop-all" ]]; then
+  elif [[ "$1" == "stop" ]]; then
     stop_all
-  elif [[ "$1" == "--restart-all" ]]; then
+  elif [[ "$1" == "restart" ]]; then
     restart_all
+  elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
+    usage
+  elif [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
+    create_all
   else
-    create_all "$@"
+    fail "Invalid option: $1"
+    usage
+    exit 1
   fi
 }
 

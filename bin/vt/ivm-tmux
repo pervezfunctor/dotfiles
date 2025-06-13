@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Support all virtual machines created by ivm-all
+
 set -euo pipefail
 
 # shellcheck disable=SC1091
@@ -9,13 +11,17 @@ UBUNTU_VM="ubuntu-vm"
 FEDORA_VM="fedora-vm"
 ARCH_VM="arch-vm"
 TW_VM="tw-vm"
+ALPINE_VM="alpine-vm"
+DEBIAN_VM="debian-vm"
 
 UBUNTU_USER="ubuntu"
 FEDORA_USER="fedora"
 ARCH_USER="arch"
 TW_USER="opensuse"
+ALPINE_USER="alpine"
+DEBIAN_USER="debian"
 
-SESSION_NAME="incus-vms"
+SESSION_NAME="your_session_name" # Set your session name here
 
 usage() {
     cat <<EOF
@@ -42,7 +48,6 @@ EOF
 create_session() {
     local force="${1:-false}"
 
-    # Check if session exists
     if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
         if [[ "$force" == "true" ]]; then
             echo "Session '$SESSION_NAME' exists. Recreating..."
@@ -54,28 +59,35 @@ create_session() {
         fi
     fi
 
-    # Check all VMs are running
+    # Check all VMs are running, if not start them
     for vm in "$UBUNTU_VM" "$FEDORA_VM" "$ARCH_VM" "$TW_VM"; do
         if ! check_vm "$vm"; then
-            echo "VM '$vm' is not running or reachable." >&2
-            return 1
+            echo "VM '$vm' is not running. Starting it..."
+            if ! ivm start "$vm"; then
+                fail "Failed to start VM '$vm'. Please check its status."
+                return 1
+            fi
         fi
     done
 
-    echo "Creating tmux session '$SESSION_NAME' with SSH connections to 4 Incus VMs..."
+    echo "Creating tmux session '$SESSION_NAME' with SSH connections to 6 Incus VMs..."
 
     local UBUNTU_CMD="ivm ssh $UBUNTU_VM $UBUNTU_USER"
     local FEDORA_CMD="ivm ssh $FEDORA_VM $FEDORA_USER"
     local ARCH_CMD="ivm ssh $ARCH_VM $ARCH_USER"
     local TW_CMD="ivm ssh $TW_VM $TW_USER"
+    local ALPINE_CMD="ivm ssh $ALPINE_VM $ALPINE_USER"
+    local DEBIAN_CMD="ivm ssh $DEBIAN_VM $DEBIAN_USER"
 
-    tmux new-session -d -s "$SESSION_NAME" -n "VMs" "$UBUNTU_CMD"
-    tmux split-window -h -t "$SESSION_NAME:0.0" "$FEDORA_CMD"
-    tmux split-window -v -t "$SESSION_NAME:0.0" "$ARCH_CMD"
-    tmux split-window -v -t "$SESSION_NAME:0.1" "$TW_CMD"
-    tmux select-layout -t "$SESSION_NAME:0" tiled
-
-    # Attach
+    tmux new-session -d -s "$SESSION_NAME" "$UBUNTU_CMD"
+    tmux split-window -v -t "$SESSION_NAME":0.0 "$FEDORA_CMD"
+    tmux select-pane -t "$SESSION_NAME":0.0
+    tmux split-window -h -t "$SESSION_NAME":0.0 "$ARCH_CMD"
+    tmux split-window -h -t "$SESSION_NAME":0.1 "$TW_CMD"
+    tmux select-pane -t "$SESSION_NAME":0.2
+    tmux select-pane -D
+    tmux split-window -h -t "$SESSION_NAME":0.3 "$ALPINE_CMD"
+    tmux split-window -h -t "$SESSION_NAME":0.4 "$DEBIAN_CMD"
     tmux attach-session -t "$SESSION_NAME"
 
     echo "✅ Connected to all VMs in tmux session '$SESSION_NAME'"
