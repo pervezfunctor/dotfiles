@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# A script to create a dynamic grid of tmux panes for n commands.
+#
+# v5: This is the definitive, robust version. It works by creating
+#     one pane at a time and immediately re-balancing the layout,
+#     which prevents any "no space" errors.
+
+# --- Usage ---
+# ./tmux-grid.sh "cmd1" "cmd2" "cmd3" ...
+
+# --- Dependencies ---
+# - tmux
+
+# Check for dependencies
+if ! command -v tmux &>/dev/null; then
+  echo "Error: tmux is not installed. Please install it to continue." >&2
+  exit 1
+fi
+
+# Store all command-line arguments in an array
+CMDS=("$@")
+N=${#CMDS[@]}
+
+# If no commands are provided, show usage and exit.
+if [ "$N" -eq 0 ]; then
+  echo "Usage: $0 \"command1\" \"command2\" [\"command3\"...]"
+  echo "Example: $0 \"ping google.com\" \"htop\" \"tail -f /var/log/syslog\""
+  exit 1
+fi
+
+# We can still calculate the ideal grid for user feedback, even though
+# the `tiled` layout will make the final decision based on window size.
+# The constraint `rows >= cols` will be naturally satisfied by `tiled`
+# in a typical vertically-oriented terminal.
+if [ "$N" -gt 0 ] && command -v bc &>/dev/null; then
+  sqrt_n=$(echo "sqrt($N)" | bc)
+  cols=${sqrt_n}
+  while :; do
+    rows=$(((N + cols - 1) / cols))
+    if [ "$rows" -ge "$cols" ]; then
+      break
+    fi
+    cols=$((cols - 1))
+  done
+  echo "Preparing a grid for $N commands (aiming for ~$rows x $cols)..."
+else
+  echo "Preparing a grid for $N commands..."
+fi
+
+# --- Tmux Session Creation (Iterative Re-balancing Method) ---
+
+SESSION_NAME="grid-$(date +%s)"
+
+# 1. Create a new detached session with a default shell. This is CRITICAL.
+tmux new-session -d -s "$SESSION_NAME" -n "grid"
+
+# 2. Create N-1 panes, re-balancing the layout after each creation.
+#    This is the key to avoiding "no space" errors.
+for ((i = 1; i < N; i++)); do
+  # Split the current window (which creates a new pane)
+  tmux split-window -t "$SESSION_NAME:0"
+
+  # Re-balance the layout immediately.
+  tmux select-layout -t "$SESSION_NAME:0" tiled
+done
+
+# 3. Send the commands to all panes now that the layout is stable and complete.
+for ((i = 0; i < N; i++)); do
+  tmux send-keys -t "$SESSION_NAME:0.$i" "${CMDS[$i]}" C-m
+done
+
+# --- Finalization ---
+
+echo "Attaching to session '$SESSION_NAME'."
+tmux attach-session -t "$SESSION_NAME"
