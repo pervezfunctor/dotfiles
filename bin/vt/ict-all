@@ -5,50 +5,41 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/ict-utils"
 
+ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tumbleweed")
+
+list_all() {
+    slog "Listing all Incus LXC containers..."
+
+    for ct in "${ICT_DISTRO_LIST[@]}"; do
+        if ct_exists "${ct}-ict"; then
+            incus list "${ct}-ict" --format=compact --columns=ns4
+            echo
+        else
+            echo
+            slog "Container: ${ct}-ict does not exist"
+            echo
+        fi
+    done
+
+    if ! incus list type=container --format=compact --columns=ns4; then
+        fail "Failed to list containers. Ensure Incus is running."
+        exit 1
+    fi
+
+    slog "You can access them using: ict ssh <container-name>"
+}
+
+ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tumbleweed")
+
 create_all() {
     slog "Creating Incus LXC containers (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
 
-    if ct_exists "debian-ct"; then
-        slog "Instance 'debian-ct' already exists, skipping..."
-    else
-        slog "Creating Debian container: debian-ct"
-        ict-create --distro debian --name debian-ct || return 1
-    fi
-
-    if ct_exists "ubuntu-ct"; then
-        slog "Instance 'ubuntu-ct' already exists, skipping..."
-    else
-        slog "Creating Ubuntu container: ubuntu-ct"
-        ict-create --distro ubuntu --name ubuntu-ct || return 1
-    fi
-
-    if ct_exists "fedora-ct"; then
-        slog "Instance 'fedora-ct' already exists, skipping..."
-    else
-        slog "Creating Fedora container: fedora-ct"
-        ict-create --distro fedora --name fedora-ct || return 1
-    fi
-
-    if ct_exists "arch-ct"; then
-        slog "Instance 'arch-ct' already exists, skipping..."
-    else
-        slog "Creating Arch container: arch-ct"
-        ict-create --distro arch --name arch-ct || return 1
-    fi
-
-    if ct_exists "debian-ct"; then
-        slog "Instance 'debian-ct' already exists, skipping..."
-    else
-        slog "Creating Debian container: debian-ct"
-        ict-create --distro debian --name debian-ct || return 1
-    fi
-
-    if ct_exists "tumbleweed-ct"; then
-        slog "Instance 'tumbleweed-ct' already exists, skipping..."
-    else
-        slog "Creating Tumbleweed container: tumbleweed-ct"
-        ict-create --distro tumbleweed --name tumbleweed-ct || return 1
-    fi
+    for ct in "${ICT_DISTRO_LIST[@]}"; do
+        if ! ct_exists "${ct}-ict"; then
+            slog "Creating container: ${ct}-ict"
+            ict-create --distro "$ct" --name "${ct}-ict"
+        fi
+    done
 
     slog "Listing created containers:"
     incus list type=container
@@ -59,10 +50,10 @@ create_all() {
 
 delete_all() {
     slog "Deleting all containers..."
-    for ct in debian-ct ubuntu-ct fedora-ct arch-ct tumbleweed-ct; do
-        if ct_exists "$ct"; then
-            slog "Deleting container: $ct"
-            ict delete "$ct"
+    for ct in "${ICT_DISTRO_LIST[@]}"; do
+        if ct_exists "${ct}-ict"; then
+            slog "Deleting container: ${ct}-ict"
+            ict delete "${ct}-ict"
         fi
     done
     success "All containers deleted successfully!"
@@ -70,10 +61,10 @@ delete_all() {
 
 start_all() {
     slog "Starting all containers..."
-    for ct in debian-ct ubuntu-ct fedora-ct arch-ct tumbleweed-ct; do
-        if ct_exists "$ct"; then
-            slog "Starting container: $ct"
-            ict start "$ct"
+    for ct in "${ICT_DISTRO_LIST[@]}"; do
+        if ct_exists "${ct}-ict"; then
+            slog "Starting container: ${ct}-ict"
+            ict start "${ct}-ict"
         fi
     done
     success "All containers started successfully!"
@@ -81,10 +72,10 @@ start_all() {
 
 stop_all() {
     slog "Stopping all containers..."
-    for ct in debian-ct ubuntu-ct fedora-ct arch-ct tumbleweed-ct; do
-        if ct_exists "$ct"; then
-            slog "Stopping container: $ct"
-            ict stop "$ct"
+    for ct in "${ICT_DISTRO_LIST[@]}"; do
+        if ct_exists "${ct}-ict"; then
+            slog "Stopping container: ${ct}-ict"
+            ict stop "${ct}-ict"
         fi
     done
     success "All containers stopped successfully!"
@@ -92,10 +83,10 @@ stop_all() {
 
 restart_all() {
     slog "Restarting all containers..."
-    for ct in debian-ct ubuntu-ct fedora-ct arch-ct tumbleweed-ct; do
-        if ct_exists "$ct"; then
-            slog "Restarting container: $ct"
-            ict restart "$ct"
+    for ct in "${ICT_DISTRO_LIST[@]}"; do
+        if ct_exists "${ct}-ict"; then
+            slog "Restarting container: ${ct}-ict"
+            ict restart "${ct}-ict"
             sleep 1
         fi
     done

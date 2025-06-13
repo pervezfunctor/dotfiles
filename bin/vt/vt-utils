@@ -48,3 +48,26 @@ check_tmux() {
 incus_instance_exists() {
   incus list type=container,virtual-machine --format csv --columns n | grep -q "^$1$"
 }
+
+get_default_username() {
+  local vm_name="$1"
+
+  local username
+
+  case "$vm_name" in
+  ubuntu*) username="ubuntu" ;;
+  fedora*) username="fedora" ;;
+  centos*) username="centos" ;;
+  debian*) username="debian" ;;
+  arch*) username="arch" ;;
+  alpine*) username="alpine" ;;
+  nix*) username="nixos" ;;
+  rocky*) username="rocky" ;;
+  tumbleweed* | tw*) username="opensuse" ;;
+  *)
+    username="$USER"
+    ;;
+  esac
+
+  echo "$username"
+}

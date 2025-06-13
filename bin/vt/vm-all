@@ -5,36 +5,47 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vm-utils"
 
+VM_DISTRO_LIST=("ubuntu" "fedora" "alpine" "debian" "arch")
+
 create_all() {
     slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Alpine, Debian)..."
 
-    if vm_exists "dev"; then
-        slog "Ubuntu VM already exists, skipping..."
-    else
-        slog "Creating Ubuntu VM: dev"
-        vm-create --distro ubuntu --name dev --release noble --docker --brew --dotfiles min
-    fi
+    for distro in "${VM_DISTRO_LIST[@]}"; do
+        if has_vm "${distro}-virt"; then
+            slog "$distro VM already exists, skipping..."
+        else
+            slog "Creating $distro VM: $distro-virt"
+            vm-create --distro "$distro" --name "${distro}-virt"
+        fi
+    done
 
-    if vm_exists "min"; then
-        slog "Fedora VM already exists, skipping..."
-    else
-        slog "Creating Fedora VM: min"
-        vm-create --distro fedora --name min --dotfiles min
-    fi
+    # if vm_exists "dev"; then
+    #     slog "Ubuntu VM already exists, skipping..."
+    # else
+    #     slog "Creating Ubuntu VM: dev"
+    #     vm-create --distro ubuntu --name dev --release noble --docker --brew --dotfiles min
+    # fi
 
-    if vm_exists "incus"; then
-        slog "Alpine VM already exists, skipping..."
-    else
-        slog "Creating Alpine VM: incus"
-        vm-create --distro alpine --name incus --dotfiles min
-    fi
+    # if vm_exists "min"; then
+    #     slog "Fedora VM already exists, skipping..."
+    # else
+    #     slog "Creating Fedora VM: min"
+    #     vm-create --distro fedora --name min --dotfiles min
+    # fi
 
-    if vm_exists "nix"; then
-        slog "Debian VM already exists, skipping..."
-    else
-        slog "Creating Debian VM: nix"
-        vm-create --distro debian --name nix --nix
-    fi
+    # if vm_exists "incus"; then
+    #     slog "Alpine VM already exists, skipping..."
+    # else
+    #     slog "Creating Alpine VM: incus"
+    #     vm-create --distro alpine --name incus --dotfiles min
+    # fi
+
+    # if vm_exists "nix"; then
+    #     slog "Debian VM already exists, skipping..."
+    # else
+    #     slog "Creating Debian VM: nix"
+    #     vm-create --distro debian --name nix --nix
+    # fi
 
     slog "Listing created VMs:"
     list_vms
@@ -60,10 +71,10 @@ EOF
 
 delete_all() {
     slog "Deleting all VMs..."
-    for vm in dev min incus nix; do
-        if vm_exists "$vm"; then
-            slog "Deleting VM: $vm"
-            vm delete "$vm"
+    for vm in "${VM_DISTRO_LIST[@]}"; do
+        if vm_exists "${vm}-virt"; then
+            slog "Deleting VM: ${vm}-virt"
+            vm delete "${vm}-virt"
         fi
     done
     success "All VMs deleted successfully!"
@@ -71,10 +82,10 @@ delete_all() {
 
 start_all() {
     slog "Starting all VMs..."
-    for vm in dev min incus nix; do
-        if vm_exists "$vm"; then
-            slog "Starting VM: $vm"
-            vm start "$vm"
+    for vm in "${VM_DISTRO_LIST[@]}"; do
+        if vm_exists "${vm}-virt"; then
+            slog "Starting VM: ${vm}-virt"
+            vm start "${vm}-virt"
         fi
     done
     success "All VMs started successfully!"
@@ -82,10 +93,10 @@ start_all() {
 
 stop_all() {
     slog "Stopping all VMs..."
-    for vm in dev min incus nix; do
-        if vm_exists "$vm"; then
-            slog "Stopping VM: $vm"
-            vm stop "$vm"
+    for vm in "${VM_DISTRO_LIST[@]}"; do
+        if vm_exists "${vm}-virt"; then
+            slog "Stopping VM: ${vm}-virt"
+            vm stop "${vm}-virt"
         fi
     done
     success "All VMs stopped successfully!"
@@ -93,10 +104,10 @@ stop_all() {
 
 restart_all() {
     slog "Restarting all VMs..."
-    for vm in dev min incus nix; do
-        if vm_exists "$vm"; then
-            slog "Restarting VM: $vm"
-            vm restart "$vm"
+    for vm in "${VM_DISTRO_LIST[@]}"; do
+        if vm_exists "${vm}-virt"; then
+            slog "Restarting VM: ${vm}-virt"
+            vm restart "${vm}-virt"
         fi
     done
     success "All VMs restarted successfully!"

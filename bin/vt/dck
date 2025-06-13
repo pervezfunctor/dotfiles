@@ -111,9 +111,13 @@ install_docker() {
     fi
 }
 
+has_container() {
+    docker ps -a --format '{{.Names}}' | grep -Fxq "$1"
+}
+
 check_container() {
     local container_name="$1"
-    if ! docker ps -a --format "{{.Names}}" | grep -q "^${container_name}$"; then
+    if ! has_container "$container_name"; then
         fail "Container '$container_name' not found"
         return 1
     fi
@@ -141,7 +145,7 @@ container_status() {
     ' 2>/dev/null || docker inspect "$container_name" | head -20
 }
 
-get_ct_state() {
+get_container_state() {
     local container_name="$1"
     docker inspect "$container_name" --format "{{.State.Status}}" 2>/dev/null || true
 }
@@ -208,7 +212,7 @@ create_container() {
 
     sleep 1
     local state
-    state=$(get_ct_state "$container_name")
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" == "running" ]]; then
         slog "Container status:"
@@ -225,7 +229,7 @@ start_container() {
     check_container "$container_name" || return 1
 
     local state
-    state=$(get_ct_state "$container_name")
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" == "running" ]]; then
         warn "Container '$container_name' is already running"
@@ -252,7 +256,7 @@ stop_container() {
     fi
 
     local state
-    state=$(get_ct_state "$container_name")
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" != "running" ]]; then
         warn "Container '$container_name' is not running"
@@ -301,7 +305,7 @@ delete_container() {
     fi
 
     local state
-    state=$(get_ct_state "$container_name")
+    state=$(get_container_state "$container_name")
     if [[ "$state" == "running" ]]; then
         slog "Stopping container first..."
         docker stop "$container_name"
@@ -326,7 +330,7 @@ enter_shell() {
     fi
 
     local state
-    state=$(get_ct_state "$container_name")
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" != "running" ]]; then
         fail "Container '$container_name' is not running"
@@ -349,7 +353,7 @@ exec_in_container() {
     check_container "$container_name" || return 1
 
     local state
-    state=$(get_ct_state "$container_name")
+    state=$(get_container_state "$container_name")
 
     if [[ "$state" != "running" ]]; then
         fail "Container '$container_name' is not running"

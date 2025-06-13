@@ -7,76 +7,33 @@ DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
 source "$DOT_DIR/share/utils"
 
-check_prerequisites() {
+DCK_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
+
+check_dck() {
   if ! has_cmd docker; then
     fail "docker is not installed. Please install it first."
     exit 1
   fi
+}
 
-  if ! has_cmd dck-create; then
-    fail "dck-create is not in PATH."
-    exit 1
-  fi
+dck_exists() {
+  local container_name="$1"
+  docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"
 }
 
 create_all() {
-  check_prerequisites
+  check_dck
 
-  if dck_exists "ubuntu"; then
-    slog "Ubuntu container already exists, skipping..."
-  else
-    slog "Creating Ubuntu container: ubuntu"
-    dck create ubuntu ubuntu
-  fi
+  slog "Creating Docker containers for various Linux distributions..."
 
-  if dck_exists "debian"; then
-    slog "Debian container already exists, skipping..."
-  else
-    slog "Creating Debian container: debian"
-    dck create debian debian
-  fi
-
-  if dck_exists "arch"; then
-    slog "Arch container already exists, skipping..."
-  else
-    slog "Creating Arch container: arch"
-    dck create arch arch
-  fi
-
-  if dck_exists "fedora"; then
-    slog "Fedora container already exists, skipping..."
-  else
-    slog "Creating Fedora container: fedora"
-    dck create fedora fedora
-  fi
-
-  if dck_exists "rocky"; then
-    slog "Rocky Linux container already exists, skipping..."
-  else
-    slog "Creating Rocky Linux container: rocky"
-    dck create rocky rocky
-  fi
-
-  if dck_exists "tumbleweed"; then
-    slog "Tumbleweed container already exists, skipping..."
-  else
-    slog "Creating Tumbleweed container: tumbleweed"
-    dck create tumbleweed tumbleweed
-  fi
-
-  if dck_exists "alpine"; then
-    slog "Alpine container already exists, skipping..."
-  else
-    slog "Creating Alpine container: alpine"
-    dck create alpine alpine
-  fi
-
-  if dck_exists "nix"; then
-    slog "NixOS container already exists, skipping..."
-  else
-    slog "Creating NixOS container: nix"
-    dck create nix nix
-  fi
+  for d in "${DCK_DISTRO_LIST[@]}"; do
+    if ! dck_exists "$d"; then
+      slog "Creating container for $d..."
+      dck create "$d" "$d"
+    else
+      slog "Container for $d already exists, skipping..."
+    fi
+  done
 
   slog "Listing created containers:"
   docker ps -a
@@ -86,53 +43,61 @@ create_all() {
 }
 
 delete_all() {
-  check_prerequisites
+  check_dck
 
   slog "Deleting all containers..."
-  for ct in ubuntu debian arch fedora rocky tumbleweed alpine nix; do
+  for ct in "${DCK_DISTRO_LIST[@]}"; do
     if dck_exists "$ct"; then
       slog "Deleting container: $ct"
       dck delete "$ct"
+    else
+      slog "Container $ct does not exist, skipping..."
     fi
   done
   success "All containers deleted successfully!"
 }
 
 start_all() {
-  check_prerequisites
+  check_dck
 
   slog "Starting all containers..."
-  for ct in ubuntu debian arch fedora rocky tumbleweed alpine nix; do
+  for ct in "${DCK_DISTRO_LIST[@]}"; do
     if dck_exists "$ct"; then
       slog "Starting container: $ct"
       dck start "$ct"
+    else
+      slog "Container $ct does not exist, skipping..."
     fi
   done
   success "All containers started successfully!"
 }
 
 stop_all() {
-  check_prerequisites
+  check_dck
 
   slog "Stopping all containers..."
-  for ct in ubuntu debian arch fedora rocky tumbleweed alpine nix; do
+  for ct in "${DCK_DISTRO_LIST[@]}"; do
     if dck_exists "$ct"; then
       slog "Stopping container: $ct"
       dck stop "$ct"
+    else
+      slog "Container $ct does not exist, skipping..."
     fi
   done
   success "All containers stopped successfully!"
 }
 
 restart_all() {
-  check_prerequisites
+  check_dck
 
   slog "Restarting all containers..."
-  for ct in ubuntu debian arch fedora rocky tumbleweed alpine nix; do
+  for ct in "${DCK_DISTRO_LIST[@]}"; do
     if dck_exists "$ct"; then
       slog "Restarting container: $ct"
       dck restart "$ct"
       sleep 1
+    else
+      slog "Container $ct does not exist, skipping..."
     fi
   done
   success "All containers restarted successfully!"
@@ -163,7 +128,7 @@ EOF
 }
 
 main() {
-  check_prerequisites
+  check_dck
 
   if [[ "$1" == "delete" ]]; then
     delete_all

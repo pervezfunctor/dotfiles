@@ -1,0 +1,73 @@
+#!/bin/bash
+
+set -euo pipefail
+
+tmux_grid() {
+  if ! has_cmd tmux; then
+    fail "tmux is not installed. Please install it first."
+    return 1
+  fi
+
+  if [ $# -lt 1 ]; then
+    fail "Usage: tmux-grid tmux-session-name command1 command2 [command3 ...]"
+    return 1
+  fi
+
+  local SESSION_NAME="$1"
+  shift
+
+  if [ -z "$SESSION_NAME" ]; then
+    echo "Error: Session name cannot be empty." >&2
+    return 1
+  fi
+
+  if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    echo "Creating new tmux session '$SESSION_NAME'..."
+  else
+    echo "Session '$SESSION_NAME' already exists. Attaching to it..."
+    tmux attach-session -t "$SESSION_NAME"
+    return 0
+  fi
+
+  local -a CMDS=("$@")
+  N=${#CMDS[@]}
+
+  if [ "$N" -gt 0 ] && command -v bc &>/dev/null; then
+    sqrt_n=$(echo "sqrt($N)" | bc)
+    cols=${sqrt_n}
+    while :; do
+      rows=$(((N + cols - 1) / cols))
+      if [ "$rows" -ge "$cols" ]; then
+        break
+      fi
+      cols=$((cols - 1))
+    done
+    echo "Preparing a grid for $N commands (aiming for ~$rows x $cols)..."
+  else
+    echo "Preparing a grid for $N commands..."
+  fi
+
+  tmux new-session -d -s "$SESSION_NAME" -n "grid"
+
+  for ((i = 1; i < N; i++)); do
+    tmux split-window -t "$SESSION_NAME:0"
+    tmux select-layout -t "$SESSION_NAME:0" tiled
+  done
+
+  for ((i = 0; i < N; i++)); do
+    tmux send-keys -t "$SESSION_NAME:0.$i" "${CMDS[$i]}" C-m
+  done
+
+  echo "Attaching to session '$SESSION_NAME'."
+  tmux attach-session -t "$SESSION_NAME"
+
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  if [ $# -eq 0 ]; then
+    echo "Usage: $0 tmux-session-name command1 command2 [command3 ...]"
+    exit 1
+  fi
+
+  tmux_grid foo "$@"
+fi

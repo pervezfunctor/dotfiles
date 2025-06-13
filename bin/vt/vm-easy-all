@@ -5,36 +5,19 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vm-utils"
 
+VM_EASY_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian")
+
 create_all() {
   slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
 
-  if vm_exists "ubuntu-vt"; then
-    slog "Ubuntu VM already exists, skipping..."
-  else
-    slog "Creating Ubuntu VM: ubuntu-vt"
-    vm-easy --distro ubuntu
-  fi
-
-  if vm_exists "fedora-vt"; then
-    slog "Fedora VM already exists, skipping..."
-  else
-    slog "Creating Fedora VM: fedora-vt"
-    vm-easy --distro fedora
-  fi
-
-  if vm_exists "debian-vt"; then
-    slog "Debian VM already exists, skipping..."
-  else
-    slog "Creating Debian VM: debian-vt"
-    vm-easy --distro debian
-  fi
-
-  if vm_exists "arch-vt"; then
-    slog "Arch Linux VM already exists, skipping..."
-  else
-    slog "Creating Arch Linux VM: arch-vt"
-    vm-easy --distro arch
-  fi
+  for distro in "${VM_EASY_DISTRO_LIST[@]}"; do
+    if vm_exists "${distro}-easy"; then
+      slog "$distro VM already exists, skipping..."
+    else
+      slog "Creating $distro VM: $distro-easy"
+      vm-easy --distro "$distro" --name "${distro}-easy"
+    fi
+  done
 
   success "All VMs created successfully!"
   slog "You can access them using: virsh console <vm-name>"
@@ -57,10 +40,10 @@ EOF
 
 delete_all() {
   slog "Deleting all VMs..."
-  for vm in dev min incus nix; do
-    if vm_exists "$vm"; then
-      slog "Deleting VM: $vm"
-      vm delete "$vm"
+  for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
+    if vm_exists "${vm}-easy"; then
+      slog "Deleting VM: ${vm}-easy"
+      vm delete "${vm}-easy"
     fi
   done
   success "All VMs deleted successfully!"
@@ -68,10 +51,10 @@ delete_all() {
 
 start_all() {
   slog "Starting all VMs..."
-  for vm in dev min incus nix; do
-    if vm_exists "$vm"; then
-      slog "Starting VM: $vm"
-      vm start "$vm"
+  for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
+    if vm_exists "${vm}-easy"; then
+      slog "Starting VM: ${vm}-easy"
+      vm start "${vm}-easy"
     fi
   done
   success "All VMs started successfully!"
@@ -79,10 +62,10 @@ start_all() {
 
 stop_all() {
   slog "Stopping all VMs..."
-  for vm in dev min incus nix; do
-    if vm_exists "$vm"; then
-      slog "Stopping VM: $vm"
-      vm stop "$vm"
+  for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
+    if vm_exists "${vm}-easy"; then
+      slog "Stopping VM: ${vm}-easy"
+      vm stop "${vm}-easy"
     fi
   done
   success "All VMs stopped successfully!"
@@ -90,10 +73,10 @@ stop_all() {
 
 restart_all() {
   slog "Restarting all VMs..."
-  for vm in dev min incus nix; do
-    if vm_exists "$vm"; then
-      slog "Restarting VM: $vm"
-      vm restart "$vm"
+  for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
+    if vm_exists "${vm}-easy"; then
+      slog "Restarting VM: ${vm}-easy"
+      vm restart "${vm}-easy"
     fi
   done
   success "All VMs restarted successfully!"

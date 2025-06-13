@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-source "$(dirname "$0")/ict-utils"
+source "$(dirname "$0")/ivm-utils"
 
 # Default values
 unset VM_NAME
@@ -70,37 +70,38 @@ configure_distribution() {
     case "$DISTRO" in
     ubuntu)
         RELEASE=${RELEASE:-"24.04"}
-        USERNAME=${USERNAME:-"ubuntu"}
         IMAGE="images:ubuntu/${RELEASE}/cloud"
         ;;
     fedora)
         RELEASE=${RELEASE:-"42"}
-        USERNAME=${USERNAME:-"fedora"}
         IMAGE="images:fedora/${RELEASE}/cloud"
         ;;
     arch)
         RELEASE=${RELEASE:-"current"}
-        USERNAME=${USERNAME:-"arch"}
         IMAGE="images:archlinux/${RELEASE}/cloud"
         ;;
     debian)
         RELEASE=${RELEASE:-"12"}
-        USERNAME=${USERNAME:-"debian"}
         IMAGE="images:debian/${RELEASE}/cloud"
         ;;
     centos)
         RELEASE=${RELEASE:-"9-Stream"}
-        USERNAME=${USERNAME:-"centos"}
         IMAGE="images:centos/${RELEASE}/cloud"
         ;;
     tumbleweed | tw)
         RELEASE=${RELEASE:-"current"}
-        USERNAME=${USERNAME:-"opensuse"}
         IMAGE="images:opensuse/tumbleweed/cloud"
+        ;;
+    nix)
+        RELEASE=${RELEASE:-"unstable"}
+        IMAGE="images:nixos/${RELEASE}/cloud"
+        ;;
+    rocky)
+        RELEASE=${RELEASE:-"9"}
+        IMAGE="images:rockylinux/${RELEASE}/cloud"
         ;;
     alpine)
         RELEASE=${RELEASE:-"3.22"}
-        USERNAME=${USERNAME:-"alpine"}
         IMAGE="images:alpine/${RELEASE}/cloud"
         ;;
     *)
@@ -111,6 +112,7 @@ configure_distribution() {
     esac
 
     VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
+    USERNAME=$(get_default_username "$DISTRO")
     PASSWORD=${PASSWORD:-"$USERNAME"}
     PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
@@ -234,7 +236,6 @@ packages:
   - $openssh_pkg
 $(for pkg in $packages_common; do echo "  - $pkg"; done)
 
-# Enable SSH service and ensure proper configuration
 runcmd:
 $(printf "  - %s\n" "${runcmd_lines[@]}")
 
@@ -285,7 +286,7 @@ create_vm() {
         --network "$BRIDGE_IF"
     )
 
-    if [[ "$DISTRO" == "arch" ]]; then
+    if [[ "$DISTRO" == "arch" || "$DISTRO" == "alpine" ]]; then
         launch_cmd+=(--config "security.secureboot=false")
     fi
 
@@ -438,7 +439,7 @@ parse_args() {
 
 main() {
     slog "Starting Incus VM creation..."
-    check_incus
+    check_ivm_prerequisites
     parse_args "$@"
 
     [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)

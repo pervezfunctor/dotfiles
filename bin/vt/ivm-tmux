@@ -1,27 +1,17 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
+
 # Support all virtual machines created by ivm-all
 
 set -euo pipefail
 
-# shellcheck disable=SC1091
 source "$(dirname "$0")/ivm-utils"
+source "$(dirname "$0")/tmux-utils"
 
-UBUNTU_VM="ubuntu-vm"
-FEDORA_VM="fedora-vm"
-ARCH_VM="arch-vm"
-TW_VM="tw-vm"
-ALPINE_VM="alpine-vm"
-DEBIAN_VM="debian-vm"
+IVM_DISTRO_LIST=("ubuntu" "fedora" "arch" "tw" "debian")
 
-UBUNTU_USER="ubuntu"
-FEDORA_USER="fedora"
-ARCH_USER="arch"
-TW_USER="opensuse"
-ALPINE_USER="alpine"
-DEBIAN_USER="debian"
-
-SESSION_NAME="your_session_name" # Set your session name here
+SESSION_NAME="IVM_TMUX"
 
 usage() {
     cat <<EOF
@@ -59,12 +49,11 @@ create_session() {
         fi
     fi
 
-    # Check all VMs are running, if not start them
-    for vm in "$UBUNTU_VM" "$FEDORA_VM" "$ARCH_VM" "$TW_VM"; do
-        if ! check_vm "$vm"; then
-            echo "VM '$vm' is not running. Starting it..."
-            if ! ivm start "$vm"; then
-                fail "Failed to start VM '$vm'. Please check its status."
+    for vm in "${IVM_DISTRO_LIST[@]}"; do
+        if ! has_vm "${vm}-ivm"; then
+            echo "VM '${vm}-ivm' is not running. Starting it..."
+            if ! ivm start "${vm}-ivm"; then
+                fail "Failed to start VM '${vm}-ivm'. Please check its status."
                 return 1
             fi
         fi
@@ -72,25 +61,15 @@ create_session() {
 
     echo "Creating tmux session '$SESSION_NAME' with SSH connections to 6 Incus VMs..."
 
-    local UBUNTU_CMD="ivm ssh $UBUNTU_VM $UBUNTU_USER"
-    local FEDORA_CMD="ivm ssh $FEDORA_VM $FEDORA_USER"
-    local ARCH_CMD="ivm ssh $ARCH_VM $ARCH_USER"
-    local TW_CMD="ivm ssh $TW_VM $TW_USER"
-    local ALPINE_CMD="ivm ssh $ALPINE_VM $ALPINE_USER"
-    local DEBIAN_CMD="ivm ssh $DEBIAN_VM $DEBIAN_USER"
+    local -a cmds=()
+    for vm in "${IVM_DISTRO_LIST[@]}"; do
+        cmds+=("ivm ssh ${vm}-ivm")
+    done
 
-    tmux new-session -d -s "$SESSION_NAME" "$UBUNTU_CMD"
-    tmux split-window -v -t "$SESSION_NAME":0.0 "$FEDORA_CMD"
-    tmux select-pane -t "$SESSION_NAME":0.0
-    tmux split-window -h -t "$SESSION_NAME":0.0 "$ARCH_CMD"
-    tmux split-window -h -t "$SESSION_NAME":0.1 "$TW_CMD"
-    tmux select-pane -t "$SESSION_NAME":0.2
-    tmux select-pane -D
-    tmux split-window -h -t "$SESSION_NAME":0.3 "$ALPINE_CMD"
-    tmux split-window -h -t "$SESSION_NAME":0.4 "$DEBIAN_CMD"
-    tmux attach-session -t "$SESSION_NAME"
-
-    echo "✅ Connected to all VMs in tmux session '$SESSION_NAME'"
+    if ! tmux_grid "$SESSION_NAME" "${cmds[@]}"; then
+        fail "Failed to create tmux session '$SESSION_NAME' with SSH to VMs."
+        return 1
+    fi
 }
 
 attach_session() {

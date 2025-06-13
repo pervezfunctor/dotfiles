@@ -138,7 +138,6 @@ generate_cloud_init_config() {
 
     local runcmd_lines=(
         "systemctl enable --now ssh || systemctl enable --now sshd || true"
-        "systemctl enable --now systemd-resolved || netplan apply || true"
     )
 
     if [[ "$DISTRO" == "alpine" ]]; then
@@ -176,9 +175,12 @@ packages:
   - $openssh_pkg
 $(for pkg in $packages_common; do echo "  - $pkg"; done)
 
-# Enable SSH service and ensure proper configuration
 runcmd:
 $(for line in "${runcmd_lines[@]}"; do echo "  - $line"; done)
+
+# Ensure SSH service is enabled
+ssh_pwauth: true
+disable_root: false
 
 write_files:
   - path: /etc/motd
@@ -223,6 +225,8 @@ create_container() {
     if [[ "$PRIVILEGED" == "true" ]]; then
         launch_args+=(--config "security.privileged=true")
         slog "Creating privileged container"
+    elif [[ "$DISTRO" != "ubuntu" && "$DISTRO" != "debian" ]]; then
+        launch_args+=(--config "security.nesting=true")
     fi
 
     if ! incus launch "${launch_args[@]}"; then

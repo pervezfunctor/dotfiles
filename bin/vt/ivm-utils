@@ -217,7 +217,7 @@ ssh_to_vm() {
 
   # Auto-detect username if not provided
   if [[ -z "$username" ]]; then
-    username=$(detect_vm_user "$vm_name")
+    username=$(get_default_username "$vm_name")
     slog "Auto-detected username: $username (override with: $0 ssh $vm_name <username>)"
   fi
 
@@ -245,32 +245,4 @@ ssh_to_vm() {
     ssh "$username@$ip"
     ;;
   esac
-}
-
-detect_vm_user() {
-  local vm_name="$1"
-
-  # Extract base name from VM name (remove -vm suffix if present)
-  local username="${vm_name%-vm}"
-
-  # Handle special cases for common distros
-  case "$username" in
-  ubuntu*) username="ubuntu" ;;
-  fedora*) username="fedora" ;;
-  centos*) username="centos" ;;
-  debian*) username="debian" ;;
-  arch*) username="arch" ;;
-  tumbleweed* | tw*) username="opensuse" ;;
-  *)
-    # Default to the VM name or common default
-    if [[ "$username" =~ ^(ubuntu|fedora|centos|debian|arch|opensuse)$ ]]; then
-      # Keep as is
-      :
-    else
-      username="ubuntu" # Default fallback
-    fi
-    ;;
-  esac
-
-  echo "$username"
 }

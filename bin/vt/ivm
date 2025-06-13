@@ -4,7 +4,6 @@
 
 set -euo pipefail
 
-source "$(dirname "$0")/vt-utils"
 source "$(dirname "$0")/ivm-utils"
 
 usage() {
@@ -80,7 +79,6 @@ install_incus() {
 }
 
 list_vms() {
-
     slog "Listing all Incus VMs..."
     echo
     incus_list_vms
@@ -379,7 +377,7 @@ shell_to_vm() {
     local username="${2:-}"
 
     if [[ -z "$username" ]]; then
-        username=$(detect_vm_user "$vm_name")
+        username=$(get_default_username "$vm_name")
         slog "Auto-detected username: $username (override with: $0 shell $vm_name <username>)"
     fi
 

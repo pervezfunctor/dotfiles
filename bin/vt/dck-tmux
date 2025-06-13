@@ -5,14 +5,9 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vt-utils"
 
-UBUNTU_CT="ubuntu"
-FEDORA_CT="fedora"
-ARCH_CT="arch"
-DEBIAN_CT="debian"
-ALPINE_CT="alpine"
-NIX_CT="nix"
-
 SESSION_NAME="docker-containers"
+
+DCK_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
 
 usage() {
   cat <<EOF
@@ -36,7 +31,7 @@ check_docker() {
   fi
 }
 
-container_exists() {
+dck_exists() {
   local container_name="$1"
   docker ps -a --format "{{.Names}}" | grep -q "^$container_name$"
   return $?
@@ -44,16 +39,21 @@ container_exists() {
 
 check_container() {
   local container_name="$1"
-  if ! container_exists "$container_name"; then
+  if ! dck_exists "$container_name"; then
     fail "Container '$container_name' does not exist"
     return 1
   fi
   return 0
 }
 
-check_container_running() {
+is_dck_running() {
   local container_name="$1"
-  if ! docker ps --format "{{.Names}}" | grep -q "^$container_name$"; then
+  docker ps --format "{{.Names}}" | grep -q "^$container_name$"
+}
+
+check_dck_running() {
+  local container_name="$1"
+  if ! is_dck_running "$container_name"; then
     fail "Container '$container_name' is not running"
     return 1
   fi
@@ -65,7 +65,7 @@ create_container_cmd() {
 
   check_container "$container_name" || return 1
 
-  if ! check_container_running "$container_name"; then
+  if ! is_dck_running "$container_name"; then
     docker start "$container_name"
   fi
 
@@ -86,31 +86,32 @@ create_session() {
     fi
   fi
 
-  for container in "$UBUNTU_CT" "$FEDORA_CT" "$ARCH_CT" "$DEBIAN_CT" "$ALPINE_CT" "$NIX_CT"; do
-    check_container "$container" || return 1
+  local -a cmds
+
+  for distro in "${DCK_DISTRO_LIST[@]}"; do
+    cmds+=("$(create_container_cmd "$distro")")
   done
 
-  slog "Creating tmux session with connections to 6 Docker containers..."
+  # Create new session with first pane and run first command
+  tmux new-session -d -s "$SESSION_NAME" -n "Containers" "${cmds[0]}"
 
-  UBUNTU_CMD=$(create_container_cmd "$UBUNTU_CT")
-  FEDORA_CMD=$(create_container_cmd "$FEDORA_CT")
-  ARCH_CMD=$(create_container_cmd "$ARCH_CT")
-  DEBIAN_CMD=$(create_container_cmd "$DEBIAN_CT")
-  ALPINE_CMD=$(create_container_cmd "$ALPINE_CT")
-  NIX_CMD=$(create_container_cmd "$NIX_CT")
+  # Create remaining 8 panes
+  for i in {1..2}; do
+    tmux split-window -h -t "$SESSION_NAME":0.$((i - 1))
+  done
 
-  # Create a new session with the first container
-  tmux new-session -d -s "$SESSION_NAME" -n "Containers" "$UBUNTU_CMD"
+  for i in {0..2}; do
+    tmux select-pane -t "$SESSION_NAME":0.$i
+    tmux split-window -v -t "$SESSION_NAME":0.$i
+    tmux select-pane -t "$SESSION_NAME":0.$((i + 3))
+    tmux split-window -v -t "$SESSION_NAME":0.$((i + 3))
+  done
 
-  # Split the window for the remaining containers
-  tmux split-window -h -t "$SESSION_NAME:0.0" "$FEDORA_CMD"
-  tmux split-window -v -t "$SESSION_NAME:0.0" "$ARCH_CMD"
-  tmux split-window -v -t "$SESSION_NAME:0.1" "$DEBIAN_CMD"
-  tmux split-window -h -t "$SESSION_NAME:0.1" "$ALPINE_CMD"
-  tmux split-window -v -t "$SESSION_NAME:0.2" "$NIX_CMD"
+  for i in "${!cmds[@]}"; do
+    tmux send-keys -t "$SESSION_NAME":0.$i "${cmds[$i]}" C-m
+  done
 
-  # Set layout for the window
-  tmux select-layout -t "$SESSION_NAME:0" tiled
+  tmux select-pane -t "$SESSION_NAME":0.0
 
   tmux attach-session -t "$SESSION_NAME"
 

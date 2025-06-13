@@ -6,57 +6,40 @@ set -euo pipefail
 
 source "$(dirname "$0")/ivm-utils"
 
+IVM_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tw")
+
+list_all() {
+    for vm in "${IVM_DISTRO_LIST[@]}"; do
+        if has_vm "${vm}-ivm"; then
+            incus list "${vm}-ivm" --format=compact --columns=ns4
+        else
+            warn "VM: ${vm}-ivm does not exist"
+        fi
+    done
+}
+
 create_all() {
-    slog "Creating Incus VMs (Debian, Ubuntu, Fedora, Arch, Tumbleweed, Alpine)..."
+    slog "Creating Incus VMs (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
 
-    if has_vm "debian-vm"; then
-        slog "Debian VM already exists, skipping..."
-    else
-        slog "Creating Debian VM: debian-vm"
-        ivm-create --distro debian --name debian-vm
-    fi
-
-    if has_vm "ubuntu-vm"; then
-        slog "Ubuntu VM already exists, skipping..."
-    else
-        slog "Creating Ubuntu VM: ubuntu-vm"
-        ivm-create --distro ubuntu --name ubuntu-vm
-    fi
-
-    if has_vm "fedora-vm"; then
-        slog "Fedora VM already exists, skipping..."
-    else
-        slog "Creating Fedora VM: fedora-vm"
-        ivm-create --distro fedora --name fedora-vm
-    fi
-
-    if has_vm "arch-vm"; then
-        slog "Arch VM already exists, skipping..."
-    else
-        slog "Creating Arch VM: arch-vm"
-        ivm-create --distro arch --name arch-vm
-    fi
-
-    if has_vm "tw-vm"; then
-        slog "Tumbleweed VM already exists, skipping..."
-    else
-        slog "Creating openSUSE Tumbleweed VM: tw-vm"
-        ivm-create --distro tw --name tw-vm
-    fi
-
-    slog "Listing created VMs:"
-    ivm list
+    for distro in "${IVM_DISTRO_LIST[@]}"; do
+        if has_vm "${distro}-ivm"; then
+            slog "$distro VM already exists, skipping..."
+        else
+            slog "Creating $distro VM: $distro-ivm"
+            ivm-create --distro "$distro" --name "${distro}-ivm"
+        fi
+    done
 
     success "All VMs created successfully!"
-    slog "You can access them using: incus console <vm-name>"
+    slog "You can access them using: incus console <vm-name> <username>"
 }
 
 delete_all() {
     slog "Deleting all VMs..."
-    for vm in debian-vm ubuntu-vm fedora-vm arch-vm tw-vm; do
-        if has_vm "$vm"; then
-            slog "Deleting VM: $vm"
-            ivm delete "$vm"
+    for vm in "${IVM_DISTRO_LIST[@]}"; do
+        if has_vm "${vm}-ivm"; then
+            slog "Deleting VM: ${vm}-ivm"
+            ivm delete "${vm}-ivm"
         fi
     done
     success "All VMs deleted successfully!"
@@ -64,10 +47,10 @@ delete_all() {
 
 start_all() {
     slog "Starting all VMs..."
-    for vm in debian-vm ubuntu-vm fedora-vm arch-vm tw-vm; do
-        if has_vm "$vm"; then
-            slog "Starting VM: $vm"
-            ivm start "$vm"
+    for vm in "${IVM_DISTRO_LIST[@]}"; do
+        if has_vm "${vm}-ivm"; then
+            slog "Starting VM: ${vm}-ivm"
+            ivm start "${vm}-ivm"
         fi
     done
     success "All VMs started successfully!"
@@ -75,10 +58,10 @@ start_all() {
 
 stop_all() {
     slog "Stopping all VMs..."
-    for vm in debian-vm ubuntu-vm fedora-vm arch-vm tw-vm; do
-        if has_vm "$vm"; then
-            slog "Stopping VM: $vm"
-            ivm stop "$vm"
+    for vm in "${IVM_DISTRO_LIST[@]}"; do
+        if has_vm "${vm}-ivm"; then
+            slog "Stopping VM: ${vm}-ivm"
+            ivm stop "${vm}-ivm"
         fi
     done
     success "All VMs stopped successfully!"
@@ -86,10 +69,10 @@ stop_all() {
 
 restart_all() {
     slog "Restarting all VMs..."
-    for vm in debian-vm ubuntu-vm fedora-vm arch-vm tw-vm; do
-        if has_vm "$vm"; then
-            slog "Restarting VM: $vm"
-            ivm restart "$vm"
+    for vm in "${IVM_DISTRO_LIST[@]}"; do
+        if has_vm "${vm}-ivm"; then
+            slog "Restarting VM: ${vm}-ivm"
+            ivm restart "${vm}-ivm"
         fi
     done
     success "All VMs restarted successfully!"
@@ -114,7 +97,7 @@ EOF
 main() {
     check_ivm_prerequisites
 
-    if [[ $# -eq 0 ]]; then
+    if [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
         create_all
     elif [[ "$1" == "delete" ]]; then
         delete_all
@@ -127,8 +110,8 @@ main() {
     elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
         usage
         exit 0
-    elif [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
-        create_all
+    elif [[ "$1" == "list" ]]; then
+        list_all
     else
         fail "Unknown option: $1"
         usage

@@ -1,21 +1,15 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
-# shellcheck disable=SC1091
 source "$(dirname "$0")/ict-utils"
+source "$(dirname "$0")/tmux-utils"
 
-UBUNTU_CT="ubuntu-ct"
-FEDORA_CT="fedora-ct"
-ARCH_CT="arch-ct"
-TUMBLEWEED_CT="tumbleweed-ct"
+ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tumbleweed")
 
-UBUNTU_USER="ubuntu"
-FEDORA_USER="fedora"
-ARCH_USER="arch"
-TUMBLEWEED_USER="opensuse"
-
-SESSION_NAME="incus-containers"
+SESSION_NAME="ICT_TMUX"
 
 usage() {
     cat <<EOF
@@ -53,29 +47,27 @@ create_session() {
         fi
     fi
 
-    for container in "$UBUNTU_CT" "$FEDORA_CT" "$ARCH_CT" "$TUMBLEWEED_CT"; do
-        check_container "$container" || return 1
+    for ct in "${ICT_DISTRO_LIST[@]}"; do
+        if ! ct_exists "${ct}-ict"; then
+            echo "VM '${ct}-ict' is not running. Starting it..."
+            if ! ivm start "${ct}-ict"; then
+                fail "Failed to start container '${ct}-ict'. Please check its status."
+                return 1
+            fi
+        fi
     done
 
     slog "Creating tmux session with SSH connections to Incus LXC containers..."
 
-    UBUNTU_CMD="ict ssh $UBUNTU_CT $UBUNTU_USER"
-    FEDORA_CMD="ict ssh $FEDORA_CT $FEDORA_USER"
-    ARCH_CMD="ict ssh $ARCH_CT $ARCH_USER"
-    TUMBLEWEED_CMD="ict ssh $TUMBLEWEED_CT $TUMBLEWEED_USER"
+    local -a cmds=()
+    for ct in "${ICT_DISTRO_LIST[@]}"; do
+        cmds+=("ict ssh ${ct}-ict")
+    done
 
-    # Create a new session with the first container
-    tmux new-session -d -s "$SESSION_NAME" -n "Containers" "$UBUNTU_CMD"
-
-    tmux new-session -d -s "$SESSION_NAME" -n "VMs" "$UBUNTU_CMD"
-    tmux split-window -h -t "$SESSION_NAME:0.0" "$FEDORA_CMD"
-    tmux split-window -v -t "$SESSION_NAME:0.0" "$ARCH_CMD"
-    tmux split-window -v -t "$SESSION_NAME:0.1" "$TUMBLEWEED_CMD"
-    tmux select-layout -t "$SESSION_NAME:0" tiled
-
-    tmux attach-session -t "$SESSION_NAME"
-
-    success "Connected to all containers in tmux session"
+    if ! tmux_grid "$SESSION_NAME" "${cmds[@]}"; then
+        fail "Failed to create tmux session '$SESSION_NAME' with SSH to containers."
+        return 1
+    fi
 }
 
 attach_session() {
