@@ -1,21 +1,15 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
-# shellcheck disable=SC1091
 source "$(dirname "$0")/vm-utils"
-
-UBUNTU_VM="ubuntu-vm"
-FEDORA_VM="fedora-vm"
-ARCH_VM="arch-vm"
-DEBIAN_VM="debian-vm"
-
-UBUNTU_USER="ubuntu"
-FEDORA_USER="fedora"
-ARCH_USER="arch"
-DEBIAN_USER="debian"
+source "$(dirname "$0")/tmux-utils"
 
 SESSION_NAME="libvirt-vms"
+
+VM_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian") # alpine is not working
 
 usage() {
     cat <<EOF
@@ -60,22 +54,27 @@ create_session() {
         fi
     fi
 
-    for vm in "$UBUNTU_VM" "$FEDORA_VM" "$ARCH_VM" "$DEBIAN_VM"; do
-        check_vm "$vm" || return 1
+    for vm in "${VM_DISTRO_LIST[@]}"; do
+        if ! has_vm "${vm}-virt"; then
+            slog "VM '${vm}-virt' is not running. Starting it..."
+            if ! vm start "${vm}-virt"; then
+                fail "Failed to start VM '${vm}-virt'. Please check its status."
+                return 1
+            fi
+        fi
     done
 
     slog "Creating tmux session with SSH connections to 4 libvirt VMs..."
 
-    UBUNTU_CMD="vm ssh $UBUNTU_VM $UBUNTU_USER"
-    FEDORA_CMD="vm ssh $FEDORA_VM $FEDORA_USER"
-    ARCH_CMD="vm ssh $ARCH_VM $ARCH_USER"
-    DEBIAN_CMD="vm ssh $DEBIAN_VM $DEBIAN_USER"
+    local -a cmds=()
+    for vm in "${VM_DISTRO_LIST[@]}"; do
+        cmds+=("vm ssh $vm")
+    done
 
-    tmux new-session -d -s "$SESSION_NAME" -n "VMs" "$UBUNTU_CMD"
-    tmux split-window -h -t "$SESSION_NAME:0.0" "$FEDORA_CMD"
-    tmux split-window -v -t "$SESSION_NAME:0.0" "$ARCH_CMD"
-    tmux split-window -v -t "$SESSION_NAME:0.1" "$DEBIAN_CMD"
-    tmux select-layout -t "$SESSION_NAME:0" tiled
+    if ! tmux_grid "$SESSION_NAME" "${cmds[@]}"; then
+        fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs"
+        return 1
+    fi
 
     tmux attach-session -t "$SESSION_NAME"
 

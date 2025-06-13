@@ -67,7 +67,7 @@ create_session() {
     done
 
     if ! tmux_grid "$SESSION_NAME" "${cmds[@]}"; then
-        fail "Failed to create tmux session '$SESSION_NAME' with SSH to VMs."
+        fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."
         return 1
     fi
 }
