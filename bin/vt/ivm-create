@@ -283,12 +283,9 @@ create_vm() {
         --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
         --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
         --device "root,size=$DISK_SIZE"
+        --config "security.secureboot=false"
         --network "$BRIDGE_IF"
     )
-
-    if [[ "$DISTRO" == "arch" || "$DISTRO" == "alpine" ]]; then
-        launch_cmd+=(--config "security.secureboot=false")
-    fi
 
     if ! "${launch_cmd[@]}"; then
         fail "Failed to create VM '$VM_NAME'"
