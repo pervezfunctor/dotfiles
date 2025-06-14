@@ -65,62 +65,25 @@ check_dck_running() {
   return 0
 }
 
-create_container_cmd() {
-  local container_name="$1"
-
-  dck_check_exists "$container_name" || return 1
-
-  if ! is_dck_running "$container_name"; then
-    docker start "$container_name"
-  fi
-
-  echo "docker exec -it $container_name /bin/bash"
-}
-
 create_session() {
-  local force="${1:-false}"
+  tmux_session "$SESSION_NAME" "$1"
 
-  if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    if [[ "$force" == "true" ]]; then
-      slog "Killing existing session and creating a new one..."
-      tmux kill-session -t "$SESSION_NAME"
-    else
-      slog "Session '$SESSION_NAME' already exists, attaching..."
-      tmux attach-session -t "$SESSION_NAME"
-      return
-    fi
+  slog "Creating tmux session '$SESSION_NAME' with connections to Docker containers..."
+
+  local ssh_cmds=()
+  create_commands ssh_cmds "dck" "${DCK_DISTRO_LIST[@]}"
+
+  start_sessions "dck" "${ssh_cmds[@]}"
+
+  if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
+    fail "Failed to create tmux session '$SESSION_NAME' with connections to containers."
+    return 1
   fi
 
-  local -a cmds
-
-  for distro in "${DCK_DISTRO_LIST[@]}"; do
-    cmds+=("$(create_container_cmd "$distro")")
-  done
-
-  # Create new session with first pane and run first command
-  tmux new-session -d -s "$SESSION_NAME" -n "Containers" "${cmds[0]}"
-
-  # Create remaining 8 panes
-  for i in {1..2}; do
-    tmux split-window -h -t "$SESSION_NAME":0.$((i - 1))
-  done
-
-  for i in {0..2}; do
-    tmux select-pane -t "$SESSION_NAME":0.$i
-    tmux split-window -v -t "$SESSION_NAME":0.$i
-    tmux select-pane -t "$SESSION_NAME":0.$((i + 3))
-    tmux split-window -v -t "$SESSION_NAME":0.$((i + 3))
-  done
-
-  for i in "${!cmds[@]}"; do
-    tmux send-keys -t "$SESSION_NAME":0.$i "${cmds[$i]}" C-m
-  done
-
-  tmux select-pane -t "$SESSION_NAME":0.0
-
-  tmux attach-session -t "$SESSION_NAME"
-
-  success "Connected to all containers in tmux session"
+  if ! tmux attach-session -t "$SESSION_NAME"; then
+    fail "Failed to attach to tmux session '$SESSION_NAME'."
+    return 1
+  fi
 }
 
 attach_session() {

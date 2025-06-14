@@ -31,18 +31,6 @@ virt_check_prerequisites() {
 
 }
 
-vm_list() {
-  slog "Listing all VMs..."
-  echo
-  if has_cmd virsh; then
-    virsh list --all
-  else
-    fail "virsh command not found. Please install virtualization tools first."
-    slog "You can install them with: vm install"
-    return 1
-  fi
-}
-
 vm_check_prerequisites() {
   virt_check_prerequisites
 
@@ -57,9 +45,17 @@ vm_check_prerequisites() {
   fi
 }
 
-# vm_exists() {
-#   virsh list --all | grep -q "$1" >/dev/null
-# }
+vm_list() {
+  slog "Listing all VMs..."
+  echo
+  if has_cmd virsh; then
+    virsh list --all
+  else
+    fail "virsh command not found. Please install virtualization tools first."
+    slog "You can install them with: vm install"
+    return 1
+  fi
+}
 
 vm_exists() {
   virsh dominfo "$1" &>/dev/null

@@ -1,0 +1,29 @@
+#! /bin/bash
+
+if vm_exists "dev"; then
+  slog "Ubuntu VM already exists, skipping..."
+else
+  slog "Creating Ubuntu VM: dev"
+  vm-create --distro ubuntu --name dev --docker --brew --dotfiles min
+fi
+
+if vm_exists "min"; then
+  slog "Fedora VM already exists, skipping..."
+else
+  slog "Creating Fedora VM: min"
+  vm-create --distro fedora --name min --dotfiles min
+fi
+
+if vm_exists "incus"; then
+  slog "Alpine VM already exists, skipping..."
+else
+  slog "Creating Alpine VM: incus"
+  vm-create --distro alpine --name incus --dotfiles min incus
+fi
+
+if vm_exists "nix"; then
+  slog "Debian VM already exists, skipping..."
+else
+  slog "Creating Debian VM: nix"
+  vm-create --distro debian --name nix --nix
+fi

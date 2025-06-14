@@ -38,9 +38,14 @@ attach_session() {
   fi
 
   if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    warn "Session '$SESSION_NAME' does not exist. Creating it..."
-    create_session
-    return
+    if has_cmd create_session; then
+      slog "Session '$SESSION_NAME' does not exist. Creating it..."
+      create_session "$SESSION_NAME"
+      return
+    else
+      fail "Error: Session '$SESSION_NAME' does not exist and create_session function is not available." >&2
+      return 1
+    fi
   fi
 
   slog "Attaching to session '$SESSION_NAME'..."

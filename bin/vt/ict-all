@@ -1,13 +1,15 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
-# shellcheck disable=SC1091
 source "$(dirname "$0")/ict-utils"
+source "$(dirname "$0")/all-utils"
 
 ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tumbleweed")
 
-list_all() {
+all_list() {
     slog "Listing all Incus LXC containers..."
 
     for ct in "${ICT_DISTRO_LIST[@]}"; do
@@ -31,7 +33,7 @@ list_all() {
 
 ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tumbleweed")
 
-create_all() {
+all_create() {
     slog "Creating Incus LXC containers (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
 
     for ct in "${ICT_DISTRO_LIST[@]}"; do
@@ -48,7 +50,7 @@ create_all() {
     slog "You can access them using: ict ssh <container-name>"
 }
 
-delete_all() {
+all_delete() {
     slog "Deleting all containers..."
     for ct in "${ICT_DISTRO_LIST[@]}"; do
         if ict_exists "${ct}-ict"; then
@@ -59,7 +61,7 @@ delete_all() {
     success "All containers deleted successfully!"
 }
 
-start_all() {
+all_start() {
     slog "Starting all containers..."
     for ct in "${ICT_DISTRO_LIST[@]}"; do
         if ict_exists "${ct}-ict"; then
@@ -70,7 +72,7 @@ start_all() {
     success "All containers started successfully!"
 }
 
-stop_all() {
+all_stop() {
     slog "Stopping all containers..."
     for ct in "${ICT_DISTRO_LIST[@]}"; do
         if ict_exists "${ct}-ict"; then
@@ -81,7 +83,7 @@ stop_all() {
     success "All containers stopped successfully!"
 }
 
-restart_all() {
+all_restart() {
     slog "Restarting all containers..."
     for ct in "${ICT_DISTRO_LIST[@]}"; do
         if ict_exists "${ct}-ict"; then
@@ -94,54 +96,12 @@ restart_all() {
 }
 
 usage() {
-    cat <<EOF
-Usage: $(basename "$0") [OPTION]
-
-Incus LXC containers created by ict-create.
-
-Options:
-  delete  Delete all containers created by ict-create
-  start   Start all containers created by ict-create
-  stop    Stop all containers created by ict-create
-  restart Restart all containers created by ict-create
-  --help    Display this help message
-
-Examples:
-  $(basename "$0")          # Create all containers (default if no option)
-  $(basename "$0") delete   # Delete all containers
-  $(basename "$0") start    # Start all containers
-  $(basename "$0") stop     # Stop all containers
-  $(basename "$0") restart  # Restart all containers
-  $(basename "$0") --help   # Display help message
-EOF
+    all_usage "incus" "LXC containers"
 }
 
 main() {
     incus_check
-
-    if [[ $# -eq 0 ]]; then
-        create_all
-        exit 0
-    fi
-
-    if [[ "$1" == "delete" ]]; then
-        delete_all
-    elif [[ "$1" == "start" ]]; then
-        start_all
-    elif [[ "$1" == "stop" ]]; then
-        stop_all
-    elif [[ "$1" == "restart" ]]; then
-        restart_all
-    elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
-        usage
-        exit 0
-    elif [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
-        create_all
-    else
-        fail "Unknown option: $1"
-        usage
-        exit 1
-    fi
+    all_parse_args "$@"
 }
 
 main "$@"

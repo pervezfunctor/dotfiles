@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bash completion for mp-vm script
+# Bash completion for mvm script
 # shellcheck disable=SC2207  # Standard pattern for bash completions
 
 _multipass_vm_get_vms() {
@@ -63,4 +63,4 @@ _multipass_vm() {
     esac
 }
 
-complete -F _multipass_vm mp-vm
+complete -F _multipass_vm mvm

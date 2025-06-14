@@ -5,10 +5,11 @@
 set -euo pipefail
 
 source "$(dirname "$0")/ivm-utils"
+source "$(dirname "$0")/all-utils"
 
 IVM_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tw")
 
-list_all() {
+all_list() {
     for vm in "${IVM_DISTRO_LIST[@]}"; do
         if ivm_exists "${vm}-ivm"; then
             incus list "${vm}-ivm" --format=compact --columns=ns4
@@ -18,7 +19,7 @@ list_all() {
     done
 }
 
-create_all() {
+all_create() {
     slog "Creating Incus VMs (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
 
     for distro in "${IVM_DISTRO_LIST[@]}"; do
@@ -34,7 +35,7 @@ create_all() {
     slog "You can access them using: incus console <vm-name> <username>"
 }
 
-delete_all() {
+all_delete() {
     slog "Deleting all VMs..."
     for vm in "${IVM_DISTRO_LIST[@]}"; do
         if ivm_exists "${vm}-ivm"; then
@@ -45,7 +46,7 @@ delete_all() {
     success "All VMs deleted successfully!"
 }
 
-start_all() {
+all_start() {
     slog "Starting all VMs..."
     for vm in "${IVM_DISTRO_LIST[@]}"; do
         if ivm_exists "${vm}-ivm"; then
@@ -56,7 +57,7 @@ start_all() {
     success "All VMs started successfully!"
 }
 
-stop_all() {
+all_stop() {
     slog "Stopping all VMs..."
     for vm in "${IVM_DISTRO_LIST[@]}"; do
         if ivm_exists "${vm}-ivm"; then
@@ -67,7 +68,7 @@ stop_all() {
     success "All VMs stopped successfully!"
 }
 
-restart_all() {
+all_restart() {
     slog "Restarting all VMs..."
     for vm in "${IVM_DISTRO_LIST[@]}"; do
         if ivm_exists "${vm}-ivm"; then
@@ -79,44 +80,12 @@ restart_all() {
 }
 
 usage() {
-    cat <<EOF
-Usage: $(basename "$0") [OPTION]
-
-Incus VMs created by ivm-create.
-
-Options:
-  create       # Create all VMs (default if no option)
-  delete       # Delete all VMs
-  start        # Start all VMs
-  stop         # Stop all VMs
-  restart      # Restart all VMs
-  --help       # Display this help message
-EOF
+    all_usage "incus" "VMs"
 }
 
 main() {
     ivm_check_exists_prerequisites
-
-    if [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
-        create_all
-    elif [[ "$1" == "delete" ]]; then
-        delete_all
-    elif [[ "$1" == "start" ]]; then
-        start_all
-    elif [[ "$1" == "stop" ]]; then
-        stop_all
-    elif [[ "$1" == "restart" ]]; then
-        restart_all
-    elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
-        usage
-        exit 0
-    elif [[ "$1" == "list" ]]; then
-        list_all
-    else
-        fail "Unknown option: $1"
-        usage
-        exit 1
-    fi
+    all_parse_args "$@"
 }
 
 main "$@"

@@ -3,18 +3,6 @@
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vt-utils"
 
-incus_check() {
-  if ! has_cmd incus; then
-    fail "incus command not found. Please install Incus first."
-    exit 1
-  fi
-
-  if ! incus info >/dev/null 2>&1; then
-    fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
-    exit 1
-  fi
-}
-
 ict_check_prerequisites() {
   local missing=()
   for cmd in incus openssl curl wget tee mktemp; do
@@ -57,6 +45,13 @@ ict_exists() {
   incus list type=container --format csv --columns n | grep -q "^${1}$"
 }
 
+ict_check_exists() {
+  local container_name="$1"
+  if ! ict_exists "$container_name"; then
+    fail "Container '$container_name' not found"
+    return 1
+  fi
+}
 ict_state() {
   local container_name="$1"
   incus list type=container "$container_name" --format csv --columns s | head -1
@@ -73,14 +68,6 @@ ict_check_running() {
   local container_name="$1"
   if ! ict_running "$container_name"; then
     fail "Container '$container_name' is not running (state: $(ict_state "$container_name"))"
-    return 1
-  fi
-}
-
-ict_check_exists() {
-  local container_name="$1"
-  if ! ict_exists "$container_name"; then
-    fail "Container '$container_name' not found"
     return 1
   fi
 }

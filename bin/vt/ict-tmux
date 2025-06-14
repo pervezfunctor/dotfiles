@@ -34,72 +34,24 @@ EOF
 }
 
 create_session() {
-    local force="${1:-false}"
+    tmux_session "$SESSION_NAME" "$1"
 
-    if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-        if [[ "$force" == "true" ]]; then
-            slog "Killing existing session and creating a new one..."
-            tmux kill-session -t "$SESSION_NAME"
-        else
-            slog "Session '$SESSION_NAME' already exists, attaching..."
-            tmux attach-session -t "$SESSION_NAME"
-            return 0
-        fi
-    fi
+    slog "Creating tmux session '$SESSION_NAME' with SSH connections to Incus containers..."
 
-    for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ! ict_exists "${ct}-ict"; then
-            echo "VM '${ct}-ict' is not running. Starting it..."
-            if ! ivm start "${ct}-ict"; then
-                fail "Failed to start container '${ct}-ict'. Please check its status."
-                return 1
-            fi
-        fi
-    done
+    local ssh_cmds=()
+    create_commands ssh_cmds "ict" "${ICT_DISTRO_LIST[@]}"
 
-    slog "Creating tmux session with SSH connections to Incus LXC containers..."
+    start_sessions "ict" "${ssh_cmds[@]}"
 
-    local -a cmds=()
-    for ct in "${ICT_DISTRO_LIST[@]}"; do
-        cmds+=("ict ssh ${ct}-ict")
-    done
-
-    if ! tmux_grid "$SESSION_NAME" "${cmds[@]}"; then
-        fail "Failed to create tmux session '$SESSION_NAME' with SSH to containers."
+    if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
+        fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to containers."
         return 1
     fi
-}
 
-attach_session() {
-    if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-        warn "Session '$SESSION_NAME' does not exist. Creating it..."
-        create_session
-        return 0
+    if ! tmux attach-session -t "$SESSION_NAME"; then
+        fail "Failed to attach to tmux session '$SESSION_NAME'."
+        return 1
     fi
-
-    slog "Attaching to session '$SESSION_NAME'..."
-    tmux attach-session -t "$SESSION_NAME"
-}
-
-detach_session() {
-    if [[ -z "${TMUX:-}" ]]; then
-        fail "Not currently in a tmux session"
-        exit 1
-    fi
-
-    slog "Detaching from tmux session..."
-    tmux detach-client
-}
-
-destroy_session() {
-    if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-        warn "Session '$SESSION_NAME' does not exist"
-        return 0
-    fi
-
-    slog "Destroying session '$SESSION_NAME'..."
-    tmux kill-session -t "$SESSION_NAME"
-    success "Session destroyed"
 }
 
 main() {
@@ -113,13 +65,13 @@ main() {
         create_session "true"
         ;;
     attach)
-        attach_session
+        attach_session "$SESSION_NAME"
         ;;
     detach)
-        detach_session
+        detach_session "$SESSION_NAME"
         ;;
     destroy)
-        destroy_session
+        destroy_session "$SESSION_NAME"
         ;;
     help | --help | -h)
         usage

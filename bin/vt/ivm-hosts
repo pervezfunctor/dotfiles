@@ -26,7 +26,7 @@ EXAMPLES:
 EOF
 }
 
-add_vm_to_hosts() {
+ivm_hosts_add() {
     local vm_name="$1"
 
     local ip
@@ -48,7 +48,7 @@ add_vm_to_hosts() {
     success "Added $vm_name ($ip) to /etc/hosts"
 }
 
-remove_vm_from_hosts() {
+vm_hosts_remove() {
     local vm_name="$1"
 
     if grep -q "^[0-9.]* .*$vm_name # Added by ivm-hosts" /etc/hosts; then
@@ -59,7 +59,7 @@ remove_vm_from_hosts() {
     fi
 }
 
-list_vm_hosts() {
+vm_hosts_list() {
     slog "Incus VM entries in /etc/hosts:"
     echo
 
@@ -86,7 +86,7 @@ list_vm_hosts() {
     fi
 }
 
-update_all_vms() {
+vm_hosts_update_all() {
     slog "Updating /etc/hosts for all running Incus VMs..."
 
     local vms
@@ -100,7 +100,7 @@ update_all_vms() {
     while IFS= read -r vm; do
         if [[ -n "$vm" ]]; then
             slog "Processing VM: $vm"
-            add_vm_to_hosts "$vm"
+            ivm_hosts_add "$vm"
         fi
     done <<<"$vms"
 
@@ -125,7 +125,7 @@ main() {
             usage
             exit 1
         }
-        add_vm_to_hosts "$vm_name"
+        ivm_hosts_add "$vm_name"
         ;;
     remove)
         [[ -z "$vm_name" ]] && {
@@ -133,13 +133,13 @@ main() {
             usage
             exit 1
         }
-        remove_vm_from_hosts "$vm_name"
+        vm_hosts_remove "$vm_name"
         ;;
     list)
-        list_vm_hosts
+        vm_hosts_list
         ;;
     update)
-        update_all_vms
+        vm_hosts_update_all
         ;;
     --help | -h)
         usage

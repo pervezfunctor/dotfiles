@@ -54,7 +54,7 @@ get_vm_ip() {
     return 0
 }
 
-add_vm_to_hosts() {
+mvm_hosts_add() {
     local vm_name="$1"
 
     local ip
@@ -76,7 +76,7 @@ add_vm_to_hosts() {
     success "Added $vm_name ($ip) to /etc/hosts"
 }
 
-remove_vm_from_hosts() {
+mvm_hosts_remove() {
     local vm_name="$1"
 
     if grep -q "^[0-9.]* .*$vm_name" /etc/hosts; then
@@ -87,7 +87,7 @@ remove_vm_from_hosts() {
     fi
 }
 
-list_vm_hosts() {
+mvm_hosts_list() {
     slog "Multipass VM entries in /etc/hosts:"
     echo
 
@@ -114,7 +114,7 @@ list_vm_hosts() {
     fi
 }
 
-update_all_vms() {
+mvm_hosts_update_all() {
     slog "Updating /etc/hosts for all running Multipass VMs..."
 
     local vms
@@ -128,14 +128,14 @@ update_all_vms() {
     while IFS= read -r vm; do
         if [[ -n "$vm" ]]; then
             slog "Processing VM: $vm"
-            add_vm_to_hosts "$vm"
+            mvm_hosts_add "$vm"
         fi
     done <<<"$vms"
 
     success "Updated /etc/hosts for all running Multipass VMs"
 }
 
-clean_vm_hosts() {
+mvm_hosts_clean() {
     slog "Cleaning up /etc/hosts entries for non-existent Multipass VMs..."
 
     # Get all VM names from /etc/hosts
@@ -156,7 +156,7 @@ clean_vm_hosts() {
             # Check if this VM exists in Multipass
             if ! echo "$multipass_vms" | grep -q "^$vm$"; then
                 warn "VM '$vm' no longer exists in Multipass, removing from /etc/hosts"
-                remove_vm_from_hosts "$vm"
+                vm_hosts_remove "$vm"
             fi
         fi
     done <<<"$host_vms"
@@ -194,7 +194,7 @@ main() {
             usage
             exit 1
         }
-        add_vm_to_hosts "$vm_name"
+        mvm_hosts_add "$vm_name"
         ;;
     remove)
         [[ -z "$vm_name" ]] && {
@@ -202,16 +202,16 @@ main() {
             usage
             exit 1
         }
-        remove_vm_from_hosts "$vm_name"
+        mvm_hosts_remove "$vm_name"
         ;;
     list)
-        list_vm_hosts
+        mvm_hosts_list
         ;;
     update)
-        update_all_vms
+        mvm_hosts_update_all
         ;;
     clean)
-        clean_vm_hosts
+        mvm_hosts_clean
         ;;
     --help | -h)
         usage

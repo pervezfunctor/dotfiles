@@ -1,6 +1,6 @@
-#compdef mp-vm
+#compdef mvm
 
-# Zsh completion for mp-vm script
+# Zsh completion for mvm script
 
 _multipass_vm_get_vms() {
     local vms

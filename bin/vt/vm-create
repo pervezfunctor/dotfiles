@@ -322,9 +322,7 @@ parse_args() {
     done
 
     if [[ -z "$DISTRO" ]]; then
-        fail "Distribution is required. Use --distro ubuntu|fedora|arch|debian"
-        usage
-        exit 1
+        DISTRO="ubuntu"
     fi
 
 }

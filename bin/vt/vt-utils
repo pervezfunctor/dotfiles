@@ -71,3 +71,15 @@ default_username() {
 
   echo "$username"
 }
+
+incus_check() {
+  if ! has_cmd incus; then
+    fail "incus command not found. Please install Incus first."
+    exit 1
+  fi
+
+  if ! incus info >/dev/null 2>&1; then
+    fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
+    exit 1
+  fi
+}

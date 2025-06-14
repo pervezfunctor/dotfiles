@@ -44,10 +44,15 @@ create_session() {
     local ssh_cmds=()
     create_commands ssh_cmds "ivm" "${IVM_DISTRO_LIST[@]}"
 
-    # start_sessions "ivm" "${ssh_cmds[@]}"
+    start_sessions "ivm" "${ssh_cmds[@]}"
 
     if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
         fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."
+        return 1
+    fi
+
+    if ! tmux attach-session -t "$SESSION_NAME"; then
+        fail "Failed to attach to tmux session '$SESSION_NAME'."
         return 1
     fi
 }

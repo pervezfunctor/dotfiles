@@ -1,9 +1,11 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
-# shellcheck disable=SC1091
 source "$(dirname "$0")/dck-utils"
+source "$(dirname "$0")/all-utils"
 
 DCK_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
 
@@ -102,50 +104,13 @@ restart_all() {
 }
 
 usage() {
-  cat <<EOF
-Usage: $(basename "$0") [OPTION]
-
-Docker containers for various Linux distributions.
-
-Options:
-  create    # Create all Docker containers (default if no option)
-  delete    # Delete all Docker containers
-  start     # Start all Docker containers
-  stop      # Stop all Docker containers
-  restart   # Restart all Docker containers
-  --help    # Display this help message
-
-Examples:
-  $(basename "$0")           # Create containers or attach if exists
-  $(basename "$0") create    # Force create all containers
-  $(basename "$0") delete    # Delete all containers
-  $(basename "$0") start     # Start all containers
-  $(basename "$0") stop      # Stop all containers
-  $(basename "$0") restart   # Restart all containers
-EOF
+  all_usage "docker" "containers"
 }
 
 main() {
   check_dck
 
-  if [[ "$1" == "delete" ]]; then
-    delete_all
-  elif [[ "$1" == "start" ]]; then
-    start_all
-  elif [[ "$1" == "stop" ]]; then
-    stop_all
-  elif [[ "$1" == "restart" ]]; then
-    restart_all
-  elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
-    usage
-    exit 0
-  elif [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
-    create_all
-  else
-    fail "Unknown option: $1"
-    usage
-    exit 1
-  fi
+  all_parse_args "$@"
 }
 
 main "$@"

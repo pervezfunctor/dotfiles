@@ -1,13 +1,15 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
-# shellcheck disable=SC1091
 source "$(dirname "$0")/vm-utils"
+source "$(dirname "$0")/all-utils"
 
 VM_EASY_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian")
 
-create_all() {
+all_create() {
   slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
 
   for distro in "${VM_EASY_DISTRO_LIST[@]}"; do
@@ -23,22 +25,7 @@ create_all() {
   slog "You can access them using: virsh console <vm-name>"
 }
 
-usage() {
-  cat <<EOF
-Usage: $(basename "$0") [OPTION]
-
-Manage all VMs created by vm-create.
-
-Options:
-  delete  Delete all VMs created by vm-create
-  start   Start all VMs created by vm-create
-  stop    Stop all VMs created by vm-create
-  restart Restart all VMs created by vm-create
-  --help        Display this help message
-EOF
-}
-
-delete_all() {
+all_delete() {
   slog "Deleting all VMs..."
   for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
     if vm_exists "${vm}-easy"; then
@@ -49,7 +36,7 @@ delete_all() {
   success "All VMs deleted successfully!"
 }
 
-start_all() {
+all_start() {
   slog "Starting all VMs..."
   for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
     if vm_exists "${vm}-easy"; then
@@ -60,7 +47,7 @@ start_all() {
   success "All VMs started successfully!"
 }
 
-stop_all() {
+all_stop() {
   slog "Stopping all VMs..."
   for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
     if vm_exists "${vm}-easy"; then
@@ -71,7 +58,7 @@ stop_all() {
   success "All VMs stopped successfully!"
 }
 
-restart_all() {
+all_restart() {
   slog "Restarting all VMs..."
   for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
     if vm_exists "${vm}-easy"; then
@@ -83,46 +70,12 @@ restart_all() {
 }
 
 usage() {
-  cat <<EOF
-Usage: $(basename "$0") [OPTION]
-
-Manage VMs created by vm-easy.
-
-Options:
-  create       # Create all VMs (default if no option)
-  delete       # Delete all VMs
-  start        # Start all VMs
-  stop         # Stop all VMs
-  restart      # Restart all VMs
-  --help       # Display this help message
-EOF
+  all_usage "libvirt" "VMs"
 }
 
 main() {
   virt_check_prerequisites
-
-  if [[ $# -eq 0 ]]; then
-    create_all "$@"
-    exit 0
-  fi
-
-  if [[ "$1" == "delete" ]]; then
-    delete_all
-  elif [[ "$1" == "start" ]]; then
-    start_all
-  elif [[ "$1" == "stop" ]]; then
-    stop_all
-  elif [[ "$1" == "restart" ]]; then
-    restart_all
-  elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
-    usage
-    exit 0
-  else
-    slog "Invalid option: $1"
-    slog "Use --help for usage information."
-    usage
-    exit 1
-  fi
+  all_parse_args "$@"
 }
 
 main "$@"

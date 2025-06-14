@@ -5,12 +5,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/dt-utils"
 
-UBUNTU_CT="ubuntu"
-FEDORA_CT="fedora"
-ARCH_CT="arch"
-DEBIAN_CT="debian"
-ALPINE_CT="alpine"
-NIX_CT="nix"
+DT_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "alpine" "nix")
 
 SESSION_NAME="DT_TMUX"
 
@@ -43,30 +38,15 @@ check_distrobox() {
     fi
 }
 
-container_exists() {
+dt_exists() {
     local container_name="$1"
     distrobox list | grep -q "^$container_name "
     return $?
 }
 
-create_container_cmd() {
-    local container_name="$1"
-
-    if ! container_exists "$container_name"; then
-        echo "echo 'Container $container_name does not exist. Create it with: dt create $container_name $container_name'"
-        return
-    fi
-
-    if ! distrobox list | grep -q "^$container_name.*Up"; then
-        echo "echo 'Container $container_name is not running. Starting it...'; distrobox enter $container_name"
-    else
-        echo "distrobox enter $container_name"
-    fi
-}
-
 dt_check_exists() {
     local container_name="$1"
-    if ! container_exists "$container_name"; then
+    if ! dt_exists "$container_name"; then
         fail "Container '$container_name' does not exist"
         return 1
     fi
@@ -74,86 +54,24 @@ dt_check_exists() {
 }
 
 create_session() {
-    local force="${1:-false}"
+    tmux_session "$SESSION_NAME" "$1"
 
-    if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-        if [[ "$force" == "true" ]]; then
-            slog "Killing existing session and creating a new one..."
-            tmux kill-session -t "$SESSION_NAME"
-        else
-            slog "Session '$SESSION_NAME' already exists, attaching..."
-            tmux attach-session -t "$SESSION_NAME"
-            return
-        fi
+    slog "Creating tmux session '$SESSION_NAME' with SSH connections to Distrobox containers..."
+
+    local ssh_cmds=()
+    create_commands ssh_cmds "dt" "${DT_DISTRO_LIST[@]}"
+
+    start_sessions "dt" "${ssh_cmds[@]}"
+
+    if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
+        fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to containers."
+        return 1
     fi
 
-    for container in "$UBUNTU_CT" "$FEDORA_CT" "$ARCH_CT" "$DEBIAN_CT" "$ALPINE_CT" "$NIX_CT"; do
-        dt_check_exists "$container" || return 1
-    done
-
-    slog "Creating tmux session with connections to 6 distrobox containers..."
-
-    UBUNTU_CMD=$(create_container_cmd "$UBUNTU_CT")
-    FEDORA_CMD=$(create_container_cmd "$FEDORA_CT")
-    ARCH_CMD=$(create_container_cmd "$ARCH_CT")
-    DEBIAN_CMD=$(create_container_cmd "$DEBIAN_CT")
-    ALPINE_CMD=$(create_container_cmd "$ALPINE_CT")
-    NIX_CMD=$(create_container_cmd "$NIX_CT")
-
-    # Create a new session with the first container
-    tmux new-session -d -s "$SESSION_NAME" -n "Containers" "$UBUNTU_CMD"
-
-    # Split the window for the remaining containers
-    tmux split-window -h -t "$SESSION_NAME:0.0" "$FEDORA_CMD"
-    tmux split-window -v -t "$SESSION_NAME:0.0" "$ARCH_CMD"
-    tmux split-window -v -t "$SESSION_NAME:0.1" "$DEBIAN_CMD"
-
-    # Create a second window for the remaining containers
-    tmux new-window -t "$SESSION_NAME:1" -n "More" "$ALPINE_CMD"
-    tmux split-window -h -t "$SESSION_NAME:1.0" "$NIX_CMD"
-
-    # Set layout for both windows
-    tmux select-layout -t "$SESSION_NAME:0" tiled
-    tmux select-layout -t "$SESSION_NAME:1" even-horizontal
-
-    # Start with the first window
-    tmux select-window -t "$SESSION_NAME:0"
-
-    tmux attach-session -t "$SESSION_NAME"
-
-    success "Connected to all containers in tmux session"
-}
-
-attach_session() {
-    if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-        warn "Session '$SESSION_NAME' does not exist. Creating it..."
-        create_session
-        return
+    if ! tmux attach-session -t "$SESSION_NAME"; then
+        fail "Failed to attach to tmux session '$SESSION_NAME'."
+        return 1
     fi
-
-    slog "Attaching to session '$SESSION_NAME'..."
-    tmux attach-session -t "$SESSION_NAME"
-}
-
-detach_session() {
-    if [[ -z "${TMUX:-}" ]]; then
-        fail "Not currently in a tmux session"
-        exit 1
-    fi
-
-    slog "Detaching from tmux session..."
-    tmux detach-client
-}
-
-destroy_session() {
-    if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-        warn "Session '$SESSION_NAME' does not exist"
-        return
-    fi
-
-    slog "Destroying session '$SESSION_NAME'..."
-    tmux kill-session -t "$SESSION_NAME"
-    success "Session destroyed"
 }
 
 main() {
@@ -163,23 +81,20 @@ main() {
     local command="${1:-}"
 
     case "$command" in
-    create)
+    create | -c | --create | "")
         create_session "true"
         ;;
     attach)
-        attach_session
+        attach_session "$SESSION_NAME"
         ;;
     detach)
-        detach_session
+        detach_session "$SESSION_NAME"
         ;;
     destroy)
-        destroy_session
+        destroy_session "$SESSION_NAME"
         ;;
     help | --help | -h)
         usage
-        ;;
-    "")
-        create_session
         ;;
     *)
         fail "Unknown option: $command"

@@ -1,13 +1,15 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
-# shellcheck disable=SC1091
 source "$(dirname "$0")/vm-utils"
+source "$(dirname "$0")/all-utils"
 
 VM_DISTRO_LIST=("ubuntu" "fedora" "alpine" "debian" "arch")
 
-create_all() {
+all_create() {
     slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Alpine, Debian)..."
 
     for distro in "${VM_DISTRO_LIST[@]}"; do
@@ -19,34 +21,6 @@ create_all() {
         fi
     done
 
-    # if vm_exists "dev"; then
-    #     slog "Ubuntu VM already exists, skipping..."
-    # else
-    #     slog "Creating Ubuntu VM: dev"
-    #     vm-create --distro ubuntu --name dev --release noble --docker --brew --dotfiles min
-    # fi
-
-    # if vm_exists "min"; then
-    #     slog "Fedora VM already exists, skipping..."
-    # else
-    #     slog "Creating Fedora VM: min"
-    #     vm-create --distro fedora --name min --dotfiles min
-    # fi
-
-    # if vm_exists "incus"; then
-    #     slog "Alpine VM already exists, skipping..."
-    # else
-    #     slog "Creating Alpine VM: incus"
-    #     vm-create --distro alpine --name incus --dotfiles min
-    # fi
-
-    # if vm_exists "nix"; then
-    #     slog "Debian VM already exists, skipping..."
-    # else
-    #     slog "Creating Debian VM: nix"
-    #     vm-create --distro debian --name nix --nix
-    # fi
-
     slog "Listing created VMs:"
     vm_list
 
@@ -55,21 +29,10 @@ create_all() {
 }
 
 usage() {
-    cat <<EOF
-Usage: $(basename "$0") [OPTION]
-
-Manage all VMs created by vm-create.
-
-Options:
-  delete  Delete all VMs created by vm-create
-  start   Start all VMs created by vm-create
-  stop    Stop all VMs created by vm-create
-  restart Restart all VMs created by vm-create
-  --help        Display this help message
-EOF
+    all_usage "libvirt" "VMs"
 }
 
-delete_all() {
+all_delete() {
     slog "Deleting all VMs..."
     for vm in "${VM_DISTRO_LIST[@]}"; do
         if vm_exists "${vm}-virt"; then
@@ -80,7 +43,7 @@ delete_all() {
     success "All VMs deleted successfully!"
 }
 
-start_all() {
+all_start() {
     slog "Starting all VMs..."
     for vm in "${VM_DISTRO_LIST[@]}"; do
         if vm_exists "${vm}-virt"; then
@@ -91,7 +54,7 @@ start_all() {
     success "All VMs started successfully!"
 }
 
-stop_all() {
+all_stop() {
     slog "Stopping all VMs..."
     for vm in "${VM_DISTRO_LIST[@]}"; do
         if vm_exists "${vm}-virt"; then
@@ -102,7 +65,7 @@ stop_all() {
     success "All VMs stopped successfully!"
 }
 
-restart_all() {
+all_restart() {
     slog "Restarting all VMs..."
     for vm in "${VM_DISTRO_LIST[@]}"; do
         if vm_exists "${vm}-virt"; then
@@ -113,55 +76,9 @@ restart_all() {
     success "All VMs restarted successfully!"
 }
 
-usage() {
-    cat <<EOF
-Usage: $(basename "$0") [OPTION]
-
-Manage all VMs created by vm-all.
-
-Options:
-  create       Create all VMs (default if no option)
-  delete       Delete all VMs
-  start        Start all VMs
-  stop         Stop all VMs
-  restart      Restart all VMs
-  --help       Display this help message
-
-Examples:
-  $(basename "$0")           # Create VMs or attach if exists
-  $(basename "$0") delete    # Delete all VMs
-  $(basename "$0") start     # Start all VMs
-  $(basename "$0") stop      # Stop all VMs
-  $(basename "$0") restart   # Restart all VMs
-EOF
-}
-
 main() {
     virt_check_prerequisites
-
-    if [[ $# -eq 0 ]]; then
-        create_all "$@"
-        exit 0
-    fi
-
-    if [[ "$1" == "delete" ]]; then
-        delete_all
-    elif [[ "$1" == "start" ]]; then
-        start_all
-    elif [[ "$1" == "stop" ]]; then
-        stop_all
-    elif [[ "$1" == "restart" ]]; then
-        restart_all
-    elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
-        usage
-        exit 0
-    elif [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
-        create_all
-    else
-        fail "Unknown option: $1"
-        usage
-        exit 1
-    fi
+    all_parse_args "$@"
 }
 
 main "$@"
