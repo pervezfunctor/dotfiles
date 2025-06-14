@@ -1,9 +1,9 @@
 #! /usr/bin/env bash
 
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+
 # shellcheck disable=SC1091
 source "$DOT_DIR/share/utils"
-
-export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
 [[ -d "$DOT_DIR" ]] || err_exit "Please clone dotfiles to $DOT_DIR"
 

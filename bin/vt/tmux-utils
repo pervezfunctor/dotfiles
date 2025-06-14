@@ -2,72 +2,66 @@
 
 set -euo pipefail
 
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
 tmux_grid() {
-  if ! has_cmd tmux; then
-    fail "tmux is not installed. Please install it first."
+  if ! command -v tmux &>/dev/null; then
+    echo "Error: tmux is not installed. Please install it first." >&2
     return 1
   fi
 
-  if [ $# -lt 1 ]; then
-    fail "Usage: tmux-grid tmux-session-name command1 command2 [command3 ...]"
+  if [ "$#" -lt 2 ]; then
+    echo "Usage: tmux_grid <session-name> <command1> [command2 ...]" >&2
     return 1
   fi
 
-  local SESSION_NAME="$1"
+  local session_name="$1"
   shift
 
-  if [ -z "$SESSION_NAME" ]; then
+  if [ -z "$session_name" ]; then
     echo "Error: Session name cannot be empty." >&2
     return 1
   fi
 
-  if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    echo "Creating new tmux session '$SESSION_NAME'..."
-  else
-    echo "Session '$SESSION_NAME' already exists. Attaching to it..."
-    tmux attach-session -t "$SESSION_NAME"
+  if tmux has-session -t "$session_name" 2>/dev/null; then
+    echo "Session '$session_name' already exists. Attaching to it..."
+    tmux attach-session -t "$session_name"
     return 0
   fi
 
-  local -a CMDS=("$@")
-  N=${#CMDS[@]}
+  local base_index
+  base_index=$(tmux show-options -gqv base-index 2>/dev/null)
+  base_index=${base_index:-0}
 
-  if [ "$N" -gt 0 ] && command -v bc &>/dev/null; then
-    sqrt_n=$(echo "sqrt($N)" | bc)
-    cols=${sqrt_n}
-    while :; do
-      rows=$(((N + cols - 1) / cols))
-      if [ "$rows" -ge "$cols" ]; then
-        break
-      fi
-      cols=$((cols - 1))
-    done
-    echo "Preparing a grid for $N commands (aiming for ~$rows x $cols)..."
-  else
-    echo "Preparing a grid for $N commands..."
-  fi
+  local pane_base_index
+  pane_base_index=$(tmux show-options -gqv pane-base-index 2>/dev/null)
+  pane_base_index=${pane_base_index:-0}
 
-  tmux new-session -d -s "$SESSION_NAME" -n "grid"
+  local -a cmds=("$@")
+  local num_cmds=${#cmds[@]}
 
-  for ((i = 1; i < N; i++)); do
-    tmux split-window -t "$SESSION_NAME:0"
-    tmux select-layout -t "$SESSION_NAME:0" tiled
+  echo "Creating new tmux session '$session_name' for $num_cmds command(s)..."
+
+  tmux new-session -d -s "$session_name" -n "grid"
+
+  for ((i = 1; i < num_cmds; i++)); do
+    tmux split-window -t "$session_name:$base_index"
+    tmux select-layout -t "$session_name:$base_index" tiled
   done
 
-  for ((i = 0; i < N; i++)); do
-    tmux send-keys -t "$SESSION_NAME:0.$i" "${CMDS[$i]}" C-m
+  for ((i = 0; i < num_cmds; i++)); do
+    local pane_index=$((pane_base_index + i))
+    local target_pane="$session_name:$base_index.$pane_index"
+    tmux send-keys -t "$target_pane" "${cmds[$i]}" C-m
   done
 
-  echo "Attaching to session '$SESSION_NAME'."
-  tmux attach-session -t "$SESSION_NAME"
+  tmux set-window-option -t "$session_name:$base_index" synchronize-panes on
 
+  echo "Attaching to session '$session_name'. Panes are synchronized."
+  tmux attach-session -t "$session_name"
 }
 
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  if [ $# -eq 0 ]; then
-    echo "Usage: $0 tmux-session-name command1 command2 [command3 ...]"
-    exit 1
-  fi
-
-  tmux_grid foo "$@"
-fi
+tmux_grid "$@"
