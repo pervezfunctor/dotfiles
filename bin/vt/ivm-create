@@ -15,7 +15,7 @@ unset PASSWORD
 unset SSH_KEY
 unset IMAGE
 
-VCPUS="4"
+VCPUS="3"
 MEMORY_MB="4096"
 DISK_SIZE="20GB"
 BRIDGE_IF="incusbr0"

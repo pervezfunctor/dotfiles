@@ -15,7 +15,7 @@ unset SSH_KEY
 unset IMAGE
 
 VCPUS="2"
-MEMORY_MB="1024"
+MEMORY_MB="2048"
 PRIVILEGED="false"
 
 usage() {
