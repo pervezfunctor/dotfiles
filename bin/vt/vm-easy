@@ -320,7 +320,7 @@ parse_args() {
 }
 
 main() {
-  check_libvirt
+  virt_check_prerequisites
 
   parse_args "$@"
   configure_distribution

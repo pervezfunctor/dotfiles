@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-# shellcheck disable=SC1090
-source ~/.ilm/share/utils
+# shellcheck disable=SC1091
+source "$(dirname "$0")/dt-utils"
 
 usage() {
     cat <<EOF
@@ -49,41 +49,6 @@ EXAMPLES:
 EOF
 }
 
-has_container() {
-    local container_name="$1"
-    distrobox list | grep -q "\b${container_name}\b" || return 1
-}
-
-check_container() {
-    local container_name="$1"
-
-    if ! has_container "$container_name"; then
-        fail "Container '$container_name' not found"
-        exit 1
-    fi
-}
-
-list_containers() {
-    slog "Listing all distrobox containers..."
-
-    echo
-    distrobox list
-
-    if has_cmd podman; then
-        echo
-        echo
-        echo
-        slog "Podman container details:"
-        podman ps -a --filter "label=manager=distrobox" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedHuman}}" 2>/dev/null || true
-    elif has_cmd docker; then
-        echo
-        echo
-        echo
-        slog "Docker container details:"
-        docker ps -a --filter "label=manager=distrobox" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}" 2>/dev/null || true
-    fi
-}
-
 install_distrobox() {
     slog "Installing distrobox using ilmi..."
 
@@ -116,30 +81,11 @@ install_distrobox() {
     fi
 }
 
-container_status() {
-    local container_name="$1"
-
-    check_container "$container_name"
-
-    slog "Status for container '$container_name':"
-
-    local engine
-    engine=$(distrobox list | grep "\b${container_name}\b" | awk '{print $NF}' | head -1)
-    if [[ -n "$engine" ]]; then
-        slog "Container engine details:"
-        if has_cmd podman; then
-            podman ps -a --filter "name=${container_name}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedHuman}}" 2>/dev/null || true
-        elif has_cmd docker; then
-            docker ps -a --filter "name=${container_name}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}" 2>/dev/null || true
-        fi
-    fi
-}
-
 create_container() {
     local distro="$1"
     local container_name="${2:-$distro}"
 
-    if has_container "$container_name"; then
+    if dt_exists "$container_name"; then
         fail "Container '$container_name' already exists"
         return 1
     fi
@@ -157,7 +103,7 @@ create_container() {
 start_container() {
     local container_name="$1"
 
-    check_container "$container_name"
+    dt_check_exists "$container_name"
 
     slog "Starting container '$container_name'..."
 
@@ -180,7 +126,7 @@ start_container() {
 stop_container() {
     local container_name="$1"
 
-    check_container "$container_name"
+    dt_check_exists "$container_name"
 
     slog "Stopping container '$container_name'..."
 
@@ -194,7 +140,7 @@ stop_container() {
 
 restart_container() {
     local container_name="$1"
-    check_container "$container_name"
+    dt_check_exists "$container_name"
 
     slog "Restarting container '$container_name'..."
     stop_container "$container_name"
@@ -209,7 +155,7 @@ restart_container() {
 delete_container() {
     local container_name="$1"
 
-    check_container "$container_name"
+    dt_check_exists "$container_name"
 
     warn "This will permanently delete container '$container_name' and all its data!"
     read -p "Are you sure? (y/N): " -r
@@ -236,7 +182,7 @@ delete_container() {
 enter_container() {
     local container_name="$1"
 
-    check_container "$container_name"
+    dt_check_exists "$container_name"
 
     slog "Entering container '$container_name'..."
     distrobox enter -nw --clean-path --name "$container_name"
@@ -247,7 +193,7 @@ run_in_container() {
     shift
     local command="$*"
 
-    check_container "$container_name"
+    dt_check_exists "$container_name"
 
     slog "Running command in container '$container_name': $command"
     distrobox enter -nw --clean-path --name "$container_name" -- "$@"
@@ -257,7 +203,7 @@ export_app() {
     local container_name="$1"
     local app_name="$2"
 
-    check_container "$container_name"
+    dt_check_exists "$container_name"
 
     slog "Exporting '$app_name' from container '$container_name'..."
     if distrobox-export --app "$app_name" --container "$container_name"; then
@@ -283,7 +229,7 @@ unexport_app() {
 upgrade_container() {
     local container_name="$1"
 
-    check_container "$container_name"
+    dt_check_exists "$container_name"
 
     slog "Upgrading packages in container '$container_name'..."
     if distrobox upgrade "$container_name"; then
@@ -297,7 +243,7 @@ upgrade_container() {
 show_logs() {
     local container_name="$1"
 
-    check_container "$container_name"
+    dt_check_exists "$container_name"
 
     slog "Showing logs for container '$container_name'..."
     echo
@@ -321,7 +267,7 @@ show_logs() {
 tail_logs() {
     local container_name="$1"
 
-    check_container "$container_name"
+    dt_check_exists "$container_name"
 
     slog "Following logs for container '$container_name' (Press Ctrl+C to stop)..."
     echo
@@ -417,10 +363,10 @@ install)
     install_distrobox
     ;;
 list)
-    list_containers
+    dt_list
     ;;
 status)
-    container_status "$container_name"
+    dt_state "$container_name"
     ;;
 create)
     create_container "${2:-}"

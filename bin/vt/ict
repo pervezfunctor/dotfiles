@@ -60,7 +60,7 @@ EOF
 
 container_status() {
     local container_name="$1"
-    check_container "$container_name"
+    ict_check_exists "$container_name"
 
     slog "Status for container '$container_name':"
     echo
@@ -77,9 +77,9 @@ create_container() {
 
 start_container() {
     local container_name="$1"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
-    check_container_running "$container_name" && {
+    ict_check_running "$container_name" && {
         warn "Container '$container_name' is already running"
         return 0
     }
@@ -97,9 +97,9 @@ start_container() {
 
 stop_container() {
     local container_name="$1"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
-    check_container_running "$container_name" || return 0
+    ict_check_running "$container_name" || return 0
 
     slog "Stopping container '$container_name'..."
     if incus stop "$container_name"; then
@@ -112,8 +112,8 @@ stop_container() {
 
 restart_container() {
     local container_name="$1"
-    check_container "$container_name" || return 1
-    check_container_running "$container_name" || return 0
+    ict_check_exists "$container_name" || return 1
+    ict_check_running "$container_name" || return 0
 
     slog "Restarting container '$container_name'..."
     if incus restart "$container_name"; then
@@ -128,7 +128,7 @@ restart_container() {
 
 delete_container() {
     local container_name="$1"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
     warn "This will permanently delete container '$container_name' and all its data!"
     read -p "Are you sure? (y/N): " -r
@@ -137,7 +137,7 @@ delete_container() {
         return 0
     fi
 
-    if is_container_running "$container_name"; then
+    if ict_running "$container_name"; then
         slog "Stopping container first..."
         incus stop "$container_name" --force
     fi
@@ -171,9 +171,9 @@ detect_container_user() {
 
 enter_shell() {
     local container_name="$1"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
-    check_container_running "$container_name" || return 1
+    ict_check_running "$container_name" || return 1
 
     # Try to find an appropriate user for this container
     local username
@@ -194,8 +194,8 @@ exec_in_container() {
     local container_name="$1"
     shift
     local command="$*"
-    check_container "$container_name" || return 1
-    check_container_running "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
+    ict_check_running "$container_name" || return 1
 
     slog "Executing command in container '$container_name': $command"
     incus exec "$container_name" -- "$@"
@@ -203,7 +203,7 @@ exec_in_container() {
 
 show_container_info() {
     local container_name="$1"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
     slog "Detailed information for container '$container_name':"
     echo
@@ -212,7 +212,7 @@ show_container_info() {
 
 show_container_config() {
     local container_name="$1"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
     slog "Configuration for container '$container_name':"
     echo
@@ -222,10 +222,10 @@ show_container_config() {
 show_logs() {
     local container_name="$1"
     local log_type="${2:-instance}"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
     local state
-    state=$(get_container_state "$container_name")
+    state=$(ict_state "$container_name")
 
     case "$log_type" in
     instance)
@@ -270,7 +270,7 @@ show_logs() {
 create_snapshot() {
     local container_name="$1"
     local snapshot_name="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
     slog "Creating snapshot '$snapshot_name' for container '$container_name'..."
     if incus snapshot "$container_name" "$snapshot_name"; then
@@ -284,7 +284,7 @@ create_snapshot() {
 restore_snapshot() {
     local container_name="$1"
     local snapshot_name="$2"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
     if [[ -z "$snapshot_name" ]]; then
         fail "Snapshot name required"
@@ -311,8 +311,8 @@ restore_snapshot() {
 copy_container() {
     local source_container="$1"
     local dest_container="$2"
-    check_container "$source_container" || return 1
-    check_container "$dest_container" && {
+    ict_check_exists "$source_container" || return 1
+    ict_check_exists "$dest_container" && {
         fail "Destination container '$dest_container' already exists"
         return 1
     }
@@ -343,10 +343,10 @@ copy_container() {
 
 show_container_ip() {
     local container_name="$1"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
     local ip
-    if ip=$(get_container_ip "$container_name"); then
+    if ip=$(ict_ip "$container_name"); then
         echo "IP: $ip"
         return 0
     else
@@ -400,7 +400,7 @@ list_host_usb_devices() {
 
 list_container_usb_devices() {
     local container_name="$1"
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
     slog "USB devices attached to container '$container_name':"
     echo
@@ -414,10 +414,10 @@ attach_usb_device() {
     local device_spec="$2"
     local device_name="${3:-usb-$(date +%s)}"
 
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
     local state
-    state=$(get_container_state "$container_name")
+    state=$(ict_state "$container_name")
 
     if [[ "$state" != "RUNNING" ]]; then
         fail "Container '$container_name' must be running to attach USB devices"
@@ -455,7 +455,7 @@ detach_usb_device() {
     local container_name="$1"
     local device_name="$2"
 
-    check_container "$container_name" || return 1
+    ict_check_exists "$container_name" || return 1
 
     slog "Detaching USB device '$device_name' from container '$container_name'..."
     if incus config device remove "$container_name" "$device_name"; then
@@ -480,11 +480,11 @@ fi
 command="$1"
 container_name="${2:-}"
 
-check_incus
+incus_check
 
 case "$command" in
 list)
-    list_containers
+    ict_list
     ;;
 list-remote-images)
     list_remote_images
@@ -567,7 +567,7 @@ ssh)
         usage
         exit 1
     }
-    ssh_to_container "$container_name" "${3:-}"
+    ict_ssh "$container_name" "${3:-}"
     ;;
 info)
     [[ -z "$container_name" ]] && {

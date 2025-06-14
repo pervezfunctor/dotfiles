@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# shellcheck disable=SC1091
+
+source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/vt-utils"
+
+check_docker() {
+  if ! has_cmd docker; then
+    fail "docker command not found. Please install Docker first."
+    slog "You can install it with: $0 install"
+    return 1
+  fi
+
+  if ! docker info >/dev/null 2>&1; then
+    fail "Docker daemon is not running or not accessible."
+    slog "Start Docker with: sudo systemctl start docker"
+    slog "Or add your user to docker group: sudo usermod -aG docker \$USER"
+    return 1
+  fi
+
+  return 0
+}
+
+dck_list() {
+  check_docker || return 1
+  slog "Listing all Docker containers..."
+  echo
+  docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}\t{{.CreatedAt}}"
+}
+
+dck_exists() {
+  docker ps -a --format '{{.Names}}' | grep -Fxq "$1"
+}
+
+dck_check_exists() {
+  local container_name="$1"
+  if ! dck_exists "$container_name"; then
+    fail "Container '$container_name' not found"
+    return 1
+  fi
+  return 0
+}
+
+dck_state() {
+  local container_name="$1"
+  check_docker || return 1
+  dck_check_exists "$container_name" || return 1
+
+  slog "Status for container '$container_name':"
+  echo
+  docker ps -a --filter "name=^${container_name}$" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}\t{{.CreatedAt}}"
+  echo
+
+  slog "Container details:"
+  docker inspect "$container_name" --format "{{json .}}" | jq -r '
+        "ID: " + .Id[:12] + "\n" +
+        "Image: " + .Config.Image + "\n" +
+        "State: " + .State.Status + "\n" +
+        "Started: " + .State.StartedAt + "\n" +
+        "IP Address: " + (.NetworkSettings.IPAddress // "N/A") + "\n" +
+        "Ports: " + ((.NetworkSettings.Ports // {}) | keys | join(", "))
+    ' 2>/dev/null || docker inspect "$container_name" | head -20
+}

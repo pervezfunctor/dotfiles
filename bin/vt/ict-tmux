@@ -48,7 +48,7 @@ create_session() {
     fi
 
     for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ! ct_exists "${ct}-ict"; then
+        if ! ict_exists "${ct}-ict"; then
             echo "VM '${ct}-ict' is not running. Starting it..."
             if ! ivm start "${ct}-ict"; then
                 fail "Failed to start container '${ct}-ict'. Please check its status."
@@ -103,7 +103,7 @@ destroy_session() {
 }
 
 main() {
-    check_prerequisites
+    ict_check_prerequisites
     check_tmux
 
     local command="${1:-}"

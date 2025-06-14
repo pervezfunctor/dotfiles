@@ -105,7 +105,7 @@ configure_alpine() {
 }
 
 main() {
-    check_libvirt
+    virt_check_prerequisites
     parse_args "$@"
     [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)
     if [[ ! -f "$SSH_KEY" ]]; then

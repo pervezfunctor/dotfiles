@@ -6,7 +6,7 @@ set -euo pipefail
 source "$(dirname "$0")/vm-utils"
 
 check_prerequisites() {
-    check_vm_prerequisites
+    vm_check_prerequisites
 
     if ! has_cmd vm-create; then
         fail "vm-create is not in PATH."
@@ -100,7 +100,7 @@ install_vm() {
 vm_status() {
     local vm_name="$1"
 
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     slog "Status for VM '$vm_name':"
     echo
@@ -122,7 +122,7 @@ create_vm() {
 autostart_vm() {
     local vm_name="$1"
 
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     slog "Setting VM '$vm_name' to start on boot..."
     virsh autostart "$vm_name"
@@ -132,10 +132,10 @@ autostart_vm() {
 start_vm() {
     local vm_name="$1"
 
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     local state
-    state=$(get_vm_state "$vm_name")
+    state=$(vm_state "$vm_name")
 
     if [[ "$state" == "running" ]]; then
         warn "VM '$vm_name' is already running"
@@ -160,7 +160,7 @@ stop_vm() {
     fi
 
     local state
-    state=$(get_vm_state "$vm_name")
+    state=$(vm_state "$vm_name")
 
     if [[ "$state" != "running" ]]; then
         warn "VM '$vm_name' is not running"
@@ -197,7 +197,7 @@ restart_vm() {
 
 destroy_vm() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     warn "Force stopping VM '$vm_name'..."
     if virsh destroy "$vm_name"; then
@@ -209,7 +209,7 @@ destroy_vm() {
 
 delete_vm() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     warn "This will permanently delete VM '$vm_name' and all its data!"
     read -p "Are you sure? (y/N): " -r
@@ -219,7 +219,7 @@ delete_vm() {
     fi
 
     local state
-    state=$(get_vm_state "$vm_name")
+    state=$(vm_state "$vm_name")
     if [[ "$state" == "running" ]]; then
         slog "Stopping VM first..."
         virsh destroy "$vm_name"
@@ -254,7 +254,7 @@ delete_vm() {
 
 connect_console() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     local state
     state=$(virsh domstate "$vm_name")
@@ -273,7 +273,7 @@ connect_console() {
 
 show_logs() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     slog "Showing logs for VM '$vm_name'..."
     echo
@@ -333,7 +333,7 @@ cleanup_vms() {
 
 show_ip() {
     local ip
-    ip=$(get_vm_ip "$vm_name")
+    ip=$(vm_ip "$vm_name")
     local ret=$?
     ip_errors "$ret" "$vm_name"
 
@@ -377,7 +377,7 @@ list_host_usb_devices() {
 
 list_vm_usb_devices() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     slog "USB devices attached to VM '$vm_name':"
     echo
@@ -439,7 +439,7 @@ attach_usb_device() {
     local device_spec="$2"
     local device_name="${3:-usb-$(date +%s)}"
 
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     local state
     state=$(virsh domstate "$vm_name")
@@ -517,7 +517,7 @@ detach_usb_device() {
     local vm_name="$1"
     local device_spec="$2"
 
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     local state
     state=$(virsh domstate "$vm_name")
@@ -622,7 +622,7 @@ list_host_disks() {
 
 list_vm_disks() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     slog "Disk devices attached to VM '$vm_name':"
     echo
@@ -705,7 +705,7 @@ attach_disk_device() {
     local device_path="$2"
     local device_name="${3:-disk-$(date +%s)}"
 
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     local state
     state=$(virsh domstate "$vm_name")
@@ -774,7 +774,7 @@ detach_disk_device() {
     local vm_name="$1"
     local device_path="$2"
 
-    check_vm "$vm_name" || return 1
+    vm_check_exists "$vm_name" || return 1
 
     local state
     state=$(virsh domstate "$vm_name")
@@ -835,7 +835,7 @@ command="$1"
 vm_name="${2:-}"
 
 if [[ "$command" != "install" ]]; then
-    check_libvirt
+    virt_check_prerequisites
 fi
 
 case "$command" in
@@ -843,7 +843,7 @@ install)
     install_vm
     ;;
 list)
-    list_vms
+    vm_list
     ;;
 status)
     [[ -z "$vm_name" ]] && {
@@ -932,7 +932,7 @@ ssh)
         usage
         exit 1
     }
-    ssh_to_vm "$vm_name" "${3:-}"
+    vm_ssh "$vm_name" "${3:-}"
     ;;
 usb-list)
     list_host_usb_devices

@@ -30,7 +30,7 @@ add_vm_to_hosts() {
     local vm_name="$1"
 
     local ip
-    ip=$(get_vm_ip "$vm_name")
+    ip=$(ivm_ip "$vm_name")
     local ret=$?
     if [[ $ret -ne 0 ]]; then
         fail "Could not get IP for Incus VM '$vm_name'. Is it running?"
@@ -116,7 +116,7 @@ command="$1"
 vm_name="${2:-}"
 
 main() {
-    check_ivm_prerequisites
+    ivm_check_exists_prerequisites
 
     case "$command" in
     add)

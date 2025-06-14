@@ -112,7 +112,7 @@ configure_distribution() {
     esac
 
     VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
-    USERNAME=$(get_default_username "$DISTRO")
+    USERNAME=$(default_username "$DISTRO")
     PASSWORD=${PASSWORD:-"$USERNAME"}
     PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
@@ -309,7 +309,7 @@ show_completion_info() {
     echo
 
     local ip
-    if ip=$(get_vm_ip "$VM_NAME"); then
+    if ip=$(ivm_ip "$VM_NAME"); then
         slog "SSH Access:"
         slog "  IP Address: $ip"
         slog "  Username: $USERNAME"
@@ -436,7 +436,7 @@ parse_args() {
 
 main() {
     slog "Starting Incus VM creation..."
-    check_ivm_prerequisites
+    ivm_check_exists_prerequisites
     parse_args "$@"
 
     [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)

@@ -81,16 +81,16 @@ install_incus() {
 list_vms() {
     slog "Listing all Incus VMs..."
     echo
-    incus_list_vms
+    ivm_list
 }
 
 vm_status() {
     local vm_name="$1"
-    check_vm "$vm_name"
+    ivm_check_exists "$vm_name"
 
     slog "Status for VM '$vm_name':"
     echo
-    incus_list_vms "$vm_name"
+    ivm_list "$vm_name"
     echo
 
     slog "Detailed information:"
@@ -104,9 +104,9 @@ create_vm() {
 start_vm() {
     local vm_name="$1"
 
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
-    is_running "$vm_name" && {
+    ivm_running "$vm_name" && {
         warn "VM '$vm_name' is already running"
         return 0
     }
@@ -123,9 +123,9 @@ start_vm() {
 stop_vm() {
     local vm_name="$1"
 
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
-    is_running "$vm_name" || {
+    ivm_running "$vm_name" || {
         warn "VM '$vm_name' is already stopped"
         return 0
     }
@@ -141,7 +141,7 @@ stop_vm() {
 
 restart_vm() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     slog "Restarting VM '$vm_name'..."
     if incus restart "$vm_name"; then
@@ -154,7 +154,7 @@ restart_vm() {
 
 delete_vm() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     warn "This will permanently delete VM '$vm_name' and all its data!"
     read -p "Are you sure? (y/N): " -r
@@ -164,7 +164,7 @@ delete_vm() {
     fi
 
     local state
-    state=$(get_vm_state "$vm_name")
+    state=$(ivm_state "$vm_name")
     if [[ "$state" == "RUNNING" ]]; then
         slog "Stopping VM first..."
         incus stop "$vm_name" --force
@@ -181,9 +181,9 @@ delete_vm() {
 
 connect_console() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
-    check_running "$vm_name" || return 1
+    ivm_check_exists_running "$vm_name" || return 1
 
     incus console "$vm_name"
 }
@@ -193,12 +193,12 @@ exec_in_vm() {
     shift
     local command="$*"
 
-    if ! has_vm "$vm_name"; then
+    if ! ivm_exists "$vm_name"; then
         fail "VM '$vm_name' not found"
         return 1
     fi
 
-    check_running "$vm_name" || return 1
+    ivm_check_exists_running "$vm_name" || return 1
 
     slog "Executing command in VM '$vm_name': $command"
     incus exec "$vm_name" -- "$@"
@@ -206,7 +206,7 @@ exec_in_vm() {
 
 show_vm_info() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     slog "Detailed information for VM '$vm_name':"
     echo
@@ -215,7 +215,7 @@ show_vm_info() {
 
 show_vm_config() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     slog "Configuration for VM '$vm_name':"
     echo
@@ -225,10 +225,10 @@ show_vm_config() {
 show_logs() {
     local vm_name="$1"
     local log_type="${2:-instance}"
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     local state
-    state=$(get_vm_state "$vm_name")
+    state=$(ivm_state "$vm_name")
 
     case "$log_type" in
     instance)
@@ -273,7 +273,7 @@ show_logs() {
 create_snapshot() {
     local vm_name="$1"
     local snapshot_name="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     slog "Creating snapshot '$snapshot_name' for VM '$vm_name'..."
     if incus snapshot "$vm_name" "$snapshot_name"; then
@@ -287,7 +287,7 @@ create_snapshot() {
 restore_snapshot() {
     local vm_name="$1"
     local snapshot_name="$2"
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     if [[ -z "$snapshot_name" ]]; then
         fail "Snapshot name required"
@@ -325,9 +325,9 @@ copy_vm() {
         return 1
     fi
 
-    check_vm "$source_vm" || return 1
+    ivm_check_exists "$source_vm" || return 1
 
-    check_vm "$dest_vm" && {
+    ivm_check_exists "$dest_vm" && {
         fail "Destination VM '$dest_vm' already exists"
         return 1
     }
@@ -346,7 +346,7 @@ cleanup_vms() {
 
     # List stopped VMs
     local stopped_vms
-    stopped_vms=$(incus_list_vms "" "--format csv --columns n,s" | grep ",STOPPED$" | cut -d',' -f1)
+    stopped_vms=$(ivm_list "" "--format csv --columns n,s" | grep ",STOPPED$" | cut -d',' -f1)
 
     if [[ -n "$stopped_vms" ]]; then
         slog "Stopped VMs found:"
@@ -371,13 +371,13 @@ cleanup_vms() {
 
 shell_to_vm() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
-    check_running "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
+    ivm_check_exists_running "$vm_name" || return 1
 
     local username="${2:-}"
 
     if [[ -z "$username" ]]; then
-        username=$(get_default_username "$vm_name")
+        username=$(default_username "$vm_name")
         slog "Auto-detected username: $username (override with: $0 shell $vm_name <username>)"
     fi
 
@@ -418,7 +418,7 @@ list_host_usb_devices() {
 
 list_vm_usb_devices() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     slog "USB devices attached to VM '$vm_name':"
     echo
@@ -432,10 +432,10 @@ attach_usb_device() {
     local device_spec="$2"
     local device_name="${3:-usb-$(date +%s)}"
 
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     local state
-    state=$(get_vm_state "$vm_name")
+    state=$(ivm_state "$vm_name")
 
     if [[ "$state" != "RUNNING" ]]; then
         fail "VM '$vm_name' must be running to attach USB devices"
@@ -474,7 +474,7 @@ detach_usb_device() {
     local vm_name="$1"
     local device_name="$2"
 
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     slog "Detaching USB device '$device_name' from VM '$vm_name'..."
     if incus config device remove "$vm_name" "$device_name"; then
@@ -500,7 +500,7 @@ list_host_disk_devices() {
 
 list_vm_disk_devices() {
     local vm_name="$1"
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     slog "Disk devices attached to VM '$vm_name':"
     echo
@@ -514,7 +514,7 @@ attach_disk_device() {
     local device_path="$2"
     local device_name="${3:-disk-$(basename "$device_path")}"
 
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     if [[ ! -b "$device_path" ]]; then
         fail "Device '$device_path' is not a valid block device"
@@ -522,7 +522,7 @@ attach_disk_device() {
     fi
 
     local state
-    state=$(get_vm_state "$vm_name")
+    state=$(ivm_state "$vm_name")
 
     if [[ "$state" != "RUNNING" ]]; then
         fail "VM '$vm_name' must be running to attach disk devices"
@@ -543,7 +543,7 @@ detach_disk_device() {
     local vm_name="$1"
     local device_name="$2"
 
-    check_vm "$vm_name" || return 1
+    ivm_check_exists "$vm_name" || return 1
 
     slog "Detaching disk device '$device_name' from VM '$vm_name'..."
     if incus config device remove "$vm_name" "$device_name"; then
@@ -563,7 +563,7 @@ command="$1"
 vm_name="${2:-}"
 
 if [[ "$command" != "install" ]]; then
-    check_ivm_prerequisites
+    ivm_check_exists_prerequisites
 fi
 
 case "$command" in
@@ -657,7 +657,7 @@ ip)
         usage
         exit 1
     }
-    show_ip "$vm_name"
+    ivm_show_ip "$vm_name"
     ;;
 ssh)
     [[ -z "$vm_name" ]] && {
@@ -665,7 +665,7 @@ ssh)
         usage
         exit 1
     }
-    ssh_to_vm "$vm_name" "${3:-}"
+    ivm_ssh "$vm_name" "${3:-}"
     ;;
 info)
     [[ -z "$vm_name" ]] && {

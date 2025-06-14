@@ -251,7 +251,7 @@ show_completion_info() {
     echo
 
     local ip
-    if ip=$(get_container_ip "$CONTAINER_NAME"); then
+    if ip=$(ict_ip "$CONTAINER_NAME"); then
         slog "SSH Access:"
         slog "  IP Address: $ip"
         slog "  Username: $USERNAME"
@@ -335,7 +335,7 @@ parse_args() {
 main() {
     slog "Starting Incus LXC container creation..."
 
-    check_incus
+    incus_check
 
     parse_args "$@"
     [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)

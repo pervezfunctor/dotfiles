@@ -7,14 +7,87 @@ DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
 source "$DOT_DIR/share/utils"
 
+tmux_session() {
+  local SESSION_NAME="${1}"
+
+  if [[ -z "$SESSION_NAME" ]]; then
+    fail "Error: Session name cannot be empty." >&2
+    return 1
+  fi
+
+  local force="${2:-false}"
+
+  if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    if [[ "$force" == "true" ]]; then
+      slog "Session '$SESSION_NAME' exists. Recreating..."
+      tmux kill-session -t "$SESSION_NAME"
+    else
+      slog "Session '$SESSION_NAME' already exists. Attaching..."
+      tmux attach-session -t "$SESSION_NAME"
+      return 0
+    fi
+  fi
+
+}
+
+attach_session() {
+  local SESSION_NAME="${1:-$SESSION_NAME}"
+  if [[ -z "$SESSION_NAME" ]]; then
+    fail "Error: Session name cannot be empty." >&2
+    return 1
+  fi
+
+  if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    warn "Session '$SESSION_NAME' does not exist. Creating it..."
+    create_session
+    return
+  fi
+
+  slog "Attaching to session '$SESSION_NAME'..."
+  tmux attach-session -t "$SESSION_NAME"
+}
+
+detach_session() {
+  local SESSION_NAME="${1:-$SESSION_NAME}"
+  if [[ -z "$SESSION_NAME" ]]; then
+    fail "Error: Session name cannot be empty." >&2
+    return 1
+  fi
+
+  if [[ -z "${TMUX:-}" ]]; then
+    fail "Not currently in a tmux session"
+    exit 1
+  fi
+
+  slog "Detaching from tmux session..."
+  tmux detach-client
+}
+
+destroy_session() {
+  local SESSION_NAME="${1:-$SESSION_NAME}"
+  if [[ -z "$SESSION_NAME" ]]; then
+    fail "Error: Session name cannot be empty." >&2
+    return 1
+  fi
+
+  if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    warn "Session '$SESSION_NAME' does not exist"
+    return
+  fi
+
+  slog "Destroying session '$SESSION_NAME'..."
+  tmux kill-session -t "$SESSION_NAME"
+  success "Session destroyed"
+}
+
 tmux_grid() {
-  if ! command -v tmux &>/dev/null; then
-    echo "Error: tmux is not installed. Please install it first." >&2
+  if ! has_cmd tmux; then
+    fail "Error: tmux is not installed. Please install it first." >&2
     return 1
   fi
 
   if [ "$#" -lt 2 ]; then
-    echo "Usage: tmux_grid <session-name> <command1> [command2 ...]" >&2
+    fail "Usage: tmux_grid <session-name> <command1> [command2 ...]" >&2
     return 1
   fi
 
@@ -22,12 +95,12 @@ tmux_grid() {
   shift
 
   if [ -z "$session_name" ]; then
-    echo "Error: Session name cannot be empty." >&2
+    fail "Error: Session name cannot be empty." >&2
     return 1
   fi
 
   if tmux has-session -t "$session_name" 2>/dev/null; then
-    echo "Session '$session_name' already exists. Attaching to it..."
+    slog "Session '$session_name' already exists. Attaching to it..."
     tmux attach-session -t "$session_name"
     return 0
   fi
@@ -43,7 +116,7 @@ tmux_grid() {
   local -a cmds=("$@")
   local num_cmds=${#cmds[@]}
 
-  echo "Creating new tmux session '$session_name' for $num_cmds command(s)..."
+  slog "Creating new tmux session '$session_name' for $num_cmds command(s)..."
 
   tmux new-session -d -s "$session_name" -n "grid"
 
@@ -58,10 +131,56 @@ tmux_grid() {
     tmux send-keys -t "$target_pane" "${cmds[$i]}" C-m
   done
 
-  tmux set-window-option -t "$session_name:$base_index" synchronize-panes on
+  # tmux set-window-option -t "$session_name:$base_index" synchronize-panes on
+  # success "Attaching to session '$session_name'. Panes are synchronized."
 
-  echo "Attaching to session '$session_name'. Panes are synchronized."
   tmux attach-session -t "$session_name"
 }
 
-tmux_grid "$@"
+# for testing purposes
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  tmux_grid "$@"
+fi
+
+create_commands() {
+  if [ "$#" -lt 3 ]; then
+    echo "Usage: create_commands <output_array_name> <prefix> <distro1> ..." >&2
+    return 1
+  fi
+
+  local -n cmds
+  cmds="$1"
+  local cmd_prefix="$2"
+  shift 2
+
+  local -a distro_list=("$@")
+
+  cmds=()
+
+  for distro in "${distro_list[@]}"; do
+    cmds+=("${cmd_prefix} ssh ${distro}-${cmd_prefix}")
+  done
+}
+
+start_sessions() {
+  local command="$1"
+  shift
+
+  if [[ -z "$command" ]]; then
+    fail "Error: Command cannot be empty." >&2
+    return 1
+  fi
+
+  local -a distros
+  distros=("$@")
+
+  for d in "${distros[@]}"; do
+    if ! has_vm "${d}-${command}"; then
+      slog "VM '${d}-${command}' is not running. Starting it..."
+      if ! ${command} start "${d}-${command}"; then
+        fail "Failed to start '${d}-${command}'. Please check its status."
+        return 1
+      fi
+    fi
+  done
+}

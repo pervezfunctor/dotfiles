@@ -11,7 +11,7 @@ list_all() {
     slog "Listing all Incus LXC containers..."
 
     for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ct_exists "${ct}-ict"; then
+        if ict_exists "${ct}-ict"; then
             incus list "${ct}-ict" --format=compact --columns=ns4
             echo
         else
@@ -35,7 +35,7 @@ create_all() {
     slog "Creating Incus LXC containers (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
 
     for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ! ct_exists "${ct}-ict"; then
+        if ! ict_exists "${ct}-ict"; then
             slog "Creating container: ${ct}-ict"
             ict-create --distro "$ct" --name "${ct}-ict"
         fi
@@ -51,7 +51,7 @@ create_all() {
 delete_all() {
     slog "Deleting all containers..."
     for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ct_exists "${ct}-ict"; then
+        if ict_exists "${ct}-ict"; then
             slog "Deleting container: ${ct}-ict"
             ict delete "${ct}-ict"
         fi
@@ -62,7 +62,7 @@ delete_all() {
 start_all() {
     slog "Starting all containers..."
     for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ct_exists "${ct}-ict"; then
+        if ict_exists "${ct}-ict"; then
             slog "Starting container: ${ct}-ict"
             ict start "${ct}-ict"
         fi
@@ -73,7 +73,7 @@ start_all() {
 stop_all() {
     slog "Stopping all containers..."
     for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ct_exists "${ct}-ict"; then
+        if ict_exists "${ct}-ict"; then
             slog "Stopping container: ${ct}-ict"
             ict stop "${ct}-ict"
         fi
@@ -84,7 +84,7 @@ stop_all() {
 restart_all() {
     slog "Restarting all containers..."
     for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ct_exists "${ct}-ict"; then
+        if ict_exists "${ct}-ict"; then
             slog "Restarting container: ${ct}-ict"
             ict restart "${ct}-ict"
             sleep 1
@@ -117,7 +117,7 @@ EOF
 }
 
 main() {
-    check_incus
+    incus_check
 
     if [[ $# -eq 0 ]]; then
         create_all

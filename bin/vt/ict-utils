@@ -3,7 +3,7 @@
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vt-utils"
 
-check_incus() {
+incus_check() {
   if ! has_cmd incus; then
     fail "incus command not found. Please install Incus first."
     exit 1
@@ -15,52 +15,7 @@ check_incus() {
   fi
 }
 
-list_containers() {
-  check_incus || return 1
-
-  slog "Listing all Incus containers..."
-  echo
-
-  incus list type=container
-}
-
-ct_exists() {
-  incus list type=container --format csv --columns n | grep -q "^${1}$"
-}
-
-get_container_state() {
-  local container_name="$1"
-  incus list type=container "$container_name" --format csv --columns s | head -1
-}
-
-is_container_running() {
-  local container_name="$1"
-  local state
-  state=$(get_container_state "$container_name")
-  [[ "$state" == "RUNNING" ]]
-}
-
-check_container_running() {
-  local container_name="$1"
-  if ! is_container_running "$container_name"; then
-    fail "Container '$container_name' is not running (state: $(get_container_state "$container_name"))"
-    return 1
-  fi
-}
-
-has_container() {
-  incus list type=container --format csv --columns n | grep -q "^${1}$" || return 1
-}
-
-check_container() {
-  local container_name="$1"
-  if ! has_container "$container_name"; then
-    fail "Container '$container_name' not found"
-    return 1
-  fi
-}
-
-check_prerequisites() {
+ict_check_prerequisites() {
   local missing=()
   for cmd in incus openssl curl wget tee mktemp; do
     if ! has_cmd "$cmd"; then
@@ -89,14 +44,55 @@ check_prerequisites() {
   }
 }
 
-get_container_ip() {
+ict_list() {
+  incus_check || return 1
+
+  slog "Listing all Incus containers..."
+  echo
+
+  incus list type=container
+}
+
+ict_exists() {
+  incus list type=container --format csv --columns n | grep -q "^${1}$"
+}
+
+ict_state() {
+  local container_name="$1"
+  incus list type=container "$container_name" --format csv --columns s | head -1
+}
+
+ict_running() {
+  local container_name="$1"
+  local state
+  state=$(ict_state "$container_name")
+  [[ "$state" == "RUNNING" ]]
+}
+
+ict_check_running() {
+  local container_name="$1"
+  if ! ict_running "$container_name"; then
+    fail "Container '$container_name' is not running (state: $(ict_state "$container_name"))"
+    return 1
+  fi
+}
+
+ict_check_exists() {
+  local container_name="$1"
+  if ! ict_exists "$container_name"; then
+    fail "Container '$container_name' not found"
+    return 1
+  fi
+}
+
+ict_ip() {
   local container_name="$1"
 
-  if ! ct_exists "$container_name"; then
+  if ! ict_exists "$container_name"; then
     return 1
   fi
 
-  if ! is_container_running "$container_name"; then
+  if ! ict_running "$container_name"; then
     return 2
   fi
 
@@ -111,12 +107,12 @@ get_container_ip() {
   return 0
 }
 
-ssh_to_container() {
+ict_ssh() {
   local container_name="$1"
   local username="${2:-}"
-  check_container "$container_name" || return 1
+  ict_check_exists "$container_name" || return 1
 
-  if ! is_container_running "$container_name"; then
+  if ! ict_running "$container_name"; then
     fail "Container '$container_name' is not running"
     slog "Start it with: $0 start $container_name"
     return 1
@@ -129,7 +125,7 @@ ssh_to_container() {
   fi
 
   local ip
-  if ip=$(get_container_ip "$container_name"); then
+  if ip=$(ict_ip "$container_name"); then
     slog "Connecting to $container_name ($ip) as $username..."
     ssh "$username@$ip"
     return 0

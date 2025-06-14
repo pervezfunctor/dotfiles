@@ -99,7 +99,7 @@ EOF
 }
 
 main() {
-  check_libvirt
+  virt_check_prerequisites
 
   if [[ $# -eq 0 ]]; then
     create_all "$@"

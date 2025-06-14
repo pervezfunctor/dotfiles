@@ -2,10 +2,8 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/dck-utils"
 
 DCK_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
 

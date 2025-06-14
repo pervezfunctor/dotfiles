@@ -10,7 +10,7 @@ IVM_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tw")
 
 list_all() {
     for vm in "${IVM_DISTRO_LIST[@]}"; do
-        if has_vm "${vm}-ivm"; then
+        if ivm_exists "${vm}-ivm"; then
             incus list "${vm}-ivm" --format=compact --columns=ns4
         else
             warn "VM: ${vm}-ivm does not exist"
@@ -22,7 +22,7 @@ create_all() {
     slog "Creating Incus VMs (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
 
     for distro in "${IVM_DISTRO_LIST[@]}"; do
-        if has_vm "${distro}-ivm"; then
+        if ivm_exists "${distro}-ivm"; then
             slog "$distro VM already exists, skipping..."
         else
             slog "Creating $distro VM: $distro-ivm"
@@ -37,7 +37,7 @@ create_all() {
 delete_all() {
     slog "Deleting all VMs..."
     for vm in "${IVM_DISTRO_LIST[@]}"; do
-        if has_vm "${vm}-ivm"; then
+        if ivm_exists "${vm}-ivm"; then
             slog "Deleting VM: ${vm}-ivm"
             ivm delete "${vm}-ivm"
         fi
@@ -48,7 +48,7 @@ delete_all() {
 start_all() {
     slog "Starting all VMs..."
     for vm in "${IVM_DISTRO_LIST[@]}"; do
-        if has_vm "${vm}-ivm"; then
+        if ivm_exists "${vm}-ivm"; then
             slog "Starting VM: ${vm}-ivm"
             ivm start "${vm}-ivm"
         fi
@@ -59,7 +59,7 @@ start_all() {
 stop_all() {
     slog "Stopping all VMs..."
     for vm in "${IVM_DISTRO_LIST[@]}"; do
-        if has_vm "${vm}-ivm"; then
+        if ivm_exists "${vm}-ivm"; then
             slog "Stopping VM: ${vm}-ivm"
             ivm stop "${vm}-ivm"
         fi
@@ -70,7 +70,7 @@ stop_all() {
 restart_all() {
     slog "Restarting all VMs..."
     for vm in "${IVM_DISTRO_LIST[@]}"; do
-        if has_vm "${vm}-ivm"; then
+        if ivm_exists "${vm}-ivm"; then
             slog "Restarting VM: ${vm}-ivm"
             ivm restart "${vm}-ivm"
         fi
@@ -95,7 +95,7 @@ EOF
 }
 
 main() {
-    check_ivm_prerequisites
+    ivm_check_exists_prerequisites
 
     if [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
         create_all

@@ -3,7 +3,7 @@
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vt-utils"
 
-check_ivm_prerequisites() {
+ivm_check_exists_prerequisites() {
   local missing=()
   for cmd in incus openssl curl wget tee mktemp; do
     if ! has_cmd "$cmd"; then
@@ -32,37 +32,37 @@ check_ivm_prerequisites() {
   }
 }
 
-get_vm_state() {
+ivm_state() {
   incus info "$1" | grep "Status:" | awk '{print $2}'
 }
 
-has_vm() {
+ivm_exists() {
   incus info "$1" >/dev/null 2>&1
 }
 
-check_vm() {
-  if ! has_vm "$1"; then
+ivm_check_exists() {
+  if ! ivm_exists "$1"; then
     fail "VM '$1' not found"
     return 1
   fi
 }
 
-is_running() {
+ivm_running() {
   local vm_name="$1"
   local state
-  state=$(get_vm_state "$vm_name")
+  state=$(ivm_state "$vm_name")
   [[ "$state" == "RUNNING" ]]
 }
 
-check_running() {
+ivm_check_exists_running() {
   local vm_name="$1"
-  if ! is_running "$vm_name"; then
+  if ! ivm_running "$vm_name"; then
     fail "VM '$vm_name' is not running (state: $state)"
     return 1
   fi
 }
 
-incus_list_vms() {
+ivm_list() {
   local vm_name="${1:-}"
   local extra_args="${2:-}"
 
@@ -73,28 +73,28 @@ incus_list_vms() {
   fi
 }
 
-wait_for_vm_state() {
-  local vm_name="$1"
-  local expected_state="$2"
-  local timeout="${3:-60}"
-  local interval="${4:-3}"
+# wait_for_vm_state() {
+#   local vm_name="$1"
+#   local expected_state="$2"
+#   local timeout="${3:-60}"
+#   local interval="${4:-3}"
 
-  local count=0
-  local max_attempts=$((timeout / interval))
+#   local count=0
+#   local max_attempts=$((timeout / interval))
 
-  while ((count < max_attempts)); do
-    local state
-    state=$(get_vm_state "$vm_name")
-    if [[ "$state" == "$expected_state" ]]; then
-      return 0
-    fi
-    sleep "$interval"
-    ((count++))
-  done
-  return 1
-}
+#   while ((count < max_attempts)); do
+#     local state
+#     state=$(ivm_state "$vm_name")
+#     if [[ "$state" == "$expected_state" ]]; then
+#       return 0
+#     fi
+#     sleep "$interval"
+#     ((count++))
+#   done
+#   return 1
+# }
 
-# get_vm_ip() {
+# ivm_ip() {
 #     local vm_name="$1"
 
 #     if ! incus info "$vm_name" &>/dev/null; then
@@ -119,7 +119,7 @@ wait_for_vm_state() {
 #     return 0
 # }
 
-# get_vm_ip() {
+# ivm_ip() {
 #     slog "Getting VM IP address..."
 
 #     local ip
@@ -142,7 +142,7 @@ wait_for_vm_state() {
 #     return 1
 # }
 
-get_vm_ip() {
+ivm_ip() {
   local vm_name="$1"
 
   if ! incus info "$vm_name" >/dev/null 2>&1; then
@@ -150,7 +150,7 @@ get_vm_ip() {
   fi
 
   local state
-  state=$(get_vm_state "$vm_name")
+  state=$(ivm_state "$vm_name")
 
   if [[ "$state" != "RUNNING" ]]; then
     return 2
@@ -178,12 +178,12 @@ get_vm_ip() {
   return 0
 }
 
-show_ip() {
+ivm_show_ip() {
   local vm_name="$1"
-  check_vm "$vm_name" || return 1
+  ivm_check_exists "$vm_name" || return 1
 
   local ip
-  ip=$(get_vm_ip "$vm_name")
+  ip=$(ivm_ip "$vm_name")
   local ret=$?
 
   case $ret in
@@ -208,21 +208,21 @@ show_ip() {
   esac
 }
 
-ssh_to_vm() {
+ivm_ssh() {
   local vm_name="$1"
   local username="${2:-}"
-  check_vm "$vm_name" || return 1
+  ivm_check_exists "$vm_name" || return 1
 
-  check_running "$vm_name" || return 1
+  ivm_check_exists_running "$vm_name" || return 1
 
   # Auto-detect username if not provided
   if [[ -z "$username" ]]; then
-    username=$(get_default_username "$vm_name")
+    username=$(default_username "$vm_name")
     slog "Auto-detected username: $username (override with: $0 ssh $vm_name <username>)"
   fi
 
   local ip
-  ip=$(get_vm_ip "$vm_name")
+  ip=$(ivm_ip "$vm_name")
   local ret=$?
 
   case $ret in

@@ -61,7 +61,7 @@ EOF
 }
 
 check_prerequisites() {
-    check_ivm_prerequisites
+    ivm_check_exists_prerequisites
 
     if ! command -v lsusb >/dev/null; then
         fail "lsusb command not found. Please install usbutils package."
@@ -69,7 +69,7 @@ check_prerequisites() {
     fi
 }
 
-check_vm() {
+ivm_check_exists() {
     local vm_name="$1"
 
     if ! incus info "$vm_name" >/dev/null 2>&1; then
@@ -125,7 +125,7 @@ list_host_usb_devices() {
 
 list_vm_usb_devices() {
     local vm_name="$1"
-    check_vm "$vm_name"
+    ivm_check_exists "$vm_name"
 
     slog "USB devices attached to VM '$vm_name':"
     echo
@@ -223,7 +223,7 @@ attach_usb_device() {
     local device_spec="$2"
     local device_name="${3:-}"
 
-    check_vm "$vm_name"
+    ivm_check_exists "$vm_name"
 
     # Parse device specification
     local device_config
@@ -277,7 +277,7 @@ detach_usb_device() {
     local vm_name="$1"
     local device_name="$2"
 
-    check_vm "$vm_name"
+    ivm_check_exists "$vm_name"
 
     # Check if device exists
     if ! incus config device show "$vm_name" "$device_name" >/dev/null 2>&1; then

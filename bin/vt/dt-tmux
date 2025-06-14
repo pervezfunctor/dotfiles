@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # shellcheck disable=SC1091
-source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/dt-utils"
 
 UBUNTU_CT="ubuntu"
 FEDORA_CT="fedora"
@@ -12,7 +12,7 @@ DEBIAN_CT="debian"
 ALPINE_CT="alpine"
 NIX_CT="nix"
 
-SESSION_NAME="distrobox-containers"
+SESSION_NAME="DT_TMUX"
 
 usage() {
     cat <<EOF
@@ -64,7 +64,7 @@ create_container_cmd() {
     fi
 }
 
-check_container() {
+dt_check_exists() {
     local container_name="$1"
     if ! container_exists "$container_name"; then
         fail "Container '$container_name' does not exist"
@@ -88,7 +88,7 @@ create_session() {
     fi
 
     for container in "$UBUNTU_CT" "$FEDORA_CT" "$ARCH_CT" "$DEBIAN_CT" "$ALPINE_CT" "$NIX_CT"; do
-        check_container "$container" || return 1
+        dt_check_exists "$container" || return 1
     done
 
     slog "Creating tmux session with connections to 6 distrobox containers..."

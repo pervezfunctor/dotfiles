@@ -7,9 +7,9 @@ set -euo pipefail
 source "$(dirname "$0")/vm-utils"
 source "$(dirname "$0")/tmux-utils"
 
-SESSION_NAME="libvirt-vms"
-
 VM_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian") # alpine is not working
+
+SESSION_NAME="LIBVIRT_TMUX"
 
 usage() {
     cat <<EOF
@@ -34,7 +34,7 @@ EOF
 }
 
 check_prerequisites() {
-    check_vm_prerequisites
+    vm_check_prerequisites
     check_tmux
 }
 
@@ -55,7 +55,7 @@ create_session() {
     fi
 
     for vm in "${VM_DISTRO_LIST[@]}"; do
-        if ! has_vm "${vm}-virt"; then
+        if ! vm_exists "${vm}-virt"; then
             slog "VM '${vm}-virt' is not running. Starting it..."
             if ! vm start "${vm}-virt"; then
                 fail "Failed to start VM '${vm}-virt'. Please check its status."
@@ -67,8 +67,11 @@ create_session() {
     slog "Creating tmux session with SSH connections to 4 libvirt VMs..."
 
     local -a cmds=()
+    local username
+
     for vm in "${VM_DISTRO_LIST[@]}"; do
-        cmds+=("vm ssh $vm")
+        username="$(default_username "${vm}-virt")"
+        cmds+=("vm ssh ${vm}-virt ${username}")
     done
 
     if ! tmux_grid "$SESSION_NAME" "${cmds[@]}"; then

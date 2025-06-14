@@ -36,98 +36,43 @@ EOF
 }
 
 create_session() {
-    local force="${1:-false}"
 
-    if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-        if [[ "$force" == "true" ]]; then
-            echo "Session '$SESSION_NAME' exists. Recreating..."
-            tmux kill-session -t "$SESSION_NAME"
-        else
-            echo "Session '$SESSION_NAME' already exists. Attaching..."
-            tmux attach-session -t "$SESSION_NAME"
-            return 0
-        fi
-    fi
+    tmux_session "$SESSION_NAME" "$1"
 
-    for vm in "${IVM_DISTRO_LIST[@]}"; do
-        if ! has_vm "${vm}-ivm"; then
-            echo "VM '${vm}-ivm' is not running. Starting it..."
-            if ! ivm start "${vm}-ivm"; then
-                fail "Failed to start VM '${vm}-ivm'. Please check its status."
-                return 1
-            fi
-        fi
-    done
+    slog "Creating tmux session '$SESSION_NAME' with SSH connections to 6 Incus VMs..."
 
-    echo "Creating tmux session '$SESSION_NAME' with SSH connections to 6 Incus VMs..."
+    local ssh_cmds=()
+    create_commands ssh_cmds "ivm" "${IVM_DISTRO_LIST[@]}"
 
-    local -a cmds=()
-    for vm in "${IVM_DISTRO_LIST[@]}"; do
-        cmds+=("ivm ssh ${vm}-ivm")
-    done
+    # start_sessions "ivm" "${ssh_cmds[@]}"
 
-    if ! tmux_grid "$SESSION_NAME" "${cmds[@]}"; then
+    if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
         fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."
         return 1
     fi
 }
 
-attach_session() {
-    if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-        warn "Session '$SESSION_NAME' does not exist. Creating it..."
-        create_session
-        return
-    fi
-
-    slog "Attaching to session '$SESSION_NAME'..."
-    tmux attach-session -t "$SESSION_NAME"
-}
-
-detach_session() {
-    if [[ -z "${TMUX:-}" ]]; then
-        fail "Not currently in a tmux session"
-        exit 1
-    fi
-
-    slog "Detaching from tmux session..."
-    tmux detach-client
-}
-
-destroy_session() {
-    if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-        warn "Session '$SESSION_NAME' does not exist"
-        return
-    fi
-
-    slog "Destroying session '$SESSION_NAME'..."
-    tmux kill-session -t "$SESSION_NAME"
-    success "Session destroyed"
-}
-
 main() {
-    check_ivm_prerequisites
+    ivm_check_exists_prerequisites
     check_tmux
 
     local command="${1:-}"
 
     case "$command" in
-    create)
+    create | "" | -c | --create)
         create_session "true"
         ;;
-    attach)
-        attach_session
+    attach | -a | --attach)
+        attach_session "$SESSION_NAME"
         ;;
-    detach)
-        detach_session
+    detach | -d | --detach)
+        detach_session "$SESSION_NAME"
         ;;
-    destroy)
-        destroy_session
+    destroy | -x | --destroy)
+        destroy_session "$SESSION_NAME"
         ;;
     help | --help | -h)
         usage
-        ;;
-    "")
-        create_session
         ;;
     *)
         fail "Unknown option: $command"

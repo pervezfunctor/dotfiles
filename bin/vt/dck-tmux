@@ -3,9 +3,9 @@
 set -euo pipefail
 
 # shellcheck disable=SC1091
-source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/dck-utils"
 
-SESSION_NAME="docker-containers"
+SESSION_NAME="DCK_TMUX"
 
 DCK_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
 
@@ -37,13 +37,18 @@ dck_exists() {
   return $?
 }
 
-check_container() {
+dck_check_exists() {
   local container_name="$1"
   if ! dck_exists "$container_name"; then
     fail "Container '$container_name' does not exist"
     return 1
   fi
   return 0
+}
+
+dck_state() {
+  local container_name="$1"
+  docker inspect "$container_name" --format "{{.State.Status}}" 2>/dev/null || true
 }
 
 is_dck_running() {
@@ -63,7 +68,7 @@ check_dck_running() {
 create_container_cmd() {
   local container_name="$1"
 
-  check_container "$container_name" || return 1
+  dck_check_exists "$container_name" || return 1
 
   if ! is_dck_running "$container_name"; then
     docker start "$container_name"

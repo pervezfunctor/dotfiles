@@ -2,27 +2,8 @@
 
 set -euo pipefail
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-
 # shellcheck disable=SC1091
-source "$DOT_DIR/share/utils"
-
-check_docker() {
-    if ! has_cmd docker; then
-        fail "docker command not found. Please install Docker first."
-        slog "You can install it with: $0 install"
-        return 1
-    fi
-
-    if ! docker info >/dev/null 2>&1; then
-        fail "Docker daemon is not running or not accessible."
-        slog "Start Docker with: sudo systemctl start docker"
-        slog "Or add your user to docker group: sudo usermod -aG docker \$USER"
-        return 1
-    fi
-
-    return 0
-}
+source "$(dirname "$0")/dck-utils"
 
 if check_docker; then
     docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}" 2>/dev/null | head -10 || true
@@ -71,14 +52,7 @@ EXAMPLES:
 EOF
 }
 
-list_containers() {
-    check_docker || return 1
-    slog "Listing all Docker containers..."
-    echo
-    docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}\t{{.CreatedAt}}"
-}
-
-install_docker() {
+dck_install() {
     slog "Installing Docker using ilmi..."
 
     if has_cmd ilmi; then
@@ -111,50 +85,11 @@ install_docker() {
     fi
 }
 
-has_container() {
-    docker ps -a --format '{{.Names}}' | grep -Fxq "$1"
-}
-
-check_container() {
-    local container_name="$1"
-    if ! has_container "$container_name"; then
-        fail "Container '$container_name' not found"
-        return 1
-    fi
-    return 0
-}
-
-container_status() {
-    local container_name="$1"
-    check_docker || return 1
-    check_container "$container_name" || return 1
-
-    slog "Status for container '$container_name':"
-    echo
-    docker ps -a --filter "name=^${container_name}$" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}\t{{.CreatedAt}}"
-    echo
-
-    slog "Container details:"
-    docker inspect "$container_name" --format "{{json .}}" | jq -r '
-        "ID: " + .Id[:12] + "\n" +
-        "Image: " + .Config.Image + "\n" +
-        "State: " + .State.Status + "\n" +
-        "Started: " + .State.StartedAt + "\n" +
-        "IP Address: " + (.NetworkSettings.IPAddress // "N/A") + "\n" +
-        "Ports: " + ((.NetworkSettings.Ports // {}) | keys | join(", "))
-    ' 2>/dev/null || docker inspect "$container_name" | head -20
-}
-
-get_container_state() {
-    local container_name="$1"
-    docker inspect "$container_name" --format "{{.State.Status}}" 2>/dev/null || true
-}
-
-create_container() {
+dck_create() {
     local distro="$1"
     local container_name="${2:-$distro}"
     check_docker || return 1
-    check_container "$container_name" || return 1
+    dck_check_exists "$container_name" || return 1
 
     slog "Creating $distro Docker container: $container_name"
 
@@ -212,7 +147,7 @@ create_container() {
 
     sleep 1
     local state
-    state=$(get_container_state "$container_name")
+    state=$(dck_state "$container_name")
 
     if [[ "$state" == "running" ]]; then
         slog "Container status:"
@@ -223,13 +158,13 @@ create_container() {
     fi
 }
 
-start_container() {
+dck_start() {
     local container_name="$1"
     check_docker || return 1
-    check_container "$container_name" || return 1
+    dck_check_exists "$container_name" || return 1
 
     local state
-    state=$(get_container_state "$container_name")
+    state=$(dck_state "$container_name")
 
     if [[ "$state" == "running" ]]; then
         warn "Container '$container_name' is already running"
@@ -246,7 +181,7 @@ start_container() {
     fi
 }
 
-stop_container() {
+dck_stop() {
     local container_name="$1"
     check_docker || return 1
 
@@ -256,7 +191,7 @@ stop_container() {
     fi
 
     local state
-    state=$(get_container_state "$container_name")
+    state=$(dck_state "$container_name")
 
     if [[ "$state" != "running" ]]; then
         warn "Container '$container_name' is not running"
@@ -272,7 +207,7 @@ stop_container() {
     fi
 }
 
-restart_container() {
+dck_restart() {
     local container_name="$1"
     check_docker || return 1
 
@@ -292,10 +227,10 @@ restart_container() {
     fi
 }
 
-delete_container() {
+dck_delete() {
     local container_name="$1"
     check_docker || return 1
-    check_container "$container_name" || return 1
+    dck_check_exists "$container_name" || return 1
 
     warn "This will permanently delete container '$container_name' and all its data!"
     read -p "Are you sure? (y/N): " -r
@@ -305,7 +240,7 @@ delete_container() {
     fi
 
     local state
-    state=$(get_container_state "$container_name")
+    state=$(dck_state "$container_name")
     if [[ "$state" == "running" ]]; then
         slog "Stopping container first..."
         docker stop "$container_name"
@@ -320,7 +255,7 @@ delete_container() {
     fi
 }
 
-enter_shell() {
+dck_shell() {
     local container_name="$1"
     check_docker || return 1
 
@@ -330,7 +265,7 @@ enter_shell() {
     fi
 
     local state
-    state=$(get_container_state "$container_name")
+    state=$(dck_state "$container_name")
 
     if [[ "$state" != "running" ]]; then
         fail "Container '$container_name' is not running"
@@ -345,15 +280,15 @@ enter_shell() {
     fi
 }
 
-exec_in_container() {
+dck_exec() {
     local container_name="$1"
     shift
     local command="$*"
     check_docker || return 1
-    check_container "$container_name" || return 1
+    dck_check_exists "$container_name" || return 1
 
     local state
-    state=$(get_container_state "$container_name")
+    state=$(dck_state "$container_name")
 
     if [[ "$state" != "running" ]]; then
         fail "Container '$container_name' is not running"
@@ -365,17 +300,17 @@ exec_in_container() {
     docker exec "$container_name" sh -c "$command"
 }
 
-show_logs() {
+dck_logs() {
     local container_name="$1"
     check_docker || return 1
-    check_container "$container_name" || return 1
+    dck_check_exists "$container_name" || return 1
 
     slog "Showing logs for container '$container_name'..."
     echo
     docker logs "$container_name"
 }
 
-pull_image() {
+dck_pull_image() {
     local image_name="$1"
     check_docker || return 1
 
@@ -388,14 +323,7 @@ pull_image() {
     fi
 }
 
-list_images() {
-    check_docker || return 1
-    slog "Listing Docker images..."
-    echo
-    docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}\t{{.CreatedAt}}"
-}
-
-cleanup_containers() {
+dck_cleanup() {
     check_docker || return 1
     slog "Cleaning up stopped containers and orphaned data..."
 
@@ -456,10 +384,10 @@ container_name="${2:-}"
 
 case "$command" in
 install)
-    install_docker
+    dck_install
     ;;
 list)
-    list_containers
+    dck_list
     ;;
 status)
     [[ -z "$container_name" ]] && {
@@ -467,7 +395,7 @@ status)
         usage
         exit 1
     }
-    container_status "$container_name"
+    dck_state "$container_name"
     ;;
 create)
     [[ -z "$container_name" ]] && {
@@ -475,7 +403,7 @@ create)
         usage
         exit 1
     }
-    create_container "$container_name" "${3:-}"
+    dck_create "$container_name" "${3:-}"
     ;;
 start)
     [[ -z "$container_name" ]] && {
@@ -483,7 +411,7 @@ start)
         usage
         exit 1
     }
-    start_container "$container_name"
+    dck_start "$container_name"
     ;;
 stop)
     [[ -z "$container_name" ]] && {
@@ -491,7 +419,7 @@ stop)
         usage
         exit 1
     }
-    stop_container "$container_name"
+    dck_stop "$container_name"
     ;;
 restart)
     [[ -z "$container_name" ]] && {
@@ -499,7 +427,7 @@ restart)
         usage
         exit 1
     }
-    restart_container "$container_name"
+    dck_restart "$container_name"
     ;;
 delete)
     [[ -z "$container_name" ]] && {
@@ -507,7 +435,7 @@ delete)
         usage
         exit 1
     }
-    delete_container "$container_name"
+    dck_delete "$container_name"
     ;;
 shell)
     [[ -z "$container_name" ]] && {
@@ -515,7 +443,7 @@ shell)
         usage
         exit 1
     }
-    enter_shell "$container_name"
+    dck_shell "$container_name"
     ;;
 exec)
     [[ -z "$container_name" ]] && {
@@ -528,7 +456,7 @@ exec)
         usage
         exit 1
     }
-    exec_in_container "$container_name" "${@:3}"
+    dck_exec "$container_name" "${@:3}"
     ;;
 logs)
     [[ -z "$container_name" ]] && {
@@ -536,7 +464,7 @@ logs)
         usage
         exit 1
     }
-    show_logs "$container_name"
+    dck_logs "$container_name"
     ;;
 pull)
     [[ -z "$container_name" ]] && {
@@ -547,10 +475,10 @@ pull)
     pull_image "$container_name"
     ;;
 images)
-    list_images
+    dck_list
     ;;
 cleanup)
-    cleanup_containers
+    dck_cleanup
     ;;
 --help | -h)
     usage

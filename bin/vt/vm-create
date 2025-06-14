@@ -354,7 +354,7 @@ check_prerequisites() {
 
     slog "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
 
-    check_libvirt
+    virt_check_prerequisites
 
     if vm_exists "$VM_NAME"; then
         fail "VM '$VM_NAME' already exists"
