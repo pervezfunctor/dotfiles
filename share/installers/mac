@@ -42,7 +42,7 @@ core_install() {
     slog "Install xcode"
     xcode-select --install
     brew_install
-
+    zsh_config_install
     bi mas coreutils bash curl wget trash tree unzip coreutils gum stow \
         nmap
 }

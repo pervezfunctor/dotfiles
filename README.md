@@ -45,7 +45,8 @@ You will be presented with a menu, pick what you want to install.
 On macos, install applications(vscode, ghostty terminal, fonts etc) along with shell tools. Works on linux too.
 
 ```bash
-bash -c "$(curl -sSL https://is.gd/egitif)" -- desktop
+curl https://pkgx.sh | sh
+pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- desktop
 ```
 
 If you just want homebrew and basic unix tools, run the following command.
