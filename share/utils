@@ -1150,7 +1150,7 @@ environs() {
     is_distrobox || is_toolbox || smd ~/.boxes
 
     export GOPATH="$HOME/go"
-    export PNPM_HOME="$HOME/.local/share/pnpm:$PATH"
+    export PNPM_HOME="$HOME/.local/share/pnpm"
 
     export PATH="$GOPATH/bin:$HOME/.pixi/bin:$PATH"
     export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
