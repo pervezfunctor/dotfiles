@@ -660,9 +660,9 @@ is_plucky() {
 is_toolbox() {
     [[ -f /run/.containerenv || -f /.dockerenv ]] || return 1
 
-    [[ -v name && "$name" == *"toolbox"* ]] && return 0
+    # [[ -v name && "$name" == *"toolbox"* ]] && return 0
     grep -q "toolbox" /run/.containerenv 2>/dev/null && return 0
-    [[ -v TOOLBOX_PATH ]] && return 0
+    # [[ -v TOOLBOX_PATH ]] && return 0
     [[ -f "/run/.toolboxenv" ]] && return 0
 
     return 1

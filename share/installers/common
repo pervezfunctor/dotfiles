@@ -607,3 +607,99 @@ brew_packages() {
     bi git gcc make file
     brew_good_packages
 }
+
+base-group_check() {
+    cmd_check gcc make curl wget git trash tree tar unzip stow
+    dir_check "$DOT_DIR"
+    bash_config_check
+}
+
+base_groupstall() {
+    has_cmd core_install && core_install
+    dotfiles_install
+
+    git_config_install
+    bash_config_install
+
+    base-group_check
+}
+
+min-group_check() {
+    cmd_check micro zip unar
+}
+
+min_groupstall() {
+    base_groupstall
+    has_cmd essential_install && essential_install
+
+    min-group_check
+}
+
+slim-shell-group_check() {
+    cmd_check trash rg gum ug tldr starship zoxide bat eza gh fzf
+    cmd_check carapace shellcheck fd delta direnv yq
+}
+
+shell-group_check() {
+    slim-shell-group_check
+    cmd_check gh nvim zsh tmux lazygit sd bat brew htop btm atuin gawk
+    cmd_check shellcheck shfmt
+    # cmd_check cheat choose curlie direnv doggo dotenv procs
+    # cmd_check duf dust gdu hyperfine jq just yq
+}
+
+slim-shell_groupstall() {
+    min_groupstall
+    slim-shell_install
+
+    bash_config_install
+    has_cmd zsh && zsh_config_install
+
+    slim-shell-group_check
+}
+
+shell_groupstall() {
+    min_groupstall
+    shell_install
+
+    bash_config_install
+    has_cmd zsh && zsh_config_install
+    has_cmd nvim && nvim_config_install
+    has_cmd tmux && tmux_config_install
+    has_cmd yazi && yazi_config_install
+
+    shell-group_check
+}
+
+ct-group_check() {
+    cmd_check incus docker podman distrobox toolbox
+}
+
+ct_groupstall() {
+    shell_groupstall
+    has_cmd ct_install && ct_install
+
+    ct-group_check
+}
+
+vm_groupstall() {
+    ct_groupstall
+    has_cmd vm_install && vm_install
+}
+
+desktop_groupstall() {
+    vm_groupstall
+    fonts_install
+    has_cmd ui_install && ui_install
+
+    # tailscale_install
+    # @TODO: flatpak aliases?
+
+    has_cmd code && vscode-extensions_install
+    has_cmd code && vscode_config_install
+    has_cmd foot && foot_config_install
+    has_cmd ghostty && ghostty_config_install
+    has_cmd kitty && kitty_config_install
+    has_cmd wezterm && wezterm_config_install
+}
+
