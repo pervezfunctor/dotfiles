@@ -130,20 +130,22 @@ flathub_install() {
     fi
 }
 
-pnpm_install() {
-    has_cmd pnpm && return 0
+npm_install() {
+    has_cmd npm && return 0
 
-    slog "Installing pnpm"
-    curl -fsSL https://get.pnpm.io/install.sh | sh -
+    if ! has_cmd volta; then
+        curl https://get.volta.sh | bash
+    fi
 
-    # docker container installation
-    # wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.bashrc" SHELL="$(which bash)" bash -
-    slog "Installing node"
-    pnpm env use --global latest
+    if ! has_cmd volta; then
+        warn "volta not installed! Skipping npm setup."
+        return 1
+    fi
 
-    slog "pnpm/node installation done!"
+    volta install node
 
-    cmd_check pnpm
+    has_cmd npm || warn "npm not installed! Skipping pnpm install."
+    has_cmd npm && npm install -g pnpm
 }
 
 kitty_bin_install() {

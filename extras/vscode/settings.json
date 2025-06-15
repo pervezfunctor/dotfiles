@@ -105,7 +105,6 @@
   "javascript.suggest.completeFunctionCalls": false,
   "javascript.updateImportsOnFileMove.enabled": "always",
   "javascript.validate.enable": false,
-  "npm.packageManager": "pnpm",
   "nxConsole.showNodeVersionOnStartup": false,
   "playwright.reuseBrowser": true,
   "problems.showCurrentInStatus": true,

@@ -158,16 +158,15 @@ work_groupstall() {
     ptyxis_install
 }
 
-
 prog-group_check() {
-    cmd_check go rustc pnpm uv pyenv conda
+    cmd_check go rustc npm uv pyenv conda
 }
 
 prog_groupstall() {
     vm_groupstall
     go_install
     rust_install
-    pnpm_install
+    npm_install
     python_install
     uv_install
     prog-group_check

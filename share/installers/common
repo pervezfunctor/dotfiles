@@ -148,11 +148,11 @@ rust_shell_install() {
     cmd_check starship delta dust choose sd procs btm xh lsd
 }
 
-pnpm_shell_install() {
-    has_cmd pnpm || return 1
+npm_shell_install() {
+    has_cmd npm || return 1
 
-    slog "shell tools with pnpm"
-    pnpm install -g degit neovim
+    slog "shell tools with npm"
+    npm install -g degit neovim
     cmd_check degit
 }
 
@@ -535,8 +535,8 @@ shell_config_install() {
 
 web_install() {
     slog "Installing npm packages globally"
-    pnpm install -g ndb @antfu/ni
-    pnpm install -g tsx vite-node zx turbo
+    npm install -g ndb @antfu/ni
+    npm install -g tsx vite-node zx turbo
 
     if is_linux; then
         if ! grep "fs.inotify.max_user_watches" /etc/sysctl.conf >/dev/null; then
@@ -545,8 +545,8 @@ web_install() {
     fi
 
     if is_apt; then
-        pnpm dlx playwright install-deps
-        pnpm dlx playwright install
+        npm dlx playwright install-deps
+        npm dlx playwright install
     fi
 }
 
@@ -702,4 +702,3 @@ desktop_groupstall() {
     has_cmd kitty && kitty_config_install
     has_cmd wezterm && wezterm_config_install
 }
-

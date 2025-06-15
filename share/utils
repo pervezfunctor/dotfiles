@@ -1152,6 +1152,9 @@ environs() {
     export GOPATH="$HOME/go"
     export PNPM_HOME="$HOME/.local/share/pnpm"
 
+    export VOLTA_HOME="$HOME/.volta"
+    export PATH="$VOLTA_HOME/bin:$PATH"
+
     export PATH="$GOPATH/bin:$HOME/.pixi/bin:$PATH"
     export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
     export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.bin:$PATH"
