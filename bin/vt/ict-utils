@@ -35,10 +35,12 @@ ict_check_prerequisites() {
 ict_list() {
   incus_check || return 1
 
+  local extra_args="${2:---columns=ns4}"
+
   slog "Listing all Incus containers..."
   echo
 
-  incus list type=container
+  incus list type=container "${extra_args}"
 }
 
 ict_exists() {

@@ -98,6 +98,9 @@ vterm_printf() {
     fi
 }
 
+# shellcheck disable=SC1091
+source_if_exists "$DOT_DIR/share/find-exec"
+
 # has_cmd fzf && {
 #     export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --prompt="> "'
 #     export FZF_CTRL_T_COMMAND="fd --type f --hidden --follow --exclude .git"

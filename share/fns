@@ -489,6 +489,33 @@ ivms() {
     slog "Creating incus vms done!"
 }
 
+virt-dev() {
+    if vm_exists "dev"; then
+        slog "Ubuntu VM already exists, skipping..."
+    else
+        slog "Creating Ubuntu VM: dev"
+        vm-create --distro ubuntu --name dev --docker --brew --dotfiles min
+    fi
+}
+
+virt-incus() {
+    if vm_exists "incus"; then
+        slog "Alpine VM already exists, skipping..."
+    else
+        slog "Creating Alpine VM: incus"
+        vm-create --distro alpine --name incus --dotfiles min incus
+    fi
+}
+
+virt-nix() {
+    if vm_exists "nix"; then
+        slog "Debian VM already exists, skipping..."
+    else
+        slog "Creating Debian VM: nix"
+        vm-create --distro debian --name nix --nix
+    fi
+}
+
 system-update() {
     if has_cmd sup; then
         sup

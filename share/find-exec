@@ -1,0 +1,36 @@
+#! /usr/bin/env bash
+
+# FZF-based COMMAND finder (minimalist, shellcheck-clean version)
+# Press Ctrl+X, Ctrl+E to use.
+
+if command -v fzf &> /dev/null; then
+
+  if [ -n "$ZSH_VERSION" ]; then
+    _fzf_cmd_zsh() {
+      local cmd
+      # shellcheck disable=SC2296,SC2086
+      cmd=$( (print -l ${(k)commands} || compgen -c) | sort -u | fzf --height 40% --reverse)
+
+      # If a command was selected (user didn't press Esc), append it.
+      if [ -n "$cmd" ]; then
+        LBUFFER+="${cmd} "
+      fi
+    }
+    zle -N _fzf_cmd_zsh
+    bindkey '^X^E' _fzf_cmd_zsh
+
+  elif [ -n "$BASH_VERSION" ]; then
+    _fzf_cmd_bash() {
+      local cmd
+      cmd=$(compgen -c | sort -u | fzf --height 40% --reverse)
+
+      # If a command was selected, replace it
+      if [ -n "$cmd" ]; then
+        READLINE_LINE="${cmd} "
+        READLINE_POINT=${#READLINE_LINE}
+      fi
+    }
+    bind -x '"\C-x\C-e": _fzf_cmd_bash'
+  fi
+
+fi
