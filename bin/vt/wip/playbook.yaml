@@ -1,0 +1,138 @@
+---
+
+- name: 1. Provision Debian VM with libvirt
+  hosts: localhost
+  connection: local
+  become: yes
+
+  vars:
+    vm_name: "dev-vm"
+    vm_ram_mb: "4096"
+    vm_vcpus: "2"
+    vm_disk_size_gb: "30"
+    vm_disk_path: "/var/lib/libvirt/images"
+    os_variant: "debian12"
+
+    vm_user: "devuser"
+    ssh_key_url: "https://github.com/your-username.keys"
+    ssh_private_key_file: "~/.ssh/id_ed25519"
+
+    dotfiles_repo: "https://github.com/your-username/dotfiles.git"
+    stow_packages:
+      - zsh
+      - tmux
+      - nvim
+      - git
+
+  tasks:
+    - name: "Generate preseed file from template"
+      template:
+        src: templates/preseed.cfg.j2
+        dest: "/tmp/preseed.cfg"
+        mode: '0644'
+
+    - name: "Create VM using virt-install and preseed file"
+      command: >
+        virt-install
+        --name {{ vm_name }}
+        --ram {{ vm_ram_mb }}
+        --vcpus {{ vm_vcpus }}
+        --os-variant {{ os_variant }}
+        --disk path={{ vm_disk_path }}/{{ vm_name }}.qcow2,size={{ vm_disk_size_gb }},bus=virtio
+        --network bridge=virbr0,model=virtio
+        --graphics none
+        --console pty,target_type=serial
+        --location 'https://deb.debian.org/debian/dists/bookworm/main/installer-amd64/'
+        --initrd-inject /tmp/preseed.cfg
+        --extra-args "auto=true priority=critical preseed/file=/preseed.cfg console=ttyS0,115200n8 serial"
+      args:
+        creates: "{{ vm_disk_path }}/{{ vm_name }}.qcow2"
+
+    - name: "Wait for VM to get an IP address"
+      shell: "virsh domifaddr {{ vm_name }} | awk '/ipv4/ {print $4}' | cut -d'/' -f1"
+      register: vm_ip_raw
+      until: vm_ip_raw.stdout != ""
+      retries: 30
+      delay: 10
+      changed_when: false
+
+    - name: "Set VM IP as a fact"
+      set_fact:
+        vm_ip: "{{ vm_ip_raw.stdout }}"
+
+    - name: "Add new VM to in-memory inventory"
+      add_host:
+        name: "{{ vm_ip }}"
+        groups: new_vm
+        ansible_user: "{{ vm_user }}"
+        ansible_ssh_private_key_file: "{{ ssh_private_key_file | expanduser }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+    - name: "Wait for SSH to become available on the new VM"
+      wait_for_connection:
+        delay: 10
+        timeout: 300
+
+- name: 2. Configure Development Environment on the new VM
+  hosts: new_vm
+  become: yes
+
+  vars:
+    vm_user: "{{ hostvars['localhost']['vm_user'] }}"
+    dotfiles_repo: "{{ hostvars['localhost']['dotfiles_repo'] }}"
+    stow_packages: "{{ hostvars['localhost']['stow_packages'] }}"
+
+  tasks:
+    - name: "Install prerequisites for Docker's APT repository"
+      apt:
+        name: ['ca-certificates', 'curl', 'gnupg']
+        state: present
+        update_cache: yes
+
+    - name: "Create directory for Docker's GPG key"
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: "Add Docker's official GPG key"
+      shell: "curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg"
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: "Set up the Docker repository"
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+
+    - name: "Install Docker Engine and related packages"
+      apt:
+        name: ['docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin', 'docker-compose-plugin']
+        state: present
+        update_cache: yes
+
+    - name: "Add the VM user to the 'docker' group"
+      user:
+        name: "{{ vm_user }}"
+        groups: docker
+        append: yes
+
+    - name: "Install Zsh, Tmux, Neovim, Git, and Stow"
+      apt:
+        name: ['zsh', 'tmux', 'neovim', 'git', 'stow']
+        state: present
+
+    - name: "Clone dotfiles repository"
+      git:
+        repo: "{{ dotfiles_repo }}"
+        dest: "/home/{{ vm_user }}/.dotfiles"
+        accept_newhostkey: yes
+      become: no
+
+    - name: "Link dotfiles using Stow"
+      command: "stow -v -R -t /home/{{ vm_user }} {{ item }}"
+      args:
+        chdir: "/home/{{ vm_user }}/.dotfiles"
+      loop: "{{ stow_packages }}"
+      become: no

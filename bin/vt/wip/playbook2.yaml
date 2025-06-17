@@ -1,0 +1,57 @@
+---
+
+- name: "Create a backing disk from the base cloud image"
+  command: >
+    qemu-img create -f qcow2 -b /var/lib/libvirt/images/debian-12-base.qcow2 {{ vm_disk_path }}/{{ vm_name }}.qcow2 {{ vm_disk_size_gb }}G
+  args:
+    creates: "{{ vm_disk_path }}/{{ vm_name }}.qcow2"
+
+- name: "Create cloud-init user-data file"
+  copy:
+    dest: "/tmp/{{ vm_name }}-user-data.yml"
+    content: |
+      #cloud-config
+      user: {{ vm_user }}
+      password: '!'
+      chpasswd: { expire: False }
+      ssh_authorized_keys:
+        - {{ lookup('file', ssh_public_key_file) }} # Reads key from local file
+      hostname: {{ vm_name }}
+      groups:
+        - sudo
+        - docker
+      system_info:
+        default_user:
+          name: {{ vm_user }}
+
+- name: "Create cloud-init disk"
+  command: >
+    cloud-localds /tmp/{{ vm_name }}-cloud-init.iso /tmp/{{ vm_name }}-user-data.yml
+  args:
+    creates: "/tmp/{{ vm_name }}-cloud-init.iso"
+
+- name: "Create VM from cloud image using cloud-init"
+  command: >
+    virt-install
+    --name {{ vm_name }}
+    --ram {{ vm_ram_mb }}
+    --vcpus {{ vm_vcpus }}
+    --os-variant {{ os_variant }}
+    --disk path={{ vm_disk_path }}/{{ vm_name }}.qcow2,device=disk
+    --disk path=/tmp/{{ vm_name }}-cloud-init.iso,device=cdrom
+    --import
+    --network bridge=virbr0,model=virtio
+    --graphics none
+    --noautoconsole
+  args:
+    creates: "/etc/libvirt/qemu/{{ vm_name }}.xml" # Check for the final domain file
+
+# # In your configuration play
+# - name: "Deploy authorized keys for the user"
+#   authorized_key:
+#     user: "{{ vm_user }}"
+#     state: present
+#     key: "{{ lookup('file', item) }}"
+#   with_fileglob:
+#     - "files/public_keys/*.pub"
+#   become: yes
