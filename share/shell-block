@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ensure_block_in_file() {
+  if [[ $# -ne 2 ]]; then
+    echo "Usage:  $0 <target_file> <block_name>" >&2
+    echo "       (Block content must be provided via stdin)" >&2
+    return 1
+  fi
+
+  local target_file="$1"
+  local block_name="$2"
+
+  local block_content
+  block_content=$(cat)
+
+  if [[ -z "$block_content" ]]; then
+    echo "Error: Block content from stdin cannot be empty." >&2
+    return 1
+  fi
+
+  if [[ ! -e "$target_file" ]]; then
+    echo "Info: Target file '$target_file' not found."
+    return 1
+  fi
+
+  if [[ ! -f "$target_file" ]]; then
+    echo "Error: Target '$target_file' exists but is not a regular file." >&2
+    return 1
+  fi
+
+  local start_mark="# >>> ${block_name} STARTS HERE >>>"
+  local end_mark="# <<< ${block_name} ENDS HERE <<<"
+
+  local full_block
+  full_block=$(printf "%s\n%s\n%s" "$start_mark" "$block_content" "$end_mark")
+
+  local sed_start_re sed_end_re
+  sed_start_re=$(printf '%s' "$start_mark" | sed 's/[][\/.*^$]/\\&/g')
+  sed_end_re=$(printf '%s' "$end_mark" | sed 's/[][\/.*^$]/\\&/g')
+
+  local temp_file
+  temp_file=$(mktemp)
+
+  trap 'rm -f "$temp_file"' RETURN
+
+  #  delete the old block (if it exists).
+  sed "/^${sed_start_re}$/,/^${sed_end_re}$/d" "$target_file" >"$temp_file"
+
+  # Then, append the new block.
+  printf "\n%s\n" "$full_block" >>"$temp_file"
+
+  cat "$temp_file" >"$target_file"
+
+  echo "Success: Added block '$block_name' to '$target_file'."
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  ensure_block_in_file "$@"
+fi
