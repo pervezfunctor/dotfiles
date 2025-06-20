@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 set -e
 
@@ -32,17 +32,47 @@ usage() {
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -s|--storage) STORAGE="$2"; shift ;;
-        -i|--vm-id) VM_ID="$2"; shift ;;
-        -n|--vm-name) VM_NAME="$2"; shift ;;
-        -d|--disk-size) DISK_SIZE="$2"; shift ;;
-        -m|--memory) MEMORY="$2"; shift ;;
-        -c|--cores) CORES="$2"; shift ;;
-        -u|--username) USERNAME="$2"; shift ;;
-        -p|--password) PASSWORD="$2"; shift ;;
-        -U|--url) ROCKY_IMAGE_URL="$2"; shift ;;
-        -h|--help) usage ;;
-        *) echo "Unknown parameter: $1"; usage ;;
+    -s | --storage)
+        STORAGE="$2"
+        shift
+        ;;
+    -i | --vm-id)
+        VM_ID="$2"
+        shift
+        ;;
+    -n | --vm-name)
+        VM_NAME="$2"
+        shift
+        ;;
+    -d | --disk-size)
+        DISK_SIZE="$2"
+        shift
+        ;;
+    -m | --memory)
+        MEMORY="$2"
+        shift
+        ;;
+    -c | --cores)
+        CORES="$2"
+        shift
+        ;;
+    -u | --username)
+        USERNAME="$2"
+        shift
+        ;;
+    -p | --password)
+        PASSWORD="$2"
+        shift
+        ;;
+    -U | --url)
+        ROCKY_IMAGE_URL="$2"
+        shift
+        ;;
+    -h | --help) usage ;;
+    *)
+        echo "Unknown parameter: $1"
+        usage
+        ;;
     esac
     shift
 done
@@ -75,13 +105,13 @@ fi
 
 # Create the VM
 echo "Creating VM $VM_NAME with ID $VM_ID..."
-qm create $VM_ID    --name $VM_NAME \
-                    --memory $MEMORY \
-                    --cores $CORES \
-                    --ostype l26 \
-                    --agent 1 \
-                    --cpu host \
-                    --net0 virtio,bridge=vmbr0
+qm create $VM_ID --name $VM_NAME \
+    --memory $MEMORY \
+    --cores $CORES \
+    --ostype l26 \
+    --agent 1 \
+    --cpu host \
+    --net0 virtio,bridge=vmbr0
 
 if [ $? -ne 0 ]; then
     echo "Failed to create VM."
@@ -98,7 +128,7 @@ fi
 
 echo "Attaching disk to VM..."
 qm set "$VM_ID" --scsihw virtio-scsi-pci \
-                --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0",discard=on,ssd=1
+    --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0",discard=on,ssd=1
 
 if [ $? -ne 0 ]; then
     echo "Failed to attach disk to VM"
@@ -130,11 +160,11 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Configuring cloud-init..."
-qm set $VM_ID   --serial0 socket \
-                --vga serial0 \
-                --ipconfig0 ip=dhcp \
-                --cipassword $PASSWORD \
-                --ciuser $USERNAME
+qm set $VM_ID --serial0 socket \
+    --vga serial0 \
+    --ipconfig0 ip=dhcp \
+    --cipassword $PASSWORD \
+    --ciuser $USERNAME
 
 if [ $? -ne 0 ]; then
     echo "Failed to configure cloud-init"

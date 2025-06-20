@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 function si() {
     sudo apk add --no-cache "$@"
@@ -23,7 +23,7 @@ core_install() {
 
     slog "Installing core packages"
 
-    si gpg curl wget git trash-cli tree tar unzip gcc make stow fzf
+    si gpg curl wget git trash-cli tree tar unzip gcc make stow fzf gawk
 
     slog "Core packages installation done!"
 }
@@ -41,9 +41,10 @@ sys_python_install() {
 essential_install() {
     slog "Installing essential packages"
 
+    pkgx_install
     sys_python_install
 
-    si zip micro p7zip gawk net-tools iproute2 nmap
+    si zip micro p7zip net-tools iproute2 nmap
 
     slog "Essential packages installation done!"
 }

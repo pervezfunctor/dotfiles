@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 brew_install() {
     has_cmd brew && return 0
@@ -203,10 +203,31 @@ bash_config_install() {
     slog "bash config done!"
 }
 
+zsh_config_exists() {
+    # shellcheck disable=SC2016
+    grep -q '\.ilm/share/dot-zshrc' ~/.zshrc 2>/dev/null || grep -q 'source ${DOT_DIR}/share/dot-zshrc' ~/.zshrc 2>/dev/null
+}
+
+zsh-min_config_install() {
+    if ! file_exists ~/.zshrc; then
+        warn "$HOME/.zshrc doesn't exist, skipping zsh config"
+        return
+    fi
+
+    slog "Configuring zsh"
+
+    file_exists ~/.zshrc || touch ~/.zshrc
+    if ! zsh_config_exists; then
+        echo "export DOT_DIR=$DOT_DIR" >>~/.zshrc
+        # shellcheck disable=SC2016
+        echo 'source ${DOT_DIR}/share/dot-zshrc' >>~/.zshrc
+    fi
+
+    slog "bash config done!"
+}
+
 zsh_config_install() {
     slog "zsh config"
-
-    # @TODO: prepend DOT_DIR
 
     srm "$HOME/.zshrc"
     smd "$HOME/.zsh"
@@ -608,8 +629,27 @@ brew_packages() {
     brew_good_packages
 }
 
+slim-shell_install() {
+    has_cmd cli_install && cli_install
+    pixi_install
+    pixi_shell_slim_install
+    pkgx_install
+}
+
+shell_install() {
+    has_cmd cli_install && cli_install
+
+    pixi_install
+    pixi_shell_install
+
+    pkgx_install
+
+    brew_install
+    brew_shell_install
+}
+
 base-group_check() {
-    cmd_check gcc make curl wget git trash tree tar unzip stow
+    cmd_check gcc make curl wget git trash tree tar unzip
     dir_check "$DOT_DIR"
     bash_config_check
 }
@@ -620,6 +660,13 @@ base_groupstall() {
 
     git_config_install
     bash_config_install
+
+    has_cmd zsh || return 0
+    if ! file_exists "$HOME/.zshrc"; then
+        zsh-min_config_install
+    else
+        zsh_config_install
+    fi
 
     base-group_check
 }
@@ -671,6 +718,12 @@ shell_groupstall() {
     shell-group_check
 }
 
+shell-ui_groupstall() {
+    shell_groupstall
+    fonts_install
+    terminal_bin_install
+}
+
 ct-group_check() {
     cmd_check incus docker podman distrobox toolbox
 }
@@ -685,6 +738,11 @@ ct_groupstall() {
 vm_groupstall() {
     ct_groupstall
     has_cmd vm_install && vm_install
+}
+
+vm-ui_groupstall() {
+    vm_groupstall
+    vm_ui_install
 }
 
 desktop_groupstall() {

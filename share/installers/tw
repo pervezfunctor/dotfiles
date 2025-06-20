@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 zi() {
     sudo zypper --non-interactive --quiet install --auto-agree-with-licenses "$@"
@@ -48,7 +48,7 @@ core_install() {
 
     slog "Installing core packages"
 
-    si curl wget git tar tree unzip cmake stow file trash-cli libsecret
+    si curl wget git tar tree unzip cmake stow file trash-cli libsecret gawk
     sudo zypper install -y -t pattern devel_basis
 
     slog "Core packages installation done!"
@@ -68,11 +68,12 @@ snap_install() {
 }
 
 essential_install() {
+    pkgx_install
     sys_python_install
     # snap_install
 
     slog "Installing essential packages"
-    si unar zip micro-editor 7zip gawk readline-devel sqlite3-devel \
+    si unar zip micro-editor 7zip readline-devel sqlite3-devel \
         libffi-devel libbz2-devel xz-devel gum net-tools iproute2 nmap
 
     slog "Essential packages installation done!"

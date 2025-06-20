@@ -1,4 +1,4 @@
-#!/bin/bash
+# !/usr/bin/env bash
 
 choice=$(echo -e "Lock\nLogout\nReboot\nShutdown" | rofi -dmenu -i -p "Power Menu")
 

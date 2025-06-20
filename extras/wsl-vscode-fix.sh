@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+# !/usr/bin/env bash
 
 # Fix VS Code permissions issue in WSL
 echo "Fixing VS Code permissions in WSL..."

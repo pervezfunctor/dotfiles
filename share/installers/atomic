@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 webi_install() {
     has_cmd ~/.local/bin/webi && return 0
@@ -59,22 +59,6 @@ pixi_install() {
 
 #     cmd_check pkgx
 # }
-
-pkgx_install() {
-    has_cmd ~/.local/bin/pkgx && return 0
-
-    mkdir -p ~/.local/bin
-    if has_cmd curl; then
-        curl -fsSL "https://pkgx.sh/$(uname)/$(uname -m).tgz" | tar xz -C ~/.local/bin
-    elif has_cmd wget; then
-        wget -qO- "https://pkgx.sh/$(uname)/$(uname -m).tgz" | tar xz -C ~/.local/bin
-    else
-        warn "curl or wget not installed, skipping pkgx installation"
-        return 1
-    fi
-
-    cmd_check pkgx
-}
 
 uv_install() {
     has_cmd uv && return 0

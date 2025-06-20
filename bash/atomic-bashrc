@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
@@ -7,4 +7,3 @@ if [[ -n "$CONTAINER_ID" ]]; then
 else
     eval "$(starship init bash)"
 fi
-

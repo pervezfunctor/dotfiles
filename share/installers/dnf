@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 si() {
     if has_cmd dnf5; then
@@ -157,6 +157,7 @@ core_install() {
 essential_install() {
     slog "Installing essential packages"
 
+    pkgx_install
     sys_python_install
 
     si zip p7zip cmake unar gawk readline-devel sqlite-devel libffi-devel \

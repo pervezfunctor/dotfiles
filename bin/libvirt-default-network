@@ -1,4 +1,4 @@
-#! /bin/bash
+# !/usr/bin/env bash
 
 if virsh net-info default &>/dev/null; then
   echo "Default network is already defined"

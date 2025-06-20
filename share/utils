@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 export DOT_DIR=${USE_DOT_DIR:-$HOME/.ilm}
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
@@ -938,15 +938,33 @@ nix_dotfiles() {
     nix run nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 }
 
+pkgx_install() {
+    has_cmd ~/.local/bin/pkgx && return 0
+
+    if has_cmd brew; then
+        brew install pkgx
+        return 0
+    fi
+
+    if has_cmd curl; then
+        curl -fsSL "https://pkgx.sh/$(uname)/$(uname -m).tgz" | tar xz -C ~/.local/bin
+    elif has_cmd wget; then
+        wget -qO- "https://pkgx.sh/$(uname)/$(uname -m).tgz" | tar xz -C ~/.local/bin
+    else
+        warn "curl or wget not installed, skipping pkgx installation"
+        return 1
+    fi
+
+    cmd_check pkgx
+}
+
 dotfiles_install() {
     if ! has_cmd git; then
-        if has_cmd nix; then
-            nix_dotfiles
-        elif ! is_atomic; then
-            si git
-            has_cmd git || err_exit "git not installed! Qutting."
-        fi
+        pkgx_install
+        has_cmd pkgx && eval "$(pkgx +git)"
     fi
+
+    has_cmd git || err_exit "git not installed, cannot clone dotfiles repository"
 
     slog "Cloning dotfiles to $DOT_DIR"
     clone-update https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
@@ -956,38 +974,47 @@ dotfiles_install() {
     fi
 }
 
-stowgf() {
-    if ! has_cmd stow; then
-        err_exit "stow not installed, cannot stow dotfiles"
+ensure_stow() {
+    has_cmd stow && return 0
+    has_cmd pkgx || pkgx_install
+    has_cmd pkgx
+}
+
+stow_core() {
+    if ! ensure_stow; then
+        warn "stow or pkgx must be installed"
+        return 1
     fi
 
+    if has_cmd stow; then
+        stow "$@"
+    elif has_cmd pkgx; then
+        pkgx stow "$@"
+    else
+        warn "stow or pkgx must be installed"
+    fi
+}
+
+stowgf() {
     for p in "$@"; do
         slog "stow $p"
         srm "$XDG_CONFIG_HOME/$p"
         smd "$XDG_CONFIG_HOME/$p"
-        stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
+        stow_core -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
     done
 }
 
 stowdf() {
-    if ! has_cmd stow; then
-        err_exit "stow not installed, cannot stow dotfiles"
-    fi
-
     for p in "$@"; do
         slog "stow $p"
-        stow -d "$DOT_DIR" -t "$HOME" --dotfiles "$p"
+        stow_core -d "$DOT_DIR" -t "$HOME" --dotfiles "$p"
     done
 }
 
 stownf() {
-    if ! has_cmd stow; then
-        err_exit "stow not installed, cannot stow dotfiles"
-    fi
-
     for p in "$@"; do
         slog "stow $p"
-        stow --no-folding -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
+        sd --no-folding -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
     done
 }
 

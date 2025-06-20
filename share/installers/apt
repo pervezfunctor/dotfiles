@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -19,11 +19,6 @@ function si() {
     for pkg in "${not_found[@]}"; do
         warn "Package $pkg not found in apt repository"
     done
-
-    # for p in "$@"; do
-    #     slog "Installing package $p"
-    #     sudo apt-get -qq -y install "$p"
-    # done
 }
 
 pacstall_install() {
@@ -49,7 +44,11 @@ ubuntu_packages() {
         trash-cli tar stow gcc make file wl-clipboard tree bat eza ripgrep \
         zoxide fd-find htop sd bat gawk starship libsecret-tools
 
-    is_plucky && si fzf tealdeer gum
+    if is_plucky; then
+        si fzf tealdeer gum
+    else
+        pkgx_install
+    fi
 
     slog "Installing packages done!"
 
@@ -71,7 +70,9 @@ debian_packages() {
 
     slog "Installing packages done!"
 
+    pkgx_install
     pixi_install
+
     pi fzf yazi tealdeer git-delta eza bat starship lazygit
     slog "Installing pixi packages done!"
 }
@@ -82,10 +83,14 @@ core_install() {
     slog "Installing core packages"
 
     si software-properties-common apt-transport-https ca-certificates gpg curl \
-        wget git-core trash-cli tar unzip libsecret-tools \
-        tree command-not-found file build-essential libfuse2 zstd
+        wget git-core trash-cli tar unzip libsecret-tools build-essential \
+        tree command-not-found file libfuse2 zstd gawk
 
-    is_plucky && si stow
+    if is_plucky; then
+        si stow
+    else
+        pkgx_install
+    fi
 
     slog "Core packages installation done!"
 }
@@ -118,10 +123,14 @@ snap_install() {
 essential_install() {
     slog "Installing essential packages"
 
+    pkgx_install
     sys_python_install
-    snap_install
 
-    si zip unar micro nala p7zip gawk libreadline-dev libsqlite3-dev \
+    if [ -d /run/systemd/system ]; then
+        snap_install
+    fi
+
+    si zip unar micro nala p7zip libreadline-dev libsqlite3-dev \
         libffi-dev libbz2-dev liblzma-dev net-tools iproute2 nmap
 
     slog "Essential packages installation done!"
@@ -224,7 +233,7 @@ terminal_bin_install() {
     slog "terminal installation done!"
 }
 
-vm_ui_install() {
+vm-ui_install() {
 
     is_desktop || return 0
 
@@ -242,7 +251,7 @@ ui_install() {
     vscode_bin_install
     apps_install
 
-    vm_ui_install
+    vm-ui_install
     slog "ui installation done!"
 }
 
@@ -310,13 +319,17 @@ ct_install() {
 
     incus_install
     docker_install
-    portainer_install
     podman_install
     cockpit_install
 
     si buildah distrobox
 
     slog "Container tools installation done!"
+}
+
+ct-ui_install() {
+    ct_install
+    portainer_install
 }
 
 virt_install() {

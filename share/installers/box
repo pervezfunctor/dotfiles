@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 nvim_boxstall() {
     srm ~/.config/nvim

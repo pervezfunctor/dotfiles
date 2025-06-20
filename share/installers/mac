@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 macos_settings_install() {
     defaults write -g NSWindowShouldDragOnGesture -bool true
@@ -44,13 +44,13 @@ core_install() {
     brew_install
     zsh_config_install
     bi mas coreutils bash curl wget trash tree unzip coreutils gum stow \
-        nmap
+        nmap gawk
 }
 
 essential_install() {
     slog "Installing Essential packages"
 
-    bis gawk p7zip cmake unar zip
+    bis p7zip cmake unar zip pkgx
 
     slog "Essential packages installation done!"
 }

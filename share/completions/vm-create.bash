@@ -1,4 +1,4 @@
-#!/bin/bash
+# !/usr/bin/env bash
 # Bash completion for vm-create script
 # shellcheck disable=SC2207  # Standard pattern for bash completions
 

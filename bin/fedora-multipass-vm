@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 INSTANCE="fedora-cloud"
 CPUS=2

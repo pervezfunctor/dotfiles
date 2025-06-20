@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 si() {
     sudo pacman -S --needed --quiet --noconfirm "$@"
@@ -36,7 +36,7 @@ core_install() {
     slog "Installing core packages"
 
     si curl wget git base-devel trash-cli tree micro tar unzip stow cmake zstd \
-        fuse2 file libxcrypt-compat libsecret
+        fuse2 file libxcrypt-compat libsecret gawk
 
     slog "Core packages installation done!"
 }
@@ -44,7 +44,8 @@ core_install() {
 sys_python_install() {
     slog "Installing python"
 
-    si python python-pipx python-pip python-setuptools python-wheel python-virtualenv
+    si python python-pipx python-pip python-setuptools python-wheel \
+        python-virtualenv
     pipx install uv
 
     slog "Python installation done!"
@@ -68,9 +69,10 @@ snap_install() {
 essential_install() {
     slog "Installing essential packages"
 
+    pkgx_install
     sys_python_install
 
-    si unarchiver zip gawk tmux pkg-config net-tools iproute2 nmap \
+    si unarchiver zip tmux pkg-config net-tools iproute2 nmap \
         p7zip cmake readline sqlite libffi zlib xz pkgfile gum
     sudo pkgfile --update
 

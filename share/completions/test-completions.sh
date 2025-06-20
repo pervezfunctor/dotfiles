@@ -1,4 +1,4 @@
-#!/bin/bash
+# !/usr/bin/env bash
 # Test script for vm and vm-create completions
 # shellcheck disable=SC1091  # Don't follow sourced completion files
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+# !/usr/bin/env bash
 # Bash completion for ict script
 # shellcheck disable=SC2207  # Standard pattern for bash completions
 

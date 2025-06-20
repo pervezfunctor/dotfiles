@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 # FZF-based COMMAND finder (minimalist, shellcheck-clean version)
 # Press Ctrl+X, Ctrl+E to use.

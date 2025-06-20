@@ -1,4 +1,4 @@
-#!/bin/bash
+# !/usr/bin/env bash
 
 WSL_DISTRO=${1:-Ubuntu}
 USERNAME=${2:-user}

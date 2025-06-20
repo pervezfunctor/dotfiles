@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 if is_linux; then
     alias upgrade="sudo apt-get -qq update && sudo apt-get -qq -y upgrade"
@@ -318,8 +318,4 @@ if has_cmd emacs; then
     alias en="emacs -nw"
 fi
 
-if has_cmd bat; then
-    alias cat="bat"
-elif has_cmd batcat; then
-    alias cat="batcat"
-fi
+has_cmd bat || has_cmd batcat && alias bat="batcat"

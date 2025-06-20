@@ -1,4 +1,4 @@
-#! /bin/zsh
+#!/bin/zsh
 
 [ -d ~/.zgen ] || git clone https://github.com/tarjoilija/zgen.git ~/.zgen
 
@@ -36,11 +36,11 @@ if ! zgen saved; then
     zgen prezto history
     zgen prezto directory
     zgen prezto spectrum
-    zgen prezto completion                     # must be loaded after utility
-    zgen prezto archive                        # lsarchive and unarchive commands
-    zgen prezto git                            # git aliases
+    zgen prezto completion # must be loaded after utility
+    zgen prezto archive    # lsarchive and unarchive commands
+    zgen prezto git        # git aliases
     zgen prezto command-not-found
-    zgen prezto fasd                           # j , f, d etc.
+    zgen prezto fasd # j , f, d etc.
     zgen prezto osx
 
     zgen prezto syntax-highlighting
@@ -59,8 +59,8 @@ if ! zgen saved; then
     # zgen load unixorn/git-extra-commands
     # zgen load denysdovhan/spaceship-prompt spaceship
 
-    zgen prezto prompt          # prompt must be the last module to load
-    zgen save                   # save all to init script
+    zgen prezto prompt # prompt must be the last module to load
+    zgen save          # save all to init script
 fi
 
 # copied from tmux prezto module
@@ -68,11 +68,11 @@ start_tmux() {
     tmux start-server
 
     # Create a 'seartipy' session if no session has been defined in tmux.conf.
-    if ! tmux has-session 2> /dev/null; then
+    if ! tmux has-session 2>/dev/null; then
         tmux_session='seartipy'
         tmux \
             new-session -d -s "$tmux_session" \; \
-            set-option -t "$tmux_session" destroy-unattached off &> /dev/null
+            set-option -t "$tmux_session" destroy-unattached off &>/dev/null
     fi
 
     # Attach to the 'prezto' session or to the last session used.

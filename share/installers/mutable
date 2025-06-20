@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 nix_install() {
     has_cmd nix && return 0
@@ -87,25 +87,6 @@ multipass_install() {
     else
         warn "snap not installed, skipping multipass installation"
     fi
-}
-
-slim-shell_install() {
-    has_cmd cli_install && cli_install
-    pixi_install
-    pixi_shell_slim_install
-    pkgx_install
-}
-
-shell_install() {
-    has_cmd cli_install && cli_install
-
-    pixi_install
-    pixi_shell_install
-
-    pkgx_install
-
-    brew_install
-    brew_shell_install
 }
 
 vscode_install() {
