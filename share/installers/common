@@ -743,12 +743,10 @@ dev-slim_groupstall() {
 }
 
 vbox-dev_groupstall() {
-    shell_groupstall
     docker_install
+    shell_groupstall
     python_install
     npm_install
-    nvim_config_install
-    tmux_config_install
 }
 
 dev_groupstall() {
