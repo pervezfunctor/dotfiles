@@ -742,6 +742,15 @@ dev-slim_groupstall() {
     fonts_install
 }
 
+vbox-dev_groupstall() {
+    shell_groupstall
+    docker_install
+    python_install
+    npm_install
+    nvim_config_install
+    tmux_config_install
+}
+
 dev_groupstall() {
     dev-slim_groupstall
 
