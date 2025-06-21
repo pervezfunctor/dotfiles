@@ -23,6 +23,10 @@ is_ip() {
     grep -oE '\b((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\b' "$1" 2>&1
 }
 
+default_shell() {
+    basename "$(getent passwd "$USER" | cut -d: -f7)"
+}
+
 safe_append() {
     if ! grep -q "$1" "$2" 2>/dev/null; then
         slog "Adding $1 to $2"

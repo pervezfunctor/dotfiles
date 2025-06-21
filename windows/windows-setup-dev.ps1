@@ -1087,6 +1087,11 @@ function Install-VSCodeExtensions {
 
     $extensionsFile = "$global:DotDir\extras\vscode\extensions\wsl"
 
+    if (!(Get-Dotfiles)) {
+        Write-Host "Failed to clone dotfiles. Skipping vscode extensions..." -ForegroundColor Red
+        return
+    }
+
     if (!(Test-Path $extensionsFile)) {
         Write-Host "Extensions file not found at: $extensionsFile" -ForegroundColor Red
         return
@@ -1564,7 +1569,7 @@ function Initialize-SSHKey {
     }
 
     Write-Host "Generating new SSH key..." -ForegroundColor Cyan
-    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "$(whoami)@$(hostname)"
+    ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\id_ed25519" -N "" -C "$env:USERNAME@$env:COMPUTERNAME"
     Write-Host "SSH key generated successfully!" -ForegroundColor Green
 }
 
