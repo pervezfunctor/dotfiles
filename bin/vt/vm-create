@@ -783,10 +783,8 @@ launch_vm() {
 
     slog "Adding VM to /etc/hosts for name-based access..."
     sleep 5
-    if [[ -x "$(has_cmd vm-hosts)" ]]; then
+    if has_cmd vm-hosts; then
         vm-hosts add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
-    elif [[ -x "$HOME/.ilm/bin/vm-hosts" ]]; then
-        "$HOME/.ilm/bin/vm-hosts" add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
     else
         warn "vm-hosts script not found, skipping /etc/hosts update"
     fi

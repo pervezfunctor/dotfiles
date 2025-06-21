@@ -515,9 +515,7 @@ launch_vm() {
     # Add VM to /etc/hosts if vm-hosts script is available
     slog "Adding VM to /etc/hosts for name-based access..."
     sleep 5
-    if [[ -x "$HOME/.ilm/bin/vm-hosts" ]]; then
-        "$HOME/.ilm/bin/vm-hosts" add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
-    elif [[ -x "$(command -v vm-hosts)" ]]; then
+    if has_cmd vm-hosts; then
         vm-hosts add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
     else
         warn "vm-hosts script not found, skipping /etc/hosts update"
