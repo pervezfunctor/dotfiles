@@ -1240,26 +1240,7 @@ wait_for() {
     return 1
 }
 
-bootstrap() {
-    if [[ $EUID -eq 0 ]]; then
-        echo "This script must not be run as root. DO NOT use sudo." >&2
-        exit 1
-    fi
-
-    environs
-
-    curdir=$(pwd)
-
-    slog "Bootstrapping, switching to directory $HOME"
-    cd "$HOME" || err_exit "could not cd to $HOME"
-
-    slog "Removing old logs"
-    rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log 2>/dev/null
-
-    has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
-
-    [ -n "$NOSUDO" ] || keep_sudo_running
-
+source_installers() {
     local SHARE
     SHARE="${ILM_BASE_URL}/share"
 
@@ -1292,6 +1273,29 @@ bootstrap() {
         source_curl "$SHARE/fns"
     fi
 
+}
+
+bootstrap() {
+    if [[ $EUID -eq 0 ]]; then
+        echo "This script must not be run as root. DO NOT use sudo." >&2
+        exit 1
+    fi
+
+    environs
+
+    curdir=$(pwd)
+
+    slog "Bootstrapping, switching to directory $HOME"
+    cd "$HOME" || err_exit "could not cd to $HOME"
+
+    slog "Removing old logs"
+    rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log 2>/dev/null
+
+    has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
+
+    [ -n "$NOSUDO" ] || keep_sudo_running
+
+    source_installers
     slog "Installing ${*} ..."
     main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee ~/.dotfiles-error.log >&2)
     slog "Installation done! Look at ~/.dotfiles-error.log for any errors."

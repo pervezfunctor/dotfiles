@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091
+# shellcheck disable=SC1090
+
+set -euo pipefail
+
+DOT_DIR="${DOT_DIR:-$HOME/.ilm}"
+
+source "$DOT_DIR/share/utils"
+
+source_installers &>/dev/null
+
+if file_exists "$1"; then
+  source "$1"
+else
+  err_exit "script $1 not found"
+fi
+
+cmd_check core_install
+cmd_check essential_install
+cmd_check cli_install
+cmd_check cpp_install
+cmd_check vscode_bin_install
+cmd_check terminal_bin_install
+cmd_check emacs_bin_install
+cmd_check ui_install
+cmd_check vm_install
+
+if ! is_atomic && ! is_mac; then
+  cmd_check docker_install
+  cmd_check podman_install
+  cmd_check incus_install
+  cmd_check cockpit_install
+
+  cmd_check ct_install
+  cmd_check vm-ui_install
+fi
+
+cmd_check dotfiles_install
+cmd_check pkgx_install
+cmd_check docker_install
+cmd_check pixi_install
+cmd_check brew_install
+cmd_check pixi_shell_slim_install
+cmd_check brew_shell_slim_install
+cmd_check pixi_shell_install
+cmd_check brew_shell_install
+cmd_check vscode_install
+cmd_check python_install
+cmd_check shell_install
+
+if ! is_mac; then
+  cmd_check fonts_install
+  cmd_check starship_install
+  cmd_check flathub_install
+  cmd_check atomic_distrobox_install
+  cmd_check apps_install
+  cmd_check slim-apps_install
+  cmd_check gnome_config_install
+
+  cmd_check incus_config_install
+  cmd_check libvirt_config_install
+  cmd_check docker_config_install
+fi
+
+cmd_check git_config_install
+cmd_check bash_config_install
+cmd_check zsh-min_config_install
+cmd_check zsh_config_install
+cmd_check ghostty_config_install
+cmd_check wezterm_config_install
+cmd_check kitty_config_install
+cmd_check tmux_config_install
+cmd_check emacs_config_install
+cmd_check nvim_config_install
+
+cmd_check generic_groupstall
+
+is_atomic && return 0
+
+cmd_check base_groupstall
+cmd_check min_groupstall
+cmd_check slim-shell_groupstall
+cmd_check shell_groupstall
+cmd_check shell-ui_groupstall
+cmd_check ct_groupstall
+cmd_check vm_groupstall
+cmd_check vm-ui_groupstall
+cmd_check desktop_groupstall
+
+cmd_check nvim_boxstall
+cmd_check emacs_boxstall
+cmd_check tmux_boxstall
+cmd_check zsh_boxstall
+cmd_check terminal_boxstall
+
+cmd_check slimbox_groupstall
+cmd_check box_groupstall
+cmd_check terminal_boxstall
+cmd_check dbox_groupstall
+cmd_check wslbox_groupstall
+cmd_check wsl_groupstall
+cmd_check wsl_groupstall
+cmd_check centos-wsl_groupstall
+cmd_check nixbox_groupstall
+cmd_check nixos-wslbox_groupstall
+cmd_check fullbox_groupstall

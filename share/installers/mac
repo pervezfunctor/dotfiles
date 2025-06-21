@@ -90,7 +90,7 @@ ct_install() {
 vm_install() {
     slog "Installing virtualization packages"
 
-    bi orbstack colima lim
+    bi orbstack colima
 
     slog "Virtualization packages installation done!"
 }

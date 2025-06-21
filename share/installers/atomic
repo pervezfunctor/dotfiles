@@ -811,7 +811,6 @@ dbox-docker-dev_groupstall() {
 
     min_groupstall
     si firefox gnome-keyring wl-clipboard libsecret
-    sudo apt-get purge fzf
 
     starship_install
     vscode_install
