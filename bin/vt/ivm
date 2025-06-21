@@ -25,7 +25,7 @@ COMMANDS:
     exec <name> <cmd>       Execute command in VM
     shell <name>            Get interactive shell in VM
     ip <name>               Get VM IP address
-    ssh <name> [username]   Connect to VM via SSH
+    ssh <name> <username>   Connect to VM via SSH
     info <name>             Show detailed VM information
     config <name>           Show VM configuration
     logs <name> [type]      Show VM logs (instance, console, or cloud-init)
@@ -377,8 +377,8 @@ shell_to_vm() {
     local username="${2:-}"
 
     if [[ -z "$username" ]]; then
-        username=$(default_username "$vm_name")
-        slog "Auto-detected username: $username (override with: $0 shell $vm_name <username>)"
+        fail "Username required. Usage: $0 shell <vm_name> <username>"
+        return 1
     fi
 
     # Check if the detected user exists in the VM

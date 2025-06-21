@@ -131,7 +131,7 @@ vm_ssh() {
   fi
 
   if [[ -z "$username" ]]; then
-    fail "Username not provided. Usage: vm ssh $vm_name <username>"
+    fail "Username not provided. Usage: vm ssh <vm_name> [username]"
     return 1
   fi
 

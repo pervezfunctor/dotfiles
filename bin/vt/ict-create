@@ -64,37 +64,30 @@ configure_distribution() {
     case "$DISTRO" in
     ubuntu)
         RELEASE=${RELEASE:-"24.04"}
-        USERNAME=${USERNAME:-"ubuntu"}
         IMAGE="images:ubuntu/${RELEASE}/cloud"
         ;;
     fedora)
         RELEASE=${RELEASE:-"42"}
-        USERNAME=${USERNAME:-"fedora"}
         IMAGE="images:fedora/${RELEASE}/cloud"
         ;;
     arch)
         RELEASE=${RELEASE:-"current"}
-        USERNAME=${USERNAME:-"arch"}
         IMAGE="images:archlinux/${RELEASE}/cloud"
         ;;
     debian)
         RELEASE=${RELEASE:-"12"}
-        USERNAME=${USERNAME:-"debian"}
         IMAGE="images:debian/${RELEASE}/cloud"
         ;;
     centos)
         RELEASE=${RELEASE:-"9-Stream"}
-        USERNAME=${USERNAME:-"centos"}
         IMAGE="images:centos/${RELEASE}/cloud"
         ;;
     tumbleweed)
         RELEASE=${RELEASE:-"current"}
-        USERNAME=${USERNAME:-"opensuse"}
         IMAGE="images:opensuse/tumbleweed/cloud"
         ;;
     alpine)
         RELEASE=${RELEASE:-"3.22"}
-        USERNAME=${USERNAME:-"alpine"}
         IMAGE="images:alpine/${RELEASE}/cloud"
         ;;
     *)
@@ -105,6 +98,7 @@ configure_distribution() {
     esac
 
     CONTAINER_NAME=${CONTAINER_NAME:-"$DISTRO-ct"}
+    USERNAME=${USERNAME:=$(default_username alpine)}
     PASSWORD=${PASSWORD:-"$USERNAME"}
     PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 

@@ -112,7 +112,7 @@ configure_distribution() {
     esac
 
     VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
-    USERNAME=$(default_username "$DISTRO")
+    USERNAME=${USERNAME:=$(default_username alpine)}
     PASSWORD=${PASSWORD:-"$USERNAME"}
     PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
