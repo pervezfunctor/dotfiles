@@ -123,7 +123,7 @@ vm-create --distro <TAB>           # Shows: ubuntu fedora arch debian
 vm-create --memory <TAB>           # Shows: 1024 2048 4096 8192 16384
 vm-create --vcpus <TAB>            # Shows: 1 2 4 8
 vm-create --disk-size <TAB>        # Shows: 20G 40G 80G 100G
-vm-create --dotfiles <TAB>         # Shows: min slim-shell shell dev box
+vm-create --dotfiles <TAB>         # Shows: min shell-slim shell dev box
 vm-create --ssh-key <TAB>          # File path completion
 ```
 

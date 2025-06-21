@@ -89,7 +89,6 @@ rpm-ostree_packages() {
     has_cmd virsh || PKGS+=("libvirt")
     has_cmd virt-install || PKGS+=("virt-install")
     has_cmd code || PKGS+=("code")
-    # has_cmd docker || PKGS+=("docker-ce" "docker-ce-cli" "containerd.io" "docker-buildx-plugin" "docker-compose-plugin")
 
     if [[ ${#PKGS[@]} -eq 0 ]]; then
         slog "No packages to install"
@@ -160,10 +159,25 @@ essential_install() {
     pkgx_install
     sys_python_install
 
-    si zip p7zip cmake unar gawk readline-devel sqlite-devel libffi-devel \
+    si zip p7zip unar gawk readline-devel sqlite-devel libffi-devel \
         bzip2-devel xz-devel gum micro net-tools iproute2 nmap
 
     slog "Essential packages installation done!"
+}
+
+cli-slim_install() {
+    slog "Installing cli tools using dnf"
+
+    local base_pkgs=(zsh ShellCheck tmux htop gh fzf ripgrep fd-find bat zsh)
+
+    local fedora_pkgs=()
+    if is_fedora; then
+        fedora_pkgs=(zoxide git-delta procs)
+    fi
+
+    si "${base_pkgs[@]}" "${fedora_pkgs[@]}"
+
+    slog "cli tools installation done!"
 }
 
 cli_install() {

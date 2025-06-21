@@ -73,10 +73,18 @@ essential_install() {
     sys_python_install
 
     si unarchiver zip tmux pkg-config net-tools iproute2 nmap \
-        p7zip cmake readline sqlite libffi zlib xz pkgfile gum
+        p7zip readline sqlite libffi zlib xz pkgfile gum
     sudo pkgfile --update
 
     slog "Essential packages installation done!"
+}
+
+cli-slim_install() {
+    slog "Installing cli tools using pacman"
+
+    si zsh tmux htop fzf ripgrep fd bat zoxide eza starship gum git-delta
+
+    slog "cli tools installation done!"
 }
 
 cli_install() {

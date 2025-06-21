@@ -7,7 +7,7 @@ _vm_create_get_distros() {
 }
 
 _vm_create_get_dotfiles_groups() {
-    echo "min slim-shell shell dev box"
+    echo "min shell-slim shell dev box"
 }
 
 _vm_create_completion() {

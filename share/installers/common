@@ -39,21 +39,23 @@ mise_shell_install() {
     slog "shell tools with mise done!"
 }
 
-brew_shell_slim_install() {
-    bis gh gum stow tmux carapace lazygit eza fzf fd zoxide starship yazi
+brew_slim_shell_install() {
+    bis gh gum stow tmux carapace lazygit eza fzf fd zoxide starship
 
     if ! has_cmd luarocks; then
         bi luarocks
         brew link luarocks # unfortunately, this is needed currently.
     fi
     bi bash-preexec
-    has_cmd trash || bi trash-cli
-    has_cmd delta || bi git-delta
-    has_cmd nvim || bi neovim
-    has_cmd rg || bi ripgrep
-    has_cmd batcat || has_cmd bat || bi bat
-    has_cmd ug || bi ugrep
-    has_cmd emacs || bis micro
+
+    local pkgs=()
+    has_cmd trash || pkgs+=(trash-cli)
+    has_cmd delta || pkgs+=(git-delta)
+    has_cmd rg || pkgs+=(ripgrep)
+    has_cmd batcat || has_cmd bat || pkgs+=(bat)
+    has_cmd emacs || has_cmd mcirco || pkgs+=(micro)
+
+    [ ${#pkgs[@]} -gt 0 ] && bis "${pkgs[@]}"
 }
 
 brew_shell_install() {
@@ -64,19 +66,25 @@ brew_shell_install() {
 
     slog "shell tools with brew"
 
-    brew_shell_slim_install
+    brew_slim_shell_install
 
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
-        atuin direnv dust procs hyperfine pixi yq yazi htop dysk lsd whalebrew
+        atuin direnv dust procs hyperfine pixi yq yazi htop dysk lsd whalebrew \
+        yazi
 
-    has_cmd tv || bi television
+    local pkgs=()
 
-    has_cmd spf || bi superfile
-    has_cmd gdu || has_cmd gdu-go || bi gdu
-    has_cmd tldr || bi tealdeer
-    has_cmd choose || bi choose-rust
-    has_cmd btm || bi bottom
-    has_cmd nu || bi nushell
+    has_cmd tv || pkgs+=(television)
+    has_cmd ug || pkgs+=(ugrep)
+    has_cmd nvim || pkgs+=(neovim)
+    has_cmd spf || pkgs+=(superfile)
+    has_cmd gdu || has_cmd gdu-go || pkgs+=(gdu)
+    has_cmd tldr || pkgs+=(tealdeer)
+    has_cmd choose || pkgs+=(choose-rust)
+    has_cmd btm || pkgs+=(bottom)
+    has_cmd nu || pkgs+=(nushell)
+
+    [ ${#pkgs[@]} -gt 0 ] && bis "${pkgs[@]}"
 
     alias gdu=gdu-go
 
@@ -87,28 +95,31 @@ brew_shell_install() {
     slog "shell tools with brew done!"
 }
 
-pixi_shell_slim_install() {
+pixi_slim_shell_install() {
     has_cmd trash || pi trash-cli
     has_cmd rg || pi ripgrep
     has_cmd gum || pi go-gum
-    has_cmd ug || pi ugrep
-    has_cmd tldr || pi tealdeer
-    has_cmd tv || pi television
 
-    pis starship zoxide bat eza gh fzf carapace shellcheck fd git-delta direnv yq
+    pis starship zoxide bat eza gh fzf carapace shellcheck fd git-delta
 }
 
 pixi_shell_install() {
-    pixi_shell_slim_install
+    pixi_slim_shell_install
 
-    pis broot just lazydocker broot gdu nvim lazygit luarocks micro glances
-    pis cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi
-    pis carapace
+    pis broot just lazydocker broot gdu nvim lazygit luarocks micro glances \
+        cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi \
+        carapace direnv yq
 
-    has_cmd spf || pi superfile
-    has_cmd choose || pi choose-rust
-    has_cmd btm || pi bottom
-    has_cmd nu || pi nushell
+    local pkgs=()
+    has_cmd ug || pkgs+=(ugrep)
+    has_cmd tldr || pkgs+=(tealdeer)
+    has_cmd tv || pkgs+=(television)
+    has_cmd spf || pkgs+=(superfile)
+    has_cmd choose || pkgs+=(choose-rust)
+    has_cmd btm || pkgs+=(bottom)
+    has_cmd nu || pkgs+=(nushell)
+
+    [ ${#pkgs[@]} -gt 0 ] && pis "${pkgs[@]}"
 }
 
 go_shell_install() {
@@ -629,10 +640,10 @@ brew_packages() {
     brew_good_packages
 }
 
-slim-shell_install() {
+shell-slim_install() {
     has_cmd cli_install && cli_install
     pixi_install
-    pixi_shell_slim_install
+    pixi_slim_shell_install
     pkgx_install
 }
 
@@ -682,27 +693,33 @@ min_groupstall() {
     min-group_check
 }
 
-slim-shell-group_check() {
+shell-slim-group_check() {
     cmd_check trash rg gum ug tldr starship zoxide bat eza gh fzf
     cmd_check carapace shellcheck fd delta direnv yq
 }
 
 shell-group_check() {
-    slim-shell-group_check
+    shell-slim-group_check
     cmd_check gh nvim zsh tmux lazygit sd bat brew htop btm atuin gawk
     cmd_check shellcheck shfmt
     # cmd_check cheat choose curlie direnv doggo dotenv procs
     # cmd_check duf dust gdu hyperfine jq just yq
 }
 
-slim-shell_groupstall() {
+shell-slim_groupstall() {
     min_groupstall
-    slim-shell_install
+    shell-slim_install
 
     bash_config_install
     has_cmd zsh && zsh_config_install
 
-    slim-shell-group_check
+    shell-slim-group_check
+}
+
+shell-slim-ui_groupstall() {
+    shell-slim_groupstall
+    fonts_install
+    terminal_bin_install
 }
 
 shell_groupstall() {
@@ -722,6 +739,25 @@ shell-ui_groupstall() {
     shell_groupstall
     fonts_install
     terminal_bin_install
+}
+
+dev-slim_groupstall() {
+    base_groupstall
+    cli-slim_install
+
+    vscode_install
+    fonts_install
+}
+
+dev_groupstall() {
+    dev-slim_groupstall
+
+    has_cmd vm_install && vm_install
+    if is_linux; then
+        ptyxis_install
+    else
+        terminal_bin_install
+    fi
 }
 
 ct-group_check() {
@@ -749,9 +785,6 @@ desktop_groupstall() {
     vm_groupstall
     fonts_install
     has_cmd ui_install && ui_install
-
-    # tailscale_install
-    # @TODO: flatpak aliases?
 
     has_cmd code && vscode-extensions_install
     has_cmd code && vscode_config_install

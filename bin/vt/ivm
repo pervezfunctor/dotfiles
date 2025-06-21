@@ -47,7 +47,7 @@ SUPPORTED DISTROS:
 
 EXAMPLES:
     $0 create --distro ubuntu --name myubuntu --vcpus 4 --memory 4096
-    $0 create --distro fedora --dotfiles slim-shell docker
+    $0 create --distro fedora --dotfiles shell-slim docker
     $0 create --distro alpine --release 3.19 --nix
 
 All arguments after 'create' are forwarded directly to ivm-create.

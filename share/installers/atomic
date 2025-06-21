@@ -239,7 +239,7 @@ generic-ct_groupstall() {
     pkgx_install
 
     slog "Installing shell tools with pixi"
-    pixi_shell_slim_install
+    pixi_slim_shell_install
 
     has_cmd git || fail "git not installed. Quitting."
     slog "Installing shell tools with pixi done!"
@@ -366,7 +366,7 @@ fedora-atomic-tbox_groupstall() {
     jetbrains_nerd_font_install
 
     slog "Installing apps"
-    slim-apps_install
+    apps-slim_install
 
     slog "Setting up default distrobox for development"
 
@@ -384,8 +384,8 @@ ublue_groupstall() {
     dotfiles_install
     fonts_install
 
-    brew_shell_slim_install
-    slim-apps_install
+    brew_slim_shell_install
+    apps-slim_install
 
     vscode-extensions_install
     vscode_config_install
@@ -407,7 +407,7 @@ fedora-atomic_groupstall() {
     atomic_distrobox_install
 
     slog "Installing apps"
-    slim-apps_install
+    apps-slim_install
     fpi org.gnu.emacs
 
     is_gnome && gnome_config_install
@@ -432,7 +432,7 @@ fedora-layered_groupstall() {
     pkgx_install
 
     pis wget
-    pixi_shell_slim_install
+    pixi_slim_shell_install
 
     dotfiles_install
     bash_config_install
@@ -443,7 +443,7 @@ fedora-layered_groupstall() {
     vscode_config_install
     # docker_config_install
 
-    slim-apps_install
+    apps-slim_install
 
     is_gnome && gnome_config_install
     is_sway && sway_config_install
@@ -485,7 +485,7 @@ ptyxis_install() {
     slog "Ptyxis installation and configuration done!"
 }
 
-slim-apps_install() {
+apps-slim_install() {
     if ! has_cmd flatpak; then
         warn "flatpak not installed, skipping flatpak apps"
         return 1
@@ -503,7 +503,7 @@ slim-apps_install() {
 apps_install() {
     slog "Installing flatpak apps"
 
-    slim-apps_install
+    apps-slim_install
 
     fpi md.obsidian.Obsidian
     has_cmd podman && fpi io.podman_desktop.PodmanDesktop

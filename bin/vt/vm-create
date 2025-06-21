@@ -229,7 +229,7 @@ EXAMPLES:
     $0 --distro ubuntu --brew                    # Ubuntu VM with Homebrew and dev tools
     $0 --distro ubuntu --nix                     # Ubuntu VM with Nix package manager
     $0 --distro fedora --docker --brew           # Fedora VM with both Docker and Homebrew
-    $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --memory 8192 --dotfiles slim-shell docker code-server
+    $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --memory 8192 --dotfiles shell-slim docker code-server
 
 PREREQUISITES:
     - KVM/QEMU installed and running
@@ -638,7 +638,7 @@ generate_cloud_init() {
       Dotfiles are installed and ready to use.
       Location: /home/$USERNAME/.ilm
       Quick commands:
-        ilmi slim-shell
+        ilmi shell-slim
         ilmi shell
         ilmi docker
         ilmi python

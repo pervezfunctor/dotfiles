@@ -40,7 +40,7 @@ EXAMPLES:
     $0 list                         # List all containers
     $0 status ubuntu                # Show status of 'ubuntu' container
     $0 create --distro ubuntu --name myubuntu  # Create Ubuntu container named 'myubuntu'
-    $0 create --distro fedora --dotfiles slim-shell docker  # Create Fedora container with dotfiles and Docker
+    $0 create --distro fedora --dotfiles shell-slim docker  # Create Fedora container with dotfiles and Docker
     $0 shell ubuntu                 # Enter 'ubuntu' container shell
     $0 exec ubuntu "ls -la"         # Run command in 'ubuntu' container
     $0 ip ubuntu                    # Get IP address of 'ubuntu' container

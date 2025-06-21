@@ -74,7 +74,7 @@ sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools
 ./bin/vm-create --distro fedora --docker --brew
 
 # Create Ubuntu VM with dotfiles pre-installed
-./bin/vm-create --distro ubuntu --dotfiles slim-shell
+./bin/vm-create --distro ubuntu --dotfiles shell-slim
 ```
 
 ### All Options
@@ -167,14 +167,14 @@ When using the `--dotfiles` flag with an argument, the VM will have your persona
 **Installation Process:**
 - Downloads and executes the installation script from `https://is.gd/egitif`
 - Uses the provided argument to customize the installation
-- Some of the available options are min, slim-shell, shell, dev.
+- Some of the available options are min, shell-slim, shell, dev.
 - Installs dotfiles to `/home/username/.ilm`
 - Provides `ilmi` and `ilmc` commands for environment management
 
 **Usage:**
 ```bash
 ./bin/vm-create --distro ubuntu --dotfiles shell
-./bin/vm-create --distro fedora --dotfiles slim-shell
+./bin/vm-create --distro fedora --dotfiles shell-slim
 ```
 
 **Available commands after VM creation:**

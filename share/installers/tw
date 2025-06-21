@@ -48,7 +48,7 @@ core_install() {
 
     slog "Installing core packages"
 
-    si curl wget git tar tree unzip cmake stow file trash-cli libsecret gawk
+    si curl wget git tar tree unzip stow file trash-cli libsecret gawk
     sudo zypper install -y -t pattern devel_basis
 
     slog "Core packages installation done!"
@@ -73,10 +73,19 @@ essential_install() {
     # snap_install
 
     slog "Installing essential packages"
-    si unar zip micro-editor 7zip readline-devel sqlite3-devel \
-        libffi-devel libbz2-devel xz-devel gum net-tools iproute2 nmap
+    si unar zip micro-editor 7zip readline-devel sqlite3-devel libffi-devel \
+        libbz2-devel xz-devel gum net-tools iproute2 nmap
 
     slog "Essential packages installation done!"
+}
+
+cli-slim_install() {
+    slog "Installing cli tools using zypper"
+
+    si gh zsh tmux htop fzf ripgrep fd bat zoxide eza starship git-delta \
+        shfmt ShellCheck
+
+    slog "cli tools installation done!"
 }
 
 cli_install() {

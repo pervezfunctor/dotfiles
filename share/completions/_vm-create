@@ -15,7 +15,7 @@ _vm_create_get_distros() {
 _vm_create_get_dotfiles_groups() {
     local groups=(
         'min:Minimal dotfiles'
-        'slim-shell:Slim shell configuration'
+        'shell-slim:Slim shell configuration'
         'shell:Full shell configuration'
         'dev:Development environment'
         'box:Complete desktop environment'

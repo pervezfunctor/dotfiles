@@ -9,7 +9,7 @@ ublue_brew_setup() {
         return 1
     fi
 
-    brew_shell_slim_install
+    brew_slim_shell_install
 }
 
 ublue_emacs_setup() {
@@ -41,7 +41,7 @@ ublue_apps_setup() {
     fi
 
     slog "Installing apps for ublue"
-    slim-apps_install
+    apps-slim_install
     slog "apps installation done!"
 }
 

@@ -33,7 +33,7 @@ _vm_create_args() {
         '--release[Distribution release]:release:(noble jammy focal bullseye bookworm current latest)' \
         '--docker[Install Docker]' \
         '--brew[Install Homebrew]' \
-        '--dotfiles[Install dotfiles]:group:(min slim-shell shell dev box)' \
+        '--dotfiles[Install dotfiles]:group:(min shell-slim shell dev box)' \
         '--password[Set password]:password:' \
         '(--help -h)'{--help,-h}'[Show help]'
 }

@@ -52,7 +52,7 @@ EXAMPLES:
     $0 --distro arch --release current --disk-size 40GB
     $0 --distro tumbleweed --name opensuse-vm --vcpus 2 --memory 4096
     $0 --distro ubuntu --nix            # Ubuntu VM with Nix package manager
-    $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --memory 8192 --dotfiles slim-shell docker code-server
+    $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --memory 8192 --dotfiles shell-slim docker code-server
 
 SUPPORTED DISTRIBUTIONS:
     ubuntu      - Ubuntu LTS (24.04) or specified release
