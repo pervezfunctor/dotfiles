@@ -22,6 +22,7 @@ Manage VMs created with libvirt-* scripts.
 
 COMMANDS:
     install             Install virtualization tools using ilmi
+    clone <src> <dest>  Clone VM <src> to new VM named <dest>
     list                List all VMs
     status <vm-name>    Show VM status and info
     create  ARGS        Create a new VM, with same ARGS as vm-create
@@ -95,6 +96,36 @@ install_vm() {
     echo
     slog "Note: You may need to log out and back in for group changes to take effect."
     slog "Or run: newgrp libvirt"
+}
+
+clone_vm() {
+    local src_vm="$1"
+    local dest_vm="$2"
+
+    if [[ -z "$src_vm" || -z "$dest_vm" ]]; then
+        fail "Source and destination VM names required"
+        usage
+        return 1
+    fi
+
+    vm_check_exists "$src_vm" || return 1
+    if vm_exists "$dest_vm"; then
+        fail "Destination VM '$dest_vm' already exists"
+        return 1
+    fi
+
+    if has_cmd virt-clone; then
+        slog "Cloning VM '$src_vm' to '$dest_vm' using virt-clone..."
+        if sudo virt-clone --original "$src_vm" --name "$dest_vm" --auto-clone; then
+            success "VM '$src_vm' cloned to '$dest_vm' successfully!"
+        else
+            fail "Failed to clone VM using virt-clone."
+            return 1
+        fi
+    else
+        fail "virt-clone not found. Please install virt-manager or virt-clone."
+        return 1
+    fi
 }
 
 vm_status() {
@@ -841,6 +872,16 @@ fi
 case "$command" in
 install)
     install_vm
+    ;;
+clone)
+    src_vm="${2:-}"
+    dest_vm="${3:-}"
+    if [[ -z "$src_vm" || -z "$dest_vm" ]]; then
+        fail "Source and destination VM names required"
+        usage
+        exit 1
+    fi
+    clone_vm "$src_vm" "$dest_vm"
     ;;
 list)
     vm_list
