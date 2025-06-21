@@ -1,4 +1,4 @@
-# !/usr/bin/env bash
+#!/usr/bin/env bash
 
 # Function to create a Debian 12 KVM VM using the latest cloud image and cloud-init.
 # Downloads the image automatically if not found. Allows configuration via arguments.

@@ -1,4 +1,4 @@
-# !/usr/bin/env bash
+#!/usr/bin/env bash
 # Installation script for vm and vm-create shell completions
 
 set -euo pipefail

@@ -1,4 +1,4 @@
-# !/usr/bin/env bash
+#!/usr/bin/env bash
 
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
