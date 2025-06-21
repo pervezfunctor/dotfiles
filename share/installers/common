@@ -672,13 +672,6 @@ base_groupstall() {
     git_config_install
     bash_config_install
 
-    has_cmd zsh || return 0
-    if ! file_exists "$HOME/.zshrc"; then
-        zsh-min_config_install
-    else
-        zsh_config_install
-    fi
-
     base-group_check
 }
 

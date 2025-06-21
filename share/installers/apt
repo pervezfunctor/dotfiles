@@ -41,8 +41,10 @@ ubuntu_packages() {
     slog "Installing packages"
 
     si git-core gh git-delta unzip wget curl net-tools iproute2 nmap \
-        trash-cli tar stow gcc make file wl-clipboard tree bat eza ripgrep \
+        trash-cli tar stow gcc make file wl-clipboard tree bat ripgrep \
         zoxide fd-find htop sd bat gawk starship libsecret-tools
+
+    is_ubuntu && si eza
 
     if is_plucky; then
         si fzf tealdeer gum
@@ -57,6 +59,26 @@ ubuntu_packages() {
     slog "Installing pixi packages"
     pi fzf lazygit yazi tealdeer
     slog "Installing pixi packages done!"
+}
+
+locale-setup() {
+    slog "Setting locale to en_US.UTF-8..."
+    si locales
+    sudo locale-gen en_US.UTF-8
+    sudo update-locale LANG=en_US.UTF-8
+
+    slog "Setting keyboard layout to US..."
+    sudo localectl set-keymap us
+    sudo localectl set-x11-keymap us
+
+    echo "export LANGUAGE=en" | sudo tee -a /etc/default/locale
+    echo "export COUNTRY=US" | sudo tee -a /etc/default/locale
+
+    # Force console keymap now (for immediate effect)
+    sudo loadkeys us
+
+    slog "Configuration complete. You may need to reboot for all changes to take effect."
+
 }
 
 debian_packages() {
