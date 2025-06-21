@@ -1,0 +1,187 @@
+#!/usr/bin/env bash
+
+# Script manages ~/.ssh/config entries for VMs
+
+# shellcheck disable=SC1091
+source "$(dirname "$0")/vm-utils"
+
+set -euo pipefail
+
+vm_check_prerequisites
+
+SSH_CONFIG="$HOME/.ssh/config"
+MARKER="# Added by vm-ssh"
+
+usage() {
+  cat <<EOF
+Usage: $0 <command> [options]
+
+Manage ~/.ssh/config entries for VMs automatically.
+
+COMMANDS:
+    add <vm-name> [user]    Add VM to SSH config (auto-detect IP)
+    remove <vm-name>        Remove VM from SSH config
+    list                    List all VM entries in SSH config
+    update                  Update all running VMs
+    clean                   Remove entries for non-existent VMs
+
+EXAMPLES:
+    $0 add docker           # Add 'docker' VM to SSH config
+    $0 add docker root      # Add with specific SSH user
+    $0 remove old-vm        # Remove old-vm
+    $0 update               # Update all running VMs
+EOF
+}
+
+ssh_remove() {
+  local vm_name="$1"
+
+  if grep -qE "^Host $vm_name\$" "$SSH_CONFIG"; then
+    awk -v host="$vm_name" '
+            BEGIN { skip=0 }
+            $0 ~ "^Host "host"$" { skip=1; next }
+            skip && /^Host / { skip=0 }
+            !skip
+        ' "$SSH_CONFIG" >"$SSH_CONFIG.tmp"
+    mv "$SSH_CONFIG.tmp" "$SSH_CONFIG"
+    slog "Updated existing entry for '$vm_name'"
+  fi
+
+}
+
+ssh_add() {
+  local vm_name="$1"
+  local ip="$2"
+
+  ssh_remove "$vm_name"
+
+  {
+    echo "Host $vm_name"
+    echo "    HostName $ip"
+    echo "    User $user"
+    echo "    IdentityFile ~/.ssh/id_rsa"
+    echo "    $MARKER"
+    echo
+  } >>"$SSH_CONFIG"
+}
+
+ssh_update_all() {
+  local vms=("$@")
+
+  if [[ ${#vms[@]} -eq 0 ]]; then
+    warn "No running VMs found"
+    return 0
+  fi
+
+  while IFS= read -r vm; do
+    [[ -n "$vm" ]] && vm_ssh_add "$vm"
+  done <<<"${vms[@]}"
+
+}
+
+ssh_entries() {
+  grep "$MARKER" "$SSH_CONFIG" | awk '{print $2}'
+}
+
+vm_ssh_add() {
+  local vm_name="$1"
+  local user="${2:-$USER}"
+
+  local ip
+  ip=$(vm_ip "$vm_name")
+  if [[ -z "$ip" ]]; then
+    fail "Could not get IP for VM '$vm_name'. Is it running?"
+    return 1
+  fi
+
+  mkdir -p "$(dirname "$SSH_CONFIG")"
+  touch "$SSH_CONFIG"
+
+  ssh_add "$vm_name" "$ip"
+
+  success "Added SSH config entry for $vm_name ($ip)"
+}
+
+vm_ssh_remove() {
+  ssh_remove "$1"
+}
+
+vm_ssh_list() {
+  slog "VM entries in ~/.ssh/config:"
+  echo
+
+  grep -B1 "$MARKER" "$SSH_CONFIG" || warn "No VM entries found"
+  echo
+}
+
+vm_ssh_update_all() {
+  slog "Updating SSH config for all running VMs..."
+
+  local vms
+  vms=$(virsh list --name)
+
+  ssh_update_all "$vms"
+
+  success "Updated SSH config for all running VMs"
+}
+
+vm_ssh_clean() {
+  slog "Cleaning SSH config entries for non-existent VMs..."
+
+  local entries
+  entries=$(ssh_entries)
+
+  for vm in $entries; do
+    if ! virsh dominfo "$vm" &>/dev/null; then
+      warn "VM '$vm' no longer exists, removing from SSH config"
+      vm_ssh_remove "$vm"
+    fi
+  done
+
+  success "Cleanup complete"
+}
+
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 1
+fi
+
+command="$1"
+vm_name="${2:-}"
+ssh_user="${3:-}"
+
+case "$command" in
+add)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  vm_ssh_add "$vm_name" "$ssh_user"
+  ;;
+remove)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  vm_ssh_remove "$vm_name"
+  ;;
+list)
+  vm_ssh_list
+  ;;
+update)
+  vm_ssh_update_all
+  ;;
+clean)
+  vm_ssh_clean
+  ;;
+--help | -h)
+  usage
+  ;;
+*)
+  fail "Unknown command: $command"
+  usage
+  exit 1
+  ;;
+esac
