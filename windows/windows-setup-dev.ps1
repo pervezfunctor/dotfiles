@@ -41,7 +41,7 @@ if ($originalPolicy -ne "RemoteSigned" -and $originalPolicy -ne "Unrestricted") 
 }
 
 $global:GitHubBaseUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
-$global:DotDir = "$env:USERPROFILE\ilm"
+$global:DotDir = "$env:USERPROFILE\.ilm"
 $global:WinDir = "$global:DotDir\windows"
 
 function Test-CommandExists {

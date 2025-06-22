@@ -73,7 +73,7 @@ if (Test-Path $localProfile) {
 }
 
 # Source another PS1 file
-# . "$env:USERPROFILE\ilm\powershell\functions.ps1"
+# . "$env:USERPROFILE\.ilm\powershell\functions.ps1"
 
 # Print welcome message
 Write-Host "PowerShell profile loaded successfully!" -ForegroundColor Green
