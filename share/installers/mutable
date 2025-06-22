@@ -95,50 +95,6 @@ vscode_install() {
     vscode_config_install
 }
 
-dev_groupstall() {
-    slog "Setup for Development(docker, vscode, ptyxis, brew, distrobox)"
-
-    min_groupstall
-    si zsh flatpak
-
-    brew_install
-
-    has_cmd trash || bi trash-cli
-    has_cmd rg || bi ripgrep
-    has_cmd delta || bi git-delta
-
-    bis gh wget tree tar unzip stow micro make cmake starship fzf fd bat \
-        zoxide eza htop tmux gum bash-preexec
-
-    docker_install
-    atomic_distrobox_install
-
-    is_desktop || return 0
-
-    jetbrains_nerd_font_install
-    vscode_install
-
-    if has_cmd flatpak; then
-        flathub_install
-        ptyxis_install
-        fpi us.zoom.Zoom
-        fpi md.obsidian.Obsidian
-    else
-        terminal_bin_install
-    fi
-}
-
-work_groupstall() {
-    ct_groupstall
-
-    jetbrains_nerd_font_install
-    vscode_install
-
-    si flatpak
-    flathub_install
-    ptyxis_install
-}
-
 prog-group_check() {
     cmd_check go rustc npm uv pyenv conda
 }
