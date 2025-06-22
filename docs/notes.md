@@ -27,3 +27,28 @@ sudo apt install mesa-utils spice-vdagent        # Ubuntu/Debian
 sudo zypper install Mesa-dri                     # openSUSE
 sudo pacman -S mesa spice-vdagent                # Arch
 ```
+
+-- create /etc/wsl.conf
+
+```powershell
+wsl.exe sh -c 'echo -e "[user]\ndefault=pervez" | sudo tee /etc/wsl.conf > /dev/null'
+
+# following may work too
+
+$wslConf = @"
+[user]
+default=pervez
+"@
+
+# Pass it into WSL and write with sudo
+$command = "echo '$wslConf' | sudo tee /etc/wsl.conf > /dev/null"
+wsl.exe sh -c "$command"
+
+# or
+
+wsl.exe --user root sh -c 'cat > /etc/wsl.conf <<EOF
+[user]
+default=pervez
+EOF'
+
+```

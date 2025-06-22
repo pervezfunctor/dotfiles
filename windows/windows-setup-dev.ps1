@@ -713,7 +713,7 @@ function Install-MultipassVM {
     Start-Sleep -Seconds 5
 
     Write-Host "Running shell installer script..." -ForegroundColor Cyan
-    multipass exec ubuntu-ilm -- bash -c "curl -sSL https://is.gd/egitif | bash -s -- shell"
+    multipass exec ubuntu-ilm -- bash -c "curl -sSL https://is.gd/egitif | bash -s -- min"
 
     Write-Host "Ubuntu 24.10 VM setup complete!" -ForegroundColor Green
     multipass info ubuntu-ilm
@@ -1430,7 +1430,7 @@ function Copy-ConfigFromDotfiles {
 }
 
 # Define available components with preserved order
-$availableComponents   = [ordered]@{
+$availableComponents = [ordered]@{
     "windows-update"   = "Update Windows"
     "wsl"              = "Install Hyper-V and WSL"
     "multipass"        = "Install Multipass"
@@ -1568,12 +1568,48 @@ function Initialize-SSHKey {
         return
     }
 
-    Write-Host "Generating new SSH key..." -ForegroundColor Cyan
     $comment = "$env:USERNAME@$env:COMPUTERNAME"
     $path = "$env:USERPROFILE\.ssh\id_ed25519"
+
+    if (Test-Path "$path") {
+        Write-Host "SSH key already exists." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Generating new SSH key..." -ForegroundColor Cyan
     ssh-keygen --% -t ed25519 -f "$path" -N "" -C "$comment"
 
     Write-Host "SSH key generated successfully!" -ForegroundColor Green
+}
+
+function Copy-PublicKeyToMultipass {
+    $pubkey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub" -Raw
+    $multipassCommand = @"
+mkdir -p ~/.ssh
+echo '$pubkey' >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+"@
+
+    multipass exec ubuntu-ilm -- bash -c "$multipassCommand"
+}
+
+function Add-MultipassToSSHConfig {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$VMName
+    )
+
+    $ip = multipass info $VMName | Select-String -Pattern "IPv4" | ForEach-Object { $_.Line.Split(":")[1].Trim() }
+
+    $sshConfigEntry = @"
+    Host $VMName
+        HostName $ip
+        User ubuntu
+        IdentityFile ~/.ssh/id_ed25519
+"@
+
+    Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfigEntry
+    Write-Host "Added SSH config entry for $VMName ($ip)" -ForegroundColor Green
 }
 
 function Install-SelectedComponents {
