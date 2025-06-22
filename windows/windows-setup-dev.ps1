@@ -1569,7 +1569,10 @@ function Initialize-SSHKey {
     }
 
     Write-Host "Generating new SSH key..." -ForegroundColor Cyan
-    ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\id_ed25519" -N "" -C "$env:USERNAME@$env:COMPUTERNAME"
+    $comment = "$env:USERNAME@$env:COMPUTERNAME"
+    $path = "$env:USERPROFILE\.ssh\id_ed25519"
+    ssh-keygen --% -t ed25519 -f "$path" -N "" -C "$comment"
+
     Write-Host "SSH key generated successfully!" -ForegroundColor Green
 }
 
