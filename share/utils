@@ -1018,7 +1018,7 @@ stowdf() {
 stownf() {
     for p in "$@"; do
         slog "stow $p"
-        sd --no-folding -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
+        stow_core --no-folding -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
     done
 }
 
