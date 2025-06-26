@@ -202,14 +202,14 @@ function Copy-SSHKeyToWSL {
         [string]$Username
     )
 
-    if (!(Test-Path "$env:USERPROFILE\.ssh\id_ed25519.pub.pub")) {
-        Write-Host "SSH public key not found at $env:USERPROFILE\.ssh\id_ed25519.pub.pub" -ForegroundColor Red
+    if (!(Test-Path "$env:USERPROFILE\.ssh\id_ed25519.pub")) {
+        Write-Host "SSH public key not found at $env:USERPROFILE\.ssh\id_ed25519.pub" -ForegroundColor Red
         return $false
     }
 
     Write-Host "Copying SSH key to $Distribution for user $Username..." -ForegroundColor Cyan
 
-    $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub.pub"
+    $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub"
     wsl -d $Distribution -u root bash -c "mkdir -p /home/$Username/.ssh && chmod 700 /home/$Username/.ssh"
     wsl -d $Distribution -u root bash -c "grep -q $pubKey /home/$Username/.ssh/authorized_keys || echo '$pubKey' >> /home/$Username/.ssh/authorized_keys"
     wsl -d $Distribution -u root bash -c "chmod 600 /home/$Username/.ssh/authorized_keys"
@@ -750,7 +750,7 @@ function Copy-SSHKeyToMultipassVM {
     Write-Host "Copying SSH key to $VMName..." -ForegroundColor Cyan
 
     try {
-        $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub.pub" -ErrorAction Stop
+        $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub" -ErrorAction Stop
         multipass exec $VMName -- bash -c "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
         multipass exec $VMName -- bash -c "echo '$pubKey' >> ~/.ssh/authorized_keys"
         multipass exec $VMName -- bash -c "chmod 600 ~/.ssh/authorized_keys"
