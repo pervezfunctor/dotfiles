@@ -25,6 +25,7 @@ has_cmd webi && source_if_exists "$XDG_CONFIG_HOME/envman/PATH.env"
 
 export DOTNET_ROOT="$HOME/.dotnet"
 export GOPATH="$HOME/go"
+export VOLTA_HOME="$HOME/.volta"
 
 if has_cmd /opt/homebrew/bin/brew; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -46,6 +47,7 @@ spath_export "$HOME/.local/share/pypoetry"
 spath_export "$XDG_CONFIG_HOME/Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin"
 spath_export "$HOME/.console-ninja/.bin"
 spath_export "$HOME/.pixi/bin"
+spath_export "${VOLTA_HOME}/bin"
 
 if [ -z "$XDG_DATA_HOME" ]; then
     export XDG_DATA_HOME="$HOME/.local/share"
