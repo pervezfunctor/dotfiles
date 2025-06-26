@@ -566,6 +566,8 @@ shell_config_install() {
 }
 
 web_install() {
+    npm_install
+
     slog "Installing npm packages globally"
     npm install -g ndb @antfu/ni
     npm install -g tsx vite-node zx turbo
