@@ -204,7 +204,7 @@ generate_cloud_init_config() {
         ilmc nvim"
 
         runcmd_lines+=(
-            "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://dub.sh/aPKPT8V || wget -qO- https://dub.sh/aPKPT8V)\" -- $DOTFILES_OPTIONS'"
+            "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)\" -- $DOTFILES_OPTIONS'"
         )
     fi
 

