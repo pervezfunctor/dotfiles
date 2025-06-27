@@ -8,11 +8,154 @@ source "$(dirname "$0")/utils"
 set -eopipefail
 
 # https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install
-proxmox_init_install() {
+post_install() {
     bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh)"
 }
 
-proxmox_download_templates() {
+casaos_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/casaos.sh)"
+}
+
+jellyfin_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/jellyfin.sh)"
+}
+
+plex_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/plex.sh)"
+}
+
+code-server_install() {
+    # create debian lxc and install code-server using the below command
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/addon/coder-code-server.sh)"
+}
+
+backup-server_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/proxmox-backup-server.sh)"
+}
+
+backup-server-post_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pbs-install.sh)"
+}
+
+tailscale_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/addon/add-tailscale-lxc.sh)"
+}
+
+file-browser_install() {
+    # create debian lxc and install code-server using the below command
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/addon/filebrowser.sh)"
+}
+
+docker-vm_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/docker-vm.sh)"
+}
+
+iventoy_install() {
+    slog "Container MUST be privileged"
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/iventoy.sh)"
+}
+
+openwrt_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/openwrt.sh)"
+}
+
+umbrel_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/umbrel-os-vm.sh)"
+}
+
+docker-lxc_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/docker.sh)"
+}
+
+dockge_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/dockge.sh)"
+}
+
+opnsense_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/opnsense-vm.sh)"
+}
+
+adguard_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/adguard.sh)"
+}
+
+pihole_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/pihole.sh)"
+
+    echo "Use 'pihole setpassword' to set password for pihole"
+}
+
+authelia_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/authelia.sh)"
+}
+
+duplicati_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/duplicati.sh)"
+}
+
+deluge_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/deluge.sh)"
+}
+
+qbittorent_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/qbittorrent.sh)"
+}
+
+rclone_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/rclone.sh)"
+
+    echo "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
+}
+
+excalidraw_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/excalidraw.sh)"
+}
+
+syncthing_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/syncthing.sh)"
+}
+
+paperless-ai_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/paperless-ai.sh)"
+}
+
+ollama_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/ollama.sh)"
+}
+
+caddy_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/caddy.sh)"
+}
+
+nginx-proxy_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nginxproxymanager.sh)"
+}
+
+rustdesk_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/rustdeskserver.sh)"
+}
+
+gaucamole_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/apache-guacamole.sh)"
+}
+
+vaultwadren_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/vaultwarden.sh)"
+}
+
+backrest_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/backrest.sh)"
+}
+
+uptime-kuma_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/uptimekuma.sh)"
+}
+
+apline-lxc_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/alpine.sh)"
+}
+
+ct-templates_install() {
     ubuntu_latest_tmpl=$(pveam available | awk '{print $2}' | grep "^ubuntu" | sort -r | head -n 1)
     pveam download local "$ubuntu_latest_tmpl"
 
@@ -35,7 +178,11 @@ proxmox_download_templates() {
     pveam download local "$opensuse_latest_tmpl"
 }
 
-proxmox_lxc_create_all_templates() {
+twofauth_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/2fauth.sh)"
+}
+
+ct-all_install() {
     local templates
     templates=$(ls /var/lib/vz/template/cache/)
     for tmpl in $templates; do
@@ -44,7 +191,7 @@ proxmox_lxc_create_all_templates() {
     done
 }
 
-proxmox_cloud_init_vms_install() {
+vm-all_install() {
     pushd "$DOT_DIR/extras/proxmox"
     ./debian-vm-template.sh
     qm clone 9100 101 --name debian-vm
@@ -60,39 +207,101 @@ proxmox_cloud_init_vms_install() {
     popd
 }
 
-proxmox_packages_install() {
+remove-subscription() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/remove-subscription-notice.sh)"
+}
+
+core_install() {
     apt-get -qq -y --no-install-recommends install git-core micro zsh-theme-powerlevel9k zsh
-    # echo 'source /usr/share/powerlevel9k/powerlevel9k.zsh-theme' >>~/.zshrc
-    # chsh -s /bin/zsh "$USER"
-    # zsh_config_install
+    dir_exists ~/.ilm || git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
+    mv ~/.bashrc ~/".bashrc.backup-$(date +%Y%m%d-%H%M%S)"
+    ln -s ~/.ilm/share/bashrc ~/.bashrc
+    mv ~/.zshrc ~/".zshrc.backup-$(date +%Y%m%d-%H%M%S)"
+    ln -s ~/.ilm/share/zshrc ~/.zshrc
+}
+
+CORE=1
+CT_TEMPLATES=0
+VM_TEMPLATES=0
+CT_ALL=0
+VM_ALL=0
+
+yes_or_no() {
+    read -rp "$1 (y/n): " answer
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo
+    echo "Options:"
+    echo "  --ct-templates    Install container templates"
+    echo "  --vm-templates    Install VM templates"
+    echo "  --ct-all          Install all containers"
+    echo "  --vm-all          Install all VMs"
+    echo "  --all             Install all"
+}
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+        --ct-templates)
+            CT_TEMPLATES=1
+            shift
+            ;;
+        --vm-templates)
+            VM_TEMPLATES=1
+            shift
+            ;;
+        --ct-all)
+            CT_ALL=1
+            shift
+            ;;
+        --vm-all)
+            VM_ALL=1
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+        esac
+    done
 }
 
 main() {
-    proxmox_packages_install
-    dotfiles_install
-    bash_config_install
-    zsh_min_config_install
+    parse_args "$@"
 
-    read -rp "Do you want to run proxmox setup script? (y/n): " answer
-    if [[ "$answer" =~ ^[Yy]$ ]]; then
-        proxmox_init_install
+    if [[ $EUID -ne 0 ]]; then
+        echo "This script must be run as root" >&2
+        exit 1
     fi
 
-    read -rp "Do you want to download templates? (y/n): " answer
-    if [[ "$answer" =~ ^[Yy]$ ]]; then
-        pveam update
-        proxmox_download_templates
+    core_install
+
+    if [[ $ALL -eq 1 ]]; then
+        CT_TEMPLATES=1
+        VM_TEMPLATES=1
+        CT_ALL=1
+        VM_ALL=1
     fi
 
-    read -rp "Do you want to install cloud-init vms? (y/n): " answer
-    if [[ "$answer" =~ ^[Yy]$ ]]; then
-        proxmox_cloud_init_vms_install
-    fi
+    [[ $CT_TEMPLATES -eq 1 ]] && ct-templates_install
+    [[ $VM_TEMPLATES -eq 1 ]] && vm-templates_install
+    [[ $CT_ALL -eq 1 ]] && ct-all_install
+    [[ $VM_ALL -eq 1 ]] && vm-all_install
+    [[ $INIT -eq 1 ]] && post_install
 
-    read -rp "Do you want to create LXC from all templates? (y/n): " answer
-    if [[ "$answer" =~ ^[Yy]$ ]]; then
-        proxmox_lxc_create_all_templates
-    fi
+    for arg in "$@"; do
+        if fn_exists "${arg}_install"; then
+            "${arg}_install"
+        fi
+    done
 }
 
-main
+main "$@"
