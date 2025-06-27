@@ -4,6 +4,22 @@ export DOT_DIR=${USE_DOT_DIR:-$HOME/.ilm}
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export ILM_BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 
+gum_install() {
+    has_cmd gum && return 0
+    is_mac && return 1
+
+    slog "Installing gum"
+    smd "$HOME/.local/bin"
+    local gum_file
+    gum_file="gum_0.16.2_Linux_x86_64"
+    if curl -sSL "https://github.com/charmbracelet/gum/releases/download/v0.16.2/${gum_file}.tar.gz" | tar -xz -C /tmp; then
+        mv "/tmp/${gum_file}/gum" ~/.local/bin/
+        slog "gum installation done!"
+    fi
+
+    cmd_check gum
+}
+
 select-one() {
     local PS3="Please enter your choice: "
     select result in "$@"; do
