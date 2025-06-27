@@ -3,6 +3,21 @@
 # shellcheck disable=SC1091
 source "$(dirname "$0")/../share/utils"
 
+container_exists() {
+  pct status "$1" &>/dev/null
+}
+
+check_container() {
+  if ! container_exists "$1"; then
+    fail "Container '$1' does not exist"
+    return 1
+  fi
+}
+
+container_privileged() {
+  grep -q '^unprivileged: 0' "/etc/pve/lxc/$1.conf"
+}
+
 choose_from_list() {
   local -n arr="$1"
 

@@ -1,14 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-# Usage info
 if [ "$#" -ne 2 ]; then
   echo "Usage: $0 --disk <disk> --name <name>"
   echo "Example: $0 /dev/sdb vmdata"
   exit 1
 fi
 
-# Parse arguments
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -33,7 +31,6 @@ parse_args "$@"
 VG="vg_$NAME"
 THIN="thin_$NAME"
 
-# Safety checks
 if ! [ -b "$DISK" ]; then
   echo "Error: $DISK is not a block device"
   exit 1
