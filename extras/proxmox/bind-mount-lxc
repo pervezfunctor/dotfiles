@@ -5,18 +5,19 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/utils"
 
-if [[ $# -ne 2 ]]; then
-    echo "❌ Usage: $0 <container-id> <host-media-folder>"
-    echo "Example: $0 101 /srv/media"
-    exit 1
-fi
-
 CTID="$1"
 HOST_PATH="$2"
 CONTAINER_PATH="/mnt/media"
 CONFIG_FILE="/etc/pve/lxc/${CTID}.conf"
 
-# parse args
+usage() {
+    echo "Usage: $0 -c CTID -h HOST_PATH [-p CONTAINER_PATH]"
+    echo "Options:"
+    echo "  -c, --container <CTID>        Container ID"
+    echo "  -h, --host-path <PATH>        Host path to bind mount"
+    echo "  -p, --container-path <PATH>   Container path to mount to (default: /mnt/media)"
+}
+
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -34,15 +35,21 @@ parse_args() {
             ;;
         *)
             echo "Unknown option: $1"
+            usage
             exit 1
             ;;
         esac
     done
 }
 
-parse_args "$@"
-
 main() {
+    parse_args "$@"
+
+    if [[ -z "$CTID" || -z "$HOST_PATH" ]]; then
+        usage
+        exit 1
+    fi
+
     check_container "$CTID" || exit 1
 
     if grep -q '^unprivileged: 1' "$CONFIG_FILE"; then

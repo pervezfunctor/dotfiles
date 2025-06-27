@@ -5,7 +5,7 @@ DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
 source "$(dirname "$0")/utils"
 
-set -eopipefail
+set -eou pipefail
 
 # https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install
 post_install() {

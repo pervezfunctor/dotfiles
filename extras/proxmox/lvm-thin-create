@@ -1,0 +1,62 @@
+#!/bin/bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 --disk /dev/sdX --name NAME"
+  echo "Options:"
+  echo "  --disk, -d  Path to the disk (e.g., /dev/sdX)"
+  echo "  --name, -n  Name for the LVM volume group and thin pool"
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --disk)
+      DISK="$2"
+      shift 2
+      ;;
+    --name)
+      NAME="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    esac
+  done
+}
+
+main() {
+  parse_args "$@"
+
+  if ! [ -b "$DISK" ]; then
+    echo "Error: $DISK is not a block device"
+    exit 1
+  fi
+
+  if pvs | grep -q "$DISK"; then
+    echo "Error: $DISK already in use as a PV"
+    exit 1
+  fi
+
+  local VG="vg_$NAME"
+  local THIN="thin_$NAME"
+
+  echo "==> Wiping disk: $DISK"
+  wipefs -a "$DISK"
+  sgdisk --zap-all "$DISK"
+
+  echo "==> Creating LVM PV, VG, and thin pool..."
+  pvcreate "$DISK"
+  vgcreate "$VG" "$DISK"
+  lvcreate -L 100%FREE --thinpool "$THIN" "$VG"
+
+  echo "==> Adding to Proxmox storage configuration..."
+  pvesm add lvmthin "$NAME" --vgname "$VG" --thinpool "$THIN" --content rootdir,images
+
+  echo "==> Success: LVM Thin pool '$NAME' created on $DISK"
+}
+
+main "$@"
