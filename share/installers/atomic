@@ -114,24 +114,6 @@ flathub_install() {
     fi
 }
 
-npm_install() {
-    has_cmd npm && return 0
-
-    if ! has_cmd volta; then
-        curl https://get.volta.sh | bash
-    fi
-
-    if ! has_cmd volta; then
-        warn "volta not installed! Skipping npm setup."
-        return 1
-    fi
-
-    volta install node
-
-    has_cmd npm || warn "npm not installed! Skipping pnpm install."
-    has_cmd npm && npm install -g pnpm
-}
-
 kitty_bin_install() {
     if ! is_desktop; then
         warn "Not running desktop, skipping kitty installation"

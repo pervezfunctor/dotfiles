@@ -565,6 +565,24 @@ shell_config_install() {
     fi
 }
 
+npm_install() {
+    has_cmd npm && return 0
+
+    if ! has_cmd volta; then
+        curl https://get.volta.sh | bash
+    fi
+
+    if ! has_cmd volta; then
+        warn "volta not installed! Skipping npm setup."
+        return 1
+    fi
+
+    volta install node
+
+    has_cmd npm || warn "npm not installed! Skipping pnpm install."
+    has_cmd npm && npm install -g pnpm
+}
+
 web_install() {
     npm_install
 
