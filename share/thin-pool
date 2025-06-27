@@ -1,0 +1,39 @@
+#!/bin/bash
+set -euo pipefail
+
+# Usage info
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <disk> <name>"
+  echo "Example: $0 /dev/sdb vmdata"
+  exit 1
+fi
+
+DISK="$1"     # e.g., /dev/sdb
+NAME="$2"     # e.g., vmdata
+VG="vg_$NAME"
+THIN="thin_$NAME"
+
+# Safety checks
+if ! [ -b "$DISK" ]; then
+  echo "Error: $DISK is not a block device"
+  exit 1
+fi
+
+if pvs | grep -q "$DISK"; then
+  echo "Error: $DISK already in use as a PV"
+  exit 1
+fi
+
+echo "==> Wiping disk: $DISK"
+wipefs -a "$DISK"
+sgdisk --zap-all "$DISK"
+
+echo "==> Creating LVM PV, VG, and thin pool..."
+pvcreate "$DISK"
+vgcreate "$VG" "$DISK"
+lvcreate -L 100%FREE --thinpool "$THIN" "$VG"
+
+echo "==> Adding to Proxmox storage configuration..."
+pvesm add lvmthin "$NAME" --vgname "$VG" --thinpool "$THIN" --content rootdir,images
+
+echo "==> Success: LVM Thin pool '$NAME' created on $DISK"

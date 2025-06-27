@@ -1,0 +1,58 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+
+get_latest_github_release_tag() {
+  # Usage: get_latest_github_release_tag "https://github.com/owner/repo"
+  local url="$1"
+  local owner repo api_url tag
+
+  # Extract owner and repo from URL
+  owner=$(echo "$url" | awk -F/ '{print $(NF-1)}')
+  repo=$(echo "$url" | awk -F/ '{print $NF}')
+  api_url="https://api.github.com/repos/${owner}/${repo}/releases/latest"
+
+  # Query GitHub API for latest release tag
+  tag=$(curl -s "$api_url" | grep -oP '"tag_name":\s*"\K(.*)(?=")')
+  if [ -z "$tag" ]; then
+    echo "Could not fetch latest release tag." >&2
+    return 1
+  fi
+  echo "$tag"
+}
+
+gum_latest_install() {
+  local arch=${1:-"x86_64"}
+  local os=${2:-"Linux"}
+
+  local tag
+  tag=$(curl -s https://api.github.com/repos/charmbracelet/gum/releases/latest | grep -oP '"tag_name":\s*"\K(.*)(?=")')
+  if [ -z "$tag" ]; then
+    echo "Could not fetch latest Gum release tag."
+    return 1
+  fi
+
+  # Build download URL
+  local tarball url
+  tarball="gum_${tag#v}_${os}_${arch}.tar.gz"
+  url="https://github.com/charmbracelet/gum/releases/download/${tag}/${tarball}"
+
+  # Download and install
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  curl -sSL "$url" | tar -xz -C "$tmpdir"
+  mv "$tmpdir/gum" ~/.local/bin/
+  rm -rf "$tmpdir"
+
+  echo "Gum $tag installed to /usr/local/bin/gum"
+}
+
+# # Example usage with error handling
+# repo_url="https://github.com/charmbracelet/gum"
+# if latest_tag=$(get_latest_github_release_tag "$repo_url"); then
+#     echo "Latest release tag for $repo_url: $latest_tag"
+# else
+#     echo "Failed to retrieve latest release tag for $repo_url" >&2
+#     # Handle the error as needed, e.g., exit or continue
+#     exit 1
+# fi
