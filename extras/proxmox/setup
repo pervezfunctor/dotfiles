@@ -212,15 +212,19 @@ remove-subscription() {
 }
 
 core_install() {
-    apt-get -qq -y --no-install-recommends install git-core micro zsh-theme-powerlevel9k zsh
+    has_cmd git || apt-get -qq -y --no-install-recommends install git-core micro zsh-theme-powerlevel9k zsh
+
     dir_exists ~/.ilm || git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
-    mv ~/.bashrc ~/".bashrc.backup-$(date +%Y%m%d-%H%M%S)"
-    ln -s ~/.ilm/share/bashrc ~/.bashrc
-    mv ~/.zshrc ~/".zshrc.backup-$(date +%Y%m%d-%H%M%S)"
-    ln -s ~/.ilm/share/zshrc ~/.zshrc
+
+    has_cmd ilmi && return 0
+
+    mv ~/.bashrc /tmp/".bashrc.backup-$(date +%Y%m%d-%H%M%S)"
+    echo "source ~/.ilm/share/bashrc" >~/.bashrc
+
+    mv ~/.zshrc /tmp/".zshrc.backup-$(date +%Y%m%d-%H%M%S)"
+    ln -s ~/.ilm/share/dot-zshrc ~/.zshrc
 }
 
-CORE=1
 CT_TEMPLATES=0
 VM_TEMPLATES=0
 CT_ALL=0
