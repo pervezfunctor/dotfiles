@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# take the media path and sambauser as an argument
+if [[ $# -ne 1 ]]; then
+  echo "❌ Usage: $0 <media-path>"
+  echo "Example: $0 /srv/media"
+  exit 1
+fi
+
+MEDIA_PATH="$1"
+SAMBA_CONF="/etc/samba/smb.conf"
+
+echo "📂 Creating media directory at $MEDIA_PATH"
+sudo mkdir -p "$MEDIA_PATH"
+
+read -rp "🔐 Do you want password-protected access to samba(highly recommended)? (y/n): " PROTECTED
+
+if [[ "$PROTECTED" =~ ^[Yy]$ ]]; then
+  read -rp "👤 Enter the username to use for Samba (e.g., smbmedia): " SAMBA_USER
+
+  # Create user if doesn't exist
+  if ! id "$SAMBA_USER" &>/dev/null; then
+    echo "➕ Creating user $SAMBA_USER"
+    sudo adduser --disabled-password --gecos "" "$SAMBA_USER"
+  fi
+
+  echo "🔑 Set Samba password for $SAMBA_USER"
+  sudo smbpasswd -a "$SAMBA_USER"
+
+  echo "🧷 Setting ownership of $MEDIA_PATH"
+  sudo chown -R "$SAMBA_USER:$SAMBA_USER" "$MEDIA_PATH"
+
+  echo "📝 Updating Samba config..."
+  sudo tee -a "$SAMBA_CONF" >/dev/null <<EOF
+
+[Media]
+   path = $MEDIA_PATH
+   browseable = yes
+   read only = no
+   guest ok = no
+   valid users = $SAMBA_USER
+   force user = $SAMBA_USER
+   create mask = 0660
+   directory mask = 0770
+EOF
+
+else
+  echo "🧷 Setting guest-friendly permissions"
+  sudo chown -R nobody:nogroup "$MEDIA_PATH"
+
+  echo "📝 Updating Samba config for guest access..."
+  sudo tee -a "$SAMBA_CONF" >/dev/null <<EOF
+
+[Media]
+   path = $MEDIA_PATH
+   browseable = yes
+   read only = no
+   guest ok = yes
+   force user = nobody
+   create mask = 0666
+   directory mask = 0777
+EOF
+fi
+
+echo "📦 Installing Samba if not already installed..."
+sudo apt-get update
+sudo apt-get install -y samba
+
+echo "🔄 Restarting Samba service..."
+sudo systemctl restart smbd
+sudo systemctl enable smbd
+
+echo "✅ Samba setup complete!"
+echo
+
+printf "🔗 Access your share at: \\%s\Media\n" "$(hostname -I | awk '{print $1}')"

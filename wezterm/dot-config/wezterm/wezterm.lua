@@ -1,8 +1,8 @@
 local wezterm = require 'wezterm'
 
 return {
-	-- color_scheme = 'Everforest Dark (Gogh)',
-	color_scheme = 'Catppuccin Mocha',
+	color_scheme = 'Everforest Dark (Gogh)',
+	-- color_scheme = 'Catppuccin Mocha',
 	-- color_scheme = 'Rosé Pine Dawn (Gogh)',
 	-- color_scheme = 'Rosé Pine Dawn (Gogh)',
 	-- color_scheme = 'Everforest Light (Gogh)',
@@ -10,14 +10,14 @@ return {
 
 	-- Add padding to the window
 	window_padding = {
-		left = 2,
-		right = 2,
+		left = 10,
+		right = 10,
 		top = 0,
 		bottom = 0,
 	},
 	adjust_window_size_when_changing_font_size = false,
 	enable_tab_bar = false,
-	font_size = 12.0,
+	font_size = 15.0,
 	font = wezterm.font('JetBrains Mono'),
 	macos_window_background_blur = 30,
 	window_background_opacity = 0.9,

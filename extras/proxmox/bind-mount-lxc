@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ $# -ne 2 ]]; then
+    echo "❌ Usage: $0 <container-id> <host-media-folder>"
+    echo "Example: $0 101 /srv/media"
+    exit 1
+fi
+
+CTID="$1"
+HOST_PATH="$2"
+CONTAINER_PATH="/mnt/media"
+CONFIG_FILE="/etc/pve/lxc/${CTID}.conf"
+
+# Validate container exists
+if ! pct status "$CTID" &>/dev/null; then
+    echo "❌ Container ID $CTID does not exist."
+    exit 1
+fi
+
+# Check if container is privileged
+if grep -q '^unprivileged: 1' "$CONFIG_FILE"; then
+    PRIVILEGED="no"
+else
+    PRIVILEGED="yes"
+fi
+
+echo "🔍 Container $CTID is $( [[ "$PRIVILEGED" == "yes" ]] && echo "privileged" || echo "unprivileged" )"
+
+# Create host folder if it doesn't exist
+if [[ ! -d "$HOST_PATH" ]]; then
+    echo "📂 Creating host media folder at $HOST_PATH"
+    sudo mkdir -p "$HOST_PATH"
+fi
+
+# Detect container UID:GID for unprivileged containers
+if [[ "$PRIVILEGED" == "no" ]]; then
+    echo "👤 Detecting main user inside unprivileged container..."
+    CONTAINER_USER_INFO=$(pct exec "$CTID" -- getent passwd | awk -F: '$3 >= 1000 && $3 < 65534 {print $1,$3,$4; exit}')
+    if [[ -z "$CONTAINER_USER_INFO" ]]; then
+        echo "⚠️  Could not detect a normal user inside the container. Defaulting to UID 1000."
+        CONTAINER_UID=1000
+        CONTAINER_GID=1000
+    else
+        CONTAINER_UID=$(echo "$CONTAINER_USER_INFO" | awk '{print $2}')
+        CONTAINER_GID=$(echo "$CONTAINER_USER_INFO" | awk '{print $3}')
+        echo "🔎 Found container user with UID:GID = $CONTAINER_UID:$CONTAINER_GID"
+    fi
+
+    echo "🛠️  Setting host folder ownership to match container user"
+    sudo chown -R "$CONTAINER_UID:$CONTAINER_GID" "$HOST_PATH"
+else
+    echo "⚠️  Container is privileged — skipping chown"
+    echo "⚠️  WARNING: Privileged containers have full access to bind-mounted files!"
+fi
+
+# Find the next available mpX slot
+echo "🔍 Searching for available mount slot in $CONFIG_FILE"
+for i in $(seq 0 9); do
+    MP_KEY="mp${i}"
+    if ! grep -q "^${MP_KEY}:" "$CONFIG_FILE"; then
+        echo "✅ Using slot: $MP_KEY"
+        break
+    fi
+done
+
+if [[ $i -eq 10 ]]; then
+    echo "❌ No available mpX slot (mp0–mp9)."
+    exit 1
+fi
+
+# Add bind mount
+echo "📝 Adding bind mount to container $CTID"
+sudo pct set "$CTID" -${MP_KEY} "$HOST_PATH,mp=$CONTAINER_PATH"
+
+# Ask to restart container
+read -rp "🔄 Restart container $CTID now to apply changes? (y/n): " RESTART
+if [[ "$RESTART" =~ ^[Yy]$ ]]; then
+    sudo pct restart "$CTID"
+    echo "✅ Container restarted. Media is now available at $CONTAINER_PATH"
+else
+    echo "✅ Bind mount added. Restart container manually to use it."
+fi
