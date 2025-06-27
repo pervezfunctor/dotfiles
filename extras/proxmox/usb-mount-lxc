@@ -2,38 +2,19 @@
 
 set -euo pipefail
 
-# Check for required commands
-for cmd in lsblk pct mountpoint; do
-  if ! command -v "$cmd" &>/dev/null; then
-    echo "Error: Required command '$cmd' not found."
-    exit 1
-  fi
-done
+# shellcheck disable=SC1091
+source "$(dirname "$0")/utils"
 
-choose_from_list() {
-  local -n arr="$1"
-
-  if [ "${#arr[@]}" -eq 0 ]; then
-    echo "No options available."
-    return 1
-  fi
-
-  local i
-  for i in "${!arr[@]}"; do
-    echo "[$i] ${arr[$i]}"
-  done
-
-  local choice
-  while true; do
-    read -r -p "Select number: " choice
-    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 0 ] && [ "$choice" -lt "${#arr[@]}" ]; then
-      echo "${arr[$choice]}"
-      return 0
-    else
-      echo "Invalid selection."
+check_prerequisites() {
+  for cmd in lsblk pct mountpoint; do
+    if ! command -v "$cmd" &>/dev/null; then
+      echo "Error: Required command '$cmd' not found."
+      exit 1
     fi
   done
 }
+
+check_prerequisites
 
 # List USB block devices
 mapfile -t usb_devices < <(lsblk -lno NAME,TRAN | awk '$2 == "usb" {print "/dev/" $1}')
@@ -56,6 +37,8 @@ selected_usb="${usb_devices[$usb_index]}"
 
 # List LXC containers
 mapfile -t containers < <(pct list | awk 'NR>1 {print $1}')
+mapfile -t container_names < <(pct list | awk 'NR>1 {print $2}')
+
 if [ "${#containers[@]}" -eq 0 ]; then
   echo "⚠️ No LXC containers found."
   exit 1
@@ -63,7 +46,7 @@ fi
 
 echo "Available LXC containers:"
 for i in "${!containers[@]}"; do
-  echo "[$i] ${containers[$i]}"
+  echo "[$i] ${containers[$i]} ${container_names[$i]}"
 done
 
 read -r -p "Select LXC container number: " ct_index

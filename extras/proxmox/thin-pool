@@ -3,13 +3,33 @@ set -euo pipefail
 
 # Usage info
 if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <disk> <name>"
+  echo "Usage: $0 --disk <disk> --name <name>"
   echo "Example: $0 /dev/sdb vmdata"
   exit 1
 fi
 
-DISK="$1"     # e.g., /dev/sdb
-NAME="$2"     # e.g., vmdata
+# Parse arguments
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --disk)
+      DISK="$2"
+      shift 2
+      ;;
+    --name)
+      NAME="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1"
+      exit 1
+      ;;
+    esac
+  done
+}
+
+parse_args "$@"
+
 VG="vg_$NAME"
 THIN="thin_$NAME"
 

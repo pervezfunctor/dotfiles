@@ -1,0 +1,85 @@
+#! /usr/bin/env bash
+
+# shellcheck disable=SC1091
+source "$(dirname "$0")/../share/utils"
+
+choose_from_list() {
+  local -n arr="$1"
+
+  if [ "${#arr[@]}" -eq 0 ]; then
+    echo "No options available."
+    return 1
+  fi
+
+  local i
+  for i in "${!arr[@]}"; do
+    echo "[$i] ${arr[$i]}"
+  done
+
+  local choice
+  while true; do
+    read -r -p "Select number: " choice
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 0 ] && [ "$choice" -lt "${#arr[@]}" ]; then
+      echo "${arr[$choice]}"
+      return 0
+    else
+      echo "Invalid selection."
+    fi
+  done
+}
+
+lxc_create() {
+  local tmpl=$1
+
+  local VMID
+  VMID=$(pct list | awk 'NR>1 {print $1}' | sort -n | tail -n 1)
+  VMID=${VMID:-99}
+  VMID=$((VMID + 1))
+
+  local HOSTNAME
+  HOSTNAME=$(basename "$tmpl" | sed -E 's/\.tar\..*//')
+
+  local PASSWORD="program"
+  local ROOTFS_STORAGE="local-lvm"
+  local DISK_SIZE="8G"
+  local MEMORY="2048"
+  local CPUS="2"
+  local NET_BRIDGE="vmbr0"
+
+  local TEMPLATE_PATH="/var/lib/vz/template/cache/$tmpl"
+  if [[ ! -f $TEMPLATE_PATH ]]; then
+    echo "Template $TEMPLATE_PATH not found!"
+    return 1
+  fi
+
+  echo "Creating container $VMID from $tmpl..."
+
+  pct create "$VMID" "$TEMPLATE_PATH" \
+    --hostname "$HOSTNAME" \
+    --password "$PASSWORD" \
+    --storage "$ROOTFS_STORAGE" \
+    --rootfs "${ROOTFS_STORAGE}:${DISK_SIZE}" \
+    --memory "$MEMORY" \
+    --cores "$CPUS" \
+    --net0 name=eth0,bridge="$NET_BRIDGE",ip=dhcp \
+    --start 1
+
+  echo "Waiting for container to start..."
+  wait_for "UP" 30 2 pct status "$VMID"
+
+  local IP
+  IP=$(pct exec "$VMID" -- hostname -I | awk '{print $1}')
+
+  echo "✅ Container $VMID ($HOSTNAME) created successfully with IP: $IP"
+}
+
+lxc_templates() {
+  pveam available
+}
+
+# Let's provide options for all lxc templates to pick from
+read_template() {
+  local templates
+  templates=$(pveam available)
+  echo "$templates" | gum choose --header="Select LXC Template"
+}
