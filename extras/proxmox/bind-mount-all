@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Proxmox maps container UIDs/GIDs to a higher range on the host.
+# The default offset is 100000.
+readonly PROXMOX_ID_MAP_OFFSET=100000
+readonly USER_SHELL="/bin/bash"
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") --host-path <host_path> --uid <container_uid> --gid <container_gid> <ct_id1> [<ct_id2> ...]
+
+This script configures a bind mount from a Proxmox host to one or more LXC containers.
+
+Arguments:
+  <host_path>       Absolute path on the Proxmox host to be mounted.
+  <container_uid>   The UID for the user inside the container.
+  <container_gid>   The GID for the user inside the container.
+  <ct_id...>        One or more LXC Container IDs.
+
+The script will:
+1. Set ownership on the host path using the mapped UID/GID.
+2. For each container:
+   - Create a user with the specified UID/GID if it doesn't exist.
+   - Grant the user 'sudo' privileges.
+   - Add the bind mount to the container's configuration.
+   - Restart the container to apply changes.
+   - Verify the user has read/write access to the mount.
+EOF
+  exit 1
+}
+
+cleanup() {
+  local exit_code=$?
+  if [ "$exit_code" -ne 0 ]; then
+    echo ""
+    echo "--- SCRIPT FAILED ---"
+    echo "An error occurred at or near line ${BASH_LINENO[0]}. Please check the output above for details."
+    echo "Not all containers may have been processed successfully."
+  fi
+  exit "$exit_code"
+}
+
+trap cleanup EXIT
+
+if [[ $EUID -ne 0 ]]; then
+  echo "Error: This script must be run as root on the Proxmox host." >&2
+  exit 1
+fi
+
+parse_args() {
+  local host_path
+  local uid
+  local gid
+  local ct_ids=()
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --host-path)
+      host_path="$2"
+      shift 2
+      ;;
+    --uid)
+      uid="$2"
+      shift 2
+      ;;
+    --gid)
+      gid="$2"
+      shift 2
+      ;;
+    *)
+      ct_ids+=("$1")
+      shift
+      ;;
+    esac
+  done
+
+  if [[ -z "$host_path" || -z "$uid" || -z "$gid" || ${#ct_ids[@]} -eq 0 ]]; then
+    usage
+  fi
+
+  readonly HOST_PATH="$host_path"
+  readonly CONTAINER_UID="$uid"
+  readonly CONTAINER_GID="$gid"
+  readonly CT_IDS=("${ct_ids[@]}")
+  readonly CONTAINER_USER="user${CONTAINER_UID}"
+  readonly CONTAINER_GROUP="group${CONTAINER_GID}"
+
+  readonly CONTAINER_MOUNT_PATH
+  CONTAINER_MOUNT_PATH="/mnt/$(basename "${HOST_PATH}")"
+
+  # echo "$host_path $uid $gid ${ct_ids[*]}"
+
+}
+
+validate_args() {
+  if [[ ! -d "$HOST_PATH" ]]; then
+    echo "Error: Host path '${HOST_PATH}' does not exist or is not a directory." >&2
+    exit 1
+  fi
+  if ! [[ "$CONTAINER_UID" =~ ^[0-9]+$ ]] || ! [[ "$CONTAINER_GID" =~ ^[0-9]+$ ]]; then
+    echo "Error: UID and GID must be non-negative integers." >&2
+    exit 1
+  fi
+}
+
+setup_host_permissions() {
+  readonly HOST_UID=$((PROXMOX_ID_MAP_OFFSET + CONTAINER_UID))
+  readonly HOST_GID=$((PROXMOX_ID_MAP_OFFSET + CONTAINER_GID))
+
+  echo "--- Preparing Host ---"
+  echo "Setting ownership of '${HOST_PATH}' to mapped UID:GID ${HOST_UID}:${HOST_GID}"
+  chown "${HOST_UID}:${HOST_GID}" "${HOST_PATH}"
+  chmod u+rwx,g+rwx,o-rwx "${HOST_PATH}"
+  echo "Host permissions set successfully."
+}
+
+setup_containers() {
+  for CTID in "${CT_IDS[@]}"; do
+    echo ""
+    echo "================================================="
+    echo "--- Processing Container ${CTID} ---"
+    echo "================================================="
+
+    if ! pct status "$CTID" >/dev/null 2>&1; then
+      echo "Error: Container ${CTID} does not exist or is not accessible." >&2
+      continue
+    fi
+
+    echo "[${CTID}] Checking for user '${CONTAINER_USER}' (UID: ${CONTAINER_UID})..."
+    if pct exec "$CTID" -- id -u "$CONTAINER_USER" &>/dev/null; then
+      echo "[${CTID}] User '${CONTAINER_USER}' already exists. Skipping creation."
+    else
+      echo "[${CTID}] User not found. Creating user and group..."
+      pct exec "$CTID" -- groupadd -g "$CONTAINER_GID" "$CONTAINER_GROUP" 2>/dev/null || true
+      pct exec "$CTID" -- useradd -m -u "$CONTAINER_UID" -g "$CONTAINER_GID" -s "$USER_SHELL" "$CONTAINER_USER"
+      echo "[${CTID}] Adding user '${CONTAINER_USER}' to the 'sudo' group..."
+      pct exec "$CTID" -- usermod -aG sudo "$CONTAINER_USER"
+      echo "[${CTID}] User setup complete."
+    fi
+
+    echo "[${CTID}] Finding next available mount point..."
+    MOUNT_INDEX=0
+    while pct config "$CTID" | grep -q "^mp${MOUNT_INDEX}:"; do
+      ((MOUNT_INDEX++))
+    done
+    echo "[${CTID}] Using mount point mp${MOUNT_INDEX} for '${CONTAINER_MOUNT_PATH}'."
+    pct set "$CTID" --mp${MOUNT_INDEX} "mp=${HOST_PATH},mp=${CONTAINER_MOUNT_PATH}"
+
+    echo "[${CTID}] Restarting container to apply changes..."
+    pct stop "$CTID" >/dev/null
+    pct start "$CTID" >/dev/null
+
+    echo "[${CTID}] Waiting for container to become available..."
+    for i in {1..30}; do
+      if pct status "$CTID" | grep -q "status: running"; then
+        # Wait a little extra for network/services to be ready
+        sleep 3
+        break
+      fi
+      sleep 1
+      if [ "$i" -eq 30 ]; then
+        echo "Error: Timed out waiting for container ${CTID} to restart." >&2
+        exit 1
+      fi
+    done
+    echo "[${CTID}] Container is running."
+
+    echo "[${CTID}] Verifying read/write access for user '${CONTAINER_USER}'..."
+    TEST_FILE="${CONTAINER_MOUNT_PATH}/.pve_mount_test_$(date +%s)"
+    if pct exec "$CTID" -- sudo -u "$CONTAINER_USER" -- sh -c "touch '${TEST_FILE}' && rm '${TEST_FILE}'"; then
+      echo "[${CTID}] Access verification successful."
+    else
+      echo "Error: User '${CONTAINER_USER}' in CT ${CTID} failed the read/write test on '${CONTAINER_MOUNT_PATH}'." >&2
+      echo "Please check permissions inside the container and on the host." >&2
+      exit 1
+    fi
+    echo "[${CTID}] Successfully configured."
+  done
+
+  echo ""
+  echo "--- SCRIPT COMPLETE ---"
+  echo "All specified containers have been processed successfully."
+}
+
+main() {
+  parse_args "$@"
+  validate_args
+  setup_host_permissions
+  setup_containers
+}
+
+main "$@"

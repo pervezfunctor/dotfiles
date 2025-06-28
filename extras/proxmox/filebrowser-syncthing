@@ -1,0 +1,259 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Configuration
+SCRIPT_NAME="$(basename "$0")"
+DEFAULT_UID=1000
+TEMPLATE="ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
+SUBID_START=100000
+
+error_exit() {
+  echo "ERROR: $1" >&2
+  exit 1
+}
+
+usage() {
+  cat <<EOF
+Usage: $SCRIPT_NAME --host-path <path> [--uid <uid>] [--gid <gid>]
+
+Arguments:
+    --host-path <path>    Absolute path on host to bind mount (required).
+    --uid <uid>           User ID inside containers (optional, default: $DEFAULT_UID).
+    --gid <gid>           Group ID inside containers (optional, default: same as --uid).
+
+Example:
+    $SCRIPT_NAME --host-path /data/shared --uid 1001
+    $SCRIPT_NAME --host-path /data/shared --uid 1001 --gid 1002
+    $SCRIPT_NAME --host-path /home/user/files
+
+This script creates two LXC containers:
+- filebrowser: Web-based file manager with a bind mount to the host path.
+- syncthing: File synchronization tool, also with a bind mount.
+
+The script uses LXC's subordinate UID mapping. The container user (default UID/GID $DEFAULT_UID)
+is mapped to a high-level UID/GID on the host (${SUBID_START}+). The host path permissions
+are adjusted for this mapped UID/GID to grant access to the containers.
+
+Requirements:
+- Run as root or with sudo.
+- The host path must exist.
+EOF
+}
+
+check_root_user() {
+  if [[ $EUID -ne 0 ]]; then
+    error_exit "This script must be run as root"
+  fi
+}
+
+parse_args() {
+  local host_path
+  local uid=$DEFAULT_UID
+  local gid="" # Set later to uid if not provided
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --host-path)
+      host_path="$2"
+      shift 2
+      ;;
+    --uid)
+      uid="$2"
+      shift 2
+      ;;
+    --gid)
+      gid="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    esac
+  done
+
+  if [[ -z "$gid" ]]; then
+    gid="$uid"
+  fi
+
+  if [[ -z "$host_path" ]]; then
+    usage
+    error_exit "Missing required argument: --host-path"
+  fi
+
+  if [[ ! -d "$host_path" ]]; then
+    error_exit "Host path '$host_path' does not exist or is not a directory"
+  fi
+
+  host_path=$(realpath "$host_path")
+
+  if ! [[ "$uid" =~ ^[0-9]+$ ]] || [[ "$uid" -lt 0 ]]; then
+    error_exit "UID must be a non-negative integer"
+  fi
+
+  if ! [[ "$gid" =~ ^[0-9]+$ ]] || [[ "$gid" -lt 0 ]]; then
+    error_exit "GID must be a non-negative integer"
+  fi
+
+  echo "$host_path $uid $gid"
+}
+
+create_containers() {
+  local host_path="$1"
+  local host_uid="$2"
+  local host_gid="$3"
+
+  local fb_ctid
+  fb_ctid=$(pvesh get /cluster/nextid)
+  echo "Creating FileBrowser container (CTID: $fb_ctid)..."
+  pct create "$fb_ctid" "local:vztmpl/$TEMPLATE" --unprivileged 1 \
+    --hostname filebrowser-lxc --memory 512 --cores 1 \
+    --net0 name=eth0,bridge=vmbr0,ip=dhcp
+
+  local sync_ctid
+  sync_ctid=$(pvesh get /cluster/nextid)
+  echo "Creating Syncthing container (CTID: $sync_ctid)..."
+  pct create "$sync_ctid" "local:vztmpl/$TEMPLATE" --unprivileged 1 \
+    --hostname syncthing-lxc --memory 1024 --cores 1 \
+    --net0 name=eth0,bridge=vmbr0,ip=dhcp
+
+  echo "Configuring bind mounts..."
+  local lxc_config
+  lxc_config="
+mp0: $host_path,mp=/shared_data
+lxc.idmap: u 0 $SUBID_START 65536
+lxc.idmap: g 0 $SUBID_START 65536
+"
+  echo "$lxc_config" >>"/etc/pve/lxc/$fb_ctid.conf"
+  echo "$lxc_config" >>"/etc/pve/lxc/$sync_ctid.conf"
+
+  echo "Setting host permissions on $host_path..."
+  chown -R "$host_uid:$host_gid" "$host_path"
+  chmod -R 770 "$host_path"
+
+  pct start "$fb_ctid"
+  pct start "$sync_ctid"
+
+  echo "$fb_ctid $sync_ctid"
+}
+
+setup_filebrowser() {
+  local ctid="$1"
+  local uid="$2"
+  local gid="$3"
+
+  pct exec "$ctid" -- bash -c "
+    apt-get update && apt-get install -y curl
+    curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
+    filebrowser config init --port 8080 --root /shared_data
+    filebrowser config set --auth.method=noauth
+    groupadd -g '$gid' shared-group
+    useradd -u '$uid' -g '$gid' -s /bin/bash -d /home/shared-user -m shared-user
+    chown -R shared-user:shared-group /shared_data
+    cat > /etc/systemd/system/filebrowser.service <<EOF
+[Unit]
+Description=FileBrowser
+After=network.target
+
+[Service]
+User=shared-user
+ExecStart=/usr/local/bin/filebrowser -c /etc/filebrowser.json
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl enable --now filebrowser.service
+"
+}
+
+setup_syncthing() {
+  local ctid="$1"
+  local uid="$2"
+  local gid="$3"
+
+  pct exec "$ctid" -- bash -c "
+    apt-get update && apt-get install -y curl gnupg
+    curl -s https://syncthing.net/release-key.gpg | gpg --dearmor | tee /usr/share/keyrings/syncthing-archive-keyring.gpg >/dev/null
+    echo "deb [signed-by=/usr/share/keyrings/syncthing-archive-keyring.gpg] https://apt.syncthing.net/ syncthing stable" > /etc/apt/sources.list.d/syncthing.list
+    apt-get update && apt-get install -y syncthing
+    groupadd -g '$gid' shared-group
+    useradd -u '$uid' -g '$gid' -s /bin/bash -d /home/shared-user -m shared-user
+    chown -R shared-user:shared-group /shared_data
+    mkdir -p /home/shared-user/.config/syncthing
+    chown -R shared-user:shared-group /home/shared-user
+    cat > /etc/systemd/system/syncthing.service <<EOF
+[Unit]
+Description=Syncthing
+After=network.target
+
+[Service]
+User=shared-user
+ExecStart=/usr/bin/syncthing serve --no-browser --no-restart --logflags=0
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=3 4
+RestartForceExitStatus=3 4
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl enable --now syncthing.service
+"
+}
+
+main() {
+  check_root_user
+
+  local host_path uid gid
+  read -r host_path uid gid <<<"$(parse_args "$@")"
+
+  local host_uid=$((SUBID_START + uid))
+  local host_gid=$((SUBID_START + gid))
+
+  echo "Host path: $host_path"
+  echo "Container UID/GID: $uid/$gid"
+  echo "Host UID/GID for path permissions: $host_uid/$host_gid"
+
+  local fb_ctid sync_ctid
+  read -r fb_ctid sync_ctid <<<"$(create_containers "$host_path" "$host_uid" "$host_gid")"
+
+  echo "Setting up FileBrowser container..."
+  setup_filebrowser "$fb_ctid" "$uid" "$gid"
+
+  echo "Setting up Syncthing container..."
+  setup_syncthing "$sync_ctid" "$uid" "$gid"
+
+  local fb_ip
+  fb_ip=$(pct exec "$fb_ctid" -- ip a show dev eth0 | awk '/inet / {print $2}' | cut -d/ -f1)
+  local sync_ip
+  sync_ip=$(pct exec "$sync_ctid" -- ip a show dev eth0 | awk '/inet / {print $2}' | cut -d/ -f1)
+
+  echo -e "\n\e[1;32mSetup Complete!\e[0m"
+  echo "------------------------------------------------------"
+  echo "FileBrowser:"
+  echo "  URL: http://$fb_ip:8080"
+  echo "  Data Path: /shared_data"
+  echo "  Container UID/GID: $uid/$gid"
+  echo "  No authentication (enable via FileBrowser web UI)"
+  echo ""
+  echo "Syncthing:"
+  echo "  Web UI: http://$sync_ip:8384"
+  echo "  Data Path: /shared_data"
+  echo "  Container UID/GID: $uid/$gid"
+  echo ""
+  echo "Host Path: $host_path"
+  echo "Host UID/GID mapping: container $uid:$gid -> host $host_uid:$host_gid"
+  echo "Host Path Permissions: $(stat -c '%U:%G (%u:%g)' "$host_path")"
+  echo "------------------------------------------------------"
+  echo "Next steps:"
+  echo "1. Configure Syncthing: Add devices and share '/shared_data'"
+  echo "2. Enable authentication in FileBrowser settings"
+  echo "3. Consider adding an HTTPS reverse proxy for security"
+
+}
+
+trap 'error_exit "Script interrupted or failed"' ERR INT TERM
+
+main "$@"
