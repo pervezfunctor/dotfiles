@@ -161,15 +161,16 @@ setup_containers() {
       for i in {1..30}; do
         if pct status "$CTID" | grep -q "status: running"; then
           sleep 3
+          echo "[${CTID}] Container is running."
           break
         fi
+
         sleep 1
         if [ "$i" -eq 30 ]; then
           echo "Error: Timed out waiting for container ${CTID} to restart." >&2
-          exit 1
+          break
         fi
       done
-      echo "[${CTID}] Container is running."
     fi
 
     echo "[${CTID}] Verifying read/write access for user '${CONTAINER_USER}'..."
@@ -180,7 +181,7 @@ setup_containers() {
     else
       echo "Error: User '${CONTAINER_USER}' in CT ${CTID} failed the read/write test on '${CONTAINER_MOUNT_PATH}'." >&2
       echo "Please check permissions inside the container and on the host." >&2
-      exit 1
+      continue
     fi
     echo "[${CTID}] Successfully configured."
   done
