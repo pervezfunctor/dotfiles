@@ -8,17 +8,10 @@
 
   outputs = { self, nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
-      in
-      {
+      let pkgs = import nixpkgs { inherit system; };
+      in {
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            direnv
-            nixd
-            statix
-            nixpkgs-fmt
-          ];
+          buildInputs = with pkgs; [ direnv nixd nixfmt statix nixpkgs-fmt ];
 
           shellHook = ''
             echo "💻 Welcome to your Nix dev environment!"

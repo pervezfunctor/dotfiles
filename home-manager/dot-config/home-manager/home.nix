@@ -29,6 +29,9 @@
     pkgs.micro-with-wl-clipboard
     pkgs.neovim
     pkgs.nixfmt-classic
+    nixd
+    nixpkgs-fmt
+    statix
     pkgs.nushell
     pkgs.ripgrep
     pkgs.sd

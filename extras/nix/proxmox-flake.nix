@@ -2,23 +2,20 @@
   description = "Proxmox VM automation devshell (Zig, Rust, Nushell)";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";  # you can pin if needed
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable"; # you can pin if needed
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-        };
-      in
-      {
+      let pkgs = import nixpkgs { inherit system; };
+      in {
         devShells.default = pkgs.mkShell {
           name = "proxmox-devshell";
 
           buildInputs = with pkgs; [
             nixd
+            nixfmt
             nixpkgs-fmt
             statix
             zig
@@ -38,6 +35,5 @@
             echo "📦 Tools: Zig, Rust, Nushell, wget, qm (shim)"
           '';
         };
-      }
-    );
+      });
 }
