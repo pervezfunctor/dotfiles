@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+# Proxmox maps container UIDs/GIDs to a higher range on the host for unprivileged containers.
+# The default offset is 100000. This script assumes the container is unprivileged.
+readonly PROXMOX_ID_MAP_OFFSET="${PROXMOX_ID_MAP_OFFSET:-100000}"
+# This script targets the root user inside the container.
+readonly CONTAINER_UID=0
+readonly CONTAINER_GID=0
+
+HOST_PATH=""
+CT_IDS=()
+CONTAINER_MOUNT_PATH=""
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") --host-path <path> <ct_id1> [<ct_id2> ...]
+
+This script configures a bind mount from a Proxmox host to the root user of one or more LXC containers.
+It is designed for **unprivileged** containers that use the standard UID/GID mapping.
+
+Arguments:
+  --host-path <path>  Absolute path on the Proxmox host to be mounted.
+  <ct_id...>          One or more LXC Container IDs.
+
+The script will:
+1. Create the host path if it doesn't exist.
+2. Set ownership on the host path to the correctly mapped root UID/GID for container access.
+3. For each container:
+   - Add the bind mount to the container's configuration if not already present.
+   - Restart the container to apply changes if a new mount is added.
+   - Verify the root user has read/write access to the mount point.
+EOF
+}
+
+log() { echo -e "📝 $*"; }
+warn() {
+  echo -e "\033[1;33m⚠️  $*\033[0m" >&2
+  sleep 1
+}
+error() { echo -e "\033[1;31m❌ $*\033[0m" >&2; }
+
+cleanup() {
+  local exit_code=$?
+  trap - ERR EXIT
+  if [ "$exit_code" -ne 0 ]; then
+    echo -e "\n\033[1;31m--- SCRIPT FAILED ---\033[0m"
+    echo "❌ Exit code: $exit_code"
+    echo "📍 Function: ${FUNCNAME[1]:-main}"
+    echo "📄 File: ${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
+    echo "📌 Line: ${BASH_LINENO[0]}"
+    echo "⚠️  Not all containers may have been processed successfully."
+  fi
+  exit "$exit_code"
+}
+trap cleanup ERR EXIT
+
+if [[ $EUID -ne 0 ]]; then
+  error "This script must be run as root on the Proxmox host."
+  exit 1
+fi
+
+parse_args() {
+  local host_path_arg
+  local ct_ids_arg=()
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --host-path)
+      host_path_arg="$2"
+      shift 2
+      ;;
+    --help)
+      usage
+      exit 0
+      ;;
+    *)
+      ct_ids_arg+=("$1")
+      shift
+      ;;
+    esac
+  done
+
+  if [[ -z "$host_path_arg" || ${#ct_ids_arg[@]} -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  HOST_PATH="$host_path_arg"
+  CT_IDS=("${ct_ids_arg[@]}")
+  CONTAINER_MOUNT_PATH="/mnt/$(basename "${HOST_PATH}")"
+}
+
+setup_host_permissions() {
+  local host_uid=$((PROXMOX_ID_MAP_OFFSET + CONTAINER_UID))
+  local host_gid=$((PROXMOX_ID_MAP_OFFSET + CONTAINER_GID))
+
+  echo "--- Preparing Host ---"
+  if [[ ! -d "$HOST_PATH" ]]; then
+    warn "Host path '$HOST_PATH' does not exist. Creating..."
+    mkdir -p "$HOST_PATH"
+  fi
+
+  log "Setting ownership of '${HOST_PATH}' to mapped root UID:GID ${host_uid}:${host_gid}"
+  chown "${host_uid}:${host_gid}" "${HOST_PATH}"
+  chmod u+rwx,g+rwx,o-rwx "${HOST_PATH}"
+  log "Host permissions set successfully."
+}
+
+setup_containers() {
+  for CTID in "${CT_IDS[@]}"; do
+    echo ""
+    echo "================================================="
+    echo "--- Processing Container ${CTID} ---"
+    echo "================================================="
+
+    if ! pct status "$CTID" >/dev/null 2>&1; then
+      error "Container ${CTID} does not exist or is not accessible."
+      continue
+    fi
+
+    log "[${CTID}] Checking for existing bind mount for '${HOST_PATH}'..."
+    if pct config "$CTID" | grep -q ": ${HOST_PATH},mp="; then
+      log "[${CTID}] Bind mount for '${HOST_PATH}' already exists. Skipping."
+    else
+      log "[${CTID}] Finding next available mount point..."
+      local MOUNT_INDEX=0
+      while pct config "$CTID" | grep -q "^mp${MOUNT_INDEX}:"; do
+        ((MOUNT_INDEX++))
+      done
+      log "[${CTID}] Using mount point mp${MOUNT_INDEX} for '${CONTAINER_MOUNT_PATH}'."
+      pct set "$CTID" --mp${MOUNT_INDEX} "${HOST_PATH},mp=${CONTAINER_MOUNT_PATH}"
+
+      log "[${CTID}] Restarting container to apply changes..."
+      pct stop "$CTID" >/dev/null
+      pct start "$CTID" >/dev/null
+
+      log "[${CTID}] Waiting for container to become available..."
+      for i in {1..30}; do
+        if pct status "$CTID" | grep -q "status: running"; then
+          sleep 3
+          break
+        fi
+        sleep 1
+        if [ "$i" -eq 30 ]; then
+          error "Timed out waiting for container ${CTID} to restart."
+          exit 1
+        fi
+      done
+      log "[${CTID}] Container is running."
+    fi
+
+    log "[${CTID}] Verifying read/write access for root user..."
+    local TEST_FILE
+    TEST_FILE="${CONTAINER_MOUNT_PATH}/.pve_mount_test_$(date +%s)"
+    if pct exec "$CTID" -- sh -c "touch '${TEST_FILE}' && rm '${TEST_FILE}'"; then
+      log "[${CTID}] Access verification successful."
+    else
+      error "Root user in CT ${CTID} failed the read/write test on '${CONTAINER_MOUNT_PATH}'."
+      error "Please check permissions inside the container and on the host." >&2
+      exit 1
+    fi
+    log "[${CTID}] Successfully configured."
+  done
+
+  echo ""
+  echo "--- SCRIPT COMPLETE ---"
+  echo "All specified containers have been processed successfully."
+}
+
+main() {
+  parse_args "$@"
+  setup_host_permissions
+  setup_containers
+}
+
+main "$@"
