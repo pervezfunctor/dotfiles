@@ -1,126 +1,199 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# mount disk on the host and then bind mount on the container.
-# This approach works for both privileged and unprivileged containers.
+# Mounts a USB device on the Proxmox host and then bind-mounts it into an LXC container.
+# This approach is designed for unprivileged containers, as it correctly handles host permissions.
 
 set -euo pipefail
 
-# shellcheck disable=SC1091
-source "$(dirname "$0")/utils"
+# --- Configuration ---
+# For unprivileged containers, Proxmox maps the container's root UID (0) to a high-numbered UID on the host.
+# The default starting UID for the map is 100000.
+readonly HOST_ROOT_UID=100000
+readonly HOST_ROOT_GID=100000
 
+# --- Functions ---
+
+# Ensure the script is run as root and all required commands are available.
 check_prerequisites() {
-  for cmd in lsblk pct mountpoint; do
+  if [[ $EUID -ne 0 ]]; then
+    echo "Error: This script must be run as root." >&2
+    exit 1
+  fi
+
+  for cmd in lsblk pct mountpoint awk grep sort; do
     if ! command -v "$cmd" &>/dev/null; then
-      echo "Error: Required command '$cmd' not found."
+      echo "Error: Required command '$cmd' not found." >&2
       exit 1
     fi
   done
 }
 
-check_prerequisites
-
-select_usb_device() {
-  mapfile -t usb_devices < <(lsblk -lno NAME,TRAN | awk '$2 == "usb" {print "/dev/" $1}')
-  if [ "${#usb_devices[@]}" -eq 0 ]; then
-    echo "⚠️ No USB devices found."
-    exit 1
-  fi
-
-  echo "Available USB devices:"
-  for i in "${!usb_devices[@]}"; do
-    echo "[$i] ${usb_devices[$i]}"
-  done
-
-  read -r -p "Select USB device number: " usb_index
-  if ! [[ "$usb_index" =~ ^[0-9]+$ ]] || [ "$usb_index" -ge "${#usb_devices[@]}" ]; then
-    echo "Invalid selection."
-    exit 1
-  fi
-
-  selected_usb="${usb_devices[$usb_index]}"
-}
-
+# Prompts the user to select an LXC container from a list.
+# Returns the selected CTID.
 select_lxc() {
-  mapfile -t containers < <(pct list | awk 'NR>1 {print $1}')
-  mapfile -t container_names < <(pct list | awk 'NR>1 {print $2}')
+  echo "Detecting LXC containers..."
+  mapfile -t containers < <(pct list | awk 'NR>1 {printf "%s %s\n", $1, $2}')
 
   if [ "${#containers[@]}" -eq 0 ]; then
-    echo "⚠️ No LXC containers found."
+    echo "Error: No LXC containers found." >&2
     exit 1
   fi
 
   echo "Available LXC containers:"
   for i in "${!containers[@]}"; do
-    echo "[$i] ${containers[$i]} ${container_names[$i]}"
+    echo "[$i] ${containers[$i]}"
   done
 
-  read -r -p "Select LXC container number: " ct_index
+  local ct_index
+  read -r -p "Select the container to mount the USB device to: " ct_index
   if ! [[ "$ct_index" =~ ^[0-9]+$ ]] || [ "$ct_index" -ge "${#containers[@]}" ]; then
-    echo "Invalid selection."
+    echo "Error: Invalid selection." >&2
     exit 1
   fi
-  selected_ctid="${containers[$ct_index]}"
+
+  # Extract just the CTID from the selection
+  awk '{print $1}' <<< "${containers[$ct_index]}"
 }
 
-mount_path() {
-  read -r -p "Enter container mount path (e.g., /mnt/usb): " ct_mount
-  if [ -z "$ct_mount" ]; then
-    echo "No mount path specified."
+# Prompts the user to select a USB device from a list of detected devices.
+# Returns the selected device path (e.g., /dev/sdb1).
+select_usb_device() {
+  echo "Detecting USB storage devices..."
+  mapfile -t usb_devices < <(lsblk -p -o NAME,TRAN,TYPE | awk '$2 == "usb" && $3 == "part" {print $1}')
+
+  if [ "${#usb_devices[@]}" -eq 0 ]; then
+    echo "Error: No USB partitions found. Ensure the device is connected and has a partition table." >&2
     exit 1
   fi
 
-  host_mount="/mnt/usb_${selected_usb#/dev/}"
+  echo "Available USB partitions:"
+  for i in "${!usb_devices[@]}"; do
+    echo "[$i] ${usb_devices[$i]}"
+  done
 
-  if ! mountpoint -q "$host_mount"; then
-    sudo mkdir -p "$host_mount"
-    sudo mount "$selected_usb" "$host_mount"
+  local usb_index
+  read -r -p "Select the USB partition to mount: " usb_index
+  if ! [[ "$usb_index" =~ ^[0-9]+$ ]] || [ "$usb_index" -ge "${#usb_devices[@]}" ]; then
+    echo "Error: Invalid selection." >&2
+    exit 1
   fi
+
+  echo "${usb_devices[$usb_index]}"
 }
 
-next_mp() {
-  conf_file="/etc/pve/lxc/${selected_ctid}.conf"
-  if [ ! -f "$conf_file" ]; then
-    echo "LXC config file not found: $conf_file"
-    exit 1
-  fi
+# Mounts the selected device to a temporary path on the host and sets permissions.
+# Arguments:
+#   $1: The device path (e.g., /dev/sdb1).
+# Returns the host mount path.
+prepare_host_mount() {
+  local device_path="$1"
+  local device_name
+  device_name=$(basename "$device_path")
+  local host_mount_path="/mnt/pve-usb-$device_name"
 
-  mapfile -t mp_indices < <(grep -oP '^mp\K\d+(?=:)' "$conf_file" || true)
-  if [ "${#mp_indices[@]}" -eq 0 ]; then
-    next_mp=0
+  echo "Preparing host mount point at $host_mount_path..."
+
+  # Create mount point if it doesn't exist
+  mkdir -p "$host_mount_path"
+
+  # Mount the device if it's not already mounted at the target location
+  if mountpoint -q "$host_mount_path"; then
+    echo "Device is already mounted at $host_mount_path. Verifying permissions."
   else
-    max_index=$(printf '%s\n' "${mp_indices[@]}" | sort -n | tail -1)
-    next_mp=$((max_index + 1))
+    echo "Mounting $device_path to $host_mount_path..."
+    mount "$device_path" "$host_mount_path"
   fi
+
+  # Set permissions for the unprivileged container's root user
+  echo "Setting ownership for unprivileged container access (UID: $HOST_ROOT_UID, GID: $HOST_ROOT_GID)..."
+  chown "$HOST_ROOT_UID:$HOST_ROOT_GID" "$host_mount_path"
+  chmod 770 "$host_mount_path"
+
+  echo "$host_mount_path"
 }
 
-add_mount() {
-  conf_file="/etc/pve/lxc/${selected_ctid}.conf"
+# Adds the bind mount to the container's configuration if it doesn't already exist.
+# Arguments:
+#   $1: The container ID.
+#   $2: The host path to mount.
+#   $3: The container path to mount to.
+# Returns "true" if a restart is needed, otherwise "false".
+configure_container_mount() {
+  local ctid="$1"
+  local host_path="$2"
+  local container_path="$3"
+  local conf_file="/etc/pve/lxc/${ctid}.conf"
+
+  echo "Configuring container $ctid..."
+
   if [ ! -f "$conf_file" ]; then
-    echo "LXC config file not found: $conf_file"
+    echo "Error: LXC config file not found: $conf_file" >&2
     exit 1
   fi
 
-  next_mp=$(next_mp)
-  echo "mp${next_mp}: $host_mount,mp=$ct_mount" | sudo tee -a "$conf_file" >/dev/null
+  # Check if this exact bind mount already exists
+  if grep -q "mp[0-9]*: ${host_path},mp=${container_path}" "$conf_file"; then
+    echo "Bind mount already exists in container configuration. No changes made."
+    echo "false"
+    return
+  fi
+
+  # Find the next available mount point index (mp#)
+  local next_mp_index=0
+  while grep -q "^mp${next_mp_index}:" "$conf_file"; do
+    ((next_mp_index++))
+  done
+
+  echo "Adding mount point 'mp${next_mp_index}' to $conf_file..."
+  # Append the new mount point configuration
+  echo "mp${next_mp_index}: ${host_path},mp=${container_path}" >> "$conf_file"
+
+  echo "true"
 }
 
-restart_container() {
-  read -rp "🔄 Restart container $selected_ctid now to apply changes? (y/n): " RESTART
-  if [[ "$RESTART" =~ ^[Yy]$ ]]; then
-    sudo pct restart "$selected_ctid"
-    echo "✅ Container restarted. USB is now available at $ct_mount"
-  else
-    echo "✅ USB mount added. Restart container manually to use it."
-  fi
-}
+# --- Main Execution ---
 
 main() {
-  select_lxc
-  select_usb_device
-  mount_path
-  add_mount
-  echo "✅ Success! $selected_usb mounted to CT $selected_ctid at $ct_mount"
-  restart_container
+  check_prerequisites
+
+  local selected_ctid
+  selected_ctid=$(select_lxc)
+
+  local selected_usb
+  selected_usb=$(select_usb_device)
+
+  local ct_mount_path
+  read -r -p "Enter the desired mount path inside the container (e.g., /mnt/usb): " ct_mount_path
+  if [ -z "$ct_mount_path" ]; then
+    echo "Error: Mount path cannot be empty." >&2
+    exit 1
+  fi
+
+  local host_mount_path
+  host_mount_path=$(prepare_host_mount "$selected_usb")
+
+  local restart_needed
+  restart_needed=$(configure_container_mount "$selected_ctid" "$host_mount_path" "$ct_mount_path")
+
+  echo ""
+  echo "----------------------------------------"
+  echo "✅ Success!"
+  echo "Host path '$host_mount_path' is now configured to mount to '$ct_mount_path' in container $selected_ctid."
+
+  if [ "$restart_needed" = "true" ]; then
+    local restart_confirm
+    read -r -p "🔄 A container restart is required to apply changes. Restart container $selected_ctid now? (y/n): " restart_confirm
+    if [[ "$restart_confirm" =~ ^[Yy]$ ]]; then
+      echo "Restarting container $selected_ctid..."
+      pct restart "$selected_ctid"
+      echo "Container restarted."
+    else
+      echo "Please restart the container manually to access the mount."
+    fi
+  else
+    echo "The mount is already active. No restart was needed."
+  fi
+  echo "----------------------------------------"
 }
 
 main "$@"
