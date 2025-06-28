@@ -91,16 +91,16 @@ if ! [ -f /tmp/debian-cloud.qcow2 ]; then
   wget -O /tmp/debian-cloud.qcow2 "$DEBIAN_IMAGE_URL"
 fi
 
-if [ $? -ne 0 ] || [ ! -f /tmp/debian-cloud.qcow2 ]; then
+if ! [ -f /tmp/debian-cloud.qcow2 ]; then
   echo "Failed to download Debian image."
   exit 1
 fi
 
 echo "Creating VM $VM_NAME with ID $VM_ID..."
 
-if ! qm create $VM_ID --name $VM_NAME \
-  --memory $MEMORY \
-  --cores $CORES \
+if ! qm create "$VM_ID" --name "$VM_NAME" \
+  --memory "$MEMORY" \
+  --cores "$CORES" \
   --ostype l26 \
   --agent 1 \
   --cpu host \
@@ -111,50 +111,48 @@ fi
 
 echo "Importing disk to Proxmox storage..."
 
-if ! qm importdisk "$VM_ID" /tmp/debian-cloud.qcow2 $PROXMOX_STORAGE; then
+if ! qm importdisk "$VM_ID" /tmp/debian-cloud.qcow2 "$PROXMOX_STORAGE"; then
   echo "Failed to import disk."
   exit 1
 fi
 
 echo "Attaching disk to VM..."
-
-if ! qm set $VM_ID --scsihw virtio-scsi-pci \
-  --scsi0 $PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1; then
+if ! qm set "$VM_ID" --scsihw virtio-scsi-pci \
+  --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1"; then
   echo "Failed to attach disk."
   exit 1
 fi
 
 echo "Resizing disk to $DISK_SIZE..."
-if ! qm resize $VM_ID scsi0 $DISK_SIZE; then
+if ! qm resize "$VM_ID" scsi0 "$DISK_SIZE"; then
   echo "Failed to resize disk."
   exit 1
 fi
 
 echo "Configuring boot options..."
-
-if ! qm set $VM_ID --boot c --bootdisk scsi0; then
+if ! qm set "$VM_ID" --boot c --bootdisk scsi0; then
   echo "Failed to configure boot options."
   exit 1
 fi
 
 echo "Adding cloud-init drive..."
-if ! qm set $VM_ID --ide2 $PROXMOX_STORAGE:cloudinit; then
+if ! qm set "$VM_ID" --ide2 "$PROXMOX_STORAGE":cloudinit; then
   echo "Failed to add cloud-init drive."
   exit 1
 fi
 
 echo "Configuring cloud-init..."
-if ! qm set $VM_ID --serial0 socket \
+if ! qm set "$VM_ID" --serial0 socket \
   --vga serial0 \
   --ipconfig0 ip=dhcp \
-  --cipassword $PASSWORD \
-  --ciuser $USERNAME; then
+  --cipassword "$PASSWORD" \
+  --ciuser "$USERNAME"; then
   echo "Failed to configure cloud-init."
   exit 1
 fi
 
 echo "Converting VM to template..."
-if ! qm template $VM_ID; then
+if ! qm template "$VM_ID"; then
   echo "Failed to convert VM to template."
   exit 1
 fi

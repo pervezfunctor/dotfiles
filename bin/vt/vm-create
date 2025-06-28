@@ -36,7 +36,7 @@ configure_alpine() {
     VM_NAME=${VM_NAME:=alpine}
     RELEASE=${RELEASE:=3.22}
 
-    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-${RELEASE}.0-x86_64-uefi-cloudinit-r0.qcow2"
+    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v${RELEASE}/releases/cloud/generic_alpine-${RELEASE}.0-x86_64-uefi-cloudinit-r0.qcow2"
     BASE_IMG_NAME="generic_alpine-${RELEASE}.0-x86_64-uefi-cloudinit-r0.qcow2"
     USER_GROUPS=("wheel")
     # INSTALL_CMD="sudo apk add qemu libvirt qemu-img wget genisoimage"

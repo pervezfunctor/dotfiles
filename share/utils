@@ -669,6 +669,13 @@ is_ubuntu() {
         [[ "$ID" == *"pop"* ]]
 }
 
+is_proxmox() {
+    [[ -f /etc/pve/.version ]] && return 0
+    has_cmd pveversion && pveversion | grep -q "pve" && return 0
+    grep -qi "proxmox" /etc/os-release 2>/dev/null && return 0
+    return 1
+}
+
 is_plucky() {
     [[ -f /etc/os-release ]] || return 1
     # shellcheck disable=SC1091
@@ -952,6 +959,17 @@ download_to() {
 set_zsh_as_default() {
     slog "Setting zsh as default shell"
     chsh -s "$(which zsh)"
+}
+
+is_root_user() {
+    [[ $EUID -eq 0 ]]
+}
+
+check_root_user() {
+    if is_root_user; then
+        fail "This script must not be run as root. DO NOT use sudo."
+        exit 1
+    fi
 }
 
 nix_dotfiles() {

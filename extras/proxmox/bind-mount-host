@@ -20,10 +20,19 @@ HOST_GID=$((100000 + CONTAINER_UID))
 
 mkdir -p "$HOST_DIR"
 
-# Set ownership and permissions for LXC bind mount usage
-chown -R $HOST_UID:$HOST_GID "$HOST_DIR"
-chmod 2775 "$HOST_DIR"
+# Set ownership for unprivileged container UID mapping
+if ! chown -R "$HOST_UID:$HOST_GID" "$HOST_DIR"; then
+  echo "Failed to set ownership for $HOST_DIR. Please check permissions."
+  exit 1
+fi
 
-echo "Directory $HOST_DIR created and permissions set for LXC UID/GID $CONTAINER_UID (host-mapped $HOST_UID:$HOST_GID)."
-echo "You can now bind mount this directory into your LXC container."
-echo "Use command bind-mount-lxc to do so."
+# 2775 = rwxr-sr-x (setgid on directory so new files inherit group)
+if ! chmod 2775 "$HOST_DIR"; then
+  echo "Failed to set permissions for $HOST_DIR. Please check permissions."
+  exit 1
+fi
+
+echo "Permissions set for $HOST_DIR for LXC UID/GID $CONTAINER_UID (host-mapped $HOST_UID:$HOST_GID)."
+echo
+echo "You can now bind mount this directory into your LXC container using:"
+echo "  pct set <ctid> -mp0 $HOST_DIR,mp=/mnt/<mountpoint>"

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# mount disk on the host and then bind mount on the container.
+# This approach works for both privileged and unprivileged containers.
+
 set -euo pipefail
 
 # shellcheck disable=SC1091
@@ -113,17 +116,10 @@ restart_container() {
 
 main() {
   select_lxc
-  # check_container "$selected_ctid" || exit 1
-  # if ! container_privileged "$selected_ctid"; then
-  #   echo "⚠️ Container $selected_ctid is unprivileged. USB mounts will not be available inside the container."
-  # fi
-
   select_usb_device
   mount_path
   add_mount
-
   echo "✅ Success! $selected_usb mounted to CT $selected_ctid at $ct_mount"
-
   restart_container
 }
 
