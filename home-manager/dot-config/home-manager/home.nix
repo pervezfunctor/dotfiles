@@ -30,8 +30,8 @@
     pkgs.neovim
     pkgs.nixfmt-classic
     pkgs.nixd
-    nixpkgs-fmt
-    statix
+    pkgs.nixpkgs-fmt
+    pkgs.statix
     pkgs.nushell
     pkgs.ripgrep
     pkgs.sd
