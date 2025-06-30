@@ -82,7 +82,7 @@ is_atomic && return 0
 
 cmd_check base_groupstall
 cmd_check min_groupstall
-cmd_check slim-shell_groupstall
+cmd_check shell-slim_groupstall
 cmd_check shell_groupstall
 cmd_check shell-ui_groupstall
 cmd_check vm_groupstall

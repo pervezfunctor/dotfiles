@@ -91,7 +91,7 @@ On macos, install applications(vscode, terminal, fonts etc) along with shell too
 
 ```bash
 curl https://pkgx.sh | sh
-pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- slim-shell-ui
+pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- shell-slim-ui
 ```
 
 If you just want homebrew and basic unix tools, run the following command.
