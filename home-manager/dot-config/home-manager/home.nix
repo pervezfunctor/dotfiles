@@ -29,7 +29,7 @@
     pkgs.micro-with-wl-clipboard
     pkgs.neovim
     pkgs.nixfmt-classic
-    nixd
+    pkgs.nixd
     nixpkgs-fmt
     statix
     pkgs.nushell
