@@ -51,7 +51,7 @@ core_install() {
 
     slog "Installing core packages"
 
-    si curl wget git trash-cli tree micro tar unzip stow zstd file
+    si curl wget git trash-cli tree tar unzip stow zstd file
 
     slog "Core packages installation done!"
 }
@@ -89,7 +89,7 @@ essential_install() {
 
     si unarchiver zip tmux pkg-config fuse2 net-tools iproute2 p7zip readline \
         sqlite libffi zlib xz pkgfile nmap gum libxcrypt-compat libsecret gawk \
-        base-devel
+        base-devel micro
 
     sudo pkgfile --update
 

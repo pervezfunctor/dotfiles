@@ -686,7 +686,7 @@ shell_install() {
 }
 
 base-group_check() {
-    cmd_check gcc make curl wget git trash tree tar unzip
+    cmd_check curl wget git trash tree tar unzip
     dir_check "$DOT_DIR"
     bash_config_check
 }
@@ -702,7 +702,7 @@ base_groupstall() {
 }
 
 min-group_check() {
-    cmd_check micro zip unar
+    cmd_check micro zip unar gcc make
 }
 
 min_groupstall() {
