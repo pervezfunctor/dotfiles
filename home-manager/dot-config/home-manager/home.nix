@@ -20,7 +20,6 @@
     pkgs.fzf
     pkgs.gcc
     pkgs.gh
-    pkgs.git
     pkgs.htop
     pkgs.just
     pkgs.lazygit
