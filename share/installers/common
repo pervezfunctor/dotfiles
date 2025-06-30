@@ -713,14 +713,14 @@ min_groupstall() {
 }
 
 shell-slim-group_check() {
-    cmd_check trash rg gum ug tldr starship zoxide bat eza gh fzf
-    cmd_check carapace shellcheck fd delta direnv yq
+    cmd_check trash rg gum starship zoxide bat eza gh fzf
+    cmd_check carapace shellcheck delta
 }
 
 shell-group_check() {
     shell-slim-group_check
     cmd_check gh nvim zsh tmux lazygit sd bat brew htop btm atuin gawk
-    cmd_check shellcheck shfmt
+    cmd_check shellcheck shfmt ug tldr fd direnv yq
     # cmd_check cheat choose curlie direnv doggo dotenv procs
     # cmd_check duf dust gdu hyperfine jq just yq
 }
