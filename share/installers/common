@@ -382,9 +382,10 @@ git_conf() {
 git_config_install() {
     slog "Configuring git"
 
-    is_wsl && git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe"
-
-    # stowdf git
+    if is_wsl; then
+        # git config --global credential.helper "$(wslpath 'C:\Program Files\Git\mingw64\bin\git-credential-manager-core.exe')"
+        git config --global credential.helper "/mnt/c/Program Files/Git/mingw64/bin/git-credential-manager-core.exe"
+    fi
 
     git_conf init.defaultBranch main
     git_conf pull.ff only

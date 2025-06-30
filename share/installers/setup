@@ -23,9 +23,10 @@ main() {
         common-installer "$@"
     fi
 
-    if ! has_cmd zh && [[ "$(default_shell)" != "zsh" ]]; then
+    if ! has_cmd zsh && [[ "$(default_shell)" != "zsh" ]]; then
         has_cmd set_zsh_as_default && set_zsh_as_default
     fi
+
 }
 
 if [[ "$1" == "generic" ]] || [[ "$1" == "generic-ct" ]] || [[ "$1" == "fedora-atomic" ]] || is_multipass; then

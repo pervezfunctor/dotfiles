@@ -932,7 +932,6 @@ keep_sudo_running() {
     slog "Sudo credentials active."
     (
         while true; do
-            slog "Refreshing sudo credentials..."
             sudo -n true 2>/dev/null
             sleep 60
         done
