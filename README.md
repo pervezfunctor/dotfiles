@@ -2,6 +2,51 @@
 
 ## Installation on your current system
 
+### TLDR
+
+## Linux
+
+Installs vscode, docker and shell tools
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- dev
+```
+
+## Windows
+
+Pick and choose what you want to install.
+
+```powershell
+iwr -useb https://is.gd/vefawu | iex
+```
+
+## MacOS
+
+Installs homebrew and essential unix tools.
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif)"
+```
+
+### Linux
+
+On linux desktop(Ubuntu 25.04 for eg), install shell tools, vscode and docker with the following command. Works on Ubuntu 25.04, Fedora 42, OpenSUSE Tumbleweed and Arch.
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- dev
+```
+
+If you only want to install modern unix tools in a development container/vm/desktop, use the following command instead. Works on linux and macos.
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- shell-slim
+```
+
+Or just install the very basic packages(gcc, make, tar, git etc)
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)"
+```
 
 ### Windows
 
@@ -28,7 +73,7 @@ bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" --
 Exit and enter WSL again(or reboot) to install more development tools.
 
 ```bash
-ilmi tmux nvim emacs # pick any
+ilmi tmux nvim emacs # pick any tools you want
 ```
 
 If you want to setup vscode and other development tools on Windows, run the following command in powershell **as administrator**.
@@ -42,37 +87,17 @@ You will be presented with a menu, pick what you want to install.
 
 ### MACOS
 
-On macos, install applications(vscode, ghostty terminal, fonts etc) along with shell tools. Works on linux too.
+On macos, install applications(vscode, terminal, fonts etc) along with shell tools. Works on linux too.
 
 ```bash
 curl https://pkgx.sh | sh
-pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- desktop
+pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- slim-shell-ui
 ```
 
 If you just want homebrew and basic unix tools, run the following command.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif)"
-```
-
-### Linux
-
-On linux desktop(Ubuntu 25.04 for eg), install shell tools, vscode and docker with the following command. Works on Ubuntu 25.04, Fedora 42, OpenSUSE Tumbleweed, CentOS Stream 10 and Arch.
-
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- dev
-```
-
-If you only want to install modern unix tools in a development container/vm/desktop, use the following command instead. Works on linux and macos.
-
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- shell
-```
-
-Or just install the very basic packages(gcc, make, tar, git etc)
-
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)"
 ```
 
 
