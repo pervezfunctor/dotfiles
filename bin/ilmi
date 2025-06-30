@@ -3,50 +3,44 @@
 # shellcheck disable=SC1090
 source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 
-INSTALL_OPTIONS=("shell" "vscode" "cpp" "ct" "vm" "virt" "ui" "essential" "webi" "kitty" "mise" "flathub" "cursor" "vscode_flatpak" "ptyxis" "apps" "rust" "miniconda" "pnpm" "web" "brew" "monaspace" "jetbrains_nerd_font" "fonts" "doom" "go" "docker" "code_server" "conan" "cmake" "home_manager" "pyenv" "uv" "devbox" "pixi" "tailscale" "portainer" "cockpit" "podman" "incus" "@nix" "@min" "@shell" "@ct" "@vm" "@work" "@desktop" "@prog" "@all" "@sway" "@hyprland")
+INSTALL_OPTIONS=("shell-slim" "shell" "vscode" "web" "python" "apps" "fonts" "vm" "ptyxis" "incus" "docker" "nix" "cpp" "mise" "rust" "brew" "fonts" "doom" "go" "code_server" "devbox" "pixi" "tailscale" "@nix" "@shell" "@vm" "@hyprland" "@sway")
 
-DEFAULT_OPTIONS=("shell" "ct" "vscode")
+DEFAULT_OPTIONS=("shell-slim" "vscode" "fonts" "fonts")
 
 help() {
     echo "Usage: $0 [OPTION1] [OPTION2] ..."
     echo "Options:"
+    echo "  shell-slim   essential shell packages."
     echo "  shell        shell tools like zsh, tmux, nvim."
     echo "  vscode       vscode and extensions."
-    echo "  ct           container tools like docker, podman, incus, distrobox."
     echo "  vm           vm tools like buildah, distrobox, libvirt."
-    echo "  web          pnpm based web development tools."
-    echo "  ui           desktop apps like vscode, zoom, obsidian."
-    echo "  essential   only essential tools like git, curl, wget, cmake."
+    echo "  web          pnpm based web dev tools."
+    echo "  python       python dev tools."
     echo "  nix          nix installation"
     echo "  fonts        nerd fonts for jetbrains mono, cascadia code mono."
-    echo "  home-manager home-manager installation"
-    echo "  apps        flatpak apps like firefox, chromium, zoom, obsidian, wezterm."
-    echo ""
-    echo ""
-    echo "More fine grained options available like"
-    echo "  cpp         Installs gcc, clang, cmake, boost etc"
-    echo "  docker      docker only"
-    echo "  podman      podman only"
-    echo "  cockpit     cockpit only"
-    echo "  miniconda   miniconda for python."
-    echo "  brew        homebrew for macos and linuxbrew for linux."
-    echo "  help        show this help."
+    echo "  apps         flatpak apps like firefox, chromium, zoom, obsidian, wezterm."
+    echo "  incus        incus and lxc."
+    echo "  ptyxis       ptyxis terminal."
+    echo "  cpp          gcc, clang, cmake, boost."
+    echo "  docker       docker only"
+    echo "  brew         homebrew for macos and linuxbrew for linux."
+    echo "  mise         mise for managing tools like rust, go, python, etc."
+    echo "  rust         rust dev tools."
+    echo "  go           go dev tools."
+    echo "  devbox       devbox for managing dev containers."
+    echo "  pixi         pixi for managing global packages and modern conda for python."
+    echo "  tailscale    tailscale for managing vpn."
+    echo "  code-server  code-server for managing vscode in browser."
+    echo "  help         show this help."
     echo ""
     echo "Group Options"
-    echo "  @min         essential packages only."
     echo "  @nix         nix installation"
-    echo "  @work        min and vscode, flatpak apps."
     echo "  @shell       min and shell tools and config for zsh, tmux, neovim."
-    echo "  @ct          shell and container tools - docker, podman, incus, distrobox."
-    echo "  @vm          ct and vm tools like buildah, libvirt."
-    echo "  @desktop     vm and desktop apps like vscode, zoom, obsidian."
-    echo "  @prog        vm and programming tools for rust, go, web, c++, python."
-    echo "  @all         everything(not recommended)."
+    echo "  @vm          vm tools like buildah, libvirt."
     echo "  @hyprland    hyprland desktop on fedora and tumbleweed."
     echo "  @sway        sway desktop on fedora and tumbleweed."
     echo "  help        show this help."
     echo ""
-
 }
 
 main() {
@@ -60,6 +54,7 @@ main() {
         exit 0
     fi
 
+    local SELECTED_OPTIONS
     SELECTED_OPTIONS=$(igum choose "${INSTALL_OPTIONS[@]}" --no-limit --selected "${DEFAULT_OPTIONS[@]}" --header "Choose options to install" | tr '\n' ' ')
 
     if [[ -n "$SELECTED_OPTIONS" ]]; then
@@ -77,7 +72,7 @@ main() {
 if [[ "$1" == "help" ]]; then
     help
 else
-    if [[ "$1" == "generic" ]] || [[ "$1" == "generic-ct" ]] || [[ "$1" == "fedora-atomic" ]] || is_multipass; then
+    if [[ "$1" == "generic" ]] || [[ "$1" == "generic-ct" ]] || [[ "$1" == "fedora-atomic" ]] || is_multipass || is_distrobox; then
         export NOSUDO=1
     fi
 

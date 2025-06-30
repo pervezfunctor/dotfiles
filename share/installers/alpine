@@ -32,7 +32,7 @@ core_install() {
 
     slog "Installing core packages"
 
-    si gpg curl wget git trash-cli tree tar unzip gcc make stow fzf gawk
+    si gpg curl wget git trash-cli tree tar unzip stow
 
     slog "Core packages installation done!"
 }
@@ -53,7 +53,7 @@ essential_install() {
     pkgx_install
     sys_python_install
 
-    si zip micro p7zip net-tools iproute2 nmap
+    si zip micro p7zip net-tools iproute2 nmap gcc make fzf gawk
 
     slog "Essential packages installation done!"
 }
@@ -98,12 +98,6 @@ terminal_bin_install() {
     slog "terminal installation done!"
 }
 
-podman_install() {
-    slog "Installing podman"
-    si podman podman-compose
-    slog "podman installation done!"
-}
-
 vm_install() {
     si libvirt
     sudo systemctl enable --now libvirtd
@@ -120,24 +114,10 @@ incus_install() {
     slog "incus installation done!"
 }
 
-ct_install() {
-    slog "Installing container tools"
+distrobox_install() {
+    has_cmd distrobox && return 1
 
-    incus_install
-    # docker_install
-    portainer_install
-    podman_install
-
-    si buildah distrobox
-
-    slog "Container tools installation done!"
-}
-
-virt_install() {
-    slog "Installing virtualization packages"
-
-    ct_install
-    vm_install
-
-    slog "Virtualization packages installation done!"
+    slog "Installing distrobox"
+    si podman podman-compose buildah distrobox
+    slog "distrobox installation done!"
 }

@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [ -z "$BASH_VERSION" ]; then
+    echo "This script must be run with bash."
+    exit 1
+fi
+
 if command -v curl &>/dev/null; then
     # shellcheck disable=SC1090
     source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
@@ -8,14 +13,15 @@ elif command -v wget &>/dev/null; then
     source <(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 else
     echo "curl or wget is not installed"
+    exit 1
 fi
 
 main() {
     if [[ "$#" -eq 1 ]] && has_cmd "${1}_groupstall"; then
         "${1}_groupstall"
     else
-        if has_cmd base_groupstall; then
-            base_groupstall
+        if has_cmd min_groupstall; then
+            min_groupstall
         else
             err_exit "unknown or unsupported $* options"
         fi
@@ -26,10 +32,14 @@ main() {
     if ! has_cmd zsh && [[ "$(default_shell)" != "zsh" ]]; then
         has_cmd set_zsh_as_default && set_zsh_as_default
     fi
-
 }
 
-if [[ "$1" == "generic" ]] || [[ "$1" == "generic-ct" ]] || [[ "$1" == "fedora-atomic" ]] || is_multipass; then
+if [[ "$1" == "generic" ]] ||
+    [[ "$1" == "generic-ct" ]] ||
+    [[ "$1" == "fedora-atomic" ]] ||
+    is_multipass ||
+    is_distrobox; then
+
     export NOSUDO=1
 fi
 

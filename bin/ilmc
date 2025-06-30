@@ -3,7 +3,7 @@
 # shellcheck disable=SC1090
 source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 
-INSTALL_OPTIONS=("nvim" "bash" "vscode_flatpak" "vscode" "zsh" "tmux" "emacs" "git" "gnome" "sway" "hyprland")
+INSTALL_OPTIONS=("nvim" "bash" "vscode_flatpak" "vscode" "zsh" "tmux" "emacs" "git" "gnome" "sway" "hyprland" "docker" "libvirt")
 
 DEFAULT_OPTIONS=("zsh" "tmux" "nvim")
 
@@ -13,12 +13,14 @@ help() {
     echo "  zsh         zsh config with starship prompt and common plugins."
     echo "  tmux        tmux config, catppuccin theme and common plugins."
     echo "  nvim        lazyvim based config and plugins."
-    echo "  vscode      vscode settings."
+    echo "  vscode      vscode settings and extensions."
     echo "  emacs       doom emacs config."
-    echo "  git         git config."
-    echo "  sway        sway config."
-    echo "  hyprland    hyprland config."
-    echo "  gnome       gnome config."
+    echo "  git         git basic config."
+    echo "  sway        sway config with modern desktop tools."
+    echo "  hyprland    hyprland config with modern desktop tools."
+    echo "  gnome       gnome config and extensions."
+    echo "  docker      docker config to use without sudo."
+    echo "  libvirt     libvirt config to use without sudo."
     echo "  help        show this help."
     echo ""
     echo ""

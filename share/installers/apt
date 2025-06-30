@@ -105,8 +105,7 @@ core_install() {
     slog "Installing core packages"
 
     si software-properties-common apt-transport-https ca-certificates gpg curl \
-        wget git-core trash-cli tar unzip libsecret-tools build-essential \
-        tree command-not-found file libfuse2 zstd gawk
+        wget git-core trash-cli tar unzip tree file
 
     if is_plucky; then
         si stow
@@ -153,7 +152,8 @@ essential_install() {
     fi
 
     si zip unar micro nala p7zip libreadline-dev libsqlite3-dev \
-        libffi-dev libbz2-dev liblzma-dev net-tools iproute2 nmap
+        libffi-dev libbz2-dev liblzma-dev net-tools iproute2 nmap \
+        libsecret-tools build-essential command-not-found libfuse2 zstd gawk
 
     slog "Essential packages installation done!"
 }
@@ -260,14 +260,6 @@ terminal_bin_install() {
     slog "terminal installation done!"
 }
 
-vm-ui_install() {
-
-    is_desktop || return 0
-
-    si gnome-boxes
-    has_cmd virt-install && si virt-manager virt-viewer
-}
-
 ui_install() {
     slog "Installing ui"
     si chromium-browser gnome-keyring wl-clipboard flatpak
@@ -278,8 +270,16 @@ ui_install() {
     vscode_bin_install
     apps_install
 
-    vm-ui_install
     slog "ui installation done!"
+}
+
+vm-ui_install() {
+    slog "Installing virt ui packages"
+
+    si gnome-boxes
+    has_cmd virt-install && si virt-manager virt-viewer
+
+    slog "virt ui packages installation done!"
 }
 
 cockpit_install() {
@@ -296,17 +296,13 @@ cockpit_install() {
     slog "cockpit installation done!"
 }
 
-podman_install() {
-    slog "Installing podman"
-    si podman podman-toolbox podman-compose
-    slog "podman installation done!"
-}
-
 vm_install() {
     si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils \
         virgl-server qemu-utils spice-client-gtk spice-vdagent
 
     libvirt_config_install
+
+    cockpit_install
 }
 
 incus_install() {
@@ -341,31 +337,15 @@ incus_install() {
     slog "incus installation done!"
 }
 
-ct_install() {
-    slog "Installing container tools"
+distrobox_install() {
+    has_cmd distrobox && return 1
 
-    incus_install
-    docker_install
-    podman_install
-    cockpit_install
+    slog "Installing distrobox"
+
+    si podman podman-toolbox podman-compose
+    slog "podman installation done!"
 
     si buildah distrobox
 
-    slog "Container tools installation done!"
-}
-
-ct-ui_install() {
-    ct_install
-    portainer_install
-}
-
-virt_install() {
-    slog "Installing virtualization packages"
-
-    ct_install
-    vm_install
-
-    code_server_install
-
-    slog "Virtualization packages installation done!"
+    slog "distrobox installation done!"
 }

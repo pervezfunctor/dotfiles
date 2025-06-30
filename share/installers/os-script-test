@@ -19,21 +19,22 @@ fi
 
 cmd_check core_install
 cmd_check essential_install
+
+cmd_check cli-slim_install
 cmd_check cli_install
+cmd_check cli-ui_install
 cmd_check cpp_install
 cmd_check vscode_bin_install
 cmd_check terminal_bin_install
 cmd_check emacs_bin_install
+cmd_check cli-slim-ui_install
 cmd_check ui_install
 cmd_check vm_install
 
 if ! is_atomic && ! is_mac; then
   cmd_check docker_install
-  cmd_check podman_install
+  cmd_check distrobox_install
   cmd_check incus_install
-  cmd_check cockpit_install
-
-  cmd_check ct_install
   cmd_check vm-ui_install
 fi
 
@@ -84,10 +85,8 @@ cmd_check min_groupstall
 cmd_check slim-shell_groupstall
 cmd_check shell_groupstall
 cmd_check shell-ui_groupstall
-cmd_check ct_groupstall
 cmd_check vm_groupstall
 cmd_check vm-ui_groupstall
-cmd_check desktop_groupstall
 
 cmd_check nvim_boxstall
 cmd_check emacs_boxstall

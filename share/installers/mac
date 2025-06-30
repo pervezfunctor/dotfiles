@@ -74,7 +74,7 @@ cpp_install() {
     slog "C++ installation done!"
 }
 
-ct_install() {
+podman_install() {
     softwareupdate --install-rosetta --agree-to-license
     slog "Installing Container tools"
 

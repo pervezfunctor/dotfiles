@@ -2,8 +2,7 @@
 
 si() {
     if has_cmd dnf5; then
-        # fedora 41
-        sudo dnf5 -q -y \
+        sudo dnf5 -y \
             --setopt=install_weak_deps=False \
             --setopt=fastestmirror=True \
             --setopt=keepcache=False \
@@ -14,11 +13,11 @@ si() {
             --setopt=defaultyes=True \
             install --skip-unavailable --skip-broken "$@"
     else
-        # needed to support centos and rocky
+        slog "Installing packages..."
         for p in "$@"; do
-            slog "Installing package $p"
-            sudo dnf -q -y install "$p"
+            sudo dnf -y install "$p"
         done
+        slog "Packages installation done!"
     fi
 }
 
@@ -153,10 +152,8 @@ core_install() {
     is_fedora && si dnf5-plugins
 
     update_packages
-    base_dev_install
 
-    si curl wget git-core trash-cli cmake tree tar unzip util-linux-user which \
-        fuse fuse-libs zstd file libsecret
+    si curl wget git-core trash-cli tree tar unzip util-linux-user which file
 
     is_fedora && si stow
 
@@ -167,10 +164,12 @@ essential_install() {
     slog "Installing essential packages"
 
     pkgx_install
+    base_dev_install
     sys_python_install
 
     si zip p7zip unar gawk readline-devel sqlite-devel libffi-devel \
-        bzip2-devel xz-devel gum micro net-tools iproute2 nmap
+        bzip2-devel xz-devel gum micro net-tools iproute2 nmap libsecret \
+        fuse fuse-libs zstd
 
     slog "Essential packages installation done!"
 }
@@ -233,7 +232,6 @@ cpp_install() {
         si boost1.78 boost1.78-devel boost1.78-static catch-devel
     elif is_fedora; then
         si boost boost-devel boost-static catch-devel
-        sudo dnf groupinstall -q -y --with-optional "C Development Tools and Libraries"
     fi
 
     slog "C++ installation done!"
@@ -285,15 +283,21 @@ ui_install() {
 
     si flatpak chromium gnome-keyring wl-clipboard flathub_install
 
-    si gnome-boxes
-    has_cmd virt-install && si virt-manager virt-viewer
-
     terminal_bin_install
 
     vscode_bin_install
     apps_install
 
     slog "ui installation done!"
+}
+
+vm-ui_install() {
+    slog "Installing virt ui packages"
+
+    si gnome-boxes
+    has_cmd virt-install && si virt-manager virt-viewer
+
+    slog "virt ui packages installation done!"
 }
 
 cockpit_install() {
@@ -323,13 +327,9 @@ docker_install() {
 
     docker_config_install
 
-    slog "docker installation done!"
-}
+    portainer_install
 
-podman_install() {
-    slog "Installing podman"
-    si podman podman-compose podman-tui toolbox
-    slog "podman installation done!"
+    slog "docker installation done!"
 }
 
 incus_install() {
@@ -358,44 +358,21 @@ pm_install() {
 vm_install() {
     slog "Installing libvirt"
 
-    if dnf group list -q | grep -q "System Tools"; then
-        sudo dnf group install -q -y --with-optional "System Tools"
-    elif dnf group list -q | grep -q "system-tools"; then
-        si @system-tools
-    fi
-
     si libvirt qemu qemu-kvm virt-install bridge-utils virglrenderer qemu-img \
         qemu-ui-spice-core qemu-ui-spice-app qemu-char-spice qemu-audio-spice \
         qemu-device-usb-redirect qemu-device-display-virtio-vga
 
     libvirt_config_install
 
+    cockpit_install
+
     slog "libvirt installation done!"
 }
 
-ct_install() {
-    slog "Installing container tools"
-
-    incus_install
-    docker_install
-    portainer_install
-    podman_install
-    cockpit_install
-
-    si buildah distrobox
-
-    slog "Container tools installation done!"
-}
-
-virt_install() {
-    slog "Installing virtualization packages"
-
-    ct_install
-    vm_install
-
-    code_server_install
-
-    slog "Virtualization packages installation done!"
+distrobox_install() {
+    slog "Installing distrobox"
+    si podman podman-compose podman-tui toolbox buildah distrobox
+    slog "distrobox installation done!"
 }
 
 more_virt_install() {

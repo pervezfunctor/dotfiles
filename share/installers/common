@@ -380,6 +380,11 @@ git_conf() {
 }
 
 git_config_install() {
+    if ! has_cmd git; then
+        warn "git not installed, skipping git config"
+        return 1
+    fi
+
     slog "Configuring git"
 
     if is_wsl; then
@@ -691,7 +696,7 @@ base_groupstall() {
     dotfiles_install
 
     git_config_install
-    bash_config_install
+    has_cmd bash && bash_config_install
 
     base-group_check
 }
@@ -724,7 +729,6 @@ shell-slim_groupstall() {
     min_groupstall
     shell-slim_install
 
-    bash_config_install
     has_cmd zsh && zsh_config_install
 
     shell-slim-group_check
@@ -755,12 +759,23 @@ shell-ui_groupstall() {
     terminal_bin_install
 }
 
-dev-slim_groupstall() {
-    base_groupstall
+dev_groupstall() {
+    min_groupstall
     cli-slim_install
 
     vscode_install
     fonts_install
+
+    if has_cmd ghostty || has_cmd kitty || has_cmd wezterm; then
+        return 0
+    fi
+
+    if is_linux; then
+        flathub_install
+        ptyxis_install
+    else
+        terminal_bin_install
+    fi
 }
 
 vbox-dev_groupstall() {
@@ -768,28 +783,6 @@ vbox-dev_groupstall() {
     shell_groupstall
     python_install
     npm_install
-}
-
-dev_groupstall() {
-    dev-slim_groupstall
-
-    has_cmd vm_install && vm_install
-    if is_linux; then
-        ptyxis_install
-    else
-        terminal_bin_install
-    fi
-}
-
-ct-group_check() {
-    cmd_check incus docker podman distrobox toolbox
-}
-
-ct_groupstall() {
-    shell_groupstall
-    has_cmd ct_install && ct_install
-
-    ct-group_check
 }
 
 vm_groupstall() {
@@ -800,17 +793,4 @@ vm_groupstall() {
 vm-ui_groupstall() {
     vm_groupstall
     vm_ui_install
-}
-
-desktop_groupstall() {
-    vm_groupstall
-    fonts_install
-    has_cmd ui_install && ui_install
-
-    has_cmd code && vscode-extensions_install
-    has_cmd code && vscode_config_install
-    has_cmd foot && foot_config_install
-    has_cmd ghostty && ghostty_config_install
-    has_cmd kitty && kitty_config_install
-    has_cmd wezterm && wezterm_config_install
 }
