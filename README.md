@@ -25,7 +25,8 @@ iwr -useb https://is.gd/vefawu | iex
 Installs homebrew and essential unix tools.
 
 ```bash
-bash -c "$(curl -sSL https://is.gd/egitif)"
+curl https://pkgx.sh | sh
+pkgx bash -c "$(curl -sSL https://is.gd/egitif)"
 ```
 
 ### Linux
