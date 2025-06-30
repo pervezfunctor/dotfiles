@@ -178,7 +178,7 @@ essential_install() {
 cli-slim_install() {
     slog "Installing cli tools using dnf"
 
-    local base_pkgs=(zsh ShellCheck tmux htop gh fzf ripgrep fd-find bat zsh)
+    local base_pkgs=(zsh ShellCheck shfmt tmux htop gh fzf ripgrep fd-find bat zsh)
 
     local fedora_pkgs=()
     if is_fedora; then
@@ -193,7 +193,7 @@ cli-slim_install() {
 cli_install() {
     slog "Installing cli tools using dnf"
 
-    local base_pkgs=(zsh neovim ShellCheck tmux pkg-config urlview htop gh fzf ripgrep
+    local base_pkgs=(zsh neovim ShellCheck shfmt tmux pkg-config urlview htop gh fzf ripgrep
         fd-find bat plocate luarocks tealdeer zsh lsd)
 
     local fedora_pkgs=()
