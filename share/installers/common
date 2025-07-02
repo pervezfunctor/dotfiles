@@ -766,6 +766,8 @@ dev_groupstall() {
     vscode_install
     fonts_install
 
+    docker_install
+
     if has_cmd ghostty || has_cmd kitty || has_cmd wezterm; then
         return 0
     fi
