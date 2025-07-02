@@ -1290,6 +1290,8 @@ source_installers() {
         source_curl "$INSTALLERS/mac"
     else
         if ! is_atomic; then
+            source_curl "$INSTALLERS/mutable"
+
             if is_apt; then
                 source_curl "$INSTALLERS/apt"
             elif is_rh && ! is_atomic; then
@@ -1301,8 +1303,6 @@ source_installers() {
             elif is_alpine; then
                 source_curl "$INSTALLERS/alpine"
             fi
-
-            source_curl "$INSTALLERS/mutable"
         fi
 
         source_curl "$INSTALLERS/box" # some box fns are usefule in atomic too!
