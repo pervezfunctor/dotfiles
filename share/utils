@@ -832,7 +832,7 @@ is_rh() {
 }
 
 is_linux() {
-    [[ "$OSTYPE" == "linux-gnu" ]]
+    [[ "$OSTYPE" == "linux-gnu" ]] || [[ "$OSTYPE" == "linux" ]]
 }
 
 is_wayland() {
