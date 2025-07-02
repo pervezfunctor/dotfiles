@@ -630,8 +630,10 @@ docker_config_install() {
         sudo usermod -aG docker "$USER"
     fi
 
-    sudo systemctl --now enable docker
-    sudo systemctl --now enable containerd
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    sudo systemctl enable containerd
+    sudo systemctl start containerd
 }
 
 conan_install() {
