@@ -1,0 +1,16 @@
+#! /usr/bin/env bash
+
+virt-install \
+  --name archlinux \
+  --ram 2048 \
+  --vcpus 2 \
+  --os-variant archlinux \
+  --virt-type kvm \
+  --cpu model=host-model \
+  --hvm \
+  --graphics spice \
+  --console pty,target_type=serial \
+  --disk size=10,path=/var/lib/libvirt/images/archlinux.qcow2,format=qcow2 \
+  --cdrom /var/lib/libvirt/images/archlinux-2025.07.01-x86_64.iso \
+  --network network=default \
+  --boot loader=/usr/share/OVMF/OVMF_CODE.fd,loader_ro=yes,loader_type=pflash,nvram_template=/usr/share/OVMF/OVMF_VARS.fd
