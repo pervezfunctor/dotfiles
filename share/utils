@@ -4,6 +4,44 @@ export DOT_DIR=${USE_DOT_DIR:-$HOME/.ilm}
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export ILM_BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 
+generate_ssh_key() {
+    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "$(whoami)@$(hostname)"
+}
+
+ssh_key_path() {
+    if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
+        echo "${HOME}/.ssh/id_ed25519.pub"
+    elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
+        echo "${HOME}/.ssh/id_rsa.pub"
+    else
+        slog "No SSH key found. Generating new ed25519 key pair..."
+        generate_ssh_key
+        echo "${HOME}/.ssh/id_ed25519.pub"
+    fi
+}
+
+is_bash() {
+    [[ -n "$BASH_VERSION" ]]
+}
+
+check_bash() {
+    if ! is_bash; then
+        echo "This script must be run with bash."
+        exit 1
+    fi
+}
+
+check_bash_version() {
+    local required_major=$1
+    local bash_major=${BASH_VERSINFO[0]}
+
+    if ((bash_major < required_major)); then
+        echo "❌ Bash version $required_major.x or higher is required."
+        echo "   You are using Bash ${bash_major}.${BASH_VERSINFO[1]}"
+        exit 1
+    fi
+}
+
 gum_install() {
     has_cmd gum && return 0
     is_mac && return 1
@@ -1313,15 +1351,8 @@ source_installers() {
 }
 
 bootstrap() {
-    if [ -z "$BASH_VERSION" ]; then
-        echo "This script must be run with bash."
-        exit 1
-    fi
-
-    if [[ $EUID -eq 0 ]]; then
-        echo "This script must not be run as root. DO NOT use sudo." >&2
-        exit 1
-    fi
+    check_bash
+    check_root_user
 
     environs
 

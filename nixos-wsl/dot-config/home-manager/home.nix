@@ -37,7 +37,6 @@
     pkgs.tree
     pkgs.unzip
     pkgs.wget
-    pkgs.wget
     pkgs.zoxide
     pkgs.zsh
   ];

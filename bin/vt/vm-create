@@ -915,7 +915,7 @@ main() {
     slog "Distribution: $DISTRO $RELEASE"
     slog "Working Directory: $WORKDIR"
 
-    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)
+    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(ssh_key_path)
     if [[ ! -f "$SSH_KEY" ]]; then
         fail "SSH public key not found at: $SSH_KEY"
         exit 1

@@ -25,10 +25,7 @@ EOF
 }
 
 check_docker() {
-  if ! has_cmd docker; then
-    fail "docker is not installed. Please install it first."
-    exit 1
-  fi
+  has_cmd docker || err_exit "docker is not installed. Please install it first."
 }
 
 dck_exists() {
@@ -98,10 +95,7 @@ attach_session() {
 }
 
 detach_session() {
-  if [[ -z "${TMUX:-}" ]]; then
-    fail "Not currently in a tmux session"
-    exit 1
-  fi
+  [[ -z "${TMUX:-}" ]] || err_exit "Not currently in a tmux session"
 
   slog "Detaching from tmux session..."
   tmux detach-client

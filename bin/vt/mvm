@@ -148,7 +148,7 @@ create_vm() {
     local install_nix=false
 
     local ssh_pubkey
-    ssh_pubkey=$(setup_ssh_key)
+    ssh_pubkey=$(ssh_key_path)
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do

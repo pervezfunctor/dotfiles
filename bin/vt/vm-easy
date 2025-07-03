@@ -96,7 +96,7 @@ configure_distribution() {
   META_DATA="${CLOUD_INIT_DIR}/meta-data"
   VM_DISK="/var/lib/libvirt/images/${VM_NAME}.qcow2"
 
-  SSH_KEY=$(setup_ssh_key)
+  SSH_KEY=$(ssh_key_path)
   mkdir -p "$CLOUD_INIT_DIR" "$IMGDIR" "$WORKDIR"
   sudo mkdir -p /var/lib/libvirt/images
 }

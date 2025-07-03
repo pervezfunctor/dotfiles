@@ -197,10 +197,7 @@ EOF
 }
 
 create_container() {
-    if incus_instance_exists "$CONTAINER_NAME"; then
-        fail "instance '$CONTAINER_NAME' already exists"
-        exit 1
-    fi
+    incus_instance_exists "$CONTAINER_NAME" && err_exit "instance '$CONTAINER_NAME' already exists"
 
     slog "Creating Incus LXC container '$CONTAINER_NAME'..."
 
@@ -223,10 +220,7 @@ create_container() {
         launch_args+=(--config "security.nesting=true")
     fi
 
-    if ! incus launch "${launch_args[@]}"; then
-        fail "Failed to create container '$CONTAINER_NAME'"
-        exit 1
-    fi
+    incus launch "${launch_args[@]}" || err_exit "Failed to create container '$CONTAINER_NAME'"
 
     success "Container '$CONTAINER_NAME' created successfully"
 
@@ -332,11 +326,8 @@ main() {
     incus_check
 
     parse_args "$@"
-    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(setup_ssh_key)
-    if [[ ! -f "$SSH_KEY" ]]; then
-        fail "SSH public key not found at: $SSH_KEY"
-        exit 1
-    fi
+    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(ssh_key_path)
+    file_exists "$SSH_KEY" || err_exit "SSH public key not found at: $SSH_KEY"
 
     configure_distribution
     create_container

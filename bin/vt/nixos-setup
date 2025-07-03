@@ -373,7 +373,7 @@ main() {
     fi
 
     # Configure the instance
-    configure_nixos_instance "$instance_name" "$DEFAULT_USERNAME" "$DEFAULT_PASSWORD" "$(setup_ssh_key)"
+    configure_nixos_instance "$instance_name" "$DEFAULT_USERNAME" "$DEFAULT_PASSWORD" "$(ssh_key_path)"
 
     # Show completion information
     show_completion_info "$instance_name" "$DEFAULT_USERNAME"

@@ -9,40 +9,40 @@
   # release notes.
   home.stateVersion = "24.11"; # Please read the comment before changing.
 
-  home.packages = [
-    pkgs.bat
-    pkgs.carapace
-    pkgs.curl
-    pkgs.delta
-    pkgs.emacs-nox
-    pkgs.eza
-    pkgs.fd
-    pkgs.fzf
-    pkgs.gcc
-    pkgs.gh
-    pkgs.htop
-    pkgs.just
-    pkgs.lazygit
-    pkgs.luarocks
-    pkgs.gnumake
-    pkgs.micro-with-wl-clipboard
-    pkgs.neovim
-    pkgs.nixfmt-classic
-    pkgs.nixd
-    pkgs.nixpkgs-fmt
-    pkgs.statix
-    pkgs.nushell
-    pkgs.ripgrep
-    pkgs.sd
-    pkgs.starship
-    pkgs.stow
-    pkgs.tmux
-    pkgs.trash-cli
-    pkgs.tree
-    pkgs.unzip
-    pkgs.wget
-    pkgs.zoxide
-    pkgs.zsh
+  home.packages = with pkgs; [
+    bat
+    carapace
+    curl
+    delta
+    emacs-nox
+    eza
+    fd
+    fzf
+    gcc
+    gh
+    htop
+    just
+    lazygit
+    luarocks
+    gnumake
+    micro-with-wl-clipboard
+    neovim
+    nixfmt-classic
+    nixd
+    nixpkgs-fmt
+    statix
+    nushell
+    ripgrep
+    sd
+    starship
+    stow
+    tmux
+    trash-cli
+    tree
+    unzip
+    wget
+    zoxide
+    zsh
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
