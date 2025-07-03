@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEVICE="${1:-}"
+if [[ -z "$DEVICE" ]]; then
+  echo "Usage: $0 <network-device>"
+  exit 1
+fi
+
+if systemctl is-active --quiet NetworkManager; then
+  echo "🧠 Detected: NetworkManager"
+
+  if ! command -v nmcli >/dev/null; then
+    echo "❌ NetworkManager is installed but nmcli not found (minimal image?)."
+    exit 1
+  fi
+
+  if nmcli device show "$DEVICE" &>/dev/null; then
+    echo "🔌 Bringing up $DEVICE via NetworkManager"
+    nmcli device connect "$DEVICE" || true
+  fi
+
+  if ! nmcli connection show | grep -q "$DEVICE"; then
+    echo "➕ Creating new DHCP connection for $DEVICE"
+    nmcli connection add type ethernet ifname "$DEVICE" con-name "dhcp-$DEVICE" dhcp4 yes
+  fi
+
+  echo "🚀 Bringing up connection for $DEVICE"
+  nmcli connection up "dhcp-$DEVICE"
+
+elif systemctl is-active --quiet systemd-networkd; then
+  echo "🧠 Detected: systemd-networkd"
+
+  NET_DIR="/etc/systemd/network"
+  NET_FILE="$NET_DIR/20-dhcp-${DEVICE}.network"
+
+  sudo mkdir -p "$NET_DIR"
+  echo "📄 Writing DHCP config to $NET_FILE"
+
+  sudo tee "$NET_FILE" >/dev/null <<EOF
+[Match]
+Name=$DEVICE
+
+[Network]
+DHCP=yes
+EOF
+
+  echo "🔁 Restarting systemd-networkd"
+  sudo systemctl restart systemd-networkd
+  sudo ip link set "$DEVICE" up
+
+else
+  echo "❌ Neither NetworkManager nor systemd-networkd is active."
+  echo "Please enable one of them to manage networking."
+  exit 1
+fi
+
+echo "✅ DHCP setup complete for $DEVICE"
