@@ -77,9 +77,7 @@ vm_state() {
 vm_ip() {
   local vm_name="$1"
 
-  if ! virsh dominfo "$vm_name" &>/dev/null; then
-    return 1
-  fi
+  vm_exists || return 1
 
   local state
   state=$(virsh domstate "$vm_name")

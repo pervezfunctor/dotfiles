@@ -6,8 +6,6 @@
 
 (load-theme 'wombat t)
 
-(load-theme 'wombat t)
-
 (when (display-graphic-p)
   (if (find-font (font-spec :name "JetbrainsMono Nerd Font"))
       (set-face-attribute 'default nil
