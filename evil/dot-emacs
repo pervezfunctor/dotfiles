@@ -198,7 +198,6 @@
    ("C-c p s" . consult-ripgrep)
    ("C-c p b" . consult-project-buffer)))
 
-
 (use-package eglot
   :hook ((c-mode c++-mode python-mode rust-mode js-mode typescript-mode) . eglot-ensure)
   :config
@@ -213,13 +212,13 @@
 (add-hook 'post-command-hook #'my/show-flymake-diagnostics)
 (setq flymake-fringe-indicator-position 'right-fringe)
 
-use-package which-key
+(use-package which-key
   :config (which-key-mode))
 
 (use-package catppuccin-theme
   :config
   (load-theme 'catppuccin :no-confirm))
 
-(use-package mood-line
-  :init
-  (mood-line-mode))
+(use-package doom-modeline
+  :ensure t
+  :hook (after-init . doom-modeline-mode))
