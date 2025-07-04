@@ -1,0 +1,225 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; File name: ` ~/.emacs '
+;;; ---------------------
+;;;
+
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(when (file-exists-p custom-file)
+  (delete-file custom-file))
+
+(defconst *is-a-mac* (eq system-type 'darwin))
+(defconst *is-a-linux* (eq system-type 'gnu/linux))
+(defconst *is-a-windows* (eq system-type 'windows-nt))
+
+(when (display-graphic-p)
+  (if (find-font (font-spec :name "JetbrainsMono Nerd Font"))
+      (set-face-attribute 'default nil
+                          :family "JetBrainsMono Nerd Font"
+                          :height 120)))
+(when *is-a-mac*
+  (setq mac-option-modifier 'meta)
+  (custom-set-variables '(ns-use-srgb-colorspace nil)))
+
+(when *is-a-windows*
+  (setq default-directory "~/")
+
+  (setq inhibit-compacting-font-caches t)
+
+  (setq w32-pass-lwindow-to-system nil)
+  (setq w32-lwindow-modifier 'super)
+
+  (setq w32-pass-rwindow-to-system nil)
+  (setq w32-rwindow-modifier 'super)
+
+  (setq w32-pass-apps-to-system nil)
+  (setq w32-apps-modifier 'hyper))
+
+
+(setq-default show-trailing-whitespace t)
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+;; do not ask follow link
+(customize-set-variable 'find-file-visit-truename t)
+(setq vc-follow-symlinks t)
+
+(fset 'yes-or-no-p 'y-or-n-p)
+
+(setq gc-cons-threshold 100000000)
+(setq read-process-output-max (* 1024 1024))
+(setq inhibit-compacting-font-caches t)
+
+(setq locale-coding-system 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(set-selection-coding-system 'utf-8)
+(prefer-coding-system 'utf-8)
+
+(setq create-lockfiles nil)
+(setq inhibit-startup-message t)
+(setq initial-scratch-message nil)
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 2)
+(setq ring-bell-function 'ignore)
+
+;; allow system clipboard
+(setq select-enable-primary nil)
+(setq select-enable-clipboard t)
+(setq x-select-enable-primary nil)
+(setq x-select-enable-clipboard t)
+(setq xclip-select-enable-clipboard t)
+
+(setq require-final-newline t)
+(setq load-prefer-newer t)
+
+(setq frame-inhibit-implied-resize t)
+(setq fast-but-imprecise-scrolling t)
+(setq redisplay-skip-fontification-on-input t)
+
+(if (fboundp 'tool-bar-mode)
+    (tool-bar-mode -1))
+(if (fboundp 'set-scroll-bar-mode)
+    (set-scroll-bar-mode nil))
+(if (fboundp 'menu-bar-mode)
+    (menu-bar-mode -1))
+(setq use-dialog-box nil)
+(setq use-file-dialog nil)
+
+(column-number-mode 1)
+(size-indication-mode 1)
+(global-visual-line-mode 1)
+(show-paren-mode 1)
+(delete-selection-mode 1)
+(electric-pair-mode 1)
+(setq pixel-scroll-precision-mode 1)
+
+(setq mouse-drag-and-drop-region t
+      mouse-drag-and-drop-region-cut-when-buffers-differ t
+      mouse-drag-and-drop-region-show-tooltip t
+      mouse-drag-and-drop-region-show-cursor t)
+
+(setq windmove-wrap-around t)
+(when (fboundp 'windmove-default-keybindings)
+  (windmove-default-keybindings))
+
+(require 'package)
+(setq package-enable-at-startup nil)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(package-initialize)
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+(require 'use-package)
+(setq use-package-always-ensure t)
+
+(setq inhibit-startup-message t
+      make-backup-files nil
+      auto-save-default nil
+      ring-bell-function 'ignore
+      use-dialog-box nil
+      indent-tabs-mode nil
+      tab-width 4
+      scroll-conservatively 100
+      scroll-margin 4)
+
+(global-display-line-numbers-mode 1)
+(setq display-line-numbers-type 'relative)
+(column-number-mode 1)
+
+(use-package evil
+  :init
+  (setq evil-default-state 'emacs)
+  (setq evil-want-keybinding nil)
+  (setq evil-disable-insert-state-bindings t)
+  :config
+  (evil-mode 1)
+  (define-key evil-normal-state-map (kbd "C-z") 'evil-emacs-state)
+  (evil-insert-state))
+
+(use-package evil-collection
+  :after evil
+  :config (evil-collection-init))
+
+(use-package evil-surround
+  :after evil
+  :config (global-evil-surround-mode 1))
+
+(use-package undo-fu
+  :config (setq evil-undo-system 'undo-fu))
+
+(when (fboundp 'treesit-available-p)
+  (when (treesit-available-p)
+    (setq major-mode-remap-alist
+          '((c-mode          . c-ts-mode)
+            (c++-mode        . c++-ts-mode)
+            (python-mode     . python-ts-mode)
+            (js-mode         . js-ts-mode)
+            (typescript-mode . typescript-ts-mode)
+            (json-mode       . json-ts-mode)
+            (css-mode        . css-ts-mode)
+            (html-mode       . html-ts-mode)
+            (sh-mode         . bash-ts-mode)))))
+
+(use-package vertico
+  :init (vertico-mode 1))
+
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides
+   '((file (styles partial-completion)))))
+
+(use-package corfu
+  :custom
+  (corfu-auto t)
+  (corfu-cycle t)
+  :init (global-corfu-mode 1))
+
+(use-package cape
+  :init
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev))
+
+(use-package project
+  :custom
+  (project-switch-commands
+   '((project-find-file "Find file")
+     (consult-ripgrep "Ripgrep")
+     (project-find-dir "Find directory")
+     (magit-project-status "Magit"))))
+
+(use-package consult
+  :bind
+  (("C-s" . consult-line)
+   ("C-x b" . consult-buffer)
+   ("M-g g" . consult-goto-line)
+   ("C-c p f" . project-find-file)
+   ("C-c p s" . consult-ripgrep)
+   ("C-c p b" . consult-project-buffer)))
+
+
+(use-package eglot
+  :hook ((c-mode c++-mode python-mode rust-mode js-mode typescript-mode) . eglot-ensure)
+  :config
+  (setq eglot-autoshutdown t)
+  (setq eglot-send-changes-idle-time 0.5))
+
+
+(defun my/show-flymake-diagnostics ()
+  (when-let ((diags (flymake-diagnostics (point))))
+    (message "%s" (mapconcat #'flymake-diagnostic-text diags "\n"))))
+
+(add-hook 'post-command-hook #'my/show-flymake-diagnostics)
+(setq flymake-fringe-indicator-position 'right-fringe)
+
+use-package which-key
+  :config (which-key-mode))
+
+(use-package catppuccin-theme
+  :config
+  (load-theme 'catppuccin :no-confirm))
+
+(use-package mood-line
+  :init
+  (mood-line-mode))
