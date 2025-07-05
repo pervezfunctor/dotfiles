@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<EOF
+Usage: $0 <command> [interface]
+
+Commands:
+  list                 List all configured interfaces
+  show <iface>         Show configuration for given interface
+  up <iface>           Bring up interface
+  down <iface>         Bring down interface
+  reload               Reload all interfaces (safe way to apply changes)
+  check                Validate configuration
+  bridges              Show Linux bridge and port info
+  raw                  Dump /etc/network/interfaces file
+
+Examples:
+  $0 list
+  $0 show vmbr0
+  $0 up enp3s0
+  $0 reload
+  $0 bridges
+EOF
+}
+
+IFACES_FILE="/etc/network/interfaces"
+
+cmd="${1:-}"
+arg="${2:-}"
+
+case "$cmd" in
+  list)
+    ifquery --list
+    ;;
+  show)
+    if [[ -z "$arg" ]]; then
+      echo "❌ Please provide interface name."
+      usage
+      exit 1
+    fi
+    ifquery "$arg"
+    ;;
+  up)
+    if [[ -z "$arg" ]]; then
+      echo "❌ Please provide interface name."
+      usage
+      exit 1
+    fi
+    ifup "$arg"
+    ;;
+  down)
+    if [[ -z "$arg" ]]; then
+      echo "❌ Please provide interface name."
+      usage
+      exit 1
+    fi
+    ifdown "$arg"
+    ;;
+  reload)
+    ifreload -a
+    ;;
+  check)
+    ifreload --check
+    ;;
+  bridges)
+    echo "🔧 Active Linux bridges and ports:"
+    bridge link
+    echo
+    echo "🔧 Bridge summary:"
+    bridge vlan
+    ;;
+  raw)
+    cat "$IFACES_FILE"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
