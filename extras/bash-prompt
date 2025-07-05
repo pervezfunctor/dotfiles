@@ -1,0 +1,119 @@
+#! /usr/bin/env bash
+
+git_prompt_info() {
+  if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+    return
+  fi
+
+  local C_MAGENTA="\[\e[35m\]"
+  local C_BLUE="\[\e[34m\]"
+  local C_YELLOW="\[\e[33m\]"
+  local C_GREEN="\[\e[32m\]"
+  local C_CYAN="\[\e[36m\]"
+  local C_RESET="\[\e[0m\]"
+
+  local branch
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null) || branch=$(git rev-parse --short HEAD 2>/dev/null)
+  local git_icon=""
+  local git_string="${C_MAGENTA}${git_icon}${C_RESET} ${C_BLUE}${branch}${C_RESET}"
+
+  local status
+  if [[ -n $(git status --porcelain) ]]; then
+    status=" ${C_YELLOW}*${C_RESET}"
+  else
+    status=" ${C_GREEN}✔${C_RESET}"
+  fi
+
+  local ahead_behind_str=""
+  local upstream=
+  upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)
+
+  if [[ -n "$upstream" ]]; then
+    read -r behind ahead < <(git rev-list --left-right --count "$upstream"...HEAD)
+
+    local ahead_behind=""
+    if ((ahead > 0)); then
+      ahead_behind+=" ⇡${ahead}"
+    fi
+    if ((behind > 0)); then
+      ahead_behind+=" ⇣${behind}"
+    fi
+
+    if [[ -n "$ahead_behind" ]]; then
+      ahead_behind_str=" ${C_CYAN}[${ahead_behind# }]${C_RESET}"
+    fi
+  fi
+
+  local stashes
+  stashes=$(git stash list | wc -l)
+  if ((stashes > 0)); then
+    git_string+=" ${C_YELLOW}S:${stashes}${C_RESET}"
+  fi
+
+  echo " on ${git_string}${ahead_behind_str}${status}"
+}
+
+_CMD_START_TIME=
+trap '_CMD_START_TIME=$SECONDS' DEBUG
+
+_bash_prompt_command() {
+  local exit_code=$?
+
+  local rprompt_parts=()
+  local rprompt_str_clean=""
+
+  if [[ -n "$SSH_CONNECTION" ]]; then
+    rprompt_parts+=("$(hostname)")
+  fi
+
+  if [[ -n "$_CMD_START_TIME" ]]; then
+    local CMD_DURATION=$((SECONDS - _CMD_START_TIME))
+    local DURATION_THRESHOLD=15
+
+    if ((CMD_DURATION > DURATION_THRESHOLD)); then
+      rprompt_parts+=("took ${CMD_DURATION}s")
+    fi
+  fi
+  _CMD_START_TIME=
+
+  if [[ ${#rprompt_parts[@]} -gt 0 ]]; then
+    rprompt_str_clean=$(
+      IFS=' '
+      echo "${rprompt_parts[*]}"
+    )
+
+    local C_RED C_YELLOW C_RESET
+    C_RED=$(tput setaf 1)
+    C_YELLOW=$(tput setaf 3)
+    C_RESET=$(tput sgr0)
+
+    local rprompt_str_colored=""
+    if [[ -n "$SSH_CONNECTION" ]]; then
+      if [[ ${#rprompt_parts[@]} -gt 1 ]]; then
+        rprompt_str_colored="${C_RED}${rprompt_parts[0]}${C_RESET} ${C_YELLOW}${rprompt_parts[1]}${C_RESET}"
+      else
+        rprompt_str_colored="${C_RED}${rprompt_parts[0]}${C_RESET}"
+      fi
+    else
+      rprompt_str_colored="${C_YELLOW}${rprompt_parts[0]}${C_RESET}"
+    fi
+
+    local COLUMNS
+    COLUMNS=$(tput cols)
+    local RPROMPT_LEN=${#rprompt_str_clean}
+    local PADDING=$((COLUMNS - RPROMPT_LEN))
+
+    tput sc
+    tput cuf "$PADDING"
+    printf '%s' "$rprompt_str_colored"
+    tput rc
+  fi
+
+  local C_CYAN="\[\e[36m\]"
+  local C_WHITE="\[\e[37m\]"
+  local C_RESET="\[\e[0m\]"
+  PS1="\n${C_CYAN}\w${C_RESET}$(git_prompt_info) ${C_WHITE}›${C_RESET} "
+
+  return $exit_code
+}
+PROMPT_COMMAND=_bash_prompt_command

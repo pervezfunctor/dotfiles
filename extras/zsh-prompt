@@ -1,0 +1,79 @@
+#! /usr/bin/env zsh
+
+autoload -U add-zsh-hook
+_CMD_START_TIME=
+_CMD_DURATION=0
+
+zsh_preexec_time() {
+  _CMD_START_TIME=${SECONDS}
+}
+
+zsh_precmd_time() {
+  if [[ -n "$_CMD_START_TIME" ]]; then
+    _CMD_DURATION=$(("$SECONDS" - _CMD_START_TIME))
+    _CMD_START_TIME=
+  else
+    _CMD_DURATION=0
+  fi
+}
+
+add-zsh-hook preexec zsh_preexec_time
+add-zsh-hook precmd zsh_precmd_time
+
+git_prompt_info() {
+  if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+    return
+  fi
+
+  local branch
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null) || branch=$(git rev-parse --short HEAD 2>/dev/null)
+  local git_icon="%F{magenta}%f"
+  local git_string="$git_icon %F{blue}${branch}%f"
+
+  local status
+  if [[ -n $(git status --porcelain) ]]; then
+    status=" %F{yellow}*%f"
+  else
+    status=" %F{green}✔%f"
+  fi
+
+  local ahead_behind
+  local upstream
+  upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)
+  if [[ -n "$upstream" ]]; then
+    local counts
+    counts=("$(git rev-list --left-right --count "$upstream"...HEAD)")
+    local behind=${counts[0]}
+    local ahead=${counts[1]}
+
+    if ((ahead > 0)); then
+      ahead_behind+=" ⇡${ahead}"
+    fi
+    if ((behind > 0)); then
+      ahead_behind+=" ⇣${behind}"
+    fi
+
+    if [[ -n "$ahead_behind" ]]; then
+      ahead_behind=" %F{cyan}[${ahead_behind# }]%f"
+    fi
+  fi
+
+  local stashes
+  stashes=$(git stash list | wc -l | tr -d ' ')
+  if ((stashes > 0)); then
+    git_string+=" %F{yellow}S:${stashes}%f"
+  fi
+
+  echo " on ${git_string}${ahead_behind}${status}"
+}
+
+cmd_duration_prompt() {
+  local threshold=15
+  if ((_CMD_DURATION > threshold)); then
+    echo "%F{yellow}took ${_CMD_DURATION}s%f"
+  fi
+}
+
+setopt PROMPT_SUBST
+PROMPT=$'\n%F{cyan}%~%f$(git_prompt_info) %F{white}›%f '
+RPROMPT='$(cmd_duration_prompt)'
