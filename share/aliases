@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 if is_linux; then
-    alias upgrade="sudo apt-get -qq update && sudo apt-get -qq -y upgrade"
     alias open="xdg-open"
 
     pbcopy() {
@@ -20,18 +19,6 @@ if is_linux; then
         fi
     }
 fi
-
-if is_mac; then
-    alias upgrade="brew update && brew upgrade"
-fi
-
-alias xen="TERM=xterm-256color emacs -nw"
-alias xet="TERM=xterm-256color emacsclient -t"
-
-alias ten= "TERM=xterm-24bits emacs -nw"
-alias tet="TERM=xterm-24bits emacsclient -t"
-
-alias emacs-kill="seartipy_kill_emacs"
 
 alias m="mkdir -p"
 
