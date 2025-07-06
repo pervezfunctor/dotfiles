@@ -123,7 +123,7 @@ tmux_grid() {
 
   slog "Creating new tmux session '$session_name' for $num_cmds command(s)..."
 
-  tmux new-session -d -s "$session_name" -n "grid"
+  tmux new-session -d -s "$session_name" -n "grid-${session_name}"
 
   for ((i = 1; i < num_cmds; i++)); do
     tmux split-window -t "$session_name:$base_index"
