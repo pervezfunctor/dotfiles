@@ -7,6 +7,12 @@
 set -euo pipefail
 
 source "$(dirname "$0")/ivm-utils"
+
+if ! has_cmd ivm_exists; then
+    slog FOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+    exit 100
+fi
+
 source "$(dirname "$0")/tmux-utils"
 
 IVM_DISTRO_LIST=("ubuntu" "fedora" "arch" "tw" "debian")
@@ -36,7 +42,6 @@ EOF
 }
 
 create_session() {
-
     tmux_session "$SESSION_NAME" "$1"
 
     slog "Creating tmux session '$SESSION_NAME' with SSH connections to 6 Incus VMs..."
@@ -44,7 +49,7 @@ create_session() {
     local ssh_cmds=()
     create_commands ssh_cmds "ivm" "${IVM_DISTRO_LIST[@]}"
 
-    start_sessions "ivm" "${ssh_cmds[@]}"
+    start_sessions "ivm" "${IVM_DISTRO_LIST[@]}"
 
     if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
         fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."

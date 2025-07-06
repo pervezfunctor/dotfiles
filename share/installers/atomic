@@ -530,7 +530,7 @@ incus_config_install() {
 
     sudo incus admin init --minimal
     sudo incus network set incusbr0 ipv4.dhcp true
-    sudo incus network set incusbr0 ipv4.dns.mode managed
+    # sudo incus network set incusbr0 ipv4.dns.mode managed
     sudo incus config set core.https_address=127.0.0.1:8443
 
     if has_cmd firewalld; then

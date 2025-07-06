@@ -112,7 +112,7 @@ tmux_grid() {
 
   local base_index
   base_index=$(tmux show-options -gqv base-index 2>/dev/null)
-  base_index=${base_index:-0}
+  base_index=${base_index:-1}
 
   local pane_base_index
   pane_base_index=$(tmux show-options -gqv pane-base-index 2>/dev/null)
@@ -161,9 +161,10 @@ create_commands() {
   local -a distro_list=("$@")
 
   cmds=()
-
+  local username
   for distro in "${distro_list[@]}"; do
-    cmds+=("${cmd_prefix} ssh ${distro}-${cmd_prefix}")
+    username=$(default_username "$distro")
+    cmds+=("${cmd_prefix} ssh ${distro}-${cmd_prefix} ${username} ${username}")
   done
 }
 
@@ -180,10 +181,10 @@ start_sessions() {
   distros=("$@")
 
   for d in "${distros[@]}"; do
-    if ! has_vm "${d}-${command}"; then
-      slog "VM '${d}-${command}' is not running. Starting it..."
+    if ! "${command}_exists" "${d}-${command}"; then
+      slog "'${d}-${command}' is not running. Starting it..."
       if ! ${command} start "${d}-${command}"; then
-        fail "Failed to start '${d}-${command}'. Please check its status."
+        fail "Failed to start ${d}-${command}. Please check its status."
         return 1
       fi
     fi

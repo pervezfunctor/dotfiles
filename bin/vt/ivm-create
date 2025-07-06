@@ -112,7 +112,7 @@ configure_distribution() {
     esac
 
     VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
-    USERNAME=${USERNAME:=$(default_username alpine)}
+    USERNAME=${USERNAME:=$(default_username "$DISTRO")}
     PASSWORD=${PASSWORD:-"$USERNAME"}
     PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
@@ -451,6 +451,7 @@ main() {
     show_completion_info
 
     success "All done! Your $DISTRO VM '$VM_NAME' is ready to use."
+    slog "Use username: $USERNAME and password: $PASSWORD to login."
 }
 
 # Only run main if script is executed directly

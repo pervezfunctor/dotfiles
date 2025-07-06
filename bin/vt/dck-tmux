@@ -70,7 +70,7 @@ create_session() {
   local ssh_cmds=()
   create_commands ssh_cmds "dck" "${DCK_DISTRO_LIST[@]}"
 
-  start_sessions "dck" "${ssh_cmds[@]}"
+  start_sessions "dck" "${DCK_DISTRO_LIST[@]}"
 
   if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
     fail "Failed to create tmux session '$SESSION_NAME' with connections to containers."

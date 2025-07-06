@@ -173,7 +173,7 @@ configure_distribution() {
     DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
     SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
     BASE_IMG="${WORKDIR}/${BASE_IMG_NAME}"
-    USERNAME=${USERNAME:=$(default_username alpine)}
+    USERNAME=${USERNAME:=$(default_username "$DISTRO")}
     PASSWORD=${PASSWORD:=$USERNAME}
     PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 }
@@ -932,6 +932,7 @@ main() {
     stop_sudo_keepalive
 
     success "All done! Your $DISTRO VM is ready."
+    slog "Use username: $USERNAME and password: $PASSWORD to login."
 }
 
 main "$@"

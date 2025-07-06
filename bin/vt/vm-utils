@@ -19,8 +19,14 @@ virt_check_prerequisites() {
 
   if ! systemctl is-active --quiet libvirtd; then
     fail "libvirtd service is not running"
-    fail "Start with: sudo systemctl start libvirtd"
-    exit 1
+    slog "Starting with: sudo systemctl start libvirtd"
+    sudo systemctl start libvirtd
+    sleep 1
+    if ! systemctl is-active --quiet libvirtd; then
+      fail "Failed to start libvirtd service"
+      exit 1
+    fi
+
   fi
 
   if ! groups | grep -q libvirt; then
