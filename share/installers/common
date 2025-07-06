@@ -92,6 +92,8 @@ brew_shell_install() {
         brew install stress-ng topgrade
     fi
 
+    has_cmd tldr && tldr --update
+
     slog "shell tools with brew done!"
 }
 
@@ -644,6 +646,8 @@ pixi_good_packages() {
     pi gh lazygit git-delta unzip wget curl trash-cli tar stow \
         just emacs starship tmux go-gum \
         tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer navi
+
+    has_cmd tldr && tldr --update
 }
 
 pixi_packages() {
@@ -657,6 +661,8 @@ brew_good_packages() {
     bi gh unzip wget curl trash-cli stow starship tmux gum \
         just emacs zsh tree bat eza fzf ripgrep zoxide fd \
         htop sd yazi bat tealdeer cheat navi lazygit git-delta
+
+    has_cmd tldr && tldr --update
 }
 
 brew_packages() {

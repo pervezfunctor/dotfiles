@@ -58,6 +58,9 @@ ubuntu_packages() {
 
     slog "Installing pixi packages"
     pi fzf lazygit yazi tealdeer
+
+    has_cmd tldr && tldr --update
+
     slog "Installing pixi packages done!"
 }
 
@@ -96,6 +99,9 @@ debian_packages() {
     pixi_install
 
     pi fzf yazi tealdeer git-delta eza bat starship lazygit
+
+    has_cmd tldr && tldr --update
+
     slog "Installing pixi packages done!"
 }
 
@@ -179,6 +185,8 @@ cli_install() {
     is_plucky && plucky_pkgs=(fzf ugrep tealdeer starship gum git-delta direnv yq)
 
     si "${base_pkgs[@]}" "${plucky_pkgs[@]}"
+
+    has_cmd tldr && tldr --update
 
     slog "cli tools installation done!"
 }

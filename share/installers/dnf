@@ -69,6 +69,8 @@ fedora_packages() {
         gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate \
         cheat libsecret net-tools iproute2 nmap
 
+    has_cmd tldr && tldr --update
+
     slog "Installing packages done!"
 }
 
@@ -202,6 +204,8 @@ cli_install() {
     fi
 
     si "${base_pkgs[@]}" "${fedora_pkgs[@]}"
+
+    has_cmd tldr && tldr --update
 
     slog "cli tools installation done!"
 }

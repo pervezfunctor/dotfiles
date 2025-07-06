@@ -30,6 +30,8 @@ tw_packages() {
         starship gum wl-clipboard tree bat eza fzf ripgrep zoxide fd \
         htop sd tealdeer yazi cheat lazygit libsecret net-tools iproute2 nmap
 
+    has_cmd tldr && tldr --update
+
     slog "Installing packages done!"
 }
 
@@ -111,6 +113,8 @@ cli_install() {
         lazygit bottom git-delta htop xh plocate tealdeer urlview nushell \
         lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk \
         shfmt hyperfine cheat curlie jq ShellCheck gum lsd starship direnv yq
+
+    has_cmd tldr && tldr --update
 
     slog "cli tools installation done!"
 }

@@ -27,6 +27,8 @@ arch_packages() {
         zoxide fd htop sd yazi bat tealdeer lazygit libsecret net-tools \
         iproute2 nmap
 
+    has_cmd tldr && tldr --update
+
     slog "Installing packages done!"
 }
 
@@ -112,6 +114,8 @@ cli_install() {
         sd gdu bat hyperfine fd fzf ripgrep zoxide htop nushell bottom \
         plocate tealdeer television dysk yazi pixi procs dust direnv atuin \
         broot just glances curlie xh jq superfile choose lsd yq
+
+    has_cmd tldr && tldr --update
 
     slog "cli tools installation done!"
 }
