@@ -657,6 +657,14 @@ pixi_packages() {
     pixi_good_packages
 }
 
+devenv_install() {
+    has_cmd devenv && return 0
+
+    slog "Installing devenv using nix profile"
+    warn "Using home-manager or nixos is the recommended approach."
+    nix profile install nixpkgs#devenv
+}
+
 brew_good_packages() {
     bi gh unzip wget curl trash-cli stow starship tmux gum \
         just emacs zsh tree bat eza fzf ripgrep zoxide fd \
