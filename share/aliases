@@ -308,3 +308,12 @@ fi
 if ! has_cmd bat && has_cmd batcat; then
     alias bat="batcat"
 fi
+
+if has_cmd virsh; then
+    alias vl="virsh list --all"
+    alias vs="virsh start"
+    alias vsh="virsh shutdown"
+    alias vd="virsh destroy"
+    alias vu="virsh undefine 2> /dev/null || virsh undefine --nvram"
+    alias vv="virt-viewer"
+fi
