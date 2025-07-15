@@ -1,0 +1,509 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly SCRIPT_NAME="${0##*/}"
+# readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+declare -r DEFAULT_HOSTNAME="tailscale"
+declare -r DEFAULT_STORAGE="local-lvm"
+declare -r DEFAULT_SSH_KEY="$HOME/.ssh/id_ed25519.pub"
+declare -r DEFAULT_BRIDGE="vmbr0"
+declare -r DEFAULT_MEMORY="512"
+declare -r DEFAULT_CORES="1"
+declare -r DEFAULT_DISK_SIZE="4G"
+declare -r DEFAULT_SUBNET="192.168.8.0/24"
+declare -r DEBIAN_TEMPLATE_NAME="debian-12-standard_12.0-1_amd64.tar.zst"
+
+HOSTNAME="$DEFAULT_HOSTNAME"
+STORAGE="$DEFAULT_STORAGE"
+SSH_KEY="$DEFAULT_SSH_KEY"
+BRIDGE="$DEFAULT_BRIDGE"
+MEMORY="$DEFAULT_MEMORY"
+CORES="$DEFAULT_CORES"
+DISK_SIZE="$DEFAULT_DISK_SIZE"
+TAILSCALE_AUTH_KEY="${TAILSCALE_AUTH_KEY:-}"
+SUBNET="$DEFAULT_SUBNET"
+
+log() {
+  echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] $*" >&2
+}
+
+log_error() {
+  echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $*" >&2
+}
+
+log_warn() {
+  echo "$(date '+%Y-%m-%d %H:%M:%S') [WARN] $*" >&2
+}
+
+cleanup() {
+  local exit_code=$?
+  if [[ $exit_code -ne 0 ]]; then
+    log_error "Script failed with exit code $exit_code"
+    if [[ -n "${VMID:-}" ]] && pct list | grep -q "^$VMID"; then
+      log_warn "Container $VMID may be in an inconsistent state"
+      read -p "Do you want to destroy the container? (y/N): " -n 1 -r
+      echo
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        pct destroy "$VMID" || log_error "Failed to destroy container $VMID"
+      fi
+    fi
+  fi
+}
+
+trap cleanup EXIT
+
+validate_dependencies() {
+  local deps=("pct" "pvesh")
+  local missing=()
+
+  for dep in "${deps[@]}"; do
+    if ! command -v "$dep" &>/dev/null; then
+      missing+=("$dep")
+    fi
+  done
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    log_error "Missing required dependencies: ${missing[*]}"
+    log_error "This script requires Proxmox VE to be installed"
+    exit 1
+  fi
+}
+
+validate_ssh_key() {
+  if [[ ! -f "$SSH_KEY" ]]; then
+    log_error "SSH key file not found: $SSH_KEY"
+    exit 1
+  fi
+
+  if [[ ! -r "$SSH_KEY" ]]; then
+    log_error "SSH key file is not readable: $SSH_KEY"
+    exit 1
+  fi
+}
+
+validate_storage() {
+  if ! pvesh get /storage --noborder | grep -q "^$STORAGE"; then
+    log_error "Storage '$STORAGE' does not exist"
+    log_error "Available storage pools:"
+    pvesh get /storage --noborder | awk '{print "  " $1}'
+    exit 1
+  fi
+}
+
+validate_template() {
+  if ! pveam list "$STORAGE" | grep -q "$DEBIAN_TEMPLATE_NAME"; then
+    log_error "Debian 12 template not found in storage '$STORAGE'"
+    log_error "Please download the template first:"
+    log_error "  pveam download $STORAGE $DEBIAN_TEMPLATE_NAME"
+    exit 1
+  fi
+}
+
+validate_numeric() {
+  local value="$1"
+  local name="$2"
+
+  if [[ ! "$value" =~ ^[0-9]+$ ]]; then
+    log_error "$name must be a positive integer: $value"
+    exit 1
+  fi
+}
+
+validate_disk_size() {
+  if [[ ! "$DISK_SIZE" =~ ^[0-9]+[GM]$ ]]; then
+    log_error "Disk size must be in format like '4G' or '1024M': $DISK_SIZE"
+    exit 1
+  fi
+}
+
+validate_subnet() {
+  if [[ ! "$SUBNET" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
+    log_error "Subnet must be in CIDR format (e.g., 192.168.8.0/24): $SUBNET"
+    exit 1
+  fi
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    -H | --hostname)
+      [[ -n "${2:-}" ]] || {
+        log_error "Option $1 requires an argument"
+        exit 1
+      }
+      HOSTNAME="$2"
+      shift 2
+      ;;
+    -s | --storage)
+      [[ -n "${2:-}" ]] || {
+        log_error "Option $1 requires an argument"
+        exit 1
+      }
+      STORAGE="$2"
+      shift 2
+      ;;
+    -k | --ssh-key)
+      [[ -n "${2:-}" ]] || {
+        log_error "Option $1 requires an argument"
+        exit 1
+      }
+      SSH_KEY="$2"
+      shift 2
+      ;;
+    -b | --bridge)
+      [[ -n "${2:-}" ]] || {
+        log_error "Option $1 requires an argument"
+        exit 1
+      }
+      BRIDGE="$2"
+      shift 2
+      ;;
+    -m | --memory)
+      [[ -n "${2:-}" ]] || {
+        log_error "Option $1 requires an argument"
+        exit 1
+      }
+      MEMORY="$2"
+      shift 2
+      ;;
+    -c | --cores)
+      [[ -n "${2:-}" ]] || {
+        log_error "Option $1 requires an argument"
+        exit 1
+      }
+      CORES="$2"
+      shift 2
+      ;;
+    -d | --disk-size)
+      [[ -n "${2:-}" ]] || {
+        log_error "Option $1 requires an argument"
+        exit 1
+      }
+      DISK_SIZE="$2"
+      shift 2
+      ;;
+    -a | --auth-key)
+      [[ -n "${2:-}" ]] || {
+        log_error "Option $1 requires an argument"
+        exit 1
+      }
+      TAILSCALE_AUTH_KEY="$2"
+      shift 2
+      ;;
+    -n | --subnet)
+      [[ -n "${2:-}" ]] || {
+        log_error "Option $1 requires an argument"
+        exit 1
+      }
+      SUBNET="$2"
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      log_error "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    *)
+      if [[ -z "${HOSTNAME_SET:-}" ]]; then
+        HOSTNAME="$1"
+        HOSTNAME_SET=1
+      else
+        log_error "Unknown parameter: $1"
+        usage
+        exit 1
+      fi
+      shift
+      ;;
+    esac
+  done
+}
+
+usage() {
+  cat <<EOF
+Usage: $SCRIPT_NAME [OPTIONS] [HOSTNAME]
+
+Creates and configures a Debian LXC container with Tailscale.
+
+Options:
+  -H, --hostname <HOSTNAME>     Container hostname (default: $DEFAULT_HOSTNAME)
+  -s, --storage <STORAGE>       Storage pool (default: $DEFAULT_STORAGE)
+  -k, --ssh-key <SSH_KEY>       SSH public key file (default: $DEFAULT_SSH_KEY)
+  -b, --bridge <BRIDGE>         Network bridge (default: $DEFAULT_BRIDGE)
+  -m, --memory <MEMORY>         Memory in MB (default: $DEFAULT_MEMORY)
+  -c, --cores <CORES>           CPU cores (default: $DEFAULT_CORES)
+  -d, --disk-size <DISK_SIZE>   Disk size with suffix (default: $DEFAULT_DISK_SIZE)
+  -a, --auth-key <AUTH_KEY>     Tailscale auth key
+  -n, --subnet <SUBNET>         Subnet to advertise (default: $DEFAULT_SUBNET)
+  -h, --help                    Show this help message
+
+Environment Variables:
+  TAILSCALE_AUTH_KEY            Tailscale auth key (alternative to -a)
+
+Examples:
+  $SCRIPT_NAME                            # Create with defaults
+  $SCRIPT_NAME myhost                     # Create with custom hostname
+  $SCRIPT_NAME -m 1024 -c 2 myhost       # Custom resources
+  $SCRIPT_NAME -a tskey-... myhost       # With auth key
+
+EOF
+}
+
+get_next_vmid() {
+  local vmid
+  vmid=$(pvesh get /cluster/nextid 2>/dev/null) || {
+    log_error "Failed to get next VM ID"
+    exit 1
+  }
+
+  if [[ ! "$vmid" =~ ^[0-9]+$ ]]; then
+    log_error "Invalid VM ID returned: $vmid"
+    exit 1
+  fi
+
+  echo "$vmid"
+}
+
+wait_for_network() {
+  local vmid="$1"
+  local timeout=60
+  local count=0
+
+  log "Waiting for network connectivity..."
+
+  while ((count < timeout)); do
+    if pct exec "$vmid" -- ping -c 1 -W 2 8.8.8.8 &>/dev/null; then
+      log "Network is ready"
+      return 0
+    fi
+    sleep 1
+    ((count++))
+  done
+
+  log_error "Network connectivity timeout after ${timeout}s"
+  return 1
+}
+
+wait_for_tailscale_login() {
+  local vmid="$1"
+  local timeout=300
+  local count=0
+
+  log "Waiting for Tailscale login..."
+
+  while ((count < timeout)); do
+    if pct exec "$vmid" -- tailscale status 2>/dev/null | grep -q "logged in"; then
+      log "Tailscale is logged in"
+      return 0
+    fi
+    sleep 2
+    ((count++))
+  done
+
+  log_error "Tailscale login timeout after ${timeout}s"
+  return 1
+}
+
+lxc_create() {
+  log "Creating Debian LXC container with VMID $VMID..."
+
+  if pct list | grep -q "^$VMID"; then
+    log_error "Container $VMID already exists"
+    exit 1
+  fi
+
+  local template_path="$STORAGE:vztmpl/$DEBIAN_TEMPLATE_NAME"
+
+  pct create "$VMID" "$template_path" \
+    --hostname "$HOSTNAME" \
+    --cores "$CORES" \
+    --memory "$MEMORY" \
+    --net0 "name=eth0,bridge=$BRIDGE,ip=dhcp" \
+    --rootfs "$STORAGE:$DISK_SIZE" \
+    --unprivileged 1 \
+    --features "nesting=1" \
+    --ostype debian \
+    --ssh-public-keys "$SSH_KEY" || {
+    log_error "Failed to create container"
+    exit 1
+  }
+
+  log "Container $VMID created successfully"
+}
+
+lxc_configure() {
+  log "Configuring LXC for TUN device..."
+
+  local config_file="/etc/pve/lxc/$VMID.conf"
+
+  if [[ ! -f "$config_file" ]]; then
+    log_error "Container config file not found: $config_file"
+    exit 1
+  fi
+
+  {
+    echo "lxc.cgroup2.devices.allow: c 10:200 rwm"
+    echo "lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file"
+  } >>"$config_file" || {
+    log_error "Failed to configure TUN device"
+    exit 1
+  }
+
+  log "TUN device configured"
+}
+
+lxc_start() {
+  log "Starting container $VMID..."
+
+  pct start "$VMID" || {
+    log_error "Failed to start container"
+    exit 1
+  }
+
+  local timeout=30
+  local count=0
+
+  while ((count < timeout)); do
+    if pct status "$VMID" | grep -q "running"; then
+      break
+    fi
+    sleep 1
+    ((count++))
+  done
+
+  if ((count >= timeout)); then
+    log_error "Container start timeout"
+    exit 1
+  fi
+
+  log "Container started successfully"
+}
+
+lxc_install_tailscale() {
+  log "Installing Tailscale inside container..."
+
+  wait_for_network "$VMID"
+
+  # shellcheck disable=SC2016
+  pct exec "$VMID" -- bash -c '
+        set -euo pipefail
+
+        apt-get update || exit 1
+
+        apt-get install -y curl gnupg2 lsb-release || exit 1
+
+        curl -fsSL "https://pkgs.tailscale.com/stable/debian/$(lsb_release -cs).gpg" | \
+            tee /usr/share/keyrings/tailscale-archive-keyring.gpg > /dev/null || exit 1
+
+        echo "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/debian $(lsb_release -cs) main" | \
+            tee /etc/apt/sources.list.d/tailscale.list > /dev/null || exit 1
+
+        echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+        sysctl -w net.ipv4.ip_forward=1
+
+        apt-get update || exit 1
+        apt-get install -y tailscale || exit 1
+    ' || {
+    log_error "Failed to install Tailscale"
+    exit 1
+  }
+
+  pct exec "$VMID" -- systemctl enable --now tailscaled || {
+    log_error "Failed to enable Tailscale service"
+    exit 1
+  }
+
+  log "Tailscale installed and started"
+}
+
+setup_tailscale() {
+  if [[ -n "$TAILSCALE_AUTH_KEY" ]]; then
+    log "Authenticating with Tailscale using auth key..."
+
+    pct exec "$VMID" -- tailscale up \
+      --authkey="$TAILSCALE_AUTH_KEY" \
+      --advertise-routes="$SUBNET" || {
+      log_error "Failed to authenticate with Tailscale"
+      exit 1
+    }
+
+    wait_for_tailscale_login "$VMID"
+  else
+    log "No auth key provided. Manual login required:"
+    log "Run: pct exec $VMID -- tailscale up --advertise-routes=$SUBNET"
+    log "Then visit the provided URL to authenticate"
+  fi
+}
+
+get_container_info() {
+  local tailscale_ip
+  local local_ip
+
+  local_ip=$(pct exec "$VMID" -- hostname -I | awk '{print $1}') || {
+    log_warn "Could not retrieve local IP"
+    local_ip="unknown"
+  }
+
+  if pct exec "$VMID" -- tailscale status &>/dev/null; then
+    tailscale_ip=$(pct exec "$VMID" -- tailscale ip 2>/dev/null | head -n1) || {
+      log_warn "Could not retrieve Tailscale IP"
+      tailscale_ip="unknown"
+    }
+  else
+    tailscale_ip="not configured"
+  fi
+
+  echo
+  echo "✅ Container created successfully!"
+  echo "   VMID: $VMID"
+  echo "   Hostname: $HOSTNAME"
+  echo "   Local IP: $local_ip"
+  echo "   Tailscale IP: $tailscale_ip"
+  echo
+  echo "To access the container:"
+  echo "   pct enter $VMID"
+  echo
+  if [[ "$tailscale_ip" == "not configured" ]]; then
+    echo "To configure Tailscale:"
+    echo "   pct exec $VMID -- tailscale up --advertise-routes=$SUBNET"
+  fi
+}
+
+main() {
+  parse_args "$@"
+
+  validate_dependencies
+  validate_ssh_key
+  validate_storage
+  validate_template
+  validate_numeric "$MEMORY" "Memory"
+  validate_numeric "$CORES" "Cores"
+  validate_disk_size
+  validate_subnet
+
+  readonly VMID
+  VMID=$(get_next_vmid)
+
+  log "Starting container creation with VMID: $VMID"
+
+  lxc_create
+  lxc_configure
+  lxc_start
+  lxc_install_tailscale
+  setup_tailscale
+
+  get_container_info
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
