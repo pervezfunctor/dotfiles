@@ -286,7 +286,6 @@ vm-templates_install() {
     "$curdir/vm-template" --distro ubuntu
     "$curdir/vm-template" --distro alpine
     "$curdir/vm-template" --distro centos
-    "$curdir/vm-template" --distro rocky
 }
 
 main() {
