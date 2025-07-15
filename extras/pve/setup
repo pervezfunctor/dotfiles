@@ -3,7 +3,7 @@
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
 # shellcheck disable=SC1091
-source "$(dirname "$0")/utils"
+source "$(dirname "$0")/../../share/utils"
 
 set -eou pipefail
 
@@ -229,6 +229,7 @@ CT_TEMPLATES=0
 VM_TEMPLATES=0
 CT_ALL=0
 VM_ALL=0
+ALL=0
 
 yes_or_no() {
     read -rp "$1 (y/n): " answer
@@ -269,13 +270,23 @@ parse_args() {
             VM_ALL=1
             shift
             ;;
-        *)
-            echo "Unknown option: $1"
-            usage
-            exit 1
+        --all)
+            ALL=1
+            shift
             ;;
         esac
     done
+}
+
+vm-templates_install() {
+    local curdir
+    curdir="$(dirname "$0")"
+    "$curdir/vm-template" --distro debian
+    "$curdir/vm-template" --distro fedora
+    "$curdir/vm-template" --distro ubuntu
+    "$curdir/vm-template" --distro alpine
+    "$curdir/vm-template" --distro centos
+    "$curdir/vm-template" --distro rocky
 }
 
 main() {
@@ -288,7 +299,8 @@ main() {
 
     core_install
 
-    if [[ $ALL -eq 1 ]]; then
+    # ALL might be unset
+    if [[ -n "$ALL" ]] && [[ $ALL -eq 1 ]]; then
         CT_TEMPLATES=1
         VM_TEMPLATES=1
         CT_ALL=1
@@ -299,11 +311,12 @@ main() {
     [[ $VM_TEMPLATES -eq 1 ]] && vm-templates_install
     [[ $CT_ALL -eq 1 ]] && ct-all_install
     [[ $VM_ALL -eq 1 ]] && vm-all_install
-    [[ $INIT -eq 1 ]] && post_install
 
     for arg in "$@"; do
         if fn_exists "${arg}_install"; then
             "${arg}_install"
+        else
+            echo "Unknown option: $arg"
         fi
     done
 }
