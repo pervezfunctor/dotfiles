@@ -2,7 +2,12 @@
 
 set -euo pipefail
 
+readonly SCRIPT_NAME
+SCRIPT_NAME="$(basename "$0")"
+
+readonly TEMP_DIR="/tmp"
 PROXMOX_STORAGE="local-lvm"
+
 VM_ID=""
 VM_NAME=""
 IMAGE_URL=""
@@ -14,174 +19,298 @@ PASSWORD=""
 DISTRO=""
 SSH_KEY=""
 
-echo_error() {
+log_info() {
+  echo "[INFO] $1" >&2
+}
+
+log_warn() {
+  echo "[WARN] $1" >&2
+}
+
+log_error() {
   echo "[ERROR] $1" >&2
   exit 1
 }
 
+cleanup() {
+  local exit_code=$?
+  if [[ -n "${TEMP_IMAGE_PATH:-}" && -f "$TEMP_IMAGE_PATH" ]]; then
+    log_info "Cleaning up temporary image file..."
+    rm -f "$TEMP_IMAGE_PATH"
+  fi
+  exit $exit_code
+}
+
+trap cleanup EXIT INT TERM
+
 usage() {
-  echo "Usage: $0 -D <distro> [OPTIONS]"
-  echo
-  echo "Required:"
-  echo "  -D, --distro <distro>           Specify the distribution: debian, fedora, ubuntu, alpine, or centos."
-  echo
-  echo "Options:"
-  echo "  -s, --storage <storage>         Proxmox storage target (default: local-lvm)."
-  echo "  -i, --vm-id <id>                Unique ID for the new VM (default: auto-assigned)."
-  echo "  -n, --vm-name <name>            Name for the VM (default: auto-assigned)."
-  echo "  -d, --disk-size <size>          Size of the VM disk (default: 32G)."
-  echo "  -m, --memory <mb>               VM memory in MB (default: 8192)."
-  echo "  -c, --cores <num>               Number of CPU cores (default: 4)."
-  echo "  -u, --username <user>           Username for cloud-init (default: distro-specific)."
-  echo "  -p, --password <pass>           Password for cloud-init (only if no SSH key is provided)."
-  echo "  -k, --ssh-key <path>            Path to an SSH public key file to add to the VM."
-  echo "  -U, --image-url <url>           URL of the cloud image (default: latest for the distro)."
-  echo "  -h, --help                      Display this help message."
+  cat <<EOF
+Usage: $SCRIPT_NAME -D <distro> [OPTIONS]
+
+Required:
+  -D, --distro <distro>           Specify the distribution: debian, fedora, ubuntu, alpine, or centos.
+
+Options:
+  -s, --storage <storage>         Proxmox storage target (default: local-lvm).
+  -i, --vm-id <id>                Unique ID for the new VM (default: auto-assigned).
+  -n, --vm-name <name>            Name for the VM (default: auto-assigned).
+  -d, --disk-size <size>          Size of the VM disk (default: 32G).
+  -m, --memory <mb>               VM memory in MB (default: 8192).
+  -c, --cores <num>               Number of CPU cores (default: 4).
+  -u, --username <user>           Username for cloud-init (default: distro-specific).
+  -p, --password <pass>           Password for cloud-init (only if no SSH key is provided).
+  -k, --ssh-key <path>            Path to an SSH public key file to add to the VM.
+  -U, --image-url <url>           URL of the cloud image (default: latest for the distro).
+  -h, --help                      Display this help message.
+
+Examples:
+  $SCRIPT_NAME -D debian
+  $SCRIPT_NAME -D ubuntu -k ~/.ssh/id_rsa.pub -m 4096 -c 2
+  $SCRIPT_NAME -D fedora -i 1001 -n my-fedora-template
+EOF
 }
 
 parse_args() {
-  while [[ "$#" -gt 0 ]]; do
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  while [[ $# -gt 0 ]]; do
     case $1 in
     -D | --distro)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
       DISTRO="$2"
-      shift
+      shift 2
       ;;
     -s | --storage)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
       PROXMOX_STORAGE="$2"
-      shift
+      shift 2
       ;;
     -i | --vm-id)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
+      if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+        log_error "VM ID must be a positive integer"
+      fi
       VM_ID="$2"
-      shift
+      shift 2
       ;;
     -n | --vm-name)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
       VM_NAME="$2"
-      shift
+      shift 2
       ;;
     -d | --disk-size)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
+      if ! [[ "$2" =~ ^[0-9]+[KMGT]?$ ]]; then
+        log_error "Invalid disk size format. Use formats like: 32G, 1024M, 1T"
+      fi
       DISK_SIZE="$2"
-      shift
+      shift 2
       ;;
     -m | --memory)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
+      if ! [[ "$2" =~ ^[0-9]+$ ]] || [[ "$2" -lt 512 ]]; then
+        log_error "Memory must be a positive integer >= 512 MB"
+      fi
       MEMORY="$2"
-      shift
+      shift 2
       ;;
     -c | --cores)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
+      if ! [[ "$2" =~ ^[0-9]+$ ]] || [[ "$2" -lt 1 ]]; then
+        log_error "Cores must be a positive integer >= 1"
+      fi
       CORES="$2"
-      shift
+      shift 2
       ;;
     -u | --username)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
       USERNAME="$2"
-      shift
+      shift 2
       ;;
     -p | --password)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
       PASSWORD="$2"
-      shift
+      shift 2
       ;;
     -k | --ssh-key)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
       SSH_KEY="$2"
-      shift
+      shift 2
       ;;
     -U | --image-url)
+      if [[ -z "${2:-}" ]]; then
+        log_error "Option $1 requires an argument"
+      fi
       IMAGE_URL="$2"
-      shift
+      shift 2
       ;;
     -h | --help)
       usage
       exit 0
       ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      log_error "Unknown option: $1"
+      ;;
     *)
-      echo "Unknown parameter: $1"
-      usage
-      exit 1
+      log_error "Unexpected argument: $1"
       ;;
     esac
-    shift
   done
 }
 
 check_prerequisites() {
-  if ! command -v qm >/dev/null; then
-    echo_error "The 'qm' command is required. This script must be run on a Proxmox host."
+  if ! command -v qm >/dev/null 2>&1; then
+    log_error "The 'qm' command is required. This script must be run on a Proxmox host."
+  fi
+
+  if [[ $EUID -ne 0 ]] && ! groups | grep -q '\bwww-data\b'; then
+    log_warn "This script typically needs to run as root or with Proxmox privileges"
   fi
 
   if [[ -z "$DISTRO" ]]; then
-    echo_error "The --distro argument is required."
+    log_error "The --distro argument is required. Use -h for help."
   fi
 
-  if [[ -n "$SSH_KEY" && ! -f "$SSH_KEY" ]]; then
-    echo_error "SSH key file not found at '$SSH_KEY'"
+  if [[ -n "$SSH_KEY" ]]; then
+    if [[ ! -f "$SSH_KEY" ]]; then
+      log_error "SSH key file not found at '$SSH_KEY'"
+    fi
+    if [[ ! -r "$SSH_KEY" ]]; then
+      log_error "SSH key file '$SSH_KEY' is not readable"
+    fi
   fi
 
-  if [[ -n "$VM_ID" && $(qm list | awk -v id="$VM_ID" '$1 == id') ]]; then
-    echo_error "VM ID $VM_ID is already in use."
+  if [[ -n "$VM_ID" ]]; then
+    if qm list 2>/dev/null | awk -v id="$VM_ID" '$1 == id { found=1 } END { exit !found }'; then
+      log_error "VM ID $VM_ID is already in use."
+    fi
   fi
 
-  if [[ -n "$VM_NAME" && $(qm list | awk -v name="$VM_NAME" '$2 == name') ]]; then
-    echo_error "VM name $VM_NAME is already in use."
+  if [[ -n "$VM_NAME" ]]; then
+    if qm list 2>/dev/null | awk -v name="$VM_NAME" '$2 == name { found=1 } END { exit !found }'; then
+      log_error "VM name '$VM_NAME' is already in use."
+    fi
   fi
+
+  if ! pvesm status "$PROXMOX_STORAGE" >/dev/null 2>&1; then
+    log_error "Proxmox storage '$PROXMOX_STORAGE' is not available or accessible"
+  fi
+
+  local required_tools=("wget" "awk")
+  for tool in "${required_tools[@]}"; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      log_error "Required tool '$tool' not found"
+    fi
+  done
 }
 
 configure_distribution() {
   case "$DISTRO" in
-  "debian")
+  debian)
     VM_ID=${VM_ID:-9100}
     VM_NAME=${VM_NAME:-debian-template}
     IMAGE_URL=${IMAGE_URL:-"https://cdimage.debian.org/cdimage/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"}
     USERNAME=${USERNAME:-debian}
     ;;
-  "fedora")
+  fedora)
     VM_ID=${VM_ID:-9200}
     VM_NAME=${VM_NAME:-fedora-template}
     IMAGE_URL=${IMAGE_URL:-"https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"}
     USERNAME=${USERNAME:-fedora}
     ;;
-  "ubuntu")
+  ubuntu)
     VM_ID=${VM_ID:-9400}
     VM_NAME=${VM_NAME:-ubuntu-template}
     IMAGE_URL=${IMAGE_URL:-"https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"}
     USERNAME=${USERNAME:-ubuntu}
     ;;
-  "alpine")
+  alpine)
     VM_ID=${VM_ID:-9300}
     VM_NAME=${VM_NAME:-alpine-template}
-    IMAGE_URL=${IMAGE_URL:-"https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.0-x86_64-uefi-cloudinit-r0.qcow2"}
+    IMAGE_URL=${IMAGE_URL:-"https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/generic_alpine-3.20.3-x86_64-uefi-cloudinit-r0.qcow2"}
     USERNAME=${USERNAME:-alpine}
     ;;
-  "centos")
+  centos)
     VM_ID=${VM_ID:-9500}
     VM_NAME=${VM_NAME:-centos-template}
     IMAGE_URL=${IMAGE_URL:-"https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2"}
     USERNAME=${USERNAME:-centos}
     ;;
   *)
-    echo_error "Unsupported distribution: '$DISTRO'. Please use debian, fedora, ubuntu, alpine, or centos."
+    log_error "Unsupported distribution: '$DISTRO'. Supported: debian, fedora, ubuntu, alpine, centos"
     ;;
   esac
 
-  if [[ -z "$SSH_KEY" ]]; then
-    PASSWORD=${PASSWORD:-$USERNAME}
+  if [[ -z "$SSH_KEY" && -z "$PASSWORD" ]]; then
+    PASSWORD="$USERNAME"
+    log_warn "No SSH key provided. Using username as default password: '$PASSWORD'"
+  fi
+
+  if qm list 2>/dev/null | awk -v id="$VM_ID" '$1 == id { found=1 } END { exit !found }'; then
+    log_error "Auto-assigned VM ID $VM_ID is already in use. Please specify a different ID with -i"
+  fi
+
+  if qm list 2>/dev/null | awk -v name="$VM_NAME" '$2 == name { found=1 } END { exit !found }'; then
+    log_error "Auto-assigned VM name '$VM_NAME' is already in use. Please specify a different name with -n"
   fi
 }
 
-main() {
-  parse_args "$@"
-  check_prerequisites
-  configure_distribution
+download_image() {
+  local temp_image_path="$TEMP_DIR/${DISTRO}-cloud-${VM_ID}.qcow2"
+  TEMP_IMAGE_PATH="$temp_image_path"
 
-  local TEMP_IMAGE_PATH
-  TEMP_IMAGE_PATH="/tmp/${DISTRO}-cloud.qcow2"
+  log_info "Downloading $DISTRO image from $IMAGE_URL..."
 
-  echo "Downloading $DISTRO image..."
-  if [[ ! -f "$TEMP_IMAGE_PATH" ]]; then
-    if ! wget -q --show-progress -O "$TEMP_IMAGE_PATH" "$IMAGE_URL"; then
-      echo_error "Failed to download $DISTRO image from $IMAGE_URL."
-    fi
+  if [[ -f "$temp_image_path" ]]; then
+    log_info "Image already exists at $temp_image_path, skipping download"
+    return 0
   fi
 
-  echo "Creating VM $VM_NAME with ID $VM_ID..."
-  declare -a qm_create_args
-  qm_create_args=(
+  mkdir -p "$TEMP_DIR"
+
+  if ! wget --timeout=30 --tries=3 --show-progress --progress=bar:force \
+    -O "$temp_image_path" "$IMAGE_URL" 2>&1; then
+    log_error "Failed to download $DISTRO image from $IMAGE_URL"
+  fi
+
+  if [[ ! -f "$temp_image_path" ]] || [[ ! -s "$temp_image_path" ]]; then
+    log_error "Downloaded image file is empty or missing"
+  fi
+
+  log_info "Successfully downloaded image to $temp_image_path"
+}
+
+create_vm() {
+  log_info "Creating VM '$VM_NAME' with ID $VM_ID..."
+
+  local qm_create_args=(
     "$VM_ID"
     --name "$VM_NAME"
     --memory "$MEMORY"
@@ -189,69 +318,121 @@ main() {
     --ostype l26
     --agent 1
     --cpu host
-    --net0 "virtio,bridge=vmbr0")
+    --net0 "virtio,bridge=vmbr0"
+    --tags "template,${DISTRO}"
+  )
 
+  # Ubuntu needs UEFI boot
   if [[ "$DISTRO" == "ubuntu" ]]; then
     qm_create_args+=(--bios ovmf --efidisk0 "$PROXMOX_STORAGE:0,pre-enrolled-keys=0")
   fi
-  if ! qm create "${qm_create_args[@]}"; then
-    echo_error "Failed to create VM."
+
+  if ! qm create "${qm_create_args[@]}" 2>&1; then
+    log_error "Failed to create VM"
   fi
 
-  echo "Importing disk to Proxmox storage..."
-  if ! qm importdisk "$VM_ID" "$TEMP_IMAGE_PATH" "$PROXMOX_STORAGE"; then
-    echo_error "Failed to import disk."
+  log_info "VM created successfully"
+}
+
+import_and_configure_disk() {
+  log_info "Importing disk to Proxmox storage '$PROXMOX_STORAGE'..."
+
+  if ! qm importdisk "$VM_ID" "$TEMP_IMAGE_PATH" "$PROXMOX_STORAGE" 2>&1; then
+    log_error "Failed to import disk"
   fi
 
-  DISK_TARGET=$([[ "$DISTRO" == "ubuntu" ]] && echo "virtio0" || echo "scsi0")
-  echo "Attaching disk to VM..."
+  local disk_target
   if [[ "$DISTRO" == "ubuntu" ]]; then
-    if ! qm set "$VM_ID" --scsihw virtio-scsi-pci --virtio0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on"; then
-      echo_error "Failed to attach disk."
+    disk_target="virtio0"
+  else
+    disk_target="scsi0"
+  fi
+
+  log_info "Attaching disk to VM..."
+
+  if [[ "$DISTRO" == "ubuntu" ]]; then
+    if ! qm set "$VM_ID" --scsihw virtio-scsi-pci \
+      --virtio0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on" 2>&1; then
+      log_error "Failed to attach disk to Ubuntu VM"
     fi
   else
-    if ! qm set "$VM_ID" --scsihw virtio-scsi-pci --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1"; then
-      echo_error "Failed to attach disk."
+    if ! qm set "$VM_ID" --scsihw virtio-scsi-pci \
+      --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1" 2>&1; then
+      log_error "Failed to attach disk to VM"
     fi
   fi
 
-  echo "Resizing disk to $DISK_SIZE..."
-  if ! qm resize "$VM_ID" "$DISK_TARGET" "$DISK_SIZE"; then
-    echo_error "Failed to resize disk."
+  log_info "Resizing disk to $DISK_SIZE..."
+  if ! qm resize "$VM_ID" "$disk_target" "$DISK_SIZE" 2>&1; then
+    log_error "Failed to resize disk"
   fi
 
-  echo "Configuring boot options..."
-  if ! qm set "$VM_ID" --boot c --bootdisk "$DISK_TARGET"; then
-    echo_error "Failed to configure boot options."
+  log_info "Configuring boot options..."
+  if ! qm set "$VM_ID" --boot c --bootdisk "$disk_target" 2>&1; then
+    log_error "Failed to configure boot options"
   fi
 
-  echo "Adding cloud-init drive..."
-  if ! qm set "$VM_ID" --ide2 "$PROXMOX_STORAGE:cloudinit"; then
-    echo_error "Failed to add cloud-init drive."
+  log_info "Disk configuration completed"
+}
+
+configure_cloudinit() {
+  log_info "Adding cloud-init drive..."
+
+  if ! qm set "$VM_ID" --ide2 "$PROXMOX_STORAGE:cloudinit" 2>&1; then
+    log_error "Failed to add cloud-init drive"
   fi
 
-  echo "Configuring cloud-init settings..."
-  declare -a qm_set_args
-  qm_set_args=(
-    "$VM_ID" --serial0 socket --vga serial0 --ipconfig0 ip=dhcp --ciuser "$USERNAME"
+  log_info "Configuring cloud-init settings..."
+
+  local qm_set_args=(
+    "$VM_ID"
+    --serial0 socket
+    --vga serial0
+    --ipconfig0 ip=dhcp
+    --ciuser "$USERNAME"
   )
 
   if [[ -n "$SSH_KEY" ]]; then
     qm_set_args+=(--sshkeys "$SSH_KEY")
+    log_info "SSH key authentication configured"
   else
     qm_set_args+=(--cipassword "$PASSWORD")
+    log_info "Password authentication configured"
   fi
 
-  if ! qm set "${qm_set_args[@]}"; then
-    echo_error "Failed to configure cloud-init."
+  if ! qm set "${qm_set_args[@]}" 2>&1; then
+    log_error "Failed to configure cloud-init"
   fi
 
-  echo "Converting VM to template..."
-  if ! qm template "$VM_ID"; then
-    echo_error "Failed to convert VM to template."
-  fi
-
-  echo "$DISTRO template '$VM_NAME' created successfully."
+  log_info "Cloud-init configuration completed"
 }
 
-main "$@"
+convert_to_template() {
+  log_info "Converting VM to template..."
+
+  if ! qm template "$VM_ID" 2>&1; then
+    log_error "Failed to convert VM to template"
+  fi
+
+  log_info "Template conversion completed"
+}
+
+main() {
+  log_info "Starting Proxmox VM template creation..."
+
+  parse_args "$@"
+  check_prerequisites
+  configure_distribution
+  download_image
+  create_vm
+  import_and_configure_disk
+  configure_cloudinit
+  convert_to_template
+
+  log_info "SUCCESS: $DISTRO template '$VM_NAME' (ID: $VM_ID) created successfully!"
+  log_info "You can now clone this template to create new VMs"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

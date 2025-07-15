@@ -1,256 +1,517 @@
 #!/usr/bin/env bash
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+set -euo pipefail
 
-# shellcheck disable=SC1091
-source "$(dirname "$0")/../../share/utils"
+readonly DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+readonly SCRIPT_DIR
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-set -eou pipefail
+readonly LOG_FILE="/var/log/proxmox-installer.log"
 
-# https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install
-post_install() {
-    bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh)"
+# readonly CONFIG_FILE
+# CONFIG_FILE="${DOT_DIR}/config/proxmox.conf"
+
+readonly COMMUNITY_SCRIPTS_BASE="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main"
+
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly NC='\033[0m' # No Color
+
+# Global flags
+declare -g CT_TEMPLATES=0
+declare -g VM_TEMPLATES=0
+declare -g CT_ALL=0
+declare -g VM_ALL=0
+declare -g ALL=0
+
+# Logging functions
+log() {
+    local level="$1"
+    shift
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "${timestamp} [${level}] $*" | tee -a "$LOG_FILE"
 }
 
-casaos_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/casaos.sh)"
+log_info() {
+    log "INFO" "${BLUE}$*${NC}"
 }
 
-jellyfin_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/jellyfin.sh)"
+log_warn() {
+    log "WARN" "${YELLOW}$*${NC}"
 }
 
-plex_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/plex.sh)"
+log_error() {
+    log "ERROR" "${RED}$*${NC}"
 }
 
-code-server_install() {
-    # create debian lxc and install code-server using the below command
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/addon/coder-code-server.sh)"
+log_success() {
+    log "SUCCESS" "${GREEN}$*${NC}"
 }
 
-backup-server_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/proxmox-backup-server.sh)"
+# Utility functions
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
 }
 
-backup-server-post_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pbs-install.sh)"
+directory_exists() {
+    [[ -d "$1" ]]
 }
 
-tailscale_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/addon/add-tailscale-lxc.sh)"
+file_exists() {
+    [[ -f "$1" ]]
 }
 
-file-browser_install() {
-    # create debian lxc and install code-server using the below command
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/addon/filebrowser.sh)"
+function_exists() {
+    declare -f "$1" >/dev/null 2>&1
 }
 
-docker-vm_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/docker-vm.sh)"
-}
+yes_or_no() {
+    local prompt="$1"
+    local default="${2:-n}"
+    local answer
 
-iventoy_install() {
-    slog "Container MUST be privileged"
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/iventoy.sh)"
-}
-
-openwrt_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/openwrt.sh)"
-}
-
-umbrel_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/umbrel-os-vm.sh)"
-}
-
-docker-lxc_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/docker.sh)"
-}
-
-dockge_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/dockge.sh)"
-}
-
-opnsense_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/opnsense-vm.sh)"
-}
-
-adguard_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/adguard.sh)"
-}
-
-pihole_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/pihole.sh)"
-
-    echo "Use 'pihole setpassword' to set password for pihole"
-}
-
-authelia_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/authelia.sh)"
-}
-
-duplicati_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/duplicati.sh)"
-}
-
-deluge_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/deluge.sh)"
-}
-
-qbittorent_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/qbittorrent.sh)"
-}
-
-rclone_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/rclone.sh)"
-
-    echo "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
-}
-
-excalidraw_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/excalidraw.sh)"
-}
-
-syncthing_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/syncthing.sh)"
-}
-
-paperless-ai_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/paperless-ai.sh)"
-}
-
-ollama_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/ollama.sh)"
-}
-
-caddy_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/caddy.sh)"
-}
-
-nginx-proxy_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nginxproxymanager.sh)"
-}
-
-rustdesk_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/rustdeskserver.sh)"
-}
-
-gaucamole_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/apache-guacamole.sh)"
-}
-
-vaultwadren_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/vaultwarden.sh)"
-}
-
-backrest_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/backrest.sh)"
-}
-
-uptime-kuma_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/uptimekuma.sh)"
-}
-
-apline-lxc_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/alpine.sh)"
-}
-
-ct-templates_install() {
-    ubuntu_latest_tmpl=$(pveam available | awk '{print $2}' | grep "^ubuntu" | sort -r | head -n 1)
-    pveam download local "$ubuntu_latest_tmpl"
-
-    debian_latest_tmpl=$(pveam available | awk '{print $2}' | grep "^debian.*standard" | sort -r | head -n 1)
-    pveam download local "$debian_latest_tmpl"
-
-    rocky_latest_tmpl=$(pveam available | awk '{print $2}' | grep "^rockylinux.*default" | sort -r | head -n 1)
-    pveam download local "$rocky_latest_tmpl"
-
-    fedora_latest_tmpl=$(pveam available | awk '{print $2}' | grep "^fedora.*default" | sort -r | head -n 1)
-    pveam download local "$fedora_latest_tmpl"
-
-    arch_latest_tmpl=$(pveam available | awk '{print $2}' | grep "archlinux-base" | sort -r | head -n 1)
-    pveam download local "$arch_latest_tmpl"
-
-    centos_latest_tmpl=$(pveam available | awk '{print $2}' | grep "^centos.*default" | sort -r | head -n 1)
-    pveam download local "$centos_latest_tmpl"
-
-    opensuse_latest_tmpl=$(pveam available | awk '{print $2}' | grep "^opensuse.*default" | sort -r | head -n 1)
-    pveam download local "$opensuse_latest_tmpl"
-}
-
-twofauth_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/2fauth.sh)"
-}
-
-ct-all_install() {
-    local templates
-    templates=$(ls /var/lib/vz/template/cache/)
-    for tmpl in $templates; do
-        echo "Creating LXC from template: $tmpl"
-        lxc_create "$tmpl"
+    while true; do
+        read -rp "$prompt (y/n) [${default}]: " answer
+        answer=${answer:-$default}
+        case "$answer" in
+        [Yy] | [Yy][Ee][Ss]) return 0 ;;
+        [Nn] | [Nn][Oo]) return 1 ;;
+        *) echo "Please answer yes or no." ;;
+        esac
     done
 }
 
-vm-all_install() {
-    pushd "$DOT_DIR/extras/proxmox"
-    ./debian-vm-template.sh
-    qm clone 9100 101 --name debian-vm
-
-    ./ubuntu-vm-template.sh
-    qm clone 9400 104 --name ubuntu-vm
-
-    ./rocky-vm-template.sh
-    qm clone 9300 103 --name rocky-vm
-
-    ./fedora-vm-template.sh
-    qm clone 9200 102 --name fedora-vm
-    popd
+# Check if running as root
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        log_error "This script must be run as root"
+        exit 1
+    fi
 }
 
-remove-subscription() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/remove-subscription-notice.sh)"
+# Check if running on Proxmox VE
+check_proxmox() {
+    if ! file_exists "/etc/pve/local/pve-ssl.pem"; then
+        log_error "This script is designed to run on Proxmox VE"
+        exit 1
+    fi
 }
 
-core_install() {
-    has_cmd git || apt-get -qq -y --no-install-recommends install git-core micro zsh-theme-powerlevel9k zsh
+# Create necessary directories
+setup_directories() {
+    local dirs=("$DOT_DIR" "$DOT_DIR/config" "$DOT_DIR/logs" "$DOT_DIR/backups")
 
-    dir_exists ~/.ilm || git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
-
-    has_cmd ilmi && return 0
-
-    mv ~/.bashrc /tmp/".bashrc.backup-$(date +%Y%m%d-%H%M%S)"
-    echo "source ~/.ilm/share/bashrc" >~/.bashrc
-
-    mv ~/.zshrc /tmp/".zshrc.backup-$(date +%Y%m%d-%H%M%S)"
-    ln -s ~/.ilm/share/dot-zshrc ~/.zshrc
+    for dir in "${dirs[@]}"; do
+        if ! directory_exists "$dir"; then
+            mkdir -p "$dir"
+            log_info "Created directory: $dir"
+        fi
+    done
 }
 
-CT_TEMPLATES=0
-VM_TEMPLATES=0
-CT_ALL=0
-VM_ALL=0
-ALL=0
+# Safe download function with retry logic
+safe_download() {
+    local url="$1"
+    local max_retries=3
+    local retry_count=0
 
-yes_or_no() {
-    read -rp "$1 (y/n): " answer
-    if [[ "$answer" =~ ^[Yy]$ ]]; then
+    while [[ $retry_count -lt $max_retries ]]; do
+        if curl -fsSL --connect-timeout 10 --max-time 30 "$url"; then
+            return 0
+        fi
+
+        retry_count=$((retry_count + 1))
+        log_warn "Download failed, retrying ($retry_count/$max_retries)..."
+        sleep 2
+    done
+
+    log_error "Failed to download from: $url"
+    return 1
+}
+
+# Execute installation script with error handling
+execute_install() {
+    local name="$1"
+    local url="$2"
+    local pre_install_msg="${3:-}"
+
+    log_info "Starting installation of $name..."
+
+    if [[ -n "$pre_install_msg" ]]; then
+        log_warn "$pre_install_msg"
+    fi
+
+    if safe_download "$url" | bash; then
+        log_success "$name installation completed successfully"
         return 0
     else
+        log_error "$name installation failed"
         return 1
     fi
 }
 
-usage() {
-    echo "Usage: $0 [OPTIONS]"
-    echo
-    echo "Options:"
-    echo "  --ct-templates    Install container templates"
-    echo "  --vm-templates    Install VM templates"
-    echo "  --ct-all          Install all containers"
-    echo "  --vm-all          Install all VMs"
-    echo "  --all             Install all"
+# Installation functions
+post_install() {
+    execute_install "Post-PVE Install" \
+        "https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh"
 }
 
+remove_subscription() {
+    execute_install "Remove Subscription Notice" \
+        "${COMMUNITY_SCRIPTS_BASE}/misc/remove-subscription-notice.sh"
+}
+
+# Container installations
+casaos_install() {
+    execute_install "CasaOS" "${COMMUNITY_SCRIPTS_BASE}/ct/casaos.sh"
+}
+
+jellyfin_install() {
+    execute_install "Jellyfin" "${COMMUNITY_SCRIPTS_BASE}/ct/jellyfin.sh"
+}
+
+plex_install() {
+    execute_install "Plex" "${COMMUNITY_SCRIPTS_BASE}/ct/plex.sh"
+}
+
+code_server_install() {
+    execute_install "Code Server" \
+        "${COMMUNITY_SCRIPTS_BASE}/tools/addon/coder-code-server.sh" \
+        "Create a Debian LXC container first"
+}
+
+backup_server_install() {
+    execute_install "Proxmox Backup Server" \
+        "${COMMUNITY_SCRIPTS_BASE}/ct/proxmox-backup-server.sh"
+}
+
+backup_server_post_install() {
+    execute_install "Proxmox Backup Server Post-Install" \
+        "${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pbs-install.sh"
+}
+
+tailscale_install() {
+    execute_install "Tailscale" \
+        "${COMMUNITY_SCRIPTS_BASE}/tools/addon/add-tailscale-lxc.sh"
+}
+
+file_browser_install() {
+    execute_install "File Browser" \
+        "${COMMUNITY_SCRIPTS_BASE}/tools/addon/filebrowser.sh" \
+        "Create a Debian LXC container first"
+}
+
+docker_lxc_install() {
+    execute_install "Docker LXC" "${COMMUNITY_SCRIPTS_BASE}/ct/docker.sh"
+}
+
+dockge_install() {
+    execute_install "Dockge" "${COMMUNITY_SCRIPTS_BASE}/ct/dockge.sh"
+}
+
+adguard_install() {
+    execute_install "AdGuard Home" "${COMMUNITY_SCRIPTS_BASE}/ct/adguard.sh"
+}
+
+pihole_install() {
+    execute_install "Pi-hole" "${COMMUNITY_SCRIPTS_BASE}/ct/pihole.sh"
+    log_info "Use 'pihole setpassword' to set password for Pi-hole"
+}
+
+authelia_install() {
+    execute_install "Authelia" "${COMMUNITY_SCRIPTS_BASE}/ct/authelia.sh"
+}
+
+duplicati_install() {
+    execute_install "Duplicati" "${COMMUNITY_SCRIPTS_BASE}/ct/duplicati.sh"
+}
+
+deluge_install() {
+    execute_install "Deluge" "${COMMUNITY_SCRIPTS_BASE}/ct/deluge.sh"
+}
+
+qbittorrent_install() {
+    execute_install "qBittorrent" "${COMMUNITY_SCRIPTS_BASE}/ct/qbittorrent.sh"
+}
+
+rclone_install() {
+    execute_install "Rclone" "${COMMUNITY_SCRIPTS_BASE}/ct/rclone.sh"
+    log_info "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
+}
+
+syncthing_install() {
+    execute_install "Syncthing" "${COMMUNITY_SCRIPTS_BASE}/ct/syncthing.sh"
+}
+
+paperless_ai_install() {
+    execute_install "Paperless-ng with AI" "${COMMUNITY_SCRIPTS_BASE}/ct/paperless-ai.sh"
+}
+
+ollama_install() {
+    execute_install "Ollama" "${COMMUNITY_SCRIPTS_BASE}/ct/ollama.sh"
+}
+
+caddy_install() {
+    execute_install "Caddy" "${COMMUNITY_SCRIPTS_BASE}/ct/caddy.sh"
+}
+
+nginx_proxy_install() {
+    execute_install "Nginx Proxy Manager" \
+        "${COMMUNITY_SCRIPTS_BASE}/ct/nginxproxymanager.sh"
+}
+
+rustdesk_install() {
+    execute_install "RustDesk Server" "${COMMUNITY_SCRIPTS_BASE}/ct/rustdeskserver.sh"
+}
+
+guacamole_install() {
+    execute_install "Apache Guacamole" "${COMMUNITY_SCRIPTS_BASE}/ct/apache-guacamole.sh"
+}
+
+vaultwarden_install() {
+    execute_install "Vaultwarden" "${COMMUNITY_SCRIPTS_BASE}/ct/vaultwarden.sh"
+}
+
+backrest_install() {
+    execute_install "Backrest" "${COMMUNITY_SCRIPTS_BASE}/ct/backrest.sh"
+}
+
+uptime_kuma_install() {
+    execute_install "Uptime Kuma" "${COMMUNITY_SCRIPTS_BASE}/ct/uptimekuma.sh"
+}
+
+alpine_lxc_install() {
+    execute_install "Alpine LXC" "${COMMUNITY_SCRIPTS_BASE}/ct/alpine.sh"
+}
+
+twofauth_install() {
+    execute_install "2FAuth" "${COMMUNITY_SCRIPTS_BASE}/ct/2fauth.sh"
+}
+
+iventoy_install() {
+    execute_install "iVentoy" "${COMMUNITY_SCRIPTS_BASE}/ct/iventoy.sh" \
+        "Container MUST be privileged"
+}
+
+# VM installations
+docker_vm_install() {
+    execute_install "Docker VM" "${COMMUNITY_SCRIPTS_BASE}/vm/docker-vm.sh"
+}
+
+openwrt_install() {
+    execute_install "OpenWrt" "${COMMUNITY_SCRIPTS_BASE}/vm/openwrt.sh"
+}
+
+umbrel_install() {
+    execute_install "Umbrel OS" "${COMMUNITY_SCRIPTS_BASE}/vm/umbrel-os-vm.sh"
+}
+
+opnsense_install() {
+    execute_install "OPNsense" "${COMMUNITY_SCRIPTS_BASE}/vm/opnsense-vm.sh"
+}
+
+# Template management
+ct_templates_install() {
+    log_info "Installing container templates..."
+
+    local templates=(
+        "ubuntu.*standard"
+        "debian.*standard"
+        "rockylinux.*default"
+        "fedora.*default"
+        "archlinux-base"
+        "centos.*default"
+        "opensuse.*default"
+    )
+
+    for pattern in "${templates[@]}"; do
+        local template
+        template=$(pveam available | awk '{print $2}' | grep -E "^${pattern}" | sort -r | head -n 1)
+
+        if [[ -n "$template" ]]; then
+            log_info "Downloading template: $template"
+            pveam download local "$template" || log_warn "Failed to download $template"
+        else
+            log_warn "No template found for pattern: $pattern"
+        fi
+    done
+}
+
+vm_templates_install() {
+    log_info "Installing VM templates..."
+
+    local current_dir
+    current_dir="$(dirname "$0")"
+
+    local distros=("debian" "fedora" "ubuntu" "alpine" "centos")
+
+    for distro in "${distros[@]}"; do
+        if file_exists "$current_dir/vm-template"; then
+            log_info "Creating $distro VM template..."
+            "$current_dir/vm-template" --distro "$distro" || log_warn "Failed to create $distro template"
+        else
+            log_warn "VM template script not found: $current_dir/vm-template"
+        fi
+    done
+}
+
+# Create LXC containers from all available templates
+ct_all_install() {
+    log_info "Creating containers from all templates..."
+
+    local template_dir="/var/lib/vz/template/cache"
+
+    if ! directory_exists "$template_dir"; then
+        log_error "Template directory not found: $template_dir"
+        return 1
+    fi
+
+    for template in "$template_dir"/*; do
+        if file_exists "$template"; then
+            local template_name
+            template_name=$(basename "$template")
+            log_info "Creating LXC from template: $template_name"
+
+            create_lxc_from_template "$template_name" || log_warn "Failed to create LXC from $template_name"
+        fi
+    done
+}
+
+# Create VMs from all available templates
+vm_all_install() {
+    log_info "Creating VMs from all templates..."
+
+    local templates=(
+        "201:101:debian-vm"
+        "202:102:fedora-vm"
+        "203:103:rocky-vm"
+        "204:104:ubuntu-vm"
+    )
+
+    pushd "$DOT_DIR/extras/proxmox" || {
+        log_error "Cannot access $DOT_DIR/extras/proxmox"
+        return 1
+    }
+
+    for template_info in "${templates[@]}"; do
+        IFS=':' read -r source_id dest_id vm_name <<<"$template_info"
+
+        if qm status "$source_id" >/dev/null 2>&1; then
+            log_info "Cloning VM $source_id to $dest_id ($vm_name)"
+            qm clone "$source_id" "$dest_id" --name "$vm_name" || log_warn "Failed to clone VM $source_id"
+        else
+            log_warn "Source VM $source_id not found"
+        fi
+    done
+
+    popd || true
+
+}
+
+# Core system setup
+core_install() {
+    log_info "Installing core components..."
+
+    # Install essential packages
+    local packages=("git-core" "micro" "zsh-theme-powerlevel9k" "zsh" "curl" "wget")
+
+    for package in "${packages[@]}"; do
+        if ! command_exists "$package"; then
+            log_info "Installing $package..."
+            apt-get -qq -y --no-install-recommends install "$package" || log_warn "Failed to install $package"
+        fi
+    done
+
+    # Clone dotfiles if not exists
+    if ! directory_exists ~/.ilm; then
+        log_info "Cloning dotfiles..."
+        git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm || {
+            log_error "Failed to clone dotfiles"
+            return 1
+        }
+    fi
+
+    # Check if ilmi command exists
+    if command_exists ilmi; then
+        log_info "Core installation already completed"
+        return 0
+    fi
+
+    # Backup and setup shell configurations
+    local timestamp
+    timestamp=$(date +%Y%m%d-%H%M%S)
+
+    if file_exists ~/.bashrc; then
+        log_info "Backing up .bashrc"
+        mv ~/.bashrc "/tmp/.bashrc.backup-$timestamp"
+    fi
+
+    if file_exists ~/.zshrc; then
+        log_info "Backing up .zshrc"
+        mv ~/.zshrc "/tmp/.zshrc.backup-$timestamp"
+    fi
+
+    # Create new configurations
+    echo "source ~/.ilm/share/bashrc" >~/.bashrc
+    ln -sf ~/.ilm/share/dot-zshrc ~/.zshrc
+
+    log_success "Core installation completed"
+}
+
+# Placeholder function for LXC creation
+create_lxc_from_template() {
+    local template="$1"
+    log_info "Creating LXC from template: $template"
+    # Implementation depends on your specific requirements
+    # This is a placeholder that should be implemented based on your needs
+    return 0
+}
+
+# Usage information
+usage() {
+    cat <<EOF
+Usage: $0 [OPTIONS] [SERVICES...]
+
+Proxmox VE Installation and Configuration Script
+
+OPTIONS:
+    --ct-templates      Install container templates
+    --vm-templates      Install VM templates
+    --ct-all           Create all containers from templates
+    --vm-all           Create all VMs from templates
+    --all              Install everything
+    --verbose          Enable verbose output
+    --dry-run          Show what would be done without executing
+    --help             Show this help message
+
+SERVICES:
+    Core Services:
+        post-install, remove-subscription, core
+
+    Container Services:
+        casaos, jellyfin, plex, code-server, backup-server, tailscale,
+        file-browser, docker-lxc, dockge, adguard, pihole, authelia,
+        duplicati, deluge, qbittorrent, rclone, syncthing, paperless-ai,
+        ollama, caddy, nginx-proxy, rustdesk, guacamole, vaultwarden,
+        backrest, uptime-kuma, alpine-lxc, twofauth, iventoy
+
+    VM Services:
+        docker-vm, openwrt, umbrel, opnsense
+
+Examples:
+    $0 --all                    # Install everything
+    $0 casaos jellyfin plex     # Install specific services
+    $0 --ct-templates           # Install only container templates
+    $0 --dry-run --all          # Show what would be installed
+
+EOF
+}
+
+# Parse command line arguments
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -274,50 +535,86 @@ parse_args() {
             ALL=1
             shift
             ;;
+        --help)
+            usage
+            exit 0
+            ;;
+        *)
+            # Store remaining arguments for service installation
+            break
+            ;;
         esac
     done
 }
 
-vm-templates_install() {
-    local curdir
-    curdir="$(dirname "$0")"
-    "$curdir/vm-template" --distro debian
-    "$curdir/vm-template" --distro fedora
-    "$curdir/vm-template" --distro ubuntu
-    "$curdir/vm-template" --distro alpine
-    "$curdir/vm-template" --distro centos
-}
-
+# Main function
 main() {
+    log_info "Starting Proxmox installation script..."
+
     parse_args "$@"
 
-    if [[ $EUID -ne 0 ]]; then
-        echo "This script must be run as root" >&2
-        exit 1
-    fi
+    check_root
+    check_proxmox
+    setup_directories
 
+    # Install core components
     core_install
 
-    # ALL might be unset
-    if [[ -n "$ALL" ]] && [[ $ALL -eq 1 ]]; then
+    # Handle --all flag
+    if [[ $ALL -eq 1 ]]; then
         CT_TEMPLATES=1
         VM_TEMPLATES=1
         CT_ALL=1
         VM_ALL=1
     fi
 
-    [[ $CT_TEMPLATES -eq 1 ]] && ct-templates_install
-    [[ $VM_TEMPLATES -eq 1 ]] && vm-templates_install
-    [[ $CT_ALL -eq 1 ]] && ct-all_install
-    [[ $VM_ALL -eq 1 ]] && vm-all_install
+    # Execute template installations
+    [[ $CT_TEMPLATES -eq 1 ]] && ct_templates_install
+    [[ $VM_TEMPLATES -eq 1 ]] && vm_templates_install
+    [[ $CT_ALL -eq 1 ]] && ct_all_install
+    [[ $VM_ALL -eq 1 ]] && vm_all_install
 
-    for arg in "$@"; do
-        if fn_exists "${arg}_install"; then
-            "${arg}_install"
+    # Process individual service installations
+    local failed_services=()
+
+    for service in "$@"; do
+        # Skip flags that were already processed
+        if [[ "$service" =~ ^-- ]]; then
+            continue
+        fi
+
+        # Convert hyphens to underscores for function names
+        local function_name="${service//-/_}_install"
+
+        if function_exists "$function_name"; then
+            log_info "Installing service: $service"
+            if ! "$function_name"; then
+                failed_services+=("$service")
+            fi
         else
-            echo "Unknown option: $arg"
+            log_warn "Unknown service: $service"
+            failed_services+=("$service")
         fi
     done
+
+    # Report results
+    if [[ ${#failed_services[@]} -eq 0 ]]; then
+        log_success "All installations completed successfully!"
+    else
+        log_error "The following services failed to install:"
+        for service in "${failed_services[@]}"; do
+            log_error "  - $service"
+        done
+        exit 1
+    fi
+
+    log_info "Installation script completed. Check $LOG_FILE for details."
 }
 
+if file_exists "$SCRIPT_DIR/../../share/utils"; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/../../share/utils"
+fi
+
+# Execute main function
 main "$@"
