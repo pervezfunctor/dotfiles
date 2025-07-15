@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TAILSCALE_ROUTER_IP="100.x.x.x"
+DOMAIN="local"
+IFACE="tailscale0"
+
+echo "[+] Configuring systemd-resolved to query router at $TAILSCALE_ROUTER_IP for *.$DOMAIN..."
+
+resolvectl dns $IFACE $TAILSCALE_ROUTER_IP
+resolvectl domain $IFACE "~$DOMAIN"
+
+echo "[✔] Done. Test with: getent hosts vm123.$DOMAIN"

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BRIDGE_IF="virbr0"
+SUBNET="192.168.122.0"
+RANGE_START="192.168.122.100"
+RANGE_END="192.168.122.200"
+LEASE_TIME="12h"
+TAILSCALE_DNS_LISTEN="100.100.100.100" # Optional, Tailscale DNS listener
+DOMAIN="local"
+
+echo "[+] Installing dnsmasq..."
+si dnsmasq
+
+echo "[+] Backing up existing dnsmasq.conf..."
+mv /etc/dnsmasq.conf /etc/dnsmasq.conf.backup."$(date +%s)"
+
+cat <<EOF >/etc/dnsmasq.conf
+# DNSMASQ CONFIGURATION
+domain-needed
+bogus-priv
+no-resolv
+
+interface=$BRIDGE_IF
+bind-interfaces
+
+domain=$DOMAIN
+expand-hosts
+dhcp-authoritative
+
+dhcp-range=$RANGE_START,$RANGE_END,$LEASE_TIME
+EOF
+
+echo "[+] Restarting dnsmasq..."
+systemctl enable dnsmasq
+systemctl restart dnsmasq
+
+# Optional: expose DNS on Tailscale interface for remote clients
+echo "[+] Optional: configuring systemd-resolved to use dnsmasq..."
+
+mkdir -p /etc/systemd/resolved.conf.d
+cat <<EOF >/etc/systemd/resolved.conf.d/99-dnsmasq.conf
+[Resolve]
+DNS=127.0.0.1
+Domains=~$DOMAIN
+EOF
+
+echo "[+] Restarting systemd-resolved..."
+systemctl restart systemd-resolved
+
+echo "[✔] dnsmasq and DNS routing are set up for $SUBNET on $BRIDGE_IF."
+echo "[i] You can now use this router to resolve VM hostnames like 'vm123.$DOMAIN'."
