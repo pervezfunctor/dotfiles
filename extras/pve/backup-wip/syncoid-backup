@@ -1,0 +1,7 @@
+syncoid --sendoptions=raw --recursive \
+  rpool/ROOT/pve-1 \
+  root@backup-host:rpool-backup/ROOT/pve-1
+
+# or local with
+# syncoid --recursive rpool/ROOT/pve-1 /mnt/backup-zfs/rpool-backup
+

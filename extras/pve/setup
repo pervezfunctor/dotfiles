@@ -154,6 +154,10 @@ execute_install() {
     fi
 }
 
+systools_install() {
+    apt install -y powertop smartmontools sanoid live-build zfsutils-linux rsync dialog proxmox-backup-client restic
+}
+
 # Installation functions
 post_install() {
     execute_install "Post-PVE Install" \
@@ -314,7 +318,6 @@ opnsense_install() {
     execute_install "OPNsense" "${COMMUNITY_SCRIPTS_BASE}/vm/opnsense-vm.sh"
 }
 
-# Template management
 ct_templates_install() {
     log_info "Installing container templates..."
 
@@ -359,7 +362,6 @@ vm_templates_install() {
     done
 }
 
-# Create LXC containers from all available templates
 ct_all_install() {
     log_info "Creating containers from all templates..."
 
@@ -381,7 +383,6 @@ ct_all_install() {
     done
 }
 
-# Create VMs from all available templates
 vm_all_install() {
     log_info "Creating VMs from all templates..."
 
@@ -412,11 +413,9 @@ vm_all_install() {
 
 }
 
-# Core system setup
 core_install() {
     log_info "Installing core components..."
 
-    # Install essential packages
     local packages=("git-core" "micro" "zsh-theme-powerlevel9k" "zsh" "curl" "wget")
 
     for package in "${packages[@]}"; do
@@ -426,7 +425,6 @@ core_install() {
         fi
     done
 
-    # Clone dotfiles if not exists
     if ! directory_exists ~/.ilm; then
         log_info "Cloning dotfiles..."
         git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm || {
@@ -455,7 +453,6 @@ core_install() {
         mv ~/.zshrc "/tmp/.zshrc.backup-$timestamp"
     fi
 
-    # Create new configurations
     echo "source ~/.ilm/share/bashrc" >~/.bashrc
     ln -sf ~/.ilm/share/dot-zshrc ~/.zshrc
 
@@ -471,7 +468,6 @@ create_lxc_from_template() {
     return 0
 }
 
-# Usage information
 usage() {
     cat <<EOF
 Usage: $0 [OPTIONS] [SERVICES...]
@@ -511,7 +507,6 @@ Examples:
 EOF
 }
 
-# Parse command line arguments
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -547,7 +542,6 @@ parse_args() {
     done
 }
 
-# Main function
 main() {
     log_info "Starting Proxmox installation script..."
 
@@ -557,10 +551,8 @@ main() {
     check_proxmox
     setup_directories
 
-    # Install core components
     core_install
 
-    # Handle --all flag
     if [[ $ALL -eq 1 ]]; then
         CT_TEMPLATES=1
         VM_TEMPLATES=1
@@ -568,17 +560,14 @@ main() {
         VM_ALL=1
     fi
 
-    # Execute template installations
     [[ $CT_TEMPLATES -eq 1 ]] && ct_templates_install
     [[ $VM_TEMPLATES -eq 1 ]] && vm_templates_install
     [[ $CT_ALL -eq 1 ]] && ct_all_install
     [[ $VM_ALL -eq 1 ]] && vm_all_install
 
-    # Process individual service installations
     local failed_services=()
 
     for service in "$@"; do
-        # Skip flags that were already processed
         if [[ "$service" =~ ^-- ]]; then
             continue
         fi
@@ -597,7 +586,6 @@ main() {
         fi
     done
 
-    # Report results
     if [[ ${#failed_services[@]} -eq 0 ]]; then
         log_success "All installations completed successfully!"
     else
@@ -616,5 +604,4 @@ if file_exists "$SCRIPT_DIR/../../share/utils"; then
     source "$SCRIPT_DIR/../../share/utils"
 fi
 
-# Execute main function
 main "$@"

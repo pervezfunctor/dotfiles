@@ -1,0 +1,13 @@
+#!/bin/bash
+
+DEST="/mnt/backups/proxmox-host-$(hostname)-$(date +%F)"
+mkdir -p "$DEST"
+
+rsync -aAXv \
+  --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} \
+  /etc /root /usr/local/bin /var/lib/pve-cluster/config.db "$DEST"
+
+dpkg --get-selections >"$DEST/package-list.txt"
+zfs list >"$DEST/zfs-list.txt"
+
+# restorw with rsync -aAX

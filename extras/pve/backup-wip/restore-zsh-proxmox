@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+BACKUP_POOL="backup"
+RESTORE_POOL="rpool"
+MOUNTPOINT="/mnt"
+
+echo "Importing backup pool..."
+zpool import -R $MOUNTPOINT $BACKUP_POOL
+
+echo "Renaming dataset to rpool..."
+zfs rename -p $BACKUP_POOL/rpool $RESTORE_POOL
+
+echo "Mounting datasets..."
+zfs mount $RESTORE_POOL/ROOT/pve-1
+
+echo "Chrooting and reinstalling GRUB..."
+mount --rbind /dev $MOUNTPOINT/dev
+mount --rbind /proc $MOUNTPOINT/proc
+mount --rbind /sys $MOUNTPOINT/sys
+chroot $MOUNTPOINT /bin/bash -c "grub-install /dev/sda && update-grub"
+
+echo "Done! You may reboot."

@@ -1,0 +1,36 @@
+#! /usr/bin/env bash
+
+create_snapshot() {
+  zfs snapshot -r rpool@backup-"$(date +%F)"
+}
+
+send_snapshot() {
+  zfs send -R rpool@backup-2025-07-17 | zfs recv -F backup/rpool
+}
+
+remote_send_snapshot() {
+  zfs send -R rpool@backup-2025-07-17 | ssh root@backuphost zfs recv -F backup/rpool
+}
+
+import_from_backup() {
+  zpool import -R /mnt backup
+  zfs rename -p backup/rpool rpool
+
+  zfs mount rpool/ROOT/pve-1
+  mount --rbind /dev /mnt/dev
+  mount --rbind /proc /mnt/proc
+  mount --rbind /sys /mnt/sys
+
+  chroot /mnt /bin/bash
+
+  apt install grub-efi efibootmgr
+  mount /boot/efi
+  grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=proxmox
+  update-grub
+}
+
+enable_auto_snapshot() {
+
+  apt install zfs-auto-snapshot
+  systemctl enable --now zfs-auto-snapshot.timer
+}

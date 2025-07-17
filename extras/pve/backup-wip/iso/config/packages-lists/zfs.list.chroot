@@ -1,0 +1,8 @@
+zfsutils-linux
+grub-pc
+grub-efi-amd64
+rsync
+openssh-client
+dialog
+proxmox-backup-client
+restic

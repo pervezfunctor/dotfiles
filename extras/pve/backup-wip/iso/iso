@@ -1,0 +1,5 @@
+mkdir proxmox-zfs-restore && cd proxmox-zfs-restore
+lb config \
+  --distribution bookworm \
+  --debian-installer live \
+  --archive-areas "main contrib non-free non-free-firmware"
