@@ -71,8 +71,7 @@ execute_install() {
 }
 
 post-install_install() {
-    execute_install "Post-PVE Install" \
-        "https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh"
+    execute_install "Post-PVE Install" "${COMMUNITY_SCRIPTS_BASE}/misc/post-pve-install.sh"
 }
 
 remove-subscription_install() {
