@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # shellcheck disable=SC1090
-source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
+source <(curl -sSL https://is.gd/anumof)
 
 INSTALL_OPTIONS=("shell-slim" "shell" "vscode" "web" "python" "apps" "fonts" "vm" "ptyxis" "incus" "docker" "nix" "cpp" "mise" "rust" "brew" "fonts" "doom" "go" "code_server" "devbox" "pixi" "tailscale" "@nix" "@shell" "@vm" "@hyprland" "@sway")
 

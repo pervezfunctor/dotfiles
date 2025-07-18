@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # shellcheck disable=SC1090
-source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
+source <(curl -sSL https://is.gd/anumof)
 
 INSTALL_OPTIONS=("nvim" "bash" "vscode_flatpak" "vscode" "zsh" "tmux" "emacs" "git" "gnome" "sway" "hyprland" "docker" "libvirt")
 
