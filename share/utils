@@ -1037,7 +1037,7 @@ is_root_user() {
 }
 
 check_root_user() {
-    if is_root_user; then
+    if ! is_root_user; then
         fail "This script must not be run as root. DO NOT use sudo."
         exit 1
     fi

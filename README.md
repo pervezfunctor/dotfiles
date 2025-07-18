@@ -162,3 +162,9 @@ You might be able to install vscode with
 ```bash
 ilmi vscode
 ```
+
+## Proxmox setup WIP
+
+```bash
+bash -c "$(curl -sSL https://is.gd/epesoq)"
+```
