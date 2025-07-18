@@ -298,8 +298,8 @@ iventoy_install() {
 }
 
 # VM installations
-docker_vm_install() {
-    execute_install "Docker VM" "${COMMUNITY_SCRIPTS_BASE}/vm/docker-vm.sh"
+docker_install() {
+    execute_install "Docker" "${COMMUNITY_SCRIPTS_BASE}/vm/docker-vm.sh"
 }
 
 openwrt_install() {
@@ -312,6 +312,22 @@ umbrel_install() {
 
 opnsense_install() {
     execute_install "OPNsense" "${COMMUNITY_SCRIPTS_BASE}/vm/opnsense-vm.sh"
+}
+
+nextcloud_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/nextcloud-vm.sh)"
+}
+
+ubuntu_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/ubuntu2504-vm.sh)"
+}
+
+debian_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/debian-vm.sh)"
+}
+
+arch_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/archlinux-vm.sh)"
 }
 
 ct_templates_install() {
@@ -488,7 +504,7 @@ OPTIONS:
 
 SERVICES:
     Core Services:
-        post-install, remove-subscription, core
+        post, remove-subscription, core
 
     Container Services:
         casaos, jellyfin, plex, code-server, backup-server, tailscale,
@@ -498,7 +514,8 @@ SERVICES:
         backrest, uptime-kuma, alpine-lxc, twofauth, iventoy
 
     VM Services:
-        docker-vm, openwrt, umbrel, opnsense
+        docker, openwrt, umbrel, opnsense, nextcloud, ubuntu,
+        debian, arch
 
 Examples:
     $0 --all                    # Install everything
@@ -543,6 +560,10 @@ parse_args() {
     done
 }
 
+proxmox-backup-server_install() {
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/proxmox-backup-server.sh)"
+}
+
 main() {
     log_info "Starting Proxmox installation script..."
 
@@ -551,8 +572,8 @@ main() {
     check_root
     check_proxmox
     setup_directories
-
     core_install
+    post-install_install
 
     if [[ $ALL -eq 1 ]]; then
         CT_TEMPLATES=1
