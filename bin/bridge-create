@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly BRIDGE_NAME="br0"
+ETH_IFACE="${1:-}"
+
+usage() {
+  echo "Usage: sudo $0 <ethernet-interface>"
+  echo
+  echo "This script creates a network bridge 'br0' and enslaves the specified"
+  echo "Ethernet interface to it using NetworkManager (nmcli)."
+  echo
+  echo "Available Ethernet interfaces:"
+  nmcli -g DEVICE,TYPE device | grep ':ethernet$' | cut -d: -f1 | sed 's/^/  /'
+  exit 1
+}
+
+if [[ $EUID -ne 0 ]]; then
+  echo "❌ This script must be run as root. Please use sudo." >&2
+  exit 1
+fi
+
+if ! command -v nmcli &>/dev/null; then
+  echo "❌ Error: nmcli could not be found. Please install NetworkManager." >&2
+  exit 1
+fi
+
+if [[ -z "$ETH_IFACE" ]]; then
+  echo "❌ Error: No Ethernet interface specified." >&2
+  echo
+  usage
+fi
+
+if ! nmcli -g DEVICE,TYPE device | grep -q "^${ETH_IFACE}:ethernet$"; then
+  echo "❌ Error: Interface '${ETH_IFACE}' not found or is not an Ethernet device." >&2
+  echo
+  usage
+fi
+
+readonly BRIDGE_CON_NAME="${BRIDGE_NAME}-con"
+readonly SLAVE_CON_NAME="${BRIDGE_NAME}-${ETH_IFACE}-slave"
+
+echo "🔧 Setting up bridge '${BRIDGE_NAME}' on interface '${ETH_IFACE}'"
+
+echo "🧹 Cleaning up any existing bridge configuration..."
+
+for con_name in "${SLAVE_CON_NAME}" "${BRIDGE_CON_NAME}"; do
+  if nmcli connection show "${con_name}" &>/dev/null; then
+    echo "🗑️  Deleting old connection: ${con_name}"
+    nmcli connection delete "${con_name}" || true
+  fi
+done
+
+if nmcli device status | grep -q "^${BRIDGE_NAME} "; then
+  echo "Ensuring bridge device '${BRIDGE_NAME}' is deleted."
+  nmcli device delete "${BRIDGE_NAME}" || true
+fi
+
+echo "➕ Creating bridge connection: ${BRIDGE_CON_NAME}"
+nmcli connection add type bridge ifname "${BRIDGE_NAME}" con-name "${BRIDGE_CON_NAME}"
+nmcli connection modify "${BRIDGE_CON_NAME}" ipv4.method auto ipv6.method ignore
+nmcli connection modify "${BRIDGE_CON_NAME}" connection.autoconnect yes
+
+echo "➕ Adding '${ETH_IFACE}' as a slave to '${BRIDGE_NAME}'"
+nmcli connection add type ethernet slave-type bridge ifname "${ETH_IFACE}" master "${BRIDGE_NAME}" con-name "${SLAVE_CON_NAME}"
+nmcli connection modify "${SLAVE_CON_NAME}" connection.autoconnect yes
+
+echo "🚀 Bringing bridge up..."
+nmcli connection up "${BRIDGE_CON_NAME}"
+
+echo "Ensuring slave connection is active..."
+nmcli device connect "${ETH_IFACE}"
+
+echo "✅ Bridge '${BRIDGE_NAME}' is now active and using '${ETH_IFACE}'"
+echo
+echo "NetworkManager connections created:"
+echo "  - Bridge: ${BRIDGE_CON_NAME}"
+echo "  - Slave:  ${SLAVE_CON_NAME}"
