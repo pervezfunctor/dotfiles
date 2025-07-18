@@ -154,10 +154,6 @@ execute_install() {
     fi
 }
 
-systools_install() {
-    apt install -y powertop smartmontools sanoid live-build zfsutils-linux rsync dialog proxmox-backup-client restic
-}
-
 # Installation functions
 post_install() {
     execute_install "Post-PVE Install" \
@@ -413,17 +409,25 @@ vm_all_install() {
 
 }
 
-core_install() {
-    log_info "Installing core components..."
-
-    local packages=("git-core" "micro" "zsh-theme-powerlevel9k" "zsh" "curl" "wget")
-
+si() {
+    local packages=("$@")
     for package in "${packages[@]}"; do
         if ! command_exists "$package"; then
             log_info "Installing $package..."
             apt-get -qq -y --no-install-recommends install "$package" || log_warn "Failed to install $package"
         fi
     done
+}
+
+systools_install() {
+    si powertop smartmontools sanoid live-build zfsutils-linux rsync dialog proxmox-backup-client restic
+}
+
+core_install() {
+    log_info "Installing core components..."
+
+    local packages=("git-core" "micro" "zsh-theme-powerlevel9k" "zsh" "curl" "wget")
+    si "${packages[@]}"
 
     if ! directory_exists ~/.ilm; then
         log_info "Cloning dotfiles..."
@@ -459,12 +463,10 @@ core_install() {
     log_success "Core installation completed"
 }
 
-# Placeholder function for LXC creation
 create_lxc_from_template() {
     local template="$1"
     log_info "Creating LXC from template: $template"
-    # Implementation depends on your specific requirements
-    # This is a placeholder that should be implemented based on your needs
+    # @TODO: Implement LXC creation from template
     return 0
 }
 
@@ -502,7 +504,6 @@ Examples:
     $0 --all                    # Install everything
     $0 casaos jellyfin plex     # Install specific services
     $0 --ct-templates           # Install only container templates
-    $0 --dry-run --all          # Show what would be installed
 
 EOF
 }
@@ -602,6 +603,9 @@ main() {
 if file_exists "$SCRIPT_DIR/../../share/utils"; then
     # shellcheck disable=SC1091
     source "$SCRIPT_DIR/../../share/utils"
+else
+    log_error "utils not found"
+    exit 1
 fi
 
 main "$@"
