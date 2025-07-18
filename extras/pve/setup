@@ -1,119 +1,56 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+# shellcheck disable=SC1090
+source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 
 readonly DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-readonly SCRIPT_DIR
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-readonly LOG_FILE="/var/log/proxmox-installer.log"
-
-# readonly CONFIG_FILE
-# CONFIG_FILE="${DOT_DIR}/config/proxmox.conf"
 
 readonly COMMUNITY_SCRIPTS_BASE="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main"
 
-# Colors for output
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly NC='\033[0m' # No Color
-
-# Global flags
 declare -g CT_TEMPLATES=0
 declare -g VM_TEMPLATES=0
 declare -g CT_ALL=0
 declare -g VM_ALL=0
 declare -g ALL=0
 
-# Logging functions
-log() {
-    local level="$1"
-    shift
-    local timestamp
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo -e "${timestamp} [${level}] $*" | tee -a "$LOG_FILE"
-}
-
-log_info() {
+slog() {
     log "INFO" "${BLUE}$*${NC}"
 }
 
-log_warn() {
+warn() {
     log "WARN" "${YELLOW}$*${NC}"
 }
 
-log_error() {
+error() {
     log "ERROR" "${RED}$*${NC}"
 }
 
-log_success() {
+success() {
     log "SUCCESS" "${GREEN}$*${NC}"
 }
 
-# Utility functions
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-directory_exists() {
-    [[ -d "$1" ]]
-}
-
-file_exists() {
-    [[ -f "$1" ]]
-}
-
-function_exists() {
+fn_exists() {
     declare -f "$1" >/dev/null 2>&1
 }
 
-yes_or_no() {
-    local prompt="$1"
-    local default="${2:-n}"
-    local answer
-
-    while true; do
-        read -rp "$prompt (y/n) [${default}]: " answer
-        answer=${answer:-$default}
-        case "$answer" in
-        [Yy] | [Yy][Ee][Ss]) return 0 ;;
-        [Nn] | [Nn][Oo]) return 1 ;;
-        *) echo "Please answer yes or no." ;;
-        esac
-    done
-}
-
-# Check if running as root
-check_root() {
-    if [[ $EUID -ne 0 ]]; then
-        log_error "This script must be run as root"
-        exit 1
-    fi
-}
-
-# Check if running on Proxmox VE
 check_proxmox() {
     if ! file_exists "/etc/pve/local/pve-ssl.pem"; then
-        log_error "This script is designed to run on Proxmox VE"
+        error "This script is designed to run on Proxmox VE"
         exit 1
     fi
 }
 
-# Create necessary directories
 setup_directories() {
     local dirs=("$DOT_DIR" "$DOT_DIR/config" "$DOT_DIR/logs" "$DOT_DIR/backups")
 
     for dir in "${dirs[@]}"; do
-        if ! directory_exists "$dir"; then
+        if ! dir_exists "$dir"; then
             mkdir -p "$dir"
-            log_info "Created directory: $dir"
+            slog "Created directory: $dir"
         fi
     done
 }
 
-# Safe download function with retry logic
 safe_download() {
     local url="$1"
     local max_retries=3
@@ -125,47 +62,44 @@ safe_download() {
         fi
 
         retry_count=$((retry_count + 1))
-        log_warn "Download failed, retrying ($retry_count/$max_retries)..."
+        warn "Download failed, retrying ($retry_count/$max_retries)..."
         sleep 2
     done
 
-    log_error "Failed to download from: $url"
+    error "Failed to download from: $url"
     return 1
 }
 
-# Execute installation script with error handling
 execute_install() {
     local name="$1"
     local url="$2"
     local pre_install_msg="${3:-}"
 
-    log_info "Starting installation of $name..."
+    slog "Starting installation of $name..."
 
     if [[ -n "$pre_install_msg" ]]; then
-        log_warn "$pre_install_msg"
+        warn "$pre_install_msg"
     fi
 
     if safe_download "$url" | bash; then
-        log_success "$name installation completed successfully"
+        success "$name installation completed successfully"
         return 0
     else
-        log_error "$name installation failed"
+        error "$name installation failed"
         return 1
     fi
 }
 
-# Installation functions
-post_install() {
+post-install_install() {
     execute_install "Post-PVE Install" \
         "https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh"
 }
 
-remove_subscription() {
+remove-subscription_install() {
     execute_install "Remove Subscription Notice" \
         "${COMMUNITY_SCRIPTS_BASE}/misc/remove-subscription-notice.sh"
 }
 
-# Container installations
 casaos_install() {
     execute_install "CasaOS" "${COMMUNITY_SCRIPTS_BASE}/ct/casaos.sh"
 }
@@ -219,7 +153,7 @@ adguard_install() {
 
 pihole_install() {
     execute_install "Pi-hole" "${COMMUNITY_SCRIPTS_BASE}/ct/pihole.sh"
-    log_info "Use 'pihole setpassword' to set password for Pi-hole"
+    slog "Use 'pihole setpassword' to set password for Pi-hole"
 }
 
 authelia_install() {
@@ -240,7 +174,7 @@ qbittorrent_install() {
 
 rclone_install() {
     execute_install "Rclone" "${COMMUNITY_SCRIPTS_BASE}/ct/rclone.sh"
-    log_info "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
+    slog "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
 }
 
 syncthing_install() {
@@ -297,7 +231,6 @@ iventoy_install() {
         "Container MUST be privileged"
 }
 
-# VM installations
 docker_install() {
     execute_install "Docker" "${COMMUNITY_SCRIPTS_BASE}/vm/docker-vm.sh"
 }
@@ -315,23 +248,23 @@ opnsense_install() {
 }
 
 nextcloud_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/nextcloud-vm.sh)"
+    execute_install "Nextcloud" "${COMMUNITY_SCRIPTS_BASE}/vm/nextcloud-vm.sh"
 }
 
 ubuntu_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/ubuntu2504-vm.sh)"
+    execute_install "Ubuntu" "${COMMUNITY_SCRIPTS_BASE}/vm/ubuntu2504-vm.sh"
 }
 
 debian_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/debian-vm.sh)"
+    execute_install "Debian" "${COMMUNITY_SCRIPTS_BASE}/vm/debian-vm.sh"
 }
 
 arch_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/archlinux-vm.sh)"
+    execute_install "Arch Linux" "${COMMUNITY_SCRIPTS_BASE}/vm/archlinux-vm.sh"
 }
 
 ct_templates_install() {
-    log_info "Installing container templates..."
+    slog "Installing container templates..."
 
     local templates=(
         "ubuntu.*standard"
@@ -348,16 +281,16 @@ ct_templates_install() {
         template=$(pveam available | awk '{print $2}' | grep -E "^${pattern}" | sort -r | head -n 1)
 
         if [[ -n "$template" ]]; then
-            log_info "Downloading template: $template"
-            pveam download local "$template" || log_warn "Failed to download $template"
+            slog "Downloading template: $template"
+            pveam download local "$template" || warn "Failed to download $template"
         else
-            log_warn "No template found for pattern: $pattern"
+            warn "No template found for pattern: $pattern"
         fi
     done
 }
 
 vm_templates_install() {
-    log_info "Installing VM templates..."
+    slog "Installing VM templates..."
 
     local current_dir
     current_dir="$(dirname "$0")"
@@ -366,21 +299,21 @@ vm_templates_install() {
 
     for distro in "${distros[@]}"; do
         if file_exists "$current_dir/vm-template"; then
-            log_info "Creating $distro VM template..."
-            "$current_dir/vm-template" --distro "$distro" || log_warn "Failed to create $distro template"
+            slog "Creating $distro VM template..."
+            "$current_dir/vm-template" --distro "$distro" || warn "Failed to create $distro template"
         else
-            log_warn "VM template script not found: $current_dir/vm-template"
+            warn "VM template script not found: $current_dir/vm-template"
         fi
     done
 }
 
 ct_all_install() {
-    log_info "Creating containers from all templates..."
+    slog "Creating containers from all templates..."
 
     local template_dir="/var/lib/vz/template/cache"
 
-    if ! directory_exists "$template_dir"; then
-        log_error "Template directory not found: $template_dir"
+    if ! dir_exists "$template_dir"; then
+        error "Template directory not found: $template_dir"
         return 1
     fi
 
@@ -388,15 +321,15 @@ ct_all_install() {
         if file_exists "$template"; then
             local template_name
             template_name=$(basename "$template")
-            log_info "Creating LXC from template: $template_name"
+            slog "Creating LXC from template: $template_name"
 
-            create_lxc_from_template "$template_name" || log_warn "Failed to create LXC from $template_name"
+            create_lxc_from_template "$template_name" || warn "Failed to create LXC from $template_name"
         fi
     done
 }
 
 vm_all_install() {
-    log_info "Creating VMs from all templates..."
+    slog "Creating VMs from all templates..."
 
     local templates=(
         "201:101:debian-vm"
@@ -406,7 +339,7 @@ vm_all_install() {
     )
 
     pushd "$DOT_DIR/extras/proxmox" || {
-        log_error "Cannot access $DOT_DIR/extras/proxmox"
+        error "Cannot access $DOT_DIR/extras/proxmox"
         return 1
     }
 
@@ -414,10 +347,10 @@ vm_all_install() {
         IFS=':' read -r source_id dest_id vm_name <<<"$template_info"
 
         if qm status "$source_id" >/dev/null 2>&1; then
-            log_info "Cloning VM $source_id to $dest_id ($vm_name)"
-            qm clone "$source_id" "$dest_id" --name "$vm_name" || log_warn "Failed to clone VM $source_id"
+            slog "Cloning VM $source_id to $dest_id ($vm_name)"
+            qm clone "$source_id" "$dest_id" --name "$vm_name" || warn "Failed to clone VM $source_id"
         else
-            log_warn "Source VM $source_id not found"
+            warn "Source VM $source_id not found"
         fi
     done
 
@@ -428,9 +361,9 @@ vm_all_install() {
 si() {
     local packages=("$@")
     for package in "${packages[@]}"; do
-        if ! command_exists "$package"; then
-            log_info "Installing $package..."
-            apt-get -qq -y --no-install-recommends install "$package" || log_warn "Failed to install $package"
+        if ! has_cmd "$package"; then
+            slog "Installing $package..."
+            apt-get -qq -y --no-install-recommends install "$package" || warn "Failed to install $package"
         fi
     done
 }
@@ -440,48 +373,46 @@ systools_install() {
 }
 
 core_install() {
-    log_info "Installing core components..."
+    slog "Installing core components..."
 
     local packages=("git-core" "micro" "zsh-theme-powerlevel9k" "zsh" "curl" "wget")
     si "${packages[@]}"
 
-    if ! directory_exists ~/.ilm; then
-        log_info "Cloning dotfiles..."
+    if ! dir_exists ~/.ilm; then
+        slog "Cloning dotfiles..."
         git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm || {
-            log_error "Failed to clone dotfiles"
+            error "Failed to clone dotfiles"
             return 1
         }
     fi
 
-    # Check if ilmi command exists
-    if command_exists ilmi; then
-        log_info "Core installation already completed"
+    if has_cmd ilmi; then
+        slog "Core installation already completed"
         return 0
     fi
 
-    # Backup and setup shell configurations
     local timestamp
     timestamp=$(date +%Y%m%d-%H%M%S)
 
     if file_exists ~/.bashrc; then
-        log_info "Backing up .bashrc"
+        slog "Backing up .bashrc"
         mv ~/.bashrc "/tmp/.bashrc.backup-$timestamp"
     fi
 
     if file_exists ~/.zshrc; then
-        log_info "Backing up .zshrc"
+        slog "Backing up .zshrc"
         mv ~/.zshrc "/tmp/.zshrc.backup-$timestamp"
     fi
 
     echo "source ~/.ilm/share/bashrc" >~/.bashrc
     ln -sf ~/.ilm/share/dot-zshrc ~/.zshrc
 
-    log_success "Core installation completed"
+    success "Core installation completed"
 }
 
 create_lxc_from_template() {
     local template="$1"
-    log_info "Creating LXC from template: $template"
+    slog "Creating LXC from template: $template"
     # @TODO: Implement LXC creation from template
     return 0
 }
@@ -561,17 +492,19 @@ parse_args() {
 }
 
 proxmox-backup-server_install() {
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/proxmox-backup-server.sh)"
+    execute_install "Proxmox Backup Server" \
+        "${COMMUNITY_SCRIPTS_BASE}/ct/proxmox-backup-server.sh"
 }
 
 main() {
-    log_info "Starting Proxmox installation script..."
+    slog "Starting Proxmox installation script..."
 
     parse_args "$@"
 
-    check_root
+    check_root_user
     check_proxmox
     setup_directories
+    systools_install
     core_install
     post-install_install
 
@@ -597,36 +530,28 @@ main() {
         # Convert hyphens to underscores for function names
         local function_name="${service//-/_}_install"
 
-        if function_exists "$function_name"; then
-            log_info "Installing service: $service"
+        if fn_exists "$function_name"; then
+            slog "Installing service: $service"
             if ! "$function_name"; then
                 failed_services+=("$service")
             fi
         else
-            log_warn "Unknown service: $service"
+            warn "Unknown service: $service"
             failed_services+=("$service")
         fi
     done
 
     if [[ ${#failed_services[@]} -eq 0 ]]; then
-        log_success "All installations completed successfully!"
+        success "All installations completed successfully!"
     else
-        log_error "The following services failed to install:"
+        error "The following services failed to install:"
         for service in "${failed_services[@]}"; do
-            log_error "  - $service"
+            error "  - $service"
         done
         exit 1
     fi
 
-    log_info "Installation script completed. Check $LOG_FILE for details."
+    slog "Installation script completed. Check $LOG_FILE for details."
 }
-
-if file_exists "$SCRIPT_DIR/../../share/utils"; then
-    # shellcheck disable=SC1091
-    source "$SCRIPT_DIR/../../share/utils"
-else
-    log_error "utils not found"
-    exit 1
-fi
 
 main "$@"
