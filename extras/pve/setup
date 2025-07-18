@@ -13,26 +13,6 @@ declare -g CT_ALL=0
 declare -g VM_ALL=0
 declare -g ALL=0
 
-slog() {
-    log "INFO" "${BLUE}$*${NC}"
-}
-
-warn() {
-    log "WARN" "${YELLOW}$*${NC}"
-}
-
-error() {
-    log "ERROR" "${RED}$*${NC}"
-}
-
-success() {
-    log "SUCCESS" "${GREEN}$*${NC}"
-}
-
-fn_exists() {
-    declare -f "$1" >/dev/null 2>&1
-}
-
 check_proxmox() {
     if ! file_exists "/etc/pve/local/pve-ssl.pem"; then
         error "This script is designed to run on Proxmox VE"
