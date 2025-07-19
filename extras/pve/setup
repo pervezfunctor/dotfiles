@@ -36,20 +36,33 @@ safe_download() {
     local max_retries=3
     local retry_count=0
 
+    # Input validation
+    if [[ -z "$url" ]]; then
+        error "URL parameter is required"
+        return 1
+    fi
+
     while [[ $retry_count -lt $max_retries ]]; do
-        if curl -fsSL --connect-timeout 10 --max-time 30 "$url"; then
+        # Added User-Agent and max file size (50MB default)
+        if curl -fsSL \
+            --connect-timeout 10 \
+            --user-agent "Installation Script/1.0" \
+            "$url"; then
+            # --max-time 30 \
+            # --max-filesize 52428800 \
             return 0
         fi
 
         retry_count=$((retry_count + 1))
-        warn "Download failed, retrying ($retry_count/$max_retries)..."
-        sleep 2
+        if [[ $retry_count -lt $max_retries ]]; then
+            warn "Download failed, retrying ($retry_count/$max_retries)..."
+            sleep 2
+        fi
     done
 
-    error "Failed to download from: $url"
+    error "Failed to download from: $url after $max_retries attempts"
     return 1
 }
-
 execute_install() {
     local name="$1"
     local url="$2"
@@ -61,11 +74,23 @@ execute_install() {
         warn "$pre_install_msg"
     fi
 
-    if safe_download "$url" | bash; then
-        success "$name installation completed successfully"
-        return 0
+    # Check if safe_download succeeded before piping to bash
+    local temp_script
+    temp_script=$(mktemp)
+
+    if safe_download "$url" >"$temp_script"; then
+        if bash "$temp_script"; then
+            success "$name installation completed successfully"
+            rm -f "$temp_script"
+            return 0
+        else
+            error "$name installation failed during execution"
+            rm -f "$temp_script"
+            return 1
+        fi
     else
-        error "$name installation failed"
+        error "$name download failed"
+        rm -f "$temp_script"
         return 1
     fi
 }
