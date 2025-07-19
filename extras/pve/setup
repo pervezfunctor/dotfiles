@@ -479,13 +479,13 @@ main() {
     slog "Starting Proxmox installation script..."
 
     parse_args "$@"
+    post-install_install
 
     check_root_user
     check_proxmox
     setup_directories
     systools_install
     core_install
-    post-install_install
 
     if [[ $ALL -eq 1 ]]; then
         CT_TEMPLATES=1
