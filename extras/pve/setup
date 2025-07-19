@@ -96,12 +96,7 @@ execute_install() {
 }
 
 post-install_install() {
-    execute_install "Post-PVE Install" "${COMMUNITY_SCRIPTS_BASE}/misc/post-pve-install.sh"
-}
-
-remove-subscription_install() {
-    execute_install "Remove Subscription Notice" \
-        "${COMMUNITY_SCRIPTS_BASE}/misc/remove-subscription-notice.sh"
+    execute_install "Post-PVE Install" "${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pve-install.sh"
 }
 
 casaos_install() {
@@ -439,7 +434,7 @@ OPTIONS:
 
 SERVICES:
     Core Services:
-        post, remove-subscription, core
+        post-install, core
 
     Container Services:
         casaos, jellyfin, plex, code-server, backup-server, tailscale,
