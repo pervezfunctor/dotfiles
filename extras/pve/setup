@@ -36,7 +36,8 @@ safe_download() {
     local max_retries=3
     local retry_count=0
 
-    # Input validation
+    slog "Fetching $1..."
+
     if [[ -z "$url" ]]; then
         error "URL parameter is required"
         return 1
