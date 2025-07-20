@@ -12,37 +12,24 @@
   home.packages = with pkgs; [
     bat
     carapace
-    curl
     delta
     emacs-nox
     eza
     fd
     fzf
-    gcc
-    gh
-    htop
     just
     lazygit
     luarocks
-    gnumake
-    micro-with-wl-clipboard
     neovim
-    nixfmt-classic
-    nixd
     nixpkgs-fmt
-    statix
-    nushell
+    nodejs
     ripgrep
     sd
     starship
-    stow
-    tmux
-    trash-cli
-    tree
+    tealdeer
     unzip
-    wget
+    yazi
     zoxide
-    zsh
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
@@ -63,18 +50,19 @@
     enableBashIntegration = true;
     nix-direnv.enable = true;
   };
+
   programs.bash = {
     enable = true;
     initExtra = ''
       source ~/.ilm/share/bashrc
     '';
   };
+
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
   programs.git.enable = true;
   programs.zsh.enable = true;
 
-  nixpkgs.config.allowUnfree = true;
 
   home.file = {
     ".zshrc" = { source = ~/.ilm/zsh/dot-zshrc; };
