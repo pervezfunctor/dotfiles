@@ -17,7 +17,7 @@ export MOZ_ENABLE_WAYLAND=1
 # electron >28 apps (may help)`
 export ELECTRON_OZONE_PLATFORM_HINT=auto
 export OZONE_PLATFORM=wayland
-export ELECTRON_OZONE_PLATFORM_HINT=wayland
+# export ELECTRON_OZONE_PLATFORM_HINT=wayland
 
 # export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/gcr/ssh"
 # export GNOME_KEYRING_CONTROL="${XDG_RUNTIME_DIR}/keyring"
