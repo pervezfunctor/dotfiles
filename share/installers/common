@@ -587,8 +587,13 @@ npm_install() {
 
     volta install node
 
-    has_cmd npm || warn "npm not installed! Skipping pnpm install."
-    has_cmd npm && npm install -g pnpm
+    if has_cmd npm; then
+        npm install -g @anthropic-ai/claude-code
+        npm install -g @google/gemini-cli
+        npm install -g pnpm
+    else
+        warn "npm not installed! Skipping pnpm install."
+    fi
 }
 
 web_install() {
