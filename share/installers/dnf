@@ -179,7 +179,8 @@ essential_install() {
 cli-slim_install() {
     slog "Installing cli tools using dnf"
 
-    local base_pkgs=(zsh ShellCheck shfmt tmux htop gh fzf ripgrep fd-find bat zsh)
+    local base_pkgs=(zsh ShellCheck shfmt tmux htop gh fzf ripgrep fd-find bat
+        zsh jq)
 
     local fedora_pkgs=()
     if is_fedora; then
@@ -194,8 +195,8 @@ cli-slim_install() {
 cli_install() {
     slog "Installing cli tools using dnf"
 
-    local base_pkgs=(zsh neovim ShellCheck shfmt tmux pkg-config urlview htop gh fzf ripgrep
-        fd-find bat plocate luarocks tealdeer zsh lsd)
+    local base_pkgs=(zsh neovim ShellCheck shfmt tmux pkg-config urlview htop
+        gh fzf ripgrep fd-find bat plocate luarocks tealdeer zsh lsd jq)
 
     local fedora_pkgs=()
     if is_fedora; then
@@ -364,7 +365,9 @@ vm_install() {
 
     si libvirt qemu qemu-kvm virt-install bridge-utils virglrenderer qemu-img \
         qemu-ui-spice-core qemu-ui-spice-app qemu-char-spice qemu-audio-spice \
-        qemu-device-usb-redirect qemu-device-display-virtio-vga
+        qemu-device-usb-redirect qemu-device-display-virtio-vga \
+        qemu-device-display-virtio-gpu qemu-user-binfmt qemu-user-static \
+        qemu-system-x86_64 coreos-installer butane cloud-utils
 
     libvirt_config_install
 
@@ -384,13 +387,9 @@ more_virt_install() {
     si samba-winbind-modules samba
     si cockpit-bridge cockpit-selinux cockpit-storaged cockpit-system
     si cockpit-machines cockpit-networkmanager cockpit-system cockpit-storaged
-    si cockpit-ostree cockpit-podman podman-tui podmansh powertop
-    si qemu-device-display-virtio-gpu qemu-img qemu-system-x86-core qemu-user-binfmt
-    si qemu-user-static qemu udica # rocm-hip rocm-opencl
-    si virt-viewer libvirt libvirt-nss podman-bootc
-
-    si virt-manager containerd.io dbus-x11 docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin
-
+    si cockpit-ostree cockpit-podman podman-tui podmansh powertop udica
+    si libvirt-nss podman-bootc containerd.io dbus-x11
+    si docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin
     # si svirt incus incus-agent lxc lxd-agent lxd kcli ubuntu-family-fonts
 }
 

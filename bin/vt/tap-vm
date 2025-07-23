@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Function to create TAP interface
+create_tap() {
+    local tap_name=$1
+    local bridge_name=$2
+
+    # Create TAP interface
+    sudo ip tuntap add dev $tap_name mode tap user $(whoami)
+    sudo ip link set dev $tap_name up
+
+    # Add to bridge
+    sudo ip link set dev $tap_name master $bridge_name
+
+    echo "Created $tap_name and added to $bridge_name"
+}
+
+# Create TAP interfaces for OPNsense
+create_tap tap-opn-wan br-wan
+create_tap tap-opn-lan br-lan
+
+# Create TAP interfaces for client VMs (add more as needed)
+create_tap tap-vm1 br-lan
+create_tap tap-vm2 br-lan

@@ -171,15 +171,15 @@ essential_install() {
 #   redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common wl-clipboard
 
 cli-slim_install() {
-    si tmux zsh git bat ripgrep zoxide eza gh shellcheck htop shfmt
+    si tmux zsh git bat ripgrep zoxide eza gh shellcheck htop shfmt jq
     is_plucky && si fzf starship gum git-delta
 }
 
 cli_install() {
     slog "Installing cli tools using apt"
 
-    local base_pkgs=(tmux pkg-config urlview zsh git plocate sd gdu bat hyperfine fd-find
-        ripgrep zoxide eza gh shellcheck just htop shfmt)
+    local base_pkgs=(tmux pkg-config urlview zsh git plocate sd gdu bat
+        hyperfine fd-find ripgrep zoxide eza gh shellcheck just htop shfmt jq)
 
     local plucky_pkgs=()
     is_plucky && plucky_pkgs=(fzf ugrep tealdeer starship gum git-delta direnv yq)
@@ -306,7 +306,8 @@ cockpit_install() {
 
 vm_install() {
     si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils \
-        virgl-server qemu-utils spice-client-gtk spice-vdagent
+        virgl-server qemu-utils spice-client-gtk spice-vdagent \
+        coreos-installer cloud-image-utils
 
     libvirt_config_install
 

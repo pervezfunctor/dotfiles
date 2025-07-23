@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+VCPUS=4
+RAM_MB=8192
+SSH_PUBKEY="${SSH_PUBKEY:-$(cat ~/.ssh/id_ed25519.pub)}"
+VM_NAME="fcos"
+VM_DIR="${HOME}/vms/${VM_NAME}"
+
+STREAM="stable"
+FCOS_URL="https://builds.coreos.fedoraproject.org/streams/${STREAM}.json"
+IGNITION_FILE="${VM_DIR}/config.ign"
+DISK="${VM_DIR}/${VM_NAME}.qcow2"
+
+IMAGE_URL=$(curl -sL "${FCOS_URL}" | jq -r '.architectures.x86_64.artifacts.qemu.formats["qcow2.xz"].disk.location')
+IMAGE_PATH="${VM_DIR}/$(basename "${IMAGE_URL}")"
+
+usage() {
+  echo "Usage: $0 [OPTIONS]"
+  echo "Options:"
+  echo "  --name NAME         VM name (default: fcos)"
+  echo "  --dir DIR           VM directory (default: ${HOME}/vms/NAME)"
+  echo "  --stream STREAM     CoreOS stream (default: stable)"
+  echo "  --vcpus VCPUS       Number of vCPUs (default: 4)"
+  echo "  --memory MB         RAM in MB (default: 8192)"
+  echo "  --ssh-key PATH      SSH public key path (default: auto-detect)"
+  echo "  --help, -h          Show this help"
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --name)
+      VM_NAME="$2"
+      shift 2
+      ;;
+    --dir)
+      VM_DIR="$2"
+      shift 2
+      ;;
+    --stream)
+      STREAM="$2"
+      shift 2
+      ;;
+    --vcpus)
+      VCPUS="$2"
+      shift 2
+      ;;
+    --memory)
+      RAM_MB="$2"
+      shift 2
+      ;;
+    --ssh-key)
+      SSH_PUBKEY=$(<"$2")
+      shift 2
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    esac
+  done
+}
+
+check_prerequisites() {
+  for cmd in curl jq qemu-system-x86_64 coreos-installer unxz qemu-img; do
+    has_cmd "$cmd" || err_exit "Install $cmd first"
+  done
+}
+
+download_coreos_image() {
+  mkdir -p "${VM_DIR}"
+
+  if [[ ! -f "${IMAGE_PATH%.xz}" ]]; then
+    echo "Downloading ${IMAGE_URL} …"
+    curl -L "${IMAGE_URL}" -o "${IMAGE_PATH}"
+    unxz "${IMAGE_PATH}"
+  fi
+}
+
+create_ignition() {
+  cat >"${IGNITION_FILE}" <<EOF
+{
+  "ignition": { "version": "3.4.0" },
+  "passwd": {
+    "users": [
+      {
+        "name": "core",
+        "sshAuthorizedKeys": ["${SSH_PUBKEY}"],
+        "groups": ["sudo"]
+      }
+    ]
+  },
+  "systemd": {
+    "units": [
+      {
+        "name": "qemu-guest-agent.service",
+        "enabled": true
+      }
+    ]
+  }
+}
+EOF
+}
+
+create_disk_image() {
+  if [[ ! -f "${DISK}" ]]; then
+    echo "Creating ${DISK} …"
+    cp --reflink=auto "${IMAGE_PATH%.xz}" "${DISK}"
+
+    jq . "${IGNITION_FILE}" >/dev/null || echo "Ignition file is empty"
+
+    coreos-installer iso ignition embed \
+      --force \
+      --ignition-file "${IGNITION_FILE}" \
+      "${DISK}"
+  fi
+}
+
+launch_vm() {
+  echo "Starting ${VM_NAME} …"
+  exec qemu-system-x86_64 \
+    -name "${VM_NAME}" \
+    -m "${RAM_MB}" \
+    -smp "${VCPUS}" \
+    -cpu host \
+    -enable-kvm \
+    -machine q35,accel=kvm \
+    -netdev user,id=net0,hostfwd=tcp::2222-:22 \
+    -device virtio-net-pci,netdev=net0 \
+    -drive if=virtio,file="${DISK}",discard=unmap,detect-zeroes=unmap \
+    -device virtio-rng-pci \
+    -fw_cfg name=opt/com.coreos/config,file="${IGNITION_FILE}" \
+    -nographic
+}
+
+main() {
+  parse_args "$@"
+  check_prerequisites
+  download_coreos_image
+  create_ignition
+  create_disk_image
+
+  echo "Using Ignition file: ${IGNITION_FILE}"
+  ls -l "${IGNITION_FILE}"
+  launch_vm
+
+  echo "Using Ignition file: ${IGNITION_FILE}"
+  ls -l "${IGNITION_FILE}"
+}
+
+main "$@"
+
+start_in_background() {
+  nohup qemu-system-x86_64 \
+    -daemonize \
+    -pidfile "${VM_DIR}/${VM_NAME}.pid" \
+    …
+}
+
+stop_vm() {
+  kill -TERM "$(cat "${VM_DIR}/${VM_NAME}.pid")"
+}

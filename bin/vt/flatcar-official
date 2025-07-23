@@ -1,0 +1,44 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+wget_if_not_exists() {
+
+  if [ -f "$1" ]; then
+    return 0
+  fi
+
+  wget -q "$2" -O "$1"
+}
+
+main() {
+  if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 <ignition-file>"
+    exit 1
+  fi
+
+  for cmd in wget gpg; do
+    has_cmd "$cmd" || err_exit "Install $cmd first"
+  done
+
+  local IGNITION_FILE
+  IGNITION_FILE="$1"
+
+  echo "Creating Flatcar VM ..."
+
+  wget_if_not_exists flatcar_production_qemu.sh https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_qemu.sh
+  wget_if_not_exists flatcar_production_qemu.sh.sig https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_qemu.sh.sig
+  wget_if_not_exists flatcar_production_qemu_image.img https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_qemu_image.img
+  wget_if_not_exists flatcar_production_qemu_image.img.sig https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_qemu_image.img.sig
+
+  gpg --verify flatcar_production_qemu.sh.sig
+  gpg --verify flatcar_production_qemu_image.img.sig
+  chmod +x flatcar_production_qemu.sh
+  ./flatcar_production_qemu.sh -a ~/.ssh/id_ed25519.pub -i "$IGNITION_FILE" -- -nographic
+}
+
+main "$@"

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Create WAN bridge
+sudo ip link add name br-wan type bridge
+sudo ip link set dev br-wan up
+
+# Add physical interface to WAN bridge
+sudo ip link set dev eth0 master br-wan
+sudo ip link set dev eth0 up
+
+# Get DHCP IP for the bridge (so host can access network)
+sudo dhclient br-wan
+
+# Enable forwarding
+echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward

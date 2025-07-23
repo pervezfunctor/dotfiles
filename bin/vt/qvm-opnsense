@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# OPNsense VM with Direct QEMU - No Libvirt
+set -e
+
+VM_NAME="${1:-opnsense}"
+VM_MEMORY="${2:-2048}"
+VM_VCPUS="${3:-2}"
+DISK_SIZE="${4:-20G}"
+
+IMAGE_DIR="/var/lib/qemu/images"
+VM_DIR="$IMAGE_DIR/$VM_NAME"
+
+echo "Creating OPNsense VM: $VM_NAME"
+
+# Create directories
+sudo mkdir -p "$IMAGE_DIR"
+sudo mkdir -p "$VM_DIR"
+
+# Download OPNsense ISO
+OPNSENSE_ISO="$IMAGE_DIR/OPNsense-24.7-dvd-amd64.iso"
+if [ ! -f "$OPNSENSE_ISO" ]; then
+    echo "Downloading OPNsense ISO..."
+    wget -O "/tmp/OPNsense-24.7-dvd-amd64.iso" \
+        "https://mirror.ams1.nl.leaseweb.net/opnsense/releases/24.7/OPNsense-24.7-dvd-amd64.iso"
+    sudo mv "/tmp/OPNsense-24.7-dvd-amd64.iso" "$OPNSENSE_ISO"
+fi
+
+# Create VM disk
+echo "Creating VM disk..."
+sudo qemu-img create -f qcow2 "$VM_DIR/opnsense-disk.qcow2" "$DISK_SIZE"
+
+# Generate MAC addresses
+WAN_MAC=$(printf '52:54:00:%02x:%02x:%02x' $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)))
+LAN_MAC=$(printf '52:54:00:%02x:%02x:%02x' $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)))
+
+echo "WAN MAC: $WAN_MAC"
+echo "LAN MAC: $LAN_MAC"
+
+# Create startup script for OPNsense VM
+cat > "$VM_DIR/start-opnsense.sh" << EOF
+#!/bin/bash
+
+# Start OPNsense VM with direct QEMU
+sudo qemu-system-x86_64 \\
+    -enable-kvm \\
+    -m $VM_MEMORY \\
+    -smp $VM_VCPUS \\
+    -drive file=$VM_DIR/opnsense-disk.qcow2,format=qcow2,if=virtio \\
+    -drive file=$OPNSENSE_ISO,media=cdrom \\
+    -netdev tap,id=wan,ifname=tap-opn-wan,script=no,downscript=no \\
+    -device virtio-net-pci,netdev=wan,mac=$WAN_MAC \\
+    -netdev tap,id=lan,ifname=tap-opn-lan,script=no,downscript=no \\
+    -device virtio-net-pci,netdev=lan,mac=$LAN_MAC \\
+    -vnc :1 \\
+    -serial stdio \\
+    -name "$VM_NAME" \\
+    -daemonize \\
+    -pidfile $VM_DIR/opnsense.pid
+
+echo "OPNsense VM started with PID \$(cat $VM_DIR/opnsense.pid)"
+echo "Connect via VNC on localhost:5901"
+EOF
+
+chmod +x "$VM_DIR/start-opnsense.sh"
+
+echo "OPNsense VM setup complete!"
+echo "Start the VM with: $VM_DIR/start-opnsense.sh"
+echo ""
+echo "Network Configuration:"
+echo "- WAN interface (MAC: $WAN_MAC) will get DHCP from your router"
+echo "- LAN interface (MAC: $LAN_MAC) should be configured with static IP"
+echo "- Suggested LAN IP: 192.168.100.1/24"
