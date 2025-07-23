@@ -427,7 +427,7 @@ parse_args() {
     done
 
     # Validate required arguments
-    if [[ -z "$DISTRO" ]]; then
+    if [[ -z "${DISTRO:-}" ]]; then
         fail "Distribution is required. Use --distro option."
         usage
         exit 1

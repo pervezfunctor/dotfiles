@@ -313,7 +313,7 @@ parse_args() {
         esac
     done
 
-    if [[ -z "$DISTRO" ]]; then
+    if [[ -z "${DISTRO:-}" ]]; then
         fail "Distribution is required. Use --distro option."
         usage
         exit 1

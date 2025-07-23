@@ -316,7 +316,7 @@ parse_args() {
         esac
     done
 
-    if [[ -z "$DISTRO" ]]; then
+    if [[ -z "${DISTRO:-}" ]]; then
         DISTRO="ubuntu"
     fi
 
