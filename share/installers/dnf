@@ -67,7 +67,7 @@ fedora_packages() {
 
     si git-core gh git-delta unzip wget curl trash-cli tar stow gcc make file \
         gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate \
-        cheat libsecret net-tools iproute2 nmap
+        cheat libsecret net-tools iproute nmap
 
     has_cmd tldr && tldr --update
 

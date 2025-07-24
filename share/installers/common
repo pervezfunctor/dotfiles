@@ -780,7 +780,7 @@ shell-ui_groupstall() {
 
 dev_groupstall() {
     min_groupstall
-    cli-slim_install
+    shell-slim_install
 
     vscode_install
     fonts_install
