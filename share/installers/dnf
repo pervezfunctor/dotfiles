@@ -308,7 +308,8 @@ vm-ui_install() {
 cockpit_install() {
     has_cmd cockpit && return 1
 
-    slog "Installing cockpit" si cockpit cockpit-machines cockpit-podman \
+    slog "Installing cockpit"
+    si cockpit cockpit-machines cockpit-podman \
         cockpit-storaged cockpit-bridge cockpit-networkmanager cockpit-selinux \
         cockpit-system firewalld cockpit-packagekit
 
