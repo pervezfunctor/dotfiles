@@ -204,7 +204,7 @@ bash_config_check() {
     bash_config_exists || warn "bash config is not setup correctly"
 }
 
-bash_config_install() {
+bash_confstall() {
     slog "Configuring bash"
 
     if ! bash_config_exists; then
@@ -221,7 +221,7 @@ zsh_config_exists() {
     grep -q '\.ilm/share/dot-zshrc' ~/.zshrc 2>/dev/null || grep -q 'source ${DOT_DIR}/share/dot-zshrc' ~/.zshrc 2>/dev/null
 }
 
-zsh-min_config_install() {
+zsh-min_confstall() {
     if ! file_exists ~/.zshrc; then
         warn "$HOME/.zshrc doesn't exist, skipping zsh config"
         return
@@ -239,7 +239,7 @@ zsh-min_config_install() {
     slog "bash config done!"
 }
 
-zsh_config_install() {
+zsh_confstall() {
     slog "zsh config"
 
     srm "$HOME/.zshrc"
@@ -258,7 +258,7 @@ zsh_config_install() {
     slog "zsh config done!"
 }
 
-tmux_config_install() {
+tmux_confstall() {
     slog "tmux config"
 
     srm "$XDG_CONFIG_HOME/tmux"
@@ -324,7 +324,7 @@ vscode-all-extensions_install() {
     slog "vscode extensions installation done!"
 }
 
-emacs-doom_config_install() {
+emacs-doom_confstall() {
     dir_exists "$XDG_CONFIG_HOME/doom" && return 0
 
     slog "Installing doom"
@@ -341,7 +341,7 @@ emacs-doom_config_install() {
     has_cmd update-locale && sudo update-locale LANG=en_US.UTF8
 }
 
-emacs_config_install() {
+emacs_confstall() {
     slog "emacs config"
 
     # srm $XDG_CONFIG_HOME/.emacs
@@ -353,7 +353,7 @@ emacs_config_install() {
     slog "emacs config done!"
 }
 
-emacs-slim_config_install() {
+emacs-slim_confstall() {
     slog "Installing slim emacs"
 
     srm ~/.emacs
@@ -362,7 +362,7 @@ emacs-slim_config_install() {
     slog "emacs slim installation done!"
 }
 
-nvim_config_install() {
+nvim_confstall() {
     slog "nvim config"
 
     frm "$XDG_CONFIG_HOME/nvim.bak"
@@ -381,7 +381,7 @@ git_conf() {
     git config --global "$@"
 }
 
-git_config_install() {
+git_confstall() {
     if ! has_cmd git; then
         warn "git not installed, skipping git config"
         return 1
@@ -412,7 +412,7 @@ git_config_install() {
     slog "git configuration done!"
 }
 
-vscode_config_install() {
+vscode_confstall() {
     slog "vscode config"
 
     if is_mac; then
@@ -431,37 +431,37 @@ vscode_config_install() {
     slog "vscode config done!"
 }
 
-alacritty_config_install() {
+alacritty_confstall() {
     slog "alacritty config"
     stowgf alacritty
     slog "alacritty config done!"
 }
 
-wezterm_config_install() {
+wezterm_confstall() {
     slog "wezterm config"
     stowgf wezterm
     slog "wezterm config done!"
 }
 
-kitty_config_install() {
+kitty_confstall() {
     slog "kitty config"
     stowgf kitty
     slog "kitty config done!"
 }
 
-ghostty_config_install() {
+ghostty_confstall() {
     slog "ghostty config"
     stowgf ghostty
     slog "ghostty config done!"
 }
 
-atuin_config_install() {
+atuin_confstall() {
     slog "atuin config"
     stowgf atuin
     slog "atuin config done!"
 }
 
-yazi_config_install() {
+yazi_confstall() {
     slog "yazi config"
 
     srm "$XDG_CONFIG_HOME/yazi"
@@ -479,20 +479,20 @@ yazi_config_install() {
     slog "yazi config done!"
 }
 
-config_install() {
-    shell_config_install
+confstall() {
+    shell_confstall
 
-    has_cmd atuin && atuin_config_install
-    has_cmd yazi && yazi_config_install
+    has_cmd atuin && atuin_confstall
+    has_cmd yazi && yazi_confstall
 
-    has_cmd alacritty && alacritty_config_install
-    has_cmd foot && foot_config_install
-    has_cmd ghostty && ghostty_config_install
-    has_cmd kitty && kitty_config_install
-    has_cmd wezterm && wezterm_config_install
+    has_cmd alacritty && alacritty_confstall
+    has_cmd foot && foot_confstall
+    has_cmd ghostty && ghostty_confstall
+    has_cmd kitty && kitty_confstall
+    has_cmd wezterm && wezterm_confstall
 
-    has_cmd aerospace && aerospace_config_install
-    has_cmd amethyst && amethyst_config_install
+    has_cmd aerospace && aerospace_confstall
+    has_cmd amethyst && amethyst_confstall
 }
 
 poetry_install() {
@@ -550,26 +550,26 @@ pyenv-miniconda_install() {
     cmd_check conda
 }
 
-shell_config_install() {
-    bash_config_install
-    has_cmd code && vscode_config_install
+shell_confstall() {
+    bash_confstall
+    has_cmd code && vscode_confstall
 
     if ! has_cmd stow; then
         warn "stow not installed, skipping config"
         return 1
     fi
 
-    has_cmd git && git_config_install
-    has_cmd nvim && nvim_config_install
-    has_cmd tmux && tmux_config_install
-    has_cmd zsh && zsh_config_install
+    has_cmd git && git_confstall
+    has_cmd nvim && nvim_confstall
+    has_cmd tmux && tmux_confstall
+    has_cmd zsh && zsh_confstall
 
     has_cmd emacs || return 0
 
     local emacs_version
     emacs_version=$(emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1)
     if [ "$emacs_version" -gt 28 ]; then
-        emacs_config_install
+        emacs_confstall
     fi
 }
 
@@ -714,8 +714,8 @@ base_groupstall() {
     has_cmd core_install && core_install
     dotfiles_install
 
-    git_config_install
-    has_cmd bash && bash_config_install
+    git_confstall
+    has_cmd bash && bash_confstall
 
     base-group_check
 }
@@ -748,7 +748,7 @@ shell-slim_groupstall() {
     min_groupstall
     shell-slim_install
 
-    has_cmd zsh && zsh_config_install
+    has_cmd zsh && zsh_confstall
 
     shell-slim-group_check
 }
@@ -763,11 +763,11 @@ shell_groupstall() {
     min_groupstall
     shell_install
 
-    bash_config_install
-    has_cmd zsh && zsh_config_install
-    has_cmd nvim && nvim_config_install
-    has_cmd tmux && tmux_config_install
-    has_cmd yazi && yazi_config_install
+    bash_confstall
+    has_cmd zsh && zsh_confstall
+    has_cmd nvim && nvim_confstall
+    has_cmd tmux && tmux_confstall
+    has_cmd yazi && yazi_confstall
 
     shell-group_check
 }

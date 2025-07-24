@@ -92,7 +92,7 @@ multipass_install() {
 vscode_install() {
     vscode_bin_install
     vscode-extensions_install
-    vscode_config_install
+    vscode_confstall
 }
 
 prog-group_check() {
@@ -120,7 +120,7 @@ all_groupstall() {
 
     emacs_bin_install
 
-    emacs_config_install
+    emacs_confstall
 
     all-group_check
 }
@@ -163,7 +163,7 @@ docker_install() {
     sudo sh /tmp/get-docker.sh
     frm /tmp/get-docker.sh
 
-    docker_config_install
+    docker_confstall
 
     slog "Docker installation done!"
 }
@@ -196,7 +196,7 @@ permissive_selinux() {
     fi
 }
 
-foot_config_install() {
+foot_confstall() {
     slog "foot config"
     stowgf foot
     slog "foot config done!"
@@ -269,11 +269,11 @@ hyprland_install() {
 
     hyprland_bin_install
 
-    hyprland_config_install
-    hypr-waybar_config_install
-    kitty_config_install
-    rofi_config_install
-    wlogout_config_install
+    hyprland_confstall
+    hypr-waybar_confstall
+    kitty_confstall
+    rofi_confstall
+    wlogout_confstall
 
     slog "hyprland installation done!"
 }

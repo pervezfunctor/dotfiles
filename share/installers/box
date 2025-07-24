@@ -79,14 +79,14 @@ terminal_boxstall() {
     terminal_bin_install
     jetbrains_nerd_font_install
 
-    has_cmd ghostty && ghostty_config_install
-    has_cmd kitty && kitty_config_install
-    has_cmd alacritty && alacritty_config_install
+    has_cmd ghostty && ghostty_confstall
+    has_cmd kitty && kitty_confstall
+    has_cmd alacritty && alacritty_confstall
 
     if has_cmd flatpak; then
         flathub_install
         ptyxis_install
-        # ptyxis_config_install
+        # ptyxis_confstall
     fi
 }
 
@@ -105,7 +105,7 @@ slimbox_base() {
     "$1_packages"
 
     dotfiles_install
-    bash_config_install
+    bash_confstall
     starship_install
 
     dir_exists "$DOT_DIR" || err_exit "$DOT_DIR doesn't exist, Installation failed."

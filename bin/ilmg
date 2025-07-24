@@ -3,21 +3,25 @@
 # shellcheck disable=SC1090
 source <(curl -sSL https://is.gd/anumof)
 
-INSTALL_OPTIONS=("dev" "nix" "shell-slim" "shell" "shell-ui" "vm" "vm-ui" "sway" "hyprland")
+# all options
+# "base" "min" "shell-slim" "shell-slim-ui" "shell" "shell-ui" "dev" "vbox-dev" "vm" "vm-ui" "prog" "all" "nix" "sway" "hyprland" "slimbox" "box" "fullbox" "dbox" "nixbox" "tw-wslbox" "nixos-wslbox" "wslbox" "wsl" "centos-wsl" "centos-fast" "generic-ct" "generic" "fedora-atomic-tbox" "ublue" "fedora-atomic" "fedora-layered" "dbox-docker-dev" "box-default" "box-default-atomic"
+
+INSTALL_OPTIONS=("dev" "nix" "shell-slim" "shell" "shell-ui" "vm" "vm-ui")
 
 help() {
     echo "Usage: $0 [OPTION]"
     echo "Options:"
-    echo "  dev         shell, vscode, docker and flatpak apps."
-    echo "  nix         nix with home-manager"
-    echo "  shell-slim  essential shell packages."
-    echo "  shell       min and shell tools and config for zsh, tmux, neovim."
-    echo "  shell-ui    shell, fonts and modern terminal."
-    echo "  vm          vm tools(libvirt for linux and orbstack for macos)."
-    echo "  vm-ui       vm and virt-manager and gnome-boxes."
-    echo "  sway        sway desktop on fedora and tumbleweed."
-    echo "  hyprland    hyprland desktop on fedora and tumbleweed."
-    echo "  help        shows this help."
+    echo "  dev             shell, vscode, docker and terminal."
+    echo "  nix             nix with home-manager"
+    echo "  shell-slim      essential shell packages."
+    echo "  shell-slim-ui   essential shell packages with modern terminal."
+    echo "  shell           min and shell tools and config for zsh, tmux, neovim."
+    echo "  shell-ui        shell, fonts and modern terminal."
+    echo "  vm              vm tools(libvirt for linux and orbstack for macos)."
+    echo "  vm-ui           vm and virt-manager and gnome-boxes."
+    echo "  sway            sway desktop on fedora and tumbleweed."
+    echo "  hyprland        hyprland desktop on fedora and tumbleweed."
+    echo "  help            shows this help."
     echo ""
 }
 
@@ -33,13 +37,13 @@ main() {
     fi
 
     local SELECTED_OPTION
-    SELECTED_OPTION=$(igum choose "${INSTALL_OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
+    SELECTED_OPTION=$(gum choose --header "Choose option to install" "${INSTALL_OPTIONS[@]}")
 
     if [[ -n "$SELECTED_OPTION" ]]; then
         echo ""
-        slog "Selected: ${SELECTED_OPTION}. Installing.."
+        slog "Selected: $SELECTED_OPTION. Installing..."
         echo ""
-        "${1}_groupstall"
+        "${SELECTED_OPTION}_groupstall"
         slog "Installation complete."
     else
         slog "No option selected."

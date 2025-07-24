@@ -24,5 +24,5 @@ is_desktop || return 0
 # smd ~/.local/share/fonts
 # jetbrains_nerd_font_install
 # kitty_bin_install
-# kitty_config_install
+# kitty_confstall
 # vscode_flatpak_install

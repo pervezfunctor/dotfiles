@@ -109,7 +109,7 @@ incus_install() {
     slog "Installing incus"
 
     si incus
-    incus_config_install
+    incus_confstall
 
     slog "incus installation done!"
 }

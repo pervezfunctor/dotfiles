@@ -195,7 +195,7 @@ vm_install() {
         qemu-char-spice qemu-audio-spice qemu-device-usb-redirect \
         qemu-device-display-virtio-vga cloud-utils
 
-    libvirt_config_install
+    libvirt_confstall
 
     cockpit_install
 
@@ -208,7 +208,7 @@ docker_install() {
     slog "Installing docker"
 
     si docker docker-compose
-    docker_config_install
+    docker_confstall
 
     slog "docker installation done!"
 }
@@ -219,7 +219,7 @@ incus_install() {
     slog "Installing incus"
 
     si incus qemu-full bridge-utils
-    incus_config_install
+    incus_confstall
 
     slog "incus installation done!"
 }

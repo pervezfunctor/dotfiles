@@ -58,23 +58,23 @@ if ! is_mac; then
   cmd_check atomic_distrobox_install
   cmd_check apps_install
   cmd_check slim-apps_install
-  cmd_check gnome_config_install
+  cmd_check gnome_confstall
 
-  cmd_check incus_config_install
-  cmd_check libvirt_config_install
-  cmd_check docker_config_install
+  cmd_check incus_confstall
+  cmd_check libvirt_confstall
+  cmd_check docker_confstall
 fi
 
-cmd_check git_config_install
-cmd_check bash_config_install
-cmd_check zsh-min_config_install
-cmd_check zsh_config_install
-cmd_check ghostty_config_install
-cmd_check wezterm_config_install
-cmd_check kitty_config_install
-cmd_check tmux_config_install
-cmd_check emacs_config_install
-cmd_check nvim_config_install
+cmd_check git_confstall
+cmd_check bash_confstall
+cmd_check zsh-min_confstall
+cmd_check zsh_confstall
+cmd_check ghostty_confstall
+cmd_check wezterm_confstall
+cmd_check kitty_confstall
+cmd_check tmux_confstall
+cmd_check emacs_confstall
+cmd_check nvim_confstall
 
 cmd_check generic_groupstall
 

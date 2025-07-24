@@ -54,7 +54,7 @@ ublue_code_setup() {
     fi
 
     vscode-extensions_install
-    vscode_config_install
+    vscode_confstall
 
     slog "code setup done!"
 }
@@ -72,9 +72,9 @@ config_setup() {
 
     slog "config setup"
 
-    bash_config_install
-    zsh_config_install
-    tmux_config_install
+    bash_confstall
+    zsh_confstall
+    tmux_confstall
 
     slog "config setup done!"
 }
@@ -103,8 +103,8 @@ main() {
         slog "Setting up ublue for myself"
         ublue_cpp_setup
         ublue_emacs_setup
-        nvim_config_install
-        git_config_install
+        nvim_confstall
+        git_confstall
     fi
 }
 

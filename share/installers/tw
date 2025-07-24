@@ -215,7 +215,7 @@ docker_install() {
     slog "Installing docker"
 
     si docker docker-compose docker-compose-switch
-    docker_config_install
+    docker_confstall
 
     portainer_install
 
@@ -228,7 +228,7 @@ incus_install() {
     slog "Installing incus"
 
     si incus qemu-kvm qemu-tools bridge-utils
-    incus_config_install
+    incus_confstall
 
     slog "incus installation done!"
 }

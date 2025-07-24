@@ -19,19 +19,19 @@ macos_settings_install() {
     defaults write -g NSWindowShouldDragOnGesture -bool true
 }
 
-amethyst_config_install() {
+amethyst_confstall() {
     slog "amethyst config"
     stowdf amethyst
     slog "amethyst config done!"
 
 }
 
-aerospace_config_install() {
+aerospace_confstall() {
     slog "aerospace config"
     stowgf aerospace
 }
 
-macos_config_install() {
+macos_confstall() {
     stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R aerospace
     stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R amethyst
 }
@@ -55,7 +55,7 @@ ui_install() {
 
 core_install() {
     brew_install
-    zsh_config_install
+    zsh_confstall
     bi mas coreutils bash curl wget trash tree unzip coreutils gum stow \
         nmap gawk
 }

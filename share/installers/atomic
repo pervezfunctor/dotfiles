@@ -149,7 +149,7 @@ kitty_bin_install() {
 
 kitty_install() {
     kitty_bin_install
-    kitty_config_install
+    kitty_confstall
 }
 
 ghostty_bin_install() {
@@ -168,7 +168,7 @@ ghostty_bin_install() {
 
 ghostty_install() {
     ghostty_bin_install
-    ghostty_config_install
+    ghostty_confstall
 }
 
 atomic_distrobox_install() {
@@ -229,7 +229,7 @@ generic-ct_groupstall() {
     dotfiles_install
 
     starship_install
-    bash_config_install
+    bash_confstall
 }
 
 generic_groupstall() {
@@ -311,7 +311,7 @@ gnome_flatpaks_install() {
 }
 
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
-gnome_config_install() {
+gnome_confstall() {
     if ! is_gnome; then
         warn "Not running GNOME, skipping GNOME config"
         return 1
@@ -370,11 +370,11 @@ ublue_groupstall() {
     apps-slim_install
 
     vscode-extensions_install
-    vscode_config_install
-    git_config_install
-    bash_config_install
-    tmux_config_install
-    nvim_config_install
+    vscode_confstall
+    git_confstall
+    bash_confstall
+    tmux_confstall
+    nvim_confstall
 
     slog "ublue setup done!"
 }
@@ -392,8 +392,8 @@ fedora-atomic_groupstall() {
     apps-slim_install
     fpi org.gnu.emacs
 
-    is_gnome && gnome_config_install
-    is_sway && sway_config_install
+    is_gnome && gnome_confstall
+    is_sway && sway_confstall
 
     slog "Setting up default distrobox for development"
 
@@ -417,18 +417,18 @@ fedora-layered_groupstall() {
     pixi_slim_shell_install
 
     dotfiles_install
-    bash_config_install
+    bash_confstall
     zsh_boxstall
 
     fonts_install
     atomic_distrobox_install
-    vscode_config_install
-    # docker_config_install
+    vscode_confstall
+    # docker_confstall
 
     apps-slim_install
 
-    is_gnome && gnome_config_install
-    is_sway && sway_config_install
+    is_gnome && gnome_confstall
+    is_sway && sway_confstall
 
     slog "Fedora layered setup done! Reboot your system."
 }
@@ -438,7 +438,7 @@ vscode_flatpak_install() {
     flatpak install com.visualstudio.code.tool.podman
     alias code="flatpak run com.visualstudio.code"
     xargs -L 1 flatpak run com.visualstudio.code --install-extension <"$DOT_DIR/extras/vscode/extensions/default"
-    vscode-flatpak_config_install
+    vscode-flatpak_confstall
 }
 
 ptyxis_install() {
@@ -513,7 +513,7 @@ more_apps_install() {
     # fpi com.google.Chrome
 }
 
-incus_config_install() {
+incus_confstall() {
     slog "incus config"
 
     if ! has_cmd incus; then
@@ -545,7 +545,7 @@ incus_config_install() {
     slog "incus config done! Re-login or reboot for group changes to apply."
 }
 
-libvirt_config_install() {
+libvirt_confstall() {
     sudo systemctl enable --now libvirtd
     sudo systemctl enable --now libvirtd.socket
     sudo systemctl enable --now virtlogd
@@ -611,7 +611,7 @@ rust_install() {
     cmd_check rustc
 }
 
-docker_config_install() {
+docker_confstall() {
     if ! has_cmd docker; then
         warn "docker not installed, skipping docker post install configuration"
         return 1
@@ -750,7 +750,7 @@ starship_install() {
     curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
 }
 
-vscode-flatpak_config_install() {
+vscode-flatpak_confstall() {
     slog "vscode config"
 
     smd ~/.var/app/com.visualstudio.code/config/Code/User
@@ -759,28 +759,28 @@ vscode-flatpak_config_install() {
     slog "vscode config done!"
 }
 
-sway-waybar_config_install() {
+sway-waybar_confstall() {
     slog "waybar config"
     has_cmd waybar || return 1
     stowgf waybar
     slog "waybar config done!"
 }
 
-wlogout_config_install() {
+wlogout_confstall() {
     slog "wlogout config"
     has_cmd wlogout || return 1
     stowgf wlogout
     slog "wlogout config done!"
 }
 
-sway_config_install() {
+sway_confstall() {
     has_cmd sway || return 1
     slog "sway config"
     stowgf sway
     slog "sway config done!"
 }
 
-rofi_config_install() {
+rofi_confstall() {
     has_cmd rofi || return 1
 
     slog "rofi config"
@@ -792,7 +792,7 @@ dbox-docker-dev_groupstall() {
     is_ubuntu || err_exit "This script is only for Ubuntu"
     has_cmd docker || err_exit "This script requires docker"
 
-    docker_config_install
+    docker_confstall
 
     min_groupstall
     si firefox gnome-keyring wl-clipboard libsecret
@@ -800,7 +800,7 @@ dbox-docker-dev_groupstall() {
     starship_install
     vscode_install
 
-    has_cmd zsh && zsh_config_install
+    has_cmd zsh && zsh_confstall
 }
 
 github_user_setup() {
@@ -883,16 +883,16 @@ dbox_with_home() {
     slog "distrobox ${osname} created!"
 }
 
-sway-full_config_install() {
-    sway-waybar_config_install
-    foot_config_install
-    kitty_config_install
-    sway_config_install
-    rofi_config_install
-    wlogout_config_install
+sway-full_confstall() {
+    sway-waybar_confstall
+    foot_confstall
+    kitty_confstall
+    sway_confstall
+    rofi_confstall
+    wlogout_confstall
 }
 
-hypr-waybar_config_install() {
+hypr-waybar_confstall() {
     has_cmd waybar || return 1
 
     slog "waybar config"
@@ -900,13 +900,13 @@ hypr-waybar_config_install() {
     slog "waybar config done!"
 }
 
-hyprland_config_install() {
+hyprland_confstall() {
     slog "hypr config install"
 
-    hypr-waybar_config_install
-    wlogout_config_install
-    rofi_config_install
-    kitty_config_install
+    hypr-waybar_confstall
+    wlogout_confstall
+    rofi_confstall
+    kitty_confstall
 
     slog "hypr config done!"
 }

@@ -309,7 +309,7 @@ vm_install() {
         virgl-server qemu-utils spice-client-gtk spice-vdagent \
         coreos-installer cloud-image-utils
 
-    libvirt_config_install
+    libvirt_confstall
 
     cockpit_install
 }
@@ -341,7 +341,7 @@ incus_install() {
     fi
 
     si incus bridge-utils
-    incus_config_install
+    incus_confstall
 
     slog "incus installation done!"
 }

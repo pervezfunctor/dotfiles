@@ -331,7 +331,7 @@ docker_install() {
     si docker-ce docker-ce-cli containerd.io docker-buildx-plugin \
         docker-compose-plugin
 
-    docker_config_install
+    docker_confstall
 
     portainer_install
 
@@ -351,7 +351,7 @@ incus_install() {
     fi
 
     si incus qemu-kvm qemu-img bridge-utils incus-agent
-    incus_config_install
+    incus_confstall
 
     slog "incus installation done!"
 }
@@ -370,7 +370,7 @@ vm_install() {
         qemu-device-display-virtio-gpu qemu-user-binfmt qemu-user-static \
         qemu-system-x86_64 coreos-installer butane cloud-utils
 
-    libvirt_config_install
+    libvirt_confstall
 
     cockpit_install
 
