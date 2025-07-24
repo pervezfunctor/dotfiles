@@ -12,14 +12,6 @@ Installs vscode, docker and shell tools
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- dev
 ```
 
-## Windows
-
-Pick and choose what you want to install.
-
-```powershell
-iwr -useb https://is.gd/vefawu | iex
-```
-
 ## MacOS
 
 Installs homebrew and essential unix tools.
@@ -27,6 +19,14 @@ Installs homebrew and essential unix tools.
 ```bash
 curl https://pkgx.sh | sh
 pkgx bash -c "$(curl -sSL https://is.gd/egitif)"
+```
+
+## Windows
+
+Pick and choose what you want to install.
+
+```powershell
+iwr -useb https://is.gd/vefawu | iex
 ```
 
 ### Linux
@@ -136,6 +136,10 @@ This should work on almost any linux system/container even without sudo privileg
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- generic
 ```
 
+### NixOS
+
+**@TODO**
+
 
 ## Linux Development Container/VM
 
@@ -148,7 +152,7 @@ bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" --
 You could later install additional development tools with
 
 ```bash
-ilmi zsh tmux nvim emacs # pick any
+ilmb zsh tmux nvim emacs # pick any
 ```
 
 If you are in distrobox or a virtual machine with desktop environment, you could install terminal with
@@ -163,7 +167,9 @@ You might be able to install vscode with
 ilmi vscode
 ```
 
-## Proxmox setup WIP
+## Proxmox setup
+
+**@TODO**
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/epesoq)"
