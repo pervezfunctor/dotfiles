@@ -18,7 +18,7 @@ dck_exists() {
   docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"
 }
 
-create_all() {
+all_create() {
   check_dck
 
   slog "Creating Docker containers for various Linux distributions..."
@@ -39,7 +39,7 @@ create_all() {
   slog "You can access them using: docker exec -it <container-name> /bin/bash"
 }
 
-delete_all() {
+all_delete() {
   check_dck
 
   slog "Deleting all containers..."
@@ -54,7 +54,7 @@ delete_all() {
   success "All containers deleted successfully!"
 }
 
-start_all() {
+all_start() {
   check_dck
 
   slog "Starting all containers..."
@@ -69,7 +69,7 @@ start_all() {
   success "All containers started successfully!"
 }
 
-stop_all() {
+all_stop() {
   check_dck
 
   slog "Stopping all containers..."
@@ -84,7 +84,7 @@ stop_all() {
   success "All containers stopped successfully!"
 }
 
-restart_all() {
+all_restart() {
   check_dck
 
   slog "Restarting all containers..."

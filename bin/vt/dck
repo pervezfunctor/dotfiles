@@ -472,7 +472,7 @@ pull)
         usage
         exit 1
     }
-    pull_image "$container_name"
+    dck_pull_image "$container_name"
     ;;
 images)
     dck_list
