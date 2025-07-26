@@ -1,0 +1,35 @@
+
+module my-qemusystemx86 1.0;
+
+require {
+	type svirt_tmp_t;
+	type system_dbusd_var_run_t;
+	type svirt_tmpfs_t;
+	type xserver_exec_t;
+	type svirt_image_t;
+	type svirt_t;
+	type system_dbusd_t;
+	class sock_file write;
+	class file { execute getattr map };
+	class process execmem;
+	class unix_stream_socket connectto;
+}
+
+#============= svirt_t ==============
+
+#!!!! This avc can be allowed using the boolean 'virt_use_execmem'
+allow svirt_t self:process execmem;
+allow svirt_t svirt_image_t:file execute;
+
+#!!!! This avc can be allowed using the boolean 'domain_can_mmap_files'
+allow svirt_t svirt_tmp_t:file map;
+
+#!!!! This avc is allowed in the current policy
+allow svirt_t svirt_tmpfs_t:file execute;
+
+#!!!! This avc is allowed in the current policy
+allow svirt_t system_dbusd_t:unix_stream_socket connectto;
+
+#!!!! This avc is allowed in the current policy
+allow svirt_t system_dbusd_var_run_t:sock_file write;
+allow svirt_t xserver_exec_t:file getattr;

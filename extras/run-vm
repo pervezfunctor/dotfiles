@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Build your target bootc image
+sudo podman build -t localhost/sway-bootc .
+
+# Clone and build bootc-image-builder if needed
+if [ ! -d bootc ]; then
+  git clone https://github.com/containers/bootc.git
+fi
+
+if ! sudo podman image exists localhost/bootc-image-builder; then
+  sudo podman build -t localhost/bootc-image-builder ./bootc/image-builder
+fi
+
+# Run bootc-image-builder entirely inside container
+sudo podman run --pull=never --rm -it \
+  -v "$PWD":/build:z \
+  -v /var/lib/containers/storage:/var/lib/containers/storage \
+  --privileged \
+  localhost/bootc-image-builder \
+  --type qcow2 \
+  --output /build/output \
+  localhost/sway-bootc
+
+# Boot with QEMU
+qemu-system-x86_64 \
+  -m 4G \
+  -smp 4 \
+  -drive file=./output/disk.qcow2,format=qcow2 \
+  -enable-kvm \
+  -netdev user,id=net0 \
+  -device virtio-net,netdev=net0

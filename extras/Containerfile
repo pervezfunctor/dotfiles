@@ -1,0 +1,29 @@
+# Containerfile
+FROM quay.io/fedora/fedora-bootc:42
+LABEL bootc.version="42"
+LABEL com.redhat.bootc.build="true"
+
+RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
+  echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+
+RUN dnf5 install -y \
+  sway \
+  xorg-x11-server-Xwayland \
+  gdm \
+  dbus \
+  foot \
+  network-manager-applet \
+  polkit \
+  gnome-keyring \
+  pipewire pipewire-pulseaudio wireplumber \
+  gsettings-desktop-schemas \
+  glibc-langpack-en \
+  && dnf5 clean all
+
+RUN systemctl enable gdm.service
+LABEL bootc.mode="baremetal"
+ENV LANG=en_US.UTF-8
+
+RUN mkdir -p /var/spool/mail && \
+  useradd -m -G wheel pervez && \
+  echo "pervez:program" | chpasswd
