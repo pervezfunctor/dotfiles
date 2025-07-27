@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 # shellcheck disable=SC1090
 source <(curl -sSL https://is.gd/anumof)
 
 readonly DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-
 readonly COMMUNITY_SCRIPTS_BASE="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main"
 
 declare -g CT_TEMPLATES=0
@@ -15,7 +16,6 @@ declare -g ALL=0
 
 check_proxmox() {
     file_exists "/etc/pve/local/pve-ssl.pem" && return 0
-
     error "This script is designed to run on Proxmox VE"
     exit 1
 }
@@ -30,7 +30,6 @@ post-install_install() {
 
 ct-templates_install() {
     slog "Installing container templates..."
-
     local templates=(
         "ubuntu.*standard"
         "debian.*standard"
@@ -56,10 +55,8 @@ ct-templates_install() {
 
 vm-templates_install() {
     slog "Installing VM templates..."
-
     local current_dir
     current_dir="$(dirname "$0")"
-
     local distros=("debian" "fedora" "ubuntu" "alpine" "centos")
 
     for distro in "${distros[@]}"; do
@@ -74,7 +71,6 @@ vm-templates_install() {
 
 ct-all_install() {
     slog "Creating containers from all templates..."
-
     local template_dir="/var/lib/vz/template/cache"
 
     if ! dir_exists "$template_dir"; then
@@ -87,7 +83,6 @@ ct-all_install() {
             local template_name
             template_name=$(basename "$template")
             slog "Creating LXC from template: $template_name"
-
             create_lxc_from_template "$template_name" || warn "Failed to create LXC from $template_name"
         fi
     done
@@ -95,9 +90,8 @@ ct-all_install() {
 
 vm-all_install() {
     slog "Creating VMs from all templates..."
-
     local templates=(
-        "211:201:debian-vm" # 201 etc are template vm ids
+        "211:201:debian-vm"
         "212:202:fedora-vm"
         "213:203:ubuntu-vm"
         "214:204:alpine-vm"
@@ -106,7 +100,6 @@ vm-all_install() {
 
     for template_info in "${templates[@]}"; do
         IFS=':' read -r source_id dest_id vm_name <<<"$template_info"
-
         if qm status "$source_id" >/dev/null 2>&1; then
             slog "Cloning VM $source_id to $dest_id ($vm_name)"
             qm clone "$source_id" "$dest_id" --name "$vm_name" || warn "Failed to clone VM $source_id"
@@ -130,18 +123,16 @@ systools_install() {
     si smartmontools zfsutils-linux rsync dialog \
         proxmox-backup-client restic ethtool nvme-cli lsof htop pciutils usbutils \
         lm-sensors jq numactl udisks2 fio stress
-    # si powertop live-build cpufrequtils sanoid
 }
 
 core_install() {
     slog "Installing core components..."
-
     local packages=("git-core" "micro" "zsh-theme-powerlevel9k" "zsh" "curl" "wget")
     si "${packages[@]}"
 
-    if ! dir_exists ~/.ilm; then
+    if ! dir_exists "$DOT_DIR"; then
         slog "Cloning dotfiles..."
-        git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm || {
+        git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR" || {
             error "Failed to clone dotfiles"
             return 1
         }
@@ -156,9 +147,9 @@ core_install() {
     fi
 
     if ! grep -q "source ~/.ilm/share/bashrc" ~/.bashrc; then
-        echo "source ~/.ilm/share/bashrc" >~/.bashrc
+        echo "source ~/.ilm/share/bashrc" >>~/.bashrc
     fi
-    ln -sf ~/.ilm/share/dot-zshrc ~/.zshrc
+    ln -sf "$DOT_DIR/share/dot-zshrc" ~/.zshrc
 
     success "Core installation completed"
 }
@@ -166,7 +157,6 @@ core_install() {
 create_lxc_from_template() {
     local template="$1"
     slog "Creating LXC from template: $template"
-
     local distro
     distro=$(echo "$template" | cut -d'.' -f1)
 
@@ -180,10 +170,6 @@ create_lxc_from_template() {
         error "Failed to create LXC from $template"
         return 1
     fi
-
-    # pct start 101
-    # pct exec 101 bash -c "echo 'root:password' | chpasswd"
-
     return 0
 }
 
@@ -196,30 +182,13 @@ Proxmox VE Installation and Configuration Script
 OPTIONS:
     --ct-templates      Install container templates
     --vm-templates      Install VM templates
-    --ct-all           Create all containers from templates
-    --vm-all           Create all VMs from templates
-    --all              Install everything
-    --verbose          Enable verbose output
-    --help             Show this help message
-
-SERVICES:
-    Core Services:
-        post-install, core
-
-    Container Services:
-        casaos, jellyfin, plex, code-server, backup-server, tailscale,
-        file-browser, docker-lxc, dockge, adguard, pihole, authelia,
-        duplicati, deluge, qbittorrent, rclone, syncthing, paperless-ai,
-        ollama, caddy, nginx-proxy, rustdesk, guacamole, vaultwarden,
-        backrest, uptime-kuma, alpine-lxc, twofauth, iventoy
-
-    VM Services:
-        docker, openwrt, umbrel, opnsense, nextcloud, ubuntu,
-        debian, arch
+    --ct-all            Create all containers from templates
+    --vm-all            Create all VMs from templates
+    --all               Install everything
+    --help              Show this help message
 
 Examples:
     $0 --all                    # Install everything
-    $0 casaos jellyfin plex     # Install specific services
     $0 --ct-templates           # Install only container templates
 
 EOF
@@ -228,26 +197,11 @@ EOF
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-        --ct-templates)
-            CT_TEMPLATES=1
-            shift
-            ;;
-        --vm-templates)
-            VM_TEMPLATES=1
-            shift
-            ;;
-        --ct-all)
-            CT_ALL=1
-            shift
-            ;;
-        --vm-all)
-            VM_ALL=1
-            shift
-            ;;
-        --all)
-            ALL=1
-            shift
-            ;;
+        --ct-templates) CT_TEMPLATES=1 ;;
+        --vm-templates) VM_TEMPLATES=1 ;;
+        --ct-all) CT_ALL=1 ;;
+        --vm-all) VM_ALL=1 ;;
+        --all) ALL=1 ;;
         --help)
             usage
             exit 0
@@ -258,19 +212,18 @@ parse_args() {
             exit 1
             ;;
         esac
+        shift
     done
 }
 
 main() {
     slog "Starting Proxmox installation script..."
-
     check_root_user
     check_proxmox
 
     parse_args "$@"
-    cpu-governor_install
     post-install_install
-
+    cpu-governor_install
     systools_install
     core_install
 
