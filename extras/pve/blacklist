@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-cat <<EOF | sudo tee /etc/modprobe.d/blacklist-vfio.conf
+cat <<EOF | tee /etc/modprobe.d/blacklist-vfio.conf
 blacklist nouveau
 blacklist radeon
 blacklist amdgpu
@@ -8,4 +8,4 @@ blacklist i915
 blacklist snd_hda_intel
 EOF
 
-sudo update-initramfs -u -k all
+update-initramfs -u -k all
