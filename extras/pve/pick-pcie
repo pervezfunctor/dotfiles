@@ -1,0 +1,39 @@
+#!/bin/bash
+set -euo pipefail
+
+command -v dialog >/dev/null || {
+  echo "Please install 'dialog' package."
+  exit 1
+}
+
+OUT=$(mktemp)
+
+DEVICES=()
+while IFS= read -r line; do
+  SLOT=$(echo "$line" | awk '{print $1}')
+  DESC=$(echo "$line" | cut -d' ' -f2-)
+  DEVICES+=("$SLOT" "$DESC" "off")
+done < <(lspci)
+
+dialog --checklist "Select PCI devices for VFIO passthrough:" 0 0 10 \
+  "${DEVICES[@]}" 2>"$OUT"
+
+SELECTED=$(<"$OUT")
+rm -f "$OUT"
+
+if [ -z "$SELECTED" ]; then
+  echo "❌ No device selected."
+  exit 1
+fi
+
+SELECTED=$(echo "$SELECTED" | tr -d '"')
+
+echo "🔍 Extracting PCI IDs for selected devices..."
+PCI_IDS=()
+for SLOT in $SELECTED; do
+  ID=$(lspci -n -s "$SLOT" | awk '{print $3}')
+  [ -n "$ID" ] && PCI_IDS+=("$ID")
+done
+
+echo "✅ VFIO PCI IDs:"
+printf "%s\n" "${PCI_IDS[@]}"

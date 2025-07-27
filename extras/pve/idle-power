@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "⚙️ Creating runtime power tuning service..."
+
+SYSTEMD_SERVICE="/etc/systemd/system/power-tweaks.service"
+
+cat <<'EOF' >"$SYSTEMD_SERVICE"
+[Unit]
+Description=Runtime power-saving tunables
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/power-tweaks.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+chmod 644 "$SYSTEMD_SERVICE"
+
+echo "⚙️ Creating runtime power tuning script..."
+cat <<'EOF' >/usr/local/sbin/power-tweaks.sh
+
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "💤 Setting USB autosuspend..."
+for f in /sys/bus/usb/devices/*/power/control; do
+    echo auto > "$f" 2>/dev/null || true
+done
+
+echo "💿 Enabling SATA link power management..."
+for f in /sys/class/scsi_host/host*/link_power_management_policy; do
+    echo min_power > "$f" 2>/dev/null || true
+done
+
+echo "🔋 Setting CPU energy performance preference to 'powersave'..."
+for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+    echo powersave > "$cpu/power/energy_performance_preference" 2>/dev/null || true
+done
+
+echo "🧠 Setting CPU governor to 'powersave' (if available)..."
+if command -v cpupower >/dev/null; then
+    cpupower frequency-set -g powersave || true
+fi
+
+echo "⚡ Setting PCIe ASPM to 'powersupersave'..."
+echo powersupersave > /sys/module/pcie_aspm/parameters/policy 2>/dev/null || echo "⚠️ PCIe ASPM policy not set (may not be supported)"
+
+EOF
+
+chmod +x /usr/local/sbin/power-tweaks.sh
+
+echo "🔌 Enabling power-tweaks service..."
+systemctl daemon-reexec
+systemctl daemon-reload
+systemctl enable power-tweaks.service
+systemctl start power-tweaks.service
+
+echo "✅ Power optimization applied. Please reboot for GRUB changes to take effect."

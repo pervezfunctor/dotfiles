@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+### ⚙️ Configurable Parameters ###
+GRUB_FILE="/etc/default/grub"
+BACKUP_FILE="/etc/default/grub.bak.$(date +%Y%m%d_%H%M%S)"
+GRUB_LINE_KEY="GRUB_CMDLINE_LINUX_DEFAULT"
+
+# Add your desired kernel parameters here
+GRUB_PARAMS=(
+  "pcie_aspm=force"
+  "intel_iommu=on"
+  "iommu=pt"
+)
+
+echo "📦 Backing up GRUB config to $BACKUP_FILE"
+cp "$GRUB_FILE" "$BACKUP_FILE"
+
+### 🔍 Extract existing GRUB_CMDLINE_LINUX_DEFAULT
+if grep -q "^$GRUB_LINE_KEY=" "$GRUB_FILE"; then
+  CURRENT=$(grep "^$GRUB_LINE_KEY=" "$GRUB_FILE" | cut -d'"' -f2)
+else
+  CURRENT=""
+  echo "$GRUB_LINE_KEY=\"\"" >>"$GRUB_FILE"
+fi
+
+### 🛠 Add missing parameters
+UPDATED="$CURRENT"
+for param in "${GRUB_PARAMS[@]}"; do
+  if [[ ! "$UPDATED" =~ (^|[[:space:]])$param($|[[:space:]]) ]]; then
+    UPDATED+=" $param"
+  fi
+done
+
+# Clean leading/trailing spaces
+UPDATED=$(echo "$UPDATED" | xargs)
+
+# Apply updated value
+sed -i "s|^$GRUB_LINE_KEY=.*|$GRUB_LINE_KEY=\"$UPDATED\"|" "$GRUB_FILE"
+
+### 🔁 Regenerate GRUB config
+echo "🔁 Regenerating GRUB config..."
+grub-mkconfig -o /boot/grub/grub.cfg
+
+echo "✅ Done. GRUB kernel parameters updated:"
+echo "  $GRUB_LINE_KEY=\"$UPDATED\""

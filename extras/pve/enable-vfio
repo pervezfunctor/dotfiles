@@ -1,0 +1,46 @@
+#!/bin/bash
+set -euo pipefail
+
+PCI_IDS=(
+  "10de:1b81" # Example: NVIDIA GTX 1050 Ti
+  "10de:10f0" # Example: NVIDIA HDMI Audio
+  #"8086:10fb"  # Example: Intel NIC
+)
+
+GRUB_FILE="/etc/default/grub"
+VFIO_CONF="/etc/modprobe.d/vfio.conf"
+MODULES_FILE="/etc/modules"
+INITRD_HOOK="/etc/initramfs-tools/modules"
+TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+VFIO_BACKUP="/etc/modprobe.d/vfio.conf.bak.$TIMESTAMP"
+
+### 2️⃣ Load VFIO Modules
+echo "🧩 Ensuring VFIO modules load on boot..."
+for mod in vfio vfio_pci vfio_iommu_type1 vfio_virqfd; do
+  grep -q "^$mod" "$MODULES_FILE" 2>/dev/null || echo "$mod" >>"$MODULES_FILE"
+done
+
+### 3️⃣ Create modprobe.d override for VFIO PCI binding
+echo "🎯 Binding device IDs to vfio-pci..."
+[ -f "$VFIO_CONF" ] && cp "$VFIO_CONF" "$VFIO_BACKUP"
+{
+  echo "options vfio-pci ids=$(
+    IFS=,
+    echo "${PCI_IDS[*]}"
+  )"
+} >"$VFIO_CONF"
+
+### 4️⃣ Ensure device IDs are added to initramfs
+for mod in vfio vfio_pci vfio_iommu_type1 vfio_virqfd; do
+  grep -q "^$mod" "$INITRD_HOOK" 2>/dev/null || echo "$mod" >>"$INITRD_HOOK"
+done
+
+### 5️⃣ Regenerate initramfs
+echo "🔁 Regenerating initramfs..."
+update-initramfs -u -k all
+
+### 6️⃣ Verify
+echo "🔍 Current VFIO-pci bind list:"
+lspci -nnk | grep -A2 'Kernel driver in use'
+
+echo "✅ VFIO enabled. Please reboot to apply changes."

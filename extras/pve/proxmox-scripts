@@ -157,73 +157,105 @@ file-browser-addon_install() {
   bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/addon/filebrowser.sh)"
 }
 
-pick_one() {
-  local services=("$@")
+show_dialog() {
+  local -a options=("$@")
+  local -a checklist_entries=()
 
-  local selected_services
-  selected_services=$(dialog --checklist "Select services to install" 20 60 10 "${services[@]}" 3>&1 1>&2 2>&3)
-  echo "$selected_services"
+  for option in "${options[@]}"; do
+    checklist_entries+=("$option" "$option" "off")
+  done
+
+  local selected
+  if ! selected=$(dialog --checklist "Select services to install" 20 60 15 \
+    "${checklist_entries[@]}" \
+    3>&1 1>&2 2>&3); then
+    echo -n "Selection cancelled." >&2
+    return 1
+  fi
+
+  read -r -a selected <<<"$selected"
+  echo "${selected[@]}"
 }
 
-pick_addons() {
-  local addons=(
-    "tailscale-addon"
-    "file-browser-addon"
-    "code-server-addon"
+addon_dialog() {
+  local -a addons=(
+    "tailscale"
+    "file-browser"
+    "code-server"
   )
-  pick_one "${addons[@]}"
+  show_dialog "${addons[@]}"
 }
 
-pick_lxc() {
-  local lxc_services=(
-    "backup-server-lxc"
-    "docker-lxc"
-    "dockge"
-    "adguard"
-    "pihole"
-    "authelia"
-    "duplicati"
-    "deluge"
-    "qbittorrent"
-    "rclone"
-    "syncthing"
-    "paperless-ai"
-    "ollama"
-    "caddy"
-    "nginx-proxy"
-    "rustdesk"
-    "guacamole"
-    "vaultwarden"
-    "backrest"
-    "uptime-kuma"
-    "alpine-lxc"
-    "twofauth"
-    "iventoy"
+lxc_dialog() {
+  local -a lxc_services=(
+    "backup-server" "docker" "dockge" "adguard" "pihole"
+    "authelia" "duplicati" "deluge" "qbittorrent" "rclone"
+    "syncthing" "paperless-ai" "ollama" "caddy" "nginx-proxy"
+    "rustdesk" "guacamole" "vaultwarden" "backrest"
+    "uptime-kuma" "alpine" "twofauth" "iventoy"
   )
-  pick_one "${lxc_services[@]}"
+  show_dialog "${lxc_services[@]}"
 }
 
-pick_vm() {
-  local vm_services=(
-    "docker-vm"
-    "openwrt"
-    "umbrel"
-    "opnsense"
-    "nextcloud"
-    "ubuntu"
-    "debian"
-    "arch"
+vm_dialog() {
+  local -a vm_services=(
+    "docker" "openwrt" "umbrel" "opnsense"
+    "nextcloud" "ubuntu" "debian" "arch"
   )
-  pick_one "${vm_services[@]}"
+  show_dialog "${vm_services[@]}"
+}
+
+show_category_menu() {
+  local category
+  if ! category=$(dialog --menu "Choose a service category" 15 40 5 \
+    lxc "LXC containers" \
+    addon "Addons" \
+    vm "Virtual Machines" \
+    3>&1 1>&2 2>&3); then
+    echo -n "Selection cancelled." >&2
+    return 1
+  fi
+
+  echo "$category"
+}
+
+execute_service() {
+  local category="$1"
+  local service="$2"
+  "${service}-${category}_install"
 }
 
 main() {
-  local selected_services
-  selected_services=$(pick_addons)
-  echo "$selected_services"
-  # for service in $selected_services; do
-  #   "$service"_install
-  # done
+  local category
+  category=$(show_category_menu)
+  clear
+
+  local -a selected
+
+  case "$category" in
+  lxc)
+    read -r -a selected < <(lxc_dialog)
+    ;;
+  addon)
+    read -r -a selected < <(addon_dialog)
+    ;;
+  vm)
+    read -r -a selected < <(vm_dialog)
+    ;;
+  *)
+    echo "Invalid selection" >&2
+    exit 1
+    ;;
+  esac
+
+  echo "Selected services: ${selected[*]}"
+
+  for service in "${selected[@]}"; do
+    execute_service "$category" "$service"
+  done
+
+  clear
+  echo "Done!"
 }
 
 main "$@"

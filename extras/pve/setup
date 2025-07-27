@@ -14,10 +14,10 @@ declare -g VM_ALL=0
 declare -g ALL=0
 
 check_proxmox() {
-    if ! file_exists "/etc/pve/local/pve-ssl.pem"; then
-        error "This script is designed to run on Proxmox VE"
-        exit 1
-    fi
+    file_exists "/etc/pve/local/pve-ssl.pem" && return 0
+
+    error "This script is designed to run on Proxmox VE"
+    exit 1
 }
 
 cpu-governor_install() {
@@ -97,17 +97,12 @@ vm-all_install() {
     slog "Creating VMs from all templates..."
 
     local templates=(
-        "211:201:debian-vm"
+        "211:201:debian-vm" # 201 etc are template vm ids
         "212:202:fedora-vm"
         "213:203:ubuntu-vm"
         "214:204:alpine-vm"
         "215:205:centos-vm"
     )
-
-    pushd "$DOT_DIR/extras/proxmox" || {
-        error "Cannot access $DOT_DIR/extras/proxmox"
-        return 1
-    }
 
     for template_info in "${templates[@]}"; do
         IFS=':' read -r source_id dest_id vm_name <<<"$template_info"
@@ -119,9 +114,6 @@ vm-all_install() {
             warn "Source VM $source_id not found"
         fi
     done
-
-    popd || true
-
 }
 
 si() {
@@ -135,7 +127,10 @@ si() {
 }
 
 systools_install() {
-    si powertop smartmontools sanoid live-build zfsutils-linux rsync dialog proxmox-backup-client restic
+    si smartmontools zfsutils-linux rsync dialog \
+        proxmox-backup-client restic ethtool nvme-cli lsof htop pciutils usbutils \
+        lm-sensors jq numactl udisks2 fio stress
+    # si powertop live-build cpufrequtils sanoid
 }
 
 core_install() {
@@ -205,7 +200,6 @@ OPTIONS:
     --vm-all           Create all VMs from templates
     --all              Install everything
     --verbose          Enable verbose output
-    --dry-run          Show what would be done without executing
     --help             Show this help message
 
 SERVICES:
@@ -259,8 +253,9 @@ parse_args() {
             exit 0
             ;;
         *)
-            # Store remaining arguments for service installation
-            break
+            echo "Unknown option: $1" >&2
+            usage
+            exit 1
             ;;
         esac
     done
@@ -269,13 +264,13 @@ parse_args() {
 main() {
     slog "Starting Proxmox installation script..."
 
+    check_root_user
+    check_proxmox
+
     parse_args "$@"
     cpu-governor_install
     post-install_install
 
-    check_root_user
-    check_proxmox
-    setup_directories
     systools_install
     core_install
 
@@ -291,37 +286,7 @@ main() {
     [[ $CT_ALL -eq 1 ]] && ct-all_install
     [[ $VM_ALL -eq 1 ]] && vm-all_install
 
-    local failed_services=()
-
-    for service in "$@"; do
-        if [[ "$service" =~ ^-- ]]; then
-            continue
-        fi
-
-        local function_name="${service}_install"
-
-        if fn_exists "$function_name"; then
-            slog "Installing service: $service"
-            if ! "$function_name"; then
-                failed_services+=("$service")
-            fi
-        else
-            warn "Unknown service: $service"
-            failed_services+=("$service")
-        fi
-    done
-
-    if [[ ${#failed_services[@]} -eq 0 ]]; then
-        success "All installations completed successfully!"
-    else
-        error "The following services failed to install:"
-        for service in "${failed_services[@]}"; do
-            error "  - $service"
-        done
-        exit 1
-    fi
-
-    slog "Installation script completed. Check $LOG_FILE for details."
+    slog "Installation done!"
 }
 
 main "$@"
