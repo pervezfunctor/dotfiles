@@ -44,8 +44,8 @@ fi
   )"
 } >"$VFIO_CONF"
 
-echo "🔁 Regenerating initramfs..."
-update-initramfs -u -k all
+echo "Updating grub config..."
+update-grub
 
 echo "🔍 Current VFIO-pci bind list:"
 lspci -nnk | grep -A2 'Kernel driver in use'
