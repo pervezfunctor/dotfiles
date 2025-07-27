@@ -2,27 +2,41 @@
 set -euo pipefail
 
 PCI_IDS=(
-  "10de:1b81" # Example: NVIDIA GTX 1050 Ti
-  "10de:10f0" # Example: NVIDIA HDMI Audio
-  #"8086:10fb"  # Example: Intel NIC
+  "10de:2489" # nvidia rtx 3060 ti
+  10de:228b   # nvidia audio
 )
 
-GRUB_FILE="/etc/default/grub"
 VFIO_CONF="/etc/modprobe.d/vfio.conf"
 MODULES_FILE="/etc/modules"
 INITRD_HOOK="/etc/initramfs-tools/modules"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 VFIO_BACKUP="/etc/modprobe.d/vfio.conf.bak.$TIMESTAMP"
 
-### 2️⃣ Load VFIO Modules
+read -rp "🚨 This may affect boot. Continue? [y/N] " confirm
+[[ "$confirm" =~ ^[Yy]$ ]] || {
+  echo "❌ Aborted."
+  exit 1
+}
+
 echo "🧩 Ensuring VFIO modules load on boot..."
+
+ensure_module() {
+  local mod="$1" file="$2"
+  grep -q "^\s*${mod}\b" "$file" 2>/dev/null || echo "$mod" >>"$file"
+}
+
 for mod in vfio vfio_pci vfio_iommu_type1 vfio_virqfd; do
-  grep -q "^$mod" "$MODULES_FILE" 2>/dev/null || echo "$mod" >>"$MODULES_FILE"
+  ensure_module "$mod" "$MODULES_FILE"
+  ensure_module "$mod" "$INITRD_HOOK"
 done
 
-### 3️⃣ Create modprobe.d override for VFIO PCI binding
 echo "🎯 Binding device IDs to vfio-pci..."
-[ -f "$VFIO_CONF" ] && cp "$VFIO_CONF" "$VFIO_BACKUP"
+
+if grep -q '^options vfio-pci ids=' "$VFIO_CONF" 2>/dev/null; then
+  echo "⚠️ Existing vfio-pci binding found in $VFIO_CONF. Backing up..."
+  cp "$VFIO_CONF" "$VFIO_BACKUP"
+fi
+
 {
   echo "options vfio-pci ids=$(
     IFS=,
@@ -30,17 +44,11 @@ echo "🎯 Binding device IDs to vfio-pci..."
   )"
 } >"$VFIO_CONF"
 
-### 4️⃣ Ensure device IDs are added to initramfs
-for mod in vfio vfio_pci vfio_iommu_type1 vfio_virqfd; do
-  grep -q "^$mod" "$INITRD_HOOK" 2>/dev/null || echo "$mod" >>"$INITRD_HOOK"
-done
-
-### 5️⃣ Regenerate initramfs
 echo "🔁 Regenerating initramfs..."
 update-initramfs -u -k all
 
-### 6️⃣ Verify
 echo "🔍 Current VFIO-pci bind list:"
 lspci -nnk | grep -A2 'Kernel driver in use'
 
-echo "✅ VFIO enabled. Please reboot to apply changes."
+echo "✅ VFIO enabled. Reboot to apply changes."
+echo "ℹ️ Reminder: Ensure GRUB has 'intel_iommu=on iommu=pt' (or amd_iommu)."
