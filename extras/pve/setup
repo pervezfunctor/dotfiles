@@ -8,6 +8,7 @@ source <(curl -sSL https://is.gd/anumof)
 readonly DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 readonly COMMUNITY_SCRIPTS_BASE="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main"
 
+declare -g CORE=0
 declare -g CT_TEMPLATES=0
 declare -g VM_TEMPLATES=0
 declare -g CT_ALL=0
@@ -126,9 +127,12 @@ systools_install() {
 }
 
 core_install() {
+    post-install_install
+    cpu-governor_install
+
     slog "Installing core components..."
-    local packages=("git-core" "micro" "zsh-theme-powerlevel9k" "zsh" "curl" "wget")
-    si "${packages[@]}"
+    si git-core micro zsh-theme-powerlevel9k zsh curl wget
+    systools_install
 
     if ! dir_exists "$DOT_DIR"; then
         slog "Cloning dotfiles..."
@@ -180,16 +184,16 @@ Usage: $0 [OPTIONS] [SERVICES...]
 Proxmox VE Installation and Configuration Script
 
 OPTIONS:
-    --ct-templates      Install container templates
-    --vm-templates      Install VM templates
-    --ct-all            Create all containers from templates
-    --vm-all            Create all VMs from templates
-    --all               Install everything
-    --help              Show this help message
+    ct-templates      Install container templates
+    vm-templates      Install VM templates
+    ct-all            Create all containers from templates
+    vm-all            Create all VMs from templates
+    all               Install everything
+    help|-h|--help              Show this help message
 
 Examples:
-    $0 --all                    # Install everything
-    $0 --ct-templates           # Install only container templates
+    $0 all                    # Install everything
+    $0 ct-templates           # Install only container templates
 
 EOF
 }
@@ -197,12 +201,12 @@ EOF
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-        --ct-templates) CT_TEMPLATES=1 ;;
-        --vm-templates) VM_TEMPLATES=1 ;;
-        --ct-all) CT_ALL=1 ;;
-        --vm-all) VM_ALL=1 ;;
-        --all) ALL=1 ;;
-        --help)
+        ct-templates) CT_TEMPLATES=1 ;;
+        vm-templates) VM_TEMPLATES=1 ;;
+        ct-all) CT_ALL=1 ;;
+        vm-all) VM_ALL=1 ;;
+        all) ALL=1 ;;
+        help | -h | --help)
             usage
             exit 0
             ;;
@@ -221,19 +225,22 @@ main() {
     check_root_user
     check_proxmox
 
-    parse_args "$@"
-    post-install_install
-    cpu-governor_install
-    systools_install
-    core_install
-
-    if [[ $ALL -eq 1 ]]; then
+    if [[ $# -eq 0 ]]; then
+        CORE=1
         CT_TEMPLATES=1
         VM_TEMPLATES=1
-        CT_ALL=1
-        VM_ALL=1
+    else
+        parse_args "$@"
+
+        if [[ $ALL -eq 1 ]]; then
+            CT_TEMPLATES=1
+            VM_TEMPLATES=1
+            CT_ALL=1
+            VM_ALL=1
+        fi
     fi
 
+    [[ $CORE -eq 1 ]] && core_install
     [[ $CT_TEMPLATES -eq 1 ]] && ct-templates_install
     [[ $VM_TEMPLATES -eq 1 ]] && vm-templates_install
     [[ $CT_ALL -eq 1 ]] && ct-all_install
