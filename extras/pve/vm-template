@@ -234,31 +234,31 @@ check_prerequisites() {
 configure_distribution() {
   case "$DISTRO" in
   debian)
-    VM_ID=${VM_ID:-9100}
+    VM_ID=${VM_ID:-201}
     VM_NAME=${VM_NAME:-debian-template}
     IMAGE_URL=${IMAGE_URL:-"https://cdimage.debian.org/cdimage/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"}
     USERNAME=${USERNAME:-debian}
     ;;
   fedora)
-    VM_ID=${VM_ID:-9200}
+    VM_ID=${VM_ID:-202}
     VM_NAME=${VM_NAME:-fedora-template}
     IMAGE_URL=${IMAGE_URL:-"https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"}
     USERNAME=${USERNAME:-fedora}
     ;;
   ubuntu)
-    VM_ID=${VM_ID:-9400}
+    VM_ID=${VM_ID:-203}
     VM_NAME=${VM_NAME:-ubuntu-template}
     IMAGE_URL=${IMAGE_URL:-"https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"}
     USERNAME=${USERNAME:-ubuntu}
     ;;
   alpine)
-    VM_ID=${VM_ID:-9300}
+    VM_ID=${VM_ID:-204}
     VM_NAME=${VM_NAME:-alpine-template}
     IMAGE_URL=${IMAGE_URL:-"https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/generic_alpine-3.20.3-x86_64-uefi-cloudinit-r0.qcow2"}
     USERNAME=${USERNAME:-alpine}
     ;;
   centos)
-    VM_ID=${VM_ID:-9500}
+    VM_ID=${VM_ID:-205}
     VM_NAME=${VM_NAME:-centos-template}
     IMAGE_URL=${IMAGE_URL:-"https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2"}
     USERNAME=${USERNAME:-centos}

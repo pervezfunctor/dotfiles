@@ -1,0 +1,229 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+
+readonly COMMUNITY_SCRIPTS_BASE="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main"
+
+casaos-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/casaos.sh)"
+}
+
+jellyfin-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/jellyfin.sh)"
+}
+
+plex-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/plex.sh)"
+}
+
+backup-server-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/proxmox-backup-server.sh)"
+}
+
+docker-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/docker.sh)"
+}
+
+dockge-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/dockge.sh)"
+}
+
+adguard-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/adguard.sh)"
+}
+
+pihole-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/pihole.sh)"
+  slog "Use 'pihole setpassword' to set password for Pi-hole"
+}
+
+authelia-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/authelia.sh)"
+}
+
+duplicati-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/duplicati.sh)"
+}
+
+deluge-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/deluge.sh)"
+}
+
+qbittorrent_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/qbittorrent.sh)"
+}
+
+rclone-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/rclone.sh)"
+  slog "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
+}
+
+syncthing-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/syncthing.sh)"
+}
+
+paperless-ai_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/paperless-ai.sh)"
+}
+
+ollama-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/ollama.sh)"
+}
+
+caddy-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/caddy.sh)"
+}
+
+nginx-proxy-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/nginxproxymanager.sh)"
+}
+
+rustdesk-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/rustdeskserver.sh)"
+}
+
+guacamole-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/apache-guacamole.sh)"
+}
+
+vaultwarden-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/vaultwarden.sh)"
+}
+
+backrest-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/backrest.sh)"
+}
+
+uptime-kuma-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/uptimekuma.sh)"
+}
+
+alpine-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/alpine.sh)"
+}
+
+twofauth-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/2fauth.sh)"
+}
+
+iventoy-lxc_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/ct/iventoy.sh)"
+}
+
+docker-vm_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/vm/docker-vm.sh)"
+}
+
+openwrt-vm_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/vm/openwrt.sh)"
+}
+
+umbrel-vm_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/vm/umbrel-os-vm.sh)"
+}
+
+opnsense-vm_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/vm/opnsense-vm.sh)"
+}
+
+nextcloud-vm_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/vm/nextcloud-vm.sh)"
+}
+
+ubuntu-vm_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/vm/ubuntu2504-vm.sh)"
+}
+
+debian-vm_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/vm/debian-vm.sh)"
+}
+
+arch-vm_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/vm/archlinux-vm.sh)"
+}
+
+backup-server-lxc_post_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pbs-install.sh)"
+}
+
+code-server-addon_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/addon/coder-code-server.sh)"
+}
+tailscale-addon_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/addon/add-tailscale-lxc.sh)"
+}
+
+file-browser-addon_install() {
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/addon/filebrowser.sh)"
+}
+
+pick_one() {
+  local services=("$@")
+
+  local selected_services
+  selected_services=$(dialog --checklist "Select services to install" 20 60 10 "${services[@]}" 3>&1 1>&2 2>&3)
+  echo "$selected_services"
+}
+
+pick_addons() {
+  local addons=(
+    "tailscale-addon"
+    "file-browser-addon"
+    "code-server-addon"
+  )
+  pick_one "${addons[@]}"
+}
+
+pick_lxc() {
+  local lxc_services=(
+    "backup-server-lxc"
+    "docker-lxc"
+    "dockge"
+    "adguard"
+    "pihole"
+    "authelia"
+    "duplicati"
+    "deluge"
+    "qbittorrent"
+    "rclone"
+    "syncthing"
+    "paperless-ai"
+    "ollama"
+    "caddy"
+    "nginx-proxy"
+    "rustdesk"
+    "guacamole"
+    "vaultwarden"
+    "backrest"
+    "uptime-kuma"
+    "alpine-lxc"
+    "twofauth"
+    "iventoy"
+  )
+  pick_one "${lxc_services[@]}"
+}
+
+pick_vm() {
+  local vm_services=(
+    "docker-vm"
+    "openwrt"
+    "umbrel"
+    "opnsense"
+    "nextcloud"
+    "ubuntu"
+    "debian"
+    "arch"
+  )
+  pick_one "${vm_services[@]}"
+}
+
+main() {
+  local selected_services
+  selected_services=$(pick_addons)
+  echo "$selected_services"
+  # for service in $selected_services; do
+  #   "$service"_install
+  # done
+}
+
+main "$@"

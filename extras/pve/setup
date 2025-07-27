@@ -20,260 +20,25 @@ check_proxmox() {
     fi
 }
 
-setup_directories() {
-    local dirs=("$DOT_DIR" "$DOT_DIR/config" "$DOT_DIR/logs" "$DOT_DIR/backups")
-
-    for dir in "${dirs[@]}"; do
-        if ! dir_exists "$dir"; then
-            mkdir -p "$dir"
-            slog "Created directory: $dir"
-        fi
-    done
-}
-
-safe_download() {
-    local url="$1"
-    local max_retries=3
-    local retry_count=0
-
-    slog "Fetching $1..."
-
-    if [[ -z "$url" ]]; then
-        error "URL parameter is required"
-        return 1
-    fi
-
-    while [[ $retry_count -lt $max_retries ]]; do
-        # Added User-Agent and max file size (50MB default)
-        if curl -fsSL \
-            --connect-timeout 10 \
-            --user-agent "Installation Script/1.0" \
-            "$url"; then
-            # --max-time 30 \
-            # --max-filesize 52428800 \
-            return 0
-        fi
-
-        retry_count=$((retry_count + 1))
-        if [[ $retry_count -lt $max_retries ]]; then
-            warn "Download failed, retrying ($retry_count/$max_retries)..."
-            sleep 2
-        fi
-    done
-
-    error "Failed to download from: $url after $max_retries attempts"
-    return 1
-}
-execute_install() {
-    local name="$1"
-    local url="$2"
-    local pre_install_msg="${3:-}"
-
-    slog "Starting installation of $name..."
-
-    if [[ -n "$pre_install_msg" ]]; then
-        warn "$pre_install_msg"
-    fi
-
-    # Check if safe_download succeeded before piping to bash
-    local temp_script
-    temp_script=$(mktemp)
-
-    if safe_download "$url" >"$temp_script"; then
-        if bash "$temp_script"; then
-            success "$name installation completed successfully"
-            rm -f "$temp_script"
-            return 0
-        else
-            error "$name installation failed during execution"
-            rm -f "$temp_script"
-            return 1
-        fi
-    else
-        error "$name download failed"
-        rm -f "$temp_script"
-        return 1
-    fi
+cpu-governor_install() {
+    bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/scaling-governor.sh)"
 }
 
 post-install_install() {
-    execute_install "Post-PVE Install" "${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pve-install.sh"
+    bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pve-install.sh)"
 }
 
-casaos_install() {
-    execute_install "CasaOS" "${COMMUNITY_SCRIPTS_BASE}/ct/casaos.sh"
-}
-
-jellyfin_install() {
-    execute_install "Jellyfin" "${COMMUNITY_SCRIPTS_BASE}/ct/jellyfin.sh"
-}
-
-plex_install() {
-    execute_install "Plex" "${COMMUNITY_SCRIPTS_BASE}/ct/plex.sh"
-}
-
-code_server_install() {
-    execute_install "Code Server" \
-        "${COMMUNITY_SCRIPTS_BASE}/tools/addon/coder-code-server.sh" \
-        "Create a Debian LXC container first"
-}
-
-backup_server_install() {
-    execute_install "Proxmox Backup Server" \
-        "${COMMUNITY_SCRIPTS_BASE}/ct/proxmox-backup-server.sh"
-}
-
-backup_server_post_install() {
-    execute_install "Proxmox Backup Server Post-Install" \
-        "${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pbs-install.sh"
-}
-
-tailscale_install() {
-    execute_install "Tailscale" \
-        "${COMMUNITY_SCRIPTS_BASE}/tools/addon/add-tailscale-lxc.sh"
-}
-
-file_browser_install() {
-    execute_install "File Browser" \
-        "${COMMUNITY_SCRIPTS_BASE}/tools/addon/filebrowser.sh" \
-        "Create a Debian LXC container first"
-}
-
-docker_lxc_install() {
-    execute_install "Docker LXC" "${COMMUNITY_SCRIPTS_BASE}/ct/docker.sh"
-}
-
-dockge_install() {
-    execute_install "Dockge" "${COMMUNITY_SCRIPTS_BASE}/ct/dockge.sh"
-}
-
-adguard_install() {
-    execute_install "AdGuard Home" "${COMMUNITY_SCRIPTS_BASE}/ct/adguard.sh"
-}
-
-pihole_install() {
-    execute_install "Pi-hole" "${COMMUNITY_SCRIPTS_BASE}/ct/pihole.sh"
-    slog "Use 'pihole setpassword' to set password for Pi-hole"
-}
-
-authelia_install() {
-    execute_install "Authelia" "${COMMUNITY_SCRIPTS_BASE}/ct/authelia.sh"
-}
-
-duplicati_install() {
-    execute_install "Duplicati" "${COMMUNITY_SCRIPTS_BASE}/ct/duplicati.sh"
-}
-
-deluge_install() {
-    execute_install "Deluge" "${COMMUNITY_SCRIPTS_BASE}/ct/deluge.sh"
-}
-
-qbittorrent_install() {
-    execute_install "qBittorrent" "${COMMUNITY_SCRIPTS_BASE}/ct/qbittorrent.sh"
-}
-
-rclone_install() {
-    execute_install "Rclone" "${COMMUNITY_SCRIPTS_BASE}/ct/rclone.sh"
-    slog "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
-}
-
-syncthing_install() {
-    execute_install "Syncthing" "${COMMUNITY_SCRIPTS_BASE}/ct/syncthing.sh"
-}
-
-paperless_ai_install() {
-    execute_install "Paperless-ng with AI" "${COMMUNITY_SCRIPTS_BASE}/ct/paperless-ai.sh"
-}
-
-ollama_install() {
-    execute_install "Ollama" "${COMMUNITY_SCRIPTS_BASE}/ct/ollama.sh"
-}
-
-caddy_install() {
-    execute_install "Caddy" "${COMMUNITY_SCRIPTS_BASE}/ct/caddy.sh"
-}
-
-nginx_proxy_install() {
-    execute_install "Nginx Proxy Manager" \
-        "${COMMUNITY_SCRIPTS_BASE}/ct/nginxproxymanager.sh"
-}
-
-rustdesk_install() {
-    execute_install "RustDesk Server" "${COMMUNITY_SCRIPTS_BASE}/ct/rustdeskserver.sh"
-}
-
-guacamole_install() {
-    execute_install "Apache Guacamole" "${COMMUNITY_SCRIPTS_BASE}/ct/apache-guacamole.sh"
-}
-
-vaultwarden_install() {
-    execute_install "Vaultwarden" "${COMMUNITY_SCRIPTS_BASE}/ct/vaultwarden.sh"
-}
-
-backrest_install() {
-    execute_install "Backrest" "${COMMUNITY_SCRIPTS_BASE}/ct/backrest.sh"
-}
-
-uptime_kuma_install() {
-    execute_install "Uptime Kuma" "${COMMUNITY_SCRIPTS_BASE}/ct/uptimekuma.sh"
-}
-
-alpine_lxc_install() {
-    execute_install "Alpine LXC" "${COMMUNITY_SCRIPTS_BASE}/ct/alpine.sh"
-}
-
-twofauth_install() {
-    execute_install "2FAuth" "${COMMUNITY_SCRIPTS_BASE}/ct/2fauth.sh"
-}
-
-iventoy_install() {
-    execute_install "iVentoy" "${COMMUNITY_SCRIPTS_BASE}/ct/iventoy.sh" \
-        "Container MUST be privileged"
-}
-
-docker_install() {
-    execute_install "Docker" "${COMMUNITY_SCRIPTS_BASE}/vm/docker-vm.sh"
-}
-
-openwrt_install() {
-    execute_install "OpenWrt" "${COMMUNITY_SCRIPTS_BASE}/vm/openwrt.sh"
-}
-
-umbrel_install() {
-    execute_install "Umbrel OS" "${COMMUNITY_SCRIPTS_BASE}/vm/umbrel-os-vm.sh"
-}
-
-opnsense_install() {
-    execute_install "OPNsense" "${COMMUNITY_SCRIPTS_BASE}/vm/opnsense-vm.sh"
-}
-
-nextcloud_install() {
-    execute_install "Nextcloud" "${COMMUNITY_SCRIPTS_BASE}/vm/nextcloud-vm.sh"
-}
-
-ubuntu_install() {
-    execute_install "Ubuntu" "${COMMUNITY_SCRIPTS_BASE}/vm/ubuntu2504-vm.sh"
-}
-
-debian_install() {
-    execute_install "Debian" "${COMMUNITY_SCRIPTS_BASE}/vm/debian-vm.sh"
-}
-
-arch_install() {
-    execute_install "Arch Linux" "${COMMUNITY_SCRIPTS_BASE}/vm/archlinux-vm.sh"
-}
-
-ct_templates_install() {
+ct-templates_install() {
     slog "Installing container templates..."
 
     local templates=(
         "ubuntu.*standard"
         "debian.*standard"
-        "rockylinux.*default"
         "fedora.*default"
-        "archlinux-base"
         "centos.*default"
+        "archlinux-base"
         "opensuse.*default"
+        "alpine.*default"
     )
 
     for pattern in "${templates[@]}"; do
@@ -289,7 +54,7 @@ ct_templates_install() {
     done
 }
 
-vm_templates_install() {
+vm-templates_install() {
     slog "Installing VM templates..."
 
     local current_dir
@@ -307,7 +72,7 @@ vm_templates_install() {
     done
 }
 
-ct_all_install() {
+ct-all_install() {
     slog "Creating containers from all templates..."
 
     local template_dir="/var/lib/vz/template/cache"
@@ -328,14 +93,15 @@ ct_all_install() {
     done
 }
 
-vm_all_install() {
+vm-all_install() {
     slog "Creating VMs from all templates..."
 
     local templates=(
-        "201:101:debian-vm"
-        "202:102:fedora-vm"
-        "203:103:rocky-vm"
-        "204:104:ubuntu-vm"
+        "211:201:debian-vm"
+        "212:202:fedora-vm"
+        "213:203:ubuntu-vm"
+        "214:204:alpine-vm"
+        "215:205:centos-vm"
     )
 
     pushd "$DOT_DIR/extras/proxmox" || {
@@ -386,25 +152,17 @@ core_install() {
         }
     fi
 
-    if has_cmd ilmi; then
-        slog "Core installation already completed"
-        return 0
-    fi
-
     local timestamp
     timestamp=$(date +%Y%m%d-%H%M%S)
-
-    if file_exists ~/.bashrc; then
-        slog "Backing up .bashrc"
-        mv ~/.bashrc "/tmp/.bashrc.backup-$timestamp"
-    fi
 
     if file_exists ~/.zshrc; then
         slog "Backing up .zshrc"
         mv ~/.zshrc "/tmp/.zshrc.backup-$timestamp"
     fi
 
-    echo "source ~/.ilm/share/bashrc" >~/.bashrc
+    if ! grep -q "source ~/.ilm/share/bashrc" ~/.bashrc; then
+        echo "source ~/.ilm/share/bashrc" >~/.bashrc
+    fi
     ln -sf ~/.ilm/share/dot-zshrc ~/.zshrc
 
     success "Core installation completed"
@@ -413,7 +171,24 @@ core_install() {
 create_lxc_from_template() {
     local template="$1"
     slog "Creating LXC from template: $template"
-    # @TODO: Implement LXC creation from template
+
+    local distro
+    distro=$(echo "$template" | cut -d'.' -f1)
+
+    if ! pct create 101 /var/lib/vz/template/cache/"$template" \
+        --hostname my-"$distro"-ct \
+        --memory 1024 \
+        --cores 1 \
+        --rootfs local-lvm:8 \
+        --net0 name=eth0,bridge=vmbr0,ip=dhcp \
+        --storage local-lvm; then
+        error "Failed to create LXC from $template"
+        return 1
+    fi
+
+    # pct start 101
+    # pct exec 101 bash -c "echo 'root:password' | chpasswd"
+
     return 0
 }
 
@@ -491,15 +266,11 @@ parse_args() {
     done
 }
 
-proxmox-backup-server_install() {
-    execute_install "Proxmox Backup Server" \
-        "${COMMUNITY_SCRIPTS_BASE}/ct/proxmox-backup-server.sh"
-}
-
 main() {
     slog "Starting Proxmox installation script..."
 
     parse_args "$@"
+    cpu-governor_install
     post-install_install
 
     check_root_user
@@ -515,10 +286,10 @@ main() {
         VM_ALL=1
     fi
 
-    [[ $CT_TEMPLATES -eq 1 ]] && ct_templates_install
-    [[ $VM_TEMPLATES -eq 1 ]] && vm_templates_install
-    [[ $CT_ALL -eq 1 ]] && ct_all_install
-    [[ $VM_ALL -eq 1 ]] && vm_all_install
+    [[ $CT_TEMPLATES -eq 1 ]] && ct-templates_install
+    [[ $VM_TEMPLATES -eq 1 ]] && vm-templates_install
+    [[ $CT_ALL -eq 1 ]] && ct-all_install
+    [[ $VM_ALL -eq 1 ]] && vm-all_install
 
     local failed_services=()
 
@@ -527,8 +298,7 @@ main() {
             continue
         fi
 
-        # Convert hyphens to underscores for function names
-        local function_name="${service//-/_}_install"
+        local function_name="${service}_install"
 
         if fn_exists "$function_name"; then
             slog "Installing service: $service"
