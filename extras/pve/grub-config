@@ -11,6 +11,9 @@ GRUB_PARAMS=(
   "pcie_aspm=force"
   "intel_iommu=on"
   "iommu=pt"
+  "video=efifb:off"
+  "video=vesafb:off"
+  "video=simplefb:off"
 )
 
 echo "📦 Backing up GRUB config to $BACKUP_FILE"
