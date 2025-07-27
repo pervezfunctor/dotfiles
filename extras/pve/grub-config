@@ -43,7 +43,7 @@ sed -i "s|^$GRUB_LINE_KEY=.*|$GRUB_LINE_KEY=\"$UPDATED\"|" "$GRUB_FILE"
 
 ### 🔁 Regenerate GRUB config
 echo "🔁 Regenerating GRUB config..."
-grub-mkconfig -o /boot/grub/grub.cfg
+update-grub
 
 echo "✅ Done. GRUB kernel parameters updated:"
 echo "  $GRUB_LINE_KEY=\"$UPDATED\""
