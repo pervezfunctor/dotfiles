@@ -1,8 +1,11 @@
 FROM registry.fedoraproject.org/fedora-bootc:42
 
-RUN dnf5 update -y && \
-  dnf5 install --skip-unavailable -y \
-  sway \
+RUN mkdir -p /var/roothome && chmod 700 /var/roothome && chown root:root /var/roothome
+
+RUN dnf5 update -y
+RUN dnf5 group install -y swaywm-extended
+
+RUN dnf5 install --skip-unavailable -y \
   swaylock \
   network-manager-applet \
   swayidle \
@@ -20,14 +23,23 @@ RUN dnf5 update -y && \
   pavucontrol \
   network-manager-applet \
   firefox \
-  gdm \
-  && dnf clean all
+  && dnf5 clean all
 
-RUN systemctl enable gdm.service || echo "GDM service not found, continuing..." && \
-  systemctl enable NetworkManager.service || echo "NetworkManager service not found, continuing..."
+RUN curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux \
+  --extra-conf "sandbox = false" \
+  --init systemd \
+  --no-modify-profile \
+  --no-start-daemon \
+  --no-confirm
 
-RUN mkdir -p /etc/nix
-COPY <<EOF /etc/nix/nix.conf
-experimental-features = nix-command flakes
-trusted-users = root @wheel @sudo
-EOF
+ENV ENV="/etc/profile"
+RUN echo '. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' > /etc/profile.d/nix.sh
+
+
+# ENV PATH="${PATH}:/nix/var/nix/profiles/default/bin"
+# RUN nix run nixpkgs#hello
+
+# 5. Verify installation
+# RUN . /etc/profile && \
+#   nix --version && \
+#   nix-store --version

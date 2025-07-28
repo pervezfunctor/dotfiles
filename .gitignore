@@ -28,3 +28,4 @@ vim/*.un~
 history.txt
 starship.nu
 *.backup-*
+output/

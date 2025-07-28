@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-qemu-system-x86_64 \
-  -M accel=kvm \
-  -cpu host \
-  -smp 2 \
-  -m 4096 \
-  -bios /usr/share/OVMF/OVMF_CODE.fd \
-  -serial stdio \
-  -snapshot \
-  -device virtio-gpu-gl \
-  -display gtk,gl=on \
-  -device qemu-xhci \
-  output/qcow2/disk.qcow2
+# qemu-system-x86_64 \
+#   -M accel=kvm \
+#   -cpu host \
+#   -smp 2 \
+#   -m 4096 \
+#   -bios /usr/share/OVMF/OVMF_CODE.fd \
+#   -serial stdio \
+#   -snapshot \
+#   -device virtio-gpu-gl \
+#   -display gtk,gl=on \
+#   -device qemu-xhci \
+#   output/qcow2/disk.qcow2
 
-# virt-install \
-#   --name testvm \
-#   --memory 16384 \
-#   --vcpus 6 \
-#   --cpu host-model \
-#   --disk path=output/qcow2/disk.qcow2,format=qcow2,bus=virtio \
-#   --os-variant fedora41 \
-#   --boot uefi \
-#   --graphics spice,gl=on,listen=none \
-#   --video virtio \
-#   --controller type=usb,model=qemu-xhci \
-#   --input type=tablet,bus=usb \
-#   --import
+virt-install \
+  --name testvm \
+  --memory 16384 \
+  --vcpus 6 \
+  --cpu host-model \
+  --disk path=output/qcow2/disk.qcow2,format=qcow2,bus=virtio \
+  --os-variant fedora41 \
+  --boot uefi \
+  --graphics spice,gl=on,listen=none \
+  --video virtio \
+  --controller type=usb,model=qemu-xhci \
+  --input type=tablet,bus=usb \
+  --import
