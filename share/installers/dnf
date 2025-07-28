@@ -366,7 +366,7 @@ vm_install() {
 
     si libvirt qemu qemu-kvm virt-install bridge-utils virglrenderer qemu-img \
         qemu-ui-spice-core qemu-ui-spice-app qemu-char-spice qemu-audio-spice \
-        qemu-device-usb-redirect qemu-device-display-virtio-vga \
+        qemu-device-usb-redirect qemu-device-display-virtio-vga bsdtar \
         qemu-device-display-virtio-gpu qemu-user-binfmt qemu-user-static \
         qemu-system-x86_64 coreos-installer butane cloud-utils bootc pykickstart
 
