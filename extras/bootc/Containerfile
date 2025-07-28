@@ -1,0 +1,33 @@
+FROM registry.fedoraproject.org/fedora-bootc:42
+
+RUN dnf5 update -y && \
+  dnf5 install --skip-unavailable -y \
+  sway \
+  swaylock \
+  network-manager-applet \
+  swayidle \
+  waybar \
+  wofi \
+  foot \
+  SwayNotificationCenter \
+  gnome-keyring \
+  libsecret \
+  polkit \
+  grim \
+  slurp \
+  wl-clipboard \
+  brightnessctl \
+  pavucontrol \
+  network-manager-applet \
+  firefox \
+  gdm \
+  && dnf clean all
+
+RUN systemctl enable gdm.service || echo "GDM service not found, continuing..." && \
+  systemctl enable NetworkManager.service || echo "NetworkManager service not found, continuing..."
+
+RUN mkdir -p /etc/nix
+COPY <<EOF /etc/nix/nix.conf
+experimental-features = nix-command flakes
+trusted-users = root @wheel @sudo
+EOF
