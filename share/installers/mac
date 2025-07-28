@@ -63,7 +63,7 @@ core_install() {
 essential_install() {
     slog "Installing Essential packages"
 
-    bis p7zip cmake unar zip pkgx
+    bis p7zip cmake unar zip pkgx just
 
     slog "Essential packages installation done!"
 }

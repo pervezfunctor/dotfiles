@@ -28,7 +28,8 @@ tw_packages() {
 
     si git gh git-delta unzip wget curl trash-cli tar stow gcc make file \
         starship gum wl-clipboard tree bat eza fzf ripgrep zoxide fd \
-        htop sd tealdeer yazi cheat lazygit libsecret net-tools iproute2 nmap
+        htop sd tealdeer yazi cheat lazygit libsecret net-tools iproute2 nmap \
+        dialog whiptail
 
     has_cmd tldr && tldr --update
 
@@ -92,7 +93,8 @@ essential_install() {
     slog "Installing essential packages"
     sudo zypper install -y -t pattern devel_basis
     si unar zip micro-editor 7zip readline-devel sqlite3-devel libffi-devel \
-        libbz2-devel xz-devel gum net-tools iproute2 nmap libsecret gawk
+        libbz2-devel xz-devel gum net-tools iproute2 nmap libsecret gawk \
+        dialog whiptail just
 
     slog "Essential packages installation done!"
 }
@@ -109,7 +111,7 @@ cli-slim_install() {
 cli_install() {
     slog "Installing cli tools using zypper"
 
-    si gh neovim zsh tmux sd bat eza fd fzf ripgrep zoxide just procs \
+    si gh neovim zsh tmux sd bat eza fd fzf ripgrep zoxide procs \
         lazygit bottom git-delta htop xh plocate tealdeer urlview nushell \
         lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk \
         shfmt hyperfine cheat curlie jq ShellCheck gum lsd starship direnv yq

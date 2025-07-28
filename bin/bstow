@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SRC_DIR="${1:-.}"
+TARGET_DIR="${2:-$HOME}"
+TS="$(date +%Y%m%d-%H%M%S)"
+
+mkdir -p "$TARGET_DIR"
+
+cd "$SRC_DIR"
+
+echo "Linking from $SRC_DIR to $TARGET_DIR"
+
+find . -name 'dot-*' | while read -r path; do
+  rel_path="${path#./}"
+  renamed_path="${rel_path/#dot-/.}"
+  target_path="$TARGET_DIR/$renamed_path"
+  source_abs_path="$(realpath "$rel_path")"
+
+  # Create parent directories for target path if missing
+  mkdir -p "$(dirname "$target_path")"
+
+  # Handle conflict if target exists
+  if [[ -e "$target_path" || -L "$target_path" ]]; then
+    if [[ -L "$target_path" ]]; then
+      link_target="$(readlink "$target_path")"
+      if [[ "$link_target" == "$source_abs_path" ]]; then
+        echo "✓ Already linked: $target_path → $link_target"
+        continue
+      fi
+    fi
+    # Backup conflicting file/symlink
+    backup="$target_path.$TS.bak"
+    echo "⚠️  Backing up: $target_path → $backup"
+    mv "$target_path" "$backup"
+  fi
+
+  # Create symlink
+  ln -s "$source_abs_path" "$target_path"
+  echo "→ Linked: $target_path → $source_abs_path"
+done

@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -euo pipefail
+
+error_handler() {
+  local line_no=$1
+  local error_code=$2
+  local command="${BASH_COMMAND}"
+
+  echo "========================= ERROR =========================" >&2
+  echo "Script: $0" >&2
+  echo "Line: $line_no" >&2
+  echo "Function: ${FUNCNAME[1]:-main}" >&2
+  echo "Command: $command" >&2
+  echo "Exit Code: $error_code" >&2
+  echo "Time: $(date)" >&2
+  echo "========================================================" >&2
+
+  # Print call stack
+  echo "Call stack:" >&2
+  local i=1
+  while [[ ${FUNCNAME[$i]:-} ]]; do
+    echo "  [$i] ${FUNCNAME[$i]} (${BASH_SOURCE[$i]}:${BASH_LINENO[$((i - 1))]})" >&2
+    ((i++))
+  done
+
+  exit "$error_code"
+}
+
+# Set up the trap
+trap 'error_handler $LINENO $?' ERR

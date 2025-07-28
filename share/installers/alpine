@@ -53,7 +53,7 @@ essential_install() {
     pkgx_install
     sys_python_install
 
-    si zip micro p7zip net-tools iproute2 nmap gcc make fzf gawk
+    si zip micro p7zip net-tools iproute2 nmap gcc make fzf gawk just
 
     slog "Essential packages installation done!"
 }
@@ -62,7 +62,7 @@ cli_install() {
     slog "Installing cli tools using apt"
 
     local base_pkgs=(tmux urlview zsh git sd gdu bat hyperfine fd ripgrep
-        zoxide eza github-cli shellcheck just htop shfmt)
+        zoxide eza github-cli shellcheck htop shfmt)
 
     local plucky_pkgs=()
     is_plucky && plucky_pkgs=(fzf ugrep starship gum delta direnv yq)

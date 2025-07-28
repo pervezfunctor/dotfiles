@@ -42,7 +42,7 @@ ubuntu_packages() {
 
     si git-core gh git-delta unzip wget curl net-tools iproute2 nmap \
         trash-cli tar stow gcc make file wl-clipboard tree bat ripgrep \
-        zoxide fd-find htop sd bat gawk starship libsecret-tools
+        zoxide fd-find htop sd bat gawk starship libsecret-tools dialog whiptail
 
     is_ubuntu && si eza
 
@@ -88,17 +88,17 @@ debian_packages() {
     update_packages
 
     slog "Installing packages"
-    #  git-delta eza just fzf
+
     si git-core gh unzip wget curl trash-cli net-tools iproute2 nmap \
         tar stow gcc make file tree bat ripgrep zoxide fd-find htop sd gawk \
-        wl-clipboard libsecret-tools
+        wl-clipboard libsecret-tools dialog whiptail
 
     slog "Installing packages done!"
 
     pkgx_install
     pixi_install
 
-    pi fzf yazi tealdeer git-delta eza bat starship lazygit
+    pi fzf yazi tealdeer git-delta eza bat starship lazygit just
 
     has_cmd tldr && tldr --update
 
@@ -157,8 +157,8 @@ essential_install() {
         snap_install
     fi
 
-    si zip unar micro nala p7zip libreadline-dev libsqlite3-dev \
-        libffi-dev libbz2-dev liblzma-dev net-tools iproute2 nmap \
+    si zip unar micro nala p7zip libreadline-dev libsqlite3-dev whiptail just \
+        libffi-dev libbz2-dev liblzma-dev net-tools iproute2 nmap dialog \
         libsecret-tools build-essential command-not-found libfuse2 zstd gawk
 
     slog "Essential packages installation done!"
@@ -179,7 +179,7 @@ cli_install() {
     slog "Installing cli tools using apt"
 
     local base_pkgs=(tmux pkg-config urlview zsh git plocate sd gdu bat
-        hyperfine fd-find ripgrep zoxide eza gh shellcheck just htop shfmt jq)
+        hyperfine fd-find ripgrep zoxide eza gh shellcheck htop shfmt jq)
 
     local plucky_pkgs=()
     is_plucky && plucky_pkgs=(fzf ugrep tealdeer starship gum git-delta direnv yq)

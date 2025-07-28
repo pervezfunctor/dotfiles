@@ -5,6 +5,9 @@ set -euo pipefail
 # shellcheck disable=SC1090
 source <(curl -sSL https://is.gd/anumof)
 
+# print an error message with line no on error
+trap 'echo "Error on line $LINENO" >&2' ERR
+
 readonly DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 readonly COMMUNITY_SCRIPTS_BASE="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main"
 
@@ -120,19 +123,15 @@ si() {
     done
 }
 
-systools_install() {
-    si smartmontools zfsutils-linux rsync dialog \
-        proxmox-backup-client restic ethtool nvme-cli lsof htop pciutils usbutils \
-        lm-sensors jq numactl udisks2 fio stress
-}
-
 core_install() {
     post-install_install
     cpu-governor_install
 
     slog "Installing core components..."
-    si git-core micro zsh-theme-powerlevel9k zsh curl wget
-    systools_install
+    si git-core micro zsh-theme-powerlevel9k zsh curl wget htop pciutils jq \
+        smartmontools zfsutils-linux rsync whiptail dialog numactl fio stress \
+        usbutils restic ethtool nvme-cli lsof lm-sensors udisks2 \
+        proxmox-backup-client
 
     if ! dir_exists "$DOT_DIR"; then
         slog "Cloning dotfiles..."

@@ -166,7 +166,7 @@ show_dialog() {
   done
 
   local selected
-  if ! selected=$(dialog --checklist "Select services to install" 20 60 15 \
+  if ! selected=$(whiptail --checklist "Select services to install" 20 60 15 \
     "${checklist_entries[@]}" \
     3>&1 1>&2 2>&3); then
     echo -n "Selection cancelled." >&2
@@ -207,7 +207,7 @@ vm_dialog() {
 
 show_category_menu() {
   local category
-  if ! category=$(dialog --menu "Choose a service category" 15 40 5 \
+  if ! category=$(whiptail --menu "Choose a service category" 15 40 5 \
     lxc "LXC containers" \
     addon "Addons" \
     vm "Virtual Machines" \
@@ -228,7 +228,6 @@ execute_service() {
 main() {
   local category
   category=$(show_category_menu)
-  clear
 
   local -a selected
 
@@ -251,10 +250,10 @@ main() {
   echo "Selected services: ${selected[*]}"
 
   for service in "${selected[@]}"; do
-    execute_service "$category" "$service"
+    echo "Installing $service in $category..."
+    # execute_service "$category" "$service"
   done
 
-  clear
   echo "Done!"
 }
 
