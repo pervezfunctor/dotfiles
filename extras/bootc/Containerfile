@@ -1,6 +1,6 @@
 FROM registry.fedoraproject.org/fedora-bootc:42
 
-RUN mkdir -p /var/roothome && chmod 700 /var/roothome && chown root:root /var/roothome
+# RUN mkdir -p /var/roothome && chmod 700 /var/roothome && chown root:root /var/roothome
 
 RUN dnf5 update -y
 RUN dnf5 group install -y swaywm-extended
@@ -23,17 +23,18 @@ RUN dnf5 install --skip-unavailable -y \
   pavucontrol \
   network-manager-applet \
   firefox \
+  git \
   && dnf5 clean all
 
-RUN curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux \
-  --extra-conf "sandbox = false" \
-  --init systemd \
-  --no-modify-profile \
-  --no-start-daemon \
-  --no-confirm
+# RUN curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux \
+#   --extra-conf "sandbox = false" \
+#   --init systemd \
+#   --no-modify-profile \
+#   --no-start-daemon \
+#   --no-confirm
 
-ENV ENV="/etc/profile"
-RUN echo '. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' > /etc/profile.d/nix.sh
+# ENV ENV="/etc/profile"
+# RUN echo '. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' > /etc/profile.d/nix.sh
 
 
 # ENV PATH="${PATH}:/nix/var/nix/profiles/default/bin"
