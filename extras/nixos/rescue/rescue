@@ -1,0 +1,44 @@
+#!/bin/bash
+set -euo pipefail
+
+while true; do
+  CHOICE=$(whiptail --title "NixOS Rescue Menu" --menu "Choose an option" 20 60 10 \
+    "1" "Restore Snapshot" \
+    "2" "Mount Root Filesystem" \
+    "3" "Launch Shell" \
+    "4" "Reboot" \
+    3>&1 1>&2 2>&3)
+
+  case $CHOICE in
+  1)
+    SNAP=$(snapper list | tail -n +2 | whiptail --title "Choose Snapshot" --menu "Available Snapshots" 20 80 10 "$(awk '{ print $1 " " $6 }')")
+    if [ -n "$SNAP" ]; then
+      mountpoint="/mnt/restore"
+      mkdir -p $mountpoint
+      snapper -c root mount "$SNAP" "$mountpoint"
+      whiptail --msgbox "Snapshot $SNAP mounted at $mountpoint" 10 60
+    fi
+    ;;
+  2)
+    blk=$(lsblk -lpno NAME,SIZE | whiptail --title "Select Root Partition" --menu "Available Devices" 20 80 10 "$(lsblk -lpno NAME,SIZE | awk '{ print $1 " " $2 }')")
+    if [ -n "$blk" ]; then
+      mkdir -p /mnt/target
+      mount -o subvol=@ "$blk" /mnt/target
+      mount -o bind /dev /mnt/target/dev
+      mount -o bind /proc /mnt/target/proc
+      mount -o bind /sys /mnt/target/sys
+      whiptail --msgbox "Mounted root at /mnt/target" 10 60
+    fi
+    ;;
+  3)
+    clear
+    bash
+    ;;
+  4)
+    reboot
+    ;;
+  *)
+    break
+    ;;
+  esac
+done

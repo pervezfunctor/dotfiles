@@ -1,0 +1,13 @@
+DISK=/dev/sda2
+mountpoint=/mnt
+mkfs.btrfs -f -L ROOTFS $DISK
+mount $DISK $mountpoint
+
+for os in fedora arch nixos; do
+  btrfs subvolume create $mountpoint/@$os
+  btrfs subvolume create $mountpoint/@home-$os
+  btrfs subvolume create $mountpoint/@.snapshots-$os
+done
+
+btrfs subvolume create $mountpoint/@shared
+umount $mountpoint

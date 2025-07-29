@@ -1,0 +1,63 @@
+#!/bin/bash
+set -euo pipefail
+
+### CONFIGURATION ###
+DISK="/dev/sdX"  # CHANGE THIS to your real device (e.g., /dev/nvme0n1, /dev/sda)
+ESP_SIZE="512M"  # EFI System Partition size
+HOST_OS_LIST=("fedora" "nixos" "debian")  # Add/remove OS names here
+
+### VALIDATE ###
+if [[ ! -b "$DISK" ]]; then
+  echo "ERROR: $DISK is not a block device."
+  exit 1
+fi
+
+read -rp "WARNING: This will wipe $DISK completely. Proceed? (yes/no): " CONFIRM
+[[ "$CONFIRM" == "yes" ]] || exit 1
+
+echo ">>> Creating partition table..."
+parted --script "$DISK" \
+  mklabel gpt \
+  mkpart ESP fat32 1MiB "$ESP_SIZE" \
+  set 1 esp on \
+  mkpart primary "$ESP_SIZE" 100%
+
+ESP_PART="${DISK}1"
+BTRFS_PART="${DISK}2"
+
+echo ">>> Formatting partitions..."
+mkfs.vfat -F32 -n EFI "$ESP_PART"
+mkfs.btrfs -f -L MULTIBOOT "$BTRFS_PART"
+
+echo ">>> Mounting Btrfs partition..."
+mnt="/mnt/multios"
+mkdir -p "$mnt"
+mount "$BTRFS_PART" "$mnt"
+
+echo ">>> Creating subvolumes for each OS..."
+for os in "${HOST_OS_LIST[@]}"; do
+  btrfs subvolume create "$mnt/@${os}"
+  btrfs subvolume create "$mnt/@${os}_home"
+  btrfs subvolume create "$mnt/@${os}_snapshots"
+done
+
+umount "$mnt"
+echo ">>> Done. Subvolumes created."
+
+echo ">>> Subvolume layout:"
+for os in "${HOST_OS_LIST[@]}"; do
+  echo "- @${os}"
+  echo "- @${os}_home"
+  echo "- @${os}_snapshots"
+done
+
+echo ">>> EFI Partition: $ESP_PART"
+echo ">>> Btrfs Partition: $BTRFS_PART"
+
+echo ">>> You can now install each OS using manual partitioning:"
+for os in "${HOST_OS_LIST[@]}"; do
+  echo "  - Mount subvol=@${os} as /"
+  echo "  - Mount subvol=@${os}_home as /home"
+  echo "  - Mount subvol=@${os}_snapshots as /.snapshots"
+  echo "  - Mount $ESP_PART as /boot/efi"
+done

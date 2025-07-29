@@ -9,7 +9,6 @@ CUSTOM_ISO="Fedora42-custom.iso"
 
 WORKDIR=$(mktemp -d)
 EXTRACT_DIR="$WORKDIR/iso"
-MOD_DIR="$WORKDIR/custom"
 
 echo "[+] Downloading Fedora Everything ISO..."
 curl -L -o "$WORKDIR/$ISO_NAME" "$ISO_URL"

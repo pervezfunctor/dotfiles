@@ -1,0 +1,14 @@
+sudo livemedia-creator \
+  --make-iso \
+  --ks ./fedora42-live.ks \
+  --no-virt \
+  --project Fedora42Live \
+  --iso-only \
+  --releasever 42 \
+  --title "Fedora 42 Custom Live" \
+  --iso-name Fedora-42-Custom.iso \
+  --iso-dir ./output \
+  --resultdir ./results \
+  --macboot \
+  --volid FEDORA42LIVE \
+  --location https://dl.fedoraproject.org/pub/fedora/linux/releases/42/Everything/x86_64/os/

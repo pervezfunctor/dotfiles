@@ -106,6 +106,7 @@ echo ">>> Customizing user home for 'pervez'..."
 
 USER=pervez
 USER_HOME="/home/$USER"
+# or firstboot --enable # this will create user etc.
 
 # Example setup
 mkdir -p "$USER_HOME/.config"

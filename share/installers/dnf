@@ -364,11 +364,13 @@ pm_install() {
 vm_install() {
     slog "Installing libvirt"
 
-    si libvirt qemu qemu-kvm virt-install bridge-utils virglrenderer qemu-img \
-        qemu-ui-spice-core qemu-ui-spice-app qemu-char-spice qemu-audio-spice \
-        qemu-device-usb-redirect qemu-device-display-virtio-vga bsdtar \
-        qemu-device-display-virtio-gpu qemu-user-binfmt qemu-user-static \
-        qemu-system-x86_64 coreos-installer butane cloud-utils bootc pykickstart
+    si libvirt virt-install bridge-utils virglrenderer butane cloud-utils \
+        qemu qemu-kvm qemu-img qemu-ui-spice-core qemu-ui-spice-app \
+        qemu-char-spice qemu-audio-spice qemu-device-usb-redirect \
+        qemu-device-display-virtio-vga qemu-device-display-virtio-gpu \
+        qemu-user-binfmt qemu-user-static qemu-system-x86_64 \
+        coreos-installer bootc pykickstart lorax xorriso squashfs-tools bsdtar \
+        snapper btrfs-progs grub2 grub2-tools
 
     libvirt_confstall
 
