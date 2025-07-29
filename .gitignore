@@ -29,3 +29,9 @@ history.txt
 starship.nu
 *.backup-*
 output/
+custom-iso/
+*.iso
+*.img
+*.bin
+*.qcow2
+

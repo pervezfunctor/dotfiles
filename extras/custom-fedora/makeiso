@@ -1,0 +1,15 @@
+#! /usr/bin/env bash
+
+ISOPATH=~/Downloads/Fedora-Everything-netinst-x86_64-42-1.1.iso
+WORKDIR=custom-iso
+mkdir -p $WORKDIR && bsdtar -C $WORKDIR -xf $ISOPATH
+
+# Step 2: Inject Kickstart (optional)
+cp ./netinst-snapper.ks $WORKDIR/
+
+# Step 3: Modify boot configs (in $WORKDIR/isolinux/isolinux.cfg and EFI/BOOT/grub.cfg)
+#         Add inst.ks=cdrom:/ks.cfg to each default boot entry
+
+# Step 4: Rebuild ISO
+rm -f Fedora-Netinstall-custom.iso
+sudo mkksiso ./netinst-snapper.ks $ISOPATH Fedora-Netinstall-custom.iso
