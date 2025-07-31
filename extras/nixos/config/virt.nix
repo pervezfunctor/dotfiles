@@ -20,14 +20,11 @@
     libvirtd = {
       enable = true;
 
-      # # Allow non-root users in the libvirtd group to manage VMs
-      # onBoot = "ignore";
-      # onShutdown = "shutdown";
+      # Allow non-root users in the libvirtd group to manage VMs
+      onBoot = "ignore";
+      onShutdown = "shutdown";
       # graphicsListenTcp = false;
       # tls = false;
-
-      # # Add your user to the libvirtd group
-      # extraGroups = [ "libvirtd" ];
 
       # Enable listening (optional, for remote access)
       # Uncomment only if you need TCP access (secure with TLS)
@@ -94,11 +91,11 @@
 
     # incus.enable = true;
   };
-  # programs.virt-manager.enable = true;
+  programs.virt-manager.enable = true;
 
   users.users.me.extraGroups = [
     "kvm"
-    "libvirt"
+    "libvirtd"
     "incus"
     "incus-admin"
     "docker"
@@ -147,6 +144,14 @@
   # ];
 
   # Configure firewall to allow SPICE ports (optional, adjust as needed)
+  # networking.firewall.enable = true;
+  # networking.firewall.extraRules = ''
+  #   # libvirt default network
+  #   -A INPUT -i virbr0 -j ACCEPT
+  #   -A FORWARD -i virbr0 -j ACCEPT
+  #   -A FORWARD -o virbr0 -j ACCEPT
+  # '';
+
   networking.firewall.allowedTCPPorts = [ 5900 ]; # SPICE default port
 
   # networking.firewall.extraRules = ''
@@ -159,18 +164,20 @@
   #   -A FORWARD -i ${config.networking.primaryIPAddress} -o virbr0 -j ACCEPT
   # '';
 
-  # services.udev.packages = [
-  #   pkgs.spice-gtk
-  #   pkgs.usbredir
-  # ];
-  # systemd.services.virtlogd.enable = true;
+  services.udev.packages = [
+    pkgs.spice-gtk
+    pkgs.usbredir
+  ];
+  systemd.services.virtlogd.enable = true;
 
-  #  security.pam.loginLimits = [{
-  #   domain = "@libvirtd";
-  #   type = "soft";
-  #   item = "nofile";
-  #   value = "65536";
-  # }];
+  security.pam.loginLimits = [
+    {
+      domain = "@libvirtd";
+      type = "soft";
+      item = "nofile";
+      value = "65536";
+    }
+  ];
 
   # Optional: for bridged networking
   # bridgeDevices = [ "br0" ];
@@ -182,31 +189,39 @@
   #   };
   # };
 
-  # services.udev.extraRules = ''
-  #   # Allow user session to access libvirt
-  #   SUBSYSTEM=="virtio", GROUP="libvirtd", MODE="0660"
-  # '';
-
-  # systemd.services."libvirt-default-network" = {
-  #   description = "Start libvirt default network";
-  #   requires = [ "libvirtd.service" ];
-  #   after = [ "libvirtd.service" ];
-  #   script = ''
-  #     sleep 5
-  #     if ! virsh net-info default >/dev/null 2>&1; then
-  #       echo "Defining default network..."
-  #       virsh net-define /nix/store/*/etc/libvirt/qemu/networks/default.xml
-  #     fi
-  #     if ! virsh net-autostart default; then
-  #       virsh net-autostart default
-  #     fi
-  #     if ! virsh net-start default; then
-  #       virsh net-start default
-  #     fi
-  #   '';
-  #   serviceConfig = {
-  #     Type = "oneshot";
-  #     RemainAfterExit = true;
+  # security.policies.libvirtd = {
+  #   "org.libvirt.unix.manage" = {
+  #     identity = "unix-group:libvirtd";
+  #     action = "org.libvirt.unix.manage";
+  #     resultAny = "yes";
   #   };
   # };
+
+  services.udev.extraRules = ''
+    # Allow user session to access libvirt
+    SUBSYSTEM=="virtio", GROUP="libvirtd", MODE="0660"
+  '';
+
+  systemd.services."libvirt-default-network" = {
+    description = "Start libvirt default network";
+    requires = [ "libvirtd.service" ];
+    after = [ "libvirtd.service" ];
+    script = ''
+      sleep 5
+      if ! virsh net-info default >/dev/null 2>&1; then
+        echo "Defining default network..."
+        virsh net-define /nix/store/*/etc/libvirt/qemu/networks/default.xml
+      fi
+      if ! virsh net-autostart default; then
+        virsh net-autostart default
+      fi
+      if ! virsh net-start default; then
+        virsh net-start default
+      fi
+    '';
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+  };
 }

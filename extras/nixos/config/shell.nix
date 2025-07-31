@@ -14,6 +14,7 @@
     nixd
     nixfmt-rfc-style
     statix
+    tcpdump
     vim
     wget
     xz

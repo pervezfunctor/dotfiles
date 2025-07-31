@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 if virsh net-info default &>/dev/null; then
   echo "Default network is already defined"
   read -p "Do you want to delete it and recreate it? (y/n) " -r
