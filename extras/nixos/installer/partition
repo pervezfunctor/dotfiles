@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DISK=""
+
+SWAP_SIZE="4G"
+
+EFI_PARTITION=""
+SWAP_PARTITION=""
+ROOT_PARTITION=""
+
+info() {
+  printf -- "--> %s\n" "$1"
+}
+
+err_msg() {
+  printf -- "❌ ERROR: %s\n" "$1" >&2
+}
+error() {
+  err_msg "$1"
+  exit 1
+}
+
+usage() {
+  printf "Usage: %s --disk </dev/vda> [--swap-size 4G]\n" "$0" >&2
+  exit 1
+}
+
+get_partition_path() {
+  local disk="$1"
+  local number="$2"
+  if [[ "$disk" =~ [0-9]$ ]]; then
+    printf -- "%sp%s" "$disk" "$number"
+  else
+    printf -- "%s%s" "$disk" "$number"
+  fi
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    --disk)
+      DISK="$2"
+      shift 2
+      ;;
+    --swap-size)
+      SWAP_SIZE="$2"
+      shift 2
+      ;;
+    *)
+      err_msg "Unknown option: $1"
+      usage
+      ;;
+    esac
+  done
+
+  if [[ -z "$DISK" ]]; then
+    error "Missing required --disk argument."
+  fi
+
+  if ! [[ "$DISK" =~ ^/dev/(vd|sd|nvme)[a-z0-9]+$ ]]; then
+    error "Invalid disk name: '$DISK'. Expected a path like /dev/vda or /dev/nvme0n1."
+  fi
+
+  if ! [ -b "${DISK}" ]; then
+    error "Disk '$DISK' is not a block device or does not exist."
+  fi
+
+  info "Wiping and partitioning ${DISK} in 5 seconds. Press Ctrl+C to cancel."
+  sleep 5
+
+  EFI_PARTITION=$(get_partition_path "$DISK" 1)
+  SWAP_PARTITION=$(get_partition_path "$DISK" 2)
+  ROOT_PARTITION=$(get_partition_path "$DISK" 3)
+}
+
+create_partitions() {
+  info "Creating GPT partitions on ${DISK}..."
+
+  blkdiscard "${DISK}"
+  sgdisk --zap-all "${DISK}"
+  dd if=/dev/zero of="${DISK}" bs=1M count=10
+  dd if=/dev/zero of="${DISK}" bs=1M seek=$(($(blockdev --getsz "${DISK}") / 2048 - 10)) count=10
+  sgdisk -n 1:0:+1G -t 1:ef00 -c 1:"efiboot" "${DISK}"          # EFI
+  sgdisk -n 2:0:+"${SWAP_SIZE}" -t 2:8200 -c 2:"swap" "${DISK}" # swap
+  sgdisk -n 3:0:0 -t 3:8300 -c 3:"root" "${DISK}"               # root
+
+  sync
+  udevadm settle
+  partprobe "${DISK}"
+}
+
+format_partitions() {
+  info "Formatting partitions..."
+
+  mkfs.vfat -n "efiboot" -F 32 -- "${EFI_PARTITION}"
+  mkswap -f -L "swap" -- "${SWAP_PARTITION}"
+
+  mkfs.btrfs -f -L "root" -- "${ROOT_PARTITION}"
+
+  info "Creating Btrfs subvolumes..."
+  mount "${ROOT_PARTITION}" /mnt
+
+  btrfs subvolume create /mnt/@
+  btrfs subvolume create /mnt/@nix
+  btrfs subvolume create /mnt/@home
+  btrfs subvolume create /mnt/@log
+  btrfs subvolume create /mnt/@snapshots
+
+  umount /mnt
+}
+
+mount_partitions() {
+  info "Mounting filesystems..."
+
+  mount -o subvol=@,compress=zstd,noatime "${ROOT_PARTITION}" /mnt
+  mkdir -p /mnt/{boot,nix,home,var/log,snapshots}
+
+  mount -o subvol=@nix,compress=zstd,noatime "${ROOT_PARTITION}" /mnt/nix
+  mount -o subvol=@home,compress=zstd,noatime "${ROOT_PARTITION}" /mnt/home
+  mount -o subvol=@log,compress=zstd,noatime "${ROOT_PARTITION}" /mnt/var/log
+  mount -o subvol=@snapshots,compress=zstd,noatime "${ROOT_PARTITION}" /mnt/snapshots
+
+  mount -t vfat -o umask=0077 /dev/disk/by-label/efiboot /mnt/boot
+  swapon /dev/disk/by-label/swap
+}
+
+main() {
+  parse_args "$@"
+  create_partitions
+  format_partitions
+  mount_partitions
+
+  info "Disk layout complete:"
+  lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINTS "${DISK}"
+}
+
+main "$@"

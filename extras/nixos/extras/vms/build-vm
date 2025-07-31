@@ -1,0 +1,10 @@
+#! /usr/bin/env bash
+
+CONFIG=${1:-vm}
+
+echo "Building $CONFIG"
+nix build .#"${CONFIG}"
+
+# if flakes is not enabled, then
+#nixos-rebuild build-vm -I nixos-config="${CONFIG}" # or
+#nix-build '<nixpkgs/nixos>' -A config.system.build.vm -I nixos-config="${CONFIG}"

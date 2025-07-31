@@ -716,7 +716,7 @@ EOF
 create_cloud_init_iso() {
     slog "Creating cloud-init ISO..."
 
-    if ! sudo mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
+    if ! sudo xorriso -as mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
         "${CLOUD_INIT_DIR}/user-data" \
         "${CLOUD_INIT_DIR}/meta-data" 2>/dev/null; then
         fail "Failed to create cloud-init ISO"

@@ -1,0 +1,1 @@
+nixos-rebuild switch --flake path/to/your/flake#router

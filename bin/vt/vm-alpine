@@ -240,7 +240,7 @@ EOF
 
     # Create cloud-init ISO
     slog "Creating cloud-init ISO..."
-    sudo mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
+    sudo xorriso -as mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
         "${CLOUD_INIT_DIR}/user-data" \
         "${CLOUD_INIT_DIR}/meta-data" \
         "${CLOUD_INIT_DIR}/network-config"

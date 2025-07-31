@@ -7,7 +7,7 @@
   # You should not change this value, even if you update Home Manager. If you do
   # want to update the value, then make sure to first check the Home Manager
   # release notes.
-  home.stateVersion = "24.11"; # Please read the comment before changing.
+  home.stateVersion = "25.11"; # Please read the comment before changing.
 
   home.packages = with pkgs; [
     bat
@@ -63,17 +63,24 @@
   programs.git.enable = true;
   programs.zsh.enable = true;
 
-
   home.file = {
-    ".zshrc" = { source = ~/.ilm/zsh/dot-zshrc; };
-    ".config/nvim" = { source = ~/.ilm/nvim/dot-config/nvim; };
-    ".config/tmux/tmux.conf" = {
-      source = ~/.ilm/tmux/dot-config/tmux/tmux.conf;
+    ".zshrc" = {
+      source = "${builtins.getEnv "HOME"}/.ilm/zsh/dot-zshrc";
     };
-    ".gitconfig" = { source = ~/.ilm/git/dot-gitconfig; };
-    ".emacs" = { source = ~/.ilm/emacs-nano/dot-emacs; };
+    ".config/nvim" = {
+      source = "${builtins.getEnv "HOME"}/.ilm/nvim/dot-config/nvim";
+    };
+    ".config/tmux/tmux.conf" = {
+      source = "${builtins.getEnv "HOME"}/.ilm/tmux/dot-config/tmux/tmux.conf";
+    };
+    ".gitconfig" = {
+      source = "${builtins.getEnv "HOME"}/.ilm/git/dot-gitconfig";
+    };
+    ".emacs" = {
+      source = "${builtins.getEnv "HOME"}/.ilm/emacs-nano/dot-emacs";
+    };
     # ".config/Code/User/settings.json" = {
-    #     source = ~/.ilm/extras/vscode/minimal-settings.json;
+    #     source = ${builtins.getEnv "HOME"}/.ilm/extras/vscode/minimal-settings.json;
     # };
 
     # # You can also set the file content immediately.
@@ -99,5 +106,7 @@
   #
   #  /etc/profiles/per-user/<user-name>/etc/profile.d/hm-session-vars.sh
   #
-  home.sessionVariables = { EDITOR = "emacs"; };
+  home.sessionVariables = {
+    EDITOR = "code --wait";
+  };
 }

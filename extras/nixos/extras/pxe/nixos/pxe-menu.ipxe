@@ -1,0 +1,23 @@
+#!ipxe
+set base-url http://192.168.8.100
+
+menu PXE Boot Menu
+item nixos   Boot NixOS Minimal ISO
+item debian  Boot Debian Installer
+item alpine  Boot Alpine Linux
+item shell   iPXE Shell
+choose --default nixos --timeout 5000 target && goto ${target}
+
+:nixos
+kernel ${base-url}/iso/nixos.iso
+boot
+
+:debian
+kernel ${base-url}/iso/debian.iso
+boot
+
+:alpine
+sanboot --no-describe ${base-url}/iso/alpine.iso
+
+:shell
+shell

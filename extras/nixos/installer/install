@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+info() {
+  printf -- "--> %s\n" "$1"
+}
+
+error() {
+  printf -- "❌ ERROR: %s\n" "$1" >&2
+  exit 1
+}
+
+usage() {
+  printf "Usage: %s <server|gnome|kde|sway|gnome-vm|kde-vm|sway-vm>\n" "$0" >&2
+  exit 1
+}
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+CONFIG_SRC_DIR="$(realpath "${SCRIPT_DIR}/../config")"
+
+setup_config() {
+  info "Generating NixOS configuration..."
+
+  local temp_dir
+  temp_dir="$(mktemp -d -t nixos-config.XXXXXX)"
+
+  temp_dir_cleanup() {
+    rm -rf -- "$temp_dir"
+  }
+  trap temp_dir_cleanup EXIT
+
+  if ! nixos-generate-config --root "$temp_dir"; then
+    echo "❌ Failed to generate NixOS config" >&2
+    return 1
+  fi
+
+  info "Preparing /mnt/etc/nixos..."
+  mkdir -p /mnt/etc/nixos
+
+  local hw_config="$temp_dir/etc/nixos/hardware-configuration.nix"
+  if [[ -f "$hw_config" ]]; then
+    cp -- "$hw_config" /mnt/etc/nixos/
+  else
+    echo "⚠️ hardware-configuration.nix not found in generated output." >&2
+  fi
+
+  info "Copying custom config from $CONFIG_SRC_DIR..."
+  cp -r -- "${CONFIG_SRC_DIR}/." /mnt/etc/nixos/
+}
+
+setup_ssh_key() {
+  info "Setting up SSH host key..."
+  mkdir -p /mnt/etc/ssh
+
+  if [ ! -f /mnt/etc/ssh/ssh_host_ed25519_key ]; then
+    info "No SSH host key found. Generating a new one."
+    ssh-keygen -t ed25519 -f /mnt/etc/ssh/ssh_host_ed25519_key -N ""
+  fi
+
+  chmod 600 /mnt/etc/ssh/ssh_host_ed25519_key
+}
+
+install_nixos() {
+  local config_name="$1"
+  info "Installing NixOS with flake config: '${config_name}'"
+  nixos-install --root /mnt --no-root-passwd --flake "/mnt/etc/nixos#${config_name}"
+
+  info "Please set the password for user 'me'"
+  nixos-enter --root /mnt -c 'passwd me'
+}
+
+install_cleanup() {
+  info "--- Installation Complete ---"
+  umount -R /mnt
+
+  if swapon --summary | grep -q "/dev/mapper/nixos-swap"; then
+    swapoff /dev/mapper/nixos-swap
+    echo "✅ swapoff successful: /dev/mapper/nixos-swap"
+  else
+    echo "ℹ️  Swap not active or not found: /dev/mapper/nixos-swap"
+  fi
+
+  vgchange -a n nixos
+  cryptsetup close /dev/mapper/cryptroot
+  info "--- You can now reboot. ---"
+}
+
+main() {
+  if [ "$(id -u)" -ne 0 ]; then
+    error "This script must be run as root."
+  fi
+
+  if [ $# -ne 1 ]; then
+    usage
+  fi
+
+  local config="$1"
+  case "$config" in
+  server | gnome | kde | sway | gnome-vm | kde-vm | sway-vm)
+    info "Using configuration: '$config'"
+    ;;
+  *)
+    printf "❌ ERROR: Invalid configuration '%s'\n" "$config" >&2
+    usage
+    ;;
+  esac
+
+  setup_config
+  setup_ssh_key
+  install_nixos "$config"
+  install_cleanup
+}
+
+main "$@"

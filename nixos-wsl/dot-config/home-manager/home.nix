@@ -6,7 +6,7 @@
   home.homeDirectory = "/home/nixos";
 
   # DO NOT CHANGE THIS
-  home.stateVersion = "25.05";
+  home.stateVersion = "25.11";
 
   home.packages = [
     pkgs.bat

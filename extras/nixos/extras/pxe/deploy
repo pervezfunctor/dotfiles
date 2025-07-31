@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROXMOX_HOST=${1:-192.168.8.33}
+VMID=${2:-151}
+
+echo "📦 Building PXE server image..."
+nix build .#proxmoxVma
+
+echo "🚚 Copying to Proxmox..."
+scp ./result/nixos.vma.zst "root@${PROXMOX_HOST}":/var/lib/vz/dump/
+
+echo "🛠️ Restoring as VM $VMID..."
+ssh "root@${PROXMOX_HOST}" 'qmrestore /var/lib/vz/dump/nixos.vma.zst "$VMID" --unique --name pxe && qm start $VMID'
+
+# qm create $VMID --name pxe --memory 512 --net0 virtio,bridge=vmbr0
+# qm importdisk $VMID "$IMG" $BACKINGSTORE
+# qm set $VMID --scsihw virtio-scsi-pci --scsi0 $BACKINGSTORE:vm-$VMID-disk-0
+# qm set $VMID --boot order=scsi0

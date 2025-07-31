@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+trap 'echo "❌ Error on line $LINENO: $BASH_COMMAND"' ERR
+
+build_iso() {
+  nix build .#iso
+  sudo cp result/iso/*.iso /var/lib/libvirt/images/nixos/nixos-ilm.iso
+}
+
+prepare_iso() {
+  if [ -f /var/lib/libvirt/images/nixos/nixos-ilm.iso ]; then
+    echo "🚀 NixOS ISO already exists"
+    return 0
+  fi
+
+  sudo mkdir -p /var/lib/libvirt/images/nixos
+  build_iso
+}
+
+get_uefi_paths() {
+  local code vars
+  if [[ -e /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+
+    case "$ID" in
+    fedora | rhel)
+      code="/usr/share/edk2/ovmf/OVMF_CODE.fd"
+      vars="/usr/share/edk2/ovmf/OVMF_VARS.fd"
+      ;;
+    ubuntu | debian)
+      code="/usr/share/OVMF/OVMF_CODE.fd"
+      vars="/usr/share/OVMF/OVMF_VARS.fd"
+      ;;
+    arch)
+      code="/usr/share/edk2-ovmf/x64/OVMF_CODE.fd"
+      vars="/usr/share/edk2-ovmf/x64/OVMF_VARS.fd"
+      ;;
+    opensuse* | suse | tumbleweed)
+      # SMM, non-SecureBoot variant — best for NixOS
+      code="/usr/share/qemu/ovmf-x86_64-smm-5m-code.bin"
+      vars="/usr/share/qemu/ovmf-x86_64-smm-vars.bin"
+      ;;
+    *)
+      echo "❌ Unknown or unsupported distro: $ID" >&2
+      exit 1
+      ;;
+    esac
+  else
+    echo "❌ Cannot detect host OS." >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$code" || ! -f "$vars" ]]; then
+    echo "❌ UEFI files not found for distro $ID." >&2
+    echo "Checked paths:" >&2
+    echo "  CODE: $code" >&2
+    echo "  VARS: $vars" >&2
+    exit 1
+  fi
+
+  echo "$code|$vars"
+}
+
+create_vm() {
+  if virsh list --all | grep -q nixos-ilm; then
+    echo "VM already exists"
+    return 0
+  fi
+
+  IFS="|" read -r OVMF_CODE OVMF_VARS < <(get_uefi_paths)
+
+  echo "Creating VM"
+  virt-install \
+    --name nixos-ilm \
+    --cpu host-model \
+    --vcpus 8 \
+    --memory 16384 \
+    --machine q35 \
+    --disk path=/var/lib/libvirt/images/nixvm.qcow2,format=qcow2,size=20 \
+    --cdrom /var/lib/libvirt/images/nixos/nixos-ilm.iso \
+    --network network=default,model=virtio \
+    --os-variant nixos-unstable \
+    --graphics spice,gl=on \
+    --video virtio,accel3d=on \
+    --boot menu=on,loader="$OVMF_CODE",loader_ro=yes,loader_type=pflash,nvram_template="$OVMF_VARS"
+}
+
+get_ip() {
+  echo -n "Waiting for VM IP" >&2
+  local ip
+
+  for _ in {1..10}; do
+    ip=$(virsh domifaddr nixos-ilm --source lease | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1)
+    if [[ -n "$ip" ]]; then
+      echo -e "\n✅ Found IP via 'virsh domifaddr': $ip" >&2
+      echo "$ip"
+      return 0
+    fi
+    sleep 1
+    echo -n "." >&2
+  done
+
+  echo -e "\n❌ Failed to get VM IP via all methods." >&2
+  return 1
+}
+
+start_fresh() {
+  if virsh list --all | grep -q nixos-ilm; then
+    echo "VM already exists. Destroying and undefining..."
+    virsh destroy nixos-ilm || true
+    virsh undefine nixos-ilm --nvram || true
+  fi
+
+  rm -rf ./result
+  sudo rm -rf /var/lib/libvirt/images/nixos
+  sudo rm -rf /var/lib/libvirt/images/nixvm.qcow2
+}
+
+main() {
+  start_fresh
+  prepare_iso
+  create_vm
+
+  echo "🎉 VM created!"
+
+  local vm_ip
+  if ! vm_ip=$(get_ip); then
+    echo "Check VM status with 'virsh list --all' and get IP with 'virsh domifaddr nixos-ilm'" >&2
+    exit 1
+  fi
+
+  echo "To connect: ssh root@$vm_ip"
+}
+
+main

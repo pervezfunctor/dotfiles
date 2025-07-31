@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DISK=""
+SWAP_SIZE="8G"
+
+EFI_PARTITION=""
+LUKS_PARTITION=""
+
+info() {
+  printf -- "--> %s\n" "$1"
+}
+
+error() {
+  printf -- "❌ ERROR: %s\n" "$1" >&2
+  exit 1
+}
+
+usage() {
+  printf "Usage: %s --disk </dev/vda> [--swap-size 8G]\n" "$0" >&2
+  exit 1
+}
+
+get_partition_path() {
+  local disk="$1"
+  local number="$2"
+  if [[ "$disk" =~ [0-9]$ ]]; then
+    printf -- "%sp%s" "$disk" "$number"
+  else
+    printf -- "%s%s" "$disk" "$number"
+  fi
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    --disk)
+      DISK="$2"
+      shift 2
+      ;;
+    --swap-size)
+      SWAP_SIZE="$2"
+      shift 2
+      ;;
+    *)
+      error "Unknown option: $1"
+      ;;
+    esac
+  done
+
+  if [[ -z "$DISK" ]]; then
+    error "Missing required --disk argument."
+  fi
+
+  if ! [[ "$DISK" =~ ^/dev/(vd|sd|nvme)[a-z0-9]+$ ]]; then
+    error "Invalid disk name: '$DISK'. Expected a path like /dev/vda or /dev/nvme0n1."
+  fi
+
+  if ! [ -b "${DISK}" ]; then
+    error "Disk '$DISK' is not a block device or does not exist."
+  fi
+
+  info "This will WIPE, ENCRYPT, and PARTITION ${DISK} in 5 seconds. Press Ctrl+C to cancel."
+  sleep 5
+
+  EFI_PARTITION=$(get_partition_path "$DISK" 1)
+  LUKS_PARTITION=$(get_partition_path "$DISK" 2)
+}
+
+create_partitions() {
+  info "Creating GPT partitions on ${DISK}..."
+  sgdisk --zap-all "${DISK}"
+  sgdisk -n 1:0:+1G -t 1:ef00 -c 1:efiboot "${DISK}"
+  sgdisk -n 2:0:0 -t 2:8309 -c 2:cryptroot "${DISK}"
+  sync && udevadm settle
+}
+
+setup_luks() {
+  info "Setting up LUKS on ${LUKS_PARTITION}..."
+  cryptsetup -c aes-xts-plain64 -s 512 -h sha512 -i 2000 --use-random \
+    --label=cryptroot luksFormat --type luks2 "${LUKS_PARTITION}"
+
+  info "Opening LUKS container..."
+  cryptsetup open --type luks "${LUKS_PARTITION}" cryptroot
+}
+
+setup_lvm() {
+  info "Setting up LVM on /dev/mapper/cryptroot..."
+  pvcreate /dev/mapper/cryptroot
+  vgcreate nixos /dev/mapper/cryptroot
+  lvcreate -L "${SWAP_SIZE}" -n swap nixos
+  lvcreate -l '100%FREE' -n root nixos
+}
+
+format_filesystems() {
+  info "Formatting filesystems..."
+  mkfs.vfat -n efiboot -F32 "${EFI_PARTITION}"
+  mkswap -L swap /dev/mapper/nixos-swap
+
+  info "Creating Btrfs filesystem on /dev/mapper/nixos-root..."
+  mkfs.btrfs -f -L root /dev/mapper/nixos-root
+
+  info "Creating Btrfs subvolumes..."
+  mount /dev/mapper/nixos-root /mnt
+  btrfs subvolume create /mnt/@
+  btrfs subvolume create /mnt/@nix
+  btrfs subvolume create /mnt/@home
+  btrfs subvolume create /mnt/@log
+  btrfs subvolume create /mnt/@snapshots
+  umount /mnt
+}
+
+mount_filesystems() {
+  info "Mounting filesystems..."
+  mount -o subvol=@,compress=zstd,noatime /dev/disk/by-label/root /mnt
+  mkdir -p /mnt/{boot,nix,home,var/log,snapshots}
+
+  mount -o subvol=@nix,compress=zstd,noatime /dev/disk/by-label/root /mnt/nix
+  mount -o subvol=@home,compress=zstd,noatime /dev/disk/by-label/root /mnt/home
+  mount -o subvol=@log,compress=zstd,noatime /dev/disk/by-label/root /mnt/var/log
+  mount -o subvol=@snapshots,compress=zstd,noatime /dev/disk/by-label/root /mnt/snapshots
+
+  mount -t vfat -o fmask=0077,dmask=0077 /dev/disk/by-label/efiboot /mnt/boot
+  swapon /dev/disk/by-label/swap
+}
+
+main() {
+  parse_args "$@"
+  create_partitions
+  setup_luks
+  setup_lvm
+  format_filesystems
+  mount_filesystems
+
+  info "Disk layout complete:"
+  lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINTS "${DISK}"
+}
+
+main "$@"

@@ -1,0 +1,5 @@
+#! /usr/bin/env bash
+
+# ./result/bin/run-nixos-vm # without flake
+
+nix run .#nixosConfigurations.my-vm.config.system.build.vm
