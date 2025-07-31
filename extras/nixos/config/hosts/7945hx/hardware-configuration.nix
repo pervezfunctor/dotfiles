@@ -20,9 +20,17 @@
     "usb_storage"
     "sd_mod"
   ];
-  boot.initrd.kernelModules = [ ];
-  boot.kernelModules = [ "kvm-amd" ];
+
+  boot.kernelModules = [
+    "kvm-amd"
+    "vfio-pci"
+  ];
   boot.extraModulePackages = [ ];
+  boot.extraModprobeConfig = "options amd_kvm nested=1";
+  boot.kernelParams = [
+    "amd_iommu=on"
+    "iommu=pt"
+  ];
 
   swapDevices = [
     { device = "/dev/disk/by-uuid/c818bbf5-c236-4f18-8267-4d1c771c21b4"; }

@@ -1,7 +1,7 @@
 { pkgs, ... }:
 {
   environment.systemPackages = with pkgs; [
-    nixfmt-rfc-style
+    alejandra
     bash
     coreutils
     curl
@@ -11,6 +11,8 @@
     glibc
     gnugrep
     gnumake
+    nixd
+    nixfmt-rfc-style
     statix
     vim
     wget
