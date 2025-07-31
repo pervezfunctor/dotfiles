@@ -2,14 +2,17 @@
 {
   # virtualisation.docker.enable = true;
 
-  # hardware = {
-  #   # cpu.intel.updateMicrocode = config.hardware.cpu.amd.fallbackMicrocode != null;
-  #   opengl = {
-  #     enable = true;
-  #     driSupport = true;
-  #     driSupport32Bit = true;
-  #   };
-  # };
+  hardware.opengl = {
+    enable = true;
+    extraPackages = with pkgs; [
+      vaapiVdpau
+      libvdpau-va-gl
+      # intel-vaapi-driver # Intel users
+      amdvlk # AMD users
+      # rocm-opencl-icd # AMD ROCm
+    ];
+    driSupport32Bit = true;
+  };
 
   virtualisation = {
     # qemu = {
@@ -51,6 +54,12 @@
               tpmSupport = true;
             }).fd
           ];
+
+          # verbatimConfig = ''
+          #   nvram = [ "${pkgs.OVMFFull}/FV/OVMF.fd:${pkgs.OVMFFull}/FV/OVMF_VARS.fd" ]
+          #   gl = true
+          #   egl = true
+          # '';
         };
       };
     };
@@ -132,7 +141,7 @@
     "net.ipv4.ip_forward" = 1;
   };
 
-  networking.nftables.enable = true;
+  # networking.nftables.enable = true;
   # networking.firewall.trustedInterfaces = [ "incusbr0" ];
   # networking.firewall.interfaces.incusbr0.allowedTCPPorts = [
   #   53
