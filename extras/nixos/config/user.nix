@@ -6,6 +6,7 @@
     createHome = true;
     extraGroups = [
       "audio"
+      "cockpit-ws"
       "docker"
       "incus-admin"
       "incus"
@@ -18,6 +19,7 @@
       "video"
       "wheel"
     ];
+
     initialPassword = "nixos";
 
     openssh.authorizedKeys.keys = [

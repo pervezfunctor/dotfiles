@@ -3,9 +3,9 @@
   imports = [
     ./common.nix
     ./libvirt.nix
-    # ./incus.nix
-    # ./cockpit.nix
-    # ./docker.nix
+    ./incus.nix
+    ./cockpit.nix
+    ./docker.nix
   ];
 
   # virtualisation.microvm.enable = true;

@@ -25,22 +25,27 @@
   # services.zfs.autoScrub.enable = true;
   # services.zfs.autoSnapshot.enable = true;
 
-  # networking.nftables.enable = true;
-  # networking.firewall.trustedInterfaces = [ "incusbr0" ];
-  # networking.firewall.interfaces.incusbr0.allowedTCPPorts = [
-  #   53
-  #   67
-  # ];
-  # networking.firewall.interfaces.incusbr0.allowedUDPPorts = [
-  #   53
-  #   67
-  # ];
+  networking.nftables.enable = true;
+  networking.firewall.trustedInterfaces = [
+    "incusbr0"
+    "virbr0"
+  ];
+  networking.firewall.interfaces.incusbr0.allowedTCPPorts = [
+    53
+    67
+  ];
+  networking.firewall.interfaces.incusbr0.allowedUDPPorts = [
+    53
+    67
+  ];
 
-  networking.firewall.trustedInterfaces = [ "virbr0" ]; # Allow all traffic on bridge
   networking.firewall.allowedTCPPorts = [
     53
-    5900
-  ]; # SPICE default port
+    5900 # SPICE default port
+    # 80 for reverse proxy
+    # 443
+  ];
+
   networking.firewall.allowedUDPPorts = [
     53
     67

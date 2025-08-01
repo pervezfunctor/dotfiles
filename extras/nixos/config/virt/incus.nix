@@ -2,36 +2,35 @@
 {
   virtualisation.incus = {
     enable = true;
-    preseed = {
-      enable = true;
-      config = ''
-        config:
-          core.https_address: '[::]:8443'
-          core.trust_password: "CHANGE_ME_STRONG_PASSWORD"
-        storage_pools:
-          - name: default
-            driver: zfs
-            config:
-              source: tank/incus
-              zfs.pool_name: tank/incus
-        networks:
-          - name: lxdbr0
-            type: bridge
-            config:
-              ipv4.address: auto
-              ipv6.address: none
-        profiles:
-          - name: default
-            devices:
-              root:
-                path: /
-                pool: default
-                type: disk
-      '';
-    };
+    ui.enable = true;
 
-    zfsSupport = true;
-    recommendedSysctlSettings = true; # Optimizes kernel parameters
+    # preseed = {
+    #   enable = true;
+    #   config = ''
+    #     config:
+    #       core.https_address: '[::]:8443'
+    #       core.trust_password: "CHANGE_ME_STRONG_PASSWORD"
+    #     storage_pools:
+    #       - name: default
+    #         driver: zfs
+    #         config:
+    #           source: tank/incus
+    #           zfs.pool_name: tank/incus
+    #     networks:
+    #       - name: lxdbr0
+    #         type: bridge
+    #         config:
+    #           ipv4.address: auto
+    #           ipv6.address: none
+    #     profiles:
+    #       - name: default
+    #         devices:
+    #           root:
+    #             path: /
+    #             pool: default
+    #             type: disk
+    #   '';
+    # };
   };
 
   environment.systemPackages = with pkgs; [
@@ -43,7 +42,7 @@
     trustedInterfaces = [ "lxdbr0" ];
   };
 
-  incus.ui.enable = true; # Enable Incus web UI integration
+  # incus.ui.enable = true; # Enable Incus web UI integration
   virtualisation.lxc.enable = true; # Required for Incus
 }
 

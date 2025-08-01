@@ -4,24 +4,36 @@
   services.cockpit = {
     enable = true;
     port = 9090;
-    package = pkgs.cockpit.override {
-      extraPackages = with pkgs; [
-        cockpit-podman
-        cockpit-machines
-        cockpit-navigator
-        cockpit-sosreport
-      ];
-    };
+    # package = pkgs.cockpit.override {
+    #   extraPackages = with pkgs; [
+    #     cockpit-podman
+    #     cockpit-machines
+    #     cockpit-navigator
+    #     cockpit-sosreport
+    #     cockpit-file-sharing
+    #     cockpit-selinux
+    #     cockpit-storaged
+    #     cockpit-kdump
+    #     cockpit-packagekit
+    #   ];
+    # };
   };
 
-  # Additional Cockpit plugins
-  environment.systemPackages = with pkgs; [
-    cockpit-file-sharing # File transfer
-    cockpit-selinux # SELinux management
-    cockpit-storaged # Storage management
-    cockpit-kdump # Kernel crash analysis
-    cockpit-packagekit # Package updates
-  ];
+  # User groups for access control
+  users.groups.cockpit-ws = { };
+
+  # Firewall settings
+  networking.firewall = {
+    allowedTCPPortRanges = [
+      {
+        from = 9090;
+        to = 9095;
+      } # Cockpit dynamic ports
+    ];
+  };
+
+  # Enable DBus services for full functionality
+  services.dbus.packages = [ pkgs.cockpit ];
 
   # # Configure reverse proxy (optional but recommended for HTTPS)
   # services.nginx = {
@@ -43,33 +55,6 @@
   #   acme.acceptTerms = true;
   #   acme.defaults.email = "admin@your-domain.com";
   # };
-
-  # User groups for access control
-  users.groups.cockpit-ws = { };
-  users.users.yourusername.extraGroups = [
-    "cockpit-ws"
-    "docker"
-    "incus-admin"
-  ];
-
-  # Firewall settings
-  networking.firewall = {
-    allowedTCPPorts = [
-      80
-      443
-    ]; # For reverse proxy
-    # If not using reverse proxy:
-    # allowedTCPPorts = [ config.services.cockpit.port ];
-    allowedTCPPortRanges = [
-      {
-        from = 9090;
-        to = 9095;
-      } # Cockpit dynamic ports
-    ];
-  };
-
-  # Enable DBus services for full functionality
-  services.dbus.packages = [ pkgs.cockpit ];
 
   # Systemd services for additional features
   # systemd.services.cockpit-ws = {

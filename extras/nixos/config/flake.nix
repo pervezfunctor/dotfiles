@@ -9,6 +9,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    microvm = {
+      url = "github:microvm-nix/microvm.nix";
+    };
+
     home-manager = {
       # Follow corresponding `release` branch from Home Manager
       url = "github:nix-community/home-manager";
@@ -22,6 +26,7 @@
       agenix,
       stylix,
       home-manager,
+      microvm,
       ...
     }@inputs:
     let
@@ -31,6 +36,7 @@
         ./configuration.nix
         stylix.nixosModules.stylix
         home-manager.nixosModules.home-manager
+        # microvm.
         {
           home-manager = {
             extraSpecialArgs = { inherit inputs; };
