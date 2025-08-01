@@ -144,6 +144,7 @@
   programs = {
     git = {
       enable = true;
+      # @TODO: Change these values
       userName = "Pervez Iqbal";
       userEmail = "pervezfunctor@gmail.com";
     };

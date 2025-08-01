@@ -71,3 +71,7 @@
 	merge-branch = !git checkout master && git merge @{-1}
 	rebase-origin = !git fetch origin && git rebase origin/main
 	up = !git fetch origin && git rebase origin/main
+
+[user]
+	name = Pervez Iqbal
+	email = pervezfunctor@gmail.com

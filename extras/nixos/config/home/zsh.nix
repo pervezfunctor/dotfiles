@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ ... }:
 {
   programs.zsh = {
     enable = true;
@@ -7,16 +7,17 @@
     syntaxHighlighting.enable = true;
     shellAliases = {
       # cd = "z";
-      md = "mkdir -p";
-      ls = "eza -a --icons=auto --group-directories-first";
-      ll = "eza -l";
-      ipa = "ip -brief a";
-      gst = "git status";
-      gfm = "git pull";
-      gp = "git push";
-      gcm = "git commit -m";
-      gsa = "git stash apply";
       gcan = "git commit --amend --no-edit";
+      gcm = "git commit -m";
+      gfm = "git pull";
+      gia = "git add";
+      gp = "git push";
+      gsa = "git stash apply";
+      gst = "git status";
+      ipa = "ip -brief a";
+      ll = "eza -l";
+      ls = "eza -a --icons=auto --group-directories-first";
+      md = "mkdir -p";
       pbcopy = "wl-copy";
       pbpaste = "wl-paste --no-newline";
       ss = "nix search nixpkgs";
