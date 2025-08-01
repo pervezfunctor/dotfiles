@@ -38,9 +38,11 @@
       mask
       micro-with-wl-clipboard
       mprocs
+      navi
       ncspot
       nixd
       presenterm
+      procs
       ripgrep
       ripgrep-all
       rtx
@@ -53,9 +55,11 @@
       tokei
       trash-cli
       tree
+      ugrep
       unzip
       wiki-tui
       yazi
+      yq
       zellij
     ];
   };

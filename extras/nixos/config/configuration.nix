@@ -6,7 +6,7 @@
     ./user.nix
     ./dev.nix
     ./apps.nix
-    ./virt.nix
+    ./virt/virt.nix
   ];
 
   # @TODO: This will be your hostname, so change this
