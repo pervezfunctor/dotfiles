@@ -179,7 +179,6 @@ alias sl='ls'            # Correction for common spelling error.
 alias md="mkdir -p"
 alias rd="rmdir"
 alias cpr="cp -r"
-alias md="mkdir -p"
 alias rd="rmdir"
 alias del="trash"
 alias ipa="ip -brief a"

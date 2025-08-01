@@ -22,14 +22,21 @@
   ];
 
   boot.kernelModules = [
+    "virtio-gpu"
     "kvm-amd"
     "vfio-pci"
   ];
+
   boot.extraModulePackages = [ ];
   boot.extraModprobeConfig = "options amd_kvm nested=1";
   boot.kernelParams = [
     "amd_iommu=on"
     "iommu=pt"
+    "pcie_aspm=force"
+    # "video=efifb:off"
+    # "video=vesafb:off"
+    # "video=simplefb:off"
+    # "module.sig_enforce=0"  # Disable module signing enforcement
   ];
 
   swapDevices = [

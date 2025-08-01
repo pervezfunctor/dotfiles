@@ -1,12 +1,22 @@
 { pkgs, ... }:
 {
   users.users.me = {
-    # shell = pkgs.zsh;
+    shell = pkgs.zsh;
     isNormalUser = true;
     createHome = true;
     extraGroups = [
-      "wheel"
+      "audio"
+      "docker"
+      "incus-admin"
+      "incus"
+      "input"
+      "qemu-libvirtd"
+      "kvm"
+      "libvirtd"
+      "networkmanager"
+      "render"
       "video"
+      "wheel"
     ];
     initialPassword = "nixos";
 

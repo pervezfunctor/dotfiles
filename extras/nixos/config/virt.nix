@@ -1,25 +1,21 @@
-{ pkgs, config, ... }:
+{ pkgs, ... }:
 {
   # virtualisation.docker.enable = true;
 
-  hardware.opengl = {
+  hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
+      virglrenderer
       vaapiVdpau
       libvdpau-va-gl
       # intel-vaapi-driver # Intel users
       amdvlk # AMD users
       # rocm-opencl-icd # AMD ROCm
     ];
-    driSupport32Bit = true;
+    enable32Bit = true;
   };
 
   virtualisation = {
-    # qemu = {
-    #   enable = true;
-    #   nestedVirtualization = true;
-    # };
-
     libvirtd = {
       enable = true;
 
@@ -43,9 +39,11 @@
       # '';
 
       qemu = {
+        # nested = 1;
         package = pkgs.qemu_kvm;
         runAsRoot = true;
         swtpm.enable = true;
+        vhostUserPackages = with pkgs; [ virtiofsd ];
         ovmf = {
           enable = true;
           packages = [
@@ -102,14 +100,6 @@
   };
   programs.virt-manager.enable = true;
 
-  users.users.me.extraGroups = [
-    "kvm"
-    "libvirtd"
-    "incus"
-    "incus-admin"
-    "docker"
-  ];
-
   environment.systemPackages = with pkgs; [
     virt-manager
     virt-viewer
@@ -117,6 +107,9 @@
     qemu_kvm
     qemu-utils
     dnsmasq
+    openssl
+    xorriso
+    cdrkit
 
     # nftables
     # ebtables
@@ -131,9 +124,6 @@
     # dmidecode
     # seabios
     # docker-compose
-    openssl
-    xorriso
-    cdrkit
   ];
 
   # Enable IP forwarding for NAT networking
@@ -161,7 +151,15 @@
   #   -A FORWARD -o virbr0 -j ACCEPT
   # '';
 
-  networking.firewall.allowedTCPPorts = [ 5900 ]; # SPICE default port
+  networking.firewall.trustedInterfaces = [ "virbr0" ]; # Allow all traffic on bridge
+  networking.firewall.allowedTCPPorts = [
+    53
+    5900
+  ]; # SPICE default port
+  networking.firewall.allowedUDPPorts = [
+    53
+    67
+  ]; # DNS + DHCP
 
   # networking.firewall.extraRules = ''
   #   # Allow libvirt network (default NAT)

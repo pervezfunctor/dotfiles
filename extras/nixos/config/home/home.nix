@@ -3,6 +3,10 @@
   # home-manager.useUserPackages = true;
   # home-manager.useGlobalPkgs = true;
 
+  imports = [
+    ./zsh.nix
+  ];
+
   home = {
     stateVersion = "25.11";
     username = "me";
@@ -10,39 +14,49 @@
 
     packages = with pkgs; [
       alejandra
-      bat
-      carapace
+      atuin
+      bacon
+      cargo-info
       delta
+      delta
+      du-dust
+      dua
       duf
-      emacs-nox
-      eza
+      espanso
+      evil-helix
+      fastfetch
       fd
-      fzf
+      fselect
       gh
+      gitui
       htop
+      hurl
+      hyperfine
       just
+      kondo
       lazygit
-      luarocks
+      mask
       micro-with-wl-clipboard
-      neovim
+      mprocs
+      ncspot
       nixd
-      nushell
+      presenterm
       ripgrep
-      ripgrep
+      ripgrep-all
+      rtx
+      rusty-man
       sd
       shellcheck
       shfmt
-      starship
       stow
       tealdeer
-      tmux
+      tokei
       trash-cli
       tree
       unzip
-      unzip
+      wiki-tui
       yazi
-      zoxide
-      zsh
+      zellij
     ];
   };
 
@@ -74,6 +88,14 @@
     "org/gnome/desktop/input-sources" = {
       xkb-options = [ "caps:ctrl_modifier" ];
     };
+
+    "org/gnome/desktop/screensaver" = {
+      lock-enabled = false;
+    };
+
+    # "org/gnome/desktop/session" = {
+    #   idle-delay = 0; #  disables screen blanking
+    # };
 
     "org/gnome/desktop/interface" = {
       gtk-theme = "Adwaita-dark";
@@ -126,24 +148,29 @@
       userEmail = "pervezfunctor@gmail.com";
     };
 
-    zsh = {
-      enable = true;
-      enableCompletion = true;
-      autosuggestion.enable = true;
-      syntaxHighlighting.enable = true;
-    };
-
     starship = {
       enable = true;
       enableZshIntegration = true;
       enableBashIntegration = true;
       enableNushellIntegration = true;
     };
+
     bash.enable = true;
-    # nushell.enable = true;
     bat.enable = true;
     ghostty.enable = true;
     home-manager.enable = true;
+    carapace.enable = true;
+    direnv.enable = true;
+    emacs.enable = true;
+    eza.enable = true;
+    fzf.enable = true;
+    neovim.enable = true;
+    nushell.enable = true;
+    tmux.enable = true;
+    yazi.enable = true;
+    zoxide.enable = true;
+    # programs.vscode.enable = true;
+
   };
 
   # dconf.settings = {
