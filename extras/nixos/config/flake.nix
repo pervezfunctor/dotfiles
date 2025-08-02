@@ -3,18 +3,14 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     agenix.url = "github:ryantm/agenix";
+    quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
 
     stylix = {
       url = "github:danth/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    microvm = {
-      url = "github:microvm-nix/microvm.nix";
-    };
-
     home-manager = {
-      # Follow corresponding `release` branch from Home Manager
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -26,7 +22,7 @@
       agenix,
       stylix,
       home-manager,
-      microvm,
+      quadlet-nix,
       ...
     }@inputs:
     let
@@ -35,8 +31,8 @@
       commonModules = [
         ./configuration.nix
         stylix.nixosModules.stylix
+        quadlet-nix.nixosModules.quadlet
         home-manager.nixosModules.home-manager
-        # microvm.
         {
           home-manager = {
             extraSpecialArgs = { inherit inputs; };

@@ -4,8 +4,11 @@
     ./common.nix
     ./libvirt.nix
     ./incus.nix
-    ./cockpit.nix
-    ./docker.nix
+    # ./cockpit.nix
+    # ./podman.nix
+
+    # docker interferes with both podman and incus
+    # ./docker.nix
   ];
 
   # virtualisation.microvm.enable = true;
