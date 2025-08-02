@@ -176,6 +176,13 @@ rpm-ostree_install() {
 
     slog "Installing packages"
 
+    local apply_live=false
+
+    if [[ "$1" == "--apply-live" ]]; then
+        apply_live=true
+        shift
+    fi
+
     local PKGS=()
 
     has_cmd stow || PKGS+=("stow")
@@ -187,20 +194,32 @@ rpm-ostree_install() {
     has_cmd wl-copy || PKGS+=("wl-clipboard")
     has_cmd virsh || PKGS+=("libvirt")
     has_cmd virt-install || PKGS+=("virt-install")
-    has_cmd virt-manager || PKGS+=("virt-manager") # optional?
-    has_cmd code || PKGS+=("https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm code")
-    # has_cmd docker || PKGS+=("docker-ce")
+
+    if is_desktop; then
+        has_cmd virt-manager || PKGS+=("virt-manager")
+
+        has_cmd code || PKGS+=(
+            "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
+            "code"
+        )
+    fi
 
     if [[ ${#PKGS[@]} -eq 0 ]]; then
         slog "No packages to install"
         return 0
     fi
 
-    if has_cmd stow || has_cmd zsh || has_cmd gcc || has_cmd make || has_cmd wl || has_cmd virsh || has_cmd virt || has_cmd code; then
+    if has_cmd stow || has_cmd zsh || has_cmd gcc || has_cmd make ||
+        has_cmd wl || has_cmd virsh || has_cmd virt-install ||
+        has_cmd code; then
         warn "This script is supposed to be run only once"
     fi
 
-    sudo rpm-ostree install -q -y --apply-live "${PKGS[@]}"
+    if [[ "$apply_live" == true ]]; then
+        sudo rpm-ostree install --apply-live -q -y "${PKGS[@]}"
+    else
+        sudo rpm-ostree install -q -y "${PKGS[@]}"
+    fi
 
     sudo systemctl enable --now libvirtd
 
@@ -271,21 +290,24 @@ generic-ct_groupstall() {
 generic_groupstall() {
     generic-ct_groupstall
 
-    if is_desktop; then
-        jetbrains_nerd_font_install
-        flathub_install
-        ptyxis_install
-    fi
+    has_cmd zsh && zsh_confstall
+    has_cmd tmux && tmux_confstall
 
     if has_cmd podman || has_cmd docker; then
         atomic_distrobox_install
     else
         fail "No container runtime(docker or podman) installed, skipping distrobox installation"
     fi
+
+    if is_desktop; then
+        jetbrains_nerd_font_install
+        flathub_install
+        ptyxis_install
+    fi
 }
 
 rpm-ostree_groupstall() {
-    rpm-ostree_install
+    rpm-ostree_install --apply-live "$@"
     generic_groupstall
 }
 
