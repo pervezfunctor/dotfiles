@@ -2,7 +2,6 @@
 {
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.systemd-boot.enable = true;
-  boot.extraModprobeConfig = "options kvm_intel nested=1";
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
   console = {
@@ -20,10 +19,27 @@
   time.timeZone = "Asia/Kolkata";
   i18n.defaultLocale = "en_US.UTF-8";
 
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
+  nix = {
+    gc = {
+      automatic = true;
+      dates = "Sun 03:00";
+      options = "--delete-older-than 5d";
+      persistent = true;
+      randomizedDelaySec = "30min";
+    };
+
+    settings = {
+      auto-optimise-store = true;
+      keep-build-log = true;
+      keep-outputs = true;
+      keep-derivations = true;
+
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+    };
+  };
 
   nixpkgs.config.allowUnfree = true;
 }
