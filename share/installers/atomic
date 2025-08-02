@@ -511,6 +511,8 @@ vscode_flatpak_install() {
 }
 
 ptyxis_install() {
+    has_cmd ptyxis && return 0
+
     if ! has_cmd flatpak; then
         warn "flatpak not installed, skipping ptyxis installation."
         return 1
