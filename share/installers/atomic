@@ -183,6 +183,8 @@ rpm-ostree_install() {
 
     has_cmd stow || PKGS+=("stow")
     has_cmd zsh || PKGS+=("zsh")
+    has_cmd git || PKGS+=("git")
+    has_cmd tmux || PKGS+=("tmux")
     has_cmd gcc || PKGS+=("gcc")
     has_cmd make || PKGS+=("make")
     has_cmd wl-copy || PKGS+=("wl-clipboard")
@@ -190,6 +192,7 @@ rpm-ostree_install() {
     has_cmd virt-install || PKGS+=("virt-install")
     has_cmd virt-manager || PKGS+=("virt-manager") # optional?
     has_cmd code || PKGS+=("code")
+    # has_cmd docker || PKGS+=("docker-ce")
 
     if [[ ${#PKGS[@]} -eq 0 ]]; then
         slog "No packages to install"
@@ -271,14 +274,22 @@ generic-ct_groupstall() {
 generic_groupstall() {
     generic-ct_groupstall
 
-    is_desktop && jetbrains_nerd_font_install
-    is_desktop && kitty_bin_install
+    if is_desktop; then
+        jetbrains_nerd_font_install
+        flathub_install
+        ptyxis_install
+    fi
 
     if has_cmd podman || has_cmd docker; then
         atomic_distrobox_install
     else
         fail "No container runtime(docker or podman) installed, skipping distrobox installation"
     fi
+}
+
+rpm-ostree_groupstall() {
+    rpm-ostree_install
+    generic_groupstall
 }
 
 gnome_extensions_install() {
