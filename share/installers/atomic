@@ -245,6 +245,11 @@ generic_groupstall() {
     fi
 }
 
+rpm-ostree_groupstall() {
+    rpm-ostree_packages
+    generic_groupstall
+}
+
 gnome_extensions_install() {
     if ! has_cmd gext; then
         if ! has_cmd pipx; then

@@ -89,6 +89,7 @@ rpm-ostree_packages() {
     has_cmd wl-copy || PKGS+=("wl-clipboard")
     has_cmd virsh || PKGS+=("libvirt")
     has_cmd virt-install || PKGS+=("virt-install")
+    has_cmd virt-manager || PKGS+=("virt-manager") # optional?
     has_cmd code || PKGS+=("code")
 
     if [[ ${#PKGS[@]} -eq 0 ]]; then
