@@ -90,6 +90,20 @@ dbox-wolfi() {
     fi
 }
 
+dbox-virt-manager() {
+    distrobox create --pull --root --init --unshare-all --image registry.opensuse.org/opensuse/distrobox:latest --name libvirtd --additional-flags "-p 2222:22" \
+        --init-hooks "zypper in -y --no-recommends openssh-server patterns-server-kvm_server patterns-server-kvm_tools qemu-extra qemu-linux-user qemu-hw-display-virtio-gpu-pci qemu-hw-display-virtio-gpu && systemctl enable sshd.service && systemctl enable virtqemud.socket virtnetworkd.socket virtstoraged.socket virtnodedevd.socket && usermod -aG libvirt $USER"
+}
+
+dbox-fedora-virt-manager() {
+    distrobox create \
+        --pull --root --init --unshare-all \
+        --image registry.fedoraproject.org/fedora:latest \
+        --name virt-manager \
+        --additional-flags "-p 2222:22" \
+        --init-hooks "dnf install -y --skip-unavailable openssh-server libvirt virt-install virt-manager && systemctl enable sshd.service && systemctl enable virtqemud.socket virtnetworkd.socket virtstoraged.socket virtnodedevd.socket && usermod -aG libvirt $USER"
+}
+
 dbox-docker() {
     local CONTAINER_NAME=${1:-docker}
     slog "Creating Docker distrobox: ${CONTAINER_NAME}"
