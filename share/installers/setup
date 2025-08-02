@@ -22,7 +22,7 @@ else
 fi
 
 main() {
-    if [[ "$#" -eq 1 ]] && has_cmd "${1}_groupstall"; then
+    if has_cmd "${1}_groupstall"; then
         "${1}_groupstall"
     else
         if has_cmd min_groupstall; then

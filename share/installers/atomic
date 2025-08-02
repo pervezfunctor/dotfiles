@@ -210,7 +210,7 @@ rpm-ostree_install() {
     fi
 
     if has_cmd stow || has_cmd zsh || has_cmd gcc || has_cmd make ||
-        has_cmd wl || has_cmd virsh || has_cmd virt-install ||
+        has_cmd tmux || has_cmd wl || has_cmd virsh || has_cmd virt-install ||
         has_cmd code; then
         warn "This script is supposed to be run only once"
     fi
@@ -221,7 +221,11 @@ rpm-ostree_install() {
         sudo rpm-ostree install -q -y "${PKGS[@]}"
     fi
 
-    sudo systemctl enable --now libvirtd
+    dotfiles_install
+    zsh_confstall
+    tmux_confstall
+    vscode_confstall
+    libvirt_confstall
 
     warn "Installing packages done! Note that you need to reboot for the changes to take effect."
 }
