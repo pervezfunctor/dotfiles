@@ -171,35 +171,10 @@ ghostty_install() {
     ghostty_confstall
 }
 
-docker_fedora_repo() {
-    has_cmd docker && return 0
-
-    si dnf-plugins-core
-
-    is_rocky && sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    is_fedora && sudo dnf-3 config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
-}
-
-vscode_fedora_repo() {
-    has_cmd code && return 1
-
-    [ -f /etc/yum.repos.d/vscode.repo ] && return 1
-
-    slog "Adding vscode repo"
-
-    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-    sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
-
-    slog "vscode repo added!"
-}
-
 rpm-ostree_install() {
     has_cmd rpm-ostree || err_exit "This script is only for rpm-ostree based systems"
 
     slog "Installing packages"
-
-    vscode_fedora_repo
-    # docker_fedora_repo
 
     local PKGS=()
 
@@ -213,7 +188,7 @@ rpm-ostree_install() {
     has_cmd virsh || PKGS+=("libvirt")
     has_cmd virt-install || PKGS+=("virt-install")
     has_cmd virt-manager || PKGS+=("virt-manager") # optional?
-    has_cmd code || PKGS+=("code")
+    has_cmd code || PKGS+=("https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm code")
     # has_cmd docker || PKGS+=("docker-ce")
 
     if [[ ${#PKGS[@]} -eq 0 ]]; then
