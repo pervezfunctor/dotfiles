@@ -1,0 +1,91 @@
+#! /usr/bin/env bash
+
+# Check requirements
+for cmd in whiptail virsh; do
+  command -v $cmd >/dev/null || {
+    echo "$cmd is required."
+    exit 1
+  }
+done
+
+# Function to get list of VMs
+list_vms() {
+  virsh list --all --name | awk NF
+}
+
+# Function to get list of snapshots for a VM
+list_snapshots() {
+  virsh snapshot-list "$1" --name | awk NF
+}
+
+# Function to present VM selection menu
+select_vm() {
+  VMS=$(list_vms)
+  [ -z "$VMS" ] && whiptail --msgbox "No VMs found." 8 40 && return 1
+  MENU_ITEMS=()
+  while read -r vm; do
+    MENU_ITEMS+=("$vm" "")
+  done <<<"$VMS"
+  SELECTED_VM=$(whiptail --menu "Select a VM:" 20 60 10 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3) || return 1
+  echo "$SELECTED_VM"
+}
+
+# Function to present Snapshot selection menu for a VM
+select_snapshot() {
+  SNAPSHOTS=$(list_snapshots "$1")
+  [ -z "$SNAPSHOTS" ] && whiptail --msgbox "No snapshots found for VM '$1'." 8 50 && return 1
+  MENU_ITEMS=()
+  while read -r snap; do
+    MENU_ITEMS+=("$snap" "")
+  done <<<"$SNAPSHOTS"
+  SELECTED_SNAPSHOT=$(whiptail --menu "Select a Snapshot:" 20 60 10 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3) || return 1
+  echo "$SELECTED_SNAPSHOT"
+}
+
+# Snapshot management functions
+create_snapshot() {
+  VM_NAME=$(select_vm) || return
+  SNAP_NAME=$(whiptail --inputbox "Enter new snapshot name:" 8 40 --title "Create Snapshot" 3>&1 1>&2 2>&3) || return
+  virsh snapshot-create-as "$VM_NAME" "$SNAP_NAME" --disk-only --atomic --quiesce &&
+    whiptail --msgbox "Snapshot '$SNAP_NAME' created for VM '$VM_NAME'." 8 50 --title "Success"
+}
+
+list_snapshots_menu() {
+  VM_NAME=$(select_vm) || return
+  SNAPSHOTS=$(virsh snapshot-list "$VM_NAME")
+  whiptail --msgbox "$SNAPSHOTS" 20 70 --title "Snapshots for $VM_NAME"
+}
+
+revert_snapshot() {
+  VM_NAME=$(select_vm) || return
+  SNAP_NAME=$(select_snapshot "$VM_NAME") || return
+  virsh snapshot-revert "$VM_NAME" "$SNAP_NAME" --running &&
+    whiptail --msgbox "VM '$VM_NAME' reverted to snapshot '$SNAP_NAME'." 8 50 --title "Success"
+}
+
+delete_snapshot() {
+  VM_NAME=$(select_vm) || return
+  SNAP_NAME=$(select_snapshot "$VM_NAME") || return
+  virsh snapshot-delete "$VM_NAME" --snapshotname "$SNAP_NAME" &&
+    whiptail --msgbox "Snapshot '$SNAP_NAME' deleted for VM '$VM_NAME'." 8 50 --title "Success"
+}
+
+# Main menu loop
+while true; do
+  CHOICE=$(whiptail --title "VM Snapshot Manager" --menu "Choose an action:" 15 60 6 \
+    1 "Create Snapshot" \
+    2 "List Snapshots" \
+    3 "Revert to Snapshot" \
+    4 "Delete Snapshot" \
+    5 "Exit" 3>&1 1>&2 2>&3) || break
+
+  case $CHOICE in
+  1) create_snapshot ;;
+  2) list_snapshots_menu ;;
+  3) revert_snapshot ;;
+  4) delete_snapshot ;;
+  5) break ;;
+  esac
+done
+
+exit 0

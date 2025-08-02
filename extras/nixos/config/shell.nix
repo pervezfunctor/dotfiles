@@ -3,31 +3,39 @@
   programs.zsh.enable = true;
 
   environment.systemPackages = with pkgs; [
-    wl-clipboard
-    plocate
     alejandra
-    iproute2
-    nmap
     bash
     coreutils
     curl
     dialog
+    dialog
     ethtool
     fio
+    fuse
+    gawk
     gawk
     gcc
     git
     glibc
     gnugrep
     gnumake
+    gum
+    iproute2
     jq
+    libsecret
     lm_sensors
     lsof
+    micro
+    net-tools
+    newt
     nixd
     nixfmt-rfc-style
+    nmap
     numactl
     nvme-cli
+    p7zip
     pciutils
+    plocate
     proxmox-backup-client
     restic
     rsync
@@ -36,22 +44,15 @@
     stress
     tcpdump
     udisks2
+    unar
     usbutils
     vim
     wget
+    wl-clipboard
     xz
     zfs
     zfstools
     zip
-    p7zip
-    unar
-    gawk
-    dialog
-    gum
-    micro
-    net-tools
-    libsecret
-    fuse
     zstd
   ];
 }
