@@ -25,7 +25,7 @@ arch_packages() {
     si git-core github-cli git-delta unzip wget curl trash-cli tar stow \
         gcc make file starship gum wl-clipboard tree bat eza fzf ripgrep \
         zoxide fd htop sd yazi bat tealdeer lazygit libsecret net-tools \
-        iproute2 nmap dialog whiptail
+        iproute2 nmap dialog newt
 
     has_cmd tldr && tldr --update
 
@@ -91,7 +91,7 @@ essential_install() {
 
     si unarchiver zip tmux pkg-config fuse2 net-tools iproute2 p7zip readline \
         sqlite libffi zlib xz pkgfile nmap gum libxcrypt-compat libsecret gawk \
-        base-devel micro dialog whiptail just
+        base-devel micro dialog newt just
 
     sudo pkgfile --update
 

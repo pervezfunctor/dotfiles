@@ -67,7 +67,7 @@ fedora_packages() {
 
     si git-core gh git-delta unzip wget curl trash-cli tar stow gcc make file \
         gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate \
-        cheat libsecret net-tools iproute nmap dialog whiptail
+        cheat libsecret net-tools iproute nmap dialog newt
 
     has_cmd tldr && tldr --update
 
@@ -138,7 +138,7 @@ essential_install() {
 
     si zip p7zip unar gawk readline-devel sqlite-devel libffi-devel dialog \
         bzip2-devel xz-devel gum micro net-tools iproute2 nmap libsecret \
-        fuse fuse-libs zstd whiptail just
+        fuse fuse-libs zstd newt just
 
     slog "Essential packages installation done!"
 }

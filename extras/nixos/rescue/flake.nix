@@ -43,7 +43,7 @@
                   grub-btrfs
                   inotify-tools
                   vim
-                  whiptail
+                  newt
                   git
                   zsh
                   curl

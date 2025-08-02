@@ -428,6 +428,8 @@ vscode_confstall() {
         fi
     fi
 
+    vscode-extensions_install
+
     slog "vscode config done!"
 }
 

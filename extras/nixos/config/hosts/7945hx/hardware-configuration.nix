@@ -28,7 +28,7 @@
   ];
 
   boot.extraModulePackages = [ ];
-  boot.extraModprobeConfig = "options amd_kvm nested=1";
+  boot.extraModprobeConfig = "options kvm_amd nested=1";
   boot.kernelParams = [
     "amd_iommu=on"
     "iommu=pt"

@@ -29,7 +29,7 @@ tw_packages() {
     si git gh git-delta unzip wget curl trash-cli tar stow gcc make file \
         starship gum wl-clipboard tree bat eza fzf ripgrep zoxide fd \
         htop sd tealdeer yazi cheat lazygit libsecret net-tools iproute2 nmap \
-        dialog whiptail
+        dialog newt
 
     has_cmd tldr && tldr --update
 
@@ -94,7 +94,7 @@ essential_install() {
     sudo zypper install -y -t pattern devel_basis
     si unar zip micro-editor 7zip readline-devel sqlite3-devel libffi-devel \
         libbz2-devel xz-devel gum net-tools iproute2 nmap libsecret gawk \
-        dialog whiptail just
+        dialog newt just
 
     slog "Essential packages installation done!"
 }
