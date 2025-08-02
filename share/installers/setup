@@ -34,8 +34,10 @@ main() {
         common-installer "$@"
     fi
 
-    if ! has_cmd zsh && [[ "$(default_shell)" != "zsh" ]]; then
-        has_cmd set_zsh_as_default && set_zsh_as_default
+    if has_cmd zsh && [ "$(default_shell)" != "zsh" ]; then
+        if has_cmd set_zsh_as_default; then
+            set_zsh_as_default
+        fi
     fi
 }
 
