@@ -171,6 +171,28 @@ ghostty_install() {
     ghostty_confstall
 }
 
+docker_fedora_repo() {
+    has_cmd docker && return 0
+
+    si dnf-plugins-core
+
+    is_rocky && sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    is_fedora && sudo dnf-3 config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+}
+
+vscode_fedora_repo() {
+    has_cmd code && return 1
+
+    [ -f /etc/yum.repos.d/vscode.repo ] && return 1
+
+    slog "Adding vscode repo"
+
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+    sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+
+    slog "vscode repo added!"
+}
+
 rpm-ostree_install() {
     has_cmd rpm-ostree || err_exit "This script is only for rpm-ostree based systems"
 
