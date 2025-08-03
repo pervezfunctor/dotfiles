@@ -1,0 +1,69 @@
+# Set shell to bash
+set shell := ["bash", "-cu"]
+
+# VM Snapshot Commands using virsh
+
+# Usage: just snapshot-create <vm> <snapshot>
+snapshot-create vm snapshot:
+    echo "Creating snapshot '$snapshot' for VM '$vm'..."
+    virsh snapshot-create-as "$vm" "$snapshot" --disk-only --atomic --quiesce
+    echo "Snapshot '$snapshot' created."
+
+# Usage: just snapshot-list <vm>
+snapshot-list vm:
+    echo "Listing snapshots for VM '$vm'..."
+    virsh snapshot-list "$vm"
+
+# Usage: just snapshot-revert <vm> <snapshot>
+snapshot-revert vm snapshot:
+    echo "Reverting VM '$vm' to snapshot '$snapshot'..."
+    virsh snapshot-revert "$vm" "$snapshot" --running
+    echo "VM '$vm' reverted to snapshot '$snapshot'."
+
+# Usage: just snapshot-delete <vm> <snapshot>
+snapshot-delete vm snapshot:
+    echo "Deleting snapshot '$snapshot' for VM '$vm'..."
+    virsh snapshot-delete "$vm" --snapshotname "$snapshot"
+    echo "Snapshot '$snapshot' deleted."
+
+# Interactive Menu
+snapshot-menu:
+    echo "VM Snapshot Manager"
+    echo "-------------------"
+    echo "1. Create Snapshot"
+    echo "2. List Snapshots"
+    echo "3. Revert to Snapshot"
+    echo "4. Delete Snapshot"
+    echo "Choose an option: "
+    read option
+    case "$option" in
+        1)
+            echo "Enter VM name:"
+            read vm
+            echo "Enter snapshot name:"
+            read snapshot
+            just snapshot-create "$vm" "$snapshot"
+            ;;
+        2)
+            echo "Enter VM name:"
+            read vm
+            just snapshot-list "$vm"
+            ;;
+        3)
+            echo "Enter VM name:"
+            read vm
+            echo "Enter snapshot name:"
+            read snapshot
+            just snapshot-revert "$vm" "$snapshot"
+            ;;
+        4)
+            echo "Enter VM name:"
+            read vm
+            echo "Enter snapshot name:"
+            read snapshot
+            just snapshot-delete "$vm" "$snapshot"
+            ;;
+        *)
+            echo "Invalid option."
+            ;;
+    esac

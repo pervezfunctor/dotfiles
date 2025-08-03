@@ -5,7 +5,7 @@
     ./libvirt.nix
     ./incus.nix
     # ./cockpit.nix
-    # ./podman.nix
+    ./podman.nix
 
     # docker interferes with both podman and incus
     # ./docker.nix

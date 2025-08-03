@@ -6,9 +6,7 @@
     ./zsh.nix
     ./shell.nix
 
-    ./gtk.nix
-    ./ghostty.nix
-    ./vscode.nix
+    ./ui.nix
   ];
 
   home = {
