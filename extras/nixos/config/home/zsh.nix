@@ -6,6 +6,7 @@
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
     shellAliases = {
+      update-os = "sudo nixos-rebuild switch --flake ~/.ilm/extras/nixos/config";
       # cd = "z";
       # gcan = "git commit --amend --no-edit";
       # gcm = "git commit -m";
@@ -21,16 +22,17 @@
       # # pbcopy = "wl-copy";
       # pbpaste = "wl-paste --no-newline";
       # ss = "nix search nixpkgs";
-      update-os = "sudo nixos-rebuild switch --flake ~/.ilm/extras/nixos/config";
     };
 
+    # Just being extra careful to not break the shell.
     initContent = ''
-      source <(fzf --zsh)
-      eval "$(atuin init zsh --disable-up-arrow --disable-ctrl-r)"
-      export PATH=$HOME/.local/bin:$HOME/.ilm/bin:$HOME/.ilm/bin/vt:$PATH
-      source $HOME/.ilm/share/utils
-      source $HOME/.ilm/share/fns
-      source $HOME/.ilm/share/aliases
+      if [[ -d "$HOME/.ilm" ]]; then
+        export PATH="$HOME/.volta/bin:$HOME/.local/bin:$HOME/.ilm/bin:$HOME/.ilm/bin/vt:$PATH"
+
+        source "$HOME/.ilm/share/utils"
+        source "$HOME/.ilm/share/fns"
+        source "$HOME/.ilm/share/aliases"
+      fi
     '';
   };
 }

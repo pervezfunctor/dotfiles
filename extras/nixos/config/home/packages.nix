@@ -1,0 +1,54 @@
+{ pkgs, ... }:
+{
+  home.packages = with pkgs; [
+    alejandra
+    atuin
+    bacon
+    cargo-info
+    delta
+    delta
+    du-dust
+    dua
+    duf
+    espanso
+    evil-helix
+    fastfetch
+    fd
+    fselect
+    gh
+    gitui
+    htop
+    hurl
+    hyperfine
+    just
+    kondo
+    lazygit
+    mask
+    micro-with-wl-clipboard
+    mprocs
+    navi
+    ncspot
+    nixd
+    presenterm
+    procs
+    ripgrep
+    ripgrep-all
+    rtx
+    rusty-man
+    sd
+    shellcheck
+    shfmt
+    starship
+    stow
+    tealdeer
+    tokei
+    trash-cli
+    tree
+    ugrep
+    unzip
+    wiki-tui
+    yazi
+    yq
+    zellij
+  ];
+}

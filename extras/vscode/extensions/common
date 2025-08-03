@@ -1,4 +1,5 @@
-arrterian.nix-env-selector
+
+Augment.vscode-augment
 catppuccin.catppuccin-vsc
 catppuccin.catppuccin-vsc-icons
 charliermarsh.ruff
@@ -15,6 +16,7 @@ mechatroner.rainbow-csv
 mhutchie.git-graph
 ms-azuretools.vscode-docker
 ms-kubernetes-tools.vscode-kubernetes-tools
+ms-ossdata.vscode-pgsql
 ms-python.debugpy
 ms-python.python
 ms-python.vscode-pylance
@@ -26,7 +28,6 @@ ms-vscode.remote-explorer
 ms-vscode.remote-repositories
 ms-vscode.remote-server
 ms-vscode.vscode-github-issue-notebooks
-ms-ossdata.vscode-pgsql
 mvllow.rose-pine
 pflannery.vscode-versionlens
 pomdtr.excalidraw-editor
@@ -35,10 +36,8 @@ rangav.vscode-thunder-client
 redhat.vscode-yaml
 rogalmic.bash-debug
 ryanluker.vscode-coverage-gutters
-ryanluker.vscode-coverage-gutters
 sainnhe.everforest
 sclu1034.justfile
-streetsidesoftware.code-spell-checker
 tamasfe.even-better-toml
 thenuprojectcontributors.vscode-nushell-lang
 timonwong.shellcheck
@@ -48,4 +47,3 @@ vincaslt.highlight-matching-tag
 wayou.vscode-todo-highlight
 yzhang.markdown-all-in-one
 zxh404.vscode-proto3
-Augment.vscode-augment

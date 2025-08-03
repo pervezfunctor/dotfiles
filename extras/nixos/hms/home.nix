@@ -13,6 +13,7 @@
       carapace
       delta
       emacs-nox
+      devenv
       eza
       fd
       fzf
@@ -22,11 +23,14 @@
       neovim
       nixpkgs-fmt
       nodejs
+      p7zip
       ripgrep
       sd
       starship
       tealdeer
+      unar
       unzip
+      xz
       yazi
       zoxide
     ];

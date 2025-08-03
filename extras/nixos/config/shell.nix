@@ -8,13 +8,12 @@
     coreutils
     curl
     dialog
-    dialog
     ethtool
     fio
     fuse
     gawk
-    gawk
     gcc
+    ghostty
     git
     glibc
     gnugrep
@@ -33,7 +32,6 @@
     nmap
     numactl
     nvme-cli
-    p7zip
     pciutils
     plocate
     proxmox-backup-client
@@ -44,12 +42,10 @@
     stress
     tcpdump
     udisks2
-    unar
     usbutils
     vim
     wget
     wl-clipboard
-    xz
     zfs
     zfstools
     zip
