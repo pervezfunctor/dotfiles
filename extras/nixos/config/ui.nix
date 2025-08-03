@@ -45,11 +45,11 @@
 
   services.flatpak.enable = true;
 
-  system.activationScripts.flatpak-flathub = {
-    text = ''
-      flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-    '';
-  };
+  # system.activationScripts.flatpakFlathub = {
+  #   text = ''
+  #     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  #   '';
+  # };
 
   programs.appimage = {
     enable = true;
