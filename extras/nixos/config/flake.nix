@@ -4,6 +4,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     agenix.url = "github:ryantm/agenix";
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
+    flake-parts.url = "github:hercules-ci/flake-parts";
 
     stylix = {
       url = "github:danth/stylix";
@@ -12,6 +13,11 @@
 
     home-manager = {
       url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nixvim = {
+      url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -23,6 +29,7 @@
       stylix,
       home-manager,
       quadlet-nix,
+      nixvim,
       ...
     }@inputs:
     let
@@ -32,6 +39,7 @@
         ./configuration.nix
         stylix.nixosModules.stylix
         quadlet-nix.nixosModules.quadlet
+        # nixvim.nixosModules.nixvim
         home-manager.nixosModules.home-manager
         {
           home-manager = {
@@ -40,7 +48,6 @@
             useUserPackages = true;
             useGlobalPkgs = true;
             backupFileExtension = "backup";
-
             users.me = import ./home/home.nix;
           };
         }
@@ -55,7 +62,10 @@
         "me" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs; };
-          modules = [ ./home/home.nix ];
+          modules = [
+            # nixvim.homeManagerModules.nixvim
+            ./home/home.nix
+          ];
         };
       };
 

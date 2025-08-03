@@ -1,11 +1,15 @@
-{ ... }:
+{ inputs, ... }:
+let
+  nixvim = inputs.nixvim;
+in
 {
   imports = [
     ./packages.nix
     ./programs.nix
     ./zsh.nix
     ./shell.nix
-
+    nixvim.homeManagerModules.nixvim
+    ./nvim.nix
     ./ui.nix
   ];
 
