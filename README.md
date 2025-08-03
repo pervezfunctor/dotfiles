@@ -152,15 +152,25 @@ You should be able to use `vscode` and `devcontainers` without any issues. Remem
 I would highly recommend you install `libvirt` and `virt-manager` for managing virtual machines. You could use the following command.
 
 ```bash
-ilmi libvirt
+ilmi vm-ui
 ```
 
 Once you reboot, you should be able to create and use virtual machines. I have a few helper scripts to make this easier.
 
-For example you could easily create a vm with docker installed and ssh enabled with the following command.
+For example you could easily create a vm with ssh enabled, with the following command.
 
 ```bash
-vm-create --distro ubuntu --name dev --docker --brew --dotfiles min
+vm-create --distro ubuntu --name dev
+```
+After a few minutes, you should be able to ssh into this vm with the following command. User name is `ubuntu` for ubuntu vm. If needed use password `ubuntu`.
+
+```bash
+vm ssh dev ubuntu
+```
+You could install docker and shell tools in this vm with the following command.
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif)" -- shell-slim docker
 ```
 
 All of the above instructions should work equally well for ubuntu, debian trixie, arch or tumbleweed. You might want a better terminal, depending on your OS of choice. On any of them you could easily install `ptyxis` with the following command.
