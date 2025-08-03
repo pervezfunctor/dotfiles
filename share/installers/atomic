@@ -221,12 +221,6 @@ rpm-ostree_install() {
         sudo rpm-ostree install -q -y "${PKGS[@]}"
     fi
 
-    dotfiles_install
-    zsh_confstall
-    tmux_confstall
-    vscode_confstall
-    libvirt_confstall
-
     warn "Installing packages done! Note that you need to reboot for the changes to take effect."
 }
 
@@ -310,9 +304,18 @@ generic_groupstall() {
     fi
 }
 
+rpm-ostree-post_install() {
+    zsh_confstall
+    tmux_confstall
+    vscode_confstall
+    libvirt_confstall
+}
+
 rpm-ostree_groupstall() {
     rpm-ostree_install --apply-live "$@"
     generic_groupstall
+    rpm-ostree-post_install
+    apps-slim_install
 }
 
 gnome_extensions_install() {
