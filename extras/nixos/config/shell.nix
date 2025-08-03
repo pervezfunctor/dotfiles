@@ -10,7 +10,7 @@
     dialog
     ethtool
     fio
-    fuse
+    fuse2
     gawk
     gcc
     ghostty

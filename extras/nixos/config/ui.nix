@@ -43,6 +43,19 @@
 
   programs.nix-ld.enable = true;
 
+  services.flatpak.enable = true;
+
+  system.activationScripts.flatpak-flathub = {
+    text = ''
+      flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    '';
+  };
+
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
+
   networking.networkmanager.enable = true;
   # networking.interfaces.enp1s0.useDHCP = true;
 }
