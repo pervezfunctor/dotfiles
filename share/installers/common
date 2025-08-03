@@ -780,15 +780,12 @@ shell-ui_groupstall() {
     terminal_bin_install
 }
 
-dev_groupstall() {
+dev_work_common_install() {
     min_groupstall
     shell-slim_install
 
     vscode_install
     fonts_install
-
-    docker_install
-
     if has_cmd ghostty || has_cmd kitty || has_cmd wezterm; then
         return 0
     fi
@@ -799,6 +796,32 @@ dev_groupstall() {
     else
         terminal_bin_install
     fi
+}
+
+dev_groupstall() {
+    dev_work_common_install
+    vm_install
+    distrobox_install
+}
+
+work_groupstall() {
+    dev_work_common_install
+    docker_install
+}
+
+dev-work_groupstall() {
+    dev_work_common_install
+    vm_install
+
+    docker_install
+}
+
+dev-work-full_groupstall() {
+    dev_work_common_install
+    vm_install
+    distrobox_install
+    incus_install
+    docker_install
 }
 
 vbox-dev_groupstall() {
