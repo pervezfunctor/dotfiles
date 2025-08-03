@@ -81,7 +81,7 @@ centos_packages() {
 
     si git unzip wget curl tar gcc make gum tree bat ripgrep \
         htop bat plocate file just emacs-nox neovim tmux zsh libsecret \
-        net-tools iproute2 nmap
+        net-tools iproute nmap
 
     slog "Installing packages done!"
 }
@@ -137,7 +137,7 @@ essential_install() {
     sys_python_install
 
     si zip p7zip unar gawk readline-devel sqlite-devel libffi-devel dialog \
-        bzip2-devel xz-devel gum micro net-tools iproute2 nmap libsecret \
+        bzip2-devel xz-devel gum micro net-tools iproute nmap libsecret \
         fuse fuse-libs zstd newt just
 
     slog "Essential packages installation done!"

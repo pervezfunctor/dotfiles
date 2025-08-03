@@ -553,6 +553,7 @@ apps-slim_install() {
     ptyxis_install
 
     has_cmd distrobox && fpi io.github.dvlv.boxbuddyrs
+    fpi it.mijorus.gearlever
     is_atomic && fpi org.gnome.Boxes
     fpi us.zoom.Zoom # unverified
 }
@@ -568,24 +569,10 @@ apps_install() {
     fpi io.github.getnf.embellish
     fpi com.bitwarden.desktop
     fpi sh.cider.Cider
-    # fpi io.github.shiftey.Desktop # unverified
-    # fpi org.qbittorrent.qBittorrent # verified
-    # fpi org.deluge_torrent.deluge # unverified
-
-    # fpi org.wezfurlong.wezterm
-    # alias wezterm="flatpak run org.wezfurlong.wezterm"
-
-    slog "Flatpak apps installation done!"
-}
-
-more_apps_install() {
+    fpi org.qbittorrent.qBittorrent
     fpi org.wireshark.Wireshark
 
-    # fpi io.dbeaver.DBeaverCommunity
-    # fpi dev.neovide.neovide
-    # fpi io.github.zyedidia.micro
-    # fpi com.jetbrains.CLion
-    # fpi com.google.Chrome
+    slog "Flatpak apps installation done!"
 }
 
 incus_confstall() {
