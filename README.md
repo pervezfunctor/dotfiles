@@ -85,6 +85,7 @@ iwr -useb https://is.gd/vefawu | iex
 
 You will be presented with a menu, pick what you want to install.
 
+**Important Note**: I don't use Windows any more. I have not tested the above commands recently. They should work, but there might be some issues. Please let me know if you face any problems.
 
 ### MACOS
 
@@ -106,15 +107,107 @@ bash -c "$(curl -sSL https://is.gd/egitif)"
 
 If you are a developer, I would highly recommend using linux on your personal desktop. There are interesting things in happening in this space. As a developer you will have a lot of fun. This is stable enough.
 
-I have stopped using Windows for anything. I hardly use macos. I use linux on almost all my machines, servers, homelab or desktops.
+If you don't have a personal desktop, just buy a mini pc. You could get a decent minipc for $300-$400. Even a nuc could cost less than 500$. You could use it as a desktop, development machine or a server. If you fine with a server that's capable of docker, you could buy N100/N150 mini pc, which should be around 150$. You would be surprised how much such a cheap machine can do.
 
-If you have never used linux on desktop before, then you should consider either using Fedora Workstation or Kubuntu. Opt for kubuntu if you have very limited knowledge of linux, especially if you have an nvidia card. For both fedora and ubuntu/kubuntu you could follow the `linux` instructions above.
+I have stopped using Windows for anything. I hardly use macos. I use linux on almost all my machines, servers, homelab or personal desktop.
+
+### Fedora Workstation
+
+Fedora Workstation/Fedora KDE/Fedora Sway are all good choices. They are stable, have the latest kernel supporting most modern hardware. Most software is latest. This has the right balance of stability and latest software.
+
+Download fedora workstation from [here](https://getfedora.org/en/workstation/download/) and install it on a separate disk. DO NOT use dual boot.
+
+Once installation is done(which is pretty fast and easy), on first boot, make sure you enable third party repositories. This will allow you to install nvidia drivers and proprietary codecs. If you forgot to enable third party repositories, you could do so later [manually](https://rpmfusion.org/Configuration).
+
+Once nvidia drivers and codecs are installed, update your system. Use the following command.
+
+```bash
+sudo dnf update -y
+```
+Reboot your system.
+
+You could install modern shell tools with the following command.
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif)" -- shell-slim
+```
+
+This command should setup your zsh, tmux and install tools like `ripgrep`, `eza`, `fzf`, `zoxide`, `bat`, `git-delta` etc.
+
+As a developer you might need vscode. Install it with the following command.
+
+```bash
+ilmi vscode fonts
+```
+
+This will install `vscode` and `nerd fonts`. It should also install some essential extensions.
+
+If you need docker, I would highly recommend you install it in a vm. IF you prefer to install it on your host, you could use the following command.
+
+```bash
+ilmi docker
+```
+You should be able to use `vscode` and `devcontainers` without any issues. Remember to reboot after installing docker.
+
+I would highly recommend you install `libvirt` and `virt-manager` for managing virtual machines. You could use the following command.
+
+```bash
+ilmi libvirt
+```
+
+Once you reboot, you should be able to create and use virtual machines. I have a few helper scripts to make this easier.
+
+For example you could easily create a vm with docker installed and ssh enabled with the following command.
+
+```bash
+vm-create --distro ubuntu --name dev --docker --brew --dotfiles min
+```
+
+All of the above instructions should work equally well for ubuntu, debian trixie, arch or tumbleweed. You might want a better terminal, depending on your OS of choice. On any of them you could easily install `ptyxis` with the following command.
+
+```bash
+ilmi ptyxis
+```
+
+Remember to pick `Jetbrains Mono Nerd Font` as the font. Pick a nice theme like `Catppuccin Mocha`, `Tokyo Night` or `Everforest`.
+
+
+### Fedora Atomic(Silverblue, Kinoite, Sway Atomic)
+
+Fedora Atomic is great and the future of fedora if not linux in general. Unfortunately, atomic comes with almost nothing for developers and you have to use distrobox/toolbox for everything. This can be a frustrating experience. This will be a more stable operating system in practice than any of the other approaches(traditional or ublue based). This OS is strictly NOT for those who like to tinker a lot.
+
+### Purist Setup
+
+IF you want to be a *purist*, I have multiple distrobox containers, to get everything I need, but they are a bit brittle. Use the following command and see if this works for you.
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif)" -- fedora-atomic
+```
+
+Above command should install some basic tools on the host, but developer tools(`vscode`, `docker`) are in a distrobox container. 
+
+
+### rpm-ostree setup
+
+I would recommend you don't spend too much time configuring everything in a distrobox and spend multiple frustrating hours trying to get it to work. Instead use `rpm-ostree` as it's really easy but less *pure*. You could create a layer on top of atomic, using `rpm-ostree`, and that's what I am currently doing.
+ 
+Install essential development tools like `vscode`, and `virt-manager` with the following command.
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif)" -- rpm-ostree
+```
+
+If you need docker, you should install it in a vm. Use `vscode` and ssh into this virtual machine. `devconainers` work really well using this approach.
+
+```bash
+vm-create --distro ubuntu --name dev --docker --brew --dotfiles min
+```
 
 ### ublue based Bluefin/Aurora
 
-If you have some experience with linux desktop, then you could try [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en). Both are based on [ublue](https://getublue.com) and have same set of tools. Consider using dx version. You would get docker, vscode, libvirt/virt-manager by default. As a developer these tools are essential.
+If you have some experience with linux desktop, and bored with fedora atomic, then you should try [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en). Both are based on [ublue](https://getublue.com) and have the same set of tools. Consider using dx version. You would get docker, vscode, libvirt/virt-manager by default. As a developer these tools are essential.
 
-Unfortunately, there is no direct ISO of dx version available. Either you rebase to dx version after installing regular version or use the `ublue template` and create your own custom ISO based on dx version.
+Unfortunately, there is no direct ISO of dx version available. Either you rebase to dx version after installing regular version or use the `ublue template` and create your own custom ISO based on dx version. I will add instructions soon.
 
 ### NixOS
 
@@ -122,50 +215,14 @@ If you are an experienced linux desktop user, and you have enough knowledge of l
 
 Unfortunately there is no easy way to make automated installers for nixos. You need to learn `nix` and understand the configurations. You have to tailor the configuration to your needs. I will write a guide soon, as soon as I get everything working as I expect. At present you could look at my *work in progress* config at `extras/nixos/config`.
 
-### Fedora Atomic
-
-Fedora Atomic is good too. Unfortunately, comes with almost nothing for developers and you will be forced to use distrobox/toolbox for everything. This is nowhere near good enough for developers.
-
-You could create a layer on top of it, using `rpm-ostree`, that's what I am currently doing. This is really easy too but less *pure*. This will be a more stable operating system in practice than any of the other approaches. This OS is strictly NOT for those like to tinker a lot.
-
-I personally use all of these operating systems(ublue, nixos, fedora atomic). I also use tumbleweed.
-
-  - [Silverblue](https://fedoraproject.org/atomic-desktops/silverblue) with gnome 48 is a great choice. The best gnome experience you can get.
-  - [Kinoite](https://fedoraproject.org/atomic-desktops/kinoite) if you prefer KDE. This is rock solid stable.
-  - [Fedora Sway Atomic](https://fedoraproject.org/atomic-desktops/sway) if you prefer a tiling window manager. It might be a bit difficult to get vscode play well with sway. My configuration works fine as of now.
-
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif)" -- rpm-ostree
-```
-
-You should install docker in a vm. Use `vscode` and ssh into this machine. `devconainers` work really well using this approach.
-
-If you DO NOT want to use rpm-ostree, you could use the following command.
-
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif)" -- generic
-```
-
-In future, I will add a distrobox container for docker, vscode, incus and libvirt. Currently with the above setup, you won't have docker. You could install ubuntu server in vm and configure docker there.
-
-#### Recommendations
-
-  - Use [distrobox](https://distrobox.it) for everything. Default distrobox is setup with zsh and shell utilities, gnome-keyring, vscode and firefox.
-
-  - Use [Ptyxis](https://gitlab.gnome.org/chergert/ptyxis) terminal, as it has great support for distrobox and toolbox.
-
-  - Use [Boxes](https://apps.gnome.org/Boxes) for simple virtual machines. Remember to enable 3d acceleration.
-
 
 ### Linux Desktop
 
-This should work on almost any linux system/container even without sudo privilege; You should have curl/wget and bash installed. Not recommended on macos.
+This should work on almost any linux system/vm/container even without sudo privilege; You should have curl/wget and bash installed.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- generic
 ```
-
-If you don't have a personal desktop, just buy a mini pc. You could get a decent minipc for $300-$400. Even a nuc could cost less than 500$. You could use it as a desktop, development machine or a server. If you fine with a server that's capable of docker, you could buy N100/N150 mini pc, which should be around 150$. You would be surprised how much such a cheap machine can do.
 
 ## Linux Development Container/VM
 
