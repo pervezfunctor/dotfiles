@@ -176,7 +176,7 @@ rpm-ostree_install() {
 
     slog "Installing packages"
 
-    local apply_live=false
+    local apply_live=true
 
     if [[ "$1" == "--apply-live" ]]; then
         apply_live=true
@@ -191,6 +191,7 @@ rpm-ostree_install() {
     has_cmd tmux || PKGS+=("tmux")
     has_cmd gcc || PKGS+=("gcc")
     has_cmd make || PKGS+=("make")
+    has_cmd openssl || PKGS+=("openssl")
     has_cmd wl-copy || PKGS+=("wl-clipboard")
     has_cmd virsh || PKGS+=("libvirt")
     has_cmd virt-install || PKGS+=("virt-install")
@@ -210,8 +211,8 @@ rpm-ostree_install() {
     fi
 
     if has_cmd stow || has_cmd zsh || has_cmd gcc || has_cmd make ||
-        has_cmd tmux || has_cmd wl || has_cmd virsh || has_cmd virt-install ||
-        has_cmd code; then
+        has_cmd tmux || has_cmd virsh ||
+        has_cmd virt-install || has_cmd code; then
         warn "This script is supposed to be run only once"
     fi
 
@@ -311,7 +312,7 @@ rpm-ostree-post_install() {
 }
 
 rpm-ostree_groupstall() {
-    rpm-ostree_install --apply-live "$@"
+    rpm-ostree_install "$@"
     generic_groupstall
     rpm-ostree-post_install
     apps-slim_install
