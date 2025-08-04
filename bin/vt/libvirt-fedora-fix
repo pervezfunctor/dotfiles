@@ -1,42 +1,59 @@
-#!/bin/bash
+#! /usr/bin/env bash
 
-# fix libvirt NAT (virbr0) masquerading on Fedora using Firewalld Direct Rules
+# Secure NAT setup for libvirt's default network on Fedora using Firewalld Direct Rules
 
-set -e
+set -eou pipefail
 
-# Ensure firewalld is active
+echo "=== Secure libvirt NAT setup ==="
+
+# 1. Ensure firewalld is active
 echo "Ensuring firewalld is running..."
 sudo systemctl enable --now firewalld
 
-# Enable IP forwarding persistently
+# 2. Enable IP forwarding persistently
 echo "Enabling IP forwarding..."
 echo 'net.ipv4.ip_forward=1' | sudo tee /etc/sysctl.d/99-ipforward.conf
 sudo sysctl --system
 
-# Add NAT masquerade rule as a firewalld direct rule (persistent)
-echo "Adding Firewalld Direct Rule for libvirt NAT masquerade..."
-sudo firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0 -s 192.168.124.0/24 -o enp1s0 -j MASQUERADE
+# 3. Detect outbound interface dynamically
+OUT_IFACE=$(ip route get 8.8.8.8 | grep -oP 'dev \K\S+')
+echo "Detected outbound interface: $OUT_IFACE"
 
-# Ensure virbr0 is in trusted zone (so firewalld doesn't block it)
-echo "Assigning virbr0 to trusted zone..."
+# 4. Cleanup existing direct rules related to libvirt NAT (optional but recommended)
+echo "Cleaning up old direct rules (if any)..."
+sudo firewall-cmd --permanent --direct --remove-rule ipv4 nat POSTROUTING 0 -s 192.168.124.0/24 -o $OUT_IFACE -j MASQUERADE 2>/dev/null || true
+sudo firewall-cmd --permanent --direct --remove-rule ipv4 filter FORWARD 0 -i virbr0 -o $OUT_IFACE -j ACCEPT 2>/dev/null || true
+sudo firewall-cmd --permanent --direct --remove-rule ipv4 filter FORWARD 0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+sudo firewall-cmd --permanent --direct --remove-chain ipv4 filter CUSTOM_FORWARD 2>/dev/null || true
+
+# 5. Apply NAT masquerade rule
+echo "Adding MASQUERADE rule..."
+sudo firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0 -s 192.168.124.0/24 -o $OUT_IFACE -j MASQUERADE
+
+# 6. Allow established/related connections back to VMs
+echo "Allowing established/related connections back..."
+sudo firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+# 7. Allow outbound forwarding from VMs to internet
+echo "Allowing outbound VM traffic via $OUT_IFACE..."
+sudo firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0 -i virbr0 -o $OUT_IFACE -j ACCEPT
+
+# 8. Secure default FORWARD chain by creating a DROP fallback
+echo "Securing FORWARD chain with DROP policy..."
+sudo firewall-cmd --permanent --direct --add-chain ipv4 filter CUSTOM_FORWARD
+sudo firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0 -j CUSTOM_FORWARD
+sudo firewall-cmd --permanent --direct --add-rule ipv4 filter CUSTOM_FORWARD 1000 -j DROP
+
+# 9. Assign virbr0 to trusted zone
+echo "Marking virbr0 as trusted..."
 sudo firewall-cmd --permanent --zone=trusted --add-interface=virbr0
 
-# Reload firewalld to apply changes
+# 10. Reload firewalld to apply all changes
 echo "Reloading firewalld..."
 sudo firewall-cmd --reload
 
-# Display applied direct rules for confirmation
-echo "Applied Direct Rules:"
+# 11. Display the applied direct rules
+echo "Final Direct Rules:"
 sudo firewall-cmd --direct --get-all-rules
 
-# Ensure IP forwarding is ON
-echo "Enabling IP forwarding..."
-sudo sysctl -w net.ipv4.ip_forward=1
-
-echo "Libvirt NAT fix applied permanently via Firewalld Direct Rules!"
-
-cat <<EOF
-# if above does not work you might need
-sudo sed -i '/^#*firewall_backend=/c\firewall_backend="iptables"' /etc/libvirt/libvirtd.conf
-sudo systemctl restart libvirtd
-EOF
+echo "=== Secure libvirt NAT setup completed successfully ==="
