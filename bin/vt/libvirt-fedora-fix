@@ -29,4 +29,14 @@ sudo firewall-cmd --reload
 echo "Applied Direct Rules:"
 sudo firewall-cmd --direct --get-all-rules
 
+# Ensure IP forwarding is ON
+echo "Enabling IP forwarding..."
+sudo sysctl -w net.ipv4.ip_forward=1
+
 echo "Libvirt NAT fix applied permanently via Firewalld Direct Rules!"
+
+cat <<EOF
+# if above does not work you might need
+sudo sed -i '/^#*firewall_backend=/c\firewall_backend="iptables"' /etc/libvirt/libvirtd.conf
+sudo systemctl restart libvirtd
+EOF
