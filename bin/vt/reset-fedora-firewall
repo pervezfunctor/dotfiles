@@ -1,0 +1,42 @@
+#!/bin/bash
+# reset-libvirt-nat-firewalld.sh
+# Cleanly remove firewalld direct rules for libvirt NAT and reset firewall config
+
+set -e
+
+echo "=== Resetting libvirt NAT/firewalld configuration ==="
+
+# Detect outbound interface
+OUT_IFACE=$(ip route get 8.8.8.8 | grep -oP 'dev \K\S+')
+echo "Detected outbound interface: $OUT_IFACE"
+
+# Remove MASQUERADE rule
+echo "Removing MASQUERADE rule..."
+sudo firewall-cmd --permanent --direct --remove-rule ipv4 nat POSTROUTING 0 -s 192.168.124.0/24 -o $OUT_IFACE -j MASQUERADE 2>/dev/null || true
+
+# Remove FORWARD chain rules
+echo "Removing FORWARD rules..."
+sudo firewall-cmd --permanent --direct --remove-rule ipv4 filter FORWARD 0 -i virbr0 -o $OUT_IFACE -j ACCEPT 2>/dev/null || true
+sudo firewall-cmd --permanent --direct --remove-rule ipv4 filter FORWARD 0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+
+# Remove CUSTOM_FORWARD chain and related rule
+echo "Removing CUSTOM_FORWARD chain..."
+sudo firewall-cmd --permanent --direct --remove-rule ipv4 filter FORWARD 0 -j CUSTOM_FORWARD 2>/dev/null || true
+sudo firewall-cmd --permanent --direct --remove-rule ipv4 filter CUSTOM_FORWARD 1000 -j DROP 2>/dev/null || true
+sudo firewall-cmd --permanent --direct --remove-chain ipv4 filter CUSTOM_FORWARD 2>/dev/null || true
+
+# Remove virbr0 from trusted zone
+echo "Removing virbr0 from trusted zone..."
+sudo firewall-cmd --permanent --zone=trusted --remove-interface=virbr0 2>/dev/null || true
+
+# Re-enable firewalld default FORWARD policy (optional but recommended)
+echo "Resetting firewalld default FORWARD policy..."
+sudo firewall-cmd --reload
+
+# Remove IP forwarding sysctl configuration
+echo "Disabling IP forwarding persistently..."
+sudo rm -f /etc/sysctl.d/99-ipforward.conf
+sudo sysctl -w net.ipv4.ip_forward=0
+
+# Final status
+echo "=== Cleanup complete. Firewalld is now reset ==="
