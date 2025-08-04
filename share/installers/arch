@@ -68,18 +68,18 @@ sys_python_install() {
     slog "Python installation done!"
 }
 
-yay_install() {
-    has_cmd yay && return 1
-    slog "Installing yay"
+paru_install() {
+    has_cmd paru && return 1
+    slog "Installing paru"
 
-    frm /tmp/yay
-    git clone https://aur.archlinux.org/yay.git /tmp/yay && cd /tmp/yay && makepkg --syncdeps --noconfirm --install && cd - && frm /tmp/yay
+    frm /tmp/paru
+    git clone https://aur.archlinux.org/paru.git /tmp/paru && cd /tmp/paru && makepkg --syncdeps --noconfirm --install && cd - && frm /tmp/paru
 
-    slog "yay installation done!"
+    slog "paru installation done!"
 }
 
 snap_install() {
-    yay -Sy --noconfirm snapd
+    paru -Sy --noconfirm snapd
     sudo systemctl enable --now snapd
 }
 
@@ -138,7 +138,7 @@ cpp_install() {
 vscode_bin_install() {
     slog "Installing vscode"
 
-    yay -Sy --noconfirm visual-studio-code-bin
+    paru -Sy --noconfirm visual-studio-code-bin
 
     slog "vscode installation done!"
 
