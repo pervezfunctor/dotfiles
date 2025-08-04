@@ -1,6 +1,6 @@
 // -*- mode: jsonc -*-
 {
-    "height": 10,
+    "height": 20,
     "spacing": 4,
     "modules-left": [
         "hyprland/mode",
