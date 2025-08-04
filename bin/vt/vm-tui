@@ -1,0 +1,196 @@
+#! /usr/bin/env bash
+
+IMAGES_DIR="/var/lib/libvirt/images"
+LOG_FILE="/tmp/vm-manager.log"
+
+function log_and_show() {
+  TITLE=$1
+  MESSAGE=$2
+  echo "[$(date)] $TITLE: $MESSAGE" >>"$LOG_FILE"
+  whiptail --title "$TITLE" --msgbox "$MESSAGE" 20 80
+}
+
+function show_log() {
+  whiptail --textbox "$LOG_FILE" 30 100
+}
+
+function inputbox_or_cancel() {
+  local prompt="$1"
+  local height=${2:-8}
+  local width=${3:-60}
+  local result
+
+  result=$(whiptail --inputbox "$prompt" $height $width 3>&1 1>&2 2>&3)
+  local exit_status=$?
+  if [ $exit_status -ne 0 ]; then
+    return 1
+  fi
+  echo "$result"
+}
+
+function select_vm() {
+  local VMS
+  VMS=$(virsh list --all --name | awk NF)
+
+  if [ -z "$VMS" ]; then
+    log_and_show "No VMs" "No virtual machines found."
+    return 1
+  fi
+
+  local MENU_ITEMS=()
+  while read -r VM; do
+    MENU_ITEMS+=("$VM" "")
+  done <<<"$VMS"
+
+  SELECTED_VM=$(whiptail --title "Select VM" --menu "Choose a VM:" 20 60 10 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3)
+  if [ $? -ne 0 ] || [ -z "$SELECTED_VM" ]; then
+    return 1
+  fi
+  echo "$SELECTED_VM"
+}
+
+function create_vm() {
+  VM_NAME=$1
+  ISO_PATH=$2
+  DISK_SIZE=$3
+  MEMORY=${4:-4096}
+  VCPUS=${5:-2}
+
+  if [[ "$ISO_PATH" == "$HOME"* ]]; then
+    chcon --type svirt_image_t "$ISO_PATH" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "SELinux Relabel" --msgbox "$(cat -)" 20 80
+  fi
+
+  DISK_PATH="$IMAGES_DIR/${VM_NAME}.qcow2"
+  qemu-img create -f qcow2 "$DISK_PATH" ${DISK_SIZE}G 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Disk Creation" --msgbox "$(cat -)" 20 80
+
+  virt-install \
+    --name "$VM_NAME" \
+    --memory "$MEMORY" \
+    --vcpus "$VCPUS" \
+    --disk path="$DISK_PATH",format=qcow2 \
+    --cdrom "$ISO_PATH" \
+    --graphics spice,gl=on,listen=none \
+    --video virtio \
+    --channel spicevmc \
+    --sound ich9 \
+    --rng /dev/urandom \
+    --os-variant generic \
+    --noautoconsole 2>&1 | tee -a "$LOG_FILE" | whiptail --title "VM Installation" --msgbox "$(cat -)" 20 80
+}
+
+function list_vms() {
+  virsh list --all 2>&1 | tee -a "$LOG_FILE" | whiptail --title "VM List" --msgbox "$(cat -)" 20 80
+}
+
+function start_vm() {
+  VM_NAME=$1
+  virsh start "$VM_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Start VM" --msgbox "$(cat -)" 20 80
+}
+
+function stop_vm() {
+  VM_NAME=$1
+  virsh shutdown "$VM_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Stop VM" --msgbox "$(cat -)" 20 80
+}
+
+function force_stop_vm() {
+  VM_NAME=$1
+  virsh destroy "$VM_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Force Stop VM" --msgbox "$(cat -)" 20 80
+}
+
+function delete_vm() {
+  VM_NAME=$1
+  DISK_PATH=$(virsh domblklist "$VM_NAME" | awk '/^vda/ {print $2}')
+
+  virsh destroy "$VM_NAME" 2>/dev/null
+  virsh undefine "$VM_NAME" --nvram 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Delete VM" --msgbox "$(cat -)" 20 80
+
+  if [ -f "$DISK_PATH" ]; then
+    rm -f "$DISK_PATH"
+    log_and_show "Delete Disk" "Deleted disk: $DISK_PATH"
+  fi
+
+  log_and_show "Delete VM" "VM $VM_NAME deleted."
+}
+
+function add_storage_pool() {
+  POOL_NAME=$1
+  POOL_PATH=$2
+
+  virsh pool-define-as "$POOL_NAME" dir --target "$POOL_PATH" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Define Pool" --msgbox "$(cat -)" 20 80
+  virsh pool-build "$POOL_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Build Pool" --msgbox "$(cat -)" 20 80
+  virsh pool-start "$POOL_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Start Pool" --msgbox "$(cat -)" 20 80
+  virsh pool-autostart "$POOL_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Autostart Pool" --msgbox "$(cat -)" 20 80
+
+  log_and_show "Storage Pool Added" "Storage pool $POOL_NAME added at $POOL_PATH."
+}
+
+function remove_storage_pool() {
+  POOL_NAME=$1
+
+  virsh pool-destroy "$POOL_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Destroy Pool" --msgbox "$(cat -)" 20 80
+  virsh pool-undefine "$POOL_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Undefine Pool" --msgbox "$(cat -)" 20 80
+
+  log_and_show "Storage Pool Removed" "Storage pool $POOL_NAME removed."
+}
+
+while true; do
+  CHOICE=$(whiptail --title "VM Manager" --menu "Choose an action:" 20 60 10 \
+    "1" "Create VM" \
+    "2" "List VMs" \
+    "3" "Start VM" \
+    "4" "Stop VM" \
+    "5" "Force Stop VM" \
+    "6" "Delete VM" \
+    "7" "Add Storage Pool" \
+    "8" "Remove Storage Pool" \
+    "9" "View Logs" \
+    "10" "Exit" 3>&1 1>&2 2>&3)
+
+  case $CHOICE in
+  1)
+    VM_NAME=$(inputbox_or_cancel "Enter VM Name:") || continue
+    ISO_PATH=$(inputbox_or_cancel "Enter ISO Path:") || continue
+    DISK_SIZE=$(inputbox_or_cancel "Enter Disk Size (GB):") || continue
+    MEMORY=$(inputbox_or_cancel "Enter Memory (MB) [default 4096]:") || continue
+    VCPUS=$(inputbox_or_cancel "Enter VCPUs [default 2]:") || continue
+    create_vm "$VM_NAME" "$ISO_PATH" "$DISK_SIZE" "$MEMORY" "$VCPUS"
+    ;;
+  2)
+    list_vms
+    ;;
+  3)
+    VM_NAME=$(select_vm) || continue
+    start_vm "$VM_NAME"
+    ;;
+  4)
+    VM_NAME=$(select_vm) || continue
+    stop_vm "$VM_NAME"
+    ;;
+  5)
+    VM_NAME=$(select_vm) || continue
+    force_stop_vm "$VM_NAME"
+    ;;
+  6)
+    VM_NAME=$(select_vm) || continue
+    delete_vm "$VM_NAME"
+    ;;
+  7)
+    POOL_NAME=$(inputbox_or_cancel "Enter Storage Pool Name:") || continue
+    POOL_PATH=$(inputbox_or_cancel "Enter Directory Path for Pool:") || continue
+    add_storage_pool "$POOL_NAME" "$POOL_PATH"
+    ;;
+  8)
+    POOL_NAME=$(inputbox_or_cancel "Enter Storage Pool Name to Remove:") || continue
+    remove_storage_pool "$POOL_NAME"
+    ;;
+  9)
+    show_log
+    ;;
+  10)
+    exit
+    ;;
+  *)
+    log_and_show "Error" "Invalid option"
+    ;;
+  esac
+done
