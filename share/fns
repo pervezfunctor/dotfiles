@@ -509,30 +509,18 @@ ivms() {
 }
 
 virt-docker() {
-    if vm_exists "docker"; then
-        slog "Docker VM already exists, skipping..."
-    else
-        slog "Creating Docker VM: docker"
-        vm-create --distro ubuntu --name docker --docker --dotfiles min
-    fi
+    slog "Creating Docker VM: docker"
+    vm-create --distro ubuntu --name docker --docker --dotfiles min
 }
 
 virt-incus() {
-    if vm_exists "incus"; then
-        slog "Alpine VM already exists, skipping..."
-    else
-        slog "Creating Alpine VM: incus"
-        vm-create --distro alpine --name incus --dotfiles min incus
-    fi
+    slog "Creating Alpine VM: incus"
+    vm-create --distro alpine --name incus --dotfiles min incus
 }
 
 virt-nix() {
-    if vm_exists "nix"; then
-        slog "Nix/Debian VM already exists, skipping..."
-    else
-        slog "Creating Debian VM: nix"
-        vm-create --distro debian --name nix --nix
-    fi
+    slog "Creating Debian VM: nix"
+    vm-create --distro debian --name nix --nix
 }
 
 system-update() {
