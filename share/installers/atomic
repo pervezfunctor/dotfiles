@@ -613,7 +613,7 @@ libvirt_confstall() {
 
     sudo usermod -aG libvirt "$(whoami)"
 
-    sg libvirtd -c '
+    sg libvirt -c '
     if ! virsh net-list --all | grep -q default; then
         virsh net-define /usr/share/libvirt/networks/default.xml
         virsh net-start default

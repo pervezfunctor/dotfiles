@@ -508,12 +508,12 @@ ivms() {
     slog "Creating incus vms done!"
 }
 
-virt-dev() {
-    if vm_exists "dev"; then
-        slog "Ubuntu VM already exists, skipping..."
+virt-docker() {
+    if vm_exists "docker"; then
+        slog "Docker VM already exists, skipping..."
     else
-        slog "Creating Ubuntu VM: dev"
-        vm-create --distro ubuntu --name dev --docker --brew --dotfiles min
+        slog "Creating Docker VM: docker"
+        vm-create --distro ubuntu --name docker --docker --dotfiles min
     fi
 }
 
@@ -528,7 +528,7 @@ virt-incus() {
 
 virt-nix() {
     if vm_exists "nix"; then
-        slog "Debian VM already exists, skipping..."
+        slog "Nix/Debian VM already exists, skipping..."
     else
         slog "Creating Debian VM: nix"
         vm-create --distro debian --name nix --nix
