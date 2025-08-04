@@ -1063,20 +1063,22 @@ dotfiles_install() {
 
 ensure_stow() {
     has_cmd stow && return 0
-    has_cmd pkgx || pkgx_install
-    has_cmd pkgx
+    has_cmd nix && return 0
+    return 1
 }
 
 stow_core() {
-    if ! ensure_stow; then
+    if ! has_cmd stow; then
         warn "stow or pkgx must be installed"
         return 1
     fi
 
     if has_cmd stow; then
         stow "$@"
-    elif has_cmd pkgx; then
-        pkgx stow "$@"
+    # elif has_cmd pkgx; then
+    #     pkgx stow "$@"
+    elif has_cmd nix; then
+        nix run nkxpkgs#stow "$@"
     else
         warn "stow or pkgx must be installed"
     fi

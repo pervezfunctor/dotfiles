@@ -2,7 +2,6 @@
   "window.titleBarStyle": "custom",
   "editor.fontFamily": "'JetbrainsMono Nerd Font Mono', 'Jetbrains Mono', 'MonaspiceRn Nerd Font Mono', 'Cascadia Mono', 'Monaco', 'Consolas', 'Fira Code Mono', 'Ubuntu Mono', 'Source Code Pro', 'Droid Sans Mono', 'monospace'",
   "editor.fontLigatures": true,
-  // "editor.fontWeight": "600",
   "editor.fontSize": 15,
   "editor.acceptSuggestionOnEnter": "smart",
   "editor.autoIndent": "advanced",

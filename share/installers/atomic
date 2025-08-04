@@ -276,7 +276,6 @@ generic-ct_groupstall() {
     slog "Installing shell tools with pixi"
     pixi_slim_shell_install
 
-    has_cmd git || fail "git not installed. Quitting."
     slog "Installing shell tools with pixi done!"
 
     dotfiles_install
@@ -288,8 +287,8 @@ generic-ct_groupstall() {
 generic_groupstall() {
     generic-ct_groupstall
 
-    has_cmd zsh && zsh_confstall
-    has_cmd tmux && tmux_confstall
+    has_cmd zsh && zsh_boxstall
+    has_cmd tmux && tmux_boxstall
 
     if has_cmd podman || has_cmd docker; then
         atomic_distrobox_install
@@ -318,7 +317,7 @@ rpm-ostree_groupstall() {
     apps-slim_install
 }
 
-gnome_extensions_install() {
+gnome-extensions_install() {
     if ! has_cmd gext; then
         if ! has_cmd pipx; then
             warn "pipx not installed, skipping gnome extensions"
@@ -344,7 +343,7 @@ gnome_extensions_install() {
     slog "gnome extensions installation done!"
 }
 
-gnome_settings_install() {
+gnome-settings_install() {
     if ! has_cmd gsettings; then
         warn "gsettings not found, skipping gnome basic settings"
         return 1
@@ -373,7 +372,7 @@ gnome_settings_install() {
     slog "gnome settings done!"
 }
 
-gnome_flatpaks_install() {
+gnome-flatpaks_install() {
     fpi page.tesk.Refine
     fpi com.github.tchx84.Flatseal
     fpi io.github.flattool.Ignition
@@ -405,10 +404,10 @@ gnome_confstall() {
         gnome-extensions disable ding@rastersoft.com
     fi
 
-    gnome_settings_install
+    gnome-settings_install
     #   gnome_keybindings_install
-    gnome_flatpaks_install
-    gnome_extensions_install
+    gnome-flatpaks_install
+    gnome-extensions_install
 
     slog "gnome config done!"
 }

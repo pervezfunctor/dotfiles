@@ -6,7 +6,7 @@
     ./incus.nix
     # ./cockpit.nix
     ./podman.nix
-
+    ./virtualbox.nix
     # docker interferes with both podman and incus
     # ./docker.nix
   ];

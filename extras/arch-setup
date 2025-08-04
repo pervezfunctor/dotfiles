@@ -1,0 +1,206 @@
+#! /usr/bin/env bash
+
+#!/bin/bash
+
+# NIC_NAME="$1"
+
+# if [ -z "$NIC_NAME" ]; then
+#   echo "Usage: $0 <interface-name>"
+#   exit 1
+# fi
+
+# IP_ADDR=$(ip -4 addr show "$NIC_NAME" | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+
+# if [ -n "$IP_ADDR" ]; then
+#   echo "$IP_ADDR"
+# else
+#   echo "No IPv4 address found for interface: $NIC_NAME"
+#   exit 2
+# fi
+
+detect_boot_mode() {
+  if [ -f /sys/firmware/efi/fw_platform_size ]; then
+    echo "UEFI"
+  else
+    echo "BIOS"
+  fi
+}
+
+check_internet() {
+  local TARGET=${1:-8.8.8.8}
+  if ping -c 1 -W 2 "$TARGET" >/dev/null 2>&1; then
+    echo "Internet is working"
+    return 0
+  else
+    echo "Internet is NOT working"
+    return 1
+  fi
+}
+
+check_time_sync() {
+  if ! command -v timedatectl &>/dev/null; then
+    echo "timedatectl not found"
+    return 2
+  fi
+
+  local SYNC_STATUS
+  SYNC_STATUS=$(timedatectl show -p NTPSynchronized --value)
+
+  if [ "$SYNC_STATUS" = "yes" ]; then
+    echo "Time is synchronized"
+    return 0
+  else
+    echo "Time is NOT synchronized"
+    return 1
+  fi
+}
+
+take_input() {
+  # Interactive Prompts
+  HOSTNAME=$(whiptail --inputbox "Enter hostname:" 8 40 3>&1 1>&2 2>&3)
+  USERNAME=$(whiptail --inputbox "Enter username:" 8 40 3>&1 1>&2 2>&3)
+  PASSWORD=$(whiptail --passwordbox "Enter password:" 8 40 3>&1 1>&2 2>&3)
+}
+
+partition_disk() {
+  DISK="$1" # e.g., /dev/sdX or /dev/nvme0n1
+
+  if [ -z "$DISK" ]; then
+    echo "Usage: $0 /dev/sdX"
+    exit 1
+  fi
+
+  whiptail --yesno "!!! WARNING: This will WIPE $DISK completely. Continue?" 10 60
+  if [ $? -ne 0 ]; then
+    echo "Aborted."
+    exit 1
+  fi
+
+  # Partitioning
+  sgdisk --zap-all "$DISK"
+  wipefs -a "$DISK"
+  sgdisk -og "$DISK"
+  sgdisk -n 1:0:+512M -t 1:ef00 "$DISK"
+  sgdisk -n 2:0:+8G -t 2:8200 "$DISK"
+  sgdisk -n 3:0:0 -t 3:8300 "$DISK"
+  partprobe "$DISK"
+  sleep 2
+
+  # Partition names
+  if [[ "$DISK" == *"nvme"* ]]; then
+    EFI="${DISK}p1"
+    SWAP="${DISK}p2"
+    ROOT="${DISK}p3"
+  else
+    EFI="${DISK}1"
+    SWAP="${DISK}2"
+    ROOT="${DISK}3"
+  fi
+}
+
+format_partitions() {
+  mkfs.fat -F32 "$EFI"
+  mkswap "$SWAP"
+  swapon "$SWAP"
+  mkfs.btrfs -f "$ROOT"
+}
+
+mount_subvolumes() {
+  mount "$ROOT" /mnt
+  btrfs su cr /mnt/@
+  btrfs su cr /mnt/@home
+  btrfs su cr /mnt/@snapshots
+  umount /mnt
+
+  mount -o noatime,compress=zstd,subvol=@ "$ROOT" /mnt
+  mkdir -p /mnt/{boot/efi,home,.snapshots}
+  mount -o noatime,compress=zstd,subvol=@home "$ROOT" /mnt/home
+  mount -o noatime,compress=zstd,subvol=@snapshots "$ROOT" /mnt/.snapshots
+  mount "$EFI" /mnt/boot/efi
+}
+
+base_system_install() {
+  pacstrap /mnt base linux linux-firmware btrfs-progs grub efibootmgr \
+    networkmanager playerctl xdg-utils pipewire wireplumber pipewire-pulse \
+    grim nwg-look wl-clipboard kitty gvfs mpv thunar slurp \
+    hyprland xdg-desktop-portal-hyprland xdg-desktop-portal \
+    xdg-desktop-portal-hyprland hyprpaper waybar rofi-wayland hyprlock \
+    hypridle polkit-gnome
+  # gnome
+}
+
+generate_fstab() {
+  genfstab -U /mnt >>/mnt/etc/fstab
+}
+
+configure_system() {
+  arch-chroot /mnt /bin/bash <<EOF
+
+set -e
+
+# Timezone and Locale
+ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+hwclock --systohc
+sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+locale-gen
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
+
+echo "$HOSTNAME" > /etc/hostname
+echo "127.0.0.1   localhost" >> /etc/hosts
+echo "::1         localhost" >> /etc/hosts
+echo "127.0.1.1   $HOSTNAME.localdomain $HOSTNAME" >> /etc/hosts
+
+echo "root:$PASSWORD" | chpasswd
+
+useradd -m -G wheel -s /bin/bash "$USERNAME"
+echo "$USERNAME:$PASSWORD" | chpasswd
+sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
+
+systemctl enable NetworkManager
+systemctl enable gdm
+
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB
+grub-mkconfig -o /boot/grub/grub.cfg
+EOF
+
+  whiptail --msgbox "Installation Complete. Rebooting." 10 40
+
+  sleep 5
+  umount -R /mnt
+  reboot
+}
+
+main() {
+  echo "Setting font for the terminal..."
+  setfont ter-132b
+
+  if [ "$(detect_boot_mode)" = "UEFI" ]; then
+    echo "UEFI boot detected"
+  else
+    echo "BIOS boot detected"
+    echo "BIOS not supported. Aborting."
+    exit 1
+  fi
+
+  if check_internet 1.1.1.1; then
+    echo "Internet is working"
+  else
+    echo "Internet is NOT working. You will have to setup wifi"
+    exit 1
+  fi
+
+  if check_time_sync; then
+    echo "Time is synchronized"
+  else
+    echo "Time is NOT synchronized. You will have to setup time"
+    exit 1
+  fi
+
+  take_input
+  partition_disk /dev/sda
+  format_partitions
+  mount_subvolumes
+  base_system_install
+  generate_fstab
+  configure_system
+}
