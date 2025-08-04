@@ -231,3 +231,13 @@ distrobox_install() {
     si buildah distrobox podman podman-compose
     slog "distrobox installation done!"
 }
+
+hyprland_install() {
+    slog "Installing hyprland packages"
+
+    si hyprcursor hyprgraphics hypridle hyprland hyprland-protocols \
+        hyprland-qt-support hyprland-qtutils hyprlock hyprpolkitagent hyprshot \
+        hyprsunset hyprutils hyprwayland-scanner nwg-displays nwg-dock-hyprland \
+        nwg-panel xdg-desktop-portal-hyprland thunar rofi-wayland waybar dunst \
+        nwg-bar wl-clipboard dolphin swaync ghostty kitty
+}
