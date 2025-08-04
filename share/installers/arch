@@ -239,5 +239,11 @@ hyprland_install() {
         hyprland-qt-support hyprland-qtutils hyprlock hyprpolkitagent hyprshot \
         hyprsunset hyprutils hyprwayland-scanner nwg-displays nwg-dock-hyprland \
         nwg-panel xdg-desktop-portal-hyprland thunar rofi-wayland waybar dunst \
-        nwg-bar wl-clipboard dolphin swaync ghostty kitty
+        nwg-bar wl-clipboard dolphin swaync ghostty kitty otf-font-awesome \
+        noto-fonts-emoji noto-fonts ttf-roboto pavucontrol nm-connection-editor
+}
+
+firewall_setup() {
+    si nftables firewalld
+    sudo systemctl enable --now firewalld
 }
