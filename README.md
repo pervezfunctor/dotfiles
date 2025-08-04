@@ -155,17 +155,18 @@ I would highly recommend you install `libvirt` and `virt-manager` for managing v
 ilmi vm-ui
 ```
 
-Once you reboot, you should be able to create and use virtual machines. I have a few helper scripts to make this easier.
+Once you reboot, you should be able to create and use virtual machines.
 
-For example you could easily create a vm with ssh enabled, with the following command.
+I have a few helper scripts to make creating headless virtual machines easier. For example you could easily create a fedora vm with ssh enabled, using the following command.
 
 ```bash
-vm-create --distro ubuntu --name dev
+vm-create --distro fedora --name dev
 ```
-After a few minutes, you should be able to ssh into this vm with the following command. User name is `ubuntu` for ubuntu vm. If needed use password `ubuntu`.
+
+After a few minutes, you should be able to ssh into this vm with the following command. User name is `fedora` for ubuntu vm. If needed use password `fedora`.
 
 ```bash
-vm ssh dev ubuntu
+vm ssh dev fedora
 ```
 You could install docker and shell tools in this vm with the following command.
 
@@ -173,10 +174,12 @@ You could install docker and shell tools in this vm with the following command.
 bash -c "$(curl -sSL https://is.gd/egitif)" -- shell-slim docker
 ```
 
-All of the above instructions should work equally well for ubuntu, debian trixie, arch or tumbleweed. You might want a better terminal, depending on your OS of choice. On any of them you could easily install `ptyxis` with the following command.
+All of the above instructions should work equally well for ubuntu, debian trixie, arch or tumbleweed. You need to install curl on debian/ubuntu. 
+
+You might want a better terminal. On any linux you could easily install `ptyxis` with the following command.
 
 ```bash
-ilmi ptyxis
+ilmi flathub ptyxis
 ```
 
 Remember to pick `Jetbrains Mono Nerd Font` as the font. Pick a nice theme like `Catppuccin Mocha`, `Tokyo Night` or `Everforest`.
@@ -186,20 +189,19 @@ Remember to pick `Jetbrains Mono Nerd Font` as the font. Pick a nice theme like 
 
 Fedora Atomic is great and the future of fedora if not linux in general. Unfortunately, atomic comes with almost nothing for developers and you have to use distrobox/toolbox for everything. This can be a frustrating experience. This will be a more stable operating system in practice than any of the other approaches(traditional or ublue based). This OS is strictly NOT for those who like to tinker a lot.
 
-### Purist Setup
+###  Atomic Setup
 
-IF you want to be a *purist*, I have multiple distrobox containers, to get everything I need, but they are a bit brittle. Use the following command and see if this works for you.
+IF you are a *purist*, I have multiple distrobox containers, to get everything I need, but they are a bit brittle. Use the following command for such a setup.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif)" -- fedora-atomic
 ```
 
-Above command should install some basic tools on the host, but developer tools(`vscode`, `docker`) are in a distrobox container. 
-
+Above command should install some basic tools on the host, but developer tools(`vscode`, `docker`) are inside distrobox container. 
 
 ### rpm-ostree setup
 
-I would recommend you don't spend too much time configuring everything in a distrobox and spend multiple frustrating hours trying to get it to work. Instead use `rpm-ostree` as it's really easy but less *pure*. You could create a layer on top of atomic, using `rpm-ostree`, and that's what I am currently doing.
+I would recommend you don't spend too much time configuring everything in a distrobox and spend multiple frustrating hours trying to get it to work. Instead use `rpm-ostree` as it's really easy. You could create a layer on top of atomic, using `rpm-ostree`, and that's what I am currently doing. Note that calling rpm-ostree multiple times is a bad idea. Refer to Fedora Atomic documentation.
  
 Install essential development tools like `vscode`, and `virt-manager` with the following command.
 
@@ -207,7 +209,7 @@ Install essential development tools like `vscode`, and `virt-manager` with the f
 bash -c "$(curl -sSL https://is.gd/egitif)" -- rpm-ostree
 ```
 
-If you need docker, you should install it in a vm. Use `vscode` and ssh into this virtual machine. `devconainers` work really well using this approach.
+If you need docker, you should install it in a vm, use `vscode` and ssh into this virtual machine. `devconainers` work really well using this approach.
 
 ```bash
 vm-create --distro ubuntu --name dev --docker --brew --dotfiles min
@@ -223,7 +225,7 @@ Unfortunately, there is no direct ISO of dx version available. Either you rebase
 
 If you are an experienced linux desktop user, and you have enough knowledge of linux and are a developer, then you should try `nixos`. There is a lot to learn and there will be very frustrating times. But it's worth it. IF you are into devops, and like IaC, then you would love nixos.
 
-Unfortunately there is no easy way to make automated installers for nixos. You need to learn `nix` and understand the configurations. You have to tailor the configuration to your needs. I will write a guide soon, as soon as I get everything working as I expect. At present you could look at my *work in progress* config at `extras/nixos/config`.
+Unfortunately there is no easy way to make automated installers for nixos. You need to learn `nix` and understand the configurations. You have to tailor the configuration to your needs. I will write a guide soon, as soon as I get everything working as I expect. At present you could look at my *work in progress* config at `extras/nixos/config`. But, please don't judge me. :-)
 
 
 ### Linux Desktop
@@ -234,7 +236,7 @@ This should work on almost any linux system/vm/container even without sudo privi
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- generic
 ```
 
-## Linux Development Container/VM
+## Linux Development Container/VM(mutable distributions only)
 
 Install essential tools and bash config with
 
@@ -251,18 +253,22 @@ ilmb zsh tmux nvim emacs # pick any
 If you are in distrobox or a virtual machine with desktop environment, you could install terminal with
 
 ```bash
-ilmi terminal
+ilmi terminal fonts
 ```
 
-You might be able to install vscode with
+You can install vscode with
 
 ```bash
-ilmi vscode
+ilmi vscode fonts
 ```
+
+I will try to provide similar commands for immutable/nixos distributions.
 
 ## Proxmox setup
 
-This is an amazing operating system for almost anything. It's really simple, even if you don't know linux much. Just buy a minipc worth 150$ and install proxmox on it. You could learn a lot about linux, devops and cloud computing.
+This is an amazing hypervisor for almost anything. It's really simple to use, even if you don't know linux much. Just buy a minipc worth 150$ and install proxmox on it. You could learn a lot about linux, devops and cloud computing. I setup kubernetes clusters, docker/podman/lxc comtainers in multiple virtual machines without any problem. You could use Ceph if you need distributed storage for your cluster. Install desktop linux or windows if you need to. Passthrough your gpu to windows or bazzite and play games at close to bare metal fps.
+
+Basic setup can be done with the following command.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/epesoq)"
