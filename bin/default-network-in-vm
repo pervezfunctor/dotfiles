@@ -1,0 +1,40 @@
+#!/bin/bash
+
+set -e
+
+SUBNET_PREFIX="192.168.124"
+
+UUID=$(uuidgen)
+MAC=$(printf '52:54:00:%02x:%02x:%02x' $((RANDOM % 256)) $((RANDOM % 256)) $((RANDOM % 256)))
+
+cat >/tmp/default.xml <<EOF
+<network>
+  <name>default</name>
+  <uuid>$UUID</uuid>
+  <forward mode='nat' />
+  <bridge name='virbr0' stp='on' delay='0' />
+  <mac address='$MAC' />
+  <ip address='${SUBNET_PREFIX}.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='${SUBNET_PREFIX}.2' end='${SUBNET_PREFIX}.254' />
+    </dhcp>
+  </ip>
+  </network>
+EOF
+
+echo "[INFO] Destroying existing default network if active..."
+virsh net-destroy default || true
+
+echo "[INFO] Undefining existing default network..."
+virsh net-undefine default || true
+
+echo "[INFO] Defining new default network with subnet ${SUBNET_PREFIX}.0/24"
+virsh net-define /tmp/default.xml
+
+echo "[INFO] Enabling autostart for default network"
+virsh net-autostart default
+
+echo "[INFO] Starting default network"
+virsh net-start default
+
+echo "[SUCCESS] Default network redefined to ${SUBNET_PREFIX}.0/24"

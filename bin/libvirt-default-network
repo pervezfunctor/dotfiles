@@ -6,7 +6,9 @@ if sudo virsh net-info default &>/dev/null; then
   echo "Default network is already defined"
   read -p "Do you want to delete it and recreate it? (y/n) " -r
   if [[ $REPLY =~ ^[Yy]$ ]]; then
-    sudo virsh net-destroy default
+    if sudo virsh net-destroy default; then
+      echo "default network not active"
+    fi
     sudo virsh net-undefine default
   else
     echo "Default network not touched"
@@ -14,7 +16,15 @@ if sudo virsh net-info default &>/dev/null; then
   fi
 fi
 
-sudo virsh net-define /usr/share/libvirt/networks/default.xml
+if [[ -f /etc/libvirt/qemu/networks/default.xml ]]; then
+  sudo virsh net-define /etc/libvirt/qemu/networks/default.xml
+elif [[ -f /usr/share/libvirt/networks/default.xml ]]; then
+  sudo virsh net-define /usr/share/libvirt/networks/default.xml
+else
+  echo "can't find default.xml"
+  exit 1
+fi
+
 sudo virsh net-start default
 sudo virsh net-autostart default
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 si() {
-    sudo pacman -S --needed --quiet --noconfirm "$@"
+    sudo pacman -S --quiet --noconfirm "$@"
 
     # for p in "$@"; do
     #     slog "Installing package $p"
@@ -91,7 +91,7 @@ essential_install() {
 
     si unarchiver zip tmux pkg-config fuse2 net-tools iproute2 p7zip readline \
         sqlite libffi zlib xz pkgfile nmap gum libxcrypt-compat libsecret gawk \
-        base-devel micro dialog newt just
+        base-devel micro dialog newt just dmidecode
 
     sudo pkgfile --update
 
@@ -190,10 +190,10 @@ cockpit_install() {
 vm_install() {
     slog "Installing vm"
 
-    si pipewire-jack libvirt qemu-full virt-install bridge-utils dnsmasq \
+    si pipewire-jack libvirt qemu-desktop virt-install bridge-utils dnsmasq \
         edk2-ovmf virglrenderer qemu-ui-spice-core qemu-ui-spice-app \
-        qemu-char-spice qemu-audio-spice qemu-device-usb-redirect \
-        qemu-device-display-virtio-vga cloud-utils
+        qemu-audio-spice cloud-utils xorriso qemu-hw-display-virtio-vga \
+        qemu-hw-display-virtio-vga-gl dmidecode
 
     libvirt_confstall
 
