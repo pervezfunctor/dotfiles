@@ -72,14 +72,14 @@ configure_ubuntu() {
     esac
 }
 configure_tw() {
-    VM_NAME=${VM_NAME:=opensuse}
-    RELEASE=${RELEASE:=openSUSE-Tumbleweed}
+    VM_NAME=${VM_NAME:=tw}
+    RELEASE=${RELEASE:=latest} # Not used in URL, but good for consistency
 
-    IMG_URL="https://download.opensuse.org/tumbleweed/appliances/${RELEASE}-Minimal-VM.x86_64-Cloud.qcow2"
-    BASE_IMG_NAME="${RELEASE}.img"
-    USER_GROUPS=("adm" "sudo")
-    # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
+    IMG_URL="https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
+    BASE_IMG_NAME="openSUSE-Tumbleweed-Cloud.qcow2"
+    USER_GROUPS=("wheel" "users")
     OS_VARIANT="opensusetumbleweed"
+    # INSTALL_CMD="sudo zypper install qemu_kvm libvirt virt-install qemu-img wget"
 }
 
 configure_fedora() {
@@ -166,7 +166,7 @@ configure_distribution() {
     arch) configure_arch ;;
     debian) configure_debian ;;
     alpine) configure_alpine ;;
-    opensuse | tumbleweed) configure_tw ;;
+    opensuse | tumbleweed | tw) configure_tw ;;
     *)
         fail "Unsupported distribution: $DISTRO"
         fail "Supported distributions: ubuntu, fedora, arch, debian, alpine"
@@ -233,7 +233,7 @@ EXAMPLES:
     $0 --distro fedora --name myvm --memory 8192 # Custom Fedora VM
     $0 --distro arch --disk-size 80G --vcpus 4   # Arch VM with larger disk
     $0 --distro debian --release bullseye        # Debian 11 VM
-    $0 --distro tumbleweed --name opensuse-vm --vcpus 2 --memory 4096  # openSUSE Tumbleweed VM
+    $0 --distro tumbleweed --name tw-vm --vcpus 2 --memory 4096  # openSUSE Tumbleweed VM
     $0 --distro ubuntu --docker                  # Ubuntu VM with Docker pre-installed
     $0 --distro ubuntu --brew                    # Ubuntu VM with Homebrew and dev tools
     $0 --distro ubuntu --nix                     # Ubuntu VM with Nix package manager
@@ -509,10 +509,13 @@ generate_cloud_init() {
         )
         ;;
 
-    opensuse | tumbleweed)
+    opensuse | tumbleweed | tw)
         packages+=(
-            "openssh-server"
+            "openssh"
             "stow"
+        )
+        runcmd+=(
+            "systemctl enable --now sshd"
         )
         ;;
 
@@ -559,7 +562,7 @@ generate_cloud_init() {
             )
             ;;
 
-        opensuse | tumbleweed)
+        opensuse | tumbleweed | tw)
             packages+=(
                 "docker"
                 "docker-compose"
@@ -626,7 +629,7 @@ generate_cloud_init() {
                 "file"
             )
             ;;
-        opensuse | tumbleweed)
+        opensuse | tumbleweed | tw)
             packages+=(
                 "gcc"
                 "make"
@@ -803,6 +806,7 @@ launch_vm() {
         --disk path="$DISK_IMG",format=qcow2,bus=virtio \
         --disk path="$SEED_ISO",device=cdrom \
         --os-variant "$OS_VARIANT" \
+        --video virtio \
         --virt-type kvm \
         --graphics none \
         --network "$network_config" \
@@ -918,7 +922,7 @@ show_completion_info() {
         echo "  Install packages:   sudo apk add <package>"
         echo "  Search packages:    apk search <term>"
         ;;
-    tumbleweed)
+    opensuse | tumbleweed | tw)
         slog "openSUSE Tumbleweed Commands:"
         echo "  Update system:      sudo zypper refresh && sudo zypper dup"
         echo "  Install packages:   sudo zypper install <package>"
