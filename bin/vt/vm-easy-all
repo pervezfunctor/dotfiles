@@ -7,7 +7,7 @@ set -euo pipefail
 source "$(dirname "$0")/vm-utils"
 source "$(dirname "$0")/all-utils"
 
-VM_EASY_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian")
+VM_EASY_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "tumbleweed")
 
 all_create() {
   slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
