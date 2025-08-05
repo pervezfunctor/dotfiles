@@ -1021,6 +1021,14 @@ check_root_user() {
     fi
 }
 
+check_sudo_askpass() {
+    if [ -z "${SUDO_ASKPASS}" ]; then
+        echo "Error: SUDO_ASKPASS environment variable is not set." >&2
+        echo "Please set it to a graphical sudo password prompter, e.g., /usr/bin/ksshaskpass." >&2
+        exit 1
+    fi
+}
+
 nix_dotfiles() {
     nix run nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 }

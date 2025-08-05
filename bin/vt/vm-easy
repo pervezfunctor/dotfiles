@@ -141,6 +141,11 @@ generate_cloud_init() {
   local pub_key
   pub_key=$(cat "$SSH_KEY")
 
+  local ssh_package="openssh-server"
+  if [[ "$DISTRO" == "tw" || "$DISTRO" == "tumbleweed" ]]; then
+    ssh_package="openssh"
+  fi
+
   local -a packages=(
     "qemu-guest-agent"
     "git"
@@ -149,7 +154,7 @@ generate_cloud_init() {
     "curl"
     "wget"
     "unzip"
-    "openssh-server"
+    "$ssh_package"
   )
 
   cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
@@ -175,7 +180,8 @@ ssh_pwauth: false
 disable_root: true
 
 runcmd:
-  - systemctl enable --now sshd || systemctl enable --now ssh || true
+  - systemctl enable --now sshd || true
+
   - systemctl enable --now qemu-guest-agent || true
 EOF
 
@@ -259,6 +265,7 @@ create_vm() {
     --disk path="${VM_DISK}",device=disk,bus=virtio,format=qcow2 \
     --network network="${BRIDGE}",model=virtio \
     --cloud-init user-data="${USER_DATA}",meta-data="${META_DATA}" \
+    --video=virtio \
     --graphics none \
     --console pty,target_type=serial \
     --noautoconsole
@@ -395,6 +402,7 @@ main() {
   generate_cloud_init
   check_prerequisites
 
+  # check_sudo_askpass
   create_disk
   create_vm
 }
