@@ -120,12 +120,11 @@ mount_subvolumes() {
 }
 
 base_system_install() {
-  pacstrap /mnt base linux linux-firmware btrfs-progs grub efibootmgr \
-    networkmanager playerctl xdg-utils pipewire wireplumber pipewire-pulse \
-    grim nwg-look wl-clipboard kitty gvfs mpv thunar slurp \
-    hyprland xdg-desktop-portal-hyprland xdg-desktop-portal \
-    xdg-desktop-portal-hyprland hyprpaper waybar rofi-wayland hyprlock \
-    hypridle polkit-gnome
+  pacstrap /mnt base linux linux-firmware btrfs-progs grub efibootmgr sudo vim \
+    nano neovim openssh reflector networkmanager bluez bluez-utils blueman \
+    playerctl xdg-utils pipewire wireplumber pipewire-pulse udisks2 udiskie \
+    gvfs pipewire pipewire-pulse pipewire-alsa wireplumber wireshark-qt
+
   # gnome
 }
 

@@ -232,15 +232,37 @@ distrobox_install() {
     slog "distrobox installation done!"
 }
 
+desktop_essential_install() {
+    si thunar thunar-archive-plugin wl-clipboard cliphist grim slurp \
+        rofi-wayland waybar dunst nwg-displays nwg-panel xdg-desktop-portal \
+        nwg-bar dolphin swaync ghostty lxappearance qt5ct qt6ct polkit \
+        polkit-kde-agent pavucontrol nm-connection-editor mpv imv nvtop \
+        network-manager-applet otf-font-awesome noto-fonts noto-fonts-emoji \
+        ttf-font-awesome ttf-roboto tumbler firefox kvantum swappy sddm gvfs \
+        papirus-icon-theme bibata-cursor-theme nwg-look reflector
+    # xorg-server-xwayland
+    # mesa vulkan-intel vulkan-radeon vulkan-mesa-layer
+}
+
 hyprland_install() {
     slog "Installing hyprland packages"
 
-    si hyprcursor hyprgraphics hypridle hyprland hyprland-protocols \
-        hyprland-qt-support hyprland-qtutils hyprlock hyprpolkitagent hyprshot \
-        hyprsunset hyprutils hyprwayland-scanner nwg-displays nwg-dock-hyprland \
-        nwg-panel xdg-desktop-portal-hyprland thunar rofi-wayland waybar dunst \
-        nwg-bar wl-clipboard dolphin swaync ghostty kitty otf-font-awesome \
-        noto-fonts-emoji noto-fonts ttf-roboto pavucontrol nm-connection-editor
+    desktop_essential_install
+    si hyprcursor hyprgraphics hypridle hyprland hyprland-protocols hyprshot \
+        hyprland-qt-support hyprland-qtutils hyprlock hyprpolkitagent \
+        hyprsunset hyprutils hyprwayland-scanner nwg-dock-hyprland hyprpaper \
+        xdg-desktop-portal-hyprland
+
+    slog "hyprland installation done!"
+}
+
+sway_install() {
+    slog "Installing sway packages"
+
+    desktop_essential_install
+    si sway swaybg swayidle swaylock
+
+    slog "sway installation done!"
 }
 
 firewall_setup() {
