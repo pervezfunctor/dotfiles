@@ -142,6 +142,7 @@ generate_cloud_init() {
   pub_key=$(cat "$SSH_KEY")
 
   local -a packages=(
+    "qemu-guest-agent"
     "git"
     "micro"
     "tree"
@@ -174,7 +175,8 @@ ssh_pwauth: false
 disable_root: true
 
 runcmd:
-  - systemctl enable --now sshd
+  - systemctl enable --now sshd || systemctl enable --now ssh || true
+  - systemctl enable --now qemu-guest-agent || true
 EOF
 
   cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF

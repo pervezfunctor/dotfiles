@@ -755,7 +755,6 @@ shell-slim_groupstall() {
     shell-slim-group_check
 }
 
-has_cmd zsh && zsh_confstall
 shell-slim-ui_groupstall() {
     shell-slim_groupstall
     fonts_install
