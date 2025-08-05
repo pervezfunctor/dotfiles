@@ -805,6 +805,12 @@ fonts_install() {
     slog "Fonts installation done!"
 }
 
+jetbrains-mono_install() {
+    slog "Installing JetBrains Mono Nerd Font..."
+    jetbrains_nerd_font_install
+    slog "JetBrains Mono Nerd Font installation done!"
+}
+
 starship_install() {
     has_cmd starship && return 0
 
