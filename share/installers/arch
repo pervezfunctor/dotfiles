@@ -193,7 +193,7 @@ vm_install() {
     si pipewire-jack libvirt qemu-desktop virt-install bridge-utils dnsmasq \
         edk2-ovmf virglrenderer qemu-ui-spice-core qemu-ui-spice-app \
         qemu-audio-spice cloud-utils xorriso qemu-hw-display-virtio-vga \
-        qemu-hw-display-virtio-vga-gl dmidecode
+        qemu-hw-display-virtio-vga-gl dmidecode libguestfs-tools
 
     libvirt_confstall
 

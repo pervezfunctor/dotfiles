@@ -35,6 +35,7 @@ COMMANDS:
     console <vm-name>   Connect to VM console
     ip <vm-name>        Get VM IP address
     logs <vm-name>      Show VM logs
+    cloud-init-logs <vm-name> Show cloud-init logs
     cleanup             Remove stopped VMs and orphaned files
     ssh <vm-name>       Connect to VM via SSH
     usb-list            List all available USB devices on host
@@ -315,6 +316,36 @@ show_logs() {
         sudo tail -20 "$log_file"
     else
         warn "No libvirt log file found at $log_file"
+    fi
+}
+
+show_cloud_init_logs() {
+    local vm_name="$1"
+    vm_check_exists "$vm_name" || return 1
+
+    slog "Showing cloud-init logs for VM '$vm_name'..."
+    echo
+
+    if ! has_cmd virt-cat; then
+        fail "virt-cat command not found. Please install libguestfs-tools on the host."
+        return 1
+    fi
+
+    local vm_disk
+    vm_disk=$(virsh domblklist "$vm_name" --details | awk '/file.*disk/ {print $4; exit}')
+
+    if [[ -z "$vm_disk" ]]; then
+        fail "Could not find disk image for VM '$vm_name'."
+        return 1
+    fi
+
+    slog "Attempting to read cloud-init logs from VM disk: $vm_disk"
+    slog "Cloud-init logs (from /var/log/cloud-init.log inside VM):"
+    if sudo virt-cat -d "$vm_name" /var/log/cloud-init.log; then
+        success "Successfully retrieved cloud-init logs."
+    else
+        warn "Could not retrieve cloud-init logs using virt-cat. The VM might not be running, or the log file might not exist or be in a different location inside the VM."
+        warn "You can try to SSH into the VM and check /var/log/cloud-init.log or /var/log/cloud-init-output.log manually."
     fi
 }
 
@@ -883,10 +914,10 @@ clone)
     fi
     clone_vm "$src_vm" "$dest_vm"
     ;;
-list)
+list | ls)
     vm_list
     ;;
-status)
+status | info)
     [[ -z "$vm_name" ]] && {
         fail "VM name required"
         usage
@@ -894,7 +925,7 @@ status)
     }
     vm_status "$vm_name"
     ;;
-create)
+create | new)
     vm-create "${@:2}"
     ;;
 autostart)
@@ -905,7 +936,7 @@ autostart)
     }
     autostart_vm "$vm_name"
     ;;
-start)
+start | boot)
     [[ -z "$vm_name" ]] && {
         fail "VM name required"
         usage
@@ -913,7 +944,7 @@ start)
     }
     start_vm "$vm_name"
     ;;
-stop)
+stop | shutdown)
     [[ -z "$vm_name" ]] && {
         fail "VM name required"
         usage
@@ -921,7 +952,7 @@ stop)
     }
     stop_vm "$vm_name"
     ;;
-restart)
+restart | reboot)
     [[ -z "$vm_name" ]] && {
         fail "VM name required"
         usage
@@ -937,7 +968,7 @@ destroy)
     }
     destroy_vm "$vm_name"
     ;;
-delete)
+delete | rm)
     [[ -z "$vm_name" ]] && {
         fail "VM name required"
         usage
@@ -963,6 +994,14 @@ logs)
         exit 1
     }
     show_logs "$vm_name"
+    ;;
+cloud-init-logs)
+    [[ -z "$vm_name" ]] && {
+        fail "VM name required"
+        usage
+        exit 1
+    }
+    show_cloud_init_logs "$vm_name"
     ;;
 cleanup)
     cleanup_vms
