@@ -71,6 +71,16 @@ configure_ubuntu() {
         ;;
     esac
 }
+configure_tw() {
+    VM_NAME=${VM_NAME:=opensuse}
+    RELEASE=${RELEASE:=openSUSE-Tumbleweed}
+
+    IMG_URL="https://download.opensuse.org/tumbleweed/appliances/${RELEASE}-Minimal-VM.x86_64-Cloud.qcow2"
+    BASE_IMG_NAME="${RELEASE}.img"
+    USER_GROUPS=("adm" "sudo")
+    # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
+    OS_VARIANT="opensusetumbleweed"
+}
 
 configure_fedora() {
     VM_NAME=${VM_NAME:=fedora}
@@ -156,6 +166,7 @@ configure_distribution() {
     arch) configure_arch ;;
     debian) configure_debian ;;
     alpine) configure_alpine ;;
+    opensuse | tumbleweed) configure_tw ;;
     *)
         fail "Unsupported distribution: $DISTRO"
         fail "Supported distributions: ubuntu, fedora, arch, debian, alpine"
@@ -185,7 +196,7 @@ Usage: $0 --distro DISTRO [OPTIONS]
 Create a VM using virt-install and cloud-init for various Linux distributions.
 
 REQUIRED:
-    --distro DISTRO     Distribution to install (ubuntu|fedora|arch|debian)
+    --distro DISTRO     Distribution to install (ubuntu|fedora|arch|debian|alpine|tumbleweed)
 
 OPTIONS:
     --name NAME         VM name (default: distribution name)
@@ -214,12 +225,15 @@ DISTRIBUTION-SPECIFIC OPTIONS:
         --release bookworm|bullseye|trixie  (default: bookworm - 12)
     Alpine:
         --release 3.19|3.20|3.21|3.22|  (default: 3.22)
+    Tumbleweed:
+        --release latest               (default: latest)
 
 EXAMPLES:
     $0 --distro ubuntu                           # Create Ubuntu VM with defaults
     $0 --distro fedora --name myvm --memory 8192 # Custom Fedora VM
     $0 --distro arch --disk-size 80G --vcpus 4   # Arch VM with larger disk
     $0 --distro debian --release bullseye        # Debian 11 VM
+    $0 --distro tumbleweed --name opensuse-vm --vcpus 2 --memory 4096  # openSUSE Tumbleweed VM
     $0 --distro ubuntu --docker                  # Ubuntu VM with Docker pre-installed
     $0 --distro ubuntu --brew                    # Ubuntu VM with Homebrew and dev tools
     $0 --distro ubuntu --nix                     # Ubuntu VM with Nix package manager
@@ -238,13 +252,11 @@ INSTALL COMMANDS BY DISTRIBUTION:
     Fedora:        sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage
     Arch:          sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools
     Alpine:        sudo apk add qemu libvirt virt-install qemu-img wget
-
+    Tumbleweed:    sudo zypper install qemu libvirt virt-install qemu-img wget
 EOF
 }
 
-# Parse command line arguments
 parse_args() {
-
     while [[ $# -gt 0 ]]; do
         case $1 in
         --distro)
@@ -496,6 +508,14 @@ generate_cloud_init() {
             "alpine-sdk"
         )
         ;;
+
+    opensuse | tumbleweed)
+        packages+=(
+            "openssh-server"
+            "stow"
+        )
+        ;;
+
     esac
 
     if [[ "$INSTALL_DOCKER" == "true" ]]; then
@@ -536,6 +556,13 @@ generate_cloud_init() {
             packages+=(
                 "docker"
                 "docker-cli-compose"
+            )
+            ;;
+
+        opensuse | tumbleweed)
+            packages+=(
+                "docker"
+                "docker-compose"
             )
             ;;
         esac
@@ -592,6 +619,22 @@ generate_cloud_init() {
                 "file"
             )
             ;;
+        alpine)
+            packages+=(
+                "build-base"
+                "procps"
+                "file"
+            )
+            ;;
+        opensuse | tumbleweed)
+            packages+=(
+                "gcc"
+                "make"
+                "procps"
+                "file"
+            )
+            ;;
+
         esac
 
         runcmd+=(
@@ -868,6 +911,18 @@ show_completion_info() {
         echo "  Search packages:    pacman -Ss <term>"
         echo "  List installed:     pacman -Q"
         echo "  AUR helper setup:   Install yay or paru for AUR access"
+        ;;
+    alpine)
+        slog "Alpine Linux Commands:"
+        echo "  Update system:      sudo apk update && sudo apk upgrade"
+        echo "  Install packages:   sudo apk add <package>"
+        echo "  Search packages:    apk search <term>"
+        ;;
+    tumbleweed)
+        slog "openSUSE Tumbleweed Commands:"
+        echo "  Update system:      sudo zypper refresh && sudo zypper dup"
+        echo "  Install packages:   sudo zypper install <package>"
+        echo "  Search packages:    zypper search <term>"
         ;;
     esac
 

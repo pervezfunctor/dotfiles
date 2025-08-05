@@ -65,16 +65,16 @@ configure_fedora() {
   BASE_IMAGE_NAME="Fedora-Cloud-Base-Generic-${RELEASE}-1.1.x86_64.qcow2"
   DOWNLOAD_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/${BASE_IMAGE_NAME}"
   USER_GROUPS=("wheel" "network" "storage")
-  OS_VARIANT="fedora-cloud-base-generic-41"
+  OS_VARIANT="fedora41"
 }
 
-configure_tumbleweed() {
-  VM_NAME=${VM_NAME:-tumbleweed-vt}
+configure_tw() {
+  VM_NAME=${VM_NAME:-tw-vt}
   RELEASE=${RELEASE:=latest}
   BASE_IMAGE_NAME="openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
   DOWNLOAD_URL="https://download.opensuse.org/tumbleweed/appliances/${BASE_IMAGE_NAME}"
   USER_GROUPS=("wheel" "network" "users")
-  OS_VARIANT="opensuse-tumbleweed"
+  OS_VARIANT="opensusetumbleweed"
 }
 
 configure_distribution() {
@@ -91,8 +91,8 @@ configure_distribution() {
   fedora)
     configure_fedora
     ;;
-  tumbleweed)
-    configure_tumbleweed
+  tw | tumbleweed)
+    configure_tw
     ;;
   *)
     echo "Unknown distribution: $DISTRO"
