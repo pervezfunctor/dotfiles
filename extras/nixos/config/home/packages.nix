@@ -6,7 +6,8 @@
     bacon
     cargo-info
     delta
-    delta
+    devenv
+    devbox
     du-dust
     dua
     duf
