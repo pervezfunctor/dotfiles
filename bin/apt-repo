@@ -1,0 +1,99 @@
+#! /usr/bin/env bash
+
+set -Eeuo pipefail
+
+DOT_DIR="${DOT_DIR:-$HOME/.ilm}"
+# shellcheck disable=SC1091
+source "${DOT_DIR}/share/utils"
+
+trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
+
+function usage() {
+  echo "Usage:"
+  echo "  $0 add <repo-url> <gpg-key-url> [distribution] [component]"
+  echo "  $0 remove <repo-url>"
+  echo ""
+  echo "Examples:"
+  echo "  $0 add http://ppa.launchpad.net/deadsnakes/ppa/ubuntu https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x6A755776 focal main"
+  echo "  $0 remove http://ppa.launchpad.net/deadsnakes/ppa/ubuntu"
+  exit 1
+}
+
+function derive_repo_name() {
+  echo "$1" | awk -F/ '{print $(NF-1)"-"$NF}' | sed 's/[^a-zA-Z0-9]/_/g'
+}
+
+function add_repo() {
+  REPO_URL="$1"
+  GPG_KEY_URL="$2"
+  DISTRO="${3:-stable}"
+  COMPONENT="${4:-main}"
+
+  REPO_NAME=$(derive_repo_name "$REPO_URL")
+  LIST_FILE="/etc/apt/sources.list.d/${REPO_NAME}.list"
+  KEY_FILE="/usr/share/keyrings/${REPO_NAME}-archive-keyring.gpg"
+
+  slog "Downloading GPG key..."
+  curl -fsSL "$GPG_KEY_URL" | gpg --dearmor | sudo tee "$KEY_FILE" >/dev/null
+
+  slog "Adding repository to $LIST_FILE..."
+  echo "deb [signed-by=$KEY_FILE] $REPO_URL $DISTRO $COMPONENT" | sudo tee "$LIST_FILE"
+
+  slog "Updating apt..."
+  sudo apt update
+
+  slog "Repository added successfully!"
+}
+
+function remove_repo() {
+  REPO_URL="$1"
+  REPO_NAME=$(derive_repo_name "$REPO_URL")
+  LIST_FILE="/etc/apt/sources.list.d/${REPO_NAME}.list"
+  KEY_FILE="/usr/share/keyrings/${REPO_NAME}-archive-keyring.gpg"
+
+  if [ -f "$LIST_FILE" ]; then
+    slog "Removing repository list: $LIST_FILE"
+    sudo rm -f "$LIST_FILE"
+  else
+    warn "Repository list file not found: $LIST_FILE"
+  fi
+
+  if [ -f "$KEY_FILE" ]; then
+    slog "Removing GPG key: $KEY_FILE"
+    sudo rm -f "$KEY_FILE"
+  else
+    warn "GPG key file not found: $KEY_FILE"
+  fi
+
+  slog "Updating apt..."
+  sudo apt update
+
+  slog "Repository removed successfully!"
+}
+
+main() {
+  if [ $# -lt 2 ]; then
+    usage
+  fi
+
+  ACTION="$1"
+  shift
+
+  case "$ACTION" in
+  add)
+    if [ $# -lt 2 ]; then
+      usage
+    fi
+    add_repo "$@"
+    ;;
+  remove)
+    if [ $# -lt 1 ]; then
+      usage
+    fi
+    remove_repo "$@"
+    ;;
+  *)
+    usage
+    ;;
+  esac
+}

@@ -64,6 +64,21 @@ ubuntu_packages() {
     slog "Installing pixi packages done!"
 }
 
+# shellcheck disable=SC2120
+debian_locale_install() {
+    LOCALE_TO_USE=${1:-en_US.UTF-8}
+
+    if sudo apt install -y --reinstall locales &&
+        sudo sed -i "s/^# *$LOCALE_TO_USE UTF-8/$LOCALE_TO_USE UTF-8/" /etc/locale.gen &&
+        sudo locale-gen &&
+        sudo update-locale LANG="$LOCALE_TO_USE" LC_ALL="$LOCALE_TO_USE"; then
+        slog "Locales fixed. Current system locale:" && locale
+    else
+        warn "Failed to fix locales. Please check your locale settings."
+        return 1
+    fi
+}
+# or
 locale-setup() {
     slog "Setting locale to en_US.UTF-8..."
     si locales
@@ -81,12 +96,11 @@ locale-setup() {
     sudo loadkeys us
 
     slog "Configuration complete. You may need to reboot for all changes to take effect."
-
 }
 
 debian_packages() {
     update_packages
-
+    debian_locale_install
     slog "Installing packages"
 
     si git-core gh unzip wget curl trash-cli net-tools iproute2 nmap \
@@ -107,13 +121,15 @@ debian_packages() {
 
 core_install() {
     update_packages
+    is_debian && debian_locale_install
 
     slog "Installing core packages"
 
-    si software-properties-common apt-transport-https ca-certificates gpg curl \
+    is_ubuntu && software-properties-common
+    si apt-transport-https ca-certificates gpg curl \
         wget git-core trash-cli tar unzip tree file
 
-    if is_plucky; then
+    if is_plucky || is_trixie; then
         si stow
     else
         pkgx_install
