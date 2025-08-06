@@ -326,4 +326,4 @@ Once you are comfortable with proxmox, you should use ansible/terraform to creat
 
 Similarly once you are comfortable with virtual machines on your desktop(libvirt), use ansible/packer to create and provision virtual machines.
 
-You don't need to buy an expensive pc for this. Just buy 8th/9th gen i5/i7 1 liter pc from ebay. You could get one for 50$-100$. You could even avoid buying a mini pc, and use this for both proxmox and desktop. I will provide instructions for this in the future.
+You don't need to buy an expensive pc for this. Just buy [8th/9th gen i5/i7 1 liter pc](https://www.servethehome.com/introducing-project-tinyminimicro-home-lab-revolution/) from ebay. You could get one for 50$-100$. You could even avoid buying a mini pc, and use this for both proxmox and desktop. I will provide instructions for this in the future.
