@@ -102,18 +102,25 @@ If you just want homebrew and basic unix tools, run the following command.
 bash -c "$(curl -sSL https://is.gd/egitif)"
 ```
 
+## Conventional Linux
 
-## Recommended Setups
+If you are a developer, I would highly recommend using linux on your personal desktop. There are interesting things in happening in this space. As a developer you will have a lot of fun.
 
-If you are a developer, I would highly recommend using linux on your personal desktop. There are interesting things in happening in this space. As a developer you will have a lot of fun. This is stable enough.
+If you don't have a personal desktop, just buy a mini pc. You could get a decent minipc for [$300-$400](https://www.amazon.com/AOOSTAR-GEM10-7840HS-Computer-OCULINK/dp/B0F2DW9HFC). Even a nuc could cost around [500$](https://www.amazon.com/ASUS-Barebones-ThunderboltTM-Bluetooth-Toolless/dp/B0F1BBSF76). You could use it as a desktop, development machine or a server.
 
-If you don't have a personal desktop, just buy a mini pc. You could get a decent minipc for $300-$400. Even a nuc could cost less than 500$. You could use it as a desktop, development machine or a server. If you fine with a server that's capable of docker, you could buy N100/N150 mini pc, which should be around 150$. You would be surprised how much such a cheap machine can do.
+If you are fine with a server that's capable of running docker, you could buy N100/N150 mini pc, which should be around [150$](https://www.amazon.com/ASUS-Barebones-ThunderboltTM-Bluetooth-Toolless/dp/B0F1BBSF76). You would be surprised how much such a cheap machine can do.
 
-I have stopped using Windows for anything. I hardly use macos. I use linux on almost all my machines, servers, homelab or personal desktop.
+I have stopped using Windows for anything. I hardly use macos. I use linux on almost all my machines, servers, homelab or personal desktop. Almost all of them are reasonably stable and support everything I need.
+
+### Debian Trixie
+
+Debian Trixie is as stable(read boring) as linux gets. You must have used debian/ubuntu for your docker containers, at least for development. If you are familiar with the debian ecosystem, Debian Trixie, will be very familiar to you.  Comes with fairly recent kernel, and supports most modern hardware.
+
+Use Live CD/DVD iso as it uses Calamares installer. Use btrfs filesystem, preferrably subvolumes. DO NOT use netinstall. Install your favorite desktop environment. If you want to use this in a virtual machine, I would recommend KDE instead of Gnome.
 
 ### Fedora Workstation
 
-Fedora Workstation/Fedora KDE/Fedora Sway are all good choices. They are stable, have the latest kernel supporting most modern hardware. Most software is latest. This has the right balance of stability and latest software.
+Fedora Workstation/Fedora KDE/Fedora Sway are all good choices. They are stable, have the latest kernel supporting most modern hardware. Most software is latest or will be in fedora soon. This has the right balance of stability and latest software. This is also the operating system, where majority of the interesting things are happening in the linux desktop space.
 
 Download fedora workstation from [here](https://getfedora.org/en/workstation/download/) and install it on a separate disk. DO NOT use dual boot.
 
@@ -126,6 +133,15 @@ sudo dnf update -y
 ```
 Reboot your system.
 
+### OpenSUSE Tumbleweed
+
+OpenSUSE Tumbleweed is a rolling release distribution. It has the latest kernel and supports almost all hardware that linux supports.. It is very stable, most often more stable than Fedora even when Tumbleweed has the latest software. Generally tumbleweed has far more packages available than any other convention linux os(arch without AUR).
+
+Tumbleweed has one serious issue. It's installer sometimes just fails. It's nowhere near as good as or as polished as Fedora or Ubuntu installer. Once installed, it works great.
+
+
+For all of these operating systems, you could follow the same instructions below.
+
 You could install modern shell tools with the following command.
 
 ```bash
@@ -134,22 +150,35 @@ bash -c "$(curl -sSL https://is.gd/egitif)" -- shell-slim
 
 This command should setup your zsh, tmux and install tools like `ripgrep`, `eza`, `fzf`, `zoxide`, `bat`, `git-delta` etc.
 
-As a developer you might need vscode. Install it with the following command.
+Sometimes setting your shell to zsh might not work. In that case, you could use the following command.
 
 ```bash
-ilmi vscode fonts
+chsh -s $(which zsh)
 ```
 
-This will install `vscode` and `nerd fonts`. It should also install some essential extensions.
+Reopen your terminal and you should see a nice zsh prompt. You must install a nerd font like `Jetbrains Mono Nerd Font`. You could install it with the following command.
 
-If you need docker, I would highly recommend you install it in a vm. IF you prefer to install it on your host, you could use the following command.
+```bash
+ilmi fonts jetrains-mono
+```
+
+As a developer you most probably need vscode. Install it with the following command.
+
+```bash
+ilmi vscode
+```
+
+This will install `vscode`. It should also install some essential extensions. Open `vscode` and you should see a nice theme with a nice font.
+
+If you need docker, I would highly recommend you install it in a vm. If you prefer to install it on your host OS, you could use the following command.
 
 ```bash
 ilmi docker
 ```
-You should be able to use `vscode` and `devcontainers` without any issues. Remember to reboot after installing docker.
 
-I would highly recommend you install `libvirt` and `virt-manager` for managing virtual machines. You could use the following command.
+You should be able to use `vscode` and `devcontainers` without any issues. *You must reboot after installing docker*.
+
+I would highly recommend you install `libvirt` and `virt-manager` for creating and managing virtual machines. You could use the following command.
 
 ```bash
 ilmi vm-ui
@@ -157,26 +186,19 @@ ilmi vm-ui
 
 Once you reboot, you should be able to create and use virtual machines.
 
-I have a few helper scripts to make creating headless virtual machines easier. For example you could easily create a fedora vm with ssh enabled, using the following command.
+I have a few helper scripts to make creating headless virtual machines easier. For example you could easily create a debian vm with docker and ssh enabled with the following command.
 
 ```bash
-vm-create --distro fedora --name dev
+vm-create --distro debian --name dev --docker
 ```
 
-After a few minutes, you should be able to ssh into this vm with the following command. User name is `fedora` for ubuntu vm. If needed use password `fedora`.
+After a few minutes, you should be able to ssh into this vm with the following command. User name is `debian`. If needed use password `debian`.
 
 ```bash
-vm ssh dev fedora
-```
-You could install docker and shell tools in this vm with the following command.
-
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif)" -- shell-slim docker
+vm ssh dev debian # debian is the user name
 ```
 
-All of the above instructions should work equally well for ubuntu, debian trixie, arch or tumbleweed. You need to install curl on debian/ubuntu. 
-
-You might want a better terminal. On any linux you could easily install `ptyxis` with the following command.
+If you are not using Fedora, you need a better terminal. You could easily install `ptyxis` with the following command.
 
 ```bash
 ilmi flathub ptyxis
@@ -184,6 +206,8 @@ ilmi flathub ptyxis
 
 Remember to pick `Jetbrains Mono Nerd Font` as the font. Pick a nice theme like `Catppuccin Mocha`, `Tokyo Night` or `Everforest`.
 
+
+## Recommended Setups
 
 ### Fedora Atomic(Silverblue, Kinoite, Sway Atomic)
 
@@ -197,12 +221,12 @@ IF you are a *purist*, I have multiple distrobox containers, to get everything I
 bash -c "$(curl -sSL https://is.gd/egitif)" -- fedora-atomic
 ```
 
-Above command should install some basic tools on the host, but developer tools(`vscode`, `docker`) are inside distrobox container. 
+Above command should install some basic tools on the host, but developer tools(`vscode`, `docker`) are inside distrobox container.
 
 ### rpm-ostree setup
 
 I would recommend you don't spend too much time configuring everything in a distrobox and spend multiple frustrating hours trying to get it to work. Instead use `rpm-ostree` as it's really easy. You could create a layer on top of atomic, using `rpm-ostree`, and that's what I am currently doing. Note that calling rpm-ostree multiple times is a bad idea. Refer to Fedora Atomic documentation.
- 
+
 Install essential development tools like `vscode`, and `virt-manager` with the following command.
 
 ```bash
