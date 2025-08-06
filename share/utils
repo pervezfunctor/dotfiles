@@ -4,6 +4,46 @@ export DOT_DIR=${USE_DOT_DIR:-$HOME/.ilm}
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export ILM_BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 
+group_exists() {
+    getent group "$1" >/dev/null 2>&1
+}
+
+create_group() {
+    local group="$1"
+
+    if group_exists "$group"; then
+        slog "Group $group already exists, skipping creation..."
+    else
+        slog "Creating group $group"
+        sudo groupadd "$group"
+    fi
+
+}
+
+add_user_to_group() {
+    local user="$1"
+    local group="$2"
+
+    if ! group_exists "$group"; then
+        warn "Group $group does not exist, skipping adding user to group $group..."
+    fi
+
+    if id -nG "$user" | grep -qw "$group"; then
+        slog "User $user is already a member of group $group"
+    else
+        slog "Adding user $user to group $group"
+        sudo usermod -aG "$group" "$user"
+    fi
+}
+
+add_user_to_groups() {
+    local user="$1"
+    shift
+    for group in "$@"; do
+        add_user_to_group "$user" "$group"
+    done
+}
+
 generate_ssh_key() {
     ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "$(whoami)@$(hostname)"
 }
