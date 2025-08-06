@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# Script to modify and restart the libvirt 'default' network with a new IP range
+
+# Exit on any error
+set -e
+
+# Variables
+NETWORK_NAME="default"
+ORIGINAL_XML="/tmp/default_network.xml"
+MODIFIED_XML="/tmp/default_network_modified.xml"
+NEW_IP="192.168.124.1"
+NEW_RANGE_START="192.168.124.2"
+NEW_RANGE_END="192.168.124.254"
+
+# Check if virsh is installed
+if ! command -v virsh &> /dev/null; then
+    echo "Error: virsh is not installed. Please install libvirt-clients."
+    exit 1
+fi
+
+# Check if running as root (virsh may require root privileges)
+if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root (use sudo)."
+    exit 1
+fi
+
+# Step 1: Dump the default network XML
+echo "Dumping the current 'default' network XML to $ORIGINAL_XML..."
+virsh net-dumpxml $NETWORK_NAME > $ORIGINAL_XML
+
+# Step 2: Modify the IP range in the XML
+echo "Modifying IP range to $NEW_IP/24..."
+sed -e "s/address='192.168.122.1'/address='$NEW_IP'/" \
+    -e "s/start='192.168.122.2'/start='$NEW_RANGE_START'/" \
+    -e "s/end='192.168.122.254'/end='$NEW_RANGE_END'/" \
+    $ORIGINAL_XML > $MODIFIED_XML
+
+# Step 3: Destroy the default network (if active)
+echo "Destroying the 'default' network..."
+if virsh net-list --all | grep "$NETWORK_NAME.*active" > /dev/null; then
+    virsh net-destroy $NETWORK_NAME
+else
+    echo "Network $NETWORK_NAME is already inactive."
+fi
+
+# Step 4: Undefine the default network
+echo "Undefining the 'default' network..."
+virsh net-undefine $NETWORK_NAME
+
+# Step 5: Redefine the network with the modified XML
+echo "Redefining the 'default' network with modified XML..."
+virsh net-define $MODIFIED_XML
+
+# Step 6: Start the network
+echo "Starting the 'default' network..."
+virsh net-start $NETWORK_NAME
+
+# Step 7: Enable autostart for the network
+echo "Enabling autostart for the 'default' network..."
+virsh net-autostart $NETWORK_NAME
+
+# Clean up temporary files
+echo "Cleaning up temporary files..."
+rm -f $ORIGINAL_XML $MODIFIED_XML
+
+echo "Done! The 'default' network has been updated to use IP range $NEW_IP/24 and is active with autostart enabled."
+
+# Verify the network status
+echo "Current network status:"
+virsh net-list --all
