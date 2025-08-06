@@ -112,11 +112,6 @@ If you are fine with a server that's capable of running docker, you could buy N1
 
 I have stopped using Windows for anything. I hardly use macos. I use linux on almost all my machines, servers, homelab or personal desktop. Almost all of them are reasonably stable and support everything I need.
 
-### Debian Trixie
-
-Debian Trixie is as stable(read boring) as linux gets. You must have used debian/ubuntu for your docker containers, at least for development. If you are familiar with the debian ecosystem, Debian Trixie, will be very familiar to you.  Comes with fairly recent kernel, and supports most modern hardware.
-
-Use Live CD/DVD iso as it uses Calamares installer. Use btrfs filesystem, preferrably subvolumes. DO NOT use netinstall. Install your favorite desktop environment. If you want to use this in a virtual machine, I would recommend KDE instead of Gnome.
 
 ### Fedora Workstation
 
@@ -131,7 +126,14 @@ Once nvidia drivers and codecs are installed, update your system. Use the follow
 ```bash
 sudo dnf update -y
 ```
+
 Reboot your system.
+
+### Debian Trixie
+
+Debian Trixie is as stable(read boring) as linux gets. You must have used debian/ubuntu for your docker containers, at least for development. If you are familiar with the debian ecosystem, Debian Trixie, will be very familiar to you.  Comes with fairly recent kernel, and supports most modern hardware.
+
+Use Live CD/DVD iso as it uses Calamares installer. Use btrfs filesystem, preferrably subvolumes. DO NOT use netinstall. Install your favorite desktop environment. If you want to use this in a virtual machine, I would recommend KDE instead of Gnome.
 
 ### OpenSUSE Tumbleweed
 
@@ -139,8 +141,16 @@ OpenSUSE Tumbleweed is a rolling release distribution. It has the latest kernel 
 
 Tumbleweed has one serious issue. It's installer sometimes just fails. It's nowhere near as good as or as polished as Fedora or Ubuntu installer. Once installed, it works great.
 
+### Arch Linux
 
-For all of these operating systems, you could follow the same instructions below.
+This is another rolling release distribution. This is the least stale operating system, especially if you use AUR. If you want to learn how linux works, different parts that make up today's desktop linux, then you should try Arch Linux. You MUST install this manually following the [Arch Wiki](https://wiki.archlinux.org/title/Installation_guide) at least once. You will learn a lot about linux, how it works, how to configure it, and how to troubleshoot issues. You could later either use [archinstall](https://archinstall.readthedocs.io/en/latest/) or use a distriution like [EndeavourOS](https://endeavouros.com/) or [CachyOS](https://cachyos.org/download/) to install arch linux.
+
+*One important note*. If you are comfortable with terminal, and know what you need exactly, then is the simplest installation you could use for linux. With almost everything else, you will need to figure out how to install and configure things the you want to and it's usually really hard. In a sense, Arch Linux is the simplest linux distribution to install.
+
+If you have never used linux before, arch linux might not be the best choice.
+
+
+For all of these operating systems, you could *follow the same instructions* below.
 
 You could install modern shell tools with the following command.
 
@@ -215,17 +225,24 @@ Fedora Atomic is great and the future of fedora if not linux in general. Unfortu
 
 ###  Atomic Setup
 
-IF you are a *purist*, I have multiple distrobox containers, to get everything I need, but they are a bit brittle. Use the following command for such a setup.
+IF you are a *purist*, then DO NOT use rpm-ostree, use distrobox for everything instead. I have multiple distrobox containers for different purposes. But they are brittle. Not everything works perfectly. Anyway, you could use the following command for such a setup.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif)" -- fedora-atomic
 ```
 
-Above command should install some basic tools on the host, but developer tools(`vscode`, `docker`) are inside distrobox container.
+Above command should install some basic tools on the host, but developer tools(`vscode`, `docker` etc.) are inside a distrobox container.
+
+I will add more instructions to use distrobox and toolbox in the future. For now, you could use the following commands to install some essential tools.
+
+```bash
+dboxe ilm # enter distrobox container
+code # opens vscode from distrobox container
+```
 
 ### rpm-ostree setup
 
-I would recommend you don't spend too much time configuring everything in a distrobox and spend multiple frustrating hours trying to get it to work. Instead use `rpm-ostree` as it's really easy. You could create a layer on top of atomic, using `rpm-ostree`, and that's what I am currently doing. Note that calling rpm-ostree multiple times is a bad idea. Refer to Fedora Atomic documentation.
+I would recommend you don't spend too much time configuring everything in a distrobox and spend multiple frustrating hours trying to get everything to work. This is still work in progress, and hopefully in near future, this option will be a reality. Until then, use `rpm-ostree` instead, as it's really easy to get this to work. You could just create a layer on top of atomic, using `rpm-ostree`, and that's what I am currently doing. Note that using rpm-ostree too many times is a bad idea. Refer to Fedora Atomic documentation about the best practices.
 
 Install essential development tools like `vscode`, and `virt-manager` with the following command.
 
@@ -233,13 +250,16 @@ Install essential development tools like `vscode`, and `virt-manager` with the f
 bash -c "$(curl -sSL https://is.gd/egitif)" -- rpm-ostree
 ```
 
-If you need docker, you should install it in a vm, use `vscode` and ssh into this virtual machine. `devconainers` work really well using this approach.
+If you need docker, you should install it in a vm, and use `vscode` to ssh into this virtual machine. `devconainers` work really well using this approach.
 
 ```bash
-vm-create --distro ubuntu --name dev --docker --brew --dotfiles min
+vm-create --distro debian --name dev --docker --brew --dotfiles --username debian --password debian min
 ```
 
-### ublue based Bluefin/Aurora
+You should not install anything on the host, once this is done. You could use `distrobox` for command line tools. Use flatpak for desktop applications. Use `devcontainers` for development from `vscode`. You could use `virt-install/virsh` or `virt-manager` to create and manage as many virtual machines as you want.
+
+
+### Bluefin/Aurora
 
 If you have some experience with linux desktop, and bored with fedora atomic, then you should try [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en). Both are based on [ublue](https://getublue.com) and have the same set of tools. Consider using dx version. You would get docker, vscode, libvirt/virt-manager by default. As a developer these tools are essential.
 
@@ -251,10 +271,14 @@ If you are an experienced linux desktop user, and you have enough knowledge of l
 
 Unfortunately there is no easy way to make automated installers for nixos. You need to learn `nix` and understand the configurations. You have to tailor the configuration to your needs. I will write a guide soon, as soon as I get everything working as I expect. At present you could look at my *work in progress* config at `extras/nixos/config`. But, please don't judge me. :-)
 
+For installation use the minimal iso. DO NOT USE the default ISO, if this is your first time using nixos. Installation would be easy but you will struggle to get everything working as you expect. Use the minimal iso, and follow the [nixos installation guide](hhttps://nixos.org/manual/nixos/stable/#sec-installation-manual).
 
-### Linux Desktop
+### Generic Linux Desktop
 
 This should work on almost any linux system/vm/container even without sudo privilege; You should have curl/wget and bash installed.
+
+
+This will only install shell tools.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- generic
@@ -274,19 +298,19 @@ You could later install additional development tools with
 ilmb zsh tmux nvim emacs # pick any
 ```
 
-If you are in distrobox or a virtual machine with desktop environment, you could install terminal with
+If you are in a distrobox or a virtual machine with desktop environment, you could install terminal with
 
 ```bash
-ilmi terminal fonts
+ilmi terminal jetbrains-mono
 ```
 
 You can install vscode with
 
 ```bash
-ilmi vscode fonts
+ilmi vscode jetbrains-mono
 ```
 
-I will try to provide similar commands for immutable/nixos distributions.
+I will try to provide similar commands for immutable/nixos distributions in the future.
 
 ## Proxmox setup
 
@@ -297,3 +321,9 @@ Basic setup can be done with the following command.
 ```bash
 bash -c "$(curl -sSL https://is.gd/epesoq)"
 ```
+
+Once you are comfortable with proxmox, you should use ansible/terraform to create and provision virtual machines. I won't be providing any instructions for this anytime soon.
+
+Similarly once you are comfortable with virtual machines on your desktop(libvirt), use ansible/packer to create and provision virtual machines.
+
+You don't need to buy an expensive pc for this. Just buy 8th/9th gen i5/i7 1 liter pc from ebay. You could get one for 50$-100$. You could even avoid buying a mini pc, and use this for both proxmox and desktop. I will provide instructions for this in the future.
