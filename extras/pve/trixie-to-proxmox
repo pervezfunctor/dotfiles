@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
+
+LOG="/var/log/proxmox-install.log"
+exec > >(tee -a "${LOG}") 2>&1
+
+die() {
+  echo "ERROR: $*"
+  exit 1
+}
+info() { echo -e "\n\033[1m==> $*\033[0m"; }
+needs() { command -v "$1" &>/dev/null || die "Missing dependency: $1"; }
+
+[[ $(id -u) -eq 0 ]] || die "Run as root"
+
+require_valid_ip() {
+  local host="${1:-$(hostname)}"
+  local ip
+
+  # Try both IPv4 and IPv6 resolution
+  ip=$(getent ahosts "$host" | awk '/STREAM/ {print $1; exit}')
+  # Fallback if getent fails
+  [[ -z "$ip" ]] && ip=$(getent hosts "$host" | awk '{print $1; exit}')
+
+  # Confirm IP is not empty, not local/loopback
+  if [[ -z "$ip" ]]; then
+    echo "ERROR: Hostname '$host' did not resolve to an IP address."
+    return 1
+  fi
+
+  local is_loopback=1
+  # IPv4: 127.0.0.0/8, IPv6: ::1
+  if [[ "$ip" =~ ^127\. ]] || [[ "$ip" == "::1" ]]; then
+    is_loopback=0
+  fi
+
+  if [[ $is_loopback -eq 0 ]]; then
+    echo "ERROR: Hostname '$host' resolved to loopback IP $ip"
+    return 2
+  fi
+
+  # If all is ok, print the IP
+  echo "$ip"
+  return 0
+}
+
+grep -qi "debian.*13" /etc/os-release || die "This script supports Debian 13 only"
+needs curl
+needs wget
+needs sha256sum
+needs gpg
+
+info "Verifying hostname resolves to a non-loopback IP" # [1]
+IP=$(hostname --ip-address | awk '{print $1}')
+[[ -z "${IP}" || "${IP}" == 127.* ]] && die "Hostname does not resolve to a valid IP"
+
+info "Adding Proxmox VE repository" # [1]
+cat >/etc/apt/sources.list.d/pve-install-repo.sources <<'EOF'
+Types: deb
+URIs: http://download.proxmox.com/debian/pve
+Suites: trixie
+Components: pve-no-subscription
+Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+Architectures: amd64
+EOF
+
+wget -q https://enterprise.proxmox.com/debian/proxmox-archive-keyring-trixie.gpg \
+  -O /usr/share/keyrings/proxmox-archive-keyring.gpg
+
+# ---------- 3. Upgrade Debian ----------
+info "Updating package index and upgrading system" # [1]
+apt update
+apt -y full-upgrade
+
+# ---------- 4. Install and boot Proxmox kernel ----------
+info "Installing Proxmox kernel"
+apt -y install proxmox-default-kernel
+info "Rebooting into Proxmox kernel"
+systemctl reboot
+
+# ---------- Code below runs after reboot ----------
+: <<'POST_REBOOT'
+# Put the remainder in a post-reboot unit so the script resumes automatically.
+cat >/etc/systemd/system/proxmox-postinstall.service <<'UNIT'
+[Unit]
+Description=Proxmox VE post-install tasks
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/proxmox-postinstall.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+chmod 644 /etc/systemd/system/proxmox-postinstall.service
+
+cat >/usr/local/sbin/proxmox-postinstall.sh <<'SCRIPT'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+LOG="/var/log/proxmox-install.log"
+exec >> "${LOG}" 2>&1
+
+info() { echo -e "\n\033[1m==> $*\033[0m"; }
+
+info "1) Installing core Proxmox packages"
+apt -y install proxmox-ve postfix open-iscsi chrony        # [1]
+
+info "2) Removing Debian generic kernels"
+apt -y purge linux-image-amd64 'linux-image-6.12*'         # [1]
+[[ -x /usr/sbin/update-grub ]] && update-grub
+
+info "3) Removing os-prober to avoid VM disks in GRUB"      # [1]
+apt -y purge os-prober
+
+info "4) Cleaning up and enabling web GUI"
+systemctl daemon-reload
+systemctl enable --now postfix chrony pveproxy
+
+echo -e "\n✅  Installation complete. Visit https://$HOSTNAME:8006"
+
+rm -f /usr/local/sbin/proxmox-postinstall.sh
+systemctl disable proxmox-postinstall.service
+rm -f /etc/systemd/system/proxmox-postinstall.service
+SCRIPT
+chmod +x /usr/local/sbin/proxmox-postinstall.sh
+systemctl enable proxmox-postinstall.service
+POST_REBOOT
