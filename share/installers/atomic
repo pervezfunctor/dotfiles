@@ -612,9 +612,12 @@ libvirt_confstall() {
     sudo systemctl enable --now libvirtd.socket
     sudo systemctl enable --now virtlogd
 
-    sudo usermod -aG libvirt "$(whoami)"
+    add_user_to_groups "$(whoami)" libvirt libvirtd
 
-    sg libvirt -c '
+    local libvirt_group
+    libvirt_group=$(getent group libvirt | cut -d: -f1)
+
+    sg "$libvirt_group" -c '
     if ! virsh net-list --all | grep -q default; then
         virsh net-define /usr/share/libvirt/networks/default.xml
         virsh net-start default
