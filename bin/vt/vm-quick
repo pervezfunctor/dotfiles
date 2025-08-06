@@ -1,0 +1,97 @@
+#! /usr/bin/env bash
+
+# Function to display error messages
+fail() {
+  echo "Error: $1" >&2
+  exit 1
+}
+
+# Check for whiptail and virt-install
+if ! command -v whiptail &>/dev/null; then
+  fail "whiptail command not found. Please install it (e.g., sudo apt install whiptail or sudo dnf install newt)."
+fi
+
+if ! command -v virt-install &>/dev/null; then
+  fail "virt-install command not found. Please install virt-manager."
+fi
+
+# --- Whiptail TUI for variable input ---
+
+# VM Name
+VM_NAME=$(whiptail --inputbox "Enter VM Name:" 10 60 "my-vm" 3>&1 1>&2 2>&3)
+if [ -z "$VM_NAME" ]; then fail "VM Name cannot be empty."; fi
+
+# RAM in MB
+RAM_MB=$(whiptail --inputbox "Enter RAM in MB:" 10 60 "2048" 3>&1 1>&2 2>&3)
+if [ -z "$RAM_MB" ]; then fail "RAM cannot be empty."; fi
+if ! [[ "$RAM_MB" =~ ^[0-9]+$ ]] || [ "$RAM_MB" -le 0 ]; then fail "Invalid RAM value. Must be a positive number."; fi
+
+# VCPUs
+VCPUS=$(whiptail --inputbox "Enter VCPUs:" 10 60 "2" 3>&1 1>&2 2>&3)
+if [ -z "$VCPUS" ]; then fail "VCPUs cannot be empty."; fi
+if ! [[ "$VCPUS" =~ ^[0-9]+$ ]] || [ "$VCPUS" -le 0 ]; then fail "Invalid VCPUs value. Must be a positive number."; fi
+
+# OS Variant
+OS_VARIANT=$(whiptail --inputbox "Enter OS Variant (e.g., ubuntu22.04, fedora38, generic):" 10 60 "generic" 3>&1 1>&2 2>&3)
+if [ -z "$OS_VARIANT" ]; then fail "OS Variant cannot be empty."; fi
+
+# Network Configuration
+NETWORK_CONFIG=$(whiptail --inputbox "Enter Network Configuration (e.g., network=default,bridge=br0):" 10 60 "network=default" 3>&1 1>&2 2>&3)
+if [ -z "$NETWORK_CONFIG" ]; then fail "Network Configuration cannot be empty."; fi
+
+# Disk Size in GB
+DISK_SIZE_GB=$(whiptail --inputbox "Enter Disk Size in GB:" 10 60 "20" 3>&1 1>&2 2>&3)
+if [ -z "$DISK_SIZE_GB" ]; then fail "Disk Size cannot be empty."; fi
+if ! [[ "$DISK_SIZE_GB" =~ ^[0-9]+$ ]] || [ "$DISK_SIZE_GB" -le 0 ]; then fail "Invalid Disk Size value. Must be a positive number."; fi
+
+# ISO Path (optional)
+ISO_PATH=$(whiptail --inputbox "Enter path to ISO file (leave empty for no ISO):" 10 60 "" 3>&1 1>&2 2>&3)
+if [ -n "$ISO_PATH" ] && [ ! -f "$ISO_PATH" ]; then fail "ISO file not found at '$ISO_PATH'."; fi
+
+# Graphics Option
+GRAPHICS_CHOICE=$(whiptail --menu "Choose Graphics Option:" 15 60 2 \
+  "headless" "No graphical output" \
+  "virgl" "Virtio GPU with Virgl (3D acceleration)" 3>&1 1>&2 2>&3)
+if [ -z "$GRAPHICS_CHOICE" ]; then fail "Graphics option not selected."; fi
+
+# --- Construct virt-install command ---
+VIRT_INSTALL_CMD="virt-install \
+  --connect qemu:///system \
+  --name \"$VM_NAME\" \
+  --memory \"$RAM_MB\" \
+  --vcpus \"$VCPUS\" \
+  --os-variant \"$OS_VARIANT\" \
+  --virt-type kvm \
+  --network \"$NETWORK_CONFIG\" \
+  --noautoconsole"
+
+# Add disk
+VIRT_INSTALL_CMD+=" \
+  --disk path=/var/lib/libvirt/images/\"$VM_NAME\".qcow2,size=\"$
+DISK_SIZE_GB\",bus=virtio"
+
+# Add ISO if provided
+if [ -n "$ISO_PATH" ]; then
+  VIRT_INSTALL_CMD+=" \
+  --cdrom \"$ISO_PATH\""
+fi
+
+# Add graphics options
+if [ "$GRAPHICS_CHOICE" == "headless" ]; then
+  VIRT_INSTALL_CMD+=" \
+  --graphics none"
+elif [ "$GRAPHICS_CHOICE" == "virgl" ]; then
+  VIRT_INSTALL_CMD+=" \
+  --graphics spice,gl=on,listen=none \
+  --video virtio,accel=virgl"
+fi
+
+echo "Executing virt-install command:"
+echo "$VIRT_INSTALL_CMD"
+
+# Execute the command
+if ! eval "$VIRT_INSTALL_CMD"; then
+  fail "Failed to create VM"
+fi
+
+echo "VM '$VM_NAME' created successfully."
