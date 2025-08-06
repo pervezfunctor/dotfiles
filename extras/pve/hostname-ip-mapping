@@ -1,0 +1,53 @@
+#! /usr/bin/env bash
+
+set -Eeuo pipefail
+
+trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
+
+ensure_hostname_resolves_to_ip() {
+  local host ip hosts_file="/etc/hosts" now
+
+  # 1. Get canonical hostname and main non-loopback IP
+  host=$(hostname -f 2>/dev/null || hostname)
+  ip=$(ip -4 -o addr show scope global | awk '{split($4,a,"/"); print a[1]}' | head -n1)
+
+  [[ -z "$host" || -z "$ip" ]] && {
+    echo "❌ Failed to detect hostname or IP"
+    return 1
+  }
+
+  # 2. Does it already resolve?
+  if getent hosts "$host" | awk '{print $1}' | grep -qw "$ip"; then
+    echo "✅ Hostname '$host' already resolves to '$ip'"
+    return 0
+  fi
+
+  # 3. Backup /etc/hosts
+  now=$(date +%Y%m%d_%H%M%S)
+  cp -a "$hosts_file" "$hosts_file.bak_$now"
+
+  # 4. Remove any existing entries for this hostname (except comments)
+  tmp_hosts=$(mktemp)
+  awk -v h="$host" '
+        $0 ~ "^#" { print; next }
+        $0 ~ "(^|[ \t])" h "([ \t]|$)" { next }
+        { print }
+    ' "$hosts_file" >"$tmp_hosts"
+
+  # 5. Add correct mapping at end
+  echo -e "$ip\t$host" >>"$tmp_hosts"
+
+  # 6. Write back to /etc/hosts
+  cat "$tmp_hosts" >"$hosts_file"
+  rm "$tmp_hosts"
+  echo "✅ Added '$ip $host' to /etc/hosts"
+
+  # 7. Verify
+  if getent hosts "$host" | awk '{print $1}' | grep -qw "$ip"; then
+    echo "✅ Hostname '$host' now resolves to '$ip'"
+    return 0
+  else
+    echo "❌ Failed to update /etc/hosts correctly!"
+    return 2
+  fi
+}
