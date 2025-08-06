@@ -323,7 +323,7 @@ cockpit_install() {
 vm_install() {
     si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils \
         virgl-server qemu-utils spice-client-gtk spice-vdagent \
-        coreos-installer cloud-image-utils libguestfs-tools
+        cloud-image-utils libguestfs-tools
 
     libvirt_confstall
 

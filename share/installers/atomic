@@ -612,22 +612,26 @@ libvirt_confstall() {
     sudo systemctl enable --now libvirtd.socket
     sudo systemctl enable --now virtlogd
 
-    add_user_to_groups "$(whoami)" libvirt libvirtd
+    add_user_to_groups "$(whoami)" libvirt libvirtd kvm libvirt-qemu
 
-    local libvirt_group
-    libvirt_group=$(getent group libvirt | cut -d: -f1)
+    # local libvirt_group
+    # if group_exists libvirtd; then
+    #     libvirt_group=libvirtd
+    # else
+    #     libvirt_group=libvirt
+    # fi
 
-    sg "$libvirt_group" -c '
-    if ! virsh net-list --all | grep -q default; then
-        virsh net-define /usr/share/libvirt/networks/default.xml
-        virsh net-start default
-        virsh net-autostart default
-    fi
+    # sg "$libvirt_group" -c '
+    # if ! virsh net-list --all | grep -q default; then
+    #     virsh net-define /usr/share/libvirt/networks/default.xml
+    #     virsh net-start default
+    #     virsh net-autostart default
+    # fi
 
-    if ! virsh net-list --all | grep -q default; then
-        echo "Failed to create default network" >&2
-    fi
-    '
+    # if ! virsh net-list --all | grep -q default; then
+    #     echo "Failed to create default network" >&2
+    # fi
+    # '
 }
 
 atomic_nvim_install() {
