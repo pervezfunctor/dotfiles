@@ -103,20 +103,19 @@ debian_packages() {
     debian_locale_install
     slog "Installing packages"
 
-    si git-core gh unzip wget curl trash-cli net-tools iproute2 nmap \
-        tar stow gcc make file tree bat ripgrep zoxide fd-find htop sd gawk \
-        wl-clipboard libsecret-tools dialog whiptail
+    si stow git-core gh git-delta lazygit unzip wget curl trash-cli tar \
+        net-tools iproute2 nmap gcc make file tree ripgrep zoxide fd-find htop \
+        gawk tealdeer dialog whiptail starship \
+        just fzf gum eza shellcheck shfmt jq broot duf sd xh atuin procs sd \
+        hyperfine htop jq direnv yq dysk bat
 
-    slog "Installing packages done!"
-
-    pkgx_install
-    pixi_install
-
-    pi fzf yazi tealdeer git-delta eza bat starship lazygit just
+    if is_desktop || is_distrobox; then
+        si wl-clipboard libsecret-tools
+    fi
 
     has_cmd tldr && tldr --update
 
-    slog "Installing pixi packages done!"
+    slog "Installing packages done!"
 }
 
 core_install() {
@@ -188,7 +187,9 @@ essential_install() {
 
 cli-slim_install() {
     si tmux zsh git bat ripgrep zoxide eza gh shellcheck htop shfmt jq
-    is_plucky && si fzf starship gum git-delta
+    if is_plucky || is_trixie; then
+        si fzf starship gum git-delta
+    fi
 }
 
 cli_install() {
@@ -197,10 +198,12 @@ cli_install() {
     local base_pkgs=(tmux pkg-config urlview zsh git plocate sd gdu bat
         hyperfine fd-find ripgrep zoxide eza gh shellcheck htop shfmt jq)
 
-    local plucky_pkgs=()
-    is_plucky && plucky_pkgs=(fzf ugrep tealdeer starship gum git-delta direnv yq)
+    local pkgs=()
+    if is_plucky || is_trixie; then
+        pkgs=(fzf ugrep tealdeer starship gum git-delta direnv yq)
+    fi
 
-    si "${base_pkgs[@]}" "${plucky_pkgs[@]}"
+    si "${base_pkgs[@]}" "${pkgs[@]}"
 
     has_cmd tldr && tldr --update
 
