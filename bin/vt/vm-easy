@@ -52,9 +52,9 @@ configure_ubuntu() {
 
 configure_debian() {
   VM_NAME=${VM_NAME:="debian-vt"}
-  RELEASE=${RELEASE:="bookworm"}
-  BASE_IMAGE_NAME="debian-12-generic-amd64.qcow2"
-  DOWNLOAD_URL="https://cloud.debian.org/images/cloud/bookworm/latest/${BASE_IMAGE_NAME}"
+  RELEASE=${RELEASE:="trixie"} # 13
+  BASE_IMAGE_NAME="debian-13-generic-amd64.qcow2"
+  DOWNLOAD_URL="https://cloud.debian.org/images/cloud/trixie/latest/${BASE_IMAGE_NAME}"
   USER_GROUPS=("sudo" "adm")
   OS_VARIANT="debian12"
 }

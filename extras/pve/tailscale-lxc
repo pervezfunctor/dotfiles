@@ -94,7 +94,7 @@ validate_storage() {
 
 validate_template() {
   if ! pveam list "$STORAGE" | grep -q "$DEBIAN_TEMPLATE_NAME"; then
-    log_error "Debian 12 template not found in storage '$STORAGE'"
+    log_error "Debian template not found in storage '$STORAGE'"
     log_error "Please download the template first:"
     log_error "  pveam download $STORAGE $DEBIAN_TEMPLATE_NAME"
     exit 1

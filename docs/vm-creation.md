@@ -384,5 +384,5 @@ sudo ip link set br0 up
 ./bin/vm-create --distro arch --name arch-dev --disk-size 60G --brew --dotfiles box
 
 # Debian stable server with Docker and dotfiles
-./bin/vm-create --distro debian --release bookworm --name debian-server --docker --dotfiles box
+./bin/vm-create --distro debian --release trixie --name debian-server --docker --dotfiles box
 ```

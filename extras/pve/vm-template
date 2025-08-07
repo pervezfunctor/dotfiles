@@ -236,7 +236,7 @@ configure_distribution() {
   debian)
     VM_ID=${VM_ID:-201}
     VM_NAME=${VM_NAME:-debian-template}
-    IMAGE_URL=${IMAGE_URL:-"https://cdimage.debian.org/cdimage/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"}
+    IMAGE_URL=${IMAGE_URL:-"https://cdimage.debian.org/cdimage/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2"}
     USERNAME=${USERNAME:-debian}
     ;;
   fedora)

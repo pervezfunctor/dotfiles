@@ -49,7 +49,7 @@ EXAMPLES:
 SUPPORTED DISTRIBUTIONS:
     ubuntu      - Ubuntu LTS (24.04) or specified release
     fedora      - Fedora (latest) or specified release
-    debian      - Debian (12/bookworm) or specified release
+    debian      - Debian (13/trixie) or specified release
     tumbleweed  - openSUSE Tumbleweed (rolling release)
 EOF
 }
@@ -66,7 +66,7 @@ configure_distribution() {
     IMAGE="images:fedora/${RELEASE}/cloud"
     ;;
   debian)
-    RELEASE=${RELEASE:-"12"}
+    RELEASE=${RELEASE:-"13"}
     IMAGE="images:debian/${RELEASE}/cloud"
     ;;
   tumbleweed | tw)

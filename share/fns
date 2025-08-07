@@ -34,7 +34,7 @@ dbox-fedora-minimal() {
 dbox-debian-slim() {
     local CONTAINER_NAME=${1:-debian-slim}
     slog "Creating Debian slim distrobox: ${CONTAINER_NAME}"
-    if distrobox create --yes --image debian:booksworm-slim --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
+    if distrobox create --yes --image debian:trixie-slim --home "$HOME/.boxes/${CONTAINER_NAME}" --name "${CONTAINER_NAME}"; then
         slog "Debian slim distrobox ${CONTAINER_NAME} created successfully"
     fi
 }

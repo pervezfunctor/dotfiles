@@ -49,7 +49,7 @@ SUPPORTED DISTRIBUTIONS:
     ubuntu      - Ubuntu LTS (24.04) or specified release
     fedora      - Fedora (latest) or specified release
     arch        - Arch Linux (current)
-    debian      - Debian (12/bookworm) or specified release
+    debian      - Debian (13/trixie) or specified release
     centos      - CentOS Stream (9) or specified release
     tumbleweed  - openSUSE Tumbleweed (rolling release)
     alpine      - Alpine Linux (latest) or specified release
@@ -75,7 +75,7 @@ configure_distribution() {
         IMAGE="images:archlinux/${RELEASE}/cloud"
         ;;
     debian)
-        RELEASE=${RELEASE:-"12"}
+        RELEASE=${RELEASE:-"13"}
         IMAGE="images:debian/${RELEASE}/cloud"
         ;;
     centos)

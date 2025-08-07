@@ -133,7 +133,7 @@ configure_arch() {
 
 configure_debian() {
     VM_NAME=${VM_NAME:=debian}
-    RELEASE=${RELEASE:=bookworm} # 12
+    RELEASE=${RELEASE:=trixie} # 13
 
     case "$RELEASE" in
     "bookworm")
@@ -146,7 +146,9 @@ configure_debian() {
         ;;
     "trixie")
         IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
-        OS_VARIANT="debian12" # Use debian12 for now until trixie is recognized
+        # Use debian12 for now until trixie is recognized across all platforms.
+        # Currently fedora's libvirt does support debian13
+        OS_VARIANT="debian12"
         ;;
     *)
         fail "Unsupported Debian release: $RELEASE"
@@ -222,7 +224,7 @@ DISTRIBUTION-SPECIFIC OPTIONS:
     Arch:
         --release latest               (default: latest)
     Debian:
-        --release bookworm|bullseye|trixie  (default: bookworm - 12)
+        --release trixie|bullseye|bookworm  (default: trixie - 13)
     Alpine:
         --release 3.19|3.20|3.21|3.22|  (default: 3.22)
     Tumbleweed:

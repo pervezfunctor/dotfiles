@@ -5,7 +5,7 @@ set -euo pipefail
 PROXMOX_STORAGE="local-lvm"
 VM_ID=9100
 VM_NAME="debian-template"
-DEBIAN_IMAGE_URL="https://cdimage.debian.org/cdimage/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"
+DEBIAN_IMAGE_URL="https://cdimage.debian.org/cdimage/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2"
 DISK_SIZE="32G"
 MEMORY="8192"
 CORES="4"

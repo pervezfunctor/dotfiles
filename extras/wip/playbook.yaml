@@ -1,5 +1,4 @@
 ---
-
 - name: 1. Provision Debian VM with libvirt
   hosts: localhost
   connection: local
@@ -29,7 +28,7 @@
       template:
         src: templates/preseed.cfg.j2
         dest: "/tmp/preseed.cfg"
-        mode: '0644'
+        mode: "0644"
 
     - name: "Create VM using virt-install and preseed file"
       command: >
@@ -42,7 +41,7 @@
         --network bridge=virbr0,model=virtio
         --graphics none
         --console pty,target_type=serial
-        --location 'https://deb.debian.org/debian/dists/bookworm/main/installer-amd64/'
+        --location 'https://deb.debian.org/debian/dists/trixie/main/installer-amd64/'
         --initrd-inject /tmp/preseed.cfg
         --extra-args "auto=true priority=critical preseed/file=/preseed.cfg console=ttyS0,115200n8 serial"
       args:
@@ -66,7 +65,7 @@
         groups: new_vm
         ansible_user: "{{ vm_user }}"
         ansible_ssh_private_key_file: "{{ ssh_private_key_file | expanduser }}"
-        ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
     - name: "Wait for SSH to become available on the new VM"
       wait_for_connection:
@@ -85,7 +84,7 @@
   tasks:
     - name: "Install prerequisites for Docker's APT repository"
       apt:
-        name: ['ca-certificates', 'curl', 'gnupg']
+        name: ["ca-certificates", "curl", "gnupg"]
         state: present
         update_cache: yes
 
@@ -93,7 +92,7 @@
       file:
         path: /etc/apt/keyrings
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: "Add Docker's official GPG key"
       shell: "curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg"
@@ -108,7 +107,14 @@
 
     - name: "Install Docker Engine and related packages"
       apt:
-        name: ['docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin', 'docker-compose-plugin']
+        name:
+          [
+            "docker-ce",
+            "docker-ce-cli",
+            "containerd.io",
+            "docker-buildx-plugin",
+            "docker-compose-plugin",
+          ]
         state: present
         update_cache: yes
 
@@ -120,7 +126,7 @@
 
     - name: "Install Zsh, Tmux, Neovim, Git, and Stow"
       apt:
-        name: ['zsh', 'tmux', 'neovim', 'git', 'stow']
+        name: ["zsh", "tmux", "neovim", "git", "stow"]
         state: present
 
     - name: "Clone dotfiles repository"
