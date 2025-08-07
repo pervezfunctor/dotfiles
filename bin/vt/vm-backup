@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <backup-dir>"
+  exit 1
+fi
+
+BACKUP_DIR="$1"
+DATE=$(date +"%Y-%m-%d")
+BACKUP_DIR="${BACKUP_DIR}/${DATE}"
+mkdir -p "$BACKUP_DIR"
+
+log() {
+  echo "[$(date +'%F %T')] $*"
+}
+
+log "Starting libvirt VM backup to: $BACKUP_DIR"
+
+vms=$(virsh list --all --name | grep -v '^$')
+
+for vm in $vms; do
+  log "Backing up VM: $vm"
+  vm_dir="${BACKUP_DIR}/${vm}"
+  mkdir -p "$vm_dir"
+
+  virsh dumpxml "$vm" >"${vm_dir}/${vm}.xml"
+
+  virsh domblklist "$vm" --details | awk '$1 == "file" { print $4 }' | while read -r disk; do
+    if [[ "$disk" == "-" ]]; then
+      continue
+    fi
+
+    if [[ "$disk" == *.iso || "$disk" == *cloud-init* ]]; then
+      log "  Skipping cloud-init disk: $disk"
+      continue
+    fi
+
+    if [[ -f "$disk" ]]; then
+      disk_file=$(basename "$disk")
+      log "  Copying disk: $disk -> $vm_dir/$disk_file"
+      rsync -aH --sparse --no-owner --no-group "$disk" "$vm_dir/$disk_file"
+    else
+      log "  Warning: Disk file not found or not a regular file: $disk"
+    fi
+  done
+  log "✅ VM backed up: $vm"
+done
+
+log "✅ All VMs backed up successfully to: $BACKUP_DIR"

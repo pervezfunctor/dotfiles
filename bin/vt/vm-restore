@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <backup-dir>"
+  exit 1
+fi
+
+BACKUP_DIR="$1"
+
+if [[ ! -d "$BACKUP_DIR" ]]; then
+  echo "Usage: $0 <backup-dir>"
+  echo "Backup directory not found: $BACKUP_DIR"
+  exit 1
+fi
+
+log() {
+  echo "[$(date +'%F %T')] $*"
+}
+
+log "Restoring libvirt VMs from: $BACKUP_DIR"
+
+for vm_dir in "$BACKUP_DIR"/*; do
+  [[ -d "$vm_dir" ]] || continue
+  vm=$(basename "$vm_dir")
+  xml_file="${vm_dir}/${vm}.xml"
+
+  if [[ ! -f "$xml_file" ]]; then
+    log "⚠️  Skipping $vm (missing XML file)"
+    continue
+  fi
+
+  log "Restoring VM: $vm"
+
+  if virsh list --all --name | grep -qx "$vm"; then
+    log " VM $vm already exists, skipping restore"
+    continue
+  fi
+
+  grep "<source file=" "$xml_file" | sed -E "s/.*file='([^']+)'.*/\1/" | while read -r disk_path; do
+    disk_file=$(basename "$disk_path")
+    src_disk="${vm_dir}/${disk_file}"
+
+    if [[ -f "$src_disk" ]]; then
+      log "  Restoring disk: $disk_file -> $disk_path"
+      mkdir -p "$(dirname "$disk_path")"
+      cp --sparse=always "$src_disk" "$disk_path"
+    else
+      log "  ⚠️  Missing disk file in backup: $src_disk"
+    fi
+  done
+
+  virsh define "$xml_file"
+
+  log "✅ VM restored: $vm"
+done
+
+log "✅ All VMs restored from backup dir: $BACKUP_DIR"
