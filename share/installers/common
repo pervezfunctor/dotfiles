@@ -69,8 +69,7 @@ brew_shell_install() {
     brew_slim_shell_install
 
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
-        atuin direnv dust procs hyperfine pixi yq yazi htop dysk lsd whalebrew \
-        yazi
+        atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi
 
     local pkgs=()
 
@@ -108,7 +107,7 @@ pixi_slim_shell_install() {
 pixi_shell_install() {
     pixi_slim_shell_install
 
-    pis broot just lazydocker broot gdu nvim lazygit luarocks micro glances \
+    pis broot just lazydocker gdu nvim lazygit luarocks micro glances \
         cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi \
         carapace direnv yq
 

@@ -304,8 +304,11 @@ if has_cmd emacs; then
     alias en="emacs -nw"
 fi
 
-if ! has_cmd bat && has_cmd batcat; then
+if has_cmd bat; then
+    alias cat="bat"
+elif has_cmd batcat; then
     alias bat="batcat"
+    alias cat="batcat"
 fi
 
 if has_cmd virsh; then
