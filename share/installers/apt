@@ -374,3 +374,14 @@ distrobox_install() {
 
     slog "distrobox installation done!"
 }
+
+sway_install() {
+    si sway swaylock swayidle wlogout wofi dunst firefox-esr foot kitty mpv \
+        wl-clipboard swaybg polkit-kde-agent-1 gnome-keyring libsecret-tools \
+        grim imagemagick pavucontrol sway-notification-center thunar nvtop \
+        thunar-archive-plugin cliphist slurp nwg-bar nwg-clipman nwg-displays \
+        nwg-look xdg-desktop-portal-gtk nm-connection-editor swappy tumbler \
+        network-manager-applet fonts-font-awesome fonts-noto-color-emoji gvfs \
+        fonts-noto fonts-noto-mono papirus-icon-theme bibata-cursor-theme imv
+
+}
