@@ -10,7 +10,7 @@
     vm_vcpus: "2"
     vm_disk_size_gb: "30"
     vm_disk_path: "/var/lib/libvirt/images"
-    os_variant: "debian12"
+    os_variant: "debian13"
 
     vm_user: "devuser"
     ssh_key_url: "https://github.com/your-username.keys"

@@ -204,7 +204,7 @@ vm_install() {
         qemu-ui-spice-app qemu-char-spice qemu-audio-spice \
         qemu-hw-display-virtio-gpu qemu-hw-display-virtio-vga qemu-hw-usb-host \
         qemu-hw-usb-redirect qemu-ovmf-x86_64 qemu-tools qemu-ui-gtk \
-        qemu-ui-opengl libguestfs-tools
+        qemu-ui-opengl libguestfs-tools libosinfo
 
     sudo systemctl enable --now libvirtd
 

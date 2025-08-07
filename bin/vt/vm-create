@@ -138,7 +138,7 @@ configure_debian() {
     case "$RELEASE" in
     "bookworm")
         IMG_URL="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
-        OS_VARIANT="debian12"
+        OS_VARIANT="debian1"
         ;;
     "bullseye")
         IMG_URL="https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2"
@@ -146,9 +146,7 @@ configure_debian() {
         ;;
     "trixie")
         IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
-        # Use debian12 for now until trixie is recognized across all platforms.
-        # Currently fedora's libvirt does support debian13
-        OS_VARIANT="debian12"
+        OS_VARIANT="debian13"
         ;;
     *)
         fail "Unsupported Debian release: $RELEASE"

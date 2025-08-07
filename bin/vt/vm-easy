@@ -56,7 +56,7 @@ configure_debian() {
   BASE_IMAGE_NAME="debian-13-generic-amd64.qcow2"
   DOWNLOAD_URL="https://cloud.debian.org/images/cloud/trixie/latest/${BASE_IMAGE_NAME}"
   USER_GROUPS=("sudo" "adm")
-  OS_VARIANT="debian12"
+  OS_VARIANT="debian13"
 }
 
 configure_fedora() {

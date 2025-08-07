@@ -7,6 +7,10 @@ font-names() {
     fc-list : family | cut -d: -f2 | sed 's/^ //g' | sort | uniq
 }
 
+osquery-update-db() {
+    sudo osinfo-db-import --system --latest
+}
+
 dbox-ubuntu() {
     local CONTAINER_NAME=${1:-ubuntu}
     slog "Creating Ubuntu distrobox: ${CONTAINER_NAME}"
