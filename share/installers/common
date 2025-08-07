@@ -782,17 +782,10 @@ shell-ui_groupstall() {
 
 dev_work_common_install() {
     min_groupstall
-    shell-slim_install
+    shell-slim-ui_install
 
     vscode_install
     jetrains-mono_install
-    if
-        has_cmd ghostty
-
-        has_cmd zsh && zsh_confstall || has_cmd kitty || has_cmd wezterm
-    then
-        return 0
-    fi
 
     if is_linux; then
         flathub_install

@@ -2,39 +2,41 @@
 
 ## Installation on your current system
 
-### TLDR
+## TLDR
 
-## Linux
+### Linux
 
 Installs vscode, docker and shell tools
 
 ```bash
-bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- dev
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- work
 ```
 
-## MacOS
+### MacOS
 
-Installs homebrew and essential unix tools.
+Installs homebrew, essential shell tools, vscode and docker.
 
 ```bash
 curl https://pkgx.sh | sh
-pkgx bash -c "$(curl -sSL https://is.gd/egitif)"
+pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- work
 ```
 
-## Windows
+### Windows
 
-Pick and choose what you want to install.
+Pick what you want to install.
 
 ```powershell
 iwr -useb https://is.gd/vefawu | iex
 ```
 
+## Introduction
+
 ### Linux
 
-On linux desktop(Ubuntu 25.04 for eg), install shell tools, vscode and docker with the following command. Works on Ubuntu 25.04, Fedora 42, OpenSUSE Tumbleweed and Arch.
+On linux desktop(Ubuntu 25.04 for eg), install shell tools, vscode and docker with the following command. Works on Ubuntu 25.04, Fedora 42, OpenSUSE Tumbleweed, Debian Trixie and Arch.
 
 ```bash
-bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- dev
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- work
 ```
 
 If you only want to install modern unix tools in a development container/vm/desktop, use the following command instead. Works on linux and macos.
@@ -49,15 +51,49 @@ Or just install the very basic packages(gcc, make, tar, git etc)
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)"
 ```
 
+
+If you have an existing configuration, for many tools, you shouldn't run any of the commands in this README. You could still use some of the scripts here by adding the following to your ~/.bashrc or ~/.zshrc.
+
+
+```bash
+export PATH="$HOME/.local/bin:$HOME/.ilm/bin:$HOME/.ilm/bin/vt:$PATH"
+
+source "$HOME/.ilm/share/utils"
+source "$HOME/.ilm/share/fns"
+source "$HOME/.ilm/share/aliases"
+```
+
+If you need a nice prompt and a few other things, without installing anything, you could add the following.
+
+```bash
+source ~/.ilm/share/bashrc # in ~/.bashrc
+source ~/.ilm/share/zshrc  # in ~/.zshrc
+```
+
+First, you need to clone this repository to `~/.ilm`.
+
+```bash
+git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
+```
+
+Set your shell to zsh, if you haven't already. You could use the following command.
+
+```bash
+chsh -s $(which zsh)
+```
+
+Optionally, install [starship](https://starship.rs/). You would have a great experience if you install `fzf`, `zoxide` and `eza`.
+
+
 ### Windows
 
-On windows, use WSL. Install WSL, use  the following command.
+On windows, use WSL. Install WSL, use the following command.
 
 ```powershell
 wsl --install --no-distribution
 ```
 
-I recommend fedora for development. You could also use Ubuntu 24.04.
+I recommend fedora for development. You could also use Ubuntu 25.04.
 
 ```powershell
 wsl --list --online # Pick any from here in the following command.
@@ -77,7 +113,7 @@ Exit and enter WSL again(or reboot) to install more development tools.
 ilmi tmux nvim emacs # pick any tools you want
 ```
 
-If you want to setup vscode and other development tools on Windows, run the following command in powershell **as administrator**.
+If you want to setup vscode and other development tools on Windows, run the following command in powershell **as administrator**. Install Windows updates first, if you haven't already.
 
 ```powershell
 iwr -useb https://is.gd/vefawu | iex
@@ -101,6 +137,9 @@ If you just want homebrew and basic unix tools, run the following command.
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif)"
 ```
+
+You could later use `ilmi` to install additional tools like `docker`, `vscode`, `tmux`, `nvim` etc.
+
 
 ## Conventional Linux
 
@@ -271,7 +310,7 @@ dboxe ilm # enter distrobox container
 code # opens vscode from distrobox container
 ```
 
-### rpm-ostree setup
+### rpm-ostree Setup
 
 I would recommend you don't spend too much time configuring everything in a distrobox and spend multiple frustrating hours trying to get everything to work. This is still work in progress, and hopefully in near future, this option will be a reality. Until then, use `rpm-ostree` instead, as it's really easy to get this to work. You could just create a layer on top of atomic, using `rpm-ostree`, and that's what I am currently doing. Note that using rpm-ostree too many times is a bad idea. Refer to Fedora Atomic documentation about the best practices.
 
@@ -304,6 +343,7 @@ Unfortunately there is no easy way to make automated installers for nixos. You n
 
 For installation use the minimal iso. DO NOT USE the default ISO, if this is your first time using nixos. Installation would be easy but you will struggle to get everything working as you expect. Use the minimal iso, and follow the [nixos installation guide](hhttps://nixos.org/manual/nixos/stable/#sec-installation-manual).
 
+
 ### Generic Linux Desktop
 
 This should work on almost any linux system/vm/container even without sudo privilege; You should have curl/wget and bash installed.
@@ -329,7 +369,7 @@ You could later install additional development tools with
 ilmb zsh tmux nvim emacs # pick any
 ```
 
-If you are in a distrobox or a virtual machine with desktop environment, you could install terminal with
+If you are in a distrobox or in a virtual machine with desktop environment, you could install terminal with
 
 ```bash
 ilmi terminal jetbrains-mono
@@ -357,4 +397,4 @@ Once you are comfortable with proxmox, you should use ansible/terraform to creat
 
 Similarly once you are comfortable with virtual machines on your desktop(libvirt), use ansible/packer to create and provision virtual machines.
 
-You don't need to buy an expensive pc for any of this. Just buy [8th/9th gen i5/i7 1 liter pc](https://www.servethehome.com/introducing-project-tinyminimicro-home-lab-revolution/) from ebay. You could get one for 50$-100$. You could even avoid buying a separate machine, and use this for both proxmox and desktop. I will provide instructions for this in the future.
+You don't need to buy an expensive pc for any of this. Just buy a [8th/9th gen i5/i7 1 liter pc](https://www.servethehome.com/introducing-project-tinyminimicro-home-lab-revolution/) from ebay. You could get one for 50$-100$. You could even avoid buying a separate machine, and use this for both proxmox and desktop. I will provide instructions for this in the future.
