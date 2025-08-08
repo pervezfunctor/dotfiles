@@ -6,6 +6,7 @@ in
   imports = [
     ./packages.nix
     ./programs.nix
+    ./bash.nix
     ./zsh.nix
     ./shell.nix
     nixvim.homeManagerModules.nixvim
