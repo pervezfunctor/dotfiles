@@ -591,6 +591,7 @@ npm_install() {
     if has_cmd npm; then
         npm install -g @anthropic-ai/claude-code
         npm install -g @google/gemini-cli
+        npm install -g @qwen-code/qwen-code
         npm install -g pnpm
     else
         warn "npm not installed! Skipping pnpm install."

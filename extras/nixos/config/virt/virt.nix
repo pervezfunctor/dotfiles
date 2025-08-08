@@ -14,5 +14,6 @@
   # virtualisation.microvm.enable = true;
   environment.systemPackages = with pkgs; [
     quickemu
+    libosinfo
   ];
 }
