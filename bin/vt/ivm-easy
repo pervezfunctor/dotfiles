@@ -47,7 +47,7 @@ EXAMPLES:
     $0 --distro tumbleweed --name opensuse-vm --vcpus 2 --memory 4096
 
 SUPPORTED DISTRIBUTIONS:
-    ubuntu      - Ubuntu LTS (24.04) or specified release
+    ubuntu      - Ubuntu LTS (25.04) or specified release
     fedora      - Fedora (latest) or specified release
     debian      - Debian (13/trixie) or specified release
     tumbleweed  - openSUSE Tumbleweed (rolling release)
@@ -58,7 +58,7 @@ configure_distribution() {
   USERNAME=${USERNAME:-"user"}
   case "$DISTRO" in
   ubuntu)
-    RELEASE=${RELEASE:-"24.04"}
+    RELEASE=${RELEASE:-"25.04"}
     IMAGE="images:ubuntu/${RELEASE}/cloud"
     ;;
   fedora)

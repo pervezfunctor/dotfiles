@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# @TODO: Make this work for alpine
+
 function si() {
     sudo apk add --no-cache "$@"
 }
@@ -61,13 +63,9 @@ essential_install() {
 cli_install() {
     slog "Installing cli tools using apt"
 
-    local base_pkgs=(tmux urlview zsh git sd gdu bat hyperfine fd ripgrep
-        zoxide eza github-cli shellcheck htop shfmt)
-
-    local plucky_pkgs=()
-    is_plucky && plucky_pkgs=(fzf ugrep starship gum delta direnv yq)
-
-    si "${base_pkgs[@]}" "${plucky_pkgs[@]}"
+    si tmux urlview zsh git sd gdu bat hyperfine fd ripgrep \
+        zoxide eza github-cli shellcheck htop shfmt fzf ugrep starship gum \
+        delta direnv yq
 
     slog "cli tools installation done!"
 }

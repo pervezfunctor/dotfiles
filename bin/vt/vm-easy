@@ -43,11 +43,11 @@ configure_arch() {
 
 configure_ubuntu() {
   VM_NAME=${VM_NAME:-"ubuntu-vt"}
-  RELEASE=${RELEASE:="noble"}
+  RELEASE=${RELEASE:="plucky"}
   BASE_IMAGE_NAME="${RELEASE}-server-cloudimg-amd64.img"
   DOWNLOAD_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${BASE_IMAGE_NAME}"
   USER_GROUPS=("sudo" "adm" "sambashare")
-  OS_VARIANT="ubuntu24.04"
+  OS_VARIANT="ubuntu25.04"
 }
 
 configure_debian() {
@@ -65,7 +65,7 @@ configure_fedora() {
   BASE_IMAGE_NAME="Fedora-Cloud-Base-Generic-${RELEASE}-1.1.x86_64.qcow2"
   DOWNLOAD_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/${BASE_IMAGE_NAME}"
   USER_GROUPS=("wheel" "network" "storage")
-  OS_VARIANT="fedora41"
+  OS_VARIANT="fedora42"
 }
 
 configure_tw() {

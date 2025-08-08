@@ -55,7 +55,7 @@ EXAMPLES:
     $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --memory 8192 --dotfiles shell-slim docker code-server
 
 SUPPORTED DISTRIBUTIONS:
-    ubuntu      - Ubuntu LTS (24.04) or specified release
+    ubuntu      - Ubuntu (plucky/25.04) or specified release
     fedora      - Fedora (latest) or specified release
     arch        - Arch Linux (current)
     debian      - Debian (13/trixie) or specified release
@@ -69,7 +69,7 @@ EOF
 configure_distribution() {
     case "$DISTRO" in
     ubuntu)
-        RELEASE=${RELEASE:-"24.04"}
+        RELEASE=${RELEASE:-"plucky"}
         IMAGE="images:ubuntu/${RELEASE}/cloud"
         ;;
     fedora)

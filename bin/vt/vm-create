@@ -41,35 +41,20 @@ configure_alpine() {
     USER_GROUPS=("wheel")
     # INSTALL_CMD="sudo apk add qemu libvirt qemu-img wget genisoimage"
 
-    local osinfo_list
-    osinfo_list=$(virt-install --osinfo list 2>/dev/null)
-
-    if ! echo "$osinfo_list" | grep -q "alpinelinux${RELEASE}"; then
-        warn "OS variant 'alpine${RELEASE}' not found in virt-install osinfo list, using 'alpinelinux3.21'"
-        slog "Available alpine variants:"
-        echo "$osinfo_list" | grep -i alpine | head -5 || true
-        OS_VARIANT="alpinelinux3.21"
-    fi
+    OS_VARIANT="alpinelinux3.21"
 }
 
 configure_ubuntu() {
     VM_NAME=${VM_NAME:=ubuntu}
-    RELEASE=${RELEASE:=noble} # 24.04 LTS
+    RELEASE=${RELEASE:=plucky} # 25.10
 
     IMG_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${RELEASE}-server-cloudimg-amd64.img"
     BASE_IMG_NAME="${RELEASE}.img"
     USER_GROUPS=("adm" "sudo")
     # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
 
-    case "$RELEASE" in
-    "noble") OS_VARIANT="ubuntu24.04" ;;
-    "jammy") OS_VARIANT="ubuntu22.04" ;;
-    "focal") OS_VARIANT="ubuntu20.04" ;;
-    *)
-        warn "Unknown Ubuntu release '$RELEASE', using ubuntu24.04 as os-variant"
-        OS_VARIANT="ubuntu24.04"
-        ;;
-    esac
+    # Only support the default release
+    OS_VARIANT="ubuntu25.04"
 }
 configure_tw() {
     VM_NAME=${VM_NAME:=tw}
@@ -86,27 +71,12 @@ configure_fedora() {
     VM_NAME=${VM_NAME:=fedora}
     RELEASE=${RELEASE:=42}
 
-    if [[ "$RELEASE" -ge 42 ]]; then
-        IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${RELEASE}-1.1.x86_64.qcow2"
-    else
-        IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-${RELEASE}-1.14.x86_64.qcow2"
-    fi
+    IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${RELEASE}-1.1.x86_64.qcow2"
 
     BASE_IMG_NAME="fedora-${RELEASE}.qcow2"
     USER_GROUPS=("wheel")
     OS_VARIANT="fedora${RELEASE}"
     # INSTALL_CMD="sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
-
-    # Get the osinfo list once and reuse it
-    local osinfo_list
-    osinfo_list=$(virt-install --osinfo list 2>/dev/null)
-
-    if ! echo "$osinfo_list" | grep -q "fedora${RELEASE}"; then
-        warn "OS variant 'fedora${RELEASE}' not found in virt-install osinfo list, using 'fedora41'"
-        slog "Available fedora variants:"
-        echo "$osinfo_list" | grep -i fedora | head -5 || true
-        OS_VARIANT="fedora41"
-    fi
 }
 
 configure_arch() {
@@ -118,41 +88,14 @@ configure_arch() {
     USER_GROUPS=("wheel")
     OS_VARIANT="archlinux"
     # INSTALL_CMD="sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools"
-
-    # Get the osinfo list once and reuse it
-    local osinfo_list
-    osinfo_list=$(virt-install --osinfo list 2>/dev/null)
-
-    if ! echo "$osinfo_list" | grep -q "archlinux"; then
-        warn "OS variant 'archlinux' not found in virt-install osinfo list, using 'linux'"
-        slog "Available arch-related variants:"
-        echo "$osinfo_list" | grep -i arch || true
-        OS_VARIANT="linux"
-    fi
 }
 
 configure_debian() {
     VM_NAME=${VM_NAME:=debian}
     RELEASE=${RELEASE:=trixie} # 13
 
-    case "$RELEASE" in
-    "bookworm")
-        IMG_URL="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
-        OS_VARIANT="debian1"
-        ;;
-    "bullseye")
-        IMG_URL="https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2"
-        OS_VARIANT="debian11"
-        ;;
-    "trixie")
-        IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
-        OS_VARIANT="debian13"
-        ;;
-    *)
-        fail "Unsupported Debian release: $RELEASE"
-        exit 1
-        ;;
-    esac
+    IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+    OS_VARIANT="debian13"
 
     BASE_IMG_NAME="debian-${RELEASE}.qcow2"
     USER_GROUPS=("sudo")
@@ -206,7 +149,6 @@ OPTIONS:
     --ssh-key PATH      SSH public key path (default: auto-detect)
     --bridge BRIDGE     Network bridge (default: $BRIDGE_IF)
     --username USER     VM username (default: distribution-specific)
-    --release REL       Distribution release (default: distribution-specific)
     --docker            Install Docker in the VM
     --brew              Install Homebrew and essential development tools
     --nix               Install Nix using Determinate Systems installer
@@ -216,23 +158,23 @@ OPTIONS:
 
 DISTRIBUTION-SPECIFIC OPTIONS:
     Ubuntu:
-        --release noble|jammy|focal    (default: noble - 24.04 LTS)
+        Default release: plucky (25.10)
     Fedora:
-        --release 40|41|42             (default: 42)
+        Default release: 42
     Arch:
-        --release latest               (default: latest)
+        Default release: latest
     Debian:
-        --release trixie|bullseye|bookworm  (default: trixie - 13)
+        Default release: trixie (13)
     Alpine:
-        --release 3.19|3.20|3.21|3.22|  (default: 3.22)
+        Default release: 3.22
     Tumbleweed:
-        --release latest               (default: latest)
+        Default release: latest
 
 EXAMPLES:
     $0 --distro ubuntu                           # Create Ubuntu VM with defaults
     $0 --distro fedora --name myvm --memory 8192 # Custom Fedora VM
     $0 --distro arch --disk-size 80G --vcpus 4   # Arch VM with larger disk
-    $0 --distro debian --release bullseye        # Debian 11 VM
+    $0 --distro debian                           # Debian VM with defaults
     $0 --distro tumbleweed --name tw-vm --vcpus 2 --memory 4096  # openSUSE Tumbleweed VM
     $0 --distro ubuntu --docker                  # Ubuntu VM with Docker pre-installed
     $0 --distro ubuntu --brew                    # Ubuntu VM with Homebrew and dev tools
@@ -289,10 +231,6 @@ parse_args() {
             ;;
         --username)
             USERNAME="$2"
-            shift 2
-            ;;
-        --release)
-            RELEASE="$2"
             shift 2
             ;;
         --docker)

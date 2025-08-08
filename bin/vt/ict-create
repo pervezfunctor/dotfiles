@@ -46,7 +46,7 @@ EXAMPLES:
     $0 --distro tumbleweed --name opensuse-container --vcpus 2 --memory 2048
 
 SUPPORTED DISTRIBUTIONS:
-    ubuntu      - Ubuntu LTS (24.04) or specified release
+    ubuntu      - Ubuntu (plucky/25.04) or specified release
     fedora      - Fedora (latest) or specified release
     arch        - Arch Linux (current)
     debian      - Debian (13/trixie) or specified release
@@ -63,7 +63,7 @@ EOF
 configure_distribution() {
     case "$DISTRO" in
     ubuntu)
-        RELEASE=${RELEASE:-"24.04"}
+        RELEASE=${RELEASE:-"plucky"}
         IMAGE="images:ubuntu/${RELEASE}/cloud"
         ;;
     fedora)
@@ -326,7 +326,10 @@ main() {
     incus_check
 
     parse_args "$@"
-    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(ssh_key_path)
+    if [[ -z "${SSH_KEY:-}" ]]; then
+        SSH_KEY=$(ssh_key_path)
+    fi
+
     file_exists "$SSH_KEY" || err_exit "SSH public key not found at: $SSH_KEY"
 
     configure_distribution
