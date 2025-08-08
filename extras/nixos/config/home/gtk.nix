@@ -22,8 +22,8 @@
     # };
 
     # theme = {
-    #   name = "Adwaita-dark";
-    #   package = pkgs.gnome.gnome-themes-extra;
+    #   name = "Nordic";
+    #   package = pkgs.nordic;
     # };
 
     # iconTheme = {
@@ -31,6 +31,13 @@
     #   package = pkgs.gnome.adwaita-icon-theme;
     # };
   };
+
+  # qt = {
+  #   enable = true;
+  #   platformTheme = "qtct";
+  #   style = "kvantum";
+  # };
+
   home.packages = with pkgs.gnomeExtensions; [
     alphabetical-app-grid
     appindicator
@@ -51,20 +58,19 @@
     "org/gnome/shell" = {
       disable-user-extensions = false;
 
-      enabled-extensions = [
-        "alphabetical-app-grid@just-perfection.github.com"
-        "appindicatorsupport@rgcjonas.gmail.com"
-        "blur-my-shell@aunetx"
-        "coverflow-alt-tab@just-perfection.github.com"
-        "gsconnect@andyholmes.github.io"
-        "just-perfection@just-perfection.github.com"
-        "paperwm@paperwm.github.io"
-        "tailscale-status@marcel-dierkes.de"
-        "tiling-assistant@gnome-shell-extensions.gcampax.github.com"
-        "undecorate@gnome-shell-extensions.gcampax.github.com"
-        "user-themes@gnome-shell-extensions.gcampax.github.com"
-        "Vitals@CoreCoding.com"
-        "windows-navigator@gnome-shell-extensions.gcampax.github.com"
+      enabled-extensions = with pkgs.gnomeExtensions; [
+        alphabetical-app-grid.extensionUuid
+        appindicator.extensionUuid
+        blur-my-shell.extensionUuid
+        coverflow-alt-tab.extensionUuid
+        gsconnect.extensionUuid
+        just-perfection.extensionUuid
+        paperwm.extensionUuid
+        tailscale-status.extensionUuid
+        tiling-assistant.extensionUuid
+        undecorate.extensionUuid
+        user-themes.extensionUuid
+        vitals.extensionUuid
       ];
     };
 

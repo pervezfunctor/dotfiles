@@ -6,7 +6,7 @@
   virtualisation = {
     libvirtd = {
       enable = true;
-      defaultNetwork.enable = true;
+      # defaultNetwork.enable = true;
 
       # Grant the 'libvirtd' group access to the libvirt socket
       extraConfig = ''
@@ -35,7 +35,7 @@
     spiceUSBRedirection.enable = true;
   };
 
-  programs.virt-manager. enable = true;
+  programs.virt-manager.enable = true;
 
   environment.systemPackages = with pkgs; [
     virt-manager
