@@ -1,7 +1,8 @@
 { pkgs, ... }:
 {
-  # Add your user to the libvirtd group for password-less access
-  users.users.me.extraGroups = [ "libvirtd" ];
+  environment.sessionVariables = {
+    LIBVIRT_DEFAULT_URI = "qemu:///system";
+  };
 
   virtualisation = {
     libvirtd = {
@@ -38,24 +39,27 @@
   programs.virt-manager.enable = true;
 
   environment.systemPackages = with pkgs; [
-    virt-manager
-    virt-viewer
+    dmidecode
+    dnsmasq
+    gtk-vnc
+    guestfs-tools
+    parted
+    libosinfo
+    openssl
     qemu
     qemu_kvm
     qemu-utils
-    dnsmasq
-    openssl
-    xorriso
+    seabios
     spice-gtk
     spice-protocol
-    virtiofsd
-    win-virtio
-    win-spice
-    usbutils
-    gtk-vnc
     usbredir
-    dmidecode
-    seabios
+    usbutils
+    virt-manager
+    virt-viewer
+    virtiofsd
+    win-spice
+    win-virtio
+    xorriso
   ];
 
   services.udev.packages = [
