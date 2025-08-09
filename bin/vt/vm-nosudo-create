@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+
+set -euo pipefail -x
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: $0 <distro> <vm_name>"
+  echo "Supported distros: alpine, debian, ubuntu, fedora, arch, tw"
+  echo "Example: $0 debian my-vm"
+  exit 1
+fi
+
+has_cmd() {
+  command -v "$1" &>/dev/null
+}
+
+if ! has_cmd qemu-img ||
+  ! has_cmd virt-install ||
+  ! has_cmd jq ||
+  ! has_cmd trash ||
+  ! has_cmd openssl ||
+  ! has_cmd wget; then
+  echo "Required commands are not installed. Please install qemu-img, qemu-kvm, libvirt, virt-install, trash-cli, openssl, jq and wget."
+  exit 1
+fi
+
+DISTRO=${1:-debian}
+VM_NAME=${2:-$DISTRO}
+USERNAME=${DISTRO}
+PASSWORD=${USERNAME}
+WORKDIR="$HOME/images/${VM_NAME}"
+CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
+CPUS=4
+RAM=8192
+
+virsh destroy "$VM_NAME" 2>/dev/null || true
+virsh undefine "$VM_NAME" 2>/dev/null || true
+trash "$DISK_IMG" 2>/dev/null || true
+trash "$WORKDIR/cloud-init" 2>/dev/null || true
+
+mkdir -p "$CLOUD_INIT_DIR"
+
+mkdir -p "$WORKDIR"
+trash "$DISK_IMG" || true
+
+if [[ "$DISTRO" == "alpine" ]]; then
+  IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.1-x86_64-bios-cloudinit-r0.qcow2"
+  BASE_IMG="${WORKDIR}/generic_alpine-3.22.1-x86_64-bios-cloudinit-r0.qcow2"
+  OS_VARIANT="alpinelinux3.21"
+elif [[ "$DISTRO" == "debian" ]]; then
+  IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+  BASE_IMG="${WORKDIR}/debian-13-generic-amd64.qcow2"
+  OS_VARIANT="debian13"
+elif [[ "$DISTRO" == "ubuntu" ]]; then
+  IMG_URL="https://cloud-images.ubuntu.com/plucky/current/plucky-server-cloudimg-amd64.img"
+  BASE_IMG="${WORKDIR}/plucky-server-cloudimg-amd64.img"
+  OS_VARIANT="ubuntu25.04"
+elif [[ "$DISTRO" == "fedora" ]]; then
+  IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
+  BASE_IMG="${WORKDIR}/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
+  OS_VARIANT="fedora42"
+elif [[ "$DISTRO" == "arch" ]]; then
+  IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
+  BASE_IMG="${WORKDIR}/Arch-Linux-x86_64-cloudimg.qcow2"
+  OS_VARIANT="archlinux"
+elif [[ "$DISTRO" == "tw" ]]; then
+  IMG_URL="https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
+  BASE_IMG="${WORKDIR}/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
+  OS_VARIANT="opensusetumbleweed"
+else
+  echo "Unsupported distro: $DISTRO"
+  exit 1
+fi
+
+if [[ ! -f "$BASE_IMG" ]]; then
+  echo "Downloading image..."
+  wget -O "$BASE_IMG" "$IMG_URL"
+fi
+
+echo "Creating VM disk..."
+
+EXT=$(qemu-img info --output=json "$BASE_IMG" | jq -r '.format')
+qemu-img create -f qcow2 -F "$EXT" -b "$BASE_IMG" "$DISK_IMG" 20G
+
+if [[ ! -f "$DISK_IMG" ]]; then
+  echo "Failed to create disk image."
+  exit 1
+fi
+
+echo "$USERNAME:$PASSWORD"
+
+HASHED_PASSWORD=$(openssl passwd -6 "$PASSWORD")
+
+cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
+#cloud-config
+hostname: $VM_NAME
+users:
+  - name: $USERNAME
+    groups: [wheel, sudo]
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: false
+    passwd: "$HASHED_PASSWORD"
+    ssh_authorized_keys:
+      - "$(cat ~/.ssh/id_ed25519.pub)"
+ssh_pwauth: false
+disable_root: true
+package_update: true
+package_upgrade: true
+packages:
+  - qemu-guest-agent
+  - curl
+  - bash
+  - micro
+runcmd:
+  - |
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl enable --now sshd || systemctl enable --now ssh || true
+        systemctl enable --now qemu-guest-agent || true
+    else
+        rc-update add sshd default || true
+        rc-update add qemu-guest-agent default || true
+    fi
+EOF
+
+cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
+instance-id: $VM_NAME-$(date +%s)
+local-hostname: $VM_NAME
+EOF
+
+USER_DATA="${CLOUD_INIT_DIR}/user-data"
+META_DATA="${CLOUD_INIT_DIR}/meta-data"
+
+echo "Creating VM..."
+if ! virt-install \
+  --connect qemu:///session \
+  --name "$VM_NAME" \
+  --memory $RAM \
+  --vcpus $CPUS \
+  --disk path="$DISK_IMG",format=qcow2,bus=virtio \
+  --cloud-init user-data="${USER_DATA}",meta-data="${META_DATA}" \
+  --os-variant $OS_VARIANT \
+  --video virtio \
+  --virt-type kvm \
+  --graphics spice \
+  --network user,model=virtio \
+  --import; then
+  echo "Failed to create VM."
+else
+  echo "VM created. Try connecting with:"
+  echo "virsh console $VM_NAME"
+  echo "Get ip of the vm with 'virsh net-dhcp-leases default'"
+  echo "After it gets an IP:"
+  echo "ssh ${USERNAME}@<IP_ADDRESS>"
+fi
