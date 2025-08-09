@@ -45,7 +45,7 @@ add_user_to_groups() {
 }
 
 generate_ssh_key() {
-    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "$(whoami)@$(hostname)"
+    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" # -C "$(whoami)@$(hostname)"
 }
 
 ssh_key_path() {
@@ -58,6 +58,7 @@ ssh_key_path() {
         generate_ssh_key
         echo "${HOME}/.ssh/id_ed25519.pub"
     fi
+    return 0
 }
 
 is_bash() {
