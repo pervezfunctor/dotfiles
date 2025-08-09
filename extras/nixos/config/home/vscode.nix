@@ -35,6 +35,9 @@
         "workbench.colorTheme" = "Catppuccin Mocha";
         "workbench.iconTheme" = "catppuccin-mocha";
         "files.autoSave" = "onFocusChange";
+        "nix.enableLanguageServer" = true;
+        "nix.formatterPath" = "alejandra";
+        "nix.serverPath" = "nixd";
       };
     };
   };
