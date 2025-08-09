@@ -3,7 +3,7 @@
 let
   aliases = {
     update-os = "sudo nixos-rebuild switch --flake ~/.ilm/extras/nixos/config";
-    upgrade-os = "sudo nixos-rebuild switch --recreate-lock-file --flake .";
+    upgrade-os = "nix flake update --flake ~/.ilm/extras/nixos/config && sudo nixos-rebuild switch --recreate-lock-file --flake ~/.ilm/extras/nixos/config";
 
     # cd = "z";
     # gcan = "git commit --amend --no-edit";
