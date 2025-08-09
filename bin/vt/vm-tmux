@@ -7,7 +7,7 @@ set -euo pipefail
 source "$(dirname "$0")/vm-utils"
 source "$(dirname "$0")/tmux-utils"
 
-VM_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian") # alpine is not working
+VM_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "alpine")
 
 SESSION_NAME="LIBVIRT_TMUX"
 

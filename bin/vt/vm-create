@@ -36,7 +36,7 @@ configure_alpine() {
     VM_NAME=${VM_NAME:=alpine}
     RELEASE=${RELEASE:=3.22}
 
-    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v${RELEASE}/releases/cloud/generic_alpine-${RELEASE}.0-x86_64-uefi-cloudinit-r0.qcow2"
+    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v${RELEASE}/releases/cloud/generic_alpine-${RELEASE}.1-x86_64-bios-cloudinit-r0.qcow2"
     BASE_IMG_NAME="generic_alpine-${RELEASE}.0-x86_64-uefi-cloudinit-r0.qcow2"
     USER_GROUPS=("wheel")
     # INSTALL_CMD="sudo apk add qemu libvirt qemu-img wget genisoimage"
@@ -401,12 +401,22 @@ generate_cloud_init() {
         "tmux"
     )
 
-    local -a runcmd=(
-        "systemctl enable --now qemu-guest-agent"
-        "touch /home/$USERNAME/vm-setup-complete"
+    local -a runcmd=("touch /home/$USERNAME/vm-setup-complete"
         "chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete"
         "chown -R $USERNAME:$USERNAME /home/$USERNAME"
     )
+
+    if [[ "$DISTRO" == "alpine" ]]; then
+        runcmd+=(
+            "rc-update add qemu-guest-agent default"
+            "service qemu-guest-agent start"
+        )
+    else
+        runcmd+=(
+            "systemctl enable --now qemu-guest-agent"
+            "systemctl enable --now sshd"
+        )
+    fi
 
     case "$DISTRO" in
     ubuntu | debian)
@@ -444,6 +454,7 @@ generate_cloud_init() {
             "openssh-server"
             "stow"
             "alpine-sdk"
+            "bash"
         )
         ;;
 
@@ -451,9 +462,6 @@ generate_cloud_init() {
         packages+=(
             "openssh"
             "stow"
-        )
-        runcmd+=(
-            "systemctl enable --now sshd"
         )
         ;;
 
@@ -633,10 +641,6 @@ generate_cloud_init() {
         )
     fi
 
-    runcmd+=(
-        "systemctl enable --now sshd"
-    )
-
     sudo tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
 hostname: $VM_NAME
@@ -761,13 +765,13 @@ launch_vm() {
 
     success "VM '$VM_NAME' created successfully!"
 
-    slog "Adding VM to /etc/hosts for name-based access..."
-    sleep 5
-    if has_cmd vm-hosts; then
-        vm-hosts add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
-    else
-        warn "vm-hosts script not found, skipping /etc/hosts update"
-    fi
+    # slog "Adding VM to /etc/hosts for name-based access..."
+    # sleep 5
+    # if has_cmd vm-hosts; then
+    #     vm-hosts add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
+    # else
+    #     warn "vm-hosts script not found, skipping /etc/hosts update"
+    # fi
 }
 
 show_completion_info() {
