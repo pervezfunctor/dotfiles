@@ -20,8 +20,6 @@ VCPUS="3"
 MEMORY_MB="4096"
 DISK_SIZE="20GB"
 BRIDGE_IF="incusbr0"
-DOTFILES_OPTIONS="min"
-INSTALL_NIX=false
 
 usage() {
     cat <<EOF
@@ -42,8 +40,6 @@ OPTIONS:
     --disk-size SIZE        Disk size (default: 20GB)
     --ssh-key PATH          SSH public key path (default: auto-detect)
     --bridge BRIDGE         Network bridge (default: incusbr0)
-    --nix                   Install Nix using Determinate Systems installer
-    --dotfiles OPTIONS...   Install dotfiles with specified options (must be last; all following arguments are passed to dotfiles)
     --help, -h              Show this help
 
 EXAMPLES:
@@ -52,18 +48,15 @@ EXAMPLES:
     $0 --distro debian --username admin --password mypass
     $0 --distro arch --release current --disk-size 40GB
     $0 --distro tumbleweed --name opensuse-vm --vcpus 2 --memory 4096
-    $0 --distro ubuntu --nix            # Ubuntu VM with Nix package manager
-    $0 --distro ubuntu --name ubuntu-dev --vcpus 4 --memory 8192 --dotfiles shell-slim docker code-server
 
 SUPPORTED DISTRIBUTIONS:
-    ubuntu      - Ubuntu (plucky/25.04) or specified release
-    fedora      - Fedora (latest) or specified release
+    ubuntu      - Ubuntu (plucky/25.04)
+    fedora      - Fedora (latest)
     arch        - Arch Linux (current)
-    debian      - Debian (13/trixie) or specified release
-    centos      - CentOS Stream (9) or specified release
+    debian      - Debian (13/trixie)
+    centos      - CentOS Stream (9)
     tumbleweed  - openSUSE Tumbleweed (rolling release)
-    alpine      - Alpine Linux (latest) or specified release
-
+    alpine      - Alpine Linux (latest)
 EOF
 }
 
@@ -149,12 +142,6 @@ generate_cloud_init_config() {
         openssh_pkg="openssh-server"
     fi
 
-    # Prepare MOTD content
-    local motd_content="Welcome to $VM_NAME ($DISTRO $RELEASE)!
-      Created with ivm-create
-
-      SSH access configured for user: $USER_NAME"
-
     local runcmd_lines
 
     if [[ "$DISTRO" == "alpine" ]]; then
@@ -168,49 +155,7 @@ generate_cloud_init_config() {
         )
     fi
 
-    # Add Nix installation if specified
-    if [[ "$INSTALL_NIX" == "true" ]]; then
-        slog "Adding Nix installation to cloud-init"
-        motd_content+="
-
-      Nix package manager is installed and ready to use.
-      Quick commands:
-        nix --version
-        nix search <package>
-        nix-env -iA nixpkgs.<package>
-        nix-shell -p <package>"
-
-        runcmd_lines+=(
-            "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm"
-            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/bash.bashrc"
-            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/profile"
-            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /home/$USER_NAME/.bashrc"
-            "systemctl enable --now nix-daemon || true"
-        )
-    fi
-
-    # Add dotfiles installation if specified
-    if [[ -n "$DOTFILES_OPTIONS" ]]; then
-        slog "Adding dotfiles installation to cloud-init with options: $DOTFILES_OPTIONS"
-        motd_content+="
-
-      Dotfiles are installed and ready to use.
-      Location: /home/$USER_NAME/.ilm
-      Quick commands:
-        ilmi shell
-        ilmi docker
-        ilmi python
-        ilmc zsh
-        ilmc tmux
-        ilmc nvim"
-
-        runcmd_lines+=(
-            "su - $USER_NAME -c 'bash -c \"\$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)\" -- $DOTFILES_OPTIONS'"
-        )
-    fi
-
-    # Create cloud-init user-data file using tee
-    tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
+    cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
 #cloud-config
 hostname: $VM_NAME
 manage_etc_hosts: true
@@ -241,16 +186,10 @@ $(printf "  - %s\n" "${runcmd_lines[@]}")
 ssh_pwauth: true
 disable_root: false
 
-write_files:
-  - path: /etc/motd
-    content: |
-      $motd_content
-
 final_message: "VM $VM_NAME setup complete! SSH access is ready."
 EOF
 
-    # Create meta-data file
-    tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
+    cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
 instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
@@ -295,54 +234,7 @@ create_vm() {
 }
 
 show_completion_info() {
-    success "VM '$VM_NAME' is ready!"
-    echo
-    slog "VM Details:"
-    incus list "$VM_NAME"
-    echo
-
-    local ip
-    if ip=$(ivm_ip "$VM_NAME"); then
-        slog "SSH Access:"
-        slog "  IP Address: $ip"
-        slog "  Username: $USER_NAME"
-        slog "  SSH Command: ssh $USER_NAME@$ip"
-        echo
-        slog "You can also use Incus commands:"
-        slog "  Console: incus console $VM_NAME"
-        slog "  Execute: incus exec $VM_NAME -- <command>"
-        slog "  Shell: incus exec $VM_NAME -- /bin/bash"
-    else
-        slog "Use Incus commands to access the VM:"
-        slog "  Console: incus console $VM_NAME"
-        slog "  Execute: incus exec $VM_NAME -- <command>"
-        slog "  Shell: incus exec $VM_NAME -- /bin/bash"
-    fi
-
-    if [[ "$INSTALL_NIX" == "true" ]]; then
-        echo
-        slog "Nix Package Manager Information:"
-        slog "  Nix is pre-installed on this VM"
-        slog "  Check version:      nix --version"
-        slog "  Search packages:    nix search <package>"
-        slog "  Install package:    nix-env -iA nixpkgs.<package>"
-        slog "  Temporary shell:    nix-shell -p <package>"
-        slog "  Documentation: https://nixos.org/manual/nix/stable/"
-    fi
-
-    if [[ -n "$DOTFILES_OPTIONS" ]]; then
-        echo
-        slog "Dotfiles Information:"
-        slog "  Dotfiles are pre-installed on this VM with options: $DOTFILES_OPTIONS"
-        slog "  Location: ~/.ilm"
-        slog "  Install shell:      ilmi shell"
-        slog "  Install Docker:     ilmi docker"
-        slog "  Install Python:     ilmi python"
-        slog "  Config zsh:         ilmc zsh"
-        slog "  Config tmux:        ilmc tmux"
-        slog "  Config nvim:        ilmc nvim"
-        slog "  Repository: https://github.com/pervezfunctor/dotfiles"
-    fi
+    success "VM '$VM_NAME' will be ready in a few minutes!"
 
     echo
     slog "VM Management:"
@@ -350,6 +242,8 @@ show_completion_info() {
     slog "  Stop: ivm stop $VM_NAME"
     slog "  Start: ivm start $VM_NAME"
     slog "  Delete: ivm delete $VM_NAME"
+
+    slog "Use username: $USER_NAME and password: $PASSWORD to login if needed."
 }
 
 parse_args() {
@@ -395,15 +289,6 @@ parse_args() {
             BRIDGE_IF="$2"
             shift 2
             ;;
-        --nix)
-            INSTALL_NIX=true
-            shift
-            ;;
-        --dotfiles)
-            shift
-            DOTFILES_OPTIONS="$*"
-            break
-            ;;
         --help | -h)
             usage
             exit 0
@@ -428,7 +313,9 @@ main() {
     ivm_check_exists_prerequisites
     parse_args "$@"
 
-    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(ssh_key_path)
+    if [[ -z "${SSH_KEY:-}" ]]; then
+        SSH_KEY=$(ssh_key_path)
+    fi
 
     if [[ ! -f "$SSH_KEY" ]]; then
         fail "SSH public key not found at: $SSH_KEY"
@@ -438,9 +325,6 @@ main() {
     configure_distribution
     create_vm
     show_completion_info
-
-    success "All done! Your $DISTRO VM '$VM_NAME' is ready to use."
-    slog "Use username: $USER_NAME and password: $PASSWORD to login."
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
