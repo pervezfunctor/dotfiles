@@ -61,17 +61,13 @@ RAM=8192
 BASE_DIR="${BASE_DIR:=$HOME/vmus}"
 WORKDIR="$BASE_DIR/${VM_NAME}"
 BASE_IMG_DIR="$BASE_DIR/images/${DISTRO}"
-CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
 DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
-
-USER_DATA="${CLOUD_INIT_DIR}/user-data"
-META_DATA="${CLOUD_INIT_DIR}/meta-data"
 
 create_dirs() {
   safe_rm "$WORKDIR"
 
-  info "Creating directories: $BASE_IMG_DIR, $WORKDIR, $CLOUD_INIT_DIR"
-  mkdir -p "$BASE_IMG_DIR" "$WORKDIR" "$CLOUD_INIT_DIR"
+  info "Creating directories: $BASE_IMG_DIR, $WORKDIR"
+  mkdir -p "$BASE_IMG_DIR" "$WORKDIR"
 
   tree "$BASE_DIR"
   tree "$BASE_IMG_DIR"
@@ -145,7 +141,6 @@ configure_distro() {
 cleanup_on_error() {
   info "An error occurred. Cleaning up..."
   safe_rm "$DISK_IMG"
-  safe_rm "$CLOUD_INIT_DIR"
 }
 
 trap cleanup_on_error ERR INT TERM
@@ -165,10 +160,14 @@ create_disk() {
 }
 
 generate_cloud_init() {
-  local hashed_password
+  local hashed_password cloud_init_dir
   hashed_password=$(openssl passwd -6 "$PASSWORD")
 
-  info "Generating cloud-init configuration in $CLOUD_INIT_DIR"
+  cloud_init_dir=$(mktemp -d)
+  trap '[[ -n "$cloud_init_dir" && -d "$cloud_init_dir" ]] && rm -rf "$cloud_init_dir"' EXIT
+
+  USER_DATA="${cloud_init_dir}/user-data"
+  META_DATA="${cloud_init_dir}/meta-data"
 
   # This is deliberately insecure configuration as the vm is supposed to be for develpoment.
   cat >"$USER_DATA" <<EOF
@@ -213,27 +212,8 @@ local-hostname: $VM_NAME
 EOF
 }
 
-vm_ip() {
-  virsh --connect qemu:///session domifaddr debian-vmu --source agent |
-    awk '/ipv4/ && $4 !~ /^127\./ {print $4}' |
-    cut -d/ -f1
-}
-
-find_free_port() {
-  local PORT=2222
-  while ss -tuln | grep -q ":$PORT "; do
-    PORT=$((PORT + 1))
-  done
-  echo "$PORT"
-}
-
 create_vm() {
   info "Creating VM..."
-
-  # SSH_PORT=$(find_free_port)
-  # --network user,hostfwd=tcp::${SSH_PORT}-:22
-  # echo "$SSH_PORT" >"$WORKDIR/ssh-port"
-  # echo -e "🔑  SSH into your VM with:\n  ssh -p ${SSH_PORT} ${USERNAME}@localhost"
 
   virt-install \
     --connect qemu:///session \
@@ -286,3 +266,21 @@ main() {
 }
 
 main "$@"
+
+# vm_ip() {
+#   virsh --connect qemu:///session domifaddr debian-vmu --source agent |
+#     awk '/ipv4/ && $4 !~ /^127\./ {print $4}' |
+#     cut -d/ -f1
+# }
+
+# find_free_port() {
+#   local PORT=2222
+#   while ss -tuln | grep -q ":$PORT "; do
+#     PORT=$((PORT + 1))
+#   done
+#   echo "$PORT"
+# }
+# SSH_PORT=$(find_free_port)
+# --network user,hostfwd=tcp::${SSH_PORT}-:22
+# echo "$SSH_PORT" >"$WORKDIR/ssh-port"
+# echo -e "🔑  SSH into your VM with:\n  ssh -p ${SSH_PORT} ${USERNAME}@localhost"
