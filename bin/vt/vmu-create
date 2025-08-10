@@ -1,0 +1,286 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# BOLD="\033[1m"
+RESET="\033[0m"
+BLUE="\033[1;34m"
+GREEN="\033[1;32m"
+YELLOW="\033[1;33m"
+RED="\033[1;31m"
+
+info() { echo -e "${BLUE}ℹ️  $1${RESET}"; }
+success() { echo -e "${GREEN}✅ $1${RESET}"; }
+warn() { echo -e "${YELLOW}⚠️  $1${RESET}"; }
+error() { echo -e "${RED}❌ $1${RESET}"; }
+
+safe_rm() {
+  if has_cmd trash; then
+    trash "$@" 2>/dev/null || true
+  else
+    rm -rf "$@" 2>/dev/null || true
+  fi
+}
+
+usage() {
+  echo -e "\n\033[1;31m❌ Invalid usage\033[0m\n"
+  echo -e "\033[1;34m📜 Usage:\033[0m"
+  echo -e "  $0 \033[1m<distro>\033[0m [\033[1mvm_name\033[0m]\n"
+
+  echo -e "\033[1;34m🛠️  Supported distros:\033[0m"
+  echo -e "  - alpine"
+  echo -e "  - debian"
+  echo -e "  - ubuntu"
+  echo -e "  - fedora"
+  echo -e "  - arch"
+  echo -e "  - tw (openSUSE Tumbleweed)\n"
+
+  echo -e "\033[1;34m💡 Example:\033[0m"
+  echo -e "  $0 debian my-vm\n"
+
+  exit 1
+}
+
+has_cmd() {
+  command -v "$1" &>/dev/null
+}
+
+if [[ $# -gt 2 ]]; then
+  error "Too many arguments"
+  usage
+fi
+
+DISTRO=${1:-debian}
+VM_NAME=${2:-$DISTRO-vmu}
+
+USER_NAME="${USER_NAME:-$DISTRO}"
+PASSWORD="${PASSWORD:-$USER_NAME}"
+
+CPUS=4
+RAM=8192
+
+BASE_DIR="${BASE_DIR:=$HOME/vmus}"
+WORKDIR="$BASE_DIR/${VM_NAME}"
+BASE_IMG_DIR="$BASE_DIR/images/${DISTRO}"
+CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
+
+USER_DATA="${CLOUD_INIT_DIR}/user-data"
+META_DATA="${CLOUD_INIT_DIR}/meta-data"
+
+create_dirs() {
+  safe_rm "$WORKDIR"
+
+  info "Creating directories: $BASE_IMG_DIR, $WORKDIR, $CLOUD_INIT_DIR"
+  mkdir -p "$BASE_IMG_DIR" "$WORKDIR" "$CLOUD_INIT_DIR"
+
+  tree "$BASE_DIR"
+  tree "$BASE_IMG_DIR"
+  tree "$WORKDIR"
+}
+
+check_prerequisites() {
+  local missing=()
+  for cmd in qemu-img virt-install virsh jq openssl wget; do
+    has_cmd "$cmd" || missing+=("$cmd")
+  done
+
+  if ((${#missing[@]})); then
+    echo -e "\n\033[1;31m❌ Missing required commands\033[0m\n"
+    echo -e "\033[1;34m📦 Missing:\033[0m ${missing[*]}"
+    echo -e "\033[1;34m💡 Install them before running this script.\033[0m\n"
+    exit 1
+  fi
+
+  if virsh --connect qemu:///session list --all --name 2>/dev/null | grep -q "^$VM_NAME$"; then
+    error "VM '$VM_NAME' already exists"
+    exit 1
+  fi
+
+  if [[ -f ~/.ssh/id_ed25519.pub ]]; then
+    SSH_KEY=$(cat "${HOME}/.ssh/id_ed25519.pub")
+  else
+    SSH_KEY=$(ssh-keygen -t ed25519 -C "your_email@example.com" -f "${HOME}/.ssh/id_ed25519" -N "")
+  fi
+}
+
+configure_distro() {
+  case "$DISTRO" in
+  alpine)
+    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.1-x86_64-bios-cloudinit-r0.qcow2"
+    BASE_IMG="${BASE_IMG_DIR}/generic_alpine-3.22.1-x86_64-bios-cloudinit-r0.qcow2"
+    OS_VARIANT="alpinelinux3.21"
+    ;;
+  debian)
+    IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+    BASE_IMG="${BASE_IMG_DIR}/debian-13-generic-amd64.qcow2"
+    OS_VARIANT="debian13"
+    ;;
+  ubuntu)
+    IMG_URL="https://cloud-images.ubuntu.com/plucky/current/plucky-server-cloudimg-amd64.img"
+    BASE_IMG="${BASE_IMG_DIR}/plucky-server-cloudimg-amd64.img"
+    OS_VARIANT="ubuntu25.04"
+    ;;
+  fedora)
+    IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
+    BASE_IMG="${BASE_IMG_DIR}/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
+    OS_VARIANT="fedora42"
+    ;;
+  arch)
+    IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
+    BASE_IMG="${BASE_IMG_DIR}/Arch-Linux-x86_64-cloudimg.qcow2"
+    OS_VARIANT="archlinux"
+    ;;
+  tw)
+    IMG_URL="https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
+    BASE_IMG="${BASE_IMG_DIR}/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
+    OS_VARIANT="opensusetumbleweed"
+    ;;
+  *)
+    error "Unsupported distro: $DISTRO"
+    usage
+    ;;
+  esac
+}
+
+cleanup_on_error() {
+  info "An error occurred. Cleaning up..."
+  safe_rm "$DISK_IMG"
+  safe_rm "$CLOUD_INIT_DIR"
+}
+
+trap cleanup_on_error ERR INT TERM
+
+download_image() {
+  if [[ ! -f "$BASE_IMG" ]]; then
+    info "Downloading image..."
+    wget -O "$BASE_IMG" "$IMG_URL"
+  fi
+}
+
+create_disk() {
+  info "Creating VM disk..."
+  local ext
+  ext=$(qemu-img info --output=json "$BASE_IMG" | jq -r '.format')
+  qemu-img create -f qcow2 -F "$ext" -b "$BASE_IMG" "$DISK_IMG" 20G
+}
+
+generate_cloud_init() {
+  local hashed_password
+  hashed_password=$(openssl passwd -6 "$PASSWORD")
+
+  info "Generating cloud-init configuration in $CLOUD_INIT_DIR"
+
+  cat >"$USER_DATA" <<EOF
+#cloud-config
+hostname: $VM_NAME
+
+users:
+  - name: $USER_NAME
+    groups: [wheel, sudo]
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: false
+    passwd: "$hashed_password"
+    ssh_authorized_keys:
+      - "$SSH_KEY"
+
+ssh_pwauth: false
+disable_root: true
+package_update: true
+package_upgrade: true
+
+packages:
+  - qemu-guest-agent
+  - curl
+  - bash
+
+runcmd:
+  - |
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl enable --now qemu-guest-agent || true
+        systemctl enable --now sshd || systemctl enable --now ssh || true
+    else
+        rc-update add qemu-guest-agent default || true
+        rc-update add sshd default || true
+    fi
+EOF
+
+  cat >"$META_DATA" <<EOF
+instance-id: $VM_NAME-$(date +%s)
+local-hostname: $VM_NAME
+EOF
+}
+
+vm_ip() {
+  virsh --connect qemu:///session domifaddr debian-vmu --source agent |
+    awk '/ipv4/ && $4 !~ /^127\./ {print $4}' |
+    cut -d/ -f1
+}
+
+find_free_port() {
+  local PORT=2222
+  while ss -tuln | grep -q ":$PORT "; do
+    PORT=$((PORT + 1))
+  done
+  echo "$PORT"
+}
+
+create_vm() {
+  info "Creating VM..."
+
+  # SSH_PORT=$(find_free_port)
+  # --network user,hostfwd=tcp::${SSH_PORT}-:22
+  # echo "$SSH_PORT" >"$WORKDIR/ssh-port"
+  # echo -e "🔑  SSH into your VM with:\n  ssh -p ${SSH_PORT} ${USERNAME}@localhost"
+
+  virt-install \
+    --connect qemu:///session \
+    --name "$VM_NAME" \
+    --memory $RAM \
+    --vcpus $CPUS \
+    --disk path="$DISK_IMG",format=qcow2,bus=virtio \
+    --cloud-init user-data="${USER_DATA}",meta-data="${META_DATA}" \
+    --os-variant $OS_VARIANT \
+    --video virtio \
+    --virt-type kvm \
+    --graphics spice \
+    --network user,model=virtio \
+    --import
+}
+
+show_completion_info() {
+  echo -e "\n\033[1;32m✅ VM Creation Complete\033[0m\n"
+
+  echo -e "\033[1;34m📦 VM Details:\033[0m"
+  echo -e "  🖥️  Name:        \033[1m$VM_NAME\033[0m"
+  echo -e "  🐧 Distro:      \033[1m$DISTRO\033[0m"
+  echo -e "  🧠 Memory:      ${RAM}MB"
+  echo -e "  ⚙️  vCPUs:       $CPUS"
+  echo -e "  💾 Disk:        $DISK_IMG"
+  echo -e "  👤 User_name:    \033[1m$USER_NAME\033[0m"
+  echo -e "  🔑 Password:    \033[1m$PASSWORD\033[0m\n"
+
+  echo -e "\033[1;34m🔌 Connect:\033[0m"
+  echo "  virsh --connect qemu:///session console $VM_NAME"
+
+  echo -e "\n\033[1;34m🌐 Find IP:\033[0m"
+  echo "  vm ip $VM_NAME"
+
+  echo -e "\n\033[1;33m💡 Tip:\033[0m You can SSH once you know the IP:"
+  echo "  ssh ${USER_NAME}@<IP_ADDRESS>"
+}
+
+main() {
+  check_prerequisites
+  configure_distro
+
+  create_dirs
+  download_image
+  create_disk
+  generate_cloud_init
+  create_vm
+
+  show_completion_info
+}
+
+main "$@"
