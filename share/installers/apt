@@ -318,26 +318,27 @@ incus_install() {
 
     slog "Installing incus"
 
-    if ! apt-cache policy qemu-system-x86 | grep -q "Candidate: 1:8.0"; then
-        slog "Adding backports for newer QEMU packages..."
+    si qemu-system-x86 qemu-utils incus bridge-utils
 
-        if grep -q "Debian" /etc/os-release; then
-            # For Debian
-            sudo apt-get -qq install -y software-properties-common
-            sudo add-apt-repository -y "deb http://deb.debian.org/debian $(lsb_release -cs)-backports main"
-            sudo apt-get -qq update
-            si -t "$(lsb_release -cs)-backports" qemu-system-x86 qemu-utils
-        else
-            # For Ubuntu
-            sudo add-apt-repository -y ppa:incus/stable
-            sudo apt-get -qq update
-            si qemu-system-x86 qemu-utils
-        fi
-    else
-        si qemu-system-x86 qemu-utils
-    fi
+    incus_confstall
 
-    si incus bridge-utils
+    slog "incus-lts installation done!"
+}
+
+incus-latest_install() {
+    has_cmd incus && return 1
+
+    slog "Installing incus"
+
+    sudo mkdir -p /etc/apt/keyrings/
+    sudo curl -fsSL https://pkgs.zabbly.com/key.asc -o /etc/apt/keyrings/zabbly.asc
+
+    sh -c 'cat <<EOF > /etc/apt/sources.list.d/zabbly-incus-stable.sources\nEnabled: yes\nTypes: deb\nURIs: https://pkgs.zabbly.com/incus/stable\nSuites: $(. /etc/os-release && echo ${VERSION_CODENAME})\nComponents: main\nArchitectures: $(dpkg --print-architecture)\nSigned-By: /etc/apt/keyrings/zabbly.asc\n\nEOF'
+    sudo sh -c 'cat <<EOF > /etc/apt/sources.list.d/zabbly-incus-stable.sources\nEnabled: yes\nTypes: deb\nURIs: https://pkgs.zabbly.com/incus/stable\nSuites: $(. /etc/os-release && echo ${VERSION_CODENAME})\nComponents: main\nArchitectures: $(dpkg --print-architecture)\nSigned-By: /etc/apt/keyrings/zabbly.asc\n\nEOF'
+
+    update_packages
+
+    si incus bridge-utils qemu-system-x86 qemu-utils
 
     incus_confstall
 
