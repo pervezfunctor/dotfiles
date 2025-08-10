@@ -7,6 +7,21 @@ font-names() {
     fc-list : family | cut -d: -f2 | sed 's/^ //g' | sort | uniq
 }
 
+git-checkout-previous-file() {
+    if [ -z "$1" ]; then
+        echo "Usage: git-checkout-previous-file <file>"
+        return 1
+    fi
+    local file="$1"
+    local prev_commit
+    prev_commit=$(git log --format=%H -- "$file" | sed -n '2p')
+    if [ -z "$prev_commit" ]; then
+        echo "No previous commit found for $file"
+        return 1
+    fi
+    git checkout "$prev_commit" -- "$file"
+}
+
 osquery-update-db() {
     sudo osinfo-db-import --system --latest
 }
