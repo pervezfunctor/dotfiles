@@ -11,7 +11,7 @@ cmd_vmu() {
 check_prerequisites() {
   for cmd in virsh virt-cat vmu-create trash; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-      fail "Required command '$cmd' is not available."
+      echo "Error: Required command '$cmd' is not available."
       exit 1
     fi
   done
@@ -173,7 +173,7 @@ main() {
     usage
     ;;
   *)
-    fail "Unknown command: $command"
+    echo "Error: Unknown command: $command"
     usage
     ;;
   esac
