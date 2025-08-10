@@ -45,7 +45,7 @@ add_user_to_groups() {
 }
 
 generate_ssh_key() {
-    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" >/dev/null 2>&1
+    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" >/dev/null
 }
 
 ssh_key_path() {
