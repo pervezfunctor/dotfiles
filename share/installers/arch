@@ -101,7 +101,7 @@ essential_install() {
 cli-slim_install() {
     slog "Installing cli tools using pacman"
 
-    si zsh tmux htop fzf ripgrep fd bat zoxide eza starship gum git-delta
+    si zsh tmux htop fzf ripgrep fd bat zoxide eza starship gum git-delta jq
 
     slog "cli tools installation done!"
 }
@@ -125,9 +125,8 @@ cpp_install() {
 
     si gcc gdb boost boost-libs catch2 libc++ clang llvm \
         doxygen graphviz ccache cppcheck pre-commit \
-        valgrind ltrace strace lldb lld
+        valgrind ltrace strace lldb lld cmake
 
-    cmake_install
     conan_install
 
     slog "C++ installation done!"
@@ -191,7 +190,7 @@ vm_install() {
     slog "Installing vm"
 
     si pipewire-jack libvirt qemu-desktop virt-install bridge-utils dnsmasq \
-        edk2-ovmf virglrenderer qemu-ui-spice-core qemu-ui-spice-app \
+        edk2-ovmf virglrenderer qemu-ui-spice-core qemu-ui-spice-app jq \
         qemu-audio-spice cloud-utils xorriso qemu-hw-display-virtio-vga \
         qemu-hw-display-virtio-vga-gl dmidecode libguestfs-tools libosinfo
 

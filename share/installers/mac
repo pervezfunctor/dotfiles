@@ -103,7 +103,7 @@ podman_install() {
 vm_install() {
     slog "Installing virtualization packages"
 
-    bi orbstack colima
+    bi orbstack colima jq
 
     slog "Virtualization packages installation done!"
 }

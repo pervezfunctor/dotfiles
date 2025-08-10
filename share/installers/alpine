@@ -97,7 +97,7 @@ terminal_bin_install() {
 }
 
 vm_install() {
-    si libvirt
+    si libvirt jq
     sudo systemctl enable --now libvirtd
 }
 

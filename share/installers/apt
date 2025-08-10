@@ -28,22 +28,27 @@ pacstall_install() {
 }
 
 update_packages() {
-    slog "Updating Ubuntu"
+    slog "Updating..."
 
     if ! { sudo apt-get -qq update && sudo apt-get -qq upgrade -y; }; then
         err_exit "apt-get update/upgrade failed, quitting"
     fi
+
+    slog "Updating done!"
 }
 
 ubuntu_packages() {
     update_packages
 
-    slog "Installing packages"
+    slog "Installing packages..."
 
     si git-core gh git-delta unzip wget curl net-tools iproute2 nmap gum eza \
-        trash-cli tar stow gcc make file wl-clipboard tree bat ripgrep fzf \
-        zoxide fd-find htop sd bat gawk starship libsecret-tools dialog \
-        whiptail tealdeer
+        trash-cli tar stow gcc make file tree bat ripgrep fzf gawk starship \
+        zoxide fd-find htop sd batdialog whiptail tealdeer
+
+    if is_desktop || is_distrobox; then
+        si wl-clipboard libsecret-tools
+    fi
 
     has_cmd tldr && tldr --update
 
@@ -114,6 +119,11 @@ core_install() {
     si apt-transport-https ca-certificates gpg curl wget git-core trash-cli \
         tar unzip tree file stow
 
+    if ! is_trixie && ! is_plucky; then
+        brew_install
+        bis stow
+    fi
+
     slog "Core packages installation done!"
 }
 
@@ -148,7 +158,7 @@ essential_install() {
     pkgx_install
     sys_python_install
 
-    if [ -d /run/systemd/system ]; then
+    if [ -d /run/systemd/system ] && ! is_debian; then
         snap_install
     fi
 
@@ -166,8 +176,14 @@ essential_install() {
 #   redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common wl-clipboard
 
 cli-slim_install() {
-    si tmux zsh git bat ripgrep zoxide eza gh shellcheck htop shfmt jq
-    si fzf starship gum git-delta
+    si tmux zsh git bat ripgrep zoxide eza gh shellcheck htop shfmt jq \
+        fzf starship gum git-delta
+
+    if ! is_trixie && ! is_plucky && has_cmd brew; then
+        bis fzf starship gum zoxide eza gh jq
+    fi
+
+    slog "cli tools installation done!"
 }
 
 cli_install() {
@@ -187,15 +203,8 @@ cpp_install() {
 
     si gcc gdb g++ libboost-all-dev catch2 clang llvm clang-tidy clang-format \
         clang-tools libclang-dev clangd doxygen graphviz ccache cppcheck \
-        pre-commit valgrind systemtap ltrace strace lldb lld
+        pre-commit valgrind systemtap ltrace strace lldb lld cmake
 
-    if has_cmd pixi; then
-        pis cmake
-    elif has_cmd brew; then
-        bis cmake
-    else
-        cmake_install
-    fi
     conan_install
 
     cmd_check gcc g++ gdb clang clang-tidy clang-format
@@ -247,13 +256,12 @@ windsurf_install() {
 
 terminal_bin_install() {
     has_cmd ghostty && return 1
+    has_cmd kitty && return 1
 
     slog "Installing terminal"
-
-    if has_cmd snap; then
+    si kitty
+    if ! has_cmd kitty && has_cmd snap; then
         snap install ghostty --classic
-    else
-        si kitty
     fi
 
     slog "terminal installation done!"
@@ -298,7 +306,7 @@ cockpit_install() {
 vm_install() {
     si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils \
         virgl-server qemu-utils spice-client-gtk spice-vdagent \
-        cloud-image-utils libguestfs-tools libosinfo-bin
+        cloud-image-utils libguestfs-tools libosinfo-bin jq
 
     libvirt_confstall
 
@@ -310,28 +318,7 @@ incus_install() {
 
     slog "Installing incus"
 
-    # Check if we need to add backports for newer QEMU
-    if ! apt-cache policy qemu-system-x86 | grep -q "Candidate: 1:8.0"; then
-        slog "Adding backports for newer QEMU packages..."
-
-        # Determine Debian/Ubuntu version
-        if grep -q "Debian" /etc/os-release; then
-            # For Debian
-            sudo apt-get -qq install -y software-properties-common
-            sudo add-apt-repository -y "deb http://deb.debian.org/debian $(lsb_release -cs)-backports main"
-            sudo apt-get -qq update
-            si -t "$(lsb_release -cs)-backports" qemu-system-x86 qemu-utils
-        else
-            # For Ubuntu
-            sudo add-apt-repository -y ppa:incus/stable
-            sudo apt-get -qq update
-            si qemu-system-x86 qemu-utils
-        fi
-    else
-        si qemu-system-x86 qemu-utils
-    fi
-
-    si incus bridge-utils
+    si qemu-system-x86 qemu-utils incus bridge-utils
     incus_confstall
 
     slog "incus installation done!"
@@ -358,5 +345,4 @@ sway_install() {
         nwg-look xdg-desktop-portal-gtk nm-connection-editor swappy tumbler \
         network-manager-applet fonts-font-awesome fonts-noto-color-emoji gvfs \
         fonts-noto fonts-noto-mono papirus-icon-theme bibata-cursor-theme imv
-
 }

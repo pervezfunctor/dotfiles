@@ -238,7 +238,7 @@ atomic_distrobox_install() {
 cmake_install() {
     has_cmd ~/.local/bin/cmake && return 1
 
-    CMAKE_VERSION="4.0.1"
+    CMAKE_VERSION="4.1.0"
     ARCH=$(uname -m)
     CMAKE_BINARY_NAME="cmake-${CMAKE_VERSION}-linux-${ARCH}.sh"
     CMAKE_CHECKSUM_NAME="cmake-${CMAKE_VERSION}-SHA-256.txt"

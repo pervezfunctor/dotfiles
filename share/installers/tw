@@ -103,7 +103,7 @@ cli-slim_install() {
     slog "Installing cli tools using zypper"
 
     si gh zsh tmux htop fzf ripgrep fd bat zoxide eza starship git-delta \
-        shfmt ShellCheck
+        shfmt ShellCheck jq
 
     slog "cli tools installation done!"
 }
@@ -126,13 +126,7 @@ cpp_install() {
 
     si gcc gdb g++ boost-devel catch2-devel ltrace strace lldb lld \
         clang llvm clang-tools clang-devel valgrind systemtap \
-        doxygen graphviz ccache cppcheck python3-pre-commit
-
-    if has_cmd brew; then
-        bi cmake
-    else
-        cmake_install
-    fi
+        doxygen graphviz ccache cppcheck python3-pre-commit cmake
 
     conan_install
 
@@ -201,7 +195,7 @@ cockpit_install() {
 
 vm_install() {
     si libvirt qemu-kvm virt-install bridge-utils qemu-img qemu-ui-spice-core \
-        qemu-ui-spice-app qemu-char-spice qemu-audio-spice \
+        qemu-ui-spice-app qemu-char-spice qemu-audio-spice jq \
         qemu-hw-display-virtio-gpu qemu-hw-display-virtio-vga qemu-hw-usb-host \
         qemu-hw-usb-redirect qemu-ovmf-x86_64 qemu-tools qemu-ui-gtk \
         qemu-ui-opengl libguestfs-tools libosinfo
