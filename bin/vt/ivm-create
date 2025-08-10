@@ -117,9 +117,6 @@ configure_distribution() {
     slog "  Image: $IMAGE"
     slog "  Resources: ${VCPUS} vCPUs, ${MEMORY_MB}MB RAM, ${DISK_SIZE} disk"
     slog "  Network Bridge: $BRIDGE_IF"
-    if [[ -n "$DOTFILES_OPTIONS" ]]; then
-        slog "  Dotfiles: $DOTFILES_OPTIONS"
-    fi
 }
 
 generate_cloud_init_config() {
