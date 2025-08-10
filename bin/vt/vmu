@@ -9,33 +9,34 @@ cmd_vmu() {
 }
 
 check_prerequisites() {
-  vm_check_prerequisites
-
-  if ! has_cmd vmu-create; then
-    fail "vmu-create is not in PATH."
-    exit 1
-  fi
+  for cmd in virsh virt-cat vmu-create trash; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      fail "Required command '$cmd' is not available."
+      exit 1
+    fi
+  done
 }
 
 usage() {
   cat <<EOF
 Usage: $0 <command> [vm-name]
 
-Manage VMs created with vmu-create script.
+Manage VMs created with vmu-create script. These are user-mode VMs, not full libvirt VMs.
 
 COMMANDS:
     list                List all VMs
-    status <vm-name>    Show VM status and info
     create  ARGS        Create a new VM, with same ARGS as vmu-create
     autostart <vm-name> Set VM to start on boot
     start <vm-name>     Start a VM
-    stop <vm-name>      Gracefully stop a VM
+    shutdown <vm-name>  Gracefully stop a VM
     restart <vm-name>   Restart a VM
-    destroy <vm-name>   Force stop a VM
+    kill <vm-name>      Force stop a VM
     delete <vm-name>    Delete a VM completely
     console <vm-name>   Connect to VM console
     show-ip <vm-name>   Show VM IP address
+    info <vm-name>      Show VM status and info
     logs <vm-name>      Show cloud-init logs
+    disk <vm-name>      Show VM disk usage
     cmd <virsh-args>    Run virsh command with qemu:///session connection
 
 EXAMPLES:
@@ -48,22 +49,12 @@ EXAMPLES:
 EOF
 }
 
+disk_vmu() {
+  virsh --connect qemu:///session domblklist "$1"
+}
+
 status_vmu() {
-  local vm_name="$1"
-
-  vm_check_exists "$vm_name" || return 1
-
-  slog "Status for VM '$vm_name':"
-  echo
-  virsh --connect qemu:///session dominfo "$vm_name"
-  echo
-
-  slog "Network interfaces:"
-  virsh --connect qemu:///session domifaddr --source agent "$vm_name" || warn "Could not get IP address (VM may be stopped)"
-  echo
-
-  slog "Disk usage:"
-  virsh --connect qemu:///session domblklist "$vm_name"
+  virsh --connect qemu:///session dominfo "$1"
 }
 
 autostart_vmu() {
@@ -87,21 +78,26 @@ force_stop_vmu() {
 }
 
 delete_vmu() {
-  virsh --connect qemu:///session destroy "$1"
-  virsh --connect qemu:///session undefine "$1"
-
   local vda
   vda=$(virsh --connect qemu:///session domblklist "$1" | grep vda | awk '{print $2}')
+
+  virsh --connect qemu:///session destroy "$1" >/dev/null 2>&1 || true
+  virsh --connect qemu:///session undefine "$1" >/dev/null 2>&1 || true
+
   if [[ -n "$vda" ]]; then
-    local dir
     dir=$(dirname "$vda")
-    echo "Deleting $dir"
-    trash "$dir"
+
+    echo "Found vm directory: $dir"
+    read -p "Delete dir? (y/N): " -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "Deleting $dir"
+      trash "$dir"
+    fi
   fi
 }
 
 logs_vmu() {
-  sudo virt-cat -d "$vm_name" /var/log/cloud-init.log
+  sudo virt-cat -d "$1" /var/log/cloud-init.log
 }
 
 console_vmu() {
@@ -109,7 +105,9 @@ console_vmu() {
 }
 
 show_ip_vmu() {
-  virsh --connect qemu:///session domifaddr --source agent "$1"
+  echo
+  virsh --connect qemu:///session domifaddr --source agent "$1" | grep ipv4 | grep -v lo | awk '{print $1, $4}'
+  echo
 }
 
 list_vmu() {
@@ -122,11 +120,11 @@ main() {
     exit 1
   fi
 
-  local command, vm_name
+  check_prerequisites
+
+  local command vm_name
   command="$1"
   vm_name="${2:-}"
-
-  virt_check_prerequisites
 
   case "$command" in
   list | ls)
@@ -135,7 +133,10 @@ main() {
   cmd)
     cmd_vmu "${@:2}"
     ;;
-  status | info)
+  disk)
+    disk_vmu "$vm_name"
+    ;;
+  info | status)
     status_vmu "$vm_name"
     ;;
   create | new)
@@ -174,7 +175,6 @@ main() {
   *)
     fail "Unknown command: $command"
     usage
-    exit 1
     ;;
   esac
 }

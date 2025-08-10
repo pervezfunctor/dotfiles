@@ -8,11 +8,10 @@ source "$(dirname "$0")/ivm-utils"
 
 trap 'echo "❌  Error on line $LINENO"; exit 1' EXIT
 
-# Default values
 unset VM_NAME
 unset DISTRO
 unset RELEASE
-unset USERNAME
+unset USER_NAME
 unset PASSWORD
 unset SSH_KEY
 unset IMAGE
@@ -114,14 +113,14 @@ configure_distribution() {
     esac
 
     VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
-    USERNAME=${USERNAME:=$(default_username "$DISTRO")}
-    PASSWORD=${PASSWORD:-"$USERNAME"}
+    USER_NAME=${USER_NAME:=$(default_username "$DISTRO")}
+    PASSWORD=${PASSWORD:-"$USER_NAME"}
     PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
     slog "Configuration:"
     slog "  Distribution: $DISTRO $RELEASE"
     slog "  VM Name: $VM_NAME"
-    slog "  Username: $USERNAME"
+    slog "  Username: $USER_NAME"
     slog "  Image: $IMAGE"
     slog "  Resources: ${VCPUS} vCPUs, ${MEMORY_MB}MB RAM, ${DISK_SIZE} disk"
     slog "  Network Bridge: $BRIDGE_IF"
@@ -154,7 +153,7 @@ generate_cloud_init_config() {
     local motd_content="Welcome to $VM_NAME ($DISTRO $RELEASE)!
       Created with ivm-create
 
-      SSH access configured for user: $USERNAME"
+      SSH access configured for user: $USER_NAME"
 
     local runcmd_lines
 
@@ -185,7 +184,7 @@ generate_cloud_init_config() {
             "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm"
             "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/bash.bashrc"
             "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/profile"
-            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /home/$USERNAME/.bashrc"
+            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /home/$USER_NAME/.bashrc"
             "systemctl enable --now nix-daemon || true"
         )
     fi
@@ -196,7 +195,7 @@ generate_cloud_init_config() {
         motd_content+="
 
       Dotfiles are installed and ready to use.
-      Location: /home/$USERNAME/.ilm
+      Location: /home/$USER_NAME/.ilm
       Quick commands:
         ilmi shell
         ilmi docker
@@ -206,7 +205,7 @@ generate_cloud_init_config() {
         ilmc nvim"
 
         runcmd_lines+=(
-            "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)\" -- $DOTFILES_OPTIONS'"
+            "su - $USER_NAME -c 'bash -c \"\$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)\" -- $DOTFILES_OPTIONS'"
         )
     fi
 
@@ -216,9 +215,8 @@ generate_cloud_init_config() {
 hostname: $VM_NAME
 manage_etc_hosts: true
 
-# User configuration
 users:
-  - name: $USERNAME
+  - name: $USER_NAME
     groups:
       - sudo
       - wheel
@@ -230,7 +228,6 @@ users:
     ssh_authorized_keys:
       - "$pub_key"
 
-# System configuration
 package_update: true
 package_upgrade: true
 
@@ -241,8 +238,7 @@ $(for pkg in $packages_common; do echo "  - $pkg"; done)
 runcmd:
 $(printf "  - %s\n" "${runcmd_lines[@]}")
 
-# Ensure SSH service is enabled
-ssh_pwauth: false
+ssh_pwauth: true
 disable_root: false
 
 write_files:
@@ -265,19 +261,15 @@ EOF
 create_vm() {
     slog "Creating Incus VM '$VM_NAME'..."
 
-    # Check if VM already exists
     if incus_instance_exists "$VM_NAME"; then
         fail "instance '$VM_NAME' already exists"
         exit 1
     fi
 
-    # Generate cloud-init configuration files
     generate_cloud_init_config
 
-    # Create the VM with cloud-init configuration
     slog "Launching VM with image: $IMAGE"
 
-    # Build launch command with distribution-specific settings
     local launch_cmd=(
         incus launch "$IMAGE" "$VM_NAME" --vm
         --config "limits.cpu=$VCPUS"
@@ -296,7 +288,6 @@ create_vm() {
 
     success "VM '$VM_NAME' created successfully"
 
-    # Clean up temporary cloud-init directory
     if [[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]]; then
         rm -rf "$CLOUD_INIT_DIR"
         slog "Cleaned up temporary cloud-init files"
@@ -314,8 +305,8 @@ show_completion_info() {
     if ip=$(ivm_ip "$VM_NAME"); then
         slog "SSH Access:"
         slog "  IP Address: $ip"
-        slog "  Username: $USERNAME"
-        slog "  SSH Command: ssh $USERNAME@$ip"
+        slog "  Username: $USER_NAME"
+        slog "  SSH Command: ssh $USER_NAME@$ip"
         echo
         slog "You can also use Incus commands:"
         slog "  Console: incus console $VM_NAME"
@@ -328,7 +319,6 @@ show_completion_info() {
         slog "  Shell: incus exec $VM_NAME -- /bin/bash"
     fi
 
-    # Show Nix information if installed
     if [[ "$INSTALL_NIX" == "true" ]]; then
         echo
         slog "Nix Package Manager Information:"
@@ -340,7 +330,6 @@ show_completion_info() {
         slog "  Documentation: https://nixos.org/manual/nix/stable/"
     fi
 
-    # Show dotfiles information if installed
     if [[ -n "$DOTFILES_OPTIONS" ]]; then
         echo
         slog "Dotfiles Information:"
@@ -363,7 +352,6 @@ show_completion_info() {
     slog "  Delete: ivm delete $VM_NAME"
 }
 
-# Parse command line arguments
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -380,7 +368,7 @@ parse_args() {
             shift 2
             ;;
         --username)
-            USERNAME="$2"
+            USER_NAME="$2"
             shift 2
             ;;
         --password)
@@ -412,9 +400,9 @@ parse_args() {
             shift
             ;;
         --dotfiles)
-            shift                 # Remove --dotfiles from arguments
-            DOTFILES_OPTIONS="$*" # Capture all remaining arguments
-            break                 # Exit the loop since --dotfiles must be last
+            shift
+            DOTFILES_OPTIONS="$*"
+            break
             ;;
         --help | -h)
             usage
@@ -428,7 +416,6 @@ parse_args() {
         esac
     done
 
-    # Validate required arguments
     if [[ -z "${DISTRO:-}" ]]; then
         fail "Distribution is required. Use --distro option."
         usage
@@ -442,7 +429,6 @@ main() {
     parse_args "$@"
 
     [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(ssh_key_path)
-    echo "FFFFFFFFFFFFFFFFFFFFFFF: $SSH_KEY"
 
     if [[ ! -f "$SSH_KEY" ]]; then
         fail "SSH public key not found at: $SSH_KEY"
@@ -454,10 +440,9 @@ main() {
     show_completion_info
 
     success "All done! Your $DISTRO VM '$VM_NAME' is ready to use."
-    slog "Use username: $USERNAME and password: $PASSWORD to login."
+    slog "Use username: $USER_NAME and password: $PASSWORD to login."
 }
 
-# Only run main if script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"
 fi

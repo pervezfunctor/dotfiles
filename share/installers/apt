@@ -318,7 +318,27 @@ incus_install() {
 
     slog "Installing incus"
 
-    si qemu-system-x86 qemu-utils incus bridge-utils
+    if ! apt-cache policy qemu-system-x86 | grep -q "Candidate: 1:8.0"; then
+        slog "Adding backports for newer QEMU packages..."
+
+        if grep -q "Debian" /etc/os-release; then
+            # For Debian
+            sudo apt-get -qq install -y software-properties-common
+            sudo add-apt-repository -y "deb http://deb.debian.org/debian $(lsb_release -cs)-backports main"
+            sudo apt-get -qq update
+            si -t "$(lsb_release -cs)-backports" qemu-system-x86 qemu-utils
+        else
+            # For Ubuntu
+            sudo add-apt-repository -y ppa:incus/stable
+            sudo apt-get -qq update
+            si qemu-system-x86 qemu-utils
+        fi
+    else
+        si qemu-system-x86 qemu-utils
+    fi
+
+    si incus bridge-utils
+
     incus_confstall
 
     slog "incus installation done!"

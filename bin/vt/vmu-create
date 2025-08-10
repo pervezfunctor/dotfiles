@@ -170,6 +170,7 @@ generate_cloud_init() {
 
   info "Generating cloud-init configuration in $CLOUD_INIT_DIR"
 
+  # This is deliberately insecure configuration as the vm is supposed to be for develpoment.
   cat >"$USER_DATA" <<EOF
 #cloud-config
 hostname: $VM_NAME
@@ -184,8 +185,9 @@ users:
     ssh_authorized_keys:
       - "$SSH_KEY"
 
-ssh_pwauth: false
-disable_root: true
+ssh_pwauth: true
+disable_root: false
+
 package_update: true
 package_upgrade: true
 
