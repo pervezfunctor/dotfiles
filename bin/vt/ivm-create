@@ -6,6 +6,8 @@ set -euo pipefail
 
 source "$(dirname "$0")/ivm-utils"
 
+trap 'echo "❌  Error on line $LINENO"; exit 1' EXIT
+
 # Default values
 unset VM_NAME
 unset DISTRO
@@ -138,7 +140,7 @@ generate_cloud_init_config() {
     local pub_key
     pub_key=$(cat "$SSH_KEY")
 
-    local packages_common="git trash-cli micro tree curl wget unzip htop zsh tmux"
+    local packages_common="qemu-guest-agent bash micro curl"
 
     local openssh_pkg
 
@@ -158,8 +160,8 @@ generate_cloud_init_config() {
 
     if [[ "$DISTRO" == "alpine" ]]; then
         runcmd_lines=(
+            "rc-update add qemug-guest-agent default"
             "rc-update add sshd default"
-            "service sshd start"
         )
     else
         runcmd_lines=(
@@ -240,7 +242,7 @@ runcmd:
 $(printf "  - %s\n" "${runcmd_lines[@]}")
 
 # Ensure SSH service is enabled
-ssh_pwauth: true
+ssh_pwauth: false
 disable_root: false
 
 write_files:
@@ -440,6 +442,7 @@ main() {
     parse_args "$@"
 
     [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(ssh_key_path)
+    echo "FFFFFFFFFFFFFFFFFFFFFFF: $SSH_KEY"
 
     if [[ ! -f "$SSH_KEY" ]]; then
         fail "SSH public key not found at: $SSH_KEY"

@@ -172,13 +172,14 @@ Reboot your system.
 
 Debian Trixie is as stable as linux gets. You must have used debian/ubuntu for your docker containers, at least for development. If you are familiar with the debian ecosystem, Debian Trixie, will be very familiar to you.  Comes with a fairly recent kernel, and supports most modern hardware.
 
-Use Live CD/DVD iso as it uses Calamares installer. Use btrfs filesystem, preferrably with subvolumes. netinstall isn't a great experience. If you want to use this in a virtual machine, I would recommend KDE.
+Use Live CD iso as it uses Calamares installer. Use btrfs filesystem. netinstall won't be a great experience. If you want to use this in a virtual machine, I would recommend KDE.
 
-Make sure you update your system after installation. Use the following command.
+Make sure you update your system after installation and curl is installed. Use the following command.
 
 ```bash
-sudo apt update && sudo apt upgrade -y
+sudo apt update && sudo apt upgrade -y && sudo apt install curl -y
 ```
+
 Reboot your system.
 
 ### OpenSUSE Tumbleweed
@@ -192,6 +193,7 @@ Make sure you install the latest kernel and update your system after installatio
 ```bash
 sudo zypper refresh && sudo zypper update -y
 ```
+
 Reboot your system.
 
 ### Arch Linux
@@ -209,6 +211,7 @@ Once installed, make sure you update your system. Use the following command.
 ```bash
 sudo pacman -Syu --noconfirm
 ```
+
 Reboot your system.
 
 *One important note*. If you are comfortable with terminal, and know what you need exactly, then archlinux is the simplest installer you could use for linux. With almost everything else, you will need to figure out ways, how to install and configure things the way you want and it's usually can be really hard.
@@ -234,7 +237,7 @@ chsh -s $(which zsh)
 Reopen your terminal and you should see a nice zsh prompt. You must install a nerd font like `Jetbrains Mono Nerd Font`. You could install it with the following command.
 
 ```bash
-ilmi fonts jetrains-mono
+ilmi fonts jetbrains-mono
 ```
 
 As a developer you most probably need vscode. Install it with the following command.
