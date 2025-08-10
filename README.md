@@ -2,6 +2,8 @@
 
 ## Installation on your current system
 
+All the following commands are generally meant to be run on a freshly installed system. If you run it on an existing system, you will lose some of your existing configuration. You have been warned.
+
 ## TLDR
 
 ### Linux
@@ -51,7 +53,6 @@ Or just install the very basic packages(gcc, make, tar, git etc)
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)"
 ```
 
-
 If you have an existing configuration, for many tools, you shouldn't run any of the commands in this README. You could still use some of the scripts here by adding the following to your ~/.bashrc or ~/.zshrc.
 
 
@@ -60,29 +61,28 @@ export PATH="$HOME/.local/bin:$HOME/.ilm/bin:$HOME/.ilm/bin/vt:$PATH"
 
 source "$HOME/.ilm/share/utils"
 source "$HOME/.ilm/share/fns"
-source "$HOME/.ilm/share/aliases"
 ```
 
-If you need a nice prompt and a few other things, without installing anything, you could add the following.
-
-```bash
-source ~/.ilm/share/bashrc # in ~/.bashrc
-source ~/.ilm/share/zshrc  # in ~/.zshrc
-```
-
-First, you need to clone this repository to `~/.ilm`.
+If you need a nice prompt and a few other things, without installing anything, first you need to clone this repository to `~/.ilm`.
 
 ```bash
 git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
 ```
 
-Set your shell to zsh, if you haven't already. You could use the following command.
+Then set your shell to zsh, if you haven't already. You could use the following command.
 
 ```bash
 chsh -s $(which zsh)
 ```
 
 Optionally, install [starship](https://starship.rs/). You would have a great experience if you install `fzf`, `zoxide` and `eza`.
+
+Then add the following to your ~/.bashrc and ~/.zshrc.
+
+```bash
+source ~/.ilm/zsh/dot-zshrc # at the end of ~/.zshrc
+source ~/.ilm/share/bashrc # at the end of ~/.bashrc
+```
 
 
 ### Windows
@@ -265,9 +265,16 @@ I would highly recommend you install `libvirt` and `virt-manager` for creating a
 ilmi vm-ui
 ```
 
-Once you reboot, you should be able to create and use virtual machines.
+*Once you reboot*, you should be able to create and use virtual machines.
 
-I have a few helper scripts to make creating headless virtual machines easier. For example you could easily create a debian vm with docker and ssh enabled with the following command.
+I have a few helper scripts to make creating headless virtual machines easier.
+
+First generate ssh key, if you don't have it already.
+
+```bash
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
+Then create a vm with the following command. This will create a debian vm with docker and ssh enabled.
 
 ```bash
 vm-create --distro debian --name dev --docker --username debian --password debian
@@ -324,6 +331,14 @@ bash -c "$(curl -sSL https://is.gd/egitif)" -- rpm-ostree
 ```
 
 If you need docker, you should install it in a vm, and use `vscode` to ssh into this virtual machine. `devconainers` work really well using this approach.
+
+Generate ssh key, if you don't have it already.
+
+```bash
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
+
+Then create a vm with the following command. This will create a debian vm with docker, brew and dotfiles.
 
 ```bash
 vm-create --distro debian --name dev --docker --brew --dotfiles --username debian --password debian min
