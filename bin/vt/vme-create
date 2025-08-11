@@ -23,8 +23,11 @@ check_whiptail() {
 
 cleanup_on_error() {
   warn "Cleaning up due to error..."
-  sudo rm -f "$VM_DISK" 2>/dev/null || true
-  rm -rf "$WORKDIR" 2>/dev/null || true
+
+  if [[ -d "$WORK_DIR" ]]; then
+    sudo rm -rf "$WORK_DIR" 2>/dev/null
+  fi
+
   stop_sudo_keepalive
 }
 
@@ -32,7 +35,7 @@ trap cleanup_on_error ERR
 trap 'cleanup_on_error; exit 1' INT TERM
 
 configure_arch() {
-  VM_NAME=${VM_NAME:-"arch-vt"}
+  VM_NAME=${VM_NAME:-"arch-vme"}
   RELEASE=${RELEASE:="latest"}
   BASE_IMAGE_NAME="Arch-Linux-x86_64-cloudimg.qcow2"
   DOWNLOAD_URL="https://geo.mirror.pkgbuild.com/images/latest/${BASE_IMAGE_NAME}"
@@ -41,7 +44,7 @@ configure_arch() {
 }
 
 configure_ubuntu() {
-  VM_NAME=${VM_NAME:-"ubuntu-vt"}
+  VM_NAME=${VM_NAME:-"ubuntu-vme"}
   RELEASE=${RELEASE:="plucky"}
   BASE_IMAGE_NAME="${RELEASE}-server-cloudimg-amd64.img"
   DOWNLOAD_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${BASE_IMAGE_NAME}"
@@ -50,7 +53,7 @@ configure_ubuntu() {
 }
 
 configure_debian() {
-  VM_NAME=${VM_NAME:="debian-vt"}
+  VM_NAME=${VM_NAME:="debian-vme"}
   RELEASE=${RELEASE:="trixie"} # 13
   BASE_IMAGE_NAME="debian-13-generic-amd64.qcow2"
   DOWNLOAD_URL="https://cloud.debian.org/images/cloud/trixie/latest/${BASE_IMAGE_NAME}"
@@ -59,7 +62,7 @@ configure_debian() {
 }
 
 configure_fedora() {
-  VM_NAME=${VM_NAME:="fedora-vt"}
+  VM_NAME=${VM_NAME:="fedora-vme"}
   RELEASE=${RELEASE:=42}
   BASE_IMAGE_NAME="Fedora-Cloud-Base-Generic-${RELEASE}-1.1.x86_64.qcow2"
   DOWNLOAD_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/${BASE_IMAGE_NAME}"
@@ -68,7 +71,7 @@ configure_fedora() {
 }
 
 configure_tw() {
-  VM_NAME=${VM_NAME:-tw-vt}
+  VM_NAME=${VM_NAME:-tw-vme}
   RELEASE=${RELEASE:=latest}
   BASE_IMAGE_NAME="openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
   DOWNLOAD_URL="https://download.opensuse.org/tumbleweed/appliances/${BASE_IMAGE_NAME}"
@@ -76,9 +79,20 @@ configure_tw() {
   OS_VARIANT="opensusetumbleweed"
 }
 
+setup_storage() {
+  local base_dir IMG_DIR
+  base_dir="/var/lib/libvirt/images"
+  IMG_DIR="${base_dir}/base-images"
+  WORK_DIR="${base_dir}/${VM_NAME}"
+  sudo mkdir -p "$base_dir" "$IMG_DIR" "$WORK_DIR"
+
+  BASE_IMAGE="${IMG_DIR}/${BASE_IMAGE_NAME}"
+  VM_DISK="/${WORK_DIR}/${VM_NAME}.qcow2"
+}
+
 configure_distribution() {
   case "$DISTRO" in
-  arch | "")
+  arch)
     configure_arch
     ;;
   ubuntu)
@@ -103,21 +117,6 @@ configure_distribution() {
   USERNAME=${USERNAME:-"$DISTRO"}
   PASSWORD=${PASSWORD:=$USERNAME}
   PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
-
-  VTDIR="${VTDIR:-"$HOME/.virts"}"
-  IMGDIR="${VTDIR}/images"
-  WORKDIR="${VTDIR}/${VM_NAME}"
-
-  CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
-  BASE_IMAGE="${IMGDIR}/${BASE_IMAGE_NAME}"
-
-  USER_DATA="${CLOUD_INIT_DIR}/user-data"
-  META_DATA="${CLOUD_INIT_DIR}/meta-data"
-  VM_DISK="/var/lib/libvirt/images/${VM_NAME}.qcow2"
-
-  SSH_KEY=$(ssh_key_path)
-  mkdir -p "$CLOUD_INIT_DIR" "$IMGDIR" "$WORKDIR"
-  sudo mkdir -p /var/lib/libvirt/images
 }
 
 download_base_image() {
@@ -127,7 +126,7 @@ download_base_image() {
   fi
 
   echo "Downloading base image from $DOWNLOAD_URL..."
-  if ! wget -q --show-progress "$DOWNLOAD_URL" -O "${BASE_IMAGE}"; then
+  if ! sudo wget -q --show-progress "$DOWNLOAD_URL" -O "${BASE_IMAGE}"; then
     echo "Error: Failed to download base image." >&2
   else
     echo "Base image downloaded successfully."
@@ -136,6 +135,12 @@ download_base_image() {
 
 generate_cloud_init() {
   slog "Generating cloud-init configuration..."
+
+  local cloud_init_dir
+  cloud_init_dir=$(mktemp -d)
+
+  USER_DATA="${cloud_init_dir}/user-data"
+  META_DATA="${cloud_init_dir}/meta-data"
 
   local pub_key
   pub_key=$(cat "$SSH_KEY")
@@ -146,7 +151,7 @@ generate_cloud_init() {
     "openssh-server"
   )
 
-  cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
+  cat >"${USER_DATA}" <<EOF
 #cloud-config
 hostname: $VM_NAME
 manage_etc_hosts: true
@@ -174,7 +179,7 @@ runcmd:
   - systemctl enable --now qemu-guest-agent || true
 EOF
 
-  cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
+  cat >"${META_DATA}" <<EOF
 instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
@@ -183,9 +188,7 @@ EOF
 }
 
 check_prerequisites() {
-  virt_check_prerequisites
-
-  if ! groups "$USER" | grep -q '\blibvirtd?\b'; then
+  if ! groups "$USER" | grep -q '\blibvirtd\?\b'; then
     fail "Error: User '$USER' is not in the 'libvirt' group." >&2
     fail "Please run: 'sudo usermod -aG libvirt \$USER' and then log out and back in." >&2
     exit 1
@@ -317,7 +320,8 @@ parse_args() {
 }
 
 main() {
-  check_prerequisites
+  virt_check_prerequisites
+
   if [ $# -eq 0 ]; then
     check_whiptail
     interactive_mode
@@ -326,6 +330,10 @@ main() {
   fi
 
   configure_distribution
+  setup_storage
+  SSH_KEY=$(ssh_key_path)
+
+  check_prerequisites
 
   slog "Starting VM creation process for '${VM_NAME}'..."
   echo
@@ -388,6 +396,15 @@ interactive_mode() {
     fi
     if [ -z "$PASSWORD" ]; then
       whiptail --title "Invalid Input" --msgbox "Password cannot be empty." 8 78
+      continue
+    fi
+
+    if ! CONFIRM_PASSWORD=$(whiptail --title "Confirm Password" --passwordbox "Confirm the password" 10 60 3>&1 1>&2 2>&3); then
+      exit 1
+    fi
+
+    if [ "$PASSWORD" != "$CONFIRM_PASSWORD" ]; then
+      whiptail --title "Error" --msgbox "Passwords do not match. Please try again." 8 78
     else
       break
     fi
@@ -441,12 +458,10 @@ interactive_mode() {
   Distribution: $DISTRO
   VM Name:   $VM_NAME
   Username:  $USERNAME
-  Password:  $PASSWORD
   vCPUs:     $VCPUS
   Memory:    $MEMORY MB
   Disk Size: $DISK_SIZE
   " 15 60
-
 }
 
 main "$@"

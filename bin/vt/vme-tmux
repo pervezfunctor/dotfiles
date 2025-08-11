@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091
+
+set -euo pipefail
+
+source "$(dirname "$0")/vm-utils"
+source "$(dirname "$0")/tmux-utils"
+
+VM_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "tumbleweed")
+
+SESSION_NAME="VME_TMUX"
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTION]
+
+Manage a tmux session with SSH connections to libvirt VMs.
+
+Options:
+  create    Create a new tmux session with SSH connections to VMs (default if no option)
+  attach    Attach to an existing session
+  detach    Detach from the current session
+  destroy   Kill the tmux session
+  help      Display this help message
+
+Examples:
+  $(basename "$0")           # Create session or attach if exists
+  $(basename "$0") create    # Force create a new session
+  $(basename "$0") attach    # Attach to existing session
+  $(basename "$0") detach    # Detach from current session
+  $(basename "$0") destroy   # Kill the session
+EOF
+}
+
+check_prerequisites() {
+    vm_check_prerequisites
+    check_tmux
+}
+
+create_session() {
+
+    tmux_session "$SESSION_NAME" "$1"
+
+    slog "Creating tmux session '$SESSION_NAME' with SSH connections to libvirt VMs..."
+
+    local ssh_cmds=()
+    create_commands ssh_cmds "vme" "${VM_DISTRO_LIST[@]}"
+
+    start_sessions "vme" "${VM_DISTRO_LIST[@]}"
+
+    if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
+        fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."
+        return 1
+    fi
+
+    if ! tmux attach-session -t "$SESSION_NAME"; then
+        fail "Failed to attach to tmux session '$SESSION_NAME'."
+        return 1
+    fi
+}
+
+main() {
+    local command="${1:-}"
+
+    check_prerequisites
+
+    case "$command" in
+    create | "" | -c | --create)
+        create_session "true"
+        ;;
+    attach)
+        attach_session "$SESSION_NAME"
+        ;;
+    detach)
+        detach_session "$SESSION_NAME"
+        ;;
+    destroy)
+        destroy_session "$SESSION_NAME"
+        ;;
+    help | --help | -h)
+        usage
+        ;;
+    *)
+        fail "Unknown option: $command"
+        usage
+        exit 1
+        ;;
+    esac
+}
+
+main "$@"

@@ -13,11 +13,11 @@ all_create() {
   slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
 
   for distro in "${VM_EASY_DISTRO_LIST[@]}"; do
-    if vm_exists "${distro}-easy"; then
+    if vm_exists "${distro}-vme"; then
       slog "$distro VM already exists, skipping..."
     else
-      slog "Creating $distro VM: $distro-easy"
-      vm-easy --distro "$distro" --name "${distro}-easy"
+      slog "Creating $distro VM: $distro-vme"
+      vm-vme --distro "$distro" --name "${distro}-vme"
     fi
   done
 
@@ -28,9 +28,9 @@ all_create() {
 all_delete() {
   slog "Deleting all VMs..."
   for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
-    if vm_exists "${vm}-easy"; then
-      slog "Deleting VM: ${vm}-easy"
-      vm delete "${vm}-easy"
+    if vm_exists "${vm}-vme"; then
+      slog "Deleting VM: ${vm}-vme"
+      vm delete "${vm}-vme"
     fi
   done
   success "All VMs deleted successfully!"
@@ -39,9 +39,9 @@ all_delete() {
 all_start() {
   slog "Starting all VMs..."
   for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
-    if vm_exists "${vm}-easy"; then
-      slog "Starting VM: ${vm}-easy"
-      vm start "${vm}-easy"
+    if vm_exists "${vm}-vme"; then
+      slog "Starting VM: ${vm}-vme"
+      vm start "${vm}-vme"
     fi
   done
   success "All VMs started successfully!"
@@ -50,9 +50,9 @@ all_start() {
 all_stop() {
   slog "Stopping all VMs..."
   for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
-    if vm_exists "${vm}-easy"; then
-      slog "Stopping VM: ${vm}-easy"
-      vm stop "${vm}-easy"
+    if vm_exists "${vm}-vme"; then
+      slog "Stopping VM: ${vm}-vme"
+      vm stop "${vm}-vme"
     fi
   done
   success "All VMs stopped successfully!"
@@ -61,9 +61,9 @@ all_stop() {
 all_restart() {
   slog "Restarting all VMs..."
   for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
-    if vm_exists "${vm}-easy"; then
-      slog "Restarting VM: ${vm}-easy"
-      vm restart "${vm}-easy"
+    if vm_exists "${vm}-vme"; then
+      slog "Restarting VM: ${vm}-vme"
+      vm restart "${vm}-vme"
     fi
   done
   success "All VMs restarted successfully!"
