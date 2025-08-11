@@ -76,7 +76,7 @@ create_dirs() {
 
 check_prerequisites() {
   local missing=()
-  for cmd in qemu-img virt-install virsh jq openssl wget; do
+  for cmd in qemu-img virt-install virsh jq openssl wget trash ssh-keygen wget; do
     has_cmd "$cmd" || missing+=("$cmd")
   done
 
@@ -146,9 +146,12 @@ cleanup_on_error() {
 trap cleanup_on_error ERR INT TERM
 
 download_image() {
-  if [[ ! -f "$BASE_IMG" ]]; then
+  if [[ -f "$BASE_IMG" ]]; then
+    info "Using existing image: $BASE_IMG"
+    sleep 1
+  else
     info "Downloading image..."
-    wget -O "$BASE_IMG" "$IMG_URL"
+    wget --quiet --show-progress -O "$BASE_IMG" "$IMG_URL"
   fi
 }
 
@@ -160,11 +163,10 @@ create_disk() {
 }
 
 generate_cloud_init() {
-  local hashed_password cloud_init_dir
-  hashed_password=$(openssl passwd -6 "$PASSWORD")
+  local password_hash cloud_init_dir
+  password_hash=$(openssl passwd -6 "$PASSWORD")
 
   cloud_init_dir=$(mktemp -d)
-  trap '[[ -n "$cloud_init_dir" && -d "$cloud_init_dir" ]] && rm -rf "$cloud_init_dir"' EXIT
 
   USER_DATA="${cloud_init_dir}/user-data"
   META_DATA="${cloud_init_dir}/meta-data"
@@ -180,7 +182,7 @@ users:
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
-    passwd: "$hashed_password"
+    passwd: "$password_hash"
     ssh_authorized_keys:
       - "$SSH_KEY"
 

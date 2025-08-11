@@ -6,7 +6,7 @@ set -euo pipefail
 
 source "$(dirname "$0")/ivm-utils"
 
-trap 'echo "❌  Error on line $LINENO"; exit 1' EXIT
+trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
 
 unset VM_NAME
 unset DISTRO
@@ -122,14 +122,13 @@ configure_distribution() {
 generate_cloud_init_config() {
     slog "Generating cloud-init configuration..."
 
-    # Create temporary directory for cloud-init files
     CLOUD_INIT_DIR=$(mktemp -d)
     trap '[[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]] && rm -rf "$CLOUD_INIT_DIR"' EXIT
 
     local pub_key
     pub_key=$(cat "$SSH_KEY")
 
-    local packages_common="qemu-guest-agent bash micro curl"
+    local packages_common="qemu-guest-agent bash curl"
 
     local openssh_pkg
 

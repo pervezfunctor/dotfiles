@@ -365,5 +365,6 @@ sway_install() {
         thunar-archive-plugin cliphist slurp nwg-bar nwg-clipman nwg-displays \
         nwg-look xdg-desktop-portal-gtk nm-connection-editor swappy tumbler \
         network-manager-applet fonts-font-awesome fonts-noto-color-emoji gvfs \
-        fonts-noto fonts-noto-mono papirus-icon-theme bibata-cursor-theme imv
+        fonts-noto fonts-noto-mono papirus-icon-theme bibata-cursor-theme imv \
+        fonts-inter fonts-jetbrains-mono
 }

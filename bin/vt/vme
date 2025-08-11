@@ -13,7 +13,6 @@ MEMORY="8192"
 DISK_SIZE="30G"
 BRIDGE="default"
 OS_VARIANT="linux"
-FORCE=false
 
 check_whiptail() {
   if ! command -v whiptail &>/dev/null; then
@@ -141,20 +140,10 @@ generate_cloud_init() {
   local pub_key
   pub_key=$(cat "$SSH_KEY")
 
-  local ssh_package="openssh-server"
-  if [[ "$DISTRO" == "tw" || "$DISTRO" == "tumbleweed" ]]; then
-    ssh_package="openssh"
-  fi
-
   local -a packages=(
     "qemu-guest-agent"
-    "git"
-    "micro"
-    "tree"
     "curl"
-    "wget"
-    "unzip"
-    "$ssh_package"
+    "openssh-server"
   )
 
   cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
@@ -190,59 +179,28 @@ instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
-  if [[ ! -f "${CLOUD_INIT_DIR}/user-data" ||
-    ! -f "${CLOUD_INIT_DIR}/meta-data" ]]; then
-    fail "Failed to create one or more cloud-init configuration files"
-    exit 1
-  fi
-
   success "Cloud-init configuration generated"
 }
 
 check_prerequisites() {
-  slog "Starting VM creation process for '${VM_NAME}'..."
+  virt_check_prerequisites
 
-  if ! groups "$USER" | grep -q '\blibvirt\b'; then
+  if ! groups "$USER" | grep -q '\blibvirtd?\b'; then
     fail "Error: User '$USER' is not in the 'libvirt' group." >&2
     fail "Please run: 'sudo usermod -aG libvirt \$USER' and then log out and back in." >&2
     exit 1
   fi
 
-  if [ ! -f "$BASE_IMAGE" ]; then
-    fail "Error: Base image '$BASE_IMAGE' not found." >&2
-    fail "Please ensure it exists in the directory '$IMGDIR'." >&2
-    exit 1
-  fi
-
-  if [ ! -f "$USER_DATA" ]; then
-    fail "Error: User data file '$USER_DATA' not found." >&2
-    fail "Please ensure it exists in the directory '$CLOUD_INIT_DIR'." >&2
-    exit 1
-  fi
-  if [ ! -f "$META_DATA" ]; then
-    fail "Error: Meta data file '$META_DATA' not found." >&2
-    fail "Please ensure it exists in the directory '$CLOUD_INIT_DIR'." >&2
-    exit 1
-  fi
-
   if virsh dominfo "${VM_NAME}" &>/dev/null; then
-    if [ "$FORCE" = true ]; then
-      fail "Warning: A VM named '${VM_NAME}' already exists. Destroying and undefining it." >&2
-      virsh destroy "${VM_NAME}" || true
-      virsh undefine "${VM_NAME}" --remove-all-storage
-    else
-      fail "Error: A VM named '${VM_NAME}' already exists. Use --force to overwrite." >&2
-      exit 1
-    fi
+    fail "Error: A VM named '${VM_NAME}' already exists." >&2
+    fail "Please remove it with: virsh destroy ${VM_NAME} && virsh undefine ${VM_NAME}" >&2
+    exit 1
   fi
+
   if [ -f "${VM_DISK}" ]; then
-    if [ "$FORCE" = true ]; then
-      echo "Warning: A disk file at '${VM_DISK}' already exists. Deleting it." >&2
-      sudo rm -f "${VM_DISK}"
-    else
-      fail "Error: A disk file at '${VM_DISK}' already exists. Use --force to overwrite." >&2
-      exit 1
-    fi
+    fail "Error: A disk file at '${VM_DISK}' already exists." >&2
+    fail "Please remove it with: sudo rm -f ${VM_DISK}" >&2
+    exit 1
   fi
 }
 
@@ -271,33 +229,24 @@ create_vm() {
     --noautoconsole
 
   echo "✅ VM creation process started for '${VM_NAME}'."
-  echo "Waiting for cloud-init to complete and the VM to get an IP address..."
-  echo
+}
 
-  IP=""
-  echo "Waiting for IP address..."
-  for _ in {1..60}; do
-    IP=$(virsh domifaddr "${VM_NAME}" --source lease | awk '/ipv4/ {print $4}' | cut -d'/' -f1)
-    if [ -n "$IP" ]; then
-      break
-    fi
-    sleep 2
-  done
-
-  if [ -z "$IP" ]; then
-    fail "Error: Timed out waiting for VM to get an IP address." >&2
-    exit 1
-  fi
-
-  echo "✅ VM is up! IP Address: ${IP}"
+show_completion_info() {
+  echo "✅ VM should be up in few minutes. You can check the status with:"
+  echo "  virsh domstate ${VM_NAME}"
   echo
-  echo "To connect via SSH, run:"
-  echo "  ssh ${USERNAME}@${IP}"
+  echo "Once the VM is up, you can get IP address with:"
+  echo "  virsh domifaddr ${VM_NAME} --source agent"
   echo
-  echo "The password is the one you set in the '${USER_DATA}' file."
+  echo "Once you get IP from the above command, you can connect to it with:"
+  echo "  ssh ${USERNAME}@<IP_ADDRESS>"
   echo
-  echo "To access the serial console, run:"
-  echo " virsh console ${VM_NAME}"
+  echo "Provide password if prompted: ${PASSWORD}."
+  echo
+  echo "To troubleshoot, access the serial console with:"
+  echo "  virsh console ${VM_NAME}"
+  echo " You need to exit the console with Ctrl+]."
+  echo
 }
 
 usage() {
@@ -312,7 +261,6 @@ usage() {
   echo "  --release RELEASE     Set the release version (default: 'latest')"
   echo "  --bridge BRIDGE       Set the network bridge (default: 'default')"
   echo "  --disk-size SIZE      Set the disk size (default: '30G')"
-  echo "  --force               Force overwrite of existing VM"
   echo "  --help                Show this help message"
 }
 
@@ -355,10 +303,6 @@ parse_args() {
       BRIDGE="$2"
       shift 2
       ;;
-    --force)
-      FORCE=true
-      shift
-      ;;
     --help)
       usage
       exit 0
@@ -373,8 +317,7 @@ parse_args() {
 }
 
 main() {
-  virt_check_prerequisites
-
+  check_prerequisites
   if [ $# -eq 0 ]; then
     check_whiptail
     interactive_mode
@@ -391,20 +334,19 @@ main() {
   echo "Using memory: ${MEMORY} MB"
   echo "Using disk size: ${DISK_SIZE}"
   echo
+  sleep 1
 
   slog "Using username: ${USERNAME}"
   if [ -z "$PASSWORD" ]; then
-    read -r -s -p "Enter password: " PASSWORD
+    read -r -s -p "Enter password to use for the user: " PASSWORD
     echo
   fi
 
   download_base_image
   generate_cloud_init
-  check_prerequisites
-
-  # check_sudo_askpass
   create_disk
   create_vm
+  show_completion_info
 }
 
 interactive_mode() {
@@ -484,16 +426,27 @@ interactive_mode() {
     fi
   done
 
-  while true; do
-    if ! BRIDGE=$(whiptail --title "Bridge" --inputbox "Enter the bridge name" 10 60 "default" 3>&1 1>&2 2>&3); then
-      exit 1
-    fi
-    if ! virsh net-list --all --name | grep -q "^$BRIDGE$"; then
-      whiptail --title "Invalid Input" --msgbox "Bridge '$BRIDGE' not found." 8 78
-    else
-      break
-    fi
-  done
+  # while true; do
+  #   if ! BRIDGE=$(whiptail --title "Bridge" --inputbox "Enter the bridge name" 10 60 "default" 3>&1 1>&2 2>&3); then
+  #     exit 1
+  #   fi
+  #   if ! virsh net-list --all --name | grep -q "^$BRIDGE$"; then
+  #     whiptail --title "Invalid Input" --msgbox "Bridge '$BRIDGE' not found." 8 78
+  #   else
+  #     break
+  #   fi
+  # done
+
+  whiptail --title "Summary" --msgbox "
+  Distribution: $DISTRO
+  VM Name:   $VM_NAME
+  Username:  $USERNAME
+  Password:  $PASSWORD
+  vCPUs:     $VCPUS
+  Memory:    $MEMORY MB
+  Disk Size: $DISK_SIZE
+  " 15 60
+
 }
 
 main "$@"
