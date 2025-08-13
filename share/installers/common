@@ -829,8 +829,9 @@ vbox-dev_groupstall() {
 }
 
 vm_groupstall() {
-    ct_groupstall
+    min_groupstall
     has_cmd vm_install && vm_install
+
 }
 
 vm-ui_groupstall() {
