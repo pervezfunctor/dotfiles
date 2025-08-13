@@ -115,7 +115,7 @@ core_install() {
 
     slog "Installing core packages"
 
-    is_ubuntu && software-properties-common
+    is_ubuntu && si software-properties-common
     si apt-transport-https ca-certificates gpg curl wget git-core trash-cli \
         tar unzip tree file stow
 

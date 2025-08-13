@@ -782,10 +782,10 @@ shell-ui_groupstall() {
 
 dev_work_common_install() {
     min_groupstall
-    shell-slim-ui_install
+    shell-slim_install
 
     vscode_install
-    jetrains-mono_install
+    jetbrains-mono_install
 
     if is_linux; then
         flathub_install
