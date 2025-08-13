@@ -191,6 +191,11 @@ alias ....="../../../"
 alias .....="../../../../"
 alias ......="../../../../../"
 
+if has_cmd flatpak; then
+    alias fps="flatpak search"
+    alias fpr="flatpak run"
+fi
+
 if [[ ! -v CONTAINER_ID ]] && has_cmd flatpak; then
     FLATPAK_LIST=$(flatpak list)
 
