@@ -166,11 +166,31 @@ ui_install() {
     slog "ui installation done!"
 }
 
+vm_install() {
+    slog "Installing vm"
+
+    sudo pacman -R --no-confirm iptables
+
+    si iptables-nft libvirt qemu-base virt-install bOridge-utils dnsmasq jq \
+        edk2-ovmf virglrenderer xorriso cloud-utils dmidecode libguestfs \
+        guestfs-tools qemu-hw-display-virtio-gpu libosinfo iptables-nft \
+        ebtables openbsd-netcat
+
+    libvirt_confstall
+
+    cockpit_install
+
+    slog "vm installation done!"
+}
+
 vm-ui_install() {
     slog "Installing virt ui packages"
 
-    has_cmd gnome-boxes || si gnome-boxes
-    has_cmd virt-install && si virt-manager virt-viewer
+    local -a pkgs=("qemu-desktop")
+    has_cmd gnome-boxes || pkgs+=("gnome-boxes")
+    has_cmd virt-install && pkgs+=("virt-manager" "virt-viewer")
+
+    si "${pkgs[@]}"
 
     slog "virt ui packages installation done!"
 }
@@ -180,25 +200,11 @@ cockpit_install() {
 
     slog "Installing cockpit"
 
-    si cockpit cockpit-machines cockpit-packagekit cockpit-pcp cockpit-podman cockpit-storaged
+    si cockpit cockpit-machines cockpit-packagekit cockpit-pcp cockpit-podman \
+        cockpit-storaged
     sudo systemctl enable --now cockpit.socket
 
     slog "cockpit installation done!"
-}
-
-vm_install() {
-    slog "Installing vm"
-
-    si pipewire-jack libvirt qemu-desktop virt-install bridge-utils dnsmasq \
-        edk2-ovmf virglrenderer qemu-ui-spice-core qemu-ui-spice-app jq \
-        qemu-audio-spice cloud-utils xorriso qemu-hw-display-virtio-vga \
-        qemu-hw-display-virtio-vga-gl dmidecode libguestfs-tools libosinfo
-
-    libvirt_confstall
-
-    cockpit_install
-
-    slog "vm installation done!"
 }
 
 docker_install() {
@@ -217,7 +223,7 @@ incus_install() {
 
     slog "Installing incus"
 
-    si incus qemu-full bridge-utils
+    si incus qemu-desktop bridge-utils
     incus_confstall
 
     slog "incus installation done!"
