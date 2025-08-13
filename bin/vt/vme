@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
+
+cmd_vme() {
+  virsh --connect qemu:///system "$@"
+}
+
+check_prerequisites() {
+  for cmd in virsh virt-cat vme-create trash; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      echo "Error: Required command '$cmd' is not available."
+      exit 1
+    fi
+  done
+}
+
+usage() {
+  cat <<EOF
+Usage: $0 <command> [vm-name]
+
+Manage VMs created with vme-create script. These are user-mode VMs, not full libvirt VMs.
+
+COMMANDS:
+    list                List all VMs
+    create  ARGS        Create a new VM, with same ARGS as vme-create
+    autostart <vm-name> Set VM to start on boot
+    start <vm-name>     Start a VM
+    shutdown <vm-name>  Gracefully stop a VM
+    restart <vm-name>   Restart a VM
+    kill <vm-name>      Force stop a VM
+    delete <vm-name>    Delete a VM completely
+    console <vm-name>   Connect to VM console
+    show-ip <vm-name>   Show VM IP address
+    info <vm-name>      Show VM status and info
+    logs <vm-name>      Show cloud-init logs
+    disk <vm-name>      Show VM disk usage
+    cmd <virsh-args>    Run virsh command with qemu:///system connection
+
+EXAMPLES:
+    $0 list                    # List all VMs
+    $0 show-ip debian          # Show IP address of 'debian' VM
+    $0 status debian           # Show status of 'debian' VM
+    $0 create debian           # Create debian VM
+    $0 start debian            # Start 'debian' VM
+    $0 delete old-vm           # Delete 'old-vm' completely
+EOF
+}
+
+disk_vme() {
+  virsh --connect qemu:///system domblklist "$1"
+}
+
+status_vme() {
+  virsh --connect qemu:///system dominfo "$1"
+}
+
+autostart_vme() {
+  virsh --connect qemu:///system autostart "$1"
+}
+
+start_vme() {
+  virsh --connect qemu:///system start "$1"
+}
+
+shutdown_vme() {
+  virsh --connect qemu:///system shutdown "$1"
+}
+
+reboot_vme() {
+  virsh --connect qemu:///system reboot "$1"
+}
+
+force_stop_vme() {
+  virsh --connect qemu:///system destroy "$1"
+}
+
+delete_vme() {
+  local vda
+  vda=$(virsh --connect qemu:///system domblklist "$1" | grep vda | awk '{print $2}')
+
+  virsh --connect qemu:///system destroy "$1" >/dev/null 2>&1 || true
+  virsh --connect qemu:///system undefine "$1" >/dev/null 2>&1 || true
+
+  if [[ -n "$vda" ]]; then
+    dir=$(dirname "$vda")
+
+    echo "Found vm directory: $dir"
+    read -p "Delete dir? (y/N): " -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "Deleting $dir"
+      sudo rm -rf "$dir"
+    fi
+  fi
+}
+
+logs_vme() {
+  sudo virt-cat -d "$1" /var/log/cloud-init.log
+}
+
+console_vme() {
+  virsh --connect qemu:///system console "$1"
+}
+
+show_ip_vme() {
+  echo
+  virsh --connect qemu:///system domifaddr --source agent "$1" | grep ipv4 | grep -v lo | awk '{print $1, $4}'
+  echo
+}
+
+list_vme() {
+  virsh --connect qemu:///system list --all
+}
+
+main() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  check_prerequisites
+
+  local command vm_name
+  command="$1"
+  vm_name="${2:-}"
+
+  case "$command" in
+  list | ls)
+    list_vme
+    ;;
+  cmd)
+    cmd_vme "${@:2}"
+    ;;
+  disk)
+    disk_vme "$vm_name"
+    ;;
+  info | status)
+    status_vme "$vm_name"
+    ;;
+  create | new)
+    vme-create "${@:2}"
+    ;;
+  autostart)
+    autostart_vme "$vm_name"
+    ;;
+  start | boot)
+    start_vme "$vm_name"
+    ;;
+  stop | shutdown)
+    shutdown_vme "$vm_name"
+    ;;
+  restart | reboot)
+    reboot_vme "$vm_name"
+    ;;
+  destroy | kill | force-stop)
+    force_stop_vme "$vm_name"
+    ;;
+  delete | rm)
+    delete_vme "$vm_name"
+    ;;
+  console)
+    console_vme "$vm_name"
+    ;;
+  show-ip)
+    show_ip_vme "$vm_name"
+    ;;
+  logs)
+    logs_vme "$vm_name"
+    ;;
+  --help | -h)
+    usage
+    ;;
+  *)
+    echo "Error: Unknown command: $command"
+    usage
+    ;;
+  esac
+}
+
+main "$@"
