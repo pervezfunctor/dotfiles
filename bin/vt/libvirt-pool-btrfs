@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<EOF
+Usage: $0 <btrfs-root-path> <subvolume-name>
+Example: $0 /mnt/btrfs_pool vm_images
+
+Creates a btrfs subvolume and sets up a libvirt storage pool for it.
+EOF
+}
+
+if [ "$#" -ne 2 ]; then
+  usage
+  exit 1
+fi
+
+BTRFS_ROOT=$1
+SUBVOL_NAME=$2
+POOL_NAME="btrfs_${SUBVOL_NAME}"
+SUBVOL_PATH="${BTRFS_ROOT}/${SUBVOL_NAME}"
+
+detect_libvirt_user() {
+  if id libvirt-qemu &>/dev/null; then
+    echo "libvirt-qemu"
+  elif id qemu &>/dev/null; then
+    echo "qemu"
+  else
+    echo ""
+  fi
+}
+
+LIBVIRT_USER=$(detect_libvirt_user)
+LIBVIRT_GROUP=$LIBVIRT_USER
+
+if [ -z "$LIBVIRT_USER" ]; then
+  echo "Error: libvirt qemu user not found (libvirt-qemu or qemu)."
+  exit 1
+fi
+
+echo "Using libvirt user/group: $LIBVIRT_USER"
+
+if ! mountpoint -q "$BTRFS_ROOT"; then
+  echo "Error: '$BTRFS_ROOT' is not a mount point."
+  exit 1
+fi
+
+FS_TYPE=$(findmnt -n -o FSTYPE --target "$BTRFS_ROOT")
+if [ "$FS_TYPE" != "btrfs" ]; then
+  echo "Error: '$BTRFS_ROOT' is not a btrfs filesystem (found $FS_TYPE)."
+  exit 1
+fi
+
+echo "Confirmed btrfs filesystem at $BTRFS_ROOT"
+
+# Check if subvolume exists
+if sudo btrfs subvolume show "$SUBVOL_PATH" &>/dev/null; then
+  echo "Subvolume '$SUBVOL_PATH' already exists."
+else
+  echo "Creating btrfs subvolume at: $SUBVOL_PATH"
+  sudo btrfs subvolume create "$SUBVOL_PATH"
+fi
+
+# Set ownership and permissions
+echo "Setting ownership to $LIBVIRT_USER:$LIBVIRT_GROUP"
+sudo chown -R "$LIBVIRT_USER:$LIBVIRT_GROUP" "$SUBVOL_PATH"
+
+echo "Setting permissions to 770"
+sudo chmod 770 "$SUBVOL_PATH"
+
+# Check if libvirt pool already exists
+if virsh pool-info "$POOL_NAME" &>/dev/null; then
+  echo "Libvirt storage pool '$POOL_NAME' already exists."
+else
+  # Create pool XML
+  POOL_XML=$(mktemp)
+  cat >"$POOL_XML" <<EOF
+<pool type='dir'>
+  <name>$POOL_NAME</name>
+  <target>
+    <path>$SUBVOL_PATH</path>
+  </target>
+</pool>
+EOF
+
+  echo "Defining libvirt storage pool $POOL_NAME"
+  sudo virsh pool-define "$POOL_XML"
+
+  echo "Starting libvirt storage pool $POOL_NAME"
+  sudo virsh pool-start "$POOL_NAME"
+
+  echo "Setting libvirt storage pool $POOL_NAME to autostart"
+  sudo virsh pool-autostart "$POOL_NAME"
+
+  rm "$POOL_XML"
+fi
+
+echo ""
+echo "Libvirt storage pool '$POOL_NAME' is ready."
+echo ""
+echo "### BTRFS snapshot instructions ###"
+echo "To create a snapshot of this subvolume, run:"
+echo "  sudo btrfs subvolume snapshot -r $SUBVOL_PATH ${SUBVOL_PATH}_snapshot_YYYYMMDD"
+echo ""
+echo "To rollback (replace current with snapshot):"
+echo "  sudo btrfs subvolume delete $SUBVOL_PATH"
+echo "  sudo btrfs subvolume snapshot ${SUBVOL_PATH}_snapshot_YYYYMMDD $SUBVOL_PATH"
+echo ""
+echo "Make sure to stop VMs or libvirt pool when rolling back snapshots to avoid corruption."

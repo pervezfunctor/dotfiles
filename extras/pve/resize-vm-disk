@@ -1,0 +1,73 @@
+#!/bin/bash
+set -euo pipefail
+
+# -----------------------------
+# Parameters
+# -----------------------------
+# $1 = VMID
+# $2 = Disk name (e.g., scsi0, virtio0)
+# $3 = Size (e.g., +100G or 200G)
+# $4 = Thin pool LV name (default: data)
+# $5 = Volume group (default: pve)
+# -----------------------------
+
+VMID="${1:-}"
+DISK="${2:-}"
+SIZE="${3:-}"
+POOL="${4:-data}"
+VG="${5:-pve}"
+
+if [[ -z "$VMID" || -z "$DISK" || -z "$SIZE" ]]; then
+    echo "Usage: $0 <vmid> <disk> <size> [pool] [vg]"
+    echo "Example: $0 100 scsi0 +100G"
+    exit 1
+fi
+
+# -----------------------------
+# Get thin pool info
+# -----------------------------
+read -r POOL_SIZE DATA_PCT <<<"$(lvs --noheadings --units g --nosuffix -o lv_size,data_percent "${VG}/${POOL}" | awk '{print $1, $2}')"
+POOL_USED=$(echo "$POOL_SIZE * $DATA_PCT / 100" | bc)
+
+# Get VM disk info
+VIRT_SIZE_BEFORE=$(qm config "$VMID" | awk -v disk="$DISK" '$0 ~ disk":" {print $2}' | cut -d',' -f1)
+
+# Convert +SIZE to absolute if needed
+if [[ "$SIZE" =~ ^\+ ]]; then
+    ADD_SIZE="${SIZE#+}"
+    NEW_VIRT_SIZE=$(echo "$VIRT_SIZE_BEFORE + $ADD_SIZE" | bc)
+else
+    NEW_VIRT_SIZE="$SIZE"
+fi
+
+# -----------------------------
+# Check for over-provisioning
+# -----------------------------
+TOTAL_ALLOCATED=$(lvs --noheadings --units g --nosuffix -o lv_size "${VG}" | awk '{sum+=$1} END {print sum}')
+if (($(echo "$TOTAL_ALLOCATED > $POOL_SIZE" | bc -l))); then
+    echo "⚠ WARNING: Current thin volumes already exceed physical pool size!"
+fi
+
+# Estimated allocation after resize
+EXTRA_ALLOC=$(echo "$NEW_VIRT_SIZE - $VIRT_SIZE_BEFORE" | bc)
+ESTIMATED_USAGE=$(echo "$POOL_USED + $EXTRA_ALLOC" | bc)
+
+if (($(echo "$ESTIMATED_USAGE > $POOL_SIZE" | bc -l))); then
+    echo "❌ ERROR: Resizing would overfill thin pool!"
+    echo "Pool size: ${POOL_SIZE}G, Current usage: ${POOL_USED}G, After resize: ${ESTIMATED_USAGE}G"
+    echo "Add more storage or reduce size."
+    exit 1
+fi
+
+# -----------------------------
+# Perform resize
+# -----------------------------
+echo "Resizing VM $VMID disk $DISK from ${VIRT_SIZE_BEFORE}G to ${NEW_VIRT_SIZE}G..."
+qm resize "$VMID" "$DISK" "$SIZE"
+
+# -----------------------------
+# Summary
+# -----------------------------
+echo "✅ Resize complete."
+lvs -a "${VG}/${POOL}"
+echo "⚠ Remember to expand partitions/filesystems inside the guest."

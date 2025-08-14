@@ -1,0 +1,298 @@
+#!/bin/bash
+
+# ==============================================================================
+# setup-libvirt-btrfs-pool.sh
+#
+# Automates setting up a libvirt storage pool on a Btrfs subvolume.
+# - Creates a Btrfs subvolume if it doesn't exist
+# - Sets correct, distribution-agnostic ownership and permissions
+# - Defines a libvirt storage pool with Btrfs snapshot support
+# - Handles SELinux labeling automatically
+#
+# Usage:
+#   sudo ./setup-libvirt-btrfs-pool.sh /path/to/btrfs/root subvolume-name [pool-name]
+#   sudo ./setup-libvirt-btrfs-pool.sh --dry-run /var/lib/libvirt-vm images
+#   sudo ./setup-libvirt-btrfs-pool.sh --help
+#
+# Requires: sudo, btrfs, libvirt-daemon, virsh, systemctl
+# ==============================================================================
+
+set -euo pipefail
+
+# --- Configuration ---
+LOG_FILE="/var/log/libvirt-btrfs-setup.log"
+QEMU_CONF="/etc/libvirt/qemu.conf"
+DRY_RUN=false
+POOL_NAME=""
+
+# --- Functions ---
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | sudo tee -a "$LOG_FILE" >/dev/null
+}
+
+error() {
+  log "ERROR: $*" >&2
+  exit 1
+}
+
+warn() {
+  log "WARNING: $*" >&2
+}
+
+die() {
+  echo "$*" >&2
+  exit 1
+}
+
+# --- Prerequisites Check ---
+check_prerequisites() {
+  log "🔍 Checking prerequisites..."
+
+  # Must be root
+  if [ "$(id -u)" -ne 0 ]; then
+    error "This script must be run as root."
+  fi
+
+  # Check for btrfs
+  if ! command -v btrfs >/dev/null 2>&1; then
+    error "Required command 'btrfs' is not installed."
+  fi
+
+  # Check for virsh
+  if ! command -v virsh >/dev/null 2>&1; then
+    error "Required command 'virsh' is not installed."
+  fi
+
+  # Check for libvirtd service
+  if ! systemctl list-units --type=service | grep -q "libvirtd\|libvirt-daemon"; then
+    error "libvirtd or libvirt-daemon service not found. Please install libvirt."
+  fi
+
+  # Check for qemu.conf
+  if [ ! -f "$QEMU_CONF" ]; then
+    warn "Could not find $QEMU_CONF. Using default user/group."
+  fi
+
+  # Check if libvirt service is enabled/running
+  if ! systemctl is-active --quiet "libvirtd" && ! systemctl is-active --quiet "libvirt-daemon"; then
+    log "libvirt service not running. Will start it later."
+  fi
+
+  # Check if SELinux is enabled
+  if command -v sestatus >/dev/null 2>&1 && sestatus | grep -q "SELinux status:\s*enabled"; then
+    SELINUX_ENABLED=true
+    SELINUX_LABEL="system_u:object_r:libvirt_image_t:s0"
+    log "SELinux is enabled. Applying label: $SELINUX_LABEL"
+  else
+    SELINUX_ENABLED=false
+    log "SELinux is not enabled or not detected."
+  fi
+
+  log "✅ Prerequisites check passed."
+}
+
+# --- Argument Parsing ---
+parse_args() {
+  local -a args=()
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --help | -h)
+      cat <<EOF
+Usage: $0 <btrfs-root> <subvolume-name> [pool-name]
+
+Creates a libvirt storage pool backed by a Btrfs subvolume.
+
+Options:
+  --help, -h        Show this help message
+  --dry-run         Preview actions without applying changes
+  --version         Show script version
+
+Examples:
+  sudo $0 /var/lib/libvirt-vm images
+  sudo $0 /var/lib/libvirt-vm images vm-pool
+  sudo $0 --dry-run /var/lib/libvirt-vm images
+
+Requires: sudo, btrfs, libvirt-daemon, virsh
+EOF
+      exit 0
+      ;;
+    --version)
+      echo "setup-libvirt-btrfs-pool.sh v1.2 (Enhanced)"
+      exit 0
+      ;;
+    --dry-run)
+      DRY_RUN=true
+      shift
+      ;;
+    -*)
+      die "Unknown option: $1"
+      ;;
+    *)
+      args+=("$1")
+      shift
+      ;;
+    esac
+  done
+
+  if [ "${#args[@]}" -ne 2 ] && [ "${#args[@]}" -ne 3 ]; then
+    die "Usage: $0 <btrfs-root> <subvolume-name> [pool-name]"
+  fi
+
+  BTRFS_ROOT="${args[0]}"
+  SUBVOL_NAME="${args[1]}"
+  POOL_NAME="${args[2]:-btrfs-$SUBVOL_NAME}"
+}
+
+detect_libvirt_user() {
+  if id libvirt-qemu &>/dev/null; then
+    echo "libvirt-qemu"
+  elif id qemu &>/dev/null; then
+    echo "qemu"
+  else
+    echo ""
+  fi
+}
+
+# --- Main Script ---
+main() {
+  # Parse arguments
+  parse_args "$@"
+
+  # Check prerequisites
+  check_prerequisites
+
+  # Validate paths
+  if [ ! -d "$BTRFS_ROOT" ]; then
+    error "Btrfs root directory does not exist: $BTRFS_ROOT"
+  fi
+
+  if ! mount | grep -q "type btrfs" | grep -q "$BTRFS_ROOT"; then
+    error "Directory '$BTRFS_ROOT' is not a mounted Btrfs filesystem."
+  fi
+
+  LIBVIRT_USER=${1:-$(detect_libvirt_user)}
+  LIBVIRT_GROUP=${2:-LIBVIRT_USER}
+  [ -z "$LIBVIRT_USER" ] && LIBVIRT_USER="root"
+  [ -z "$LIBVIRT_GROUP" ] && LIBVIRT_GROUP="kvm"
+
+  LIBVIRT_UID=$(id -u "$LIBVIRT_USER" 2>/dev/null || echo "0")
+  LIBVIRT_GID=$(id -g "$LIBVIRT_GROUP" 2>/dev/null || echo "0")
+
+  # Build subvolume path
+  SUBVOL_PATH="$BTRFS_ROOT/$SUBVOL_NAME"
+  log "Using Btrfs subvolume: $SUBVOL_PATH"
+
+  # --- Create Subvolume ---
+  if ! btrfs subvolume list -o "$BTRFS_ROOT" | grep -q "path $SUBVOL_NAME\$"; then
+    if $DRY_RUN; then
+      log "✅ Would create Btrfs subvolume: $SUBVOL_PATH"
+    else
+      log "Creating Btrfs subvolume: $SUBVOL_PATH"
+      btrfs subvolume create "$SUBVOL_PATH"
+    fi
+  else
+    log "Btrfs subvolume already exists: $SUBVOL_PATH"
+  fi
+
+  # --- Set Ownership and Permissions ---
+  if $DRY_RUN; then
+    log "✅ Would set ownership: $LIBVIRT_USER:$LIBVIRT_GROUP (UID: $LIBVIRT_UID, GID: $LIBVIRT_GID)"
+    log "✅ Would set permissions: 770"
+    [ "$SELINUX_ENABLED" = true ] && log "✅ Would apply SELinux label: $SELINUX_LABEL"
+  else
+    log "Setting ownership of $SUBVOL_PATH to $LIBVIRT_USER:$LIBVIRT_GROUP"
+    chown "$LIBVIRT_UID:$LIBVIRT_GID" "$SUBVOL_PATH"
+    chmod 770 "$SUBVOL_PATH"
+    log "Permissions set to 770."
+
+    if $SELINUX_ENABLED; then
+      log "Applying SELinux context to $SUBVOL_PATH"
+      chcon -t "$SELINUX_LABEL" "$SUBVOL_PATH"
+    fi
+  fi
+
+  # --- Define Libvirt Storage Pool ---
+  POOL_XML=$(mktemp --suffix=.xml)
+  trap 'rm -f "$POOL_XML"' EXIT
+
+  cat >"$POOL_XML" <<EOF
+<pool type='dir'>
+  <name>$POOL_NAME</name>
+  <source>
+    <dir path='$SUBVOL_PATH'/>
+  </source>
+  <target>
+    <path>$SUBVOL_PATH</path>
+    <permissions>
+      <owner>$LIBVIRT_UID</owner>
+      <group>$LIBVIRT_GID</group>
+      <mode>0770</mode>
+      $([ "$SELINUX_ENABLED" = true ] && echo "<label>$SELINUX_LABEL</label>")
+    </permissions>
+  </target>
+</pool>
+EOF
+
+  # --- Create and Start Pool ---
+  if virsh pool-list --all | grep -q " $POOL_NAME "; then
+    log "Storage pool '$POOL_NAME' already exists. Ensuring it is active."
+  else
+    if $DRY_RUN; then
+      log "✅ Would define libvirt storage pool: $POOL_NAME"
+    else
+      log "Defining libvirt storage pool '$POOL_NAME'..."
+      virsh pool-define "$POOL_XML"
+    fi
+  fi
+
+  if ! virsh pool-info "$POOL_NAME" | grep -q "State:\s*running"; then
+    if $DRY_RUN; then
+      log "✅ Would start pool: $POOL_NAME"
+    else
+      log "Starting pool '$POOL_NAME'..."
+      virsh pool-start "$POOL_NAME"
+    fi
+  fi
+
+  if $DRY_RUN; then
+    log "✅ Would autostart pool: $POOL_NAME"
+  else
+    virsh pool-autostart "$POOL_NAME"
+    log "Storage pool '$POOL_NAME' is active and set to autostart."
+  fi
+
+  # --- Final Verification ---
+  log "Verifying Btrfs integration by checking pool capabilities."
+  if virsh pool-dumpxml "$POOL_NAME" | grep -q "<source>"; then
+    log "✅ Btrfs pool '$POOL_NAME' is correctly configured."
+  else
+    warn "⚠️ Pool '$POOL_NAME' may not be correctly configured. Please verify manually."
+  fi
+
+  # --- Final Message ---
+  log "✅ Setup complete!"
+  echo
+  echo "🎉 Successfully set up libvirt Btrfs storage pool:"
+  echo "   - Pool Name: $POOL_NAME"
+  echo "   - Path:      $SUBVOL_PATH"
+  echo "   - User:      $LIBVIRT_USER ($LIBVIRT_UID)"
+  echo "   - Group:     $LIBVIRT_GROUP ($LIBVIRT_GID)"
+  echo "   - SELinux:   $($SELINUX_ENABLED && echo "Enabled" || echo "Not Detected")"
+  echo
+  echo "You can now create volumes in this pool."
+
+  # --- Enable and Start Libvirt Service ---
+  LIBVIRT_SERVICE="libvirtd"
+  if ! systemctl list-units --type=service | grep -q "$LIBVIRT_SERVICE"; then
+    LIBVIRT_SERVICE="libvirt-daemon"
+  fi
+
+  if ! systemctl is-active --quiet "$LIBVIRT_SERVICE"; then
+    log "Starting and enabling $LIBVIRT_SERVICE..."
+    systemctl enable --now "$LIBVIRT_SERVICE"
+  fi
+}
+
+# --- Run Script ---
+main "$@"
+exit 0

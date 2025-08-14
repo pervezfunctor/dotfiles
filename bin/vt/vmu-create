@@ -226,8 +226,8 @@ create_vm() {
     --cloud-init user-data="${USER_DATA}",meta-data="${META_DATA}" \
     --os-variant $OS_VARIANT \
     --video virtio \
-    --virt-type kvm \
     --graphics spice \
+    --virt-type kvm \
     --network user,model=virtio \
     --import
 }

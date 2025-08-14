@@ -1,0 +1,5 @@
+#! /usr/bin/env bash
+
+for snap in $(snapper -c root list --columns number | grep -E '^[0-9]+' | head -n -3 | awk '{print $1}'); do
+  sudo snapper -c root delete "$snap"
+done
