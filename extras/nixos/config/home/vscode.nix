@@ -31,13 +31,18 @@
         "editor.tabCompletion" = "on";
         "editor.tabSize" = 2;
         "editor.trimAutoWhitespace" = true;
-        "files.insertFinalNewline" = true;
-        "workbench.colorTheme" = "Catppuccin Mocha";
-        "workbench.iconTheme" = "catppuccin-mocha";
+
         "files.autoSave" = "onFocusChange";
+        "files.insertFinalNewline" = true;
+
+        "git.autofetch" = true;
+
         "nix.enableLanguageServer" = true;
         "nix.formatterPath" = "alejandra";
         "nix.serverPath" = "nixd";
+
+        "workbench.colorTheme" = "Catppuccin Mocha";
+        "workbench.iconTheme" = "catppuccin-mocha";
       };
     };
   };
