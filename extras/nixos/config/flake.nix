@@ -106,6 +106,7 @@
           extraModules
           ++ [
             disko.nixosModules.disko
+            { virtualisation.diskSize = 20480; }
           ]
         );
 
