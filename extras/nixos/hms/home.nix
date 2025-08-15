@@ -78,12 +78,12 @@
       enableBashIntegration = true;
       enableNushellIntegration = true;
     };
+
+    # ghostty.enable = true;
     bash.enable = true;
     nushell.enable = true;
     bat.enable = true;
-    ghostty.enable = true;
     home-manager.enable = true;
-
   };
 
   gtk = {
