@@ -13,14 +13,11 @@
     fuse2
     gawk
     gcc
-    ghostty
     git
     glibc
     gnugrep
     gnumake
-    gum
     iproute2
-    jq
     libsecret
     lm_sensors
     lsof
@@ -45,7 +42,6 @@
     usbutils
     vim
     wget
-    wl-clipboard
     zfs
     zfstools
     zip

@@ -7,11 +7,6 @@
 
   security.pam.services.login.enableGnomeKeyring = true;
 
-  # @TODO: pick what you are using
-  security.pam.services.gdm.enableGnomeKeyring = true;
-  security.pam.services.swaylock.enableGnomeKeyring = true;
-  # security.pam.services.sddm.enableGnomeKeyring = true; # if using SDDM
-
   services.dbus.enable = true;
 
   xdg.portal = {
@@ -26,12 +21,37 @@
 
   environment.sessionVariables = {
     EDITOR = "code --wait";
+    ELECTRON_ENABLE_SCALE_FACTOR = "true";
     ELECTRON_OZONE_PLATFORM_HINT = "auto";
     MOZ_ENABLE_WAYLAND = "1";
-    NIXOS_OZONE_WL = "1"; # Forces Electron apps to use Wayland
-    # @TODO: set it to your desktop environment
-    # XDG_CURRENT_DESKTOP = "GNOME"; # or "GNOME" / "KDE" etc.
-    # XDG_SESSION_TYPE = "wayland"; # or "x11"
+    NIXOS_OZONE_WL = "1";
+    XDG_SESSION_TYPE = "wayland";
+    # GDK_SCALE = "";
+    # GDK_DPI_SCALE = "";
+  };
+
+  fonts = {
+    enableDefaultPackages = true;
+
+    packages = with pkgs; [
+      nerd-fonts.jetbrains-mono
+      noto-fonts
+      noto-fonts-emoji
+      noto-fonts-cjk-sans
+      noto-fonts-cjk-serif
+      noto-fonts-color-emoji
+
+      font-awesome
+    ];
+
+    fontconfig = {
+      defaultFonts = {
+        monospace = [ "JetBrainsMono Nerd Font" ];
+        serif = [ "Noto Serif" ];
+        sansSerif = [ "Noto Sans" ];
+        emoji = [ "Noto Color Emoji" ];
+      };
+    };
   };
 
   programs.dconf.enable = true;
@@ -45,17 +65,15 @@
 
   services.flatpak.enable = true;
 
-  # system.activationScripts.flatpakFlathub = {
-  #   text = ''
-  #     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-  #   '';
-  # };
-
   programs.appimage = {
     enable = true;
     binfmt = true;
   };
 
+  environment.systemPackages = with pkgs; [
+    wl-clipboard
+    gvfs
+  ];
+
   networking.networkmanager.enable = true;
-  # networking.interfaces.enp1s0.useDHCP = true;
 }

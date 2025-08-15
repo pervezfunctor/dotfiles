@@ -3,12 +3,19 @@
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
 
+  security.pam.services.gdm.enableGnomeKeyring = true;
+
   programs.dconf.enable = true;
   programs.gnome-terminal.enable = true;
 
   environment.systemPackages = with pkgs; [
     gnome-software
   ];
+
+  environment.sessionVariables = {
+    XDG_CURRENT_DESKTOP = "GNOME";
+  };
+  xdg.portal.extraPortals = pkgs.xdg-desktop-portal-gtk;
 
   services.gnome.core-apps.enable = false;
 

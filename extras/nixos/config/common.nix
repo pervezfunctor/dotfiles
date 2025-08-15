@@ -1,9 +1,5 @@
-{ pkgs, ... }:
+{ ... }:
 {
-  boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.systemd-boot.enable = true;
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-
   console = {
     font = "Lat2-Terminus16";
     useXkbConfig = true;

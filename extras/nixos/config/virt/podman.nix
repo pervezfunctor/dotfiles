@@ -4,16 +4,17 @@
 }:
 {
   environment.systemPackages = with pkgs; [
+    buildah
+    ctop
+    distrobox
+    fuse-overlayfs
     podman
     podman-compose
-    buildah
     podman-tui
+    ptyxis
     skopeo
     slirp4netns
-    fuse-overlayfs
     toolbox
-    distrobox
-    ctop
     # kubernetes-helm
     # kubectl
   ];

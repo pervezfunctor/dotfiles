@@ -1,0 +1,3 @@
+nix run github:nix-community/nixos-anywhere -- \
+--flake .#generic \
+--vm-test

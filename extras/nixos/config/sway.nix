@@ -1,19 +1,29 @@
 { pkgs, ... }:
 {
   services.displayManager.gdm.enable = true;
+  security.pam.services.swaylock.enableGnomeKeyring = true;
+
   programs.sway = {
     enable = true;
     wrapperFeatures.gtk = true;
 
-    extraSessionCommands = ''
-      if ! pgrep -x gnome-keyring-daemon > /dev/null; then
-        eval "$(gnome-keyring-daemon --start --components=pkcs11,secrets,ssh)"
-        export SSH_AUTH_SOCK
-      fi
-    '';
+    # extraSessionCommands = ''
+    #   if ! pgrep -x gnome-keyring-daemon > /dev/null; then
+    #     eval "$(gnome-keyring-daemon --start --components=pkcs11,secrets,ssh)"
+    #     export SSH_AUTH_SOCK
+    #   fi
+    # '';
 
     extraPackages = with pkgs; [
       swaylock
+      dunst
+      foot
+
+      nwg-bar
+      nwg-clipman
+      nwg-displays
+      nwg-look
+      swayidle
       libsecret
       rofi-wayland
       swaynotificationcenter

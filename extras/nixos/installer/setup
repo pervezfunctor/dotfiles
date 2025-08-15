@@ -19,17 +19,19 @@ touch /var/log/nixos-install.log || error "Cannot write to /var/log/nixos-instal
 exec > >(awk '{ print strftime("[%F %T]"), $0; fflush() }' | tee -a /var/log/nixos-install.log) 2>&1
 
 usage() {
-  printf "Usage: %s --disk <device> [--swap-size SIZE] --profile <profile> --hostname [hostname]\n" "$0" >&2
+  printf "Usage: %s --disk <device> [--swap-size SIZE] --profile <profile> [--hostname <hostname>]\n" "$0" >&2
   printf "  <device>     e.g. /dev/vda, /dev/sda\n" >&2
   printf "  <profile>    server | gnome | kde | sway | gnome-vm | kde-vm | sway-vm\n" >&2
-  printf "  <hostname>   The hostname to set for the system\n" >&2
+  printf "  <hostname>   The hostname to set for the system (defaults to profile name)\n" >&2
 }
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 CONFIG_SRC_DIR="$(realpath "${SCRIPT_DIR}/../config")"
 DISK=""
+CONFIG=""
+HOSTNAME=""
 
-SWAP_SIZE="4G"
+SWAP_SIZE="8G"
 
 EFI_PARTITION=""
 SWAP_PARTITION=""
@@ -61,7 +63,7 @@ parse_args() {
       shift 2
       ;;
     --hostname)
-      HOSTNAME="${2:-$CONFIG}"
+      HOSTNAME="$2"
       shift 2
       ;;
     --help | -h)
@@ -96,6 +98,11 @@ parse_args() {
     error "Invalid profile: '$CONFIG'. Expected one of: server, gnome, kde, sway, gnome-vm, kde-vm, sway-vm."
   fi
 
+  # Set hostname to config name if not provided
+  if [[ -z "$HOSTNAME" ]]; then
+    HOSTNAME="$CONFIG"
+  fi
+
   if ! [[ "$HOSTNAME" =~ ^[a-zA-Z0-9][-a-zA-Z0-9]*$ ]]; then
     error "Invalid hostname: '$HOSTNAME'"
   fi
@@ -106,6 +113,17 @@ parse_args() {
   EFI_PARTITION=$(get_partition_path "$DISK" 1)
   ROOT_PARTITION=$(get_partition_path "$DISK" 2)
   SWAP_PARTITION=$(get_partition_path "$DISK" 3)
+
+  info "Using disk: ${DISK}"
+  info "Using EFI partition: ${EFI_PARTITION}"
+  info "Using ROOT partition: ${ROOT_PARTITION}"
+  info "Using SWAP partition: ${SWAP_PARTITION}"
+  info "Using swap size: ${SWAP_SIZE}"
+  info "Using profile: ${CONFIG}"
+  info "Using hostname: ${HOSTNAME}"
+  info "Using configuration source directory: ${CONFIG_SRC_DIR}"
+
+  sleep 3
 }
 
 create_partitions() {
@@ -122,7 +140,7 @@ create_partitions() {
   sync
   udevadm settle
   partprobe "${DISK}"
-  sleep 2
+  sleep 3
 }
 
 format_partitions() {
@@ -142,6 +160,9 @@ format_partitions() {
   btrfs subvolume create /mnt/@snapshots
 
   umount /mnt
+
+  info "Btrfs subvolumes created successfully."
+  info "Formatting complete. Current partitions:"
 }
 
 mount_partitions() {
@@ -157,6 +178,12 @@ mount_partitions() {
 
   mount -t vfat -o umask=0077 "${EFI_PARTITION}" /mnt/boot
   swapon /dev/disk/by-label/SWAP
+
+  info "Mounted partitions successfully."
+  sleep 2
+  info "Current mount points:"
+  lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINTS "${DISK}"
+  sleep 2
 }
 
 setup_config() {
@@ -180,18 +207,6 @@ setup_config() {
 
   info "Copying custom config from $CONFIG_SRC_DIR..."
   cp -r -- "${CONFIG_SRC_DIR}/." /mnt/etc/nixos/
-}
-
-setup_ssh_key() {
-  info "Setting up SSH host key..."
-  mkdir -p /mnt/etc/ssh
-
-  if [ ! -f /mnt/etc/ssh/ssh_host_ed25519_key ]; then
-    info "No SSH host key found. Generating a new one."
-    ssh-keygen -t ed25519 -f /mnt/etc/ssh/ssh_host_ed25519_key -N ""
-  fi
-
-  chmod 600 /mnt/etc/ssh/ssh_host_ed25519_key
 }
 
 install_nixos() {
@@ -243,25 +258,13 @@ main() {
   lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINTS "${DISK}"
   sleep 2
 
-  case "$CONFIG" in
-  server | gnome | kde | sway | gnome-vm | kde-vm | sway-vm)
-    info "Using configuration: '$CONFIG'"
-    ;;
-  *)
-    printf "❌ ERROR: Invalid configuration '%s'\n" "$CONFIG" >&2
-    usage
-    exit 1
-    ;;
-  esac
+  info "Using configuration: '$CONFIG'"
 
   setup_config
-  setup_ssh_key
   install_nixos "$CONFIG"
 
-  local hostname="${HOSTNAME:-$CONFIG}"
-
-  nixos-enter --root /mnt -c "hostnamectl set-hostname '${hostname}'"
-  echo "--> After reboot, run: sudo nixos-rebuild switch --flake /etc/nixos#$hostname"
+  nixos-enter --root /mnt -c "hostnamectl set-hostname '${HOSTNAME}'"
+  echo "--> After reboot, run: sudo nixos-rebuild switch --flake /etc/nixos#$HOSTNAME"
 }
 
 main "$@"

@@ -5,6 +5,10 @@
     agenix.url = "github:ryantm/agenix";
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     stylix = {
       url = "github:danth/stylix";
@@ -29,11 +33,13 @@
       stylix,
       home-manager,
       quadlet-nix,
-      nixvim,
+      disko,
+      # nixvim,
       ...
     }@inputs:
     let
       system = "x86_64-linux";
+      vars = import ./vars.nix { inherit (inputs.nixpkgs) pkgs; };
 
       commonModules = [
         ./configuration.nix
@@ -43,12 +49,15 @@
         home-manager.nixosModules.home-manager
         {
           home-manager = {
-            extraSpecialArgs = { inherit inputs; };
+            extraSpecialArgs = {
+              inherit inputs;
+              inherit vars;
+            };
 
             useUserPackages = true;
             useGlobalPkgs = true;
             backupFileExtension = "backup";
-            users.me = import ./home/home.nix;
+            users.${vars.userName} = import ./home/home.nix;
           };
         }
       ];
@@ -56,11 +65,55 @@
       uiModules = commonModules ++ [
         ./ui.nix
       ];
+
+      mkNixosSystem =
+        modules:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            inherit inputs;
+            inherit vars;
+          };
+          modules = modules;
+        };
+
+      mkUiSystem = extraModules: mkNixosSystem (uiModules ++ extraModules);
+
+      mkBareSystem =
+        extraModules:
+        mkNixosSystem (
+          uiModules
+          ++ extraModules
+          ++ [
+            agenix.nixosModules.default
+          ]
+        );
+
+      mkVmSystem =
+        extraModules:
+        mkNixosSystem (
+          uiModules
+          ++ extraModules
+          ++ [
+            ./vm.nix
+            ../ssh.nix
+          ]
+        );
+
+      mkAnywhereSystem =
+        extraModules:
+        mkBareSystem (
+          extraModules
+          ++ [
+            disko.nixosModules.disko
+          ]
+        );
+
     in
     {
       homeConfigurations = {
-        "me" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        ${vars.userName} = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = { inherit inputs; };
           modules = [
             # nixvim.homeManagerModules.nixvim
@@ -70,114 +123,34 @@
       };
 
       nixosConfigurations = {
-        server = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
+        server = mkNixosSystem (commonModules ++ [ ./ssh.nix ]);
 
-          modules = commonModules ++ [
-            ./ssh.nix
-          ];
-        };
+        gnome = mkUiSystem [ ./gnome.nix ];
+        gnome-vm = mkVmSystem [ ./gnome.nix ];
 
-        gnome = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
+        kde = mkUiSystem [ ./kde.nix ];
+        kde-vm = mkVmSystem [ ./kde.nix ];
 
-          modules = uiModules ++ [
-            ./gnome.nix
-          ];
-        };
+        sway = mkUiSystem [ ./sway.nix ];
+        sway-vm = mkVmSystem [ ./sway.nix ];
 
-        kde = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
+        generic = mkAnywhereSystem [
+          ./disko-config.nix
+          # ./hardware-configuration.nix
+        ];
 
-          modules = uiModules ++ [
-            ./kde.nix
-          ];
-        };
+        um580 = mkBareSystem [
+          ./hosts/um580/hardware-configuration.nix
+          ./hosts/um580/fs.nix
+          ./sway.nix
+        ];
 
-        gnome-vm = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-
-          modules = uiModules ++ [
-            ./gnome.nix
-            ./vm.nix
-          ];
-        };
-
-        kde-vm = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-
-          modules = uiModules ++ [
-            ./kde.nix
-            ./vm.nix
-          ];
-        };
-
-        sway = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-
-          modules = uiModules ++ [
-            ./sway.nix
-          ];
-        };
-
-        sway-vm = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-
-          modules = uiModules ++ [
-            ./sway.nix
-            ./vm.nix
-          ];
-        };
-
-        um580 = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-
-          modules = uiModules ++ [
-            ./hosts/um580/hardware-configuration.nix
-            ./hosts/um580/fs.nix
-            ./sway.nix
-            agenix.nixosModules.default
-          ];
-        };
-
-        "7945hx" = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-
-          modules = uiModules ++ [
-            ./hosts/7945hx/hardware-configuration.nix
-            ./hosts/7945hx/fs.nix
-            ./gnome.nix
-            ./vm.nix
-            agenix.nixosModules.default
-          ];
-        };
-
-        vm = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-
-          modules = [
-            ./vm.nix
-            ./ssh.nix
-            (
-              { pkgs, ... }:
-              {
-                environment.systemPackages = with pkgs; [
-                  spice-vdagent
-                ];
-              }
-            )
-          ];
-        };
+        "7945hx" = mkBareSystem [
+          ./hosts/7945hx/hardware-configuration.nix
+          ./hosts/7945hx/fs.nix
+          ./gnome.nix
+          ./vm.nix
+        ];
       };
     };
 }

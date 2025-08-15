@@ -1,0 +1,19 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+
+generate_vars_nix() {
+  local vars_file="/mnt/etc/nixos/vars.nix"
+  echo "{
+  disk = \"${DISK}\";
+  swapSize = \"${SWAP_SIZE}\";
+  profile = \"${CONFIG}\";
+  hostname = \"${HOSTNAME}\";
+  userName = \"me\";
+  gitUserName = \"Your Name\";
+  gitUserEmail = \"yourEmail.com\";
+  sshKey = \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC... yourKeyHere\";
+  initialPassword = \"yourInitialPassword\";
+}" >"$vars_file"
+  info "Generated ${vars_file}"
+}

@@ -2,8 +2,10 @@
 {
   users.users.me = {
     shell = pkgs.zsh;
+
     isNormalUser = true;
     createHome = true;
+
     extraGroups = [
       "audio"
       "cockpit-ws"

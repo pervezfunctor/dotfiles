@@ -1,15 +1,18 @@
-{ ... }:
+{ pkgs, ... }:
 {
+  boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.systemd-boot.enable = true;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
   imports = [
     ./common.nix
     ./shell.nix
     ./user.nix
-    ./dev.nix
-    ./apps.nix
-    ./virt/virt.nix
+    # ./dev.nix
+    # ./apps.nix
+    # ./virt/virt.nix
   ];
 
-  # @TODO: This will be your hostname, so change this
   networking.hostName = "7945hx";
 
   # # Enable mDNS for `hostname.local` addresses

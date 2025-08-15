@@ -51,5 +51,9 @@
     yazi
     yq
     zellij
+    gum
+    jq
+    # git
+
   ];
 }

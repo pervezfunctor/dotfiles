@@ -1,9 +1,15 @@
-{ ... }:
+{ pkgs, ... }:
 {
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
+  security.pam.services.sddm.enableGnomeKeyring = true;
 
-  # environment.systemPackages = with pkgs.kdePackages; [ dolphin konsole kate ];
+  xdg.portal.extraPortals = pkgs.xdg-desktop-portal-kde;
+
+  environment.systemPackages = with pkgs.kdePackages; [
+    dolphin
+  ];
+
   # programs.plasma-manager.enable = true;
 
   # programs.plasma-manager.settings = {
