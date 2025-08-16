@@ -18,7 +18,7 @@
   environment.sessionVariables = {
     XDG_CURRENT_DESKTOP = "GNOME";
   };
-  xdg.portal.extraPortals = pkgs.xdg-desktop-portal-gtk;
+  # xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
   services.gnome.core-apps.enable = false;
 

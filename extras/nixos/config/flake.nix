@@ -137,6 +137,8 @@
         generic = mkAnywhereSystem [
           ./disko-config.nix
           ./hardware-configuration.nix
+          ./gnome.nix
+          ./ssh.nix
         ];
 
         um580 = mkBareSystem [

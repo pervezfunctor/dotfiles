@@ -357,9 +357,46 @@ Unfortunately, there is no direct ISO of dx version available. Either you rebase
 
 If you are an experienced linux desktop user, and you have enough knowledge of linux and are a developer, then you should try `nixos`. There is a lot to learn and there will be very frustrating times. But it's worth it. IF you are into devops, and like IaC, then you would love nixos.
 
-Unfortunately there is no easy way to make automated installers for nixos. You need to learn `nix` and understand the configurations. You have to tailor the configuration to your needs. I will write a guide soon, as soon as I get everything working as I expect. At present you could look at my *work in progress* config at `extras/nixos/config`. But, please don't judge me. :-)
+Unfortunately there is no easy way to make automated installers for nixos. You need to learn `nix` and understand the configurations. You have to tailor the configuration to your needs.
 
 For installation use the minimal iso. DO NOT USE the default ISO, if this is your first time using nixos. Installation would be easy but you will struggle to get everything working as you expect. Use the minimal iso, and follow the [nixos installation guide](hhttps://nixos.org/manual/nixos/stable/#sec-installation-manual).
+
+
+Some Instructions for setting up your NixOS system based on my dotfiles. *Work in progress*
+
+First, boot with minimal iso. Once you are dropped to a shell, change to `root` user, and set a password.
+
+```bash
+sudo -i # should not ask for password
+passwd
+```
+
+Then note down your IP.
+
+```bash
+ip -brief a
+```
+
+Once you have an ip, you should be able to ssh into this installer from your laptop or any other linux/mac system.
+
+```bash
+ssh root@<ip>
+```
+Once you are logged in(provide password you set above), you could check which disk to use with the following command.
+
+```bash
+lsblk -d
+```
+
+Now get back to your laptop, and open `.ilm/extras/nixos/config/disko-config.nix` file and set `disko.devices.disk.main.device` to the disk you want to use, for eg `/dev/sda` or /dev/nvme0n1`.
+
+Now run the command from your laptop.
+
+```bash
+remote-setup <ip>
+```
+
+After installation completes you should be able to boot your system(without minimal iso) from the disk you specified into a nixos system.
 
 
 ### Generic Linux Desktop

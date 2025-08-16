@@ -2,6 +2,7 @@
 {
   services.displayManager.gdm.enable = true;
   security.pam.services.swaylock.enableGnomeKeyring = true;
+  # xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-kde ];
 
   programs.sway = {
     enable = true;

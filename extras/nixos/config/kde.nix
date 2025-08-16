@@ -4,7 +4,7 @@
   services.desktopManager.plasma6.enable = true;
   security.pam.services.sddm.enableGnomeKeyring = true;
 
-  xdg.portal.extraPortals = pkgs.xdg-desktop-portal-kde;
+  # xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-kde ];
 
   environment.systemPackages = with pkgs.kdePackages; [
     dolphin
