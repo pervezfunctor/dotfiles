@@ -29,6 +29,7 @@
     mprocs
     navi
     ncspot
+    nixfmt-rfc-style
     nixd
     presenterm
     procs

@@ -39,7 +39,8 @@
     }@inputs:
     let
       system = "x86_64-linux";
-      vars = import ./vars.nix { inherit (inputs.nixpkgs) pkgs; };
+      pkgs = import nixpkgs { inherit system; };
+      vars = import ./vars.nix { inherit pkgs; };
 
       commonModules = [
         ./configuration.nix
@@ -114,7 +115,7 @@
       homeConfigurations = {
         ${vars.userName} = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
-          extraSpecialArgs = { inherit inputs; };
+          extraSpecialArgs = { inherit inputs vars; };
           modules = [
             # nixvim.homeManagerModules.nixvim
             ./home/home.nix
