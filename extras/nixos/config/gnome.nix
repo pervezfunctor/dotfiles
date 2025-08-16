@@ -10,6 +10,9 @@
 
   environment.systemPackages = with pkgs; [
     gnome-software
+    nautilus
+    refine
+    gearlever
   ];
 
   environment.sessionVariables = {

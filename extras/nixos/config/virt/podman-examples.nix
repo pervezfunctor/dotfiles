@@ -37,7 +37,7 @@
           (
             { config, pkgs, ... }:
             {
-              system.stateVersion = "24.11";
+              system.stateVersion = "25.11";
 
               nix.settings.experimental-features = [
                 "nix-command"
@@ -209,7 +209,7 @@
                       };
                     };
 
-                    home.stateVersion = "24.11";
+                    home.stateVersion = "25.11";
                   };
               };
 

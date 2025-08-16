@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, vars, ... }:
 let
   nixvim = inputs.nixvim;
 in
@@ -9,15 +9,15 @@ in
     ./bash.nix
     ./zsh.nix
     ./shell.nix
-    nixvim.homeManagerModules.nixvim
+    nixvim.homeModules.nixvim
     ./nvim.nix
     ./ui.nix
   ];
 
   home = {
     stateVersion = "25.11";
-    username = "me";
-    homeDirectory = "/home/me";
+    username = "${vars.userName}";
+    homeDirectory = "/home/${vars.userName}";
   };
 }
 

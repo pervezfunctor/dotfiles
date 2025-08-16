@@ -10,12 +10,12 @@ in
 {
   disko.devices.disk.main = {
     type = "disk";
-    device = "/dev/vdb";
+    device = "/dev/vda";
     content = {
       type = "gpt";
       partitions = {
         EFI = {
-          size = "512M"; # Reduced EFI size
+          size = "1G";
           type = "ef00";
           content = {
             type = "filesystem";
@@ -25,7 +25,7 @@ in
           };
         };
         SWAP = {
-          size = "2G"; # Much smaller swap
+          size = "8G";
           type = "8200";
           content = {
             type = "swap";
@@ -37,10 +37,11 @@ in
           content = {
             type = "btrfs";
             extraArgs = [ "-f" ];
-            mountpoint = "/";
-            mountOptions = btrfsOpts ++ [ "subvol=@" ];
             subvolumes = {
-              "@".mountpoint = "/";
+              "@" = {
+                mountpoint = "/";
+                mountOptions = btrfsOpts ++ [ "subvol=@" ];
+              };
               "@nix" = {
                 mountpoint = "/nix";
                 mountOptions = btrfsOpts ++ [ "subvol=@nix" ];
@@ -52,6 +53,22 @@ in
               "@log" = {
                 mountpoint = "/var/log";
                 mountOptions = btrfsOpts ++ [ "subvol=@log" ];
+              };
+              "@cache" = {
+                mountpoint = "/var/cache";
+                mountOptions = btrfsOpts ++ [ "subvol=@cache" ];
+              };
+              "@tmp" = {
+                mountpoint = "/tmp";
+                mountOptions = btrfsOpts ++ [ "subvol=@tmp" ];
+              };
+              "@srv" = {
+                mountpoint = "/srv";
+                mountOptions = btrfsOpts ++ [ "subvol=@srv" ];
+              };
+              "@opt" = {
+                mountpoint = "/opt";
+                mountOptions = btrfsOpts ++ [ "subvol=@opt" ];
               };
               "@snapshots" = {
                 mountpoint = "/.snapshots";

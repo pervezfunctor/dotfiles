@@ -21,34 +21,9 @@
     "sd_mod"
   ];
 
-  boot.kernelModules = [
-    "virtio-gpu"
-    "kvm-amd"
-    "vfio-pci"
-  ];
-
-  boot.extraModulePackages = [ ];
-  boot.extraModprobeConfig = "options kvm_amd nested=1";
-  boot.kernelParams = [
-    "amd_iommu=on"
-    "iommu=pt"
-    "pcie_aspm=force"
-    # "video=efifb:off"
-    # "video=vesafb:off"
-    # "video=simplefb:off"
-    # "module.sig_enforce=0"  # Disable module signing enforcement
-  ];
-
   swapDevices = [
     { device = "/dev/disk/by-uuid/c818bbf5-c236-4f18-8267-4d1c771c21b4"; }
   ];
-
-  # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
-  # (the default) this is the recommended approach. When using systemd-networkd it's
-  # still possible to use this option, but it's recommended to use it in conjunction
-  # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
-  networking.useDHCP = lib.mkDefault true;
-  # networking.interfaces.enp2s0.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;

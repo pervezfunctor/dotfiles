@@ -106,7 +106,6 @@
           extraModules
           ++ [
             disko.nixosModules.disko
-            { virtualisation.diskSize = 20480; }
           ]
         );
 
@@ -137,7 +136,7 @@
 
         generic = mkAnywhereSystem [
           ./disko-config.nix
-          # ./hardware-configuration.nix
+          ./hardware-configuration.nix
         ];
 
         um580 = mkBareSystem [

@@ -1,6 +1,6 @@
-{ pkgs, ... }:
+{ pkgs, vars, ... }:
 {
-  users.users.me = {
+  users.users.${vars.userName} = {
     shell = pkgs.zsh;
 
     isNormalUser = true;
@@ -22,10 +22,10 @@
       "wheel"
     ];
 
-    initialPassword = "nixos";
+    initialPassword = vars.initialPassword;
 
     openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIcXIDK5n+AIXExMo9nt1PRGcowyvyZUPvhBGRJRGMAl me@fedora"
+      vars.sshKey
     ];
 
   };
