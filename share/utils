@@ -1007,7 +1007,11 @@ shms() {
     nix run home-manager -- switch --flake "$DOT_DIR"/extras/nixos/config\#"${USER}" --impure -b bak
 }
 
-# @TODO: Need to remove this
+new-hms() {
+    nix run home-manager -- switch --flake "$DOT_DIR"/extras/nixos/hms\#"${USER}" --impure -b bak
+}
+
+# @TODO: Need to replace this
 hms() {
     if is_wsl; then
         hms-wsl

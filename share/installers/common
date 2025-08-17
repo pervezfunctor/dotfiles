@@ -694,6 +694,7 @@ shell-slim_install() {
     pkgx_install
 
     has_cmd zsh && zsh_confstall
+    has_cmd tmux && tmux_confstall
 }
 
 shell_install() {
@@ -755,6 +756,15 @@ shell-slim_groupstall() {
     shell-slim-group_check
 }
 
+nix-shell-slim_groupstall() {
+    min_groupstall
+    si zsh tmux git
+
+    nix_install
+    new_hms
+    shell_confstall
+}
+
 shell-slim-ui_groupstall() {
     shell-slim_groupstall
     jetrains-mono_install
@@ -781,9 +791,6 @@ shell-ui_groupstall() {
 }
 
 dev_work_common_install() {
-    min_groupstall
-    shell-slim_install
-
     vscode_install
     jetbrains-mono_install
 
@@ -796,17 +803,27 @@ dev_work_common_install() {
 }
 
 dev_groupstall() {
+    shell-slim_groupstall
     dev_work_common_install
     vm_install
     distrobox_install
 }
 
+dev-full_groupstall() {
+    nix-shell-slim_groupstall
+    dev_work_common_install
+    npm_install
+    incus_install
+}
+
 work_groupstall() {
+    shell-slim_groupstall
     dev_work_common_install
     docker_install
 }
 
 dev-work_groupstall() {
+    shell-slim_groupstall
     dev_work_common_install
     vm_install
 
@@ -814,6 +831,7 @@ dev-work_groupstall() {
 }
 
 dev-work-full_groupstall() {
+    shell-slim_groupstall
     dev_work_common_install
     vm_install
     distrobox_install

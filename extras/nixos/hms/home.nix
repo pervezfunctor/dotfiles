@@ -51,6 +51,7 @@
       shellcheck
       shfmt
       starship
+      stow
       tealdeer
       trash-cli
       unar

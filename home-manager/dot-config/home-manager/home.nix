@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   home.username = builtins.getEnv "USER";
@@ -26,6 +26,7 @@
     ripgrep
     sd
     starship
+    stow
     tealdeer
     unzip
     yazi
