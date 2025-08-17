@@ -1,4 +1,4 @@
-{ ... }:
+{ config, home, ... }:
 {
   programs.home-manager = {
     enable = true;
@@ -16,5 +16,8 @@
     ".config/Code/User/settings.json" = {
       source = "${builtins.getEnv "HOME"}/.ilm/extras/vscode/minimal-settings.json";
     };
+
+    ".config/nvim" =
+      config.lib.file.mkOutOfStoreSymlink "${home.homeDirectory}/.ilm/nvim/dot-config/nvim";
   };
 }

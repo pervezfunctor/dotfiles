@@ -10,25 +10,44 @@
   home.stateVersion = "25.11"; # Please read the comment before changing.
 
   home.packages = with pkgs; [
+    alejandra
+    atuin
     bat
+    bottom
     carapace
     delta
+    devbox
+    devenv
     emacs-nox
     eza
     fd
     fzf
+    gh
+    gum
+    htop
+    jq
     just
     lazygit
     luarocks
     neovim
-    nixpkgs-fmt
-    nodejs
+    nixd
+    nixfmt-rfc-style
+    volta
+    nushell
+    p7zip
+    procs
     ripgrep
     sd
+    shellcheck
+    shfmt
     starship
     stow
     tealdeer
+    television
+    trash-cli
+    unar
     unzip
+    xz
     yazi
     zoxide
 

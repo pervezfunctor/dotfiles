@@ -10,10 +10,6 @@
     username = "${vars.userName}";
     homeDirectory = "${vars.homeDirectory}";
 
-    sessionVariables = {
-      EDITOR = "code --wait";
-    };
-
     packages = with pkgs; [
       alejandra
       atuin
@@ -46,6 +42,8 @@
       starship
       stow
       tealdeer
+      television
+      bottom
       trash-cli
       unar
       unzip
