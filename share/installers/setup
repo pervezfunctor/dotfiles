@@ -52,4 +52,4 @@ fi
 
 bootstrap "$@"
 
-slog "Installation done! Once you reboot you can use 'ilmg' command to install more packages"
+slog "Installation done! Once you reboot you can use 'ilmi' command to install more packages"
