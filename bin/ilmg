@@ -6,21 +6,24 @@ source <(curl -sSL https://is.gd/anumof)
 # all options
 # "base" "min" "shell-slim" "shell-slim-ui" "shell" "shell-ui" "dev" "vbox-dev" "vm" "vm-ui" "prog" "all" "nix" "sway" "hyprland" "slimbox" "box" "fullbox" "dbox" "nixbox" "tw-wslbox" "nixos-wslbox" "wslbox" "wsl" "centos-wsl" "centos-fast" "generic-ct" "generic" "fedora-atomic-tbox" "ublue" "fedora-atomic" "fedora-layered" "dbox-docker-dev" "box-default" "box-default-atomic"
 
-INSTALL_OPTIONS=("dev" "nix" "shell-slim" "shell" "shell-ui" "vm" "vm-ui")
+INSTALL_OPTIONS=(
+    "work"
+    "shell-slim"
+    "shell-ui"
+    "vm-ui"
+    "dev"
+    "dev-full"
+)
 
 help() {
     echo "Usage: $0 [OPTION]"
     echo "Options:"
-    echo "  dev             shell, vscode, docker and terminal."
-    echo "  nix             nix with home-manager"
+    echo "  work            shell, vscode, docker and terminal app."
     echo "  shell-slim      essential shell packages."
-    echo "  shell-slim-ui   essential shell packages with modern terminal."
-    echo "  shell           min and shell tools and config for zsh, tmux, neovim."
-    echo "  shell-ui        shell, fonts and modern terminal."
-    echo "  vm              vm tools(libvirt for linux and orbstack for macos)."
-    echo "  vm-ui           vm and virt-manager and gnome-boxes."
-    echo "  sway            sway desktop on fedora and tumbleweed."
-    echo "  hyprland        hyprland desktop on fedora and tumbleweed."
+    echo "  shell-ui        shell, and terminal app."
+    echo "  vm-ui           libvirt, virt-manager and gnome-boxes."
+    echo "  dev             shell-slim, vscode, libvirt, distrobox and terminal app."
+    echo "  dev-full        dev with nix and incus."
     echo "  help            shows this help."
     echo ""
 }
@@ -41,7 +44,7 @@ main() {
 
     if [[ -n "$SELECTED_OPTION" ]]; then
         echo ""
-        slog "Selected: $SELECTED_OPTION. Installing..."
+        slog "Installing $SELECTED_OPTION..."
         echo ""
         "${SELECTED_OPTION}_groupstall"
         slog "Installation complete."
@@ -51,7 +54,7 @@ main() {
     fi
 }
 
-if [[ "$1" == "help" ]]; then
+if [[ "$1" == "help" || "$1" == "-h" || "$1" == "--help" ]]; then
     help
 else
     CLICOLOR_FORCE=1 bootstrap "$@"
