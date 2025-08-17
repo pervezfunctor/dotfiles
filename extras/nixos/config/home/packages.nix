@@ -1,13 +1,18 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
+    # git
+    # zsh
+    # tmux
     alejandra
     atuin
     bacon
     cargo-info
+    carapace
     delta
-    devenv
     devbox
+    devenv
+    eza
     du-dust
     dua
     duf
@@ -18,9 +23,11 @@
     fselect
     gh
     gitui
+    gum
     htop
     hurl
     hyperfine
+    jq
     just
     kondo
     lazygit
@@ -29,8 +36,8 @@
     mprocs
     navi
     ncspot
-    nixfmt-rfc-style
     nixd
+    nixfmt-rfc-style
     presenterm
     procs
     ripgrep
@@ -52,9 +59,6 @@
     yazi
     yq
     zellij
-    gum
-    jq
-    # git
-
+    zoxide
   ];
 }
