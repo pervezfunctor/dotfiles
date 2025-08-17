@@ -1,12 +1,5 @@
 { pkgs, vars, ... }:
 {
-  home-manager.useUserPackages = true;
-  home-manager.useGlobalPkgs = true;
-
-  imports = [
-    ./sources.nix
-  ];
-
   programs.direnv = {
     enable = true;
     enableBashIntegration = true;
@@ -15,7 +8,7 @@
 
   home = {
     username = "${vars.userName}";
-    homeDirectory = "/home/${vars.userName}";
+    homeDirectory = "${vars.homeDirectory}";
 
     sessionVariables = {
       EDITOR = "code --wait";
@@ -63,6 +56,10 @@
 
     stateVersion = "25.11";
   };
+
+  imports = [
+    # ./sources.nix
+  ];
 
   # Home Manager can also manage your environment variables through
   # 'home.sessionVariables'. These will be explicitly sourced when using a

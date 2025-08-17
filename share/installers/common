@@ -761,7 +761,7 @@ nix-shell-slim_groupstall() {
     si zsh tmux git
 
     nix_install
-    new_hms
+    new-hms
     shell_confstall
 }
 
