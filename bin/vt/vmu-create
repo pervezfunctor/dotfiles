@@ -49,19 +49,38 @@ if [[ $# -gt 2 ]]; then
   usage
 fi
 
-DISTRO=${1:-debian}
-VM_NAME=${2:-$DISTRO-vmu}
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --ask-password)
+      ASK_PASSWORD=true
+      shift
+      ;;
+    *)
+      break
+      ;;
+    esac
+  done
 
-USER_NAME="${USER_NAME:-$DISTRO}"
-PASSWORD="${PASSWORD:-$USER_NAME}"
+  DISTRO=${1:-debian}
+  VM_NAME=${2:-$DISTRO-vmu}
+
+  if [[ "$ASK_PASSWORD" == true ]]; then
+    read -r -s -p "Enter password for $USER_NAME: " PASSWORD
+    echo
+  fi
+
+  USER_NAME="${USER_NAME:-$DISTRO}"
+  PASSWORD="${PASSWORD:-$USER_NAME}"
+
+  BASE_DIR="${BASE_DIR:=$HOME/.vmus}"
+  WORKDIR="$BASE_DIR/${VM_NAME}"
+  BASE_IMG_DIR="$BASE_DIR/images/${DISTRO}"
+  DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
+}
 
 CPUS=4
 RAM=8192
-
-BASE_DIR="${BASE_DIR:=$HOME/vmus}"
-WORKDIR="$BASE_DIR/${VM_NAME}"
-BASE_IMG_DIR="$BASE_DIR/images/${DISTRO}"
-DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
 
 create_dirs() {
   safe_rm "$WORKDIR"
@@ -217,6 +236,9 @@ EOF
 create_vm() {
   info "Creating VM..."
 
+  SSH_PORT=$(find_free_port)
+  echo "$SSH_PORT" >"$WORKDIR/ssh-port"
+
   virt-install \
     --connect qemu:///session \
     --name "$VM_NAME" \
@@ -225,10 +247,14 @@ create_vm() {
     --disk path="$DISK_IMG",format=qcow2,bus=virtio \
     --cloud-init user-data="${USER_DATA}",meta-data="${META_DATA}" \
     --os-variant $OS_VARIANT \
-    --video virtio \
-    --graphics spice \
     --virt-type kvm \
-    --network user,model=virtio \
+    --console pty,target_type=serial \
+    --graphics none \
+    --serial pty \
+    --network none \
+    --qemu-commandline="
+    -netdev user,id=n1,hostfwd=tcp::${SSH_PORT}-:22
+    -device virtio-net-pci,netdev=n1,addr=0x3.0x0" \
     --import
 }
 
@@ -251,7 +277,7 @@ show_completion_info() {
   echo "  vm ip $VM_NAME"
 
   echo -e "\n\033[1;33m💡 Tip:\033[0m You can SSH once you know the IP:"
-  echo "  ssh ${USER_NAME}@<IP_ADDRESS>"
+  echo -e "🔑  SSH into your VM with:\n  ssh -p ${SSH_PORT} ${USER_NAME}@localhost"
 }
 
 main() {
@@ -264,25 +290,9 @@ main() {
   generate_cloud_init
   create_vm
 
+  add_port_command
+  register_vm_port "$VM_NAME" "$SSH_PORT" "$USER_NAME"
   show_completion_info
 }
 
 main "$@"
-
-# vm_ip() {
-#   virsh --connect qemu:///session domifaddr debian-vmu --source agent |
-#     awk '/ipv4/ && $4 !~ /^127\./ {print $4}' |
-#     cut -d/ -f1
-# }
-
-# find_free_port() {
-#   local PORT=2222
-#   while ss -tuln | grep -q ":$PORT "; do
-#     PORT=$((PORT + 1))
-#   done
-#   echo "$PORT"
-# }
-# SSH_PORT=$(find_free_port)
-# --network user,hostfwd=tcp::${SSH_PORT}-:22
-# echo "$SSH_PORT" >"$WORKDIR/ssh-port"
-# echo -e "🔑  SSH into your VM with:\n  ssh -p ${SSH_PORT} ${USERNAME}@localhost"

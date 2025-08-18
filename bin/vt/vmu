@@ -33,7 +33,7 @@ COMMANDS:
     kill <vm-name>      Force stop a VM
     delete <vm-name>    Delete a VM completely
     console <vm-name>   Connect to VM console
-    show-ip <vm-name>   Show VM IP address
+    ssh <vm-name>       Connect to VM via SSH
     info <vm-name>      Show VM status and info
     logs <vm-name>      Show cloud-init logs
     disk <vm-name>      Show VM disk usage
@@ -104,10 +104,29 @@ console_vmu() {
   virsh --connect qemu:///session console "$1"
 }
 
-show_ip_vmu() {
-  echo
-  virsh --connect qemu:///session domifaddr --source agent "$1" | grep ipv4 | grep -v lo | awk '{print $1, $4}'
-  echo
+ssh_vmu() {
+  local VM="$1"
+  if [ -z "$VM" ]; then
+    echo "Usage: vmu ssh <vm-name>"
+    exit 1
+  fi
+
+  if [[ ! -f ~/.vm-ports ]]; then
+    echo "No VMs found"
+    exit 1
+  fi
+
+  local entry
+  entry=$(grep -m1 "^$VM " ~/.vm-ports) || {
+    echo "VM $VM not found"
+    exit 1
+  }
+
+  local port user
+  port=$(echo "$entry" | awk '{print $2}')
+  user=$(echo "$entry" | awk '{print $3}')
+
+  ssh -p "$port" "$user"@127.0.0.1
 }
 
 list_vmu() {
@@ -163,8 +182,8 @@ main() {
   console)
     console_vmu "$vm_name"
     ;;
-  show-ip)
-    show_ip_vmu "$vm_name"
+  ssh)
+    ssh_vmu "$vm_name"
     ;;
   logs)
     logs_vmu "$vm_name"
