@@ -58,25 +58,31 @@ sup() {
 }
 
 if is_ubuntu; then
-    alias si="sudo apt-get -qq -y install"
-    alias ss="apt-cache search"
-    alias sr="sudo apt-get purge"
+    alias sysi="sudo apt-get -qq -y install"
+    alias syss="apt-cache search"
+    alias sysr="sudo apt-get purge"
 elif is_rh; then
-    alias si="sudo dnf -q -y install"
-    alias ss="dnf search"
-    alias sr="sudo dnf remove"
+    alias sysi="sudo dnf -q -y install"
+    alias syss="dnf search"
+    alias sysr="sudo dnf remove"
 elif is_tw; then
-    alias si="sudo zypper --non-interactive --quiet install --auto-agree-with-licenses"
-    alias ss="zypper search"
-    alias sr="sudo zypper remove"
+    alias sysi="sudo zypper --non-interactive --quiet install --auto-agree-with-licenses"
+    alias syss="zypper search"
+    alias sysr="sudo zypper remove"
 elif is_mac; then
-    alias si="brew install -q"
-    alias ss="brew search"
-    alias sr="brew uninstall"
+    alias sysi="brew install -q"
+    alias syss="brew search"
+    alias sysr="brew uninstall"
 elif is_arch; then
-    alias si="sudo pacman -S --needed --quiet --noconfirm"
-    alias ss="pacman -Ss"
-    alias sr="sudo pacman -R"
+    alias sysi="sudo pacman -S --needed --quiet --noconfirm"
+    alias syss="pacman -Ss"
+    alias sysr="sudo pacman -R"
+elif is_alpine; then
+    alias sysi="sudo apk add --no-cache"
+    alias syss="apk search"
+    alias sysr="sudo apk del"
+elif is_nixos; then
+    alias syss="nix search nixpkgs"
 fi
 
 if has_cmd git; then
