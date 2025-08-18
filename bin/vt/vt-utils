@@ -25,6 +25,83 @@ stop_sudo_keepalive() {
   SUDO_KEEPALIVE_PID=""
 }
 
+is_net_service_running() {
+  if ! has_cmd ss; then
+    fail "ss command not found. Please install it first."
+    return 1
+  fi
+
+  local service=${1:-ssh}
+  sudo ss -tlnp | grep -q "$service"
+}
+
+define_default_net() {
+  local net_name=${1:-default}
+  if virsh net-info "$net_name" >/dev/null 2>&1; then
+    echo "Network '$net_name' is already defined."
+    return 0
+  else
+    echo "Network '$net_name' is not defined. Attempting to define it..."
+  fi
+
+  local candidates=(
+    /usr/share/libvirt/networks/default.xml
+    /usr/local/share/libvirt/networks/default.xml
+    /var/lib/libvirt/network/default.xml
+    /etc/libvirt/qemu/networks/default.xml
+  )
+
+  local xml
+  for xml in "${candidates[@]}"; do
+    if [[ -r "$xml" ]]; then
+      echo "Found default network XML at $xml"
+      virsh net-define "$xml"
+      return $?
+    fi
+  done
+
+  echo "Dumping default network XML to /tmp/default.xml to define it..."
+  rm -f /tmp/default.xml
+  virsh net-dumpxml default >/tmp/default.xml
+  virsh net-define /tmp/default.xml
+}
+
+undefine_default_net() {
+  local net_name=${1:-default}
+  if virsh net-info "$net_name" >/dev/null 2>&1; then
+    echo "Network '$net_name' is defined. Attempting to undefine it..."
+    virsh net-destroy "$net_name"
+    virsh net-undefine "$net_name"
+  else
+    echo "Network '$net_name' is not defined."
+    return 0
+  fi
+}
+
+ensure_libvirt_default_net() {
+  local net_name=${1:default}
+  define_default_net "$net_name" || {
+    echo "Failed to define network '$net_name'" >&2
+    return 1
+  }
+
+  local state
+  state=$(virsh net-info "$net_name" | awk '/State:/ {print $2}')
+  if [[ "$state" != "active" ]]; then
+    echo "Starting network '$net_name'..."
+    virsh net-start "$net_name" || return 1
+  else
+    echo "Network '$net_name' is already running."
+  fi
+
+  local autostart
+  autostart=$(virsh net-info "$net_name" | awk '/Autostart:/ {print $2}')
+  if [[ "$autostart" != "yes" ]]; then
+    echo "Enabling autostart for '$net_name'..."
+    virsh net-autostart "$net_name"
+  fi
+}
+
 check_tmux() {
   if ! has_cmd tmux; then
     fail "tmux is not installed. Please install it first."
@@ -69,4 +146,67 @@ incus_check() {
     fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
     exit 1
   fi
+}
+
+find_free_port() {
+  for port in $(seq 2222 65000); do
+    if ! ss -l -t -n | awk '{print $4}' | grep -q ":$port\$"; then
+      echo "$port"
+      return 0
+    fi
+  done
+  return 1
+}
+
+register_vm_port() {
+  local name="$1"
+  local port="$2"
+  local user="$3"
+  local VM_PORTS_FILE="$HOME/.vm-ports"
+
+  # remove old entry if exists
+  sed -i "/^$name /d" "$VM_PORTS_FILE" 2>/dev/null || true
+  echo "$name $port $user" >>"$VM_PORTS_FILE"
+}
+
+add_ssh_config() {
+  local vm_name="$1"
+  local port="$2"
+  local user="$3"
+
+  local ssh_config="$HOME/.ssh/config"
+
+  touch "$ssh_config"
+
+  if grep -qE "^Host[[:space:]]+$vm_name\$" "$ssh_config"; then
+    return
+  fi
+
+  {
+    echo "Host $vm_name"
+    echo "    HostName 127.0.0.1"
+    echo "    User $user"
+    echo "    Port $port"
+    echo "    IdentityFile ~/.ssh/id_rsa"
+    echo
+  } >>"$ssh_config"
+}
+
+add_port_command() {
+  local ssh_config="$HOME/.ssh/config"
+  touch "$ssh_config"
+
+  if grep -qE "^Host[[:space:]]+\*-vmu\$" "$ssh_config"; then
+    return
+  fi
+
+  cat <<'EOF' >>"$ssh_config"
+Host *-vmu
+  HostName 127.0.0.1
+  PortCommand sh -c 'grep -m1 "^%h " ~/.vm-ports | awk "{print \$2}"'
+  User       sh -c 'grep -m1 "^%h " ~/.vm-ports | awk "{print \$3}"'
+  StrictHostKeyChecking no
+  UserKnownHostsFile=/dev/null
+  LogLevel ERROR
+EOF
 }
