@@ -27,7 +27,6 @@ safe_rm() {
   fi
 }
 
-# add --console --spice
 usage() {
   cat <<EOF
   Usage: $0 --distro DISTRO [OPTIONS]
@@ -52,6 +51,13 @@ usage() {
       --console           Attach console to VM
       --spice             Attach spice to VM
       --help, -h          Show this help
+  EXAMPLES:
+      $0 --distro alpine
+      $0 --distro debian --name my-debian --username admin --password mypass
+      $0 --distro ubuntu --vcpus 4 --memory 4096 --disk-size 40G
+      $0 --distro fedora --ssh-key ~/.ssh/my_key.pub
+      $0 --distro arch --console --spice
+      $0 --distro tw --ask-password
 EOF
 }
 
@@ -390,7 +396,7 @@ main() {
   generate_cloud_init
 
   # print all info for debugging
-  echo_all_vars
+  # echo_all_vars
 
   create_vm
 
