@@ -1,3 +1,5 @@
+{ vars, ... }:
+
 let
   btrfsOpts = [
     "noatime"
@@ -10,7 +12,7 @@ in
 {
   disko.devices.disk.main = {
     type = "disk";
-    device = "/dev/vda";
+    device = vars.diskoMainDisk;
     content = {
       type = "gpt";
       partitions = {
@@ -25,7 +27,7 @@ in
           };
         };
         SWAP = {
-          size = "8G";
+          size = vars.diskoSwapSize or "8G"; # fallback if not defined
           type = "8200";
           content = {
             type = "swap";

@@ -19,5 +19,9 @@
   # generate password with nix-shell -p whois --run "mkpasswd -m bcrypt"
   vscodeServer.password = "vscode-server-password";
 
+  # THIS IS DANGEROUS. All data on this disk will be lost.
+  diskoMainDisk = "/dev/nvme0n1";
+  diskoSwapSize = "8G";
+
   # networking.interfaces.enp1s0.useDHCP = true;
 }
