@@ -542,6 +542,30 @@ virt-nix() {
     vm-create --distro debian --name nix --nix
 }
 
+virt-exec() {
+    if [[ $# -ne 3 ]]; then
+        fail "Usage: virt-exec <vm-name> <group>"
+        return 1
+    fi
+
+    local username="$1"
+    local vm_name="$2"
+    local extra_arg="$3"
+
+    # shellcheck disable=SC2029
+    ssh "$username@$vm_name" "bash -c \"\$(curl -sSL https://is.gd/setup)\" -- $extra_arg"
+
+    #     virsh qemu-agent-command "$vm_name" \
+    #         "$(jq -nc --arg cmd "bash -c $cmd" '{
+    #     execute: "guest-exec",
+    #     arguments: {
+    #       path: "/usr/bin/env",
+    #       arg: ["bash","-c",$cmd],
+    #       "capture-output": true
+    #     }
+    #   }')"
+}
+
 system-update() {
     if has_cmd sup; then
         sup

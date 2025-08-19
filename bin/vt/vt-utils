@@ -148,13 +148,40 @@ incus_check() {
   fi
 }
 
-find_free_port() {
-  for port in $(seq 2222 65000); do
-    if ! ss -l -t -n | awk '{print $4}' | grep -q ":$port\$"; then
+find_free_port_linear() {
+  local start_port="${1:-2222}"
+  local end_port="${2:-65000}"
+
+  # Get all listening ports in one call for efficiency
+  local listening_ports
+  listening_ports=$(ss -l -t -n | awk 'NR>1 {print $4}' | sed 's/.*://' | sort -n)
+
+  for port in $(seq "$start_port" "$end_port"); do
+    if ! echo "$listening_ports" | grep -q "^$port\$"; then
       echo "$port"
       return 0
     fi
   done
+  return 1
+}
+
+# Alternative: More efficient random approach
+find_free_port_random() {
+  local max_attempts=100
+  local attempt=0
+
+  while [ $attempt -lt $max_attempts ]; do
+    local port=$((RANDOM % (65000 - 2222 + 1) + 2222))
+
+    if ! ss -l -t -n | awk '{print $4}' | grep -q ":$port\$"; then
+      echo "$port"
+      return 0
+    fi
+
+    attempt=$((attempt + 1))
+  done
+
+  echo "Could not find free port after $max_attempts attempts" >&2
   return 1
 }
 
@@ -174,12 +201,21 @@ add_ssh_config() {
   local port="$2"
   local user="$3"
 
+  # Validate required parameters
+  if [[ -z "$vm_name" || -z "$port" || -z "$user" ]]; then
+    echo "Usage: add_ssh_config <vm_name> <port> <user>" >&2
+    return 1
+  fi
+
   local ssh_config="$HOME/.ssh/config"
 
+  # Ensure .ssh directory exists
+  mkdir -p "$HOME/.ssh"
   touch "$ssh_config"
 
   if grep -qE "^Host[[:space:]]+$vm_name\$" "$ssh_config"; then
-    return
+    echo "Host $vm_name already exists in SSH config" >&2
+    return 0
   fi
 
   {
@@ -188,25 +224,87 @@ add_ssh_config() {
     echo "    User $user"
     echo "    Port $port"
     echo "    IdentityFile ~/.ssh/id_rsa"
+    echo "    StrictHostKeyChecking no"
+    echo "    UserKnownHostsFile /dev/null"
     echo
   } >>"$ssh_config"
+
+  echo "Added SSH config for $vm_name (port $port, user $user)"
 }
 
 add_port_command() {
   local ssh_config="$HOME/.ssh/config"
   touch "$ssh_config"
 
-  if grep -qE "^Host[[:space:]]+\*-vmu\$" "$ssh_config"; then
+  if grep -qE "^Host[[:space:]]+\\*-vmu$" "$ssh_config"; then
     return
   fi
 
   cat <<'EOF' >>"$ssh_config"
 Host *-vmu
   HostName 127.0.0.1
-  PortCommand sh -c 'grep -m1 "^%h " ~/.vm-ports | awk "{print \$2}"'
-  User       sh -c 'grep -m1 "^%h " ~/.vm-ports | awk "{print \$3}"'
+  ProxyCommand sh -c 'port=$(grep -m1 "^%h " ~/.vm-ports | awk "{print \$2}"); exec nc 127.0.0.1 $port'
   StrictHostKeyChecking no
   UserKnownHostsFile=/dev/null
   LogLevel ERROR
 EOF
+}
+
+wait_for_ssh() {
+  local vm_name=$1
+  local max_attempts=60 # 5 minutes max
+  local attempt=0
+
+  echo "Waiting for VM to be ready and SSH accessible..."
+
+  while [ $attempt -lt $max_attempts ]; do
+    # First check if VM is running
+    if [ "$(virsh --connect qemu:///session domstate "$vm_name")" = "running" ]; then
+      # Try to add port forwarding (idempotent)
+      virsh --connect qemu:///session qemu-monitor-command "$vm_name" \
+        --hmp "hostfwd_add ::2222-:22" 2>/dev/null || true
+
+      # Test if SSH port is responding
+      if timeout 5 bash -c "</dev/tcp/localhost/2222" 2>/dev/null; then
+        echo "SSH is ready!"
+        return 0
+      fi
+    fi
+
+    echo "Attempt $((attempt + 1))/$max_attempts - VM not ready yet..."
+    sleep 5
+    ((attempt++))
+  done
+
+  echo "Timeout waiting for VM to be ready"
+  return 1
+}
+
+# Curently unused
+check_and_add_port_forward() {
+  local vm_name=$1
+  local host_port=${2:-2222}
+  local guest_port=${3:-22}
+
+  echo "Checking existing port forwards for VM: $vm_name"
+
+  # Get current network info
+  network_info=$(virsh --connect qemu:///session qemu-monitor-command "$vm_name" \
+    --hmp "info network" 2>/dev/null || echo "")
+
+  # Check if our port forwarding already exists
+  if echo "$network_info" | grep -q "TCP\[HOST_FORWARD\].*:${host_port}-"; then
+    echo "Port forwarding already exists for port $host_port"
+    return 0
+  fi
+
+  echo "Adding port forwarding: localhost:$host_port -> guest:$guest_port"
+  if virsh --connect qemu:///session qemu-monitor-command "$vm_name" \
+    --hmp "hostfwd_add ::${host_port}-:${guest_port}"; then
+    echo "Port forwarding added successfully"
+    return 0
+  else
+    echo "Failed to add port forwarding"
+    return 1
+  fi
 }
