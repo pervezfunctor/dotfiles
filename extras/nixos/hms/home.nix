@@ -7,8 +7,8 @@
   };
 
   home = {
-    username = "${vars.userName}";
-    homeDirectory = "${vars.homeDirectory}";
+    username = vars.userName;
+    homeDirectory = vars.homeDirectory;
 
     packages = with pkgs; [
       alejandra
@@ -27,6 +27,7 @@
       jq
       just
       lazygit
+      llama-cpp
       luarocks
       neovim
       nixd
@@ -54,6 +55,8 @@
 
     stateVersion = "25.11";
   };
+
+  news.display = "silent";
 
   imports = [
     # ./sources.nix

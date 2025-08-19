@@ -2,17 +2,10 @@
   description = "ILM home-manager flake";
 
   inputs = {
-    nixpkgs = {
-      url = "github:NixOS/nixpkgs/nixos-unstable";
-    };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     home-manager = {
       url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    stylix = {
-      url = "github:danth/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -21,7 +14,6 @@
     {
       nixpkgs,
       home-manager,
-      stylix,
       ...
     }:
     let
@@ -33,11 +25,14 @@
       vars = import ./vars.nix { inherit pkgs; };
     in
     {
-      homeConfigurations.${vars.userName} = home-manager.lib.homeManagerConfiguration {
+      homeConfigurations."${vars.userName}" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
-        extraSpecialArgs = { inherit vars; };
+
+        extraSpecialArgs = {
+          inherit vars;
+        };
+
         modules = [
-          stylix.homeModules.stylix
           ./home.nix
         ];
       };

@@ -369,7 +369,7 @@ interactive_mode() {
   fi
 
   while true; do
-    if ! VM_NAME=$(whiptail --title "VM Name" --inputbox "Enter the VM name" 10 60 "my-vm" 3>&1 1>&2 2>&3); then
+    if ! VM_NAME=$(whiptail --title "VM Name" --inputbox "Enter the VM name" 10 60 "${DISTRO}-vme" 3>&1 1>&2 2>&3); then
       exit 1
     fi
     if [ -z "$VM_NAME" ]; then
@@ -380,7 +380,7 @@ interactive_mode() {
   done
 
   while true; do
-    if ! USERNAME=$(whiptail --title "Username" --inputbox "Enter the username" 10 60 "user" 3>&1 1>&2 2>&3); then
+    if ! USERNAME=$(whiptail --title "Username" --inputbox "Enter the username" 10 60 "${DISTRO}" 3>&1 1>&2 2>&3); then
       exit 1
     fi
     if [ -z "$USERNAME" ]; then
@@ -443,16 +443,16 @@ interactive_mode() {
     fi
   done
 
-  # while true; do
-  #   if ! BRIDGE=$(whiptail --title "Bridge" --inputbox "Enter the bridge name" 10 60 "default" 3>&1 1>&2 2>&3); then
-  #     exit 1
-  #   fi
-  #   if ! virsh net-list --all --name | grep -q "^$BRIDGE$"; then
-  #     whiptail --title "Invalid Input" --msgbox "Bridge '$BRIDGE' not found." 8 78
-  #   else
-  #     break
-  #   fi
-  # done
+  while true; do
+    if ! BRIDGE=$(whiptail --title "Bridge" --inputbox "Enter the bridge name" 10 60 "default" 3>&1 1>&2 2>&3); then
+      exit 1
+    fi
+    if ! virsh net-list --all --name | grep -q "^$BRIDGE$"; then
+      whiptail --title "Invalid Input" --msgbox "Bridge '$BRIDGE' not found." 8 78
+    else
+      break
+    fi
+  done
 
   whiptail --title "Summary" --msgbox "
   Distribution: $DISTRO
