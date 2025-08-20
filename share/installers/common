@@ -101,7 +101,7 @@ pixi_slim_shell_install() {
     has_cmd rg || pi ripgrep
     has_cmd gum || pi go-gum
 
-    pis starship zoxide bat eza gh fzf carapace shellcheck fd git-delta
+    pis starship zoxide bat eza gh fzf carapace shellcheck fd git-delta jq yq
 }
 
 pixi_shell_install() {
@@ -744,9 +744,9 @@ shell-slim-group_check() {
 shell-group_check() {
     shell-slim-group_check
     cmd_check gh nvim zsh tmux lazygit sd bat brew htop btm atuin gawk
-    cmd_check shellcheck shfmt ug tldr fd direnv yq
+    cmd_check shellcheck shfmt ug tldr fd direnv jq yq
     # cmd_check cheat choose curlie direnv doggo dotenv procs
-    # cmd_check duf dust gdu hyperfine jq just yq
+    # cmd_check duf dust gdu hyperfine just
 }
 
 shell-slim_groupstall() {

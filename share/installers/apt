@@ -44,7 +44,7 @@ ubuntu_packages() {
 
     si git-core gh git-delta unzip wget curl net-tools iproute2 nmap gum eza \
         trash-cli tar stow gcc make file tree bat ripgrep fzf gawk starship \
-        zoxide fd-find htop sd batdialog whiptail tealdeer
+        zoxide fd-find htop sd batdialog whiptail tealdeer yq
 
     if is_desktop || is_distrobox; then
         si wl-clipboard libsecret-tools
@@ -97,7 +97,7 @@ debian_packages() {
     si stow git-core gh git-delta lazygit unzip wget curl trash-cli tar \
         net-tools iproute2 nmap gcc make file tree ripgrep zoxide fd-find htop \
         gawk tealdeer dialog whiptail starship \
-        just fzf gum eza shellcheck shfmt jq broot duf sd xh atuin procs sd \
+        just fzf gum eza shellcheck shfmt broot duf sd xh atuin procs sd \
         hyperfine htop jq direnv yq dysk bat
 
     if is_desktop || is_distrobox; then
@@ -311,6 +311,8 @@ vm_install() {
     libvirt_confstall
 
     cockpit_install
+
+    is_desktop && si virt-viewer
 }
 
 incus_install() {

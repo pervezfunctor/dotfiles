@@ -69,7 +69,7 @@ essential_install() {
 }
 
 cli_install() {
-    bis tmux pkg-config urlview htop starship gping broot mcfly jq \
+    bis tmux pkg-config urlview htop starship gping broot mcfly jq yq \
         zsh-syntax-highlighting zsh-autosuggestions golang rust ripgrep neovim \
         neovide luarocks lazydocker reattach-to-user-namespace \
         brew link luarocks
