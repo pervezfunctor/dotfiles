@@ -1315,7 +1315,23 @@ pis() {
 }
 
 is_nixos() {
-    [ -e /etc/nixos/configuration.nix ]
+    if [ -r /etc/os-release ]; then
+        if grep -q '^ID=nixos' /etc/os-release 2>/dev/null; then
+            return 0
+        fi
+    fi
+
+    if has_cmd nixos-version >/dev/null 2>&1; then
+        if nixos-version >/dev/null 2>&1; then
+            return 0
+        fi
+    fi
+
+    if [ -f /etc/NIXOS ]; then
+        return 0
+    fi
+
+    return 1
 }
 
 eval_brew() {
