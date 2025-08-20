@@ -101,14 +101,14 @@
           ]
         );
 
-      mkAnywhereSystem =
-        extraModules:
-        mkBareSystem (
-          extraModules
-          ++ [
-            disko.nixosModules.disko
-          ]
-        );
+      # mkAnywhereSystem =
+      #   extraModules:
+      #   mkBareSystem (
+      #     extraModules
+      #     ++ [
+      #       disko.nixosModules.disko
+      #     ]
+      #   );
 
     in
     {
@@ -135,12 +135,12 @@
         sway = mkUiSystem [ ./sway.nix ];
         sway-vm = mkVmSystem [ ./sway.nix ];
 
-        generic = mkAnywhereSystem [
-          ./disko-config.nix
-          ./hardware-configuration.nix
-          ./gnome.nix
-          ./ssh.nix
-        ];
+        # generic = mkAnywhereSystem [
+        #   ./disko-config.nix
+        #   ./hardware-configuration.nix
+        #   ./gnome.nix
+        #   ./ssh.nix
+        # ];
 
         um580 = mkBareSystem [
           ./hosts/um580/hardware-configuration.nix

@@ -22,7 +22,7 @@
   #   enable = true;
   #   addresses = true;
   # };
-  # hardware.bluetooth.enable = true;
+  hardware.bluetooth.enable = true;
 
   system.stateVersion = "25.11";
 }

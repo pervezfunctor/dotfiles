@@ -1,9 +1,14 @@
 { pkgs, ... }:
 {
+  # gnome
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
-
   security.pam.services.gdm.enableGnomeKeyring = true;
+
+  # or kde
+  # services.displayManager.sddm.enable = true;
+  # services.desktopManager.plasma6.enable = true;
+  # security.pam.services.sddm.enableGnomeKeyring = true;
 
   programs.dconf.enable = true;
   programs.gnome-terminal.enable = true;
@@ -20,7 +25,7 @@
   };
   # xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
-  services.gnome.core-apps.enable = false;
+  # services.gnome.core-apps.enable = false;
 
   # services.accounts-daemon.enable = true;
   # services.dleyna-renderer.enable = mkDefault true;
