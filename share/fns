@@ -590,3 +590,30 @@ remove_keyrings() {
     sudo rm -rf /run/user/1000/keyrings/*
     trash .local/share/keyrings/*
 }
+
+partitions() {
+    lsblk -f -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL,UUID | grep -v '/snap/'
+    echo "Total block devices (excluding snaps): $(lsblk -f | grep -v '/snap/' | grep -c '^[a-z]')"
+
+}
+
+subvolumes() {
+    local btrfs_mounts
+    btrfs_mounts=$(mount | grep "type btrfs" | awk '{print $3}' | sort -u)
+
+    if [ -z "$btrfs_mounts" ]; then
+        echo "No Btrfs filesystems found."
+        return 1
+    fi
+
+    for mount_point in $btrfs_mounts; do
+        echo "Btrfs filesystem: $mount_point"
+        echo "----------------------------------------"
+        if ! sudo btrfs subvolume list -p -t "$mount_point" 2>/dev/null; then
+            echo "Unable to list subvolumes for $mount_point"
+        fi
+    done
+
+    echo
+    echo "Btrfs filesystems: $(echo "$btrfs_mounts" | wc -l)"
+}
