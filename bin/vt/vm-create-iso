@@ -1,0 +1,138 @@
+#!/bin/bash
+
+validate_vm_name() {
+    local name="$1"
+    if [[ -z "$name" ]]; then
+        echo "VM name cannot be empty"
+        return 1
+    fi
+    if [[ ! "$name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "VM name can only contain letters, numbers, underscores, and hyphens"
+        return 1
+    fi
+    return 0
+}
+
+validate_integer() {
+    local value="$1"
+    local field="$2"
+    if [[ ! "$value" =~ ^[0-9]+$ ]]; then
+        echo "$field must be a positive integer"
+        return 1
+    fi
+    if [[ "$value" -le 0 ]]; then
+        echo "$field must be greater than zero"
+        return 1
+    fi
+    return 0
+}
+
+while true; do
+    if ! result=$(yad --form \
+        --title="Create Virtual Machine" \
+        --text="Enter the details for the new VM:" \
+        --separator="|" \
+        --width=450 \
+        --height=400 \
+        --field="VM Name" "" \
+        --field="RAM (GB)":NUM "16!1..128!1" \
+        --field="vCPUs":NUM "4!1..32!1" \
+        --field="Disk Size (GB)":NUM "30!5..2000!5" \
+        --field="ISO Path":FL "" \
+        --field="Graphics":CB "spice!headless!virgl"); then
+        echo "VM creation cancelled by user."
+        exit 1
+    fi
+
+    IFS='|' read -r vm_name ram vcpus disk iso_path graphics <<<"$result"
+
+    error_msg=""
+
+    if ! validate_vm_name "$vm_name"; then
+        error_msg+="$(validate_vm_name "$vm_name")\n"
+    fi
+
+    if ! validate_integer "$ram" "RAM"; then
+        error_msg+="$(validate_integer "$ram" "RAM")\n"
+    fi
+
+    if ! validate_integer "$vcpus" "vCPUs"; then
+        error_msg+="$(validate_integer "$vcpus" "vCPUs")\n"
+    fi
+
+    if ! validate_integer "$disk" "Disk Size"; then
+        error_msg+="$(validate_integer "$disk" "Disk Size")\n"
+    fi
+
+    if [[ -z "$iso_path" ]]; then
+        error_msg+="ISO Path must be provided\n"
+    fi
+
+    if [[ ! -f "$iso_path" ]]; then
+        error_msg+="ISO file not found at '$iso_path'\n"
+    fi
+
+    if [[ -n "$error_msg" ]]; then
+        zenity --error --title="Validation Error" --text="Please fix the following errors:\n\n$error_msg"
+        continue
+    fi
+    break
+done
+
+echo "Form completed successfully!"
+echo "VM Name: $vm_name"
+echo "RAM: $ram GB"
+echo "vCPUs: $vcpus"
+echo "Disk: $disk GB"
+echo "ISO Path: $iso_path"
+echo "Graphics: $graphics"
+
+case "$graphics" in
+"headless")
+    graphics_param="--graphics none"
+    video_param=""
+    ;;
+"spice")
+    graphics_param="--graphics spice"
+    video_param="--video qxl"
+    ;;
+"virgl")
+    graphics_param="--graphics spice,listen=none,gl=on"
+    video_param="--video virtio,accel3d=on"
+    ;;
+*)
+    graphics_param="--graphics spice"
+    video_param="--video qxl"
+    ;;
+esac
+
+virt_install_cmd="sudo virt-install --os-variant generic \
+    --name \"$vm_name\" \
+    --ram $((ram * 1024)) \
+    --vcpus $vcpus \
+    --disk path=/var/lib/libvirt/images/${vm_name}.qcow2,size=$disk,format=qcow2 \
+    --cdrom=\"$iso_path\" \
+    --network default \
+    $graphics_param \
+    $video_param \
+    --noautoconsole"
+
+echo ""
+echo "Running virt-install command:"
+echo "$virt_install_cmd"
+echo ""
+
+if ! zenity --question --title="Create VM" --text="Ready to create VM '$vm_name'?\n\nThis will run:\n$virt_install_cmd" --width=400; then
+    echo "Creating virtual machine..."
+    echo "VM creation cancelled by user."
+    exit 0
+fi
+
+if eval "$virt_install_cmd"; then
+    zenity --info --title="Success" --text="Virtual machine '$vm_name' created successfully!"
+    echo "VM creation completed successfully!"
+else
+    zenity --error --title="Error" --text="Failed to create virtual machine '$vm_name'.\nCheck the terminal for error details."
+    echo "VM creation failed!"
+    exit 1
+fi

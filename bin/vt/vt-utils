@@ -297,3 +297,18 @@ EOF
 #     return 1
 #   fi
 # }
+
+LIBVIRT_ISO_POOL_PATH="/srv/libvirt/images/iso"
+LIBVIRT_ISO_POOL_NAME="iso-pool"
+
+libvirt_iso_pool_create() {
+  if virsh pool-info "$LIBVIRT_ISO_POOL_NAME" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "Creating ISO pool $LIBVIRT_ISO_POOL_NAME at $LIBVIRT_ISO_POOL_PATH..."
+  sudo mkdir -p "$LIBVIRT_ISO_POOL_PATH"
+  sudo virsh pool-define-as "$LIBVIRT_ISO_POOL_NAME" dir --target "$LIBVIRT_ISO_POOL_PATH"
+  sudo virsh pool-start "$LIBVIRT_ISO_POOL_NAME"
+  sudo virsh pool-autostart "$LIBVIRT_ISO_POOL_NAME"
+}
