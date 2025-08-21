@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DOTFILES_DIR="${HOME}/.ilm"
+DOTFILES_REPO="https://github.com/pervezfunctor/dotfiles.git"
+NIXOS_CONFIG_DIR="${HOME}/nixos-config"
+HM_CONFIG_DIR="${HOME}/hms-config"
+TEMP_NIXOS_CONFIG_DIR="/tmp/nixos-config-gen-$"
+
+slog() {
+  printf '\r\033[2K [ \033[00;34mINFO\033[0m ] %s\n' "$*"
+}
+
+fail() {
+  printf '\r\033[2K [ \033[0;31mFAIL\033[0m ] %s\n' "$*" >&2
+  exit 1
+}
+
+has_cmd() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+cleanup() {
+  slog "Cleaning up temporary files..."
+  rm -rf "${TEMP_NIXOS_CONFIG_DIR}"
+}
+
+main() {
+  trap cleanup EXIT
+
+  slog "Starting NixOS and Home Manager setup..."
+
+  if ! has_cmd git; then
+    fail "git is not installed. Please install git and run this script again."
+  fi
+
+  if [ -d "${DOTFILES_DIR}/.git" ]; then
+    slog "Dotfiles directory ${DOTFILES_DIR} already exists. Updating..."
+    (cd "${DOTFILES_DIR}" && git pull --rebase)
+  else
+    slog "Cloning dotfiles repository to ${DOTFILES_DIR}..."
+    git clone "${DOTFILES_REPO}" "${DOTFILES_DIR}"
+  fi
+
+  slog "Setting up NixOS configuration in ${NIXOS_CONFIG_DIR}..."
+
+  slog "Generating hardware configuration..."
+  sudo nixos-generate-config --dir "${TEMP_NIXOS_CONFIG_DIR}"
+
+  mkdir -p "${NIXOS_CONFIG_DIR}"
+
+  mv "${TEMP_NIXOS_CONFIG_DIR}/hardware-configuration.nix" "${NIXOS_CONFIG_DIR}/"
+
+  slog "Copying NixOS configuration from dotfiles..."
+  rsync -a "${DOTFILES_DIR}/extras/nixos/installer/" "${NIXOS_CONFIG_DIR}/"
+
+  slog "Setting up Home Manager configuration in ${HM_CONFIG_DIR}..."
+  mkdir -p "${HM_CONFIG_DIR}"
+  rsync -a "${DOTFILES_DIR}/extras/nixos/hms/" "${HM_CONFIG_DIR}/"
+
+  slog "Applying NixOS configuration. This may take a while..."
+  sudo nixos-rebuild switch --flake "${NIXOS_CONFIG_DIR}#$(hostname)"
+
+  slog "Applying Home Manager configuration..."
+  nix run home-manager -- switch --flake "${HM_CONFIG_DIR}#${USER}" --impure -b bak
+
+  slog "Setup complete!"
+}
+
+main "$@"

@@ -82,6 +82,9 @@
     newt
     nixd
     nixfmt-rfc-style
+    trash-cli
+    ripgrep
+    rsync
     unzip
     zsh
   ];
