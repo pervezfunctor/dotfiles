@@ -791,39 +791,31 @@ shell-ui_groupstall() {
 }
 
 dev_work_common_install() {
+    shell-slim-ui_groupstall
     vscode_install
     jetbrains-mono_install
-
-    if is_linux; then
-        flathub_install
-        ptyxis_install
-    else
-        terminal_bin_install
-    fi
 }
 
 dev_groupstall() {
-    shell-slim_groupstall
     dev_work_common_install
-    vm_install
+    vm-ui_install
     distrobox_install
 }
 
 dev-full_groupstall() {
     nix-shell-slim_groupstall
-    dev_work_common_install
+    vscode_install
+    jetbrains-mono_install
     npm_install
     incus_install
 }
 
 work_groupstall() {
-    shell-slim_groupstall
     dev_work_common_install
     docker_install
 }
 
 dev-work_groupstall() {
-    shell-slim_groupstall
     dev_work_common_install
     vm_install
 
@@ -831,7 +823,6 @@ dev-work_groupstall() {
 }
 
 dev-work-full_groupstall() {
-    shell-slim_groupstall
     dev_work_common_install
     vm_install
     distrobox_install
