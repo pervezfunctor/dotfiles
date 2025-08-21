@@ -8,6 +8,6 @@ if [[ $# -ne 1 ]]; then
 fi
 
 nix run github:nix-community/nixos-anywhere -- \
-  --flake .#generic \
+  --flake .#vm \
   --generate-hardware-config nixos-generate-config ./hardware-configuration.nix \
   --target-host "root@${1}"

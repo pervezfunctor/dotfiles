@@ -4,6 +4,10 @@
   boot.loader.systemd-boot.enable = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
+  # enable gnome
+  services.displayManager.gdm.enable = true;
+  services.desktopManager.gnome.enable = true;
+
   console = {
     font = "Lat2-Terminus16";
     useXkbConfig = true;
@@ -82,7 +86,9 @@
     zsh
   ];
 
-  users.users.root.openssh.authorizedKeys.keys = vars.sshKey;
+  users.users.root.openssh.authorizedKeys.keys = [
+    vars.sshKey
+  ];
   services.openssh = {
     enable = true;
     settings = {

@@ -10,6 +10,6 @@
   shell = pkgs.zsh;
   # shell = pkgs.bash;
 
-  diskoMainDisk = "<host-disk>"; # like "/dev/nvme0n1";
+  diskoMainDisk = "<disk-path>"; # like "/dev/nvme0n1";
   diskoSwapSize = "8G";
 }
