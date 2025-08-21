@@ -32,6 +32,7 @@
     pciutils
     plocate
     proxmox-backup-client
+    rclone
     restic
     rsync
     smartmontools

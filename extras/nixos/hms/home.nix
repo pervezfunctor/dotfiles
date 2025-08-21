@@ -36,7 +36,9 @@
       nushell
       p7zip
       procs
+      rclone
       ripgrep
+      rsync
       sd
       shellcheck
       shfmt

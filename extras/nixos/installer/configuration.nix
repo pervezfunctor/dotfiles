@@ -83,6 +83,7 @@
     nixd
     nixfmt-rfc-style
     trash-cli
+    rclone
     ripgrep
     rsync
     unzip

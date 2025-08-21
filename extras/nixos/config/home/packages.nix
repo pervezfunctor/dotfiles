@@ -40,8 +40,10 @@
     nixfmt-rfc-style
     presenterm
     procs
+    rclone
     ripgrep
     ripgrep-all
+    rsync
     rtx
     rusty-man
     sd
