@@ -365,6 +365,7 @@ For installation use the minimal iso. DO NOT USE the default ISO, if this is you
 Some Instructions for setting up your NixOS system based on my dotfiles. *Work in progress*
 
 First, boot with minimal iso. Once you are dropped to a shell, change to `root` user, and set a password.
+**Importante Note**: You must have UEFI bootloader. You MUST disable secure boot.
 
 ```bash
 sudo -i # should not ask for password

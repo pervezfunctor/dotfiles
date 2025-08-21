@@ -8,6 +8,11 @@
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
 
+  # or kde
+  # services.displayManager.sddm.enable = true;
+  # services.desktopManager.plasma6.enable = true;
+  # security.pam.services.sddm.enableGnomeKeyring = true;
+
   console = {
     font = "Lat2-Terminus16";
     useXkbConfig = true;
@@ -63,8 +68,11 @@
     ];
 
   };
-  programs.zsh.enable = true;
+
   programs.bash.enable = true;
+  programs.zsh.enable = true;
+  programs.vscode.enable = true;
+  programs.firefox.enable = true;
 
   environment.systemPackages = with pkgs; [
     alejandra
@@ -72,27 +80,33 @@
     coreutils
     curl
     dialog
+    firefox
     gawk
     git
     gnugrep
     gnumake
+    gvfs
     libsecret
     lm_sensors
     micro
+    nerd-fonts.jetbrains-mono
     newt
     nixd
     nixfmt-rfc-style
-    trash-cli
+    ptyxis
     rclone
     ripgrep
     rsync
+    trash-cli
     unzip
+    wl-clipboard
     zsh
   ];
 
   users.users.root.openssh.authorizedKeys.keys = [
     vars.sshKey
   ];
+
   services.openssh = {
     enable = true;
     settings = {
@@ -100,6 +114,24 @@
       PermitRootLogin = "prohibit-password";
     };
   };
+
+  programs.dconf.enable = true;
+
+  services.pipewire = {
+    enable = true;
+    pulse.enable = true;
+  };
+
+  programs.nix-ld.enable = true;
+
+  services.flatpak.enable = true;
+
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
+
+  networking.networkmanager.enable = true;
 
   system.stateVersion = "25.11";
 }

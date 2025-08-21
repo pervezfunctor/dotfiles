@@ -5,11 +5,6 @@
   services.desktopManager.gnome.enable = true;
   security.pam.services.gdm.enableGnomeKeyring = true;
 
-  # or kde
-  # services.displayManager.sddm.enable = true;
-  # services.desktopManager.plasma6.enable = true;
-  # security.pam.services.sddm.enableGnomeKeyring = true;
-
   programs.dconf.enable = true;
   programs.gnome-terminal.enable = true;
 

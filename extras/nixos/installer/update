@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+NIXOS_CONFIG_DIR="${HOME}/nixos-config"
+HM_CONFIG_DIR="${HOME}/hms-config"
+
+slog() {
+  printf '\r\033[2K [ \033[00;34mINFO\033[0m ] %s\n' "$*"
+}
+
+has_cmd() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+main() {
+  if ! has_cmd nixos-rebuild || ! has_cmd nix; then
+    slog "Nix is not installed. Please install Nix and run this script again."
+    exit 1
+  fi
+
+  slog "Applying NixOS configuration. This may take a while..."
+  sudo nixos-rebuild switch --flake "${NIXOS_CONFIG_DIR}#$(hostname)"
+
+  slog "Applying Home Manager configuration..."
+  nix run home-manager -- switch --flake "${HM_CONFIG_DIR}#${USER}" --impure -b bak
+
+  slog "Setup complete!"
+}
+
+main "$@"

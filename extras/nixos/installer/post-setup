@@ -21,6 +21,8 @@ has_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
+TEMP_NIXOS_CONFIG_DIR=$(mktemp -d -t nixos-config.XXXXXX)
+
 cleanup() {
   slog "Cleaning up temporary files..."
   rm -rf "${TEMP_NIXOS_CONFIG_DIR}"
@@ -35,10 +37,7 @@ main() {
     fail "git is not installed. Please install git and run this script again."
   fi
 
-  if [ -d "${DOTFILES_DIR}/.git" ]; then
-    slog "Dotfiles directory ${DOTFILES_DIR} already exists. Updating..."
-    (cd "${DOTFILES_DIR}" && git pull --rebase)
-  else
+  if ! [ -d "${DOTFILES_DIR}/.git" ]; then
     slog "Cloning dotfiles repository to ${DOTFILES_DIR}..."
     git clone "${DOTFILES_REPO}" "${DOTFILES_DIR}"
   fi
@@ -46,7 +45,7 @@ main() {
   slog "Setting up NixOS configuration in ${NIXOS_CONFIG_DIR}..."
 
   slog "Generating hardware configuration..."
-  sudo nixos-generate-config --dir "${TEMP_NIXOS_CONFIG_DIR}"
+  sudo nixos-generate-config --no-filesystems --dir "${TEMP_NIXOS_CONFIG_DIR}"
 
   mkdir -p "${NIXOS_CONFIG_DIR}"
 

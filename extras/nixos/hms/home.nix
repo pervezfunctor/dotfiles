@@ -6,6 +6,17 @@
     nix-direnv.enable = true;
   };
 
+  programs = {
+    starship = {
+      enable = true;
+      enableZshIntegration = true;
+      enableBashIntegration = true;
+    };
+    eza.enable = true;
+    fzf.enable = true;
+    zoxide.enable = true;
+  };
+
   home = {
     username = vars.userName;
     homeDirectory = vars.homeDirectory;

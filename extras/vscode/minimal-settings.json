@@ -57,5 +57,6 @@
   "editor.glyphMargin": false,
   "workbench.sideBar.location": "right",
   // "workbench.activityBar.location": "hidden",
-  "window.menuBarVisibility": "toggle"
+  "window.menuBarVisibility": "toggle",
+  "update.showReleaseNotes": false
 }
