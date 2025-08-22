@@ -338,3 +338,11 @@ if has_cmd virt-install; then
     alias vmsyc="virt-install --connect qemu:///system"
     alias vmse="virt-install --connect qemu:///session"
 fi
+
+if has_cmd nixos-rebuild; then
+    alias nrf="sudo nixos-rebuild --flake"
+fi
+
+if has_cmd home-manager; then
+    alias hmf="home-manager switch --impure -b bak --flake"
+fi
