@@ -2,12 +2,17 @@
 
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-  echo "Usage: $0 <host-ip-address>"
+main() {
+  local remote-ip="$1"
+  local hostname="$2"
+  nix run github:nix-community/nixos-anywhere -- --flake .#"${hostname}" \
+    --generate-hardware-config nixos-generate-config ./hardware-configuration.nix \
+    --target-host "root@${remote-ip}"
+}
+
+if [[ $# -ne 2 ]]; then
+  echo "Usage: $0 <remote-host-ip> <remote-hostname>"
   exit 1
 fi
 
-nix run github:nix-community/nixos-anywhere -- \
-  --flake .#vm \
-  --generate-hardware-config nixos-generate-config ./hardware-configuration.nix \
-  --target-host "root@${1}"
+main "$@"
