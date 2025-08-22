@@ -4,8 +4,9 @@ set -euo pipefail
 
 DOTFILES_DIR="${HOME}/.ilm"
 DOTFILES_REPO="https://github.com/pervezfunctor/dotfiles.git"
-NIXOS_CONFIG_DIR="${HOME}/nixos-config"
-HM_CONFIG_DIR="${HOME}/hms-config"
+NIXOS_CONFIG_DIR="${DOTFILES_DIR}/extras/nixos/config"
+HOSTNAME=$(hostname)
+HOST_DIR="${NIXOS_CONFIG_DIR}/hosts/$HOSTNAME"
 TEMP_NIXOS_CONFIG_DIR="/tmp/nixos-config-gen-$"
 
 slog() {
@@ -47,22 +48,12 @@ main() {
   slog "Generating hardware configuration..."
   sudo nixos-generate-config --no-filesystems --dir "${TEMP_NIXOS_CONFIG_DIR}"
 
-  mkdir -p "${NIXOS_CONFIG_DIR}"
+  mkdir -p "${HOST_DIR}"
 
-  mv "${TEMP_NIXOS_CONFIG_DIR}/hardware-configuration.nix" "${NIXOS_CONFIG_DIR}/"
-
-  slog "Copying NixOS configuration from dotfiles..."
-  rsync -a "${DOTFILES_DIR}/extras/nixos/installer/" "${NIXOS_CONFIG_DIR}/"
-
-  slog "Setting up Home Manager configuration in ${HM_CONFIG_DIR}..."
-  mkdir -p "${HM_CONFIG_DIR}"
-  rsync -a "${DOTFILES_DIR}/extras/nixos/hms/" "${HM_CONFIG_DIR}/"
+  mv "${TEMP_NIXOS_CONFIG_DIR}/hardware-configuration.nix" "${HOST_DIR}/"
 
   slog "Applying NixOS configuration. This may take a while..."
-  sudo nixos-rebuild switch --flake "${NIXOS_CONFIG_DIR}#$(hostname)"
-
-  slog "Applying Home Manager configuration..."
-  nix run home-manager -- switch --flake "${HM_CONFIG_DIR}#${USER}" --impure -b bak
+  sudo nixos-rebuild switch --flake "${NIXOS_CONFIG_DIR}#$HOSTNAME"
 
   slog "Setup complete!"
 }

@@ -135,11 +135,11 @@
         sway = mkUiSystem [ ./sway.nix ];
         sway-vm = mkVmSystem [ ./sway.nix ];
 
-        generic = mkAnywhereSystem [
+        "${vars.hostName}" = mkAnywhereSystem [
           ./disko-config.nix
           ./gnome.nix
           ./ssh.nix
-          ./hardware-configuration.nix
+          ./hosts/${vars.hostName}/hardware-configuration.nix
         ];
 
         um580 = mkBareSystem [
