@@ -1,6 +1,5 @@
 { pkgs, ... }:
 {
-
   gtk = {
     enable = true;
 
@@ -96,6 +95,7 @@
     "org/gnome/desktop/screensaver" = {
       lock-enabled = false;
     };
+
     "org/gnome/desktop/interface" = {
       gtk-theme = "Adwaita-dark";
       icon-theme = "Adwaita-dark";

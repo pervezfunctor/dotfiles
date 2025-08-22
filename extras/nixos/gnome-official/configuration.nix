@@ -1,10 +1,7 @@
-{  pkgs, ... }:
+{ pkgs, ... }:
 
 {
-  imports =
-    [
-      ./hardware-configuration.nix
-    ];
+  imports = [ ./hardware-configuration.nix ];
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -13,7 +10,7 @@
 
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
-  # networking.wireless.enable = true;  # wireless support via wpa_supplicant.
+  # networking.wireless.enable = true; # wireless support via wpa_supplicant.
 
   time.timeZone = "Asia/Kolkata";
   i18n.defaultLocale = "en_US.UTF-8";
@@ -80,7 +77,11 @@
     isNormalUser = true;
     description = "Pervez Iqbal";
     shell = pkgs.zsh;
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "docker"
+    ];
   };
   services.displayManager.autoLogin.enable = true;
   services.displayManager.autoLogin.user = "pervez";
@@ -96,10 +97,11 @@
   nixpkgs.config.allowUnfree = true;
 
   environment.systemPackages = with pkgs; [
-    alejandra
+    nixfmt-rfc-style
     curl
     devbox
     devenv
+    direnv
     eza
     fzf
     gh
@@ -127,15 +129,6 @@
   services.flatpak.enable = true;
   programs.nix-ld.enable = true;
 
-
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
-
   services.openssh.enable = true;
   networking.firewall.enable = true;
 
@@ -151,9 +144,20 @@
       keep-build-log = true;
       keep-outputs = true;
       keep-derivations = true;
-      experimental-features = [ "nix-command" "flakes" ];
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
     };
   };
+
+  # Some programs need SUID wrappers, can be configured further or are
+  # started in user sessions.
+  # programs.mtr.enable = true;
+  # programs.gnupg.agent = {
+  #   enable = true;
+  #   enableSSHSupport = true;
+  # };
 
   system.stateVersion = "25.05";
 }

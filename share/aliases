@@ -287,14 +287,6 @@ if has_cmd fzf; then
     alias fv="fzf --bind 'enter:become(vim {})'"
 fi
 
-# function c() {
-#     code --enable-features=UseOzonePlatform --ozone-platform-hint=auto "$@"
-# }
-
-# function ci() {
-#     code-insiders --enable-features=UseOzonePlatform --ozone-platform-hint=auto "$@"
-# }
-
 fcd() {
     cd "$(find . -type d -not -path '*/.*' | fzf)" && l
 }
@@ -339,10 +331,5 @@ if has_cmd virt-install; then
     alias vmse="virt-install --connect qemu:///session"
 fi
 
-if has_cmd nixos-rebuild; then
-    alias nrf="sudo nixos-rebuild --flake"
-fi
-
-if has_cmd home-manager; then
-    alias hmf="home-manager switch --impure -b bak --flake"
-fi
+has_cmd nixos-rebuild && alias nrf="sudo nixos-rebuild switch --flake"
+has_cmd home-manager && alias hmf="home-manager switch --impure -b bak --flake"
