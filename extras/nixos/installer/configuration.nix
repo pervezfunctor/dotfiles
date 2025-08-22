@@ -80,7 +80,6 @@
     coreutils
     curl
     dialog
-    firefox
     gawk
     git
     gnugrep

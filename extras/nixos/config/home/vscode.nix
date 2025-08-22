@@ -43,6 +43,7 @@
 
         "workbench.colorTheme" = "Catppuccin Mocha";
         "workbench.iconTheme" = "catppuccin-mocha";
+        "workbench.sideBar.location" = "right";
       };
     };
   };
