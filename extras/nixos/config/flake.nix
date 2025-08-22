@@ -150,7 +150,6 @@
 
         "7945hx" = mkBareSystem [
           ./hosts/7945hx/hardware-configuration.nix
-          ./hosts/7945hx/fs.nix
           ./gnome.nix
           ./vm.nix
         ];

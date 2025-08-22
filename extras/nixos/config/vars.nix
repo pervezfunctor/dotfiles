@@ -2,7 +2,7 @@
 
 {
   hostName = "7945hx"; # unique name for this machine, used in the hostname and SSH config.
-  userName = "me"; # This user will have sudo access.
+  userName = "pervez"; # This user will have sudo access.
 
   gitUserName = "Pervez Iqbal"; # git config user.name
   gitUserEmail = "pervezfunctor@gmail.com"; # git config user.email
