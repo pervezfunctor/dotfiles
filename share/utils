@@ -706,7 +706,7 @@ is_tw() {
 is_arch() {
     local ID
     ID=$(get_os)
-    [[ "$ID" == *"arch"* ]]
+    [[ "$ID" == *"arch"* ]] || [[ "$ID" == *"cachyos"* ]] || [[ "$ID" == *"endeavouros"* ]] || [[ "$ID" == *"manjaro"* ]] || [[ "$ID" == *"garuda"* ]]
 }
 
 is_wsl() {
