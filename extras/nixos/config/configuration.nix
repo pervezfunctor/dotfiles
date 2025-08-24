@@ -9,8 +9,8 @@
     ./shell.nix
     ./user.nix
     # ./dev.nix
-    # ./apps.nix
-    # ./virt/virt.nix
+    ./apps.nix
+    ./virt/virt.nix
   ];
 
   networking.hostName = "7945hx";
