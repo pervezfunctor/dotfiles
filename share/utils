@@ -832,7 +832,9 @@ is_hyprland() {
 }
 
 is_fedora() {
-    [ -e /etc/redhat-release ] && grep -q -i 'Fedora' /etc/redhat-release
+    [ -e /etc/redhat-release ] || return 1
+    grep -q -i 'Fedora' /etc/redhat-release && return 0
+    grep -q -i 'Nobara' /etc/redhat-release && return 0
 }
 
 is_kinoite() {
