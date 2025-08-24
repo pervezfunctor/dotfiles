@@ -437,7 +437,7 @@ ublue_groupstall() {
     slog "ublue setup..."
 
     dotfiles_install
-    jetrains-mono_install
+    jetbrains-mono_install
 
     brew_slim_shell_install
     apps-slim_install
@@ -493,7 +493,7 @@ fedora-layered_groupstall() {
     bash_confstall
     zsh_boxstall
 
-    jetrains-mono_install
+    jetbrains-mono_install
     atomic_distrobox_install
     vscode_confstall
     # docker_confstall
