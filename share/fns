@@ -617,3 +617,37 @@ subvolumes() {
     echo
     echo "Btrfs filesystems: $(echo "$btrfs_mounts" | wc -l)"
 }
+
+sync-folders() {
+    if ! has_cmd rsync; then
+        warn "rsync not installed, skipping sync"
+        return 1
+    fi
+
+    local delete_flag=""
+    local dry_flag=""
+
+    [[ "$1" == "--delete" ]] && { delete_flag="--delete"; shift; }
+    [[ "$1" == "--dry-run" ]] && { dry_flag="--dry-run"; shift; }
+
+    if [[ $# -ne 2 ]]; then
+        fail "Usage: sync-folders [--delete] [--dry-run] <source> <destination>"
+        return 1
+    fi
+
+    local source="$1"
+    local destination="$2"
+
+    if [[ ! -d "$source" ]]; then
+        fail "Source directory $source does not exist"
+        return 1
+    fi
+
+    if [[ ! -d "$destination" ]]; then
+        fail "Destination directory $destination does not exist"
+        return 1
+    fi
+
+    slog "Syncing $source to $destination"
+    rsync -avh $delete_flag $dry_flag "$source/" "$destination/" || return $?
+}
