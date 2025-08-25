@@ -566,6 +566,14 @@ virt-exec() {
     #   }')"
 }
 
+nvim-update() {
+    if has_cmd nvim; then
+        nvim --headless "+Lazy! sync" +qa
+    else
+        warn "nvim not available, skipping nvim extensions update."
+    fi
+}
+
 system-update() {
     if has_cmd sup; then
         sup
