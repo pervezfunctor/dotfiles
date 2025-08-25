@@ -98,6 +98,8 @@ brew-shell_install() {
 
     has_cmd tldr && tldr --update
 
+    bi Valkyrie00/homebrew-bbrew/bbrew
+
     slog "shell tools with brew done!"
 }
 
