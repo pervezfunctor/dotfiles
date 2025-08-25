@@ -256,7 +256,7 @@ hyprland_install() {
     si hyprcursor hyprgraphics hypridle hyprland hyprland-protocols hyprshot \
         hyprland-qt-support hyprland-qtutils hyprlock hyprpolkitagent \
         hyprsunset hyprutils hyprwayland-scanner nwg-dock-hyprland hyprpaper \
-        xdg-desktop-portal-hyprland
+        xdg-desktop-portal-hyprland udisks2 udiskie
 
     slog "hyprland installation done!"
 }
