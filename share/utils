@@ -874,7 +874,6 @@ is_aurora() {
         return 1
     fi
 
-    # Check both ID and PRETTY_NAME fields for aurora
     # shellcheck disable=SC1091
     . /etc/os-release
     [[ "${ID:-}" =~ .*aurora.* ]] || [[ "${PRETTY_NAME:-}" =~ .*aurora.* ]]
@@ -885,14 +884,23 @@ is_bluefin() {
         return 1
     fi
 
-    # Check both ID and PRETTY_NAME fields for bluefin
     # shellcheck disable=SC1091
     . /etc/os-release
     [[ "${ID:-}" =~ .*bluefin.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bluefin.* ]]
 }
 
+is_bazzite() {
+    if [ ! -f /etc/os-release ]; then
+        return 1
+    fi
+
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    [[ "${ID:-}" =~ .*bazzite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bazzite.* ]]
+}
+
 is_ublue() {
-    is_aurora || is_bluefin
+    is_aurora || is_bluefin || is_bazzite
 }
 
 is_std_atomic() {
