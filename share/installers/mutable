@@ -104,8 +104,6 @@ prog_groupstall() {
     go_install
     rust_install
     npm_install
-    python_install
-    uv_install
     prog-group_check
 }
 

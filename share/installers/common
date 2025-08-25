@@ -370,7 +370,7 @@ emacs-slim_confstall() {
 
 nvim_confstall() {
     local profile="${1:-nvim}"
-    
+
     slog "nvim config"
 
     frm "$XDG_CONFIG_HOME/nvim.bak"
@@ -847,14 +847,12 @@ dev-work-full_groupstall() {
 vbox-dev_groupstall() {
     docker_install
     shell_groupstall
-    python_install
     npm_install
 }
 
 vm_groupstall() {
     min_groupstall
     has_cmd vm_install && vm_install
-
 }
 
 vm-ui_groupstall() {

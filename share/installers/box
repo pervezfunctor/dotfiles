@@ -213,7 +213,6 @@ wslbox_groupstall() {
 
 wsl_groupstall() {
     wslbox_groupstall
-    python_install
     brew_install
     bis stow carapace fzf trash-cli lazygit eza zoxide gh gum
     has_cmd delta || bi git-delta

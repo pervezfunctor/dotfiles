@@ -347,11 +347,17 @@ vm-create --distro debian --name dev --docker --brew --dotfiles --username debia
 You should not install anything on the host, once this is done. You could use `distrobox` for command line tools. Use flatpak for desktop applications. Use `devcontainers` for development from `vscode`. You could use `virt-install/virsh` or `virt-manager` to create and manage as many virtual machines as you want.
 
 
-### Bluefin/Aurora
+### Bluefin/Aurora/Bazzite
 
-If you have some experience with linux desktop, and bored with fedora atomic, then you should try [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en). Both are based on [ublue](https://getublue.com) and have the same set of tools. Consider using dx version. You would get docker, vscode, libvirt/virt-manager by default. As a developer these tools are essential.
+If you have some experience with linux desktop, and bored with fedora atomic, then you should try [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en) or [Bazzite](https://bazzite.gg/). All based on [ublue](https://getublue.com) and have the same set of tools. Consider using dx version. You would get docker, vscode, libvirt/virt-manager by default. All tools needed for a developer are covered.
 
 Unfortunately, there is no direct ISO of dx version available. Either you rebase to dx version after installing regular version or use the `ublue template` and create your own custom ISO based on dx version. I will add instructions soon.
+
+Once you have your OS installed, you could configure vscode and shell with the following command.
+
+```bash
+  bash -c "$(curl -sSL https://is.gd/hurace)"
+```
 
 ### NixOS
 

@@ -75,8 +75,6 @@ uv_install() {
 python_install() {
     slog "Installing python tools"
 
-    has_cmd sys_python_install && sys_python_install
-
     if ! has_cmd python3; then
         warn "python3 not installed! Skipping python setup."
         return 1
