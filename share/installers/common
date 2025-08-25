@@ -39,7 +39,12 @@ mise_shell_install() {
     slog "shell tools with mise done!"
 }
 
-brew_slim_shell_install() {
+brew-shell-slim_install() {
+    if ! has_cmd brew; then
+        warn "brew not installed; skipping shell utilities installation."
+        return 1
+    fi
+
     bis gh gum stow tmux carapace lazygit eza fzf fd zoxide starship
 
     if ! has_cmd luarocks; then
@@ -58,7 +63,7 @@ brew_slim_shell_install() {
     [ ${#pkgs[@]} -gt 0 ] && bis "${pkgs[@]}"
 }
 
-brew_shell_install() {
+brew-shell_install() {
     # bi ffmpeg sevenzip poppler imagemagick
     # bis gping ncdu httpie font-symbols-only-nerd-font
     # bi glab
@@ -66,7 +71,7 @@ brew_shell_install() {
 
     slog "shell tools with brew"
 
-    brew_slim_shell_install
+    brew-shell-slim_install
 
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
         atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi
@@ -96,7 +101,7 @@ brew_shell_install() {
     slog "shell tools with brew done!"
 }
 
-pixi_slim_shell_install() {
+pixi-slim-shell_install() {
     has_cmd trash || pi trash-cli
     has_cmd rg || pi ripgrep
     has_cmd gum || pi go-gum
@@ -104,8 +109,8 @@ pixi_slim_shell_install() {
     pis starship zoxide bat eza gh fzf carapace shellcheck fd git-delta jq yq
 }
 
-pixi_shell_install() {
-    pixi_slim_shell_install
+pixi-shell_install() {
+    pixi-slim-shell_install
 
     pis broot just lazydocker gdu nvim lazygit luarocks micro glances \
         cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi \
@@ -362,6 +367,8 @@ emacs-slim_confstall() {
 }
 
 nvim_confstall() {
+    local profile="${1:-nvim}"
+    
     slog "nvim config"
 
     frm "$XDG_CONFIG_HOME/nvim.bak"
@@ -370,7 +377,7 @@ nvim_confstall() {
     frm "$HOME/.local/state/nvim"
     frm "$HOME/.cache/nvim"
 
-    stowgf nvim
+    stowgf "$profile"
     # nvim --headless "+Lazy! sync" +qa
 
     slog "nvim config done!"
@@ -412,6 +419,11 @@ git_confstall() {
 }
 
 vscode_confstall() {
+    if ! has_cmd code; then
+        warn "code not installed; skipping vscode configuration"
+        return 1
+    fi
+
     slog "vscode config"
 
     if is_mac; then
@@ -690,7 +702,7 @@ brew_packages() {
 shell-slim_install() {
     has_cmd cli_install && cli_install
     pixi_install
-    pixi_slim_shell_install
+    pixi-slim-shell_install
     pkgx_install
 
     has_cmd zsh && zsh_confstall
@@ -701,12 +713,12 @@ shell_install() {
     has_cmd cli_install && cli_install
 
     pixi_install
-    pixi_shell_install
+    pixi-shell_install
 
     pkgx_install
 
     brew_install
-    brew_shell_install
+    brew-shell_install
 }
 
 base-group_check() {

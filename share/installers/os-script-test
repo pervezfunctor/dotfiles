@@ -43,10 +43,10 @@ cmd_check pkgx_install
 cmd_check docker_install
 cmd_check pixi_install
 cmd_check brew_install
-cmd_check pixi_shell_slim_install
-cmd_check brew_shell_slim_install
-cmd_check pixi_shell_install
-cmd_check brew_shell_install
+cmd_check pixi-shell_slim_install
+cmd_check brew-shell_slim_install
+cmd_check pixi-shell_install
+cmd_check brew-shell_install
 cmd_check vscode_install
 cmd_check python_install
 cmd_check shell_install

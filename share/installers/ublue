@@ -3,15 +3,6 @@
 # shellcheck disable=SC1090
 source <(curl -sSL https://is.gd/anumof) || err_exit "Cannot source utils, Quitting"
 
-ublue_brew_setup() {
-    if ! has_cmd brew; then
-        warn "brew not installed; skipping shell utilities installation."
-        return 1
-    fi
-
-    brew_slim_shell_install
-}
-
 ublue_emacs_setup() {
     slog "emacs installation and setup"
 
@@ -34,30 +25,6 @@ ublue_cpp_setup() {
     slog "C++ installation done!"
 }
 
-ublue_apps_setup() {
-    if ! has_cmd flatpak; then
-        warn "flatpak not installed; skipping apps installation"
-        return 1
-    fi
-
-    slog "Installing apps for ublue"
-    apps-slim_install
-    slog "apps installation done!"
-}
-
-ublue_code_setup() {
-    slog "code setup"
-
-    if ! has_cmd code; then
-        warn "code not installed; skipping vscode configuration"
-        return 1
-    fi
-
-    vscode_confstall
-
-    slog "code setup done!"
-}
-
 config_setup() {
     if ! dir_exists "$DOT_DIR"; then
         warn "$DOT_DIR doesn't exist, skipping configuration"
@@ -78,32 +45,30 @@ config_setup() {
     slog "config setup done!"
 }
 
-bluefin_setup() {
-    slog "gnome setup"
-
-    gnome-settings_install
-    # gnome_keybindings_install
-    gnome-extensions_install
-
-    slog "gnome setup done!"
+ublue_cli_install() {
+    is_bluefin && ujust bluefin-cli
+    is_aurora && ujust aurora-cli
+    is_bazzite && ujust bazzite-cli
 }
 
 main() {
     dotfiles_install
     python_install
-    ublue_brew_setup
-    ublue_apps_setup
-    ublue_code_setup
+    brew-shell-slim_install
+    apps-slim_install
 
+    vscode_confstall
+    jetbrains-mono_install
     config_setup
-    is_bluefin && bluefin_setup
+    is_gnome && gnome_confstall
 
     if [[ "$USER" == "pervez" ]]; then
         slog "Setting up ublue for myself"
         ublue_cpp_setup
         ublue_emacs_setup
-        nvim_confstall
+        nvim_confstall astro
         git_confstall
+        ublue_cli_install
     fi
 }
 

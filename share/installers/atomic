@@ -275,7 +275,7 @@ generic-ct_groupstall() {
     pkgx_install
 
     slog "Installing shell tools with pixi"
-    pixi_slim_shell_install
+    pixi-slim-shell_install
 
     slog "Installing shell tools with pixi done!"
 
@@ -439,7 +439,7 @@ ublue_groupstall() {
     dotfiles_install
     jetbrains-mono_install
 
-    brew_slim_shell_install
+    brew-shell-slim_install
     apps-slim_install
 
     vscode-extensions_install
@@ -487,7 +487,7 @@ fedora-layered_groupstall() {
     pkgx_install
 
     pis wget
-    pixi_slim_shell_install
+    pixi-slim-shell_install
 
     dotfiles_install
     bash_confstall
@@ -544,8 +544,10 @@ ptyxis_install() {
 
 apps-slim_install() {
     if ! has_cmd flatpak; then
-        warn "flatpak not installed, skipping flatpak apps"
-        return 1
+        if ! si flatpak; then
+            warn "flatpak not installed, skipping flatpak apps"
+            return 1
+        fi
     fi
 
     flathub_install
