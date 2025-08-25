@@ -74,7 +74,8 @@ brew-shell_install() {
     brew-shell-slim_install
 
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
-        atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi
+        atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi \
+        ollama
 
     local pkgs=()
 
@@ -87,6 +88,7 @@ brew-shell_install() {
     has_cmd choose || pkgs+=(choose-rust)
     has_cmd btm || pkgs+=(bottom)
     has_cmd nu || pkgs+=(nushell)
+    has_cmd llama-server || pkgs+=(llama.cpp)
 
     [ ${#pkgs[@]} -gt 0 ] && bis "${pkgs[@]}"
 
@@ -600,7 +602,7 @@ npm_install() {
         return 1
     fi
 
-    volta install node
+    volta install node@latest
 
     if has_cmd npm; then
         npm install -g @anthropic-ai/claude-code
