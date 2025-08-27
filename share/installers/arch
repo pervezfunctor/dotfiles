@@ -169,10 +169,10 @@ ui_install() {
 vm_install() {
     slog "Installing vm"
 
-    sudo pacman -R --no-confirm iptables
+    sudo pacman -R --noconfirm iptables
 
-    si iptables-nft libvirt qemu-base virt-install bOridge-utils dnsmasq jq \
-        edk2-ovmf virglrenderer xorriso cloud-utils dmidecode libguestfs \
+    si iptables-nft libvirt qemu-base virt-install bridge-utils dnsmasq jq \
+        edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs \
         guestfs-tools qemu-hw-display-virtio-gpu libosinfo iptables-nft \
         ebtables openbsd-netcat
 
