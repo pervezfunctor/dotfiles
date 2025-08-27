@@ -15,7 +15,7 @@ BRIDGE="default"
 OS_VARIANT="linux"
 
 check_whiptail() {
-  if ! command -v whiptail &>/dev/null; then
+  if ! has_cmd whiptail; then
     echo "Error: whiptail is not installed. Please install it to use interactive mode." >&2
     exit 1
   fi

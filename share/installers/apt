@@ -96,9 +96,9 @@ debian_packages() {
 
     si stow git-core gh git-delta lazygit unzip wget curl trash-cli tar \
         net-tools iproute2 nmap gcc make file tree ripgrep zoxide fd-find htop \
-        gawk tealdeer dialog whiptail starship \
-        just fzf gum eza shellcheck shfmt broot duf sd xh atuin procs sd \
-        hyperfine htop jq direnv yq dysk bat
+        gawk tealdeer dialog whiptail starship hyperfine jq direnv yq dysk bat \
+        just fzf gum eza shellcheck shfmt broot duf sd xh atuin procs sd
+
 
     if is_desktop || is_distrobox; then
         si wl-clipboard libsecret-tools

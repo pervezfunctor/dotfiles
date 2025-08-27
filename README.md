@@ -349,9 +349,9 @@ You should not install anything on the host, once this is done. You could use `d
 
 ### Bluefin/Aurora/Bazzite
 
-If you have some experience with linux desktop, and bored with fedora atomic, then you should try [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en) or [Bazzite](https://bazzite.gg/). All based on [ublue](https://getublue.com) and have the same set of tools. Consider using dx version. You would get docker, vscode, libvirt/virt-manager by default. All tools needed for a developer are covered.
+If you have some experience with linux desktop, and bored with fedora atomic, then you should try [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en) or [Bazzite](https://bazzite.gg/). All based on [ublue](https://getublue.com) and have the same set of tools. Consider using dx version. You would get docker, vscode, by default.
 
-Unfortunately, there is no direct ISO of dx version available. Either you rebase to dx version after installing regular version or use the `ublue template` and create your own custom ISO based on dx version. I will add instructions soon.
+Unfortunately, there is no direct ISO of dx version available. Either you rebase to dx version after installing regular version or use the [ublue template](https://github.com/ublue-os/image-template) and create your own custom ISO based on dx version. I will add instructions soon.
 
 Once you have your OS installed, you could configure vscode and shell with the following command.
 
