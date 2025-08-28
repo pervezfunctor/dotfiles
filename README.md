@@ -379,104 +379,63 @@ vm-create --distro debian --name dev --docker --brew --dotfiles --username debia
 
 You should not install anything on the host, once this is done. You could use `distrobox` for command line tools. Use flatpak for desktop applications. Use `devcontainers` for development from `vscode`. You could use `virt-install/virsh` or `virt-manager` to create and manage as many virtual machines as you want.
 
+### Nixos
 
-### NixOS
+Install [nixos](https://channels.nixos.org/) using [graphical iso](https://channels.nixos.org/nixos-25.05/latest-nixos-graphical-x86_64-linux.iso).
 
-If you are an experienced linux desktop user, and you have enough knowledge of linux and are a developer, then you should try `nixos`. There is a lot to learn and there will be very frustrating times. But it's worth it. IF you are into devops, and like IaC, then you would love nixos.
-
-Unfortunately there is no easy way to make automated installers for nixos. You need to learn `nix` and understand the configurations. You have to tailor the configuration to your needs.
-
-For installation use the minimal iso. DO NOT USE the default ISO, if this is your first time using nixos. Installation would be easy but you will struggle to get everything working as you expect. Use the minimal iso, and follow the [nixos installation guide](hhttps://nixos.org/manual/nixos/stable/#sec-installation-manual).
-
-
-Some Instructions for setting up your NixOS system based on my dotfiles. *Work in progress*
-
-First, boot with minimal iso. Once you are dropped to a shell, change to `root` user, and set a password.
-**Importante Note**: You must have UEFI bootloader. You MUST disable secure boot.
+Once installed copy configuration to your home folder.
 
 ```bash
-sudo -i # should not ask for password
-passwd  # note this password
-```
-
-Then note down your IP.
-
-```bash
-ip -brief a # note this ip
-```
-
-Once you are logged in(provide password you set above), you could check which disk to use with the following command.
-
-```bash
-lsblk -d # note the disk you want to use
-```
-
-Now get back to your laptop,
-
-- clone this repository to your laptop.
-
-```bash
-git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
-```
-
-- open `.ilm/extras/nixos/config/disko-config.nix` file and set `disko.devices.disk.main.device` to the disk you want to use(noted above), for eg `/dev/sda` or /dev/nvme0n1`.
-
-- Open `~/.ilm/extras/nixos/config/vars.nix` and set `hostName`, `userName`, `sshKey` and `initialPassword`.
-
-- You can make any changes you want, for example, add packages you would need after installation.
-
-Now run the command from your laptop.
-
-```bash
-~/.ilm/extras/nixos/installer/remote-setup <ip> <hostname>
-```
-
-After installation completes you should be able to boot your remote system.
-
-On you new `NixOS` system, do the following after you login(with gdm).
-
-Open default terminal and run the following commands.
-
-- set your password
-```bash
-passwd <user-name>
-```
-
-- generate default base configuration.
-
-```bash
-cd /etc/nixos
-sudo nixos-generate-config
-```
-
-Either edit the above, and run the following
-
-```bash
-nixos-rebuild switch
-```
-
-Or use the same configuration used for the installer with the following.
-
-```bash
-git clone --depth=1 https://github.com/pervezfunctor/dotfiles.git ~/.ilm
 mkdir -p ~/nixos-config
-cp -r ~/.ilm/extras/nixos/installer ~/nixos-config
-cp /etc/nixos/hardware-configuration.nix ~/nixos-config
+cp -r /etc/nixos ~/nixos-config
 ```
 
-Edit configuration files, add/remove what you want. You could check `~/.ilm/extras/nixos/config` for reference.
-
-Once you are happy with your configuration, run the following command.
+Create a minimal flake.nix.
 
 ```bash
-nixos-rebuild switch --flake ~/nixos-config#<host-name> # hostname you picked in `vars.nix`
+cat > ~/nixos-config/flake.nix << EOF
+{
+  description = "NixOS flake configuration";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+  };
+
+  outputs = { self, nixpkgs, ... }:
+    let
+      system = "x86_64-linux";
+      pkgs = import nixpkgs { inherit system; };
+    in {
+      nixosConfigurations = {
+        "$(hostname)" = pkgs.lib.nixosSystem {
+          inherit system;
+          modules = [
+            ./configuration.nix
+          ];
+        };
+      };
+    };
+EOF
 ```
 
-You could also use my configuration, but I won't recommend it. Add your host configuration to `flake.nix` in `~/.ilm/extras/nixos/config/flake.nix` and run the following command. This will also work if you used `NixOS Graphical installer`.
+Initialize git repository and commit initial configuration.
 
 ```bash
-sudo nixos-rebuild switch --flake ~/.ilm/extras/nixos/config#<host-name>
+git init ~/nixos-config
+git add .
+git commit -m "Initial commit"
 ```
+
+Run the following command to apply configuration.
+
+```bash
+nixos-rebuild switch --flake ~/nixos-config#$(hostname)
+```
+
+This should do almost nothing. Now you could edit `configuration.nix` and add any additional packages you want.
+
+Don't forget to push your configuration to github.
+
 
 ### Generic Linux Desktop
 
