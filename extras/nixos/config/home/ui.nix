@@ -1,8 +1,8 @@
 { ... }:
 {
   imports = [
-    ./gtk.nix
-    ./ghostty.nix
-    ./vscode.nix
+    ./ui/gtk.nix
+    ./ui/ghostty.nix
+    ./ui/vscode.nix
   ];
 }

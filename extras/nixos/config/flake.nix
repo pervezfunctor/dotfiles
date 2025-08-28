@@ -135,7 +135,7 @@
         sway = mkUiSystem [ ./sway.nix ];
         sway-vm = mkVmSystem [ ./sway.nix ];
 
-        "${vars.hostName}" = mkAnywhereSystem [
+        anywhere."${vars.hostName}" = mkAnywhereSystem [
           ./disko-config.nix
           ./gnome.nix
           ./ssh.nix
