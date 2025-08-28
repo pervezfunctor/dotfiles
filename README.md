@@ -299,6 +299,39 @@ Remember to pick `Jetbrains Mono Nerd Font` as the font. Pick a nice theme like 
 
 ## Recommended Setups
 
+
+### Bluefin/Aurora
+
+Give [Bluefin](https://projectbluefin.io)/[Aurora](https://getaurora.dev/en)/[Bazzite](https://bazzite.gg/) a try. Especially if you have nvidia card. Use the dx version. You get docker, vscode and homebrew by default.
+
+#### Option A: devmode
+
+Unfortunately, there is no direct ISO of dx version available. You need to run the following command after installation.
+
+```bash
+ujust devmode
+```
+
+You could instead create your own custom ublue distribution using [ublue template](https://github.com/ublue-os/image-template). if you have an nvidia card, you could instead use my [custom image](https://github.com/pervezfunctor/ilm-os). Currently I add virt-install. I intend to keep this simple. You could switch to my image with the following command(preferrably from Bazzite, Aurora or Kinoite).
+
+```bash
+sudo bootc switch ghcr.io/pervezfunctor/ilm-os:latest
+```
+
+Once you have your OS installed with any of the above approaches, you could configure vscode and shell with the following command.
+
+```bash
+bash -c "$(curl -sSL https://is.gd/hurace)"
+```
+
+Above is optional and I don't recommend it. Instead run the following.
+
+```bash
+ujust bluefin-cli  # for bluefin
+ujsut aurora-cli   # for aurora
+ujust bazzite-cli  # for bazzite
+```
+
 ### Fedora Atomic(Silverblue, Kinoite, Sway Atomic)
 
 Fedora Atomic is great and the future of fedora if not linux in general. Unfortunately, atomic comes with almost nothing for developers and you have to use distrobox/toolbox for everything. This can be a frustrating experience. This will be a more stable operating system in practice than any of the other approaches(traditional or ublue based). This OS is strictly NOT for those who like to tinker a lot.
@@ -346,18 +379,6 @@ vm-create --distro debian --name dev --docker --brew --dotfiles --username debia
 
 You should not install anything on the host, once this is done. You could use `distrobox` for command line tools. Use flatpak for desktop applications. Use `devcontainers` for development from `vscode`. You could use `virt-install/virsh` or `virt-manager` to create and manage as many virtual machines as you want.
 
-
-### Bluefin/Aurora/Bazzite
-
-If you have some experience with linux desktop, and bored with fedora atomic, then you should try [Bluefin](https://projectbluefin.io) or [Aurora](https://getaurora.dev/en) or [Bazzite](https://bazzite.gg/). All based on [ublue](https://getublue.com) and have the same set of tools. Consider using dx version. You would get docker, vscode, by default.
-
-Unfortunately, there is no direct ISO of dx version available. Either you rebase to dx version after installing regular version or use the [ublue template](https://github.com/ublue-os/image-template) and create your own custom ISO based on dx version. I will add instructions soon.
-
-Once you have your OS installed, you could configure vscode and shell with the following command.
-
-```bash
-  bash -c "$(curl -sSL https://is.gd/hurace)"
-```
 
 ### NixOS
 
@@ -495,6 +516,7 @@ ilmi vscode jetbrains-mono
 ```
 
 I will try to provide similar commands for immutable/nixos distributions in the future.
+
 
 ## Proxmox setup
 
