@@ -7,6 +7,7 @@
     buildah
     ctop
     distrobox
+    distroshelf
     fuse-overlayfs
     podman
     podman-compose

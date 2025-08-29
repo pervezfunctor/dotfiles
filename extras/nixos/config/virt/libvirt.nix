@@ -54,8 +54,6 @@
     spice-protocol
     usbredir
     usbutils
-    virt-manager
-    virt-viewer
     virtiofsd
     win-spice
     win-virtio

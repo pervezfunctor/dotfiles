@@ -37,5 +37,11 @@
     };
   };
 
+  # Configure sudo access for wheel group
+  security.sudo = {
+    enable = true;
+    wheelNeedsPassword = true; # Set to false for passwordless sudo
+  };
+
   nixpkgs.config.allowUnfree = true;
 }
