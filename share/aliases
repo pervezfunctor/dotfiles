@@ -331,5 +331,17 @@ if has_cmd virt-install; then
     alias vmse="virt-install --connect qemu:///session"
 fi
 
-has_cmd nixos-rebuild && alias nrf="sudo nixos-rebuild switch --flake"
+if has_cmd nixos-rebuild; then
+    alias nrf="sudo nixos-rebuild switch --flake"
+    alias nrb="sudo nixos-rebuild build --flake"
+    alias nrb-vm="sudo nixos-rebuild build-vm -I nixos-config="
+fi
+
+if has_cmd nixos-generate; then
+    alias ng-vm="nixos-generate -f vm -c"
+    alias ng-iso="nixos-generate -f install-iso -c"
+    alias ng-pvm="nixos-generate -f proxmox -c"
+    alias ng-pmox="nixos-generate -f proxmox -c"
+fi
+
 has_cmd home-manager && alias hmf="home-manager switch --impure -b bak --flake"
