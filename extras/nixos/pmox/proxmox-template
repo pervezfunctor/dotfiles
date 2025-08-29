@@ -1,0 +1,130 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+
+# first build the image with:
+# nix build .#proxmox-template
+# and then copy it to your proxmox server, for eg
+# scp result/nixos.qcow2 root@proxmox-host:/var/lib/vz/template/iso/
+
+# then run this script to create a proxmox VM template
+
+error_exit() {
+  echo "Error: $1" >&2
+  exit 1
+}
+
+command -v qm >/dev/null 2>&1 || error_exit "'qm' command not found. Please install Proxmox CLI tools."
+
+DISK_IMAGE="./result/nixos.qcow2"
+VMID=9000
+VMNAME="nixos-template"
+MEMORY=2048
+CORES=2
+BRIDGE="vmbr0"
+STORAGE="local-lvm"
+
+usage() {
+  cat <<EOF
+Usage: $0 [options]
+
+Options:
+  --vmid <id>       VM ID (default: $VMID)
+  --name <name>     VM name (default: $VMNAME)
+  --memory <mb>     VM memory in MB (default: $MEMORY)
+  --cores <num>     Number of CPU cores (default: $CORES)
+  --bridge <name>   Network bridge (default: $BRIDGE)
+  --storage <name>  Storage pool (default: $STORAGE)
+EOF
+  exit 1
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --vmid)
+      VMID="$2"
+      shift 2
+      ;;
+    --name)
+      VMNAME="$2"
+      shift 2
+      ;;
+    --memory)
+      MEMORY="$2"
+      shift 2
+      ;;
+    --cores)
+      CORES="$2"
+      shift 2
+      ;;
+    --bridge)
+      BRIDGE="$2"
+      shift 2
+      ;;
+    --storage)
+      STORAGE="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      ;;
+    esac
+  done
+
+}
+
+main() {
+  parse_args "$@"
+  if [ ! -f "$DISK_IMAGE" ]; then
+    error_exit "Disk image '$DISK_IMAGE' not found. Build it first with: nix build .#proxmox-template"
+  fi
+
+  if qm status "$VMID" >/dev/null 2>&1; then
+    error_exit "VMID $VMID already exists. Choose a different VMID or remove the existing VM."
+  fi
+
+  echo "Creating VM $VMID ($VMNAME)..."
+  qm create "$VMID" --name "$VMNAME" --memory "$MEMORY" --cores "$CORES" --net0 virtio,bridge="$BRIDGE" || error_exit "Failed to create VM."
+
+  echo "Importing disk..."
+  qm importdisk "$VMID" "$DISK_IMAGE" "$STORAGE" || error_exit "Failed to import disk."
+
+  echo "Configuring VM..."
+  qm set "$VMID" \
+    --scsihw virtio-scsi-pci \
+    --scsi0 "$STORAGE:vm-${VMID}-disk-0" \
+    --ide2 "$STORAGE:cloudinit" \
+    --boot order=scsi0 \
+    --serial0 socket \
+    --vga serial0 \
+    --agent enabled=1 || error_exit "Failed to set VM options."
+
+  echo "Converting VM to template..."
+  qm template "$VMID" || error_exit "Failed to convert VM to template."
+
+  echo "Proxmox NixOS template VM $VMID ($VMNAME) created successfully."
+}
+
+main "$@"
+
+## For VM you could use the following commands
+# # Build the image
+# nixos-generate -f proxmox -c ./advanced-cloud-init.nix
+
+# # Deploy to Proxmox and use cloud-init
+# qm create 101 \
+#   --name nixos-cloudinit \
+#   --memory 2048 \
+#   --cores 2 \
+#   --net0 virtio,bridge=vmbr0 \
+#   --bootdisk scsi0 \
+#   --scsi0 local:0,import-from=nixos.qcow2,format=qcow2 \
+#   --ide2 local:cloudinit \
+#   --ciuser devops \
+#   --cipassword $(openssl passwd -6 secretpassword) \
+#   --sshkeys ~/.ssh/authorized_keys \
+#   --ipconfig0 ip=dhcp
+
+# qm start 101

@@ -24,6 +24,16 @@
       url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    xc = {
+      url = "github:joerdav/xc";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -34,6 +44,7 @@
       home-manager,
       quadlet-nix,
       disko,
+      nixos-generators,
       # nixvim,
       ...
     }@inputs:
@@ -101,6 +112,28 @@
           ]
         );
 
+      mkNixosGenerateCommon =
+        extraModules: format:
+        nixos-generators.nixosGenerate {
+          inherit system;
+          specialArgs = {
+            pkgs = nixpkgs.legacyPackages.${system};
+            inherit inputs;
+            inherit vars;
+          };
+          modules = extraModules ++ [
+            { virtualisation.diskImage.size = "20G"; }
+            ./vm.nix
+            ../ssh.nix
+          ];
+          format = format;
+        };
+
+      mkNixosGenerateVm = extraModules: mkNixosGenerateCommon extraModules "vm";
+
+      mkNixosGenerateProxmox =
+        extraModules: mkNixosGenerateCommon extraModules ++ [ ./proxmox.nix ] "proxmox";
+
       mkAnywhereSystem =
         extraModules:
         mkBareSystem (
@@ -109,7 +142,6 @@
             disko.nixosModules.disko
           ]
         );
-
     in
     {
       homeConfigurations = {
@@ -148,10 +180,17 @@
           ./sway.nix
         ];
 
+        # run with nix build .#ng-vm
+        ng-vm = mkNixosGenerateVm [ ];
+
+        # run with nix build .#ng-pmox
+        ng-pmox = mkNixosGenerateProxmox [ ];
+
         "7945hx" = mkBareSystem [
           ./hosts/7945hx/hardware-configuration.nix
           ./gnome.nix
-          ./vm.nix
+          ./apps.nix
+          ./virt/virt-ui.nix
         ];
       };
     };

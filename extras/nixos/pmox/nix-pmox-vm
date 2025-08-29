@@ -1,0 +1,37 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+
+nixos-generate -f proxmox -c ./cloud-init-config.nix
+
+# Upload to Proxmox
+scp result/nixos.qcow2 root@proxmox-host:/var/lib/vz/template/iso/
+
+# Create template VM
+qm create 9000 \
+  --name nixos-template \
+  --memory 2048 \
+  --cores 2 \
+  --net0 virtio,bridge=vmbr0 \
+  --serial0 socket \
+  --vga serial0 \
+  --bootdisk scsi0 \
+  --scsi0 local:0,import-from=/var/lib/vz/template/iso/nixos.qcow2,format=qcow2 \
+  --ide2 local:cloudinit \
+  --boot order=scsi0 \
+  --template
+
+# Clone from template
+qm clone 9000 100 \
+  --name my-nixos-vm \
+  --full
+
+# Configure cloud-init for the cloned VM
+qm set 100 \
+  --ciuser nixos \
+  --cipassword "$(openssl passwd -6 mynewpassword)" \
+  --sshkeys ~/.ssh/authorized_keys \
+  --ipconfig0 ip=dhcp
+
+# Start the VM
+qm start 100
