@@ -21,6 +21,28 @@ check_whiptail() {
   fi
 }
 
+setup_storage() {
+  local base_dir IMG_DIR
+
+  base_dir="/var/lib/libvirt/images"
+
+  IMG_DIR="${base_dir}/base-images"
+  WORK_DIR="${base_dir}/${VM_NAME}" # global
+
+  sudo mkdir -p "$IMG_DIR" "$WORK_DIR"
+
+  sudo chown -R "$USER":kvm "$IMG_DIR"
+  sudo chmod -R 755 "$IMG_DIR"
+
+  sudo chown -R "$USER":kvm "$WORK_DIR"
+  sudo chmod -R 755 "$WORK_DIR"
+
+  sudo mkdir -p /var/lib/libvirt/boot # bug in libvirt/virt-install?
+
+  BASE_IMAGE="${IMG_DIR}/${BASE_IMAGE_NAME}"
+  VM_DISK="${WORK_DIR}/${VM_NAME}.qcow2"
+}
+
 cleanup_on_error() {
   warn "Cleaning up due to error..."
 
@@ -79,17 +101,6 @@ configure_tw() {
   OS_VARIANT="opensusetumbleweed"
 }
 
-setup_storage() {
-  local base_dir IMG_DIR
-  base_dir="/var/lib/libvirt/images"
-  IMG_DIR="${base_dir}/base-images"
-  WORK_DIR="${base_dir}/${VM_NAME}"
-  sudo mkdir -p "$base_dir" "$IMG_DIR" "$WORK_DIR"
-
-  BASE_IMAGE="${IMG_DIR}/${BASE_IMAGE_NAME}"
-  VM_DISK="/${WORK_DIR}/${VM_NAME}.qcow2"
-}
-
 configure_distribution() {
   case "$DISTRO" in
   arch)
@@ -129,6 +140,8 @@ download_base_image() {
   if ! sudo wget -q --show-progress "$DOWNLOAD_URL" -O "${BASE_IMAGE}"; then
     echo "Error: Failed to download base image." >&2
   else
+    sudo chown root:kvm "${BASE_IMAGE}"
+    sudo chmod 644 "${BASE_IMAGE}"
     echo "Base image downloaded successfully."
   fi
 }
