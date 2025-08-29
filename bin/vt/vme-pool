@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# vm-pool: manage libvirt storage pools and images
+# Commands:
+#   create <pool> <type> <target>     Create a new storage pool
+#   pull   <pool> <name> <url>        Download image into pool if not exists
+#   list   [pool]                     List volumes in a pool (default: default)
+#   rm     <pool> <name>              Remove a volume from pool
+
+set -euo pipefail
+
+POOL_DEFAULT="default"
+
+pool_exists() {
+  virsh pool-info "$1" &>/dev/null
+}
+
+pool_create() {
+  local pool="$1"
+  local type="$2" # e.g. dir, fs, netfs, logical, zfs, etc.
+  local target="$3"
+
+  if pool_exists "$pool"; then
+    echo "Pool '$pool' already exists."
+    exit 0
+  fi
+
+  virsh pool-define-as "$pool" "$type" --target "$target"
+  virsh pool-autostart "$pool"
+  virsh pool-start "$pool"
+  echo "Created pool '$pool' of type '$type' at $target"
+}
+
+pool_delete() {
+  local pool="$1"
+  if ! pool_exists "$pool"; then
+    echo "Pool '$pool' does not exist."
+    exit 0
+  fi
+  virsh pool-destroy "$pool"
+  virsh pool-undefine "$pool"
+  echo "Deleted pool '$pool'."
+}
+
+image_pull() {
+  local pool="$1"
+  local name="$2"
+  local url="$3"
+
+  if ! pool_exists "$pool"; then
+    echo "Storage pool '$pool' does not exist."
+    exit 1
+  fi
+
+  local vol_path
+  vol_path=$(virsh vol-path --pool "$pool" "$name" 2>/dev/null || true)
+
+  if [ -n "$vol_path" ]; then
+    echo "Volume '$name' already exists in pool '$pool'."
+    return
+  fi
+
+  local target_path
+  target_path=$(virsh pool-dumpxml "$pool" | xmllint --xpath "string(//path)" -)
+  mkdir -p "$target_path"
+
+  local dest="$target_path/$name"
+  echo "Downloading $url to $dest ..."
+  curl -L --fail -o "$dest" "$url"
+
+  virsh vol-create-as "$pool" "$name" --format qcow2 --capacity "$(qemu-img info --output=json "$dest" | jq -r .virtual-size)" --allocation 0
+  virsh vol-upload "$name" "$dest" --pool "$pool"
+  rm -f "$dest"
+
+  echo "Image '$name' imported into pool '$pool'."
+}
+
+image_list() {
+  local pool="${1:-$POOL_DEFAULT}"
+  virsh vol-list --pool "$pool"
+}
+
+image_delete() {
+  local pool="$1"
+  local name="$2"
+
+  if ! virsh vol-info "$name" --pool "$pool" &>/dev/null; then
+    echo "Volume '$name' not found in pool '$pool'."
+    exit 1
+  fi
+
+  virsh vol-delete "$name" --pool "$pool"
+  echo "Deleted volume '$name' from pool '$pool'."
+}
+
+usage() {
+  cat <<EOF
+Usage: $0 <command> [args]
+
+Manage libvirt storage pools and images.
+
+Commands:
+  create <pool> <type> <target>  Create a new storage pool
+  delete <pool>                 Delete a storage pool
+
+  pull   <pool> <name> <url>     Download image into pool if not exists
+  list   [pool]                  List volumes in a pool (default: default)
+  rm     <pool> <name>           Remove a volume from pool
+EOF
+}
+
+main() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  case "${1:-}" in
+  create)
+    shift
+    pool_create "$@"
+    ;;
+  delete)
+    shift
+    pool_delete "$@"
+    ;;
+  pull)
+    shift
+    image_pull "$@"
+    ;;
+  list)
+    shift
+    image_list "$@"
+    ;;
+  rm)
+    shift
+    image_delete "$@"
+    ;;
+  *)
+    echo "Usage: $0 {create|pull|list|rm}"
+    exit 1
+    ;;
+  esac
+}
+
+main "$@"
