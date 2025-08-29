@@ -412,8 +412,8 @@ generate_cloud_init() {
         )
     else
         runcmd+=(
-            "systemctl enable --now qemu-guest-agent"
-            "systemctl enable --now sshd"
+            "systemctl enable --now qemu-guest-agent || true"
+            "systemctl enable --now sshd || systemctl enable --now ssh || true"
         )
     fi
 
