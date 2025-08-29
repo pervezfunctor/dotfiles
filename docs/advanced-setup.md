@@ -39,3 +39,33 @@ stow emacs nvim sway # folder names
 
 **NOte**: Ubuntu has older version of stow and might not work properly. Use stow version >= 2.4.x.
 
+If you have an existing configuration, for many tools, you shouldn't run any of the commands in this README. You could still use some of the scripts here by adding the following to your ~/.bashrc or ~/.zshrc.
+
+
+```bash
+export PATH="$HOME/.local/bin:$HOME/.ilm/bin:$HOME/.ilm/bin/vt:$PATH"
+
+source "$HOME/.ilm/share/utils"
+source "$HOME/.ilm/share/fns"
+```
+
+If you need a nice prompt and a few other things, without installing anything, first you need to clone this repository to `~/.ilm`.
+
+```bash
+git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
+```
+
+Then set your shell to zsh, if you haven't already. You could use the following command.
+
+```bash
+chsh -s $(which zsh)
+```
+
+Optionally, install [starship](https://starship.rs/). You would have a great experience if you install `fzf`, `zoxide` and `eza`.
+
+Then add the following to your ~/.bashrc and ~/.zshrc.
+
+```bash
+source ~/.ilm/zsh/dot-zshrc # at the end of ~/.zshrc
+source ~/.ilm/share/bashrc # at the end of ~/.bashrc
+```
