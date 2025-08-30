@@ -1,13 +1,13 @@
 { pkgs, ... }:
 {
   imports = [
-    ./common.nix
-    ./libvirt.nix
-    # ./incus.nix
-    # ./cockpit.nix
-    ./podman.nix
+    ./virt/common.nix
+    ./virt/libvirt.nix
+    ./virt/podman.nix
+    # ./virt/incus.nix
+    # ./virt/cockpit.nix
     # docker interferes with both podman and incus
-    # ./docker.nix
+    # ./virt/docker.nix
   ];
 
   # virtualisation.microvm.enable = true;

@@ -6,8 +6,8 @@
   ];
 
   imports = [
-    ./virt.nix
-    ./virtualbox.nix
-    # ./vmware.nix
+    ./vm.nix
+    ./virt/virtualbox.nix
+    # ./virt/vmware.nix
   ];
 }

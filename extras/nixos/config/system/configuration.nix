@@ -1,12 +1,9 @@
-{ pkgs, ... }:
+{ ... }:
 {
-  boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.systemd-boot.enable = true;
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-
   imports = [
+    ./systemd-boot.nix
     ./common.nix
-    ./shell.nix
+    ./packages.nix
     ./user.nix
   ];
 

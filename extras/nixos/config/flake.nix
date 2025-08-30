@@ -54,7 +54,7 @@
       vars = import ./vars.nix { inherit pkgs; };
 
       commonModules = [
-        ./configuration.nix
+        ./system/configuration.nix
         stylix.nixosModules.stylix
         quadlet-nix.nixosModules.quadlet
         # nixvim.nixosModules.nixvim
@@ -75,7 +75,7 @@
       ];
 
       uiModules = commonModules ++ [
-        ./ui.nix
+        ./system/ui.nix
       ];
 
       mkNixosSystem =
@@ -107,8 +107,8 @@
           uiModules
           ++ extraModules
           ++ [
-            ./vm.nix
-            ../ssh.nix
+            ./system/guest.nix
+            ./system/ssh.nix
           ]
         );
 
@@ -123,8 +123,8 @@
           };
           modules = extraModules ++ [
             { virtualisation.diskImage.size = "20G"; }
-            ./vm.nix
-            ../ssh.nix
+            ./system/guest.nix
+            ./system/ssh.nix
           ];
           format = format;
         };
@@ -132,7 +132,7 @@
       mkNixosGenerateVm = extraModules: mkNixosGenerateCommon extraModules "vm";
 
       mkNixosGenerateProxmox =
-        extraModules: mkNixosGenerateCommon extraModules ++ [ ./proxmox.nix ] "proxmox";
+        extraModules: mkNixosGenerateCommon extraModules ++ [ ./system/proxmox.nix ] "proxmox";
 
       mkAnywhereSystem =
         extraModules:
@@ -156,29 +156,31 @@
       };
 
       nixosConfigurations = {
-        server = mkNixosSystem (commonModules ++ [ ./ssh.nix ]);
+        server = mkNixosSystem (commonModules ++ [ ./system/ssh.nix ]);
 
-        gnome = mkUiSystem [ ./gnome.nix ];
-        gnome-vm = mkVmSystem [ ./gnome.nix ];
+        gnome = mkUiSystem [ ./system/gnome.nix ];
+        gnome-vm = mkVmSystem [ ./system/gnome.nix ];
 
-        kde = mkUiSystem [ ./kde.nix ];
-        kde-vm = mkVmSystem [ ./kde.nix ];
+        kde = mkUiSystem [ ./system/kde.nix ];
+        kde-vm = mkVmSystem [ ./system/kde.nix ];
 
-        sway = mkUiSystem [ ./sway.nix ];
-        sway-vm = mkVmSystem [ ./sway.nix ];
+        sway = mkUiSystem [ ./system/sway.nix ];
+        sway-vm = mkVmSystem [ ./system/sway.nix ];
 
         anywhere."${vars.hostName}" = mkAnywhereSystem [
-          ./disko-config.nix
-          ./gnome.nix
-          ./ssh.nix
+          ./system/disko-config.nix
+          ./system/gnome.nix
+          ./system/ssh.nix
           ./hosts/${vars.hostName}/hardware-configuration.nix
         ];
 
         um580 = mkBareSystem [
           ./hosts/um580/hardware-configuration.nix
           ./hosts/um580/fs.nix
-          ./sway.nix
+          ./system/sway.nix
         ];
+
+        docker-vm = mkVmSystem [ ./system/virt/docker.nix ];
 
         # run with nix build .#ng-vm
         ng-vm = mkNixosGenerateVm [ ];
@@ -188,9 +190,9 @@
 
         "7945hx" = mkBareSystem [
           ./hosts/7945hx/hardware-configuration.nix
-          ./gnome.nix
-          ./apps.nix
-          ./virt/virt-ui.nix
+          ./system/gnome.nix
+          ./system/apps.nix
+          ./system/vm-ui.nix
         ];
       };
     };

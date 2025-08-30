@@ -7,8 +7,8 @@ main() {
   local hostname="$2"
 
   mkdir -p "$HOME/.ilm/extras/nixos/config/hosts/${hostname}"
-  nix run github:nix-community/nixos-anywhere -- --flake .#"${hostname}" \
-    --generate-hardware-config nixos-generate-config ./hosts/${hostname}/hardware-configuration.nix \
+  nix run github:nix-community/nixos-anywhere -- --flake "$HOME"/.ilm/extras/nixos/config#"${hostname}" \
+    --generate-hardware-config nixos-generate-config ./hosts/"${hostname}"/hardware-configuration.nix \
     --target-host "root@${remote-ip}"
 }
 

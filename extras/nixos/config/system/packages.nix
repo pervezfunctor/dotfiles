@@ -18,6 +18,7 @@
     gnugrep
     gnumake
     iproute2
+    lefthook
     libsecret
     lm_sensors
     lsof
