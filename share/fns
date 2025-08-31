@@ -529,17 +529,32 @@ ivms() {
 
 virt-docker() {
     slog "Creating Docker VM: docker"
-    vm-create --distro ubuntu --name docker --docker --dotfiles min
+    sleep 1
+    vm-create --distro ubuntu --name docker --docker
 }
 
 virt-incus() {
     slog "Creating Alpine VM: incus"
-    vm-create --distro alpine --name incus --dotfiles min incus
+    sleep 1
+    vm-create --distro alpine --name incus --dotfiles incus
 }
 
 virt-nix() {
     slog "Creating Debian VM: nix"
+    sleep 1
     vm-create --distro debian --name nix --nix
+}
+
+virt-dev() {
+    slog "Creating Debian VM with docker and brew"
+    sleep 1
+    vm-create --distro debian --name dev --docker --brew
+}
+
+virt-ilm() {
+    slog "Creating Debian VM: ilm"
+    sleep 1
+    vm-create --distro debian --name ilm --dotfiles shell-slim
 }
 
 virt-exec() {
@@ -635,8 +650,14 @@ sync-folders() {
     local delete_flag=""
     local dry_flag=""
 
-    [[ "$1" == "--delete" ]] && { delete_flag="--delete"; shift; }
-    [[ "$1" == "--dry-run" ]] && { dry_flag="--dry-run"; shift; }
+    [[ "$1" == "--delete" ]] && {
+        delete_flag="--delete"
+        shift
+    }
+    [[ "$1" == "--dry-run" ]] && {
+        dry_flag="--dry-run"
+        shift
+    }
 
     if [[ $# -ne 2 ]]; then
         fail "Usage: sync-folders [--delete] [--dry-run] <source> <destination>"
