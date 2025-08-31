@@ -430,10 +430,10 @@ ssh-keygen -t ed25519 -C "your_email@example.com"
 Then create a vm with the following command. This will create a debian vm with docker and ssh enabled.
 
 ```bash
-vm-create --distro debian --name dev --docker --username debian --password debian
+vm-create --distro debian --name dev --docker
 ```
 
-After a few minutes, you should be able to ssh into this vm with the following command. If you don't have ssh key set up, this script will generate one for you.
+After a few minutes, you should be able to ssh into this vm with the following command. If you don't have ssh key set up, this script will generate one for you. Use the username `debian` and password `debian`.
 
 ```bash
 vm ssh dev debian # debian is the user name
