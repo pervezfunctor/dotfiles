@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+UFW_DEFAULTS="/etc/default/ufw"
+UFW_BEFORE="/etc/ufw/before.rules"
+EXT_IFACE="$(ip route get 8.8.8.8 | awk '{print $5; exit}')"
+
+echo "[*] Detected external interface: $EXT_IFACE"
+echo "[*] Configuring UFW (strict mode) for ALL libvirt networks"
+
+# --- 1. Ensure forwarding defaults to DROP (strict) ---
+if grep -q '^DEFAULT_FORWARD_POLICY' "$UFW_DEFAULTS"; then
+  sudo sed -i 's/^DEFAULT_FORWARD_POLICY=.*/DEFAULT_FORWARD_POLICY="DROP"/' "$UFW_DEFAULTS"
+else
+  echo 'DEFAULT_FORWARD_POLICY="DROP"' | sudo tee -a "$UFW_DEFAULTS"
+fi
+
+# --- 2. Loop over all active libvirt networks ---
+for net in $(virsh net-list --name); do
+  BRIDGE=$(virsh net-info "$net" | awk '/Bridge:/ {print $2}')
+  SUBNET=$(virsh net-dumpxml "$net" | xmllint --xpath "string(//network/ip/@address)" - 2>/dev/null)
+  PREFIX=$(virsh net-dumpxml "$net" | xmllint --xpath "string(//network/ip/@prefix)" - 2>/dev/null)
+
+  if [[ -n "$SUBNET" && -n "$PREFIX" ]]; then
+    CIDR="$SUBNET/$PREFIX"
+  else
+    echo "[!] Skipping $net (no IP subnet found)"
+    continue
+  fi
+
+  echo "[*] Configuring libvirt network '$net' bridge=$BRIDGE subnet=$CIDR"
+
+  # --- NAT masquerade per subnet ---
+  if ! grep -q "$CIDR" "$UFW_BEFORE"; then
+    echo "[*] Adding NAT masquerade for $CIDR via $EXT_IFACE"
+    sudo sed -i "/^# End required lines/a \
+\n# libvirt NAT for $CIDR ($net)\n*nat\n:POSTROUTING ACCEPT [0:0]\n-A POSTROUTING -s $CIDR -o $EXT_IFACE -j MASQUERADE\nCOMMIT\n" "$UFW_BEFORE"
+  fi
+
+  # --- Forward only this subnet ---
+  if ! grep -q "$CIDR" "$UFW_BEFORE"; then
+    echo "[*] Adding forward rules for $CIDR"
+    sudo sed -i "/^COMMIT$/i \
+# Allow forwarding for libvirt subnet $CIDR ($net)\n-A ufw-before-forward -s $CIDR -j ACCEPT\n-A ufw-before-forward -d $CIDR -j ACCEPT\n" "$UFW_BEFORE"
+  fi
+
+  # --- Allow only DHCP/DNS on bridge ---
+  sudo ufw allow in on "$BRIDGE" to any port 53 proto udp || true
+  sudo ufw allow in on "$BRIDGE" to any port 67 proto udp || true
+done
+
+# --- 3. Reload UFW ---
+echo "[*] Reloading UFW..."
+sudo ufw reload
+
+echo "[✔] Strict UFW rules for all active libvirt networks applied!"
+echo "    - Forwarding = DROP by default"
+echo "    - Forward only for detected libvirt subnets"
+echo "    - NAT masquerade on $EXT_IFACE"
+echo "    - DHCP/DNS allowed per bridge"

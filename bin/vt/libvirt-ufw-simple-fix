@@ -1,0 +1,7 @@
+# Remove the permissive rules
+sudo ufw delete allow in on virbr0
+sudo ufw delete allow out on virbr0
+
+# Add only what’s necessary
+sudo ufw allow in on virbr0 to any port 53 proto udp
+sudo ufw allow in on virbr0 to any port 67 proto udp

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-set -e
+set -eou pipefail
+
+has_cmd() {
+  command -v "$1" &>/dev/null
+}
 
 LIBVIRT_NET="virbr0"
 LIBVIRT_SUBNET="192.168.122.0/24"
@@ -18,24 +22,46 @@ fi
 
 OUT_IF=$1
 
-echo "Flushing existing FORWARD rules for libvirt and docker chains..."
-sudo iptables -D FORWARD -i $LIBVIRT_NET -o "$OUT_IF" -j ACCEPT 2>/dev/null || true
-sudo iptables -D FORWARD -i "$OUT_IF" -o $LIBVIRT_NET -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+if has_cmd iptables; then
+  echo "Flushing existing FORWARD rules for libvirt and docker chains..."
+  sudo iptables -D FORWARD -i $LIBVIRT_NET -o "$OUT_IF" -j ACCEPT 2>/dev/null || true
+  sudo iptables -D FORWARD -i "$OUT_IF" -o $LIBVIRT_NET -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
 
-sudo iptables -A FORWARD -i $LIBVIRT_NET -o "$OUT_IF" -j ACCEPT
-sudo iptables -A FORWARD -i "$OUT_IF" -o $LIBVIRT_NET -m state --state RELATED,ESTABLISHED -j ACCEPT
+  sudo iptables -A FORWARD -i $LIBVIRT_NET -o "$OUT_IF" -j ACCEPT
+  sudo iptables -A FORWARD -i "$OUT_IF" -o $LIBVIRT_NET -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-echo "Setting up NAT (MASQUERADE) for libvirt subnet..."
-sudo iptables -t nat -D POSTROUTING -s $LIBVIRT_SUBNET ! -o $LIBVIRT_NET -j MASQUERADE 2>/dev/null || true
-sudo iptables -t nat -A POSTROUTING -s $LIBVIRT_SUBNET ! -o $LIBVIRT_NET -j MASQUERADE
+  echo "Setting up NAT (MASQUERADE) for libvirt subnet..."
+  sudo iptables -t nat -D POSTROUTING -s $LIBVIRT_SUBNET ! -o $LIBVIRT_NET -j MASQUERADE 2>/dev/null || true
+  sudo iptables -t nat -A POSTROUTING -s $LIBVIRT_SUBNET ! -o $LIBVIRT_NET -j MASQUERADE
 
-echo "Done. You should now have internet access from libvirt guests alongside Docker."
+  echo "Done. You should now have internet access from libvirt guests alongside Docker."
 
-# Optionally, show the rules summary
-echo
-echo "Current FORWARD chain rules (summary):"
-sudo iptables -L FORWARD -v -n | grep -E "$LIBVIRT_NET|$OUT_IF"
+  echo
+  echo "Current FORWARD chain rules (summary):"
+  sudo iptables -L FORWARD -v -n | grep -E "$LIBVIRT_NET|$OUT_IF"
 
-echo
-echo "Current POSTROUTING nat rules (summary):"
-sudo iptables -t nat -L POSTROUTING -v -n | grep MASQUERADE
+  echo
+  echo "Current POSTROUTING nat rules (summary):"
+  sudo iptables -t nat -L POSTROUTING -v -n | grep MASQUERADE
+
+elif has_cmd ufw; then
+  # Allow DNS (port 53) for libvirt's dnsmasq
+  sudo ufw allow in on virbr0 to any port 53 proto udp
+  sudo ufw allow in on virbr0 to any port 53 proto tcp
+
+  # Allow DHCP (ports 67-68)
+  sudo ufw allow in on virbr0 to any port 67 proto udp
+  sudo ufw allow in on virbr0 to any port 68 proto udp
+
+  # Allow traffic from libvirt bridge to outside (NAT)
+  sudo ufw route allow in on virbr0 out on "$OUT_IF"
+
+  # Allow established/related traffic
+  sudo ufw allow in on virbr0 from "$LIBVIRT_SUBNET"
+
+  echo "Done. You should now have internet access from libvirt guests alongside Docker."
+
+  echo
+  echo "Current ufw status (summary):"
+  sudo ufw status numbered
+fi
