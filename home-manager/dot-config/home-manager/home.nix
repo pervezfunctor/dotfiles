@@ -12,6 +12,7 @@ let
       source "$HOME/.ilm/share/utils"
       source "$HOME/.ilm/share/fns"
       source "$HOME/.ilm/share/aliases"
+      source "$HOME/.ilm/share/exports"
     fi
   '';
 
@@ -40,6 +41,7 @@ in
     nixfmt-rfc-style
     ripgrep
     stow
+    tmux
     tealdeer
     trash-cli
     yazi
@@ -47,6 +49,7 @@ in
   ];
 
   programs.home-manager.enable = true;
+  news.display = "silent";
 
   programs.direnv = {
     enable = true;
@@ -68,6 +71,7 @@ in
     initContent = initContent;
   };
 
+  # If you have ~/.ilm, get a sensible tmux configuration with the following.
   # home.file = {
   #   ".config/tmux/tmux.conf" = {
   #     source = ~/.ilm/tmux/dot-config/tmux/tmux.conf;

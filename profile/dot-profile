@@ -1,0 +1,8 @@
+#! /usr/bin/env sh
+
+# shellcheck disable=SC1091
+. "$HOME/.ilm/share/exports"
+
+has_cmd firefox && export BROWSER=firefox
+has_cmd alacritty && export TERM=alacritty
+has_cmd qt5ct && export QT_QPA_PLATFORMTHEME=qt5ct
