@@ -21,6 +21,10 @@ unset DISTRO
 unset PASSWORD
 
 cleanup_on_error() {
+    echo "Error occurred in function: ${FUNCNAME[1]:-main}"
+    echo "Error occurred on line: ${BASH_LINENO[0]}"
+    echo "Error occurred in file: ${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
+
     warn "Cleaning up due to error..."
     sudo rm -f "$DISK_IMG" 2>/dev/null || true
     sudo rm -f "$SEED_ISO" 2>/dev/null || true
@@ -251,8 +255,8 @@ parse_args() {
             break                 # Exit the loop since --dotfiles must be last
             ;;
         --password)
-            shift
-            PASSWORD="$1"
+            PASSWORD="$2"
+            shift 2
             ;;
         --help | -h)
             usage
@@ -407,8 +411,8 @@ generate_cloud_init() {
 
     if [[ "$DISTRO" == "alpine" ]]; then
         runcmd+=(
-            "rc-update add qemu-guest-agent default"
-            "service qemu-guest-agent start"
+            "rc-update add qemu-guest-agent default || true"
+            "service qemu-guest-agent start || true"
         )
     else
         runcmd+=(
@@ -420,6 +424,7 @@ generate_cloud_init() {
     case "$DISTRO" in
     ubuntu | debian)
         packages+=(
+            "stow"
             "ca-certificates"
             "gnupg"
             "lsb-release"
