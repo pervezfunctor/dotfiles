@@ -936,8 +936,13 @@ main() {
     show_completion_info
     stop_sudo_keepalive
 
-    success "All done! Your $DISTRO VM is ready."
+    success "All done! Your $DISTRO VM will be ready in a few minutes."
+    echo "'vm console $VM_NAME' allows you to access the VM console"
     slog "Use username: $USERNAME and password: $PASSWORD to login."
+    echo "Use ctrl + ] to exit the console."
+    sleep 2
+    echo "'vm ssh $VM_NAME' to ssh into the VM."
+    sleep 3
 }
 
 main "$@"
