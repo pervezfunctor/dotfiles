@@ -516,6 +516,10 @@ incus-arch-vm() {
     incus launch images:archlinux/current archlinux-vm --vm
 }
 
+incus-nixos() {
+    incus launch images:nixos/unstable --vm nixos-vm -c security.secureboot=false
+}
+
 ivms() {
     slog "Creating incus vms"
 
