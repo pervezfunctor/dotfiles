@@ -131,6 +131,13 @@ Or execute the following and pick what you want. Do not uncheck any of the defau
 iwr -useb https://is.gd/vefawu | iex
 ```
 
+Consider using [nixos-wsl](https://github.com/nix-community/nixos-wsl).
+
+You could install nixos-wsl with the following command.
+
+```powershell
+iex "& { $(iwr -useb https://is.gd/vefawu) -Components wsl-nixos }"
+```
 
 ### MACOS
 
@@ -155,9 +162,7 @@ Consider using [nix-darwin](https://github.com/nix-darwin/nix-darwin) or at leas
 
 ### Bluefin/Aurora
 
-Give [Bluefin](https://projectbluefin.io)/[Aurora](https://getaurora.dev/en)/[Bazzite](https://bazzite.gg/) a try. Especially if you have nvidia card. Use the dx version. You get docker, vscode and homebrew by default.
-
-#### Option A: devmode
+Give [Bluefin](https://projectbluefin.io)/[Aurora](https://getaurora.dev/en)/[Bazzite](https://bazzite.gg/) a try. Especially if you have an nvidia card.
 
 Unfortunately, there is no direct ISO of dx version available. You need to run the following command after installation.
 
@@ -177,7 +182,7 @@ Once you have your OS installed with any of the above approaches, you could conf
 bash -c "$(curl -sSL https://is.gd/hurace)"
 ```
 
-Above is optional and I don't recommend it. Instead run the following.
+You could instead run the following.
 
 ```bash
 ujust bluefin-cli  # for bluefin
