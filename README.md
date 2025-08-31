@@ -6,26 +6,27 @@ All the following commands are meant to be run on a freshly installed system. If
 
 ## TLDR
 
-### Linux
-
-Installs vscode, docker and shell tools
-
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- work
-```
-
 ### MacOS
 
-Installs homebrew, essential shell tools, vscode and docker.
+Installs vscode, docker and shell tools.
 
 ```bash
 curl https://pkgx.sh | sh
 pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- work
 ```
 
+### Linux
+
+Installs vscode, docker and shell tools.
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- work
+```
+
+
 ### Windows
 
-Pick what you want to install.
+Pick what you want to install by running the following command in powershell **as administrator**. Note that you might have to restart your system multiple times. Execute the same script again.
 
 ```powershell
 iwr -useb https://is.gd/vefawu | iex
@@ -34,12 +35,6 @@ iwr -useb https://is.gd/vefawu | iex
 ## Introduction
 
 ### Linux
-
-On linux desktop(Ubuntu 25.04 for eg), install shell tools, vscode and docker with the following command. Works on Ubuntu 25.04, Fedora 42, OpenSUSE Tumbleweed, Debian Trixie and Arch.
-
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- work
-```
 
 If you only want to install modern unix tools in a development container/vm/desktop, use the following command instead. Works on linux and macos.
 
@@ -51,6 +46,38 @@ Or just install the very basic packages(gcc, make, tar, git etc)
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)"
+```
+
+Restart your terminal and use `ilmi` to install additional tools you want.
+
+```bash
+ilmi
+```
+
+You could also do the following
+```bash
+ilmi vscode docker shell-ui vm-ui # pick any tools you want
+```
+
+Consider using `nix` and [home-manager](https://github.com/nix-community/home-manager).
+
+Use the following to install `nix`.
+
+```bash
+ilmi nix
+```
+
+Setup home-manager with the following.
+
+```bash
+cp ~/.ilm/home-manager/dot-config/home-manager ~/.config/home-manager
+cd ~/.config/home-manager
+git init
+git add .
+./hms
+git add .
+git commit -m "Initial commit"
+chsh -s $(which zsh)
 ```
 
 
@@ -82,25 +109,33 @@ Exit and enter WSL again(or reboot) to install more development tools.
 ilmi tmux nvim emacs # pick any tools you want
 ```
 
-If you want to setup vscode and other development tools on Windows, run the following command in powershell **as administrator**. Install Windows updates first, if you haven't already.
+If you want to setup vscode and other development tools on Windows, run the following command in powershell **as administrator**.
+
+Install Windows updates first, if you haven't already.
+
+Then you could install `vscode` with
+
+```powershell
+iex "& { $(iwr -useb https://is.gd/vefawu) -Components vscode nerd-fonts }"
+```
+
+Install [docker desktop](https://docs.docker.com/desktop/setup/install/windows-install/) manually or use the following
+
+```powershell
+iex "& { $(iwr -useb https://is.gd/vefawu) -Components devtools }"
+```
+
+Or execute the following and pick what you want. Do not uncheck any of the default options.
 
 ```powershell
 iwr -useb https://is.gd/vefawu | iex
 ```
 
-You will be presented with a menu, pick what you want to install.
-
 
 ### MACOS
 
-On macos, install applications(vscode, terminal, fonts etc) along with shell tools. Works on linux too.
 
-```bash
-curl https://pkgx.sh | sh
-pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- shell-slim-ui
-```
-
-If you just want homebrew, run the following command.
+Install homebrew and a few essentials with the following command.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif)"
@@ -110,7 +145,9 @@ You could later use `ilmi` to install additional tools
 
 ```bash
 ilmi vscode docker tmux nvim # pick any tools you want
-``
+```
+
+Consider using [nix-darwin](https://github.com/nix-darwin/nix-darwin) or at least [home-manager](https://github.com/nix-community/home-manager)
 
 
 ## Recommended Setups
