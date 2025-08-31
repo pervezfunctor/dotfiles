@@ -528,33 +528,38 @@ ivms() {
 }
 
 virt-docker() {
+    local VM_NAME=${1:-docker}
     slog "Creating Docker VM: docker"
     sleep 1
-    vm-create --distro ubuntu --name docker --docker
+    vm-create --distro debian --name "$VM_NAME" --docker
 }
 
 virt-incus() {
+    local VM_NAME=${1:-incus}
     slog "Creating Alpine VM: incus"
     sleep 1
-    vm-create --distro alpine --name incus --dotfiles incus
+    vm-create --distro debian --name "$VM_NAME" --dotfiles incus
 }
 
 virt-nix() {
+    local VM_NAME=${1:-nix}
     slog "Creating Debian VM: nix"
     sleep 1
-    vm-create --distro debian --name nix --nix
+    vm-create --distro debian --name "$VM_NAME" --nix
 }
 
 virt-dev() {
+    local VM_NAME=${1:-dev}
     slog "Creating Debian VM with docker and brew"
     sleep 1
-    vm-create --distro debian --name dev --docker --brew
+    vm-create --distro debian --name "$VM_NAME" --docker --brew
 }
 
 virt-ilm() {
+    local VM_NAME=${1:-ilm}
     slog "Creating Debian VM: ilm"
     sleep 1
-    vm-create --distro debian --name ilm --dotfiles shell-slim
+    vm-create --distro debian --name "$VM_NAME" --dotfiles shell-slim
 }
 
 virt-exec() {
