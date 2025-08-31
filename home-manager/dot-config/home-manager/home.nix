@@ -1,132 +1,76 @@
-{ pkgs, ... }:
+{ pkgs, vars, ... }:
 
+let
+  aliases = {
+    hms = "nix run home-manager -- switch --flake ~/.ilm/home-manager/dot-config/home-manager#${vars.username} --impure -b bak";
+  };
+
+  initContent = ''
+    if [[ -d "$HOME/.ilm" ]]; then
+      export PATH="$HOME/.volta/bin:$HOME/.local/bin:$HOME/.ilm/bin:$HOME/.ilm/bin/vt:$PATH"
+
+      source "$HOME/.ilm/share/utils"
+      source "$HOME/.ilm/share/fns"
+      source "$HOME/.ilm/share/aliases"
+    fi
+  '';
+
+in
 {
-  home.username = builtins.getEnv "USER";
-  home.homeDirectory = builtins.getEnv "HOME";
+  home.username = vars.username;
+  home.homeDirectory = vars.homeDirectory;
 
-  # You should not change this value, even if you update Home Manager. If you do
-  # want to update the value, then make sure to first check the Home Manager
-  # release notes.
-  home.stateVersion = "25.11"; # Please read the comment before changing.
+  home.stateVersion = "25.11";
 
   home.packages = with pkgs; [
     alejandra
-    atuin
     bat
-    bottom
     carapace
     delta
     devbox
     devenv
-    emacs-nox
     eza
-    fd
     fzf
     gh
     gum
-    htop
     jq
     just
     lazygit
-    luarocks
-    neovim
     nixd
     nixfmt-rfc-style
-    volta
-    nushell
-    p7zip
-    procs
     ripgrep
-    sd
-    shellcheck
-    shfmt
-    starship
     stow
     tealdeer
-    television
     trash-cli
-    unar
-    unzip
-    xz
     yazi
     zoxide
-
-    # # It is sometimes useful to fine-tune packages, for example, by applying
-    # # overrides. You can do that directly here, just don't forget the
-    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
-    # # fonts?
-    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
-
-    # # You can also create simple shell scripts directly inside your
-    # # configuration. For example, this adds a command 'my-hello' to your
-    # # environment:
-    # (pkgs.writeShellScriptBin "my-hello" ''
-    #   echo "Hello, ${config.home.username}!"
-    # '')
   ];
+
+  programs.home-manager.enable = true;
 
   programs.direnv = {
     enable = true;
-    enableBashIntegration = true;
     nix-direnv.enable = true;
   };
 
-  programs.bash = {
+  programs.starship = {
     enable = true;
-    initExtra = ''
-      source ~/.ilm/share/bashrc
-    '';
+    enableZshIntegration = true;
   };
 
-  # Let Home Manager install and manage itself.
-  programs.home-manager.enable = true;
-  programs.git.enable = true;
-  programs.zsh.enable = true;
+  programs.zsh = {
+    enable = true;
+    enableCompletion = true;
+    autosuggestion.enable = true;
+    syntaxHighlighting.enable = true;
 
-  home.file = {
-    ".zshrc" = {
-      source = "${builtins.getEnv "HOME"}/.ilm/zsh/dot-zshrc";
-    };
-    ".config/nvim" = {
-      source = "${builtins.getEnv "HOME"}/.ilm/nvim/dot-config/nvim";
-    };
-    ".config/tmux/tmux.conf" = {
-      source = "${builtins.getEnv "HOME"}/.ilm/tmux/dot-config/tmux/tmux.conf";
-    };
-    ".gitconfig" = {
-      source = "${builtins.getEnv "HOME"}/.ilm/git/dot-gitconfig";
-    };
-    ".emacs" = {
-      source = "${builtins.getEnv "HOME"}/.ilm/emacs-nano/dot-emacs";
-    };
-    # ".config/Code/User/settings.json" = {
-    #     source = ${builtins.getEnv "HOME"}/.ilm/extras/vscode/minimal-settings.json;
-    # };
-
-    # # You can also set the file content immediately.
-    # ".gradle/gradle.properties".text = ''
-    #   org.gradle.console=verbose
-    #   org.gradle.daemon.idletimeout=3600000
-    # '';
+    shellAliases = aliases;
+    initContent = initContent;
   };
 
-  # Home Manager can also manage your environment variables through
-  # 'home.sessionVariables'. These will be explicitly sourced when using a
-  # shell provided by Home Manager. If you don't want to manage your shell
-  # through Home Manager then you have to manually source 'hm-session-vars.sh'
-  # located at either
-  #
-  # ~/.nix-profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  ~/.local/state/nix/profiles/profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  /etc/profiles/per-user/<user-name>/etc/profile.d/hm-session-vars.sh
-  #
-  home.sessionVariables = {
-    EDITOR = "code --wait";
-  };
+  # home.file = {
+  #   ".config/tmux/tmux.conf" = {
+  #     source = ~/.ilm/tmux/dot-config/tmux/tmux.conf;
+  #   };
+  # };
 }

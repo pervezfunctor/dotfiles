@@ -1028,7 +1028,7 @@ hms() {
         return 0
     fi
 
-    nix run home-manager -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#ilm --impure -b bak
+    nix run home-manager -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#"${USER}" --impure -b bak
 }
 
 SUDO_KEEPALIVE_PID=""
