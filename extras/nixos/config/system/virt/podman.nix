@@ -1,5 +1,6 @@
 {
   pkgs,
+  vars,
   ...
 }:
 {
@@ -49,6 +50,8 @@
   };
 
   users.groups.podman = { };
+  users.extraGroups.podman.members = [ vars.username ];
+
   boot.kernel.sysctl."user.max_user_namespaces" = 28633;
 
   # virtualisation.podman.dockerSocket.enable = true;

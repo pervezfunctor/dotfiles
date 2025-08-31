@@ -40,7 +40,7 @@ git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
 
 - open `.ilm/extras/nixos/config/disko-config.nix` file and set `disko.devices.disk.main.device` to the disk you want to use(noted above), for eg `/dev/sda` or /dev/nvme0n1`.
 
-- Open `~/.ilm/extras/nixos/config/vars.nix` and set `hostName`, `userName`, `sshKey` and `initialPassword`.
+- Open `~/.ilm/extras/nixos/config/vars.nix` and set `hostName`, `username`, `sshKey` and `initialPassword`.
 
 - You can make any changes you want, for example, add packages you would need after installation.
 

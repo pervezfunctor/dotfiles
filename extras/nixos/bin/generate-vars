@@ -73,7 +73,7 @@ generate_vars_nix() {
   echo "{ pkgs, ... }:
   {
   hostName = \"${HOSTNAME}\";
-  userName = \"${USER_NAME}\";
+  username = \"${USER_NAME}\";
   initialPassword = \"${INITIAL_PASSWORD}\";
   sshKey = \"${ssh_key}\";
   shell = pkgs.zsh;

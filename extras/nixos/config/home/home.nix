@@ -16,8 +16,8 @@ in
 
   home = {
     stateVersion = "25.11";
-    username = "${vars.userName}";
-    homeDirectory = "/home/${vars.userName}";
+    username = "${vars.username}";
+    homeDirectory = "/home/${vars.username}";
   };
 }
 

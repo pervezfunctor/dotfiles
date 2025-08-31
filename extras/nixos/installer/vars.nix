@@ -2,7 +2,7 @@
 
 {
   hostName = "nixos";
-  userName = "me";
+  username = "me";
   initialPassword = "nixos";
 
   sshKey = "<ssh-key>";

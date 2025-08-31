@@ -69,13 +69,20 @@
             useUserPackages = true;
             useGlobalPkgs = true;
             backupFileExtension = "backup";
-            users.${vars.userName} = import ./home/home.nix;
+            users.${vars.username} = import ./home/home.nix;
           };
         }
       ];
 
       uiModules = commonModules ++ [
         ./system/ui.nix
+      ];
+
+      guestModules = commonModules ++ [
+        ./system/systemd-boot.nix
+        ./system/guest.nix
+        ./system/user.nix
+        ./system/ssh.nix
       ];
 
       mkNixosSystem =
@@ -101,31 +108,20 @@
           ]
         );
 
-      mkVmSystem =
-        extraModules:
-        mkNixosSystem (
-          uiModules
-          ++ extraModules
-          ++ [
-            ./system/guest.nix
-            ./system/ssh.nix
-          ]
-        );
+      mkSimpleVmSystem = extraModules: mkNixosSystem (extraModules ++ guestModules);
+
+      mkVmSystem = extraModules: mkNixosSystem (uiModules ++ extraModules ++ guestModules);
 
       mkNixosGenerateCommon =
         extraModules: format:
         nixos-generators.nixosGenerate {
           inherit system;
           specialArgs = {
-            pkgs = nixpkgs.legacyPackages.${system};
+            pkgs = pkgs;
             inherit inputs;
             inherit vars;
           };
-          modules = extraModules ++ [
-            { virtualisation.diskImage.size = "20G"; }
-            ./system/guest.nix
-            ./system/ssh.nix
-          ];
+          modules = extraModules ++ guestModules; # ++ [ { virtualisation.diskImage.size = "20G"; } ];
           format = format;
         };
 
@@ -145,7 +141,7 @@
     in
     {
       homeConfigurations = {
-        ${vars.userName} = home-manager.lib.homeManagerConfiguration {
+        ${vars.username} = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = { inherit inputs vars; };
           modules = [
@@ -167,6 +163,10 @@
         sway = mkUiSystem [ ./system/sway.nix ];
         sway-vm = mkVmSystem [ ./system/sway.nix ];
 
+        docker-vm = mkSimpleVmSystem [ ./system/virt/docker.nix ];
+        incus-vm = mkSimpleVmSystem [ ./system/virt/incus.nix ];
+        podman-vm = mkSimpleVmSystem [ ./system/virt/podman.nix ];
+
         anywhere."${vars.hostName}" = mkAnywhereSystem [
           ./system/disko-config.nix
           ./system/gnome.nix
@@ -179,8 +179,6 @@
           ./hosts/um580/fs.nix
           ./system/sway.nix
         ];
-
-        docker-vm = mkVmSystem [ ./system/virt/docker.nix ];
 
         # run with nix build .#ng-vm
         ng-vm = mkNixosGenerateVm [ ];

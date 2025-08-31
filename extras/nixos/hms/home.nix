@@ -18,7 +18,7 @@
   };
 
   home = {
-    username = vars.userName;
+    username = vars.username;
     homeDirectory = vars.homeDirectory;
 
     packages = with pkgs; [

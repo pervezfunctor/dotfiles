@@ -25,7 +25,7 @@
       vars = import ./vars.nix { inherit pkgs; };
     in
     {
-      homeConfigurations."${vars.userName}" = home-manager.lib.homeManagerConfiguration {
+      homeConfigurations."${vars.username}" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
 
         extraSpecialArgs = {

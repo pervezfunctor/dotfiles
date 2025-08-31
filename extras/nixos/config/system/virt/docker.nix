@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, vars, ... }:
 {
   environment.systemPackages = with pkgs; [
     dive
@@ -52,6 +52,8 @@
       enable = true;
       setSocketVariable = true;
     };
+
+    users.extraGroups.docker.members = [ vars.username ];
 
     # Configure Docker registry mirrors (for faster pulls)
     # daemon.settings = {

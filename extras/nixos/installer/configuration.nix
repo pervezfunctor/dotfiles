@@ -46,7 +46,7 @@
 
   networking.hostName = vars.hostName;
 
-  users.users.${vars.userName} = {
+  users.users.${vars.username} = {
     shell = pkgs.zsh;
 
     isNormalUser = true;

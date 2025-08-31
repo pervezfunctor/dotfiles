@@ -1,7 +1,7 @@
 { vars, ... }:
 {
   virtualisation.virtualbox.host.enable = true;
-  users.extraGroups.vboxusers.members = [ vars.userName ];
+  users.extraGroups.vboxusers.members = [ vars.username ];
   virtualisation.virtualbox.host.enableExtensionPack = true;
   virtualisation.virtualbox.host.enableWebService = true;
   virtualisation.virtualbox.host.enableKvm = true;

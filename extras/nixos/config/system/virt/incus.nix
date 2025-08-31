@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, vars, ... }:
 {
   virtualisation.lxc.enable = true;
   virtualisation.incus = {
@@ -44,6 +44,9 @@
       '';
     };
   };
+
+  users.extraGroups.incus.members = [ vars.username ];
+  users.extraGroups.incus-admin.members = [ vars.username ];
 
   networking.firewall = {
     allowedTCPPorts = [ 8443 ];

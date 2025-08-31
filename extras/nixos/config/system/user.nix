@@ -1,6 +1,6 @@
 { pkgs, vars, ... }:
 {
-  users.users.${vars.userName} = {
+  users.users.${vars.username} = {
     shell = pkgs.zsh;
 
     isNormalUser = true;
@@ -14,6 +14,7 @@
       "incus"
       "input"
       "qemu-libvirtd"
+      # "libvirt-qemu"
       "kvm"
       "libvirtd"
       "networkmanager"

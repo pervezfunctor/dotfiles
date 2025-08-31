@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, vars, ... }:
 {
   environment.sessionVariables = {
     LIBVIRT_DEFAULT_URI = "qemu:///system";
@@ -37,6 +37,11 @@
   };
 
   programs.virt-manager.enable = true;
+
+  users.extraGroups.libvirtd.members = [ vars.username ];
+  users.extraGroups.qemu-libvirtd.members = [ vars.username ];
+  users.extraGroups.kvm.members = [ vars.username ];
+  # users.extraGroups.libvirt-qemu.members = [ vars.username ];
 
   environment.systemPackages = with pkgs; [
     dmidecode
