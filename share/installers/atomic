@@ -48,18 +48,6 @@ pixi_install() {
     cmd_check pixi
 }
 
-# pkgx_install() {
-#     has_cmd pkgx && return 0
-
-#     if has_cmd brew; then
-#         brew install pkgx
-#     else
-#         curl https://pkgx.sh | sh
-#     fi
-
-#     cmd_check pkgx
-# }
-
 uv_install() {
     has_cmd uv && return 0
 
