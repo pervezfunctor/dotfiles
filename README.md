@@ -202,6 +202,12 @@ mkdir -p ~/nixos-config
 cp -r /etc/nixos ~/nixos-config
 ```
 
+Edit `~/nixos-config/configuration.nix` and add the following.
+
+```nix
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+```
+
 Create a minimal flake.nix.
 
 ```bash
