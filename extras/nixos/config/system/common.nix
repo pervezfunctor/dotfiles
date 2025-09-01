@@ -18,17 +18,17 @@
   nix = {
     gc = {
       automatic = true;
-      dates = "Sun 03:00";
-      options = "--delete-older-than 5d";
+      dates = "weekly";
+      options = "--delete-older-than 1w";
       persistent = true;
       randomizedDelaySec = "30min";
     };
 
     settings = {
       auto-optimise-store = true;
-      keep-build-log = true;
-      keep-outputs = true;
-      keep-derivations = true;
+      # keep-build-log = true;
+      # keep-outputs = true;
+      # keep-derivations = true;
 
       experimental-features = [
         "nix-command"
@@ -37,10 +37,9 @@
     };
   };
 
-  # Configure sudo access for wheel group
   security.sudo = {
     enable = true;
-    wheelNeedsPassword = true; # Set to false for passwordless sudo
+    wheelNeedsPassword = true;
   };
 
   nixpkgs.config.allowUnfree = true;

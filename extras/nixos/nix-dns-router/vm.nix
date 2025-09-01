@@ -1,15 +1,22 @@
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   imports = [ <nixpkgs/nixos/modules/virtualisation/qemu-vm.nix> ];
+
+  settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   networking.hostName = "router";
   networking.useDHCP = false;
   networking.interfaces.eth0.useDHCP = true;
 
   services.tailscale.enable = true;
-  services.tailscale.extraUpFlags =
-    [ "--advertise-routes=192.168.122.0/24" "--accept-routes" ];
+  services.tailscale.extraUpFlags = [
+    "--advertise-routes=192.168.122.0/24"
+    "--accept-routes"
+  ];
 
   services.dnsmasq = {
     enable = true;

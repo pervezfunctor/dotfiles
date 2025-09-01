@@ -4,6 +4,11 @@
   boot.loader.systemd-boot.enable = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
+  settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
+
   # enable gnome
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;

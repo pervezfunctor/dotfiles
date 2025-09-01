@@ -25,6 +25,11 @@
               {
                 imports = [ "${pkgs.path}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
 
+                settings.experimental-features = [
+                  "nix-command"
+                  "flakes"
+                ];
+
                 networking.hostName = "rescue";
                 isoImage.isoName = "rescue-btrfs.iso";
 

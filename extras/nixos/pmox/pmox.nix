@@ -3,6 +3,11 @@
 {
   imports = [ ./configuration.nix ];
 
+  settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
+
   # System packages
   environment.systemPackages = with pkgs; [
     htop
