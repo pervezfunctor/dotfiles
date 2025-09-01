@@ -1,5 +1,7 @@
 { pkgs, vars, ... }:
 {
+  users.extraGroups.docker.members = [ vars.username ];
+
   environment.systemPackages = with pkgs; [
     dive
     docker-compose
@@ -13,7 +15,7 @@
     8080
   ];
 
-  virtualisation.podman.enable = false;
+  # virtualisation.podman.enable = false;
 
   networking.firewall.trustedInterfaces = [ "docker0" ];
 
@@ -52,8 +54,6 @@
       enable = true;
       setSocketVariable = true;
     };
-
-    users.extraGroups.docker.members = [ vars.username ];
 
     # Configure Docker registry mirrors (for faster pulls)
     # daemon.settings = {

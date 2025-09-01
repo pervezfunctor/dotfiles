@@ -1,4 +1,4 @@
-{ pkgs, vars, ... }:
+{ vars, ... }:
 {
   virtualisation.lxc.enable = true;
   virtualisation.incus = {
