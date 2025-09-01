@@ -1,0 +1,26 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+
+echo "Enabling nvidia persistence mode"
+sudo systemctl start nvidia-persistenced
+sudo systemctl enable nvidia-persistenced
+sudo systemctl status nvidia-persistenced
+sudo nvidia-smi -i 0 -pm 1
+
+echo "Setting GPU 0 to 200W"
+sudo nvidia-smi -i 0 -pl 200
+
+echo "Checking if persistence mode is enabled"
+if sudo nvidia-smi -q -d PERSISTENCE_MODE | grep -q "Enabled"; then
+  echo "Persistence mode is enabled"
+else
+  echo "Persistence mode is not enabled"
+fi
+
+echo "Checking power limit"
+if sudo nvidia-smi -q -d POWER | grep -i limit | grep "Current Power Limit" | grep -q "200"; then
+  echo "Power limit is set to 200W"
+else
+  echo "Power limit is not set to 200W"
+fi
