@@ -68,6 +68,10 @@
         "workbench.colorTheme" = "Rosé Pine (no italics)";
         "workbench.sideBar.location" = "right";
         "docker.extension.enableComposeLanguageServer" = true;
+        "github.copilot.enable" = {
+          "*" = false;
+        };
+        "workbench.startupEditor" = "none";
       };
     };
   };

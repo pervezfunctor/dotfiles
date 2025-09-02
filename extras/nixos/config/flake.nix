@@ -11,7 +11,7 @@
     };
 
     stylix = {
-      url = "github:danth/stylix";
+      url = "github:nix-community/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -34,6 +34,11 @@
       url = "github:joerdav/xc";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    microvm = {
+      url = "github:microvm-nix/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -45,6 +50,7 @@
       quadlet-nix,
       disko,
       nixos-generators,
+      microvm,
       # nixvim,
       ...
     }@inputs:
@@ -54,8 +60,8 @@
       vars = import ./vars.nix { inherit pkgs; };
 
       commonModules = [
-        ./system/configuration.nix
         stylix.nixosModules.stylix
+        ./system/configuration.nix
         quadlet-nix.nixosModules.quadlet
         # nixvim.nixosModules.nixvim
         home-manager.nixosModules.home-manager
@@ -146,6 +152,7 @@
           extraSpecialArgs = { inherit inputs vars; };
           modules = [
             # nixvim.homeManagerModules.nixvim
+            # stylix.homeModules.stylix
             ./home/home.nix
           ];
         };
@@ -192,6 +199,50 @@
           ./system/apps.nix
           ./system/vm-ui.nix
         ];
+
+        basic-microvm = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            inherit inputs;
+            inherit vars;
+          };
+          modules = [
+            microvm.nixosModules.microvm
+            {
+              networking.hostName = "basic-microvm";
+              microvm.hypervisor = "cloud-hypervisor";
+
+              # microvm.shares = [
+              #   {
+              #     tag = "ro-store";
+              #     source = "/nix/store";
+              #     mountPoint = "/nix/.ro-store";
+              #   }
+
+              #   # {
+              #   #   proto = "virtiofs";
+              #   #   tag = "home";
+              #   #   source = "home";
+              #   #   mountPoint = "/home";
+              #   # }
+              # ];
+
+              # microvm.vcpu = 2;
+              # microvm.mem = 4096;
+              # microvm.interfaces = "";
+              # microvm.volumes = "";
+              # microvm.shares = "";
+              # microvm.devices = "";
+              # microvm.socket = "";
+              # microvm.user = "";
+              # microvm.forwardPorts = "";
+              # microvm.kernelParams = "";
+              # microvm.storeOnDisk = "";
+              # microvm.writableStoreOverlay = "";
+            }
+          ];
+        };
+
       };
     };
 }
