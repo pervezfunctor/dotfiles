@@ -162,7 +162,7 @@ rpm-ostree_install() {
 
     slog "Installing packages"
 
-    local apply_live=true
+    local apply_live=false
 
     if [[ "$1" == "--apply-live" ]]; then
         apply_live=true
@@ -193,8 +193,11 @@ rpm-ostree_install() {
 
     if [[ ${#PKGS[@]} -eq 0 ]]; then
         slog "No packages to install"
+        sleep 3
         return 0
     fi
+
+    slog "Installing packages ${PKGS[@]}"
 
     if has_cmd stow || has_cmd zsh || has_cmd gcc || has_cmd make ||
         has_cmd tmux || has_cmd virsh ||
@@ -298,7 +301,7 @@ rpm-ostree-post_install() {
 }
 
 rpm-ostree_groupstall() {
-    rpm-ostree_install "$@"
+    rpm-ostree_install --apply-live
     generic_groupstall
     rpm-ostree-post_install
     apps-slim_install
