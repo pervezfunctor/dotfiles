@@ -257,12 +257,11 @@ zsh_confstall() {
     sclone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$HOME/.zsh/zsh-autosuggestions"
     sclone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.zsh/zsh-syntax-highlighting"
 
-    if has_cmd stowdf; then
-        slog "stowdf defined"
-        declare -f my_func
+    if has_cmd stow; then
+        stowdf zsh
+    else
+        zsh_boxstall
     fi
-    stowdf zsh
-
     slog "zsh config done!"
 }
 
@@ -271,7 +270,11 @@ tmux_confstall() {
 
     srm "$XDG_CONFIG_HOME/tmux"
 
-    stownf tmux
+    if has_cmd stow; then
+        stownf tmux
+    else
+        tmux_boxstall
+    fi
 
     slog "tmux config done!"
 }

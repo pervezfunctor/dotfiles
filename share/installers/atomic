@@ -338,6 +338,7 @@ gnome-settings_install() {
 
     slog "gnome settings"
 
+    gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer']"
     gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
     gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
     gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
