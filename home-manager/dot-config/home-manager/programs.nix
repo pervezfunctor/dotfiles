@@ -1,4 +1,4 @@
-{ pkgs, vars, ... }:
+{ vars, ... }:
 let
   aliases = {
     hms = "nix run home-manager -- switch --flake ~/.ilm/home-manager/dot-config/home-manager#${vars.username} --impure -b bak";

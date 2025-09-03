@@ -65,7 +65,7 @@
 
         "window.titleBarStyle" = "custom";
 
-        "workbench.colorTheme" = "Rosé Pine (no italics)";
+        "workbench.colorTheme" = "Catppuccin Mocha";
         "workbench.sideBar.location" = "right";
         "docker.extension.enableComposeLanguageServer" = true;
         "github.copilot.enable" = {

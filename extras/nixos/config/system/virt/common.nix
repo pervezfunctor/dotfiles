@@ -1,18 +1,18 @@
-{ pkgs, lib, ... }:
+{ lib, ... }:
 {
 
-  hardware.graphics = {
-    enable = true;
-    extraPackages = with pkgs; [
-      virglrenderer
-      vaapiVdpau
-      libvdpau-va-gl
-      # intel-vaapi-driver # Intel users
-      amdvlk # AMD users
-      # rocm-opencl-icd # AMD ROCm
-    ];
-    enable32Bit = true;
-  };
+  # hardware.graphics = {
+  #   enable = true;
+  #   extraPackages = with pkgs; [
+  #     virglrenderer
+  #     vaapiVdpau
+  #     libvdpau-va-gl
+  #     # intel-vaapi-driver # Intel users
+  #     amdvlk # AMD users
+  #     # rocm-opencl-icd # AMD ROCm
+  #   ];
+  #   enable32Bit = true;
+  # };
 
   boot.kernelModules = [
     "virtio-gpu"

@@ -7,14 +7,32 @@
   };
 
   programs = {
+    bash.enable = true;
+    nushell.enable = true;
+
+    git = {
+      enable = true;
+      userName = "${vars.gitUserName}";
+      userEmail = "${vars.gitUserEmail}";
+    };
+
+    zsh = {
+      enable = true;
+      enableCompletion = true;
+      autosuggestion.enable = true;
+      syntaxHighlighting.enable = true;
+    };
+
     starship = {
       enable = true;
       enableZshIntegration = true;
       enableBashIntegration = true;
     };
+
     eza.enable = true;
     fzf.enable = true;
     zoxide.enable = true;
+    bat.enable = true;
   };
 
   home = {
