@@ -185,7 +185,17 @@ rpm-ostree_install() {
     if is_desktop; then
         has_cmd virt-manager || PKGS+=("virt-manager")
 
-        has_cmd code || PKGS+=(
+        if ! has_cmd code; then
+            cat <<EOF | sudo tee /etc/yum.repos.d/vscode.repo
+[code]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+EOF
+
+            PKGS+=(
             "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
             "code"
         )
