@@ -55,7 +55,7 @@ enable_epel() {
 
 update_packages() {
     slog "Updating fedora"
-    if ! { sudo dnf update -q -y && sudo dnf upgrade -q -y; }; then
+    if ! { sudo dnf update -y && sudo dnf upgrade -y; }; then
         err_exit "dnf update/upgrade failed, quitting"
     fi
 }

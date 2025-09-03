@@ -206,9 +206,9 @@ rpm-ostree_install() {
     fi
 
     if [[ "$apply_live" == true ]]; then
-        sudo rpm-ostree install --apply-live -q -y "${PKGS[@]}"
+        sudo rpm-ostree install --apply-live -y "${PKGS[@]}"
     else
-        sudo rpm-ostree install -q -y "${PKGS[@]}"
+        sudo rpm-ostree install -y "${PKGS[@]}"
     fi
 
     warn "Installing packages done! Note that you need to reboot for the changes to take effect."
