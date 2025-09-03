@@ -236,18 +236,19 @@ cat > ~/nixos-config/flake.nix << EOF
 EOF
 ```
 
-Initialize git repository and commit initial configuration.
+Initialize git repository and stage all files.
 
 ```bash
 git init ~/nixos-config
-git add .
-git commit -m "Initial commit"
+git add configuration.nix flake.nix hardware-configuration.nix
 ```
 
 Run the following command to apply configuration.
 
 ```bash
 nixos-rebuild switch --flake ~/nixos-config#$(hostname)
+git add flake.lock
+git commit --amend --no-edit
 ```
 
 This should do almost nothing. Now you could edit `configuration.nix` and add any additional packages you want.
@@ -287,6 +288,17 @@ vm-create --distro debian --name dev --docker --brew --dotfiles --username debia
 
 You should not install anything on the host. You could use `distrobox` for command line tools. Use flatpak for desktop applications. Use `devcontainers` for development from `vscode`(or `jetbrains` or `neovim`). You could use `virt-install/virsh/virt-viewer` or `virt-manager` to create and manage virtual machines.
 
+**Note**: If your virtual machines do not get an IP address, edit `/etc/libvirt/network.conf` and add the following.
+
+```
+firewall_backend = "iptables"
+```
+
+and restart libvirtd service.
+
+```bash
+sudo systemctl restart libvirtd
+```
 
 ###  Atomic Setup
 
