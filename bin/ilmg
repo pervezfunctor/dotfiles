@@ -30,7 +30,7 @@ help() {
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        "${1}_groupstall"
+        "${1}_mainstall"
         return 0
     fi
 
@@ -46,7 +46,7 @@ main() {
         echo ""
         slog "Installing $SELECTED_OPTION..."
         echo ""
-        "${SELECTED_OPTION}_groupstall"
+        "${SELECTED_OPTION}_mainstall"
         slog "Installation complete."
     else
         slog "No option selected."

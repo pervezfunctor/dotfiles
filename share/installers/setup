@@ -22,12 +22,12 @@ else
 fi
 
 main() {
-    if has_cmd "${1}_groupstall"; then
-        "${1}_groupstall"
+    if has_cmd "${1}_mainstall"; then
+        "${1}_mainstall"
         shift 1
     else
-        if has_cmd min_groupstall; then
-            min_groupstall
+        if has_cmd min_mainstall; then
+            min_mainstall
         else
             err_exit "unknown or unsupported $* options"
         fi

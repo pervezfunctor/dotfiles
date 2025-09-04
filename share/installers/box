@@ -163,37 +163,37 @@ get_boxos() {
     fi
 }
 
-slimbox_groupstall() {
+slimbox_mainstall() {
     slimbox_base "$(get_boxos)"
 }
 
-box_groupstall() {
+box_mainstall() {
     box_base "$(get_boxos)"
 }
 
-fullbox_groupstall() {
+fullbox_mainstall() {
     box_base "$(get_boxos)"
     nvim_boxstall
     tmux_boxstall
     emacs_boxstall
 }
 
-dbox_groupstall() {
+dbox_mainstall() {
     dbox_base "$(get_boxos)"
 }
 
-nixbox_groupstall() {
+nixbox_mainstall() {
     nixbox_base
 }
 
-tw-wslbox_groupstall() {
+tw-wslbox_mainstall() {
     is_tw || err_exit "This script is only for openSUSE Tumbleweed"
 
     sudo systemd-tmpfiles --create
     wslbox_base tw
 }
 
-nixos-wslbox_groupstall() {
+nixos-wslbox_mainstall() {
     is_wsl || err_exit "This script is only for NixOS WSL"
 
     nix run --extra-experimental-features 'nix-command flakes' nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR"
@@ -201,18 +201,18 @@ nixos-wslbox_groupstall() {
     nix run --extra-experimental-features 'nix-command flakes' home-manager -- switch --impure -b bak
 }
 
-wslbox_groupstall() {
+wslbox_mainstall() {
     if is_tw; then
-        tw-wslbox_groupstall
+        tw-wslbox_mainstall
     elif is_nixos; then
-        nixos-wslbox_groupstall
+        nixos-wslbox_mainstall
     else
         box_base "$(get_boxos)"
     fi
 }
 
-wsl_groupstall() {
-    wslbox_groupstall
+wsl_mainstall() {
+    wslbox_mainstall
     brew_install
     bis stow carapace fzf trash-cli lazygit eza zoxide gh gum
     has_cmd delta || bi git-delta
@@ -220,14 +220,14 @@ wsl_groupstall() {
     zsh_boxstall
 }
 
-centos-wsl_groupstall() {
-    wsl_groupstall
+centos-wsl_mainstall() {
+    wsl_mainstall
 
     tmux_boxstall
     nvim_boxstall
 }
 
-centos-fast_groupstall() {
+centos-fast_mainstall() {
     is_centos || err_exit "This script is only for CentOS"
 
     sudo dnf update

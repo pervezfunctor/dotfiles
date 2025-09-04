@@ -254,7 +254,7 @@ cmake_install() {
     cmd_check cmake
 }
 
-generic-ct_groupstall() {
+generic-ct_mainstall() {
     has_cmd curl || has_cmd wget || err_exit "Install curl and run this script again."
 
     pixi_install
@@ -273,8 +273,8 @@ generic-ct_groupstall() {
     bash_confstall
 }
 
-generic_groupstall() {
-    generic-ct_groupstall
+generic_mainstall() {
+    generic-ct_mainstall
 
     has_cmd zsh && zsh_boxstall
     has_cmd tmux && tmux_boxstall
@@ -300,9 +300,9 @@ rpm-ostree-post_install() {
     libvirt_confstall
 }
 
-rpm-ostree_groupstall() {
+rpm-ostree_mainstall() {
     rpm-ostree_install
-    generic_groupstall
+    generic_mainstall
     apps-slim_install
     atomic_distrobox_install
 }
@@ -403,7 +403,7 @@ gnome_confstall() {
     slog "gnome config done!"
 }
 
-fedora-atomic-tbox_groupstall() {
+fedora-atomic-tbox_mainstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
     slog "Fedora Atomic Host setup"
@@ -421,7 +421,7 @@ fedora-atomic-tbox_groupstall() {
     slog "Fedora Atomic Host With default toolbox setup done!"
 }
 
-ublue_groupstall() {
+ublue_mainstall() {
     is_bluefin || is_aurora || err_exit "This script is only for Bluefin/Aurora"
 
     slog "ublue setup..."
@@ -442,12 +442,12 @@ ublue_groupstall() {
     slog "ublue setup done!"
 }
 
-fedora-atomic_groupstall() {
+fedora-atomic_mainstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
     slog "Fedora Atomic Host setup"
 
-    generic-ct_groupstall
+    generic-ct_mainstall
     jetbrains_nerd_font_install
     atomic_distrobox_install
 
@@ -468,7 +468,7 @@ fedora-atomic_groupstall() {
     slog "Fedora Atomic Host setup done!"
 }
 
-fedora-layered_groupstall() {
+fedora-layered_mainstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
     slog "Fedora Atomic Host setup"
@@ -855,13 +855,13 @@ rofi_confstall() {
     slog "rofi config done!"
 }
 
-dbox-docker-dev_groupstall() {
+dbox-docker-dev_mainstall() {
     is_ubuntu || err_exit "This script is only for Ubuntu"
     has_cmd docker || err_exit "This script requires docker"
 
     docker_confstall
 
-    min_groupstall
+    min_mainstall
     si firefox gnome-keyring wl-clipboard libsecret
 
     starship_install
@@ -882,8 +882,8 @@ github_user_setup() {
     fi
 }
 
-box-default_groupstall() {
-    shell_groupstall
+box-default_mainstall() {
+    shell_mainstall
     vscode_install
     jetbrains-mono_install
 
@@ -901,8 +901,8 @@ default_dbox_exports() {
     distrobox-export --app "kitty"
 }
 
-box-default-atomic_groupstall() {
-    box-default_groupstall
+box-default-atomic_mainstall() {
+    box-default_mainstall
     default_dbox_exports
 }
 

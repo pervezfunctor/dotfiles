@@ -76,17 +76,17 @@ cmd_check tmux_confstall
 cmd_check emacs_confstall
 cmd_check nvim_confstall
 
-cmd_check generic_groupstall
+cmd_check generic_mainstall
 
 is_atomic && return 0
 
-cmd_check base_groupstall
-cmd_check min_groupstall
-cmd_check shell-slim_groupstall
-cmd_check shell_groupstall
-cmd_check shell-ui_groupstall
-cmd_check vm_groupstall
-cmd_check vm-ui_groupstall
+cmd_check base_mainstall
+cmd_check min_mainstall
+cmd_check shell-slim_mainstall
+cmd_check shell_mainstall
+cmd_check shell-ui_mainstall
+cmd_check vm_mainstall
+cmd_check vm-ui_mainstall
 
 cmd_check nvim_boxstall
 cmd_check emacs_boxstall
@@ -94,14 +94,14 @@ cmd_check tmux_boxstall
 cmd_check zsh_boxstall
 cmd_check terminal_boxstall
 
-cmd_check slimbox_groupstall
-cmd_check box_groupstall
+cmd_check slimbox_mainstall
+cmd_check box_mainstall
 cmd_check terminal_boxstall
-cmd_check dbox_groupstall
-cmd_check wslbox_groupstall
-cmd_check wsl_groupstall
-cmd_check wsl_groupstall
-cmd_check centos-wsl_groupstall
-cmd_check nixbox_groupstall
-cmd_check nixos-wslbox_groupstall
-cmd_check fullbox_groupstall
+cmd_check dbox_mainstall
+cmd_check wslbox_mainstall
+cmd_check wsl_mainstall
+cmd_check wsl_mainstall
+cmd_check centos-wsl_mainstall
+cmd_check nixbox_mainstall
+cmd_check nixos-wslbox_mainstall
+cmd_check fullbox_mainstall

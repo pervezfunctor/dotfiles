@@ -734,7 +734,7 @@ base-group_check() {
     bash_config_check
 }
 
-base_groupstall() {
+base_mainstall() {
     has_cmd core_install && core_install
     dotfiles_install
 
@@ -748,8 +748,8 @@ min-group_check() {
     cmd_check micro zip unar gcc make
 }
 
-min_groupstall() {
-    base_groupstall
+min_mainstall() {
+    base_mainstall
     has_cmd essential_install && essential_install
 
     min-group_check
@@ -768,15 +768,15 @@ shell-group_check() {
     # cmd_check duf dust gdu hyperfine just
 }
 
-shell-slim_groupstall() {
-    min_groupstall
+shell-slim_mainstall() {
+    min_mainstall
     shell-slim_install
 
     shell-slim-group_check
 }
 
-nix-shell-slim_groupstall() {
-    min_groupstall
+nix-shell-slim_mainstall() {
+    min_mainstall
     si zsh tmux git
 
     nix_install
@@ -784,14 +784,14 @@ nix-shell-slim_groupstall() {
     shell_confstall
 }
 
-shell-slim-ui_groupstall() {
-    shell-slim_groupstall
+shell-slim-ui_mainstall() {
+    shell-slim_mainstall
     jetbrains-mono_install
     terminal_bin_install
 }
 
-shell_groupstall() {
-    min_groupstall
+shell_mainstall() {
+    min_mainstall
     shell_install
 
     bash_confstall
@@ -803,45 +803,45 @@ shell_groupstall() {
     shell-group_check
 }
 
-shell-ui_groupstall() {
-    shell_groupstall
+shell-ui_mainstall() {
+    shell_mainstall
     jetbrains-mono_install
     terminal_bin_install
 }
 
 dev_work_common_install() {
-    shell-slim-ui_groupstall
+    shell-slim-ui_mainstall
     vscode_install
     jetbrains-mono_install
 }
 
-dev_groupstall() {
+dev_mainstall() {
     dev_work_common_install
     vm-ui_install
     distrobox_install
 }
 
-dev-full_groupstall() {
-    nix-shell-slim_groupstall
+dev-full_mainstall() {
+    nix-shell-slim_mainstall
     vscode_install
     jetbrains-mono_install
     npm_install
     incus_install
 }
 
-work_groupstall() {
+work_mainstall() {
     dev_work_common_install
     docker_install
 }
 
-dev-work_groupstall() {
+dev-work_mainstall() {
     dev_work_common_install
     vm_install
 
     docker_install
 }
 
-dev-work-full_groupstall() {
+dev-work-full_mainstall() {
     dev_work_common_install
     vm_install
     distrobox_install
@@ -849,18 +849,18 @@ dev-work-full_groupstall() {
     docker_install
 }
 
-vbox-dev_groupstall() {
+vbox-dev_mainstall() {
     docker_install
-    shell_groupstall
+    shell_mainstall
     npm_install
 }
 
-vm_groupstall() {
-    min_groupstall
+vm_mainstall() {
+    min_mainstall
     has_cmd vm_install && vm_install
 }
 
-vm-ui_groupstall() {
-    vm_groupstall
+vm-ui_mainstall() {
+    vm_mainstall
     vm_ui_install
 }

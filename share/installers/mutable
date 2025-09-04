@@ -99,8 +99,8 @@ prog-group_check() {
     cmd_check go rustc npm uv pyenv conda
 }
 
-prog_groupstall() {
-    vm_groupstall
+prog_mainstall() {
+    vm_mainstall
     go_install
     rust_install
     npm_install
@@ -111,8 +111,8 @@ all-group_check() {
     cmd_check pixi emacs
 }
 
-all_groupstall() {
-    prog_groupstall
+all_mainstall() {
+    prog_mainstall
     pixi_install
     pkgx_install
 
@@ -123,8 +123,8 @@ all_groupstall() {
     all-group_check
 }
 
-nix_groupstall() {
-    base_groupstall
+nix_mainstall() {
+    base_mainstall
     nix_install
 
     hms
@@ -132,18 +132,18 @@ nix_groupstall() {
     cmd_check home-manager nix devbox
 }
 
-sway_groupstall() {
+sway_mainstall() {
     slog "Installing sway"
-    shell_groupstall
+    shell_mainstall
 
     sway_install
 
     slog "sway instalation done!"
 }
 
-hyprland_groupstall() {
+hyprland_mainstall() {
     slog "Installing hyprland"
-    shell_groupstall
+    shell_mainstall
 
     hyprland_install
 
