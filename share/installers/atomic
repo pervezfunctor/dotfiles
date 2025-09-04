@@ -304,6 +304,7 @@ rpm-ostree_groupstall() {
     rpm-ostree_install
     generic_groupstall
     apps-slim_install
+    atomic_distrobox_install
 }
 
 gnome-extensions_install() {

@@ -272,6 +272,14 @@ Install essential development tools like `vscode`, and `virt-manager` with the f
 bash -c "$(curl -sSL https://is.gd/egitif)" -- rpm-ostree
 ```
 
+After Installation, reboot(necessary) and execute the following command.
+
+```bash
+ilmi rpm-ostree-post
+```
+
+Reboot Again. And this is necessary. Check if vscode, virt-install are installed.
+
 If you need docker, you should install it in a vm, and use `vscode` to ssh into this virtual machine. `devcontainers` work really well using this approach.
 
 Generate ssh key, if you don't have it already.
