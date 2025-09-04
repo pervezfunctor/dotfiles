@@ -99,7 +99,6 @@ debian_packages() {
         gawk tealdeer dialog whiptail starship hyperfine jq direnv yq dysk bat \
         just fzf gum eza shellcheck shfmt broot duf sd xh atuin procs sd
 
-
     if is_desktop || is_distrobox; then
         si wl-clipboard libsecret-tools
     fi
@@ -118,11 +117,6 @@ core_install() {
     is_ubuntu && si software-properties-common
     si apt-transport-https ca-certificates gpg curl wget git-core trash-cli \
         tar unzip tree file stow
-
-    if ! is_trixie && ! is_plucky; then
-        brew_install
-        bis stow
-    fi
 
     slog "Core packages installation done!"
 }
@@ -158,6 +152,11 @@ essential_install() {
     pkgx_install
     sys_python_install
 
+    if is_noble || is_bookworm; then
+        si perl
+        pkgx pkgm install stow
+    fi
+
     if [ -d /run/systemd/system ] && ! is_debian; then
         snap_install
     fi
@@ -177,11 +176,7 @@ essential_install() {
 
 cli-slim_install() {
     si tmux zsh git bat ripgrep zoxide eza gh shellcheck htop shfmt jq \
-        fzf starship gum git-delta
-
-    if ! is_trixie && ! is_plucky && has_cmd brew; then
-        bis fzf starship gum zoxide eza gh jq
-    fi
+        starship gum git-delta
 
     slog "cli tools installation done!"
 }
