@@ -162,13 +162,6 @@ rpm-ostree_install() {
 
     slog "Installing packages"
 
-    local apply_live=false
-
-    if [[ "$1" == "--apply-live" ]]; then
-        apply_live=true
-        shift
-    fi
-
     local PKGS=()
 
     if is_desktop; then
@@ -208,19 +201,14 @@ EOF
         return 0
     fi
 
-    slog "Installing packages ${PKGS[*]}"
-
     if has_cmd stow || has_cmd zsh || has_cmd gcc || has_cmd make ||
         has_cmd tmux || has_cmd virsh ||
         has_cmd virt-install || has_cmd code; then
         warn "This script is supposed to be run only once"
     fi
 
-    if [[ "$apply_live" == true ]]; then
-        sudo rpm-ostree install --apply-live -y "${PKGS[@]}"
-    else
-        sudo rpm-ostree install -y "${PKGS[@]}"
-    fi
+    slog "Installing packages ${PKGS[*]}"
+    sudo rpm-ostree install -y "${PKGS[@]}"
 
     warn "Installing packages done! Note that you need to reboot for the changes to take effect."
 }
@@ -309,13 +297,12 @@ rpm-ostree-post_install() {
     tmux_confstall
     vscode_confstall
     python_install
-    # libvirt_confstall
+    libvirt_confstall
 }
 
 rpm-ostree_groupstall() {
-    rpm-ostree_install --apply-live
+    rpm-ostree_install
     generic_groupstall
-    rpm-ostree-post_install
     apps-slim_install
 }
 
