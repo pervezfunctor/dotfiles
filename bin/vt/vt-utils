@@ -165,7 +165,7 @@ find_free_port_random() {
       continue
     fi
 
-    if [[ -n "$vm_assigned_ports" ]] && grep -q "^$port\$" <<<"$vm_assigned_ports"; then
+    if [[ -n "${vm_assigned_ports:-}" ]] && grep -q "^$port\$" <<<"$vm_assigned_ports"; then
       continue
     fi
 

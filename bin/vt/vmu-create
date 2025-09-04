@@ -135,13 +135,13 @@ parse_args() {
     esac
   done
 
-  if [[ -z "$DISTRO" ]]; then
+  if [[ -z "${DISTRO:-}" ]]; then
     error "Distro is required"
     usage
     exit 1
   fi
 
-  if [[ -z "$SSH_PORT" ]]; then
+  if [[ -z "${SSH_PORT:-}" ]]; then
     SSH_PORT=$(find_free_port_random)
     warn "SSH port not provided, using random: $SSH_PORT"
   fi
