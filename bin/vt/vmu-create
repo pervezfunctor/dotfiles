@@ -218,7 +218,7 @@ configure_distro() {
   fedora)
     IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
     BASE_IMG="${BASE_IMG_DIR}/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
-    OS_VARIANT="fedora42"
+    OS_VARIANT="fedora41"
     ;;
   arch)
     IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
@@ -281,15 +281,15 @@ users:
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
-    passwd: $password_hash
+    passwd: "$password_hash"
     ssh_authorized_keys:
-      - $SSH_KEY
+      - "$SSH_KEY"
 
 ssh_pwauth: true
 disable_root: false
 
 package_update: true
-package_upgrade: true
+package_upgrade: false
 
 packages:
   - qemu-guest-agent
@@ -353,12 +353,12 @@ show_completion_info() {
 
   echo -e "\033[1;34m📦 VM Details:\033[0m"
   echo -e "  🖥️  Name:        \033[1m$VM_NAME\033[0m"
-  echo -e "  🐧 Distro:      \033[1m$DISTRO\033[0m"
-  echo -e "  🧠 Memory:      ${RAM_MB}MB"
+  echo -e "  🐧 Distro:       \033[1m$DISTRO\033[0m"
+  echo -e "  🧠 Memory:       ${RAM_MB}MB"
   echo -e "  ⚙️  vCPUs:       $CPUS"
-  echo -e "  💾 Disk:        $DISK_IMG"
-  echo -e "  👤 User_name:    \033[1m$USER_NAME\033[0m"
-  echo -e "  🔑 Password:    \033[1m$PASSWORD\033[0m\n"
+  echo -e "  💾 Disk:         $DISK_IMG"
+  echo -e "  👤 Username:    \033[1m$USER_NAME\033[0m"
+  echo -e "  🔑 Password:     \033[1m$PASSWORD\033[0m\n"
 
   echo -e "\033[1;34m🔌 Connect:\033[0m"
   echo "  virsh --connect qemu:///session console $VM_NAME"

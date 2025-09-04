@@ -9,7 +9,7 @@ cmd_vmu() {
 }
 
 check_prerequisites() {
-  for cmd in virsh virt-cat vmu-create trash; do
+  for cmd in virsh vmu-create trash; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
       echo "Error: Required command '$cmd' is not available."
       exit 1
