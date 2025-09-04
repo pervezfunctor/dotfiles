@@ -308,7 +308,8 @@ rpm-ostree-post_install() {
     zsh_confstall
     tmux_confstall
     vscode_confstall
-    libvirt_confstall
+    python_install
+    # libvirt_confstall
 }
 
 rpm-ostree_groupstall() {
