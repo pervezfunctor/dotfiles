@@ -171,6 +171,26 @@ rpm-ostree_install() {
 
     local PKGS=()
 
+    if is_desktop; then
+        if ! has_cmd code; then
+            cat <<EOF | sudo tee /etc/yum.repos.d/vscode.repo
+[code]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+EOF
+        fi
+
+        PKGS+=(
+            "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
+            "code"
+        )
+
+        has_cmd virt-manager || PKGS+=("virt-manager")
+    fi
+
     has_cmd stow || PKGS+=("stow")
     has_cmd zsh || PKGS+=("zsh")
     has_cmd git || PKGS+=("git")
@@ -182,32 +202,13 @@ rpm-ostree_install() {
     has_cmd virsh || PKGS+=("libvirt")
     has_cmd virt-install || PKGS+=("virt-install")
 
-    if is_desktop; then
-        has_cmd virt-manager || PKGS+=("virt-manager")
-
-        if ! has_cmd code; then
-            cat <<EOF | sudo tee /etc/yum.repos.d/vscode.repo
-[code]
-name=Visual Studio Code
-baseurl=https://packages.microsoft.com/yumrepos/vscode
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.microsoft.com/keys/microsoft.asc
-EOF
-
-            PKGS+=(
-            "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
-            "code"
-        )
-    fi
-
     if [[ ${#PKGS[@]} -eq 0 ]]; then
         slog "No packages to install"
         sleep 3
         return 0
     fi
 
-    slog "Installing packages ${PKGS[@]}"
+    slog "Installing packages ${PKGS[*]}"
 
     if has_cmd stow || has_cmd zsh || has_cmd gcc || has_cmd make ||
         has_cmd tmux || has_cmd virsh ||
