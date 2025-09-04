@@ -156,8 +156,30 @@ ilmi vscode docker tmux nvim # pick any tools you want
 
 Consider using [nix-darwin](https://github.com/nix-darwin/nix-darwin) or at least [home-manager](https://github.com/nix-community/home-manager)
 
+## Popular Linux Distributions
 
-## Recommended Setups
+### Ubuntu
+
+Use [Omakub](https://omakub.org/) if you are using Ubuntu LTS. It provides you with sensible tools and configuration for developers.
+
+### Arch Linux
+
+Use [Omarchy](https://omarchy.org/) if you want to use Arch Linux for development. DHH has a video on official website to guide you in installing arch linux and using omarchy.
+
+You could still use some tools from this repository.
+
+```bash
+git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
+```
+
+Add the following to your `~/.bashrc` and/or `~/.zshrc`.
+
+```bash
+source ~/.ilm/share/shellrc
+```
+
+
+## Recommended Linux Distributions
 
 
 ### Bluefin/Aurora
@@ -190,6 +212,11 @@ ujsut aurora-cli   # for aurora
 ujust bazzite-cli  # for bazzite
 ```
 
+and then use the following in `~/.bashrc` and/or `~/.zshrc`.
+
+```bash
+source ~/.ilm/share/shellrc
+```
 
 ### Nixos
 
@@ -272,13 +299,13 @@ Install essential development tools like `vscode`, and `virt-manager` with the f
 bash -c "$(curl -sSL https://is.gd/egitif)" -- rpm-ostree
 ```
 
-After Installation, reboot(necessary) and execute the following command.
+After Installation, **reboot** your system and execute the following command.
 
 ```bash
 ilmi rpm-ostree-post
 ```
 
-Reboot Again. And this is necessary. Check if vscode, virt-install are installed.
+**Reboot** Again. Check if vscode, virt-install are installed.
 
 If you need docker, you should install it in a vm, and use `vscode` to ssh into this virtual machine. `devcontainers` work really well using this approach.
 
