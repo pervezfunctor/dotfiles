@@ -755,6 +755,20 @@ is_trixie() {
     return 1
 }
 
+is_bookworm() {
+    is_debian || return 1
+
+    if grep -qi 'bookworm' /etc/os-release /etc/debian_version 2>/dev/null; then
+        return 0
+    fi
+
+    if lsb_release -c 2>/dev/null | grep -qi 'bookworm'; then
+        return 0
+    fi
+
+    return 1
+}
+
 is_proxmox() {
     [[ -f /etc/pve/.version ]] && return 0
     has_cmd pveversion && pveversion | grep -q "pve" && return 0
@@ -768,6 +782,14 @@ is_plucky() {
     . /etc/os-release
 
     [[ "$VERSION_CODENAME" == "plucky" ]] || [[ "${VERSION:-}" =~ .*[Pp]lucky.* ]] || [[ "${NAME:-}" =~ .*[Pp]lucky.* ]]
+}
+
+is_noble() {
+    [[ -f /etc/os-release ]] || return 1
+    # shellcheck disable=SC1091
+    . /etc/os-release
+
+    [[ "$VERSION_CODENAME" == "noble" ]] || [[ "${VERSION:-}" =~ .*[Nn]oble.* ]] || [[ "${NAME:-}" =~ .*[Nn]oble.* ]]
 }
 
 is_toolbox() {
