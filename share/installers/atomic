@@ -157,6 +157,39 @@ ghostty_install() {
     ghostty_confstall
 }
 
+rpm-ostree-libvirt_groups_setup() {
+    local NEEDED_GROUPS=(libvirt kvm qemu)
+
+    slog "[*] Syncing /usr/lib/group → /etc/group if missing..."
+
+    for grp in "${NEEDED_GROUPS[@]}"; do
+        if grep -qE "^${grp}:" /etc/group; then
+            slog "[+] Group '$grp' already in /etc/group"
+        else
+            if grep -qE "^${grp}:" /usr/lib/group; then
+                slog "[*] Copying '$grp' from /usr/lib/group to /etc/group"
+                grep -E "^${grp}:" /usr/lib/group | sudo tee -a /etc/group >/dev/null
+            else
+                slog "[!] Group '$grp' not found in /usr/lib/group, creating new system group"
+                sudo groupadd -r "$grp"
+            fi
+        fi
+
+        # could use group_exists and add_user_to_group
+        if id -nG "$USER" | grep -qw "$grp"; then
+            slog "[+] User '$USER' already in group '$grp'"
+        else
+            slog "[*] Adding user '$USER' to group '$grp'"
+            sudo usermod -aG "$grp" "$USER"
+        fi
+    done
+
+    echo
+    slog "[✔] Done. Please log out/in for group membership to apply."
+
+    sudo systemctl enable --now libvirtd
+}
+
 rpm-ostree_install() {
     has_cmd rpm-ostree || err_exit "This script is only for rpm-ostree based systems"
 
@@ -297,14 +330,12 @@ rpm-ostree-post_install() {
     tmux_confstall
     vscode_confstall
     python_install
-    libvirt_confstall
+    rpm-ostree-libvirt_groups_setup
 }
 
 rpm-ostree_mainstall() {
     rpm-ostree_install
     generic_mainstall
-    apps-slim_install
-    atomic_distrobox_install
 }
 
 gnome-extensions_install() {
@@ -329,6 +360,7 @@ gnome-extensions_install() {
     gext install blur-my-shell@aunetx
     gext install undecorate@sun.wxg@gmail.com
     gext install AlphabeticalAppGrid@stuarthayhurst
+    gext install switcher@landau.fi
 
     slog "gnome extensions installation done!"
 }
