@@ -26,7 +26,7 @@ bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" --
 
 ### Windows
 
-Pick what you want to install by running the following command in powershell **as administrator**. Note that you might have to restart your system multiple times. Execute the same script again.
+Pick what you want to install by running the following command in powershell as **administrator**. Note that you might have to restart your system multiple times. Execute the same script again.
 
 ```powershell
 iwr -useb https://is.gd/vefawu | iex
@@ -36,19 +36,19 @@ iwr -useb https://is.gd/vefawu | iex
 
 ### Linux
 
-If you only want to install modern unix tools in a development container/vm/desktop, use the following command instead. Works on linux and macos.
+Install modern unix tools in a development container/vm/desktop, using the following command instead. Works on macos too.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- shell-slim
 ```
 
-Or just install the very basic packages(gcc, make, tar, git etc)
+Or first install essential packages(gcc, make, tar, git etc)
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)"
 ```
 
-Restart your terminal and use `ilmi` to install additional tools you want.
+Restart your terminal and then use `ilmi` to install additional tools you want.
 
 ```bash
 ilmi
@@ -59,15 +59,13 @@ You could also do the following
 ilmi vscode docker shell-ui vm-ui # pick any tools you want
 ```
 
-Consider using `nix` and [home-manager](https://github.com/nix-community/home-manager).
-
-Use the following to install `nix`.
+Alternatively, you could install `nix`.
 
 ```bash
 ilmi nix
 ```
 
-Setup home-manager with the following.
+and setup home-manager with the following.
 
 ```bash
 cp ~/.ilm/home-manager/dot-config/home-manager ~/.config/home-manager
@@ -94,22 +92,23 @@ I recommend fedora for development. You could also use Ubuntu 25.04.
 ```powershell
 wsl --list --online # Pick any from here in the following command.
 wsl --install FedoraLinux-42
-wsl -d FedoraLinux-42 # Create user and set a password.
+wsl -d FedoraLinux-42
+wsl --set-default FedoraLinux-42
 ```
 
-Run the following command in WSL for installing basic tools and a nice shell prompt. Make sure you are not root.
+Setup `wsl` with the following command.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- wslbox
 ```
 
-Exit and enter WSL again(or reboot) to install more development tools.
+Exit and enter WSL again to install more development tools.
 
 ```bash
 ilmi tmux nvim emacs # pick any tools you want
 ```
 
-If you want to setup vscode and other development tools on Windows, run the following command in powershell **as administrator**.
+Setup vscode and other development tools on Windows by run the following command in powershell as **administrator**.
 
 Install Windows updates first, if you haven't already.
 
@@ -119,11 +118,7 @@ Then you could install `vscode` with
 iex "& { $(iwr -useb https://is.gd/vefawu) -Components vscode nerd-fonts }"
 ```
 
-Install [docker desktop](https://docs.docker.com/desktop/setup/install/windows-install/) manually or use the following
-
-```powershell
-iex "& { $(iwr -useb https://is.gd/vefawu) -Components devtools }"
-```
+Install [docker desktop](https://docs.docker.com/desktop/setup/install/windows-install/).
 
 Or execute the following and pick what you want. Do not uncheck any of the default options.
 
@@ -131,9 +126,8 @@ Or execute the following and pick what you want. Do not uncheck any of the defau
 iwr -useb https://is.gd/vefawu | iex
 ```
 
-Consider using [nixos-wsl](https://github.com/nix-community/nixos-wsl).
+Alternatively, install [nixos-wsl](https://github.com/nix-community/nixos-wsl).
 
-You could install nixos-wsl with the following command.
 
 ```powershell
 iex "& { $(iwr -useb https://is.gd/vefawu) -Components wsl-nixos }"
@@ -148,25 +142,27 @@ Install homebrew and a few essentials with the following command.
 bash -c "$(curl -sSL https://is.gd/egitif)"
 ```
 
-You could later use `ilmi` to install additional tools
+Restart terminal and use `ilmi` to install additional tools.
 
 ```bash
 ilmi vscode docker tmux nvim # pick any tools you want
 ```
 
-Consider using [nix-darwin](https://github.com/nix-darwin/nix-darwin) or at least [home-manager](https://github.com/nix-community/home-manager)
+You could also use [nix-darwin](https://github.com/nix-darwin/nix-darwin) or [home-manager](https://github.com/nix-community/home-manager) instead.
+
 
 ## Popular Linux Distributions
 
 ### Ubuntu
 
-Use [Omakub](https://omakub.org/) if you are using Ubuntu LTS. It provides you with sensible tools and configuration for developers.
+Use [Omakub](https://omakub.org/) if you are using Ubuntu LTS.
 
 ### Arch Linux
 
-Use [Omarchy](https://omarchy.org/) if you want to use Arch Linux for development. DHH has a video on official website to guide you in installing arch linux and using omarchy.
+Use [Omarchy](https://omarchy.org/) if you want to use Arch Linux for development.
 
-You could still use some tools from this repository.
+
+You could still use some tools from this repository on both `omarchy` and `omakub`.
 
 ```bash
 git clone https://github.com/pervezfunctor/dotfiles.git ~/.ilm
@@ -287,57 +283,7 @@ Look at `~/.ilm/extras/nixos/config` for my configuration.
 
 ### Fedora Atomic(Silverblue, Kinoite, Sway Atomic)
 
-Fedora Atomic is great and the future of fedora if not linux in general. Unfortunately, atomic comes with almost nothing for developers and you have to use distrobox/toolbox for everything. This can be a frustrating experience. This will be a more stable operating system in practice than other approaches(conventional or ublue based).
-
-### rpm-ostree based Setup
-
-I would recommend you don't spend too much time configuring everything in a distrobox and spend multiple frustrating hours trying to get everything to work. Distrobox approach is still a work in progress, and hopefully in near future, this option will be simple. Until then, use `rpm-ostree` instead, as it's really easy to get it to work. Note that using rpm-ostree too many times is a bad idea. Refer to Fedora Atomic documentation about the best practices.
-
-Install essential development tools like `vscode`, and `virt-manager` with the following command.
-
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif)" -- rpm-ostree
-```
-
-After Installation, **reboot** your system and execute the following command.
-
-```bash
-ilmi rpm-ostree-post
-```
-
-**Reboot** Again. Check if vscode, virt-install are installed.
-
-If you need docker, you should install it in a vm, and use `vscode` to ssh into this virtual machine. `devcontainers` work really well using this approach.
-
-Generate ssh key, if you don't have it already.
-
-```bash
-ssh-keygen -t ed25519 -C "<your_email@example.com>"
-```
-
-Then create a vm with the following command. This will create a debian vm with docker, brew and dotfiles.
-
-```bash
-vm-create --distro debian --name dev --docker --brew --dotfiles --username debian --password debian min
-```
-
-You should not install anything on the host. You could use `distrobox` for command line tools. Use flatpak for desktop applications. Use `devcontainers` for development from `vscode`(or `jetbrains` or `neovim`). You could use `virt-install/virsh/virt-viewer` or `virt-manager` to create and manage virtual machines.
-
-**Note**: If your virtual machines do not get an IP address, edit `/etc/libvirt/network.conf` and add the following.
-
-```
-firewall_backend = "iptables"
-```
-
-and restart libvirtd service.
-
-```bash
-sudo systemctl restart libvirtd
-```
-
-###  Atomic Setup
-
-IF you don't want to use rpm-ostree, then use distrobox for everything instead. I have multiple distrobox containers for different purposes. But they are brittle. Not everything works perfectly. Anyway, you could use the following command for such a setup.
+If you don't want to use rpm-ostree, then use distrobox for everything instead. I have multiple distrobox containers for different purposes. But they are brittle. Not everything works perfectly. Anyway, you could use the following command for such a setup.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif)" -- fedora-atomic
@@ -345,7 +291,7 @@ bash -c "$(curl -sSL https://is.gd/egitif)" -- fedora-atomic
 
 Above command should install some basic tools on the host, but developer tools(`vscode`, `docker` etc.) are inside a distrobox container.
 
-I will add more instructions to use distrobox and toolbox in the future. For now, you could use the following commands to install some essential tools.
+I will add more instructions to use distrobox and toolbox in the future. For now, you could use the following command to use `vscode` from distrobox container.
 
 ```bash
 dboxe ilm # enter distrobox container
@@ -359,9 +305,7 @@ If you are a developer, I would highly recommend using linux on your personal de
 
 If you don't have a personal desktop, just buy a mini pc. You could get a decent minipc for [$300-$400](https://www.amazon.com/AOOSTAR-GEM10-7840HS-Computer-OCULINK/dp/B0F2DW9HFC). Even a nuc could cost around [500$](https://www.amazon.com/ASUS-Barebones-ThunderboltTM-Bluetooth-Toolless/dp/B0F1BBSF76). You could use it as a desktop, development machine or a server.
 
-If you are fine with a server that's capable of running docker, you could buy N100/N150 mini pc, which should be around [150$](https://www.amazon.com/ASUS-Barebones-ThunderboltTM-Bluetooth-Toolless/dp/B0F1BBSF76). You would be surprised how much such a cheap machine can do.
-
-I have stopped using Windows for anything. I hardly use macos. I use linux on almost all my machines, servers, homelab or personal desktop. Almost all of them are reasonably stable and support everything I need.
+If you are fine with a server that's capable of running docker, you could buy N100/N150 mini pc, which should be around [150$](https://www.amazon.com/GMKtec-mini-pc-desktop-computer-n150/dp/B0DN51KD9D). You would be surprised how much such a cheap machine can do.
 
 
 ### Fedora Workstation(42 only)
@@ -428,10 +372,12 @@ Reboot your system.
 *Note*. If you are comfortable with terminal, and know what you need exactly, then archlinux is the simplest installer you could use for linux. With almost everything else, you will need to figure out ways, how to install and configure things the way you want and it's usually can be really hard.
 
 
+### Common instructions
+
 For all of the above operating systems, you could *follow the same instructions* below.
 
 
-You could install modern shell tools with the following command.
+Install modern shell tools with the following command.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif)" -- shell-slim
@@ -448,7 +394,7 @@ chsh -s $(which zsh)
 Reopen your terminal and you should see a nice zsh prompt. You must install a nerd font like `Jetbrains Mono Nerd Font`. You could install it with the following command.
 
 ```bash
-ilmi fonts jetbrains-mono
+ilmi jetbrains-mono
 ```
 
 As a developer you most probably need vscode. Install it with the following command.
@@ -459,8 +405,7 @@ ilmi vscode
 
 This will install `vscode`. It should also install some essential extensions. Open `vscode` and you should see a nice theme with jetbrains mono font.
 
-
-If you need docker, I would highly recommend you install it in a vm. If you prefer to install it on your host OS, you could use the following command.
+If you need docker, I would highly recommend you install it in a virtual machine. If you prefer to install it on your host OS, you could use the following command.
 
 ```bash
 ilmi docker
@@ -485,6 +430,7 @@ First generate ssh key, if you don't have it already.
 ```bash
 ssh-keygen -t ed25519 -C "your_email@example.com"
 ```
+
 Then create a vm with the following command. This will create a debian vm with docker and ssh enabled.
 
 ```bash
@@ -497,6 +443,12 @@ After a few minutes, you should be able to ssh into this vm with the following c
 vm ssh dev debian # debian is the user name
 ```
 
+You could also use the following command for console access to vm.
+
+```bash
+vm console dev
+```
+
 If you are not using Fedora, you need a better terminal. You could easily install `ptyxis` with the following command.
 
 ```bash
@@ -505,12 +457,15 @@ ilmi flathub ptyxis
 
 Remember to pick `Jetbrains Mono Nerd Font` as the font. Pick a nice theme like `Catppuccin Mocha`, `Tokyo Night` or `Everforest`.
 
-`ptyxis` is a great terminal, and works well with `distrobox`. You could use it as your main terminal.
+`ptyxis` is a great terminal, and works well with `distrobox`. You could use it as your main terminal. You could install distrobox with
 
+```bash
+ilmi distrobox
+```
 
 ### Generic Linux Desktop
 
-This should work on almost any linux system/vm/container even without sudo privilege; You should have curl/wget and bash installed.
+This should work on almost any linux system/vm/container even without sudo privileges; You should have curl/wget and bash installed.
 
 
 This will only install shell tools.
@@ -518,6 +473,7 @@ This will only install shell tools.
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- generic
 ```
+
 
 ## Linux Development Container/VM(mutable distributions only)
 
