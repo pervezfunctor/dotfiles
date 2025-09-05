@@ -4,7 +4,7 @@ nix_install() {
     has_cmd nix && return 0
     slog "Installing nix"
 
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm
     source_if_exists /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 
     slog "nix installation done!"
