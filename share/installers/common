@@ -580,7 +580,7 @@ shell_confstall() {
     fi
 
     has_cmd git && git_confstall
-    has_cmd nvim && nvim_confstall
+    has_cmd nvim && nvim_confstall astro
     has_cmd tmux && tmux_confstall
     has_cmd zsh && zsh_confstall
 
@@ -711,9 +711,6 @@ shell-slim_install() {
     pixi_install
     pixi-slim-shell_install
     pkgx_install
-
-    has_cmd zsh && zsh_confstall
-    has_cmd tmux && tmux_confstall
 }
 
 shell_install() {
@@ -728,56 +725,88 @@ shell_install() {
     brew-shell_install
 }
 
+mainstall() {
+    local ins="$1"
+    "$ins"_mainstall "$@"
+}
+
 base-group_check() {
     cmd_check curl wget git trash tree tar unzip
     dir_check "$DOT_DIR"
     bash_config_check
 }
 
-base_mainstall() {
-    has_cmd core_install && core_install
+base_main_install() {
+    if has_cmd core_install; then
+        core_install
+    else
+        warn "core_install not available, skipping core installation"
+    fi
+
     dotfiles_install
+}
 
-    git_confstall
+base_config_install() {
     has_cmd bash && bash_confstall
+    git_confstall
+}
 
+base_mainstall() {
+    base_main_install
+    base_config_install
     base-group_check
 }
 
 min-group_check() {
+    base-group_check
     cmd_check micro zip unar gcc make
 }
 
-min_mainstall() {
-    base_mainstall
-    has_cmd essential_install && essential_install
+min_main_install() {
+    base_main_install
+    if has_cmd essential_install; then
+        essential_install
+    else
+        warn "essential_install not available, skipping essential installation"
+    fi
+}
 
+min_config_install() {
+    base_config_install
+}
+
+min_mainstall() {
+    min_main_install
+    min_config_install
     min-group_check
 }
 
 shell-slim-group_check() {
+    min-group_check
     cmd_check trash rg gum starship zoxide bat eza gh fzf
     cmd_check carapace shellcheck delta
 }
 
-shell-group_check() {
-    shell-slim-group_check
-    cmd_check gh nvim zsh tmux lazygit sd bat brew htop btm atuin gawk
-    cmd_check shellcheck shfmt ug tldr fd direnv jq yq
-    # cmd_check cheat choose curlie direnv doggo dotenv procs
-    # cmd_check duf dust gdu hyperfine just
+shell-slim_main_install() {
+    min_main_install
+    shell-slim_install
+}
+
+shell-slim_config_install() {
+    min_config_install
+    has_cmd zsh && zsh_confstall
+    has_cmd tmux && tmux_confstall
 }
 
 shell-slim_mainstall() {
-    min_mainstall
-    shell-slim_install
-
+    shell-slim_main_install
+    shell-slim_config_install
     shell-slim-group_check
 }
 
-nix-shell-slim_mainstall() {
+nix_mainstall() {
     min_mainstall
-    si zsh tmux git
+    has_cmd si && si zsh git
 
     nix_install
     new-hms
@@ -788,18 +817,32 @@ shell-slim-ui_mainstall() {
     shell-slim_mainstall
     jetbrains-mono_install
     terminal_bin_install
+    shell-slim_config_install
+    shell-slim-group_check
+}
+
+shell-group_check() {
+    shell-slim-group_check
+    cmd_check gh nvim zsh tmux lazygit sd bat brew htop btm atuin gawk
+    cmd_check shellcheck shfmt ug tldr fd direnv jq yq
+    # cmd_check cheat choose curlie direnv doggo dotenv procs
+    # cmd_check duf dust gdu hyperfine just
+}
+
+shell_main_install() {
+    min_main_install
+    shell_install
+}
+
+shell_config_install() {
+    shell-slim_config_install
+    has_cmd nvim && nvim_confstall astro
+    has_cmd yazi && yazi_confstall
 }
 
 shell_mainstall() {
-    min_mainstall
-    shell_install
-
-    bash_confstall
-    has_cmd zsh && zsh_confstall
-    has_cmd nvim && nvim_confstall
-    has_cmd tmux && tmux_confstall
-    has_cmd yazi && yazi_confstall
-
+    shell_main_install
+    shell_config_install
     shell-group_check
 }
 
@@ -822,7 +865,7 @@ dev_mainstall() {
 }
 
 dev-full_mainstall() {
-    nix-shell-slim_mainstall
+    nix_mainstall
     vscode_install
     jetbrains-mono_install
     npm_install
