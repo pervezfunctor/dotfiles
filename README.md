@@ -84,7 +84,7 @@ On windows, use WSL.
 wsl --install --no-distribution
 ```
 
-See which official WSL distributions are available.
+List of official WSL distributions are available.
 
 ```powershell
 wsl --list --online
@@ -92,6 +92,7 @@ wsl --list --online
 
 Install any of them. For example, to install fedora.
 
+```powershell
 wsl --install FedoraLinux-42
 wsl --set-default FedoraLinux-42
 wsl -d FedoraLinux-42
@@ -127,7 +128,7 @@ Following might work too.
 
 ```powershell
 & ([scriptblock]::Create((iwr -useb https://dub.sh/NDyiu7a).Content)) -Components wsl-nixos
-``
+```
 
 
 ### MACOS
@@ -142,6 +143,12 @@ bash -c "$(curl -sSL https://is.gd/egitif)"
 Restart terminal and use `ilmi` to install additional tools.
 
 ```bash
+ilmi
+```
+
+Or
+
+```bash
 ilmi vscode docker tmux nvim # pick any tools you want
 ```
 
@@ -150,14 +157,15 @@ You could also use [nix-darwin](https://github.com/nix-darwin/nix-darwin) or [ho
 
 ## Popular Linux Distributions
 
+
 ### Ubuntu
 
 Use [Omakub](https://omakub.org/) if you are using Ubuntu LTS.
 
+
 ### Arch Linux
 
 Use [Omarchy](https://omarchy.org/) if you want to use Arch Linux for development.
-
 
 You could still use some tools from this repository on both `omarchy` and `omakub`.
 
@@ -194,7 +202,7 @@ sudo bootc switch ghcr.io/pervezfunctor/ilm-os:latest
 Once you have your OS installed with any of the above approaches, you could configure vscode and shell with the following command.
 
 ```bash
-bash -c "$(curl -sSL https://is.gd/hurace)"
+bash -c "$(curl -sSL https://is.gd/egitif) -- ublue"
 ```
 
 You could instead run the following.
