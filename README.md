@@ -26,7 +26,7 @@ bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" --
 
 ### Windows
 
-Pick what you want to install by running the following command in powershell as **administrator**. Note that you might have to restart your system multiple times. Execute the same script again.
+Pick what you want to install by running the following command in powershell as **administrator**. Note that you might have to restart your system multiple times. Execute the same script again after reboot.
 
 ```powershell
 iwr -useb https://is.gd/vefawu | iex
@@ -36,36 +36,31 @@ iwr -useb https://is.gd/vefawu | iex
 
 ### Linux
 
-Install modern unix tools in a development container/vm/desktop, using the following command instead. Works on macos too.
-
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- shell-slim
-```
-
-Or first install essential packages(gcc, make, tar, git etc)
+Install essential packages(gcc, make, tar, git etc)
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)"
 ```
 
-Restart your terminal and then use `ilmi` to install additional tools you want.
+Restart your terminal and use `ilmi` to install additional tools you want.
 
 ```bash
 ilmi
 ```
 
 You could also do the following
+
 ```bash
 ilmi vscode docker shell-ui vm-ui # pick any tools you want
 ```
 
-Alternatively, you could install `nix`.
+Optionally, install `nix`.
 
 ```bash
 ilmi nix
 ```
 
-and setup home-manager with the following.
+and setup home-manager.
 
 ```bash
 cp ~/.ilm/home-manager/dot-config/home-manager ~/.config/home-manager
@@ -81,19 +76,25 @@ chsh -s $(which zsh)
 
 ### Windows
 
-On windows, use WSL. Install WSL, use the following command.
+Install all Windows updates, if you haven't already.
+
+On windows, use WSL.
 
 ```powershell
 wsl --install --no-distribution
 ```
 
-I recommend fedora for development. You could also use Ubuntu 25.04.
+See which official WSL distributions are available.
 
 ```powershell
-wsl --list --online # Pick any from here in the following command.
+wsl --list --online
+```
+
+Install any of them. For example, to install fedora.
+
 wsl --install FedoraLinux-42
-wsl -d FedoraLinux-42
 wsl --set-default FedoraLinux-42
+wsl -d FedoraLinux-42
 ```
 
 Setup `wsl` with the following command.
@@ -108,9 +109,7 @@ Exit and enter WSL again to install more development tools.
 ilmi tmux nvim emacs # pick any tools you want
 ```
 
-Setup vscode and other development tools on Windows by run the following command in powershell as **administrator**.
-
-Install Windows updates first, if you haven't already. Execute the following and pick what you want. Do not uncheck any of the default options.
+Optionally, Execute the following and pick what you want. Do not uncheck any of the default options.
 
 ```powershell
 iwr -useb https://is.gd/vefawu | iex
@@ -122,7 +121,9 @@ If this is blocked by your firewall, try
 iwr -useb https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/windows/windows-setup-dev.ps1 | iex
 ```
 
-Consider using [nixos-wsl](https://github.com/nix-community/nixos-wsl). You could install nixos-wsl with the above command. Following might work too.
+Consider using [nixos-wsl](https://github.com/nix-community/nixos-wsl). You could install nixos-wsl with the above command.
+
+Following might work too.
 
 ```powershell
 & ([scriptblock]::Create((iwr -useb https://dub.sh/NDyiu7a).Content)) -Components wsl-nixos
