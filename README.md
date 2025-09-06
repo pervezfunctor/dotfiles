@@ -110,28 +110,24 @@ ilmi tmux nvim emacs # pick any tools you want
 
 Setup vscode and other development tools on Windows by run the following command in powershell as **administrator**.
 
-Install Windows updates first, if you haven't already.
-
-Then you could install `vscode` with
-
-```powershell
-iex "& { $(iwr -useb https://is.gd/vefawu) -Components vscode nerd-fonts }"
-```
-
-Install [docker desktop](https://docs.docker.com/desktop/setup/install/windows-install/).
-
-Or execute the following and pick what you want. Do not uncheck any of the default options.
+Install Windows updates first, if you haven't already. Execute the following and pick what you want. Do not uncheck any of the default options.
 
 ```powershell
 iwr -useb https://is.gd/vefawu | iex
 ```
 
-Alternatively, install [nixos-wsl](https://github.com/nix-community/nixos-wsl).
-
+If this is blocked by your firewall, try
 
 ```powershell
-iex "& { $(iwr -useb https://is.gd/vefawu) -Components wsl-nixos }"
+iwr -useb https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/windows/windows-setup-dev.ps1 | iex
 ```
+
+Consider using [nixos-wsl](https://github.com/nix-community/nixos-wsl). You could install nixos-wsl with the above command. Following might work too.
+
+```powershell
+& ([scriptblock]::Create((iwr -useb https://dub.sh/NDyiu7a).Content)) -Components wsl-nixos
+``
+
 
 ### MACOS
 
