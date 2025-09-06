@@ -948,7 +948,7 @@ tbox_group() {
     toolbox --assumeyes create
 
     local group=${1:-shell}
-    toolbox run bash -c "$(curl -sSL https://is.gd/egitif)" -- "$group"
+    toolbox run bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$group"
 }
 
 tbox_default() {
@@ -960,8 +960,8 @@ dbox_default() {
 
     slog "Creating default distrobox"
     distrobox create --yes
-    # distrobox enter -- env -u PATH bash -ic "$(curl -sSL https://is.gd/egitif)" -- box-default-atomic
-    distrobox enter -nw --clean-path -- bash -c "$(curl -sSL https://is.gd/egitif)" -- box-default-atomic
+    # distrobox enter -- env -u PATH bash -ic "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
+    distrobox enter -nw --clean-path -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
     slog "Default distrobox created!"
 }
 
@@ -981,7 +981,7 @@ dbox_with_home() {
     distrobox list | grep -q "^${osname}$" && return
 
     "dbox-$os" "$osname"
-    distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL https://is.gd/egitif)" -- box-default-atomic
+    distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
     slog "distrobox ${osname} created!"
 }
 

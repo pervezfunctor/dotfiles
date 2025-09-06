@@ -149,7 +149,7 @@ dbox-docker() {
         slog "Docker distrobox ${CONTAINER_NAME} created successfully"
     fi
 
-    distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://is.gd/egitif)" -- dbox-docker-dev starship snap vscode
+    distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-docker-dev starship snap vscode
 }
 
 dbox-incus() {
@@ -464,7 +464,7 @@ dbox-nix() {
     srm "$HOME/.boxes/${CONTAINER_NAME}"
 
     if distrobox create --yes --name "${CONTAINER_NAME}" -i debian:stable --additional-packages "systemd libpam-systemd curl" --home "$HOME/.boxes/${CONTAINER_NAME}"; then
-        distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL https://is.gd/egitif)" -- nix
+        distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- nix
         slog "Done creating distrobox $CONTAINER_NAME"
     fi
 }
@@ -577,7 +577,7 @@ virt-exec() {
     local extra_arg="$3"
 
     # shellcheck disable=SC2029
-    ssh "$username@$vm_name" "bash -c \"\$(curl -sSL https://is.gd/setup)\" -- $extra_arg"
+    ssh "$username@$vm_name" "bash -c \"\$(curl -sSL ${ILM_SETUP_URL})\" -- $extra_arg"
 
     #     virsh qemu-agent-command "$vm_name" \
     #         "$(jq -nc --arg cmd "bash -c $cmd" '{

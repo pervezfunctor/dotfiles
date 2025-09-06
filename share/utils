@@ -3,6 +3,7 @@
 export DOT_DIR=${USE_DOT_DIR:-$HOME/.ilm}
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export ILM_BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
+export ILM_SETUP_URL="${ILM_BASE_URL}/share/installers/setup"
 
 group_exists() {
     getent group "$1" >/dev/null 2>&1

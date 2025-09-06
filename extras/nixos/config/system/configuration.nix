@@ -1,7 +1,8 @@
 { ... }:
 {
   imports = [
-    ./systemd-boot.nix
+    # ./systemd-boot.nix
+    ./grub.nix
     ./common.nix
     ./packages.nix
     ./user.nix

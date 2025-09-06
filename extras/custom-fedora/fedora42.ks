@@ -122,7 +122,7 @@ chmod +x /usr/local/bin/setup-home.sh
 # Enable the service
 systemctl enable setup-home.service
 
-# curl -sSL https://is.gd/egitif -o /tmp/myscript.sh
+# curl -sSL "${ILM_SETUP_URL}" -o /tmp/myscript.sh
 # echo "<SHA256SUM>  /tmp/myscript.sh" | sha256sum -c -
 # bash /tmp/myscript.sh -- shell-slim
 

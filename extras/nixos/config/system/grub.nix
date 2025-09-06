@@ -6,12 +6,8 @@
     grub = {
       enable = true;
       efiSupport = true;
-      useOSProber = false;
-      version = 2;
-      device = "/dev/sda";
-      extraConfig = ''
-        GRUB_CMDLINE_LINUX_DEFAULT="quiet"
-      '';
+      useOSProber = true;
+      device = "nodev";
     };
   };
 }

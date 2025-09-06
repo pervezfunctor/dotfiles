@@ -641,7 +641,7 @@ generate_cloud_init() {
         slog "Adding dotfiles installation to cloud-init with options: $DOTFILES_OPTIONS"
 
         runcmd+=(
-            "su - $USERNAME -c 'bash -c \"\$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)\" -- $DOTFILES_OPTIONS'"
+            "su - $USERNAME -c 'bash -c \"\$(curl -sSL "${ILM_SETUP_URL}" || wget -qO- "${ILM_SETUP_URL}")\" -- $DOTFILES_OPTIONS'"
         )
     fi
 
