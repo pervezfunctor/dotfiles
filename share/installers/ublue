@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # shellcheck disable=SC1090
-source <(curl -sSL https://is.gd/anumof) || err_exit "Cannot source utils, Quitting"
+source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils) || err_exit "Cannot source utils, Quitting"
 
 ublue_emacs_setup() {
     slog "emacs installation and setup"

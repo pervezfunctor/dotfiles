@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # shellcheck disable=SC1090
-source <(curl -sSL https://is.gd/anumof)
+source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 
 # all options
 # "bash" "zsh-min" "zsh" "tmux" "emacs-doom" "emacs" "emacs-slim" "nvim" "git" "vscode" "alacritty" "wezterm" "kitty" "ghostty" "atuin" "yazi" "shell" "mfoot" "gnome" "incus" "libvirt" "docker" "vscode-flatpak" "sway-waybar" "wlogout" "sway" "rofi" "sway-full" "hypr-waybar" "hyprland" "amethyst" "aerospac"

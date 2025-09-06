@@ -2,7 +2,7 @@
 
 if command -v curl >/dev/null || command -v wget >/dev/null; then
     # shellcheck disable=SC1090
-    source <(curl -sSL https://is.gd/anumof || wget -qO- https://is.gd/anumof)
+    source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils || wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 else
     echo "curl or wget is not installed"
 fi
