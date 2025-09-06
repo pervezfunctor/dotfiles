@@ -1012,3 +1012,34 @@ hyprland_confstall() {
 
     slog "hypr config done!"
 }
+
+ublue_mainstall() {
+    if is_ublue && has_cmd git && has_cmd brew && has_cmd python3 && has_cmd code && has_cmd flatpak && has_cmd distrobox; then
+        slog "Prerequisites met, installing uBlue OS"
+    else
+        err_exit "Prerequisites not met. You need Aurora/Bluefin/Bazzite with git, just, brew, code, flatpak, distrobox and python3 installed."
+    fi
+
+    dotfiles_install
+    python_install
+    brew-shell-slim_install
+    apps-slim_install
+
+    vscode_confstall
+    jetbrains-mono_install
+    is_gnome && gnome_confstall
+
+    if [[ "$USER" == "pervez" ]]; then
+        slog "Setting up ublue for myself"
+        nvim_confstall astro
+        git_confstall
+
+        bash_confstall
+        zsh_confstall
+        tmux_confstall
+    else
+        is_bluefin && ujust bluefin-cli
+        is_aurora && ujust aurora-cli
+        is_bazzite && ujust bazzite-cli
+    fi
+}
