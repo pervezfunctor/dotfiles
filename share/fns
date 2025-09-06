@@ -689,3 +689,7 @@ sync-folders() {
     slog "Syncing $source to $destination"
     rsync -avh $delete_flag $dry_flag "$source/" "$destination/" || return $?
 }
+
+syslogs() {
+    sudo journalctl -b -p 3 -xn
+}
