@@ -48,7 +48,7 @@ help() {
     echo "  @vm-ui       virt-manager, cockpit, gnome boxes."
     echo "  @hyprland    hyprland desktop on fedora and tumbleweed."
     echo "  @sway        sway desktop on fedora and tumbleweed."
-    echo "  help        show this help."
+    echo "  help         show this help."
     echo ""
 }
 

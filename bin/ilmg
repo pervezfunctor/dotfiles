@@ -13,6 +13,13 @@ INSTALL_OPTIONS=(
     "vm-ui"
     "dev"
     "dev-full"
+    # "docker"
+    # "distrobox"
+    # "nix"
+    # "vm"
+    # "vscode"
+    # "hyprland"
+    # "sway"
 )
 
 help() {
