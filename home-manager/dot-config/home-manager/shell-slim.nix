@@ -1,24 +1,27 @@
 { pkgs, ... }:
 {
+  imports = [
+    ./core.nix
+  ];
+
   home.packages = with pkgs; [
-    alejandra
     bat
     carapace
     delta
-    devbox
-    devenv
+    eza
+    fd
+    fzf
     gh
     gum
     jq
     just
     lazygit
-    nixd
-    nixfmt-rfc-style
+    micro
     ripgrep
     stow
     tmux
-    tealdeer
     trash-cli
     yazi
+    zoxide
   ];
 }

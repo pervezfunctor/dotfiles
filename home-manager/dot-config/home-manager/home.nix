@@ -1,4 +1,4 @@
-{ pkgs, vars, ... }:
+{ vars, ... }:
 
 {
   home.username = vars.username;
