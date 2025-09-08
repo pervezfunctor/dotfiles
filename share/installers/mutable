@@ -275,6 +275,30 @@ hyprland_install() {
     slog "hyprland installation done!"
 }
 
+dev_mainstall() {
+    dev_work_common_install
+    vm-ui_install
+    distrobox_install
+}
+
+dev-full_mainstall() {
+    nix_mainstall
+    vscode_install
+    jetbrains-mono_install
+    npm_install
+    incus_install
+}
+
+dev-work_mainstall() {
+    dev_mainstall
+    docker_install
+}
+
+dev-work-full_mainstall() {
+    dev_work_mainsStall
+    incus_install
+}
+
 # kwin_script_install() {
 #   local SCRIPT="$1"
 

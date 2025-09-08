@@ -852,46 +852,6 @@ shell-ui_mainstall() {
     terminal_bin_install
 }
 
-dev_work_common_install() {
-    shell-slim-ui_mainstall
-    vscode_install
-    jetbrains-mono_install
-}
-
-dev_mainstall() {
-    dev_work_common_install
-    vm-ui_install
-    distrobox_install
-}
-
-dev-full_mainstall() {
-    nix_mainstall
-    vscode_install
-    jetbrains-mono_install
-    npm_install
-    incus_install
-}
-
-work_mainstall() {
-    dev_work_common_install
-    docker_install
-}
-
-dev-work_mainstall() {
-    dev_work_common_install
-    vm_install
-
-    docker_install
-}
-
-dev-work-full_mainstall() {
-    dev_work_common_install
-    vm_install
-    distrobox_install
-    incus_install
-    docker_install
-}
-
 vbox-dev_mainstall() {
     docker_install
     shell_mainstall
@@ -906,4 +866,15 @@ vm_mainstall() {
 vm-ui_mainstall() {
     vm_mainstall
     vm_ui_install
+}
+
+dev_work_common_install() {
+    shell-slim-ui_mainstall
+    vscode_install
+    jetbrains-mono_install
+}
+
+work_mainstall() {
+    dev_work_common_install
+    docker_install
 }
