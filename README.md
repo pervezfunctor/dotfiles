@@ -223,14 +223,7 @@ source ~/.ilm/share/shellrc
 
 Install [nixos](https://channels.nixos.org/) using [graphical iso](https://channels.nixos.org/nixos-25.05/latest-nixos-graphical-x86_64-linux.iso).
 
-Once installed copy configuration to your home folder.
-
-```bash
-mkdir -p ~/nixos-config
-cp -r /etc/nixos ~/nixos-config
-```
-
-Edit `~/nixos-config/configuration.nix` and add the following.
+Edit `/etc/nixos/configuration.nix` with `sudoedit` and add the following.
 
 ```nix
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -239,15 +232,13 @@ Edit `~/nixos-config/configuration.nix` and add the following.
 Create a minimal flake.nix.
 
 ```bash
-cat > ~/nixos-config/flake.nix << EOF
+sudo tee > /etc/nixos/flake.nix > /dev/null << EOF
 {
   description = "NixOS flake configuration";
 
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
-  };
+  inputs = { nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05"; };
 
-  outputs = { self, nixpkgs, ... }:
+  outputs = { nixpkgs, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
@@ -255,35 +246,37 @@ cat > ~/nixos-config/flake.nix << EOF
       nixosConfigurations = {
         "$(hostname)" = pkgs.lib.nixosSystem {
           inherit system;
-          modules = [
-            ./configuration.nix
-          ];
+          modules = [ ./configuration.nix ];
         };
       };
     };
+}
 EOF
-```
-
-Initialize git repository and stage all files.
-
-```bash
-git init ~/nixos-config
-git add configuration.nix flake.nix hardware-configuration.nix
 ```
 
 Run the following command to apply configuration.
 
 ```bash
-nixos-rebuild switch --flake ~/nixos-config#$(hostname)
-git add flake.lock
-git commit --amend --no-edit
+sudo nixos-rebuild switch --flake /etc/nixos#$(hostname)
 ```
 
-This should do almost nothing. Now you could edit `configuration.nix` and add any additional packages you want.
+Store your configuration files in a git repository.
+
+```bash
+cp -r /etc/nixos ~/nixos-config
+cd ~/nixos-config
+git init
+git add .
+git commit -m "initial commit"
+```
 
 Don't forget to push your configuration to github.
 
-Look at `~/.ilm/extras/nixos/config` for my configuration.
+You should be able to use the following command to update your system
+
+```bash
+sudo nixos-rebuild switch --flake ~/nixos-config#$(hostname)
+```
 
 
 ### Fedora Atomic(Silverblue, Kinoite, Sway Atomic)
