@@ -41,6 +41,7 @@
     pkgs.zsh
   ];
 
+  programs.git.enable = true;
   # programs.git = {
   #   enable = true;
   #   userName = "Pervez Iqbal";
