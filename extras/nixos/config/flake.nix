@@ -90,6 +90,38 @@
           modules = modules;
         };
 
+      mkWSLSystem = modules: homeNix:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            inherit inputs;
+            inherit vars;
+          };
+          modules = [
+            {
+              programs.nix-ld.enable = true;
+              wsl.enable = true;
+            }
+
+            nixos-wsl.nixosModules.default
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                extraSpecialArgs = {
+                  inherit inputs;
+                  # inherit vars;
+                };
+
+                useUserPackages = true;
+                useGlobalPkgs = true;
+                backupFileExtension = "backup";
+
+                users.nixos = import homeNix;
+              };
+            }
+          ] ++ modules;
+        };
+
       mkUiSystem = extraModules: mkNixosSystem (uiModules ++ extraModules);
 
       mkBareSystem = extraModules:
@@ -125,6 +157,11 @@
         mkBareSystem (extraModules ++ [ disko.nixosModules.disko ]);
     in {
       homeConfigurations = {
+        "nixos" = home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+          modules = [ ./home.nix ];
+        };
+
         ${vars.username} = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = { inherit inputs vars; };
@@ -178,6 +215,8 @@
           ./system/vm-ui.nix
         ];
 
+        wsl = mkWSLSystem [ ] ./home.nix;
+
         basic-microvm = nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = {
@@ -220,7 +259,6 @@
             }
           ];
         };
-
       };
     };
 }

@@ -1,14 +1,13 @@
-{ pkgs, vars, ... }:
-{
-  programs.direnv = {
-    enable = true;
-    enableBashIntegration = true;
-    nix-direnv.enable = true;
-  };
-
+{ pkgs, vars, ... }: {
   programs = {
     bash.enable = true;
     nushell.enable = true;
+
+    direnv = {
+      enable = true;
+      enableBashIntegration = true;
+      nix-direnv.enable = true;
+    };
 
     git = {
       enable = true;
