@@ -281,11 +281,10 @@ dev_mainstall() {
     distrobox_install
 }
 
-dev-full_mainstall() {
+dev-nix_mainstall() {
     nix_mainstall
     vscode_install
     jetbrains-mono_install
-    npm_install
     incus_install
 }
 

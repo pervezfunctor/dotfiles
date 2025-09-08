@@ -870,6 +870,7 @@ vm-ui_mainstall() {
 
 dev_work_common_install() {
     shell-slim-ui_mainstall
+    flathub_install
     vscode_install
     jetbrains-mono_install
 }
