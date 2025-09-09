@@ -1,0 +1,3 @@
+#! /usr/bin/env bash
+
+nix run home-manager -- switch --flake ~/.local/share/home-manager#"${USER}" --impure -b bak
