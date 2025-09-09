@@ -89,7 +89,7 @@ multipass_install() {
     fi
 }
 
-vscode_install() {
+vscode_groupstall() {
     vscode_bin_install
     vscode-extensions_install
     vscode_confstall
@@ -159,8 +159,6 @@ docker_install() {
     curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
     sudo sh /tmp/get-docker.sh
     frm /tmp/get-docker.sh
-
-    docker_confstall
 
     slog "Docker installation done!"
 }
@@ -276,14 +274,14 @@ hyprland_install() {
 }
 
 dev_mainstall() {
-    dev_work_common_install
-    vm-ui_install
+    shell_mainstall
+    vscode_groupstall
     distrobox_install
 }
 
 dev-nix_mainstall() {
     nix_mainstall
-    vscode_install
+    vscode_groupstall
     jetbrains-mono_install
     incus_install
 }

@@ -45,12 +45,12 @@ terminal_bin_install() {
 }
 
 ui_install() {
-    terminal_bin_install
-    vscode_bin_install
+    bic nikitabobko/tap/aerospace
+}
 
+apps_install() {
     bi deluge
     bic telegram zoom google-chrome microsoft-remote-desktop
-    bic nikitabobko/tap/aerospace
 }
 
 core_install() {

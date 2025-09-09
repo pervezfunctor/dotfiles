@@ -22,12 +22,10 @@ cmd_check essential_install
 
 cmd_check cli-slim_install
 cmd_check cli_install
-cmd_check cli-ui_install
 cmd_check cpp_install
 cmd_check vscode_bin_install
 cmd_check terminal_bin_install
 cmd_check emacs_bin_install
-cmd_check cli-slim-ui_install
 cmd_check ui_install
 cmd_check vm_install
 
@@ -84,9 +82,7 @@ cmd_check base_mainstall
 cmd_check min_mainstall
 cmd_check shell-slim_mainstall
 cmd_check shell_mainstall
-cmd_check shell-ui_mainstall
 cmd_check vm_mainstall
-cmd_check vm-ui_mainstall
 
 cmd_check nvim_boxstall
 cmd_check emacs_boxstall

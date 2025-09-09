@@ -85,16 +85,29 @@ snap_install() {
     slog "snap installation done!"
 }
 
+ui_install() {
+    is_desktop || return 1
+
+    slog "Installing ui"
+
+    si gnome-keyring wl-clipboard flatpak
+    flathub_install
+
+    slog "ui installation done!"
+}
+
 essential_install() {
     pkgx_install
-    sys_python_install
     # snap_install
 
     slog "Installing essential packages"
+
     sudo zypper install -y -t pattern devel_basis
+
     si unar zip micro-editor 7zip readline-devel sqlite3-devel libffi-devel \
-        libbz2-devel xz-devel gum net-tools iproute2 nmap libsecret gawk \
-        dialog newt just
+        libbz2-devel xz-devel gum libsecret gawk newt
+
+    ui_install
 
     slog "Essential packages installation done!"
 }
@@ -102,8 +115,7 @@ essential_install() {
 cli-slim_install() {
     slog "Installing cli tools using zypper"
 
-    si gh zsh tmux htop fzf ripgrep fd bat zoxide eza starship git-delta \
-        shfmt ShellCheck jq
+    si zsh git starship ripgrep gh fzf zoxide eza
 
     slog "cli tools installation done!"
 }
@@ -111,12 +123,16 @@ cli-slim_install() {
 cli_install() {
     slog "Installing cli tools using zypper"
 
-    si gh neovim zsh tmux sd bat eza fd fzf ripgrep zoxide procs \
-        lazygit bottom git-delta htop xh plocate tealdeer urlview nushell \
+    cli-slim_install
+
+    si neovim sd fd procs lazygit bottom xh plocate tealdeer urlview nushell \
         lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk \
-        shfmt hyperfine cheat curlie jq ShellCheck gum lsd starship direnv yq
+        hyperfine cheat curlie lsd direnv yq tmux htop fd bat git-delta \
+        shfmt ShellCheck jq just dialog
 
     has_cmd tldr && tldr --update
+
+    sys_python_install
 
     slog "cli tools installation done!"
 }
@@ -156,21 +172,9 @@ terminal_bin_install() {
     slog "ghostty installation done!"
 }
 
-ui_install() {
-    slog "Installing ui"
-
-    si chromium-browser gnome-keyring wl-clipboard flatpak
-
-    flathub_install
-
-    terminal_bin_install
-    vscode_bin_install
-    apps_install
-
-    slog "ui installation done!"
-}
-
 vm-ui_install() {
+    is_desktop || return 1
+
     slog "Installing virt ui packages"
 
     si gnome-boxes
@@ -194,6 +198,8 @@ cockpit_install() {
 }
 
 vm_install() {
+    slog "Installing libvirt"
+
     si libvirt qemu-kvm virt-install bridge-utils qemu-img qemu-ui-spice-core \
         qemu-ui-spice-app qemu-char-spice qemu-audio-spice jq \
         qemu-hw-display-virtio-gpu qemu-hw-display-virtio-vga qemu-hw-usb-host \
@@ -203,6 +209,10 @@ vm_install() {
     sudo systemctl enable --now libvirtd
 
     cockpit_install
+
+    vm-ui_install
+
+    slog "libvirt installation done!"
 }
 
 docker_install() {
@@ -211,9 +221,6 @@ docker_install() {
     slog "Installing docker"
 
     si docker docker-compose docker-compose-switch
-    docker_confstall
-
-    portainer_install
 
     slog "docker installation done!"
 }
@@ -296,4 +303,9 @@ hyprland_install() {
     cmd_check swaync swaync-client
 
     slog "hyprland installation done!"
+}
+
+pm_install() {
+    si net-tools iproute2 nmap lm_sensors stress-ng taliscale wireguard-tools \
+        smartmontools memtest86+ glmark2
 }

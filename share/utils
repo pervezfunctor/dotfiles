@@ -1460,9 +1460,11 @@ source_installers() {
 
     if is_mac; then
         source_curl "$INSTALLERS/mac"
+        source_curl "$INSTALLERS/common-mutable"
     else
         if ! is_atomic; then
             source_curl "$INSTALLERS/mutable"
+            source_curl "$INSTALLERS/common-mutable"
 
             if is_apt; then
                 source_curl "$INSTALLERS/apt"
@@ -1481,7 +1483,6 @@ source_installers() {
         source_curl "$INSTALLERS/atomic"
         source_curl "$SHARE/fns"
     fi
-
 }
 
 bootstrap() {

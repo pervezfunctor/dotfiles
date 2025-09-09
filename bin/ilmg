@@ -4,13 +4,13 @@
 source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 
 # all options
-# "base" "min" "shell-slim" "shell-slim-ui" "shell" "shell-ui" "dev" "vbox-dev" "vm" "vm-ui" "prog" "all" "nix" "sway" "hyprland" "slimbox" "box" "fullbox" "dbox" "nixbox" "tw-wslbox" "nixos-wslbox" "wslbox" "wsl" "centos-wsl" "centos-fast" "generic-ct" "generic" "fedora-atomic-tbox" "ublue" "fedora-atomic" "fedora-layered" "dbox-docker-dev" "box-default" "box-default-atomic"
+# "base" "min" "shell-slim" "shell" "dev" "vbox-dev" "vm" "prog" "all" "nix" "sway" "hyprland" "slimbox" "box" "fullbox" "dbox" "nixbox" "tw-wslbox" "nixos-wslbox" "wslbox" "wsl" "centos-wsl" "centos-fast" "generic-ct" "generic" "fedora-atomic-tbox" "ublue" "fedora-atomic" "fedora-layered" "dbox-docker-dev" "box-default" "box-default-atomic"
 
 INSTALL_OPTIONS=(
     "work"
     "shell-slim"
-    "shell-ui"
-    "vm-ui"
+    "shell"
+    "vm"
     "dev"
     "dev-full"
     # "docker"
@@ -27,8 +27,8 @@ help() {
     echo "Options:"
     echo "  work            shell, vscode, docker and terminal app."
     echo "  shell-slim      essential shell packages."
-    echo "  shell-ui        shell, and terminal app."
-    echo "  vm-ui           libvirt, virt-manager and gnome-boxes."
+    echo "  shell           shell, and terminal app."
+    echo "  vm              libvirt, virt-manager and gnome-boxes."
     echo "  dev             shell-slim, vscode, libvirt, distrobox and terminal app."
     echo "  dev-full        dev with nix and incus."
     echo "  help            shows this help."

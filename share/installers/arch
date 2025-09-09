@@ -83,17 +83,29 @@ snap_install() {
     sudo systemctl enable --now snapd
 }
 
+ui_install() {
+    is_desktop || return 1
+
+    slog "Installing ui"
+
+    si gnome-keyring wl-clipboard flatpak
+    flathub_install
+
+    slog "ui installation done!"
+}
+
 essential_install() {
     slog "Installing essential packages"
 
     pkgx_install
-    sys_python_install
 
-    si unarchiver zip tmux pkg-config fuse2 net-tools iproute2 p7zip readline \
-        sqlite libffi zlib xz pkgfile nmap gum libxcrypt-compat libsecret gawk \
-        base-devel micro dialog newt just dmidecode
+    si unarchiver zip tmux pkg-config fuse2 p7zip readline \
+        sqlite libffi zlib xz pkgfile libxcrypt-compat libsecret gawk \
+        base-devel micro newt
 
     sudo pkgfile --update
+
+    ui_install
 
     slog "Essential packages installation done!"
 }
@@ -101,7 +113,7 @@ essential_install() {
 cli-slim_install() {
     slog "Installing cli tools using pacman"
 
-    si zsh tmux htop fzf ripgrep fd bat zoxide eza starship gum git-delta jq
+    si zsh github-cli fzf ripgrep zoxide eza starship
 
     slog "cli tools installation done!"
 }
@@ -109,13 +121,16 @@ cli-slim_install() {
 cli_install() {
     slog "Installing cli tools using pacman"
 
-    si neovim github-cli shellcheck shfmt python-pynvim zsh zsh-completions \
-        luarocks duf lazygit starship eza ugrep git-delta navi \
-        sd gdu bat hyperfine fd fzf ripgrep zoxide htop nushell bottom \
-        plocate tealdeer television dysk yazi pixi procs dust direnv atuin \
-        broot glances curlie xh jq superfile choose lsd yq
+    cli-slim_install
+
+    si neovim tmux shellcheck shfmt python-pynvim zsh-completions bat jq yq \
+        luarocks duf lazygit ugrep git-delta navi sd gdu hyperfine fd lsd xh \
+        htop nushell bottom plocate tealdeer television dysk yazi pixi procs \
+        dust direnv atuin broot glances curlie superfile choose just dialog gum
 
     has_cmd tldr && tldr --update
+
+    sys_python_install
 
     slog "cli tools installation done!"
 }
@@ -152,38 +167,10 @@ terminal_bin_install() {
     slog "terminal installation done!"
 }
 
-ui_install() {
-    slog "Installing ui"
-
-    si chromium neovide gnome-keyring wl-clipboard flatpak
-
-    flathub_install
-
-    terminal_bin_install
-    vscode_bin_install
-    apps_install
-
-    slog "ui installation done!"
-}
-
-vm_install() {
-    slog "Installing vm"
-
-    sudo pacman -R --noconfirm iptables
-
-    si iptables-nft libvirt qemu-base virt-install bridge-utils dnsmasq jq \
-        edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs \
-        guestfs-tools qemu-hw-display-virtio-gpu libosinfo iptables-nft \
-        ebtables openbsd-netcat
-
-    libvirt_confstall
-
-    cockpit_install
-
-    slog "vm installation done!"
-}
 
 vm-ui_install() {
+    is_desktop || return 1
+
     slog "Installing virt ui packages"
 
     local -a pkgs=("qemu-desktop")
@@ -207,13 +194,30 @@ cockpit_install() {
     slog "cockpit installation done!"
 }
 
-docker_install() {
+vm_install() {
+    slog "Installing vm"
+
+    sudo pacman -R --noconfirm iptables
+
+    si iptables-nft libvirt qemu-base virt-install bridge-utils dnsmasq jq \
+        edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs \
+        guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat
+
+    libvirt_confstall
+
+    cockpit_install
+
+    vm-ui_install
+
+    slog "vm installation done!"
+}
+
+docker_bin_install() {
     has_cmd docker && return 1
 
     slog "Installing docker"
 
     si docker docker-compose
-    docker_confstall
 
     slog "docker installation done!"
 }
@@ -273,4 +277,9 @@ sway_install() {
 firewall_setup() {
     si nftables firewalld
     sudo systemctl enable --now firewalld
+}
+
+pm_install() {
+    si nmap net-tools iproute2 lm_sensors stress-ng taliscale wireguard-tools \
+     smartmontools memtest86+ glmark2
 }

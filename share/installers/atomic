@@ -299,7 +299,7 @@ generic-ct_mainstall() {
     pkgx_install
 
     slog "Installing shell tools with pixi"
-    pixi-slim-shell_install
+    pixi-shell-slim_install
 
     slog "Installing shell tools with pixi done!"
 
@@ -512,7 +512,7 @@ fedora-layered_mainstall() {
     pkgx_install
 
     pis wget
-    pixi-slim-shell_install
+    pixi-shell-slim_install
 
     dotfiles_install
     bash_confstall
@@ -900,7 +900,7 @@ dbox-docker-dev_mainstall() {
     si firefox gnome-keyring wl-clipboard libsecret
 
     starship_install
-    vscode_install
+    vscode_groupstall
 
     has_cmd zsh && zsh_confstall
 }
@@ -919,7 +919,7 @@ github_user_setup() {
 
 box-default_mainstall() {
     shell_mainstall
-    vscode_install
+    vscode_groupstall
     jetbrains-mono_install
 
     si firefox gnome-keyring wl-clipboard kitty libsecret

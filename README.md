@@ -51,7 +51,7 @@ ilmi
 You could also do the following
 
 ```bash
-ilmi vscode docker shell-ui vm-ui # pick any tools you want
+ilmi vscode docker shell vm # pick any tools you want
 ```
 
 Optionally, install `nix`.
@@ -416,7 +416,7 @@ You should be able to use `vscode` and `devcontainers` without any issues. *You 
 I would highly recommend you install `libvirt` and `virt-manager` for creating and managing virtual machines. You could use the following command.
 
 ```bash
-ilmi vm-ui
+ilmi vm
 ```
 
 *Once you reboot*, you should be able to create and use virtual machines.

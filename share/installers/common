@@ -45,20 +45,12 @@ brew-shell-slim_install() {
         return 1
     fi
 
-    bis gh gum stow tmux carapace lazygit eza fzf fd zoxide starship
+    bis gh gum stow tmux fzf zoxide starship
 
-    if ! has_cmd luarocks; then
-        bi luarocks
-        brew link luarocks # unfortunately, this is needed currently.
-    fi
     bi bash-preexec
 
     local pkgs=()
     has_cmd trash || pkgs+=(trash-cli)
-    has_cmd delta || pkgs+=(git-delta)
-    has_cmd rg || pkgs+=(ripgrep)
-    has_cmd batcat || has_cmd bat || pkgs+=(bat)
-    has_cmd emacs || has_cmd mcirco || pkgs+=(micro)
 
     [ ${#pkgs[@]} -gt 0 ] && bis "${pkgs[@]}"
 }
@@ -73,9 +65,14 @@ brew-shell_install() {
 
     brew-shell-slim_install
 
+    if ! has_cmd luarocks; then
+        bi luarocks
+        brew link luarocks # unfortunately, this is needed currently.
+    fi
+
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
         atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi \
-        ollama
+        ollama carapace lazygit eza fd
 
     local pkgs=()
 
@@ -88,6 +85,10 @@ brew-shell_install() {
     has_cmd choose || pkgs+=(choose-rust)
     has_cmd btm || pkgs+=(bottom)
     has_cmd nu || pkgs+=(nushell)
+    has_cmd delta || pkgs+=(git-delta)
+    has_cmd rg || pkgs+=(ripgrep)
+    has_cmd batcat || has_cmd bat || pkgs+=(bat)
+    has_cmd mcirco || pkgs+=(micro)
     has_cmd llama-server || pkgs+=(llama.cpp)
 
     [ ${#pkgs[@]} -gt 0 ] && bis "${pkgs[@]}"
@@ -105,20 +106,20 @@ brew-shell_install() {
     slog "shell tools with brew done!"
 }
 
-pixi-slim-shell_install() {
+pixi-shell-slim_install() {
     has_cmd trash || pi trash-cli
     has_cmd rg || pi ripgrep
     has_cmd gum || pi go-gum
 
-    pis starship zoxide bat eza gh fzf carapace shellcheck fd git-delta jq yq
+    pis starship zoxide gh fzf eza
 }
 
 pixi-shell_install() {
-    pixi-slim-shell_install
+    pixi-shell-slim_install
 
     pis broot just lazydocker gdu nvim lazygit luarocks micro glances \
         cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi \
-        carapace direnv yq
+        carapace direnv yq bat carapace shellcheck fd git-delta jq yq
 
     local pkgs=()
     has_cmd ug || pkgs+=(ugrep)
@@ -451,6 +452,29 @@ vscode_confstall() {
     slog "vscode config done!"
 }
 
+shell_confstall() {
+    bash_confstall
+    has_cmd code && vscode_confstall
+
+    if ! has_cmd stow; then
+        warn "stow not installed, skipping config"
+        return 1
+    fi
+
+    has_cmd git && git_confstall
+    has_cmd nvim && nvim_confstall astro
+    has_cmd tmux && tmux_confstall
+    has_cmd zsh && zsh_confstall
+
+    has_cmd emacs || return 0
+
+    local emacs_version
+    emacs_version=$(emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1)
+    if [ "$emacs_version" -gt 28 ]; then
+        emacs_confstall
+    fi
+}
+
 alacritty_confstall() {
     slog "alacritty config"
     stowgf alacritty
@@ -570,29 +594,6 @@ pyenv-miniconda_install() {
     cmd_check conda
 }
 
-shell_confstall() {
-    bash_confstall
-    has_cmd code && vscode_confstall
-
-    if ! has_cmd stow; then
-        warn "stow not installed, skipping config"
-        return 1
-    fi
-
-    has_cmd git && git_confstall
-    has_cmd nvim && nvim_confstall astro
-    has_cmd tmux && tmux_confstall
-    has_cmd zsh && zsh_confstall
-
-    has_cmd emacs || return 0
-
-    local emacs_version
-    emacs_version=$(emacs --version | awk 'NR==1 {print $3}' | cut -d'.' -f1)
-    if [ "$emacs_version" -gt 28 ]; then
-        emacs_confstall
-    fi
-}
-
 npm_install() {
     has_cmd npm && return 0
 
@@ -686,7 +687,7 @@ pixi_packages() {
 devenv_install() {
     has_cmd devenv && return 0
 
-    slog "Installing devenv using nix profile"
+    warn "Installing devenv using nix profile"
     warn "Using home-manager or nixos is the recommended approach."
     nix profile install nixpkgs#devenv
 }
@@ -707,175 +708,22 @@ brew_packages() {
 }
 
 shell-slim_install() {
-    has_cmd cli_install && cli_install
-    pixi_install
-    pixi-slim-shell_install
+    if has_cmd brew; then
+        brew-slim_shell_install
+    else
+        pixi_install
+        pixi-shell-slim_install
+    fi
     pkgx_install
+
 }
 
 shell_install() {
-    has_cmd cli_install && cli_install
-
-    pixi_install
-    pixi-shell_install
-
-    pkgx_install
-
-    brew_install
-    brew-shell_install
-}
-
-mainstall() {
-    local ins="$1"
-    "$ins"_mainstall "$@"
-}
-
-base-group_check() {
-    cmd_check curl wget git trash tree tar unzip
-    dir_check "$DOT_DIR"
-    bash_config_check
-}
-
-base_main_install() {
-    if has_cmd core_install; then
-        core_install
-    else
-        warn "core_install not available, skipping core installation"
-    fi
-
-    dotfiles_install
-}
-
-base_config_install() {
-    has_cmd bash && bash_confstall
-    git_confstall
-}
-
-base_mainstall() {
-    base_main_install
-    base_config_install
-    base-group_check
-}
-
-min-group_check() {
-    base-group_check
-    cmd_check micro zip unar gcc make
-}
-
-min_main_install() {
-    base_main_install
-    if has_cmd essential_install; then
-        essential_install
-    else
-        warn "essential_install not available, skipping essential installation"
-    fi
-}
-
-min_config_install() {
-    base_config_install
-}
-
-min_mainstall() {
-    min_main_install
-    min_config_install
-    min-group_check
-}
-
-shell-slim-group_check() {
-    min-group_check
-    cmd_check trash rg gum starship zoxide bat eza gh fzf
-    cmd_check carapace shellcheck delta
-}
-
-shell-slim_main_install() {
-    min_main_install
     shell-slim_install
-}
 
-shell-slim_config_install() {
-    min_config_install
-    has_cmd zsh && zsh_confstall
-    has_cmd tmux && tmux_confstall
-}
-
-shell-slim_mainstall() {
-    shell-slim_main_install
-    shell-slim_config_install
-    shell-slim-group_check
-}
-
-nix_mainstall() {
-    min_mainstall
-    has_cmd si && si zsh git
-
-    nix_install
-    new-hms
-    shell_confstall
-}
-
-shell-slim-ui_mainstall() {
-    shell-slim_mainstall
-    jetbrains-mono_install
-    terminal_bin_install
-    shell-slim_config_install
-    shell-slim-group_check
-}
-
-shell-group_check() {
-    shell-slim-group_check
-    cmd_check gh nvim zsh tmux lazygit sd bat brew htop btm atuin gawk
-    cmd_check shellcheck shfmt ug tldr fd direnv jq yq
-    # cmd_check cheat choose curlie direnv doggo dotenv procs
-    # cmd_check duf dust gdu hyperfine just
-}
-
-shell_main_install() {
-    min_main_install
-    shell_install
-}
-
-shell_config_install() {
-    shell-slim_config_install
-    has_cmd nvim && nvim_confstall astro
-    has_cmd yazi && yazi_confstall
-}
-
-shell_mainstall() {
-    shell_main_install
-    shell_config_install
-    shell-group_check
-}
-
-shell-ui_mainstall() {
-    shell_mainstall
-    jetbrains-mono_install
-    terminal_bin_install
-}
-
-vbox-dev_mainstall() {
-    docker_install
-    shell_mainstall
-    npm_install
-}
-
-vm_mainstall() {
-    min_mainstall
-    has_cmd vm_install && vm_install
-}
-
-vm-ui_mainstall() {
-    vm_mainstall
-    vm_ui_install
-}
-
-dev_work_common_install() {
-    shell-slim-ui_mainstall
-    flathub_install
-    vscode_install
-    jetbrains-mono_install
-}
-
-work_mainstall() {
-    dev_work_common_install
-    docker_install
+    if has_cmd brew; then
+        brew-shell_install
+    else
+        pixi-shell_install
+    fi
 }
