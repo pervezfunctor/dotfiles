@@ -202,9 +202,6 @@ bindkey '^L' vi-forward-word
 bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
 
-source_if_exists "$DOT_DIR/share/fns"
-source_if_exists "$DOT_DIR/share/aliases"
-
 # Called before prompt(?)
 function precmd {
     # Set window title

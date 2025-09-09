@@ -8,6 +8,9 @@ export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
 source "$DOT_DIR/share/shellrc"
 
+source_if_exists "$HOME/.localbashrc"
+source_if_exists "$XDG_CONFIG_HOME/localbashrc"
+
 [[ $- == *i* ]] || return
 
 export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
@@ -17,21 +20,13 @@ has_cmd carapace && source <(carapace _carapace)
 has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 has_cmd ~/.pixi/bin/pixi && eval "$(~/.pixi/bin/pixi completion --shell bash)"
 
-source_if_exists "$DOT_DIR/share/fns"
-source_if_exists "$DOT_DIR/share/aliases"
-
-source_if_exists "$HOME/.localbashrc"
-source_if_exists "$XDG_CONFIG_HOME/localbashrc"
-
 is_ublue && return
 
-if has_cmd starship; then
-    eval "$(starship init bash)"
-    has_cmd zoxide && eval "$(zoxide init bash)"
-    # shellcheck disable=SC1090
-    has_cmd fzf && source <(fzf --bash)
-    # has_cmd direnv && eval "$(direnv hook bash)"
-    # has_cmd atuin && eval "$(atuin init bash --disable-up-arrow --disable-ctrl-r)"
-fi
+has_cmd starship && eval "$(starship init bash)"
+has_cmd zoxide && eval "$(zoxide init bash)"
+# shellcheck disable=SC1090
+has_cmd fzf && source <(fzf --bash)
+# has_cmd direnv && eval "$(direnv hook bash)"
+# has_cmd atuin && eval "$(atuin init bash --disable-up-arrow --disable-ctrl-r)"
 
 # one_shell_tmux
