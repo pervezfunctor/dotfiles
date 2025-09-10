@@ -736,10 +736,13 @@ conan_install() {
     has_cmd conan && return 1
 
     slog "Installing conan"
-    if has_cmd pipx; then
+    if has_cmd uv; then
+        uv tool install conan
+    elif has_cmd pipx; then
         pipx install conan
     else
-        uv tool install conan
+        python_install
+        pipx install conan
     fi
 
     slog "conan installation done!"
@@ -890,33 +893,6 @@ rofi_confstall() {
     slog "rofi config done!"
 }
 
-dbox-docker-dev_mainstall() {
-    is_ubuntu || err_exit "This script is only for Ubuntu"
-    has_cmd docker || err_exit "This script requires docker"
-
-    docker_confstall
-
-    min_mainstall
-    si firefox gnome-keyring wl-clipboard libsecret
-
-    starship_install
-    vscode_groupstall
-
-    has_cmd zsh && zsh_confstall
-}
-
-github_user_setup() {
-    if ! has_cmd gh; then
-        warn "gh not installed, skipping github user setup"
-        return 1
-    fi
-
-    if has_cmd gh; then
-        slog "Authenticating github(gh)"
-        gh auth login
-    fi
-}
-
 box-default_mainstall() {
     shell_mainstall
     vscode_groupstall
@@ -925,64 +901,6 @@ box-default_mainstall() {
     si firefox gnome-keyring wl-clipboard kitty libsecret
     gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
     systemctl --user enable --now dbus
-}
-
-default_dbox_exports() {
-    distrobox-export --bin "$(which stow)"
-    distrobox-export --bin "$(which wl-copy)"
-    distrobox-export --bin "$(which wl-paste)"
-    distrobox-export --bin "$(which code)"
-    distrobox-export --app "Visual Studio Code"
-    distrobox-export --app "kitty"
-}
-
-box-default-atomic_mainstall() {
-    box-default_mainstall
-    default_dbox_exports
-}
-
-# shellcheck disable=SC2120
-tbox_group() {
-    has_cmd toolbox || return 0
-
-    toolbox --assumeyes create
-
-    local group=${1:-shell}
-    toolbox run bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$group"
-}
-
-tbox_default() {
-    tbox_group box-default-atomic
-}
-
-dbox_default() {
-    has_cmd distrobox || return
-
-    slog "Creating default distrobox"
-    distrobox create --yes
-    # distrobox enter -- env -u PATH bash -ic "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
-    distrobox enter -nw --clean-path -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
-    slog "Default distrobox created!"
-}
-
-# shellcheck disable=SC2120
-dbox_with_home() {
-    if ! has_cmd distrobox; then
-        fail "distrobox not installed, skipping distrobox creation"
-        return 1
-    fi
-
-    slog "Creating default distrobox"
-
-    local os
-    os=${1:-fedora-init}
-    local osname
-    osname=${2:-ilm}
-    distrobox list | grep -q "^${osname}$" && return
-
-    "dbox-$os" "$osname"
-    distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
-    slog "distrobox ${osname} created!"
 }
 
 sway-full_confstall() {

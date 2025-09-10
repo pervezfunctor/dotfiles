@@ -693,3 +693,61 @@ sync-folders() {
 syslogs() {
     sudo journalctl -b -p 3 -xn
 }
+
+default_dbox_exports() {
+    distrobox-export --bin "$(which stow)"
+    distrobox-export --bin "$(which wl-copy)"
+    distrobox-export --bin "$(which wl-paste)"
+    distrobox-export --bin "$(which code)"
+    distrobox-export --app "Visual Studio Code"
+    distrobox-export --app "kitty"
+}
+
+box-default-atomic_mainstall() {
+    box-default_mainstall
+    default_dbox_exports
+}
+
+# shellcheck disable=SC2120
+tbox_group() {
+    has_cmd toolbox || return 0
+
+    toolbox --assumeyes create
+
+    local group=${1:-shell}
+    toolbox run bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$group"
+}
+
+tbox_default() {
+    tbox_group box-default-atomic
+}
+
+dbox_default() {
+    has_cmd distrobox || return
+
+    slog "Creating default distrobox"
+    distrobox create --yes
+    # distrobox enter -- env -u PATH bash -ic "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
+    distrobox enter -nw --clean-path -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
+    slog "Default distrobox created!"
+}
+
+# shellcheck disable=SC2120
+dbox_with_home() {
+    if ! has_cmd distrobox; then
+        fail "distrobox not installed, skipping distrobox creation"
+        return 1
+    fi
+
+    slog "Creating default distrobox"
+
+    local os
+    os=${1:-fedora-init}
+    local osname
+    osname=${2:-ilm}
+    distrobox list | grep -q "^${osname}$" && return
+
+    "dbox-$os" "$osname"
+    distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
+    slog "distrobox ${osname} created!"
+}

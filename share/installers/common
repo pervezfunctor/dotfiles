@@ -523,7 +523,7 @@ yazi_confstall() {
     slog "yazi config done!"
 }
 
-confstall() {
+all-confstall() {
     shell_confstall
 
     has_cmd atuin && atuin_confstall
