@@ -456,27 +456,6 @@ fedora-atomic-tbox_mainstall() {
     slog "Fedora Atomic Host With default toolbox setup done!"
 }
 
-ublue_mainstall() {
-    is_bluefin || is_aurora || err_exit "This script is only for Bluefin/Aurora"
-
-    slog "ublue setup..."
-
-    dotfiles_install
-    jetbrains-mono_install
-
-    brew-shell-slim_install
-    apps-slim_install
-
-    vscode-extensions_install
-    vscode_confstall
-    git_confstall
-    bash_confstall
-    tmux_confstall
-    nvim_confstall
-
-    slog "ublue setup done!"
-}
-
 fedora-atomic_mainstall() {
     is_std_atomic || err_exit "This script is only for Atomic Host"
 
@@ -948,13 +927,7 @@ ublue_mainstall() {
     is_gnome && gnome_confstall
 
     if [[ "$USER" == "pervez" ]]; then
-        slog "Setting up ublue for myself"
-        nvim_confstall astro
-        git_confstall
-
-        bash_confstall
-        zsh_confstall
-        tmux_confstall
+        shell_confstall
     else
         is_bluefin && ujust bluefin-cli
         is_aurora && ujust aurora-cli
