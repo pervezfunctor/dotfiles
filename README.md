@@ -546,7 +546,7 @@ ilmg vscode
 I will try to provide similar commands for immutable/nixos distributions in the future.
 
 
-## Proxmox setup
+## Proxmox
 
 This is an amazing hypervisor for almost anything. It's really simple to use, even if you don't know linux much. Just buy a minipc worth 150$ and install proxmox on it. You could learn a lot about linux, devops and cloud computing. I setup kubernetes clusters, docker/podman/lxc comtainers in multiple virtual machines without any problem. You could use Ceph if you need distributed storage for your cluster. Install desktop linux or windows if you need to. Passthrough your gpu to windows or bazzite and play games at close to bare metal fps.
 
@@ -555,9 +555,3 @@ Basic setup can be done with the following command.
 ```bash
 bash -c "$(curl -sSL https://is.gd/epesoq)"
 ```
-
-Once you are comfortable with proxmox, you should use ansible/terraform to create and provision virtual machines. I won't be providing any instructions for this anytime soon.
-
-Similarly once you are comfortable with virtual machines on your desktop(libvirt), use ansible/packer to create and provision virtual machines.
-
-You don't need to buy an expensive pc for any of this. Just buy a [8th/9th gen i5/i7 1 liter pc](https://www.servethehome.com/introducing-project-tinyminimicro-home-lab-revolution/) from ebay. You could get one for 50$-100$. You could even avoid buying a separate machine, and use this for both proxmox and desktop. I will provide instructions for this in the future.
