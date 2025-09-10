@@ -127,6 +127,18 @@ nix_groupstall() {
     # shell_config_install
 }
 
+nix_check() {
+    min_check
+    cmd_check home-manager nix devbox
+}
+
+nix_mainstall() {
+    min_binstall
+    has_cmd si && si zsh
+    nix_groupstall
+    nix_check
+}
+
 docker_groupstall() {
     docker_install
     docker_confstall
@@ -167,13 +179,6 @@ shell-slim_mainstall() {
 
     shell-slim_config_install
     shell-slim_check
-}
-
-nix_mainstall() {
-    min_binstall
-    has_cmd si && si zsh
-
-    nix_groupstall
 }
 
 shell_check() {

@@ -123,15 +123,6 @@ all_mainstall() {
     all-group_check
 }
 
-nix_mainstall() {
-    base_mainstall
-    nix_install
-
-    hms
-
-    cmd_check home-manager nix devbox
-}
-
 sway_mainstall() {
     slog "Installing sway"
     shell_mainstall
