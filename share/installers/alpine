@@ -86,7 +86,7 @@ cpp_install() {
     slog "C++ installation done!"
 }
 
-terminal_bin_install() {
+terminal_binstall() {
     has_cmd kitty && return 1
 
     slog "Installing terminal"

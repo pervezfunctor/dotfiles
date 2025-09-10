@@ -33,7 +33,7 @@ nix-no-init_install() {
     cmd_check nix nix-shell nix-env
 }
 
-emacs_bin_install() {
+emacs_binstall() {
     slog "Installing emacs"
 
     if is_apt; then
@@ -90,7 +90,7 @@ multipass_install() {
 }
 
 vscode_groupstall() {
-    vscode_bin_install
+    vscode_binstall
     vscode-extensions_install
     vscode_confstall
 }
@@ -116,7 +116,7 @@ all_mainstall() {
     pixi_install
     pkgx_install
 
-    emacs_bin_install
+    emacs_binstall
 
     emacs_confstall
 
@@ -247,7 +247,7 @@ portainer_install() {
 sway_install() {
     slog "Installing sway..."
 
-    sway_bin_install
+    sway_binstall
 
     if has_cmd pipx; then
         pipx install i3ipc
@@ -262,7 +262,7 @@ sway_install() {
 hyprland_install() {
     slog "Installing hyprland..."
 
-    hyprland_bin_install
+    hyprland_binstall
 
     hyprland_confstall
     hypr-waybar_confstall

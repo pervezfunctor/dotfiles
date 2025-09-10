@@ -1,14 +1,7 @@
 #! /usr/bin/env bash
 
-groupstall() {
-    "$1"_groupstall
-}
-
-mainstall() {
-    "$1"_mainstall
-}
-
 base_config_install() {
+    dotfiles_install
     bash_confstall
 }
 
@@ -29,14 +22,68 @@ shell_config_install() {
     yazi_confstall
 }
 
-shell-slim_groupstall() {
+groupstall() {
+    "$1"_groupstall
+}
+
+mainstall() {
+    "$1"_mainstall
+}
+
+base_binstall() {
+    if has_cmd core_install; then
+        core_install
+    else
+        warn "core_install not available, skipping core installation"
+    fi
+}
+
+bash_config_check() {
+    bash_config_exists || warn "bash config is not setup correctly"
+}
+
+base_check() {
+    cmd_check curl wget git trash stow tree tar unzip
+    dir_check "$DOT_DIR"
+    bash_config_check
+}
+
+base_mainstall() {
+    base_binstall
+    base_config_install
+    base_check
+}
+
+min_binstall() {
+    base_binstall
+    if has_cmd essential_install; then
+        essential_install
+    else
+        warn "essential_install not available, skipping essential installation"
+    fi
+}
+
+shell-slim_binstall() {
     if has_cmd cli-slim_install; then
         cli-slim_install
     else
         warn "cli-slim_install not available, skipping cli installation"
     fi
-
     shell-slim_install
+}
+
+shell_binstall() {
+    if has_cmd cli_install; then
+        cli_install
+    else
+        warn "cli_install not available, skipping cli installation"
+    fi
+    shell_install
+    terminal_install
+}
+
+shell-slim_groupstall() {
+    shell-slim_binstall
     shell-slim_config_install
 }
 
@@ -49,7 +96,7 @@ terminal_config_install() {
 
 terminal_install() {
     jetbrains-mono_install
-    terminal_bin_install
+    terminal_binstall
 }
 
 terminal_groupstall() {
@@ -59,13 +106,7 @@ terminal_groupstall() {
 }
 
 shell_groupstall() {
-    if has_cmd cli_install; then
-        cli_install
-    else
-        warn "cli_install not available, skipping cli installation"
-    fi
-
-    shell_install
+    shell_binstall
     terminal_groupstall
     shell_config_install
 }
@@ -77,7 +118,7 @@ nix_groupstall() {
 }
 
 docker_groupstall() {
-    docker_bin_install
+    docker_binstall
     docker_confstall
     portainer_install
 }
@@ -94,48 +135,13 @@ vm_groupstall() {
     libvirt_confstall
 }
 
-bash_config_check() {
-    bash_config_exists || warn "bash config is not setup correctly"
-}
-
-base_check() {
-    cmd_check curl wget git trash stow tree tar unzip
-    dir_check "$DOT_DIR"
-    bash_config_check
-}
-
-base_main_install() {
-    if has_cmd core_install; then
-        core_install
-    else
-        warn "core_install not available, skipping core installation"
-    fi
-
-    dotfiles_install
-}
-
-base_mainstall() {
-    base_main_install
-    base_config_install
-    base_check
-}
-
 min_check() {
     base_check
     cmd_check micro zip unar gcc make whiptail
 }
 
-min_main_install() {
-    base_main_install
-    if has_cmd essential_install; then
-        essential_install
-    else
-        warn "essential_install not available, skipping essential installation"
-    fi
-}
-
 min_mainstall() {
-    min_main_install
+    min_binstall
     min_config_install
     min_check
 }
@@ -145,19 +151,16 @@ shell-slim_check() {
     cmd_check zsh rg starship zoxide eza gh fzf
 }
 
-shell-slim_main_install() {
-    min_main_install
-    shell-slim_install
-}
-
 shell-slim_mainstall() {
-    shell-slim_main_install
+    min_mainstall
+    shell-slim_binstall
+
     shell-slim_config_install
     shell-slim_check
 }
 
 nix_mainstall() {
-    min_main_install
+    min_binstall
     has_cmd si && si zsh
 
     nix_groupstall
@@ -170,22 +173,12 @@ shell_check() {
         btm yazi
 }
 
-shell_main_install() {
-    shell-slim_main_install
-    shell_install
-    terminal_install
-}
-
 shell_mainstall() {
-    shell_main_install
+    min_mainstall
+    shell_binstall
     shell_config_install
     terminal_config_install
     shell_check
-}
-
-vm_main_install() {
-    min_mainstall
-    vm_groupstall
 }
 
 vm_check() {
@@ -195,7 +188,8 @@ vm_check() {
 }
 
 vm_mainstall() {
-    vm_main_install
+    min_mainstall
+    vm_groupstall
     vm_check
 }
 

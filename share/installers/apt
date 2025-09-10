@@ -228,7 +228,7 @@ cpp_install() {
     slog "C++ installation done!"
 }
 
-vscode_bin_install() {
+vscode_binstall() {
     has_cmd code && return 0
 
     slog "Installing vscode..."
@@ -269,7 +269,7 @@ windsurf_install() {
     slog "windsurf installation done!"
 }
 
-terminal_bin_install() {
+terminal_binstall() {
     has_cmd ghostty && return 1
     has_cmd kitty && return 1
 

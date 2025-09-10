@@ -36,11 +36,11 @@ macos_confstall() {
     stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R amethyst
 }
 
-vscode_bin_install() {
+vscode_binstall() {
     bi visual-studio-code
 }
 
-terminal_bin_install() {
+terminal_binstall() {
     bic ghostty
 }
 
@@ -113,7 +113,7 @@ pyenv_mac_install() {
     bi pyenv pyenv-virtualenv
 }
 
-emacs_bin_install() {
+emacs_binstall() {
     dir_exists /Applications/Emacs.app && return 0
     dir_exists /usr/local/opt/emacs-mac && return 0
 

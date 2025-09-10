@@ -222,7 +222,7 @@ cpp_install() {
     slog "C++ installation done!"
 }
 
-vscode_bin_install() {
+vscode_binstall() {
     has_cmd code && return 1
 
     slog "Installing vscode"
@@ -237,7 +237,7 @@ vscode_bin_install() {
     cmd_check code
 }
 
-terminal_bin_install() {
+terminal_binstall() {
     has_cmd ghostty && return 1
     has_cmd kitty && return 1
     has_cmd alacritty && return 1
@@ -290,7 +290,7 @@ cockpit_install() {
     slog "cockpit installation done!"
 }
 
-docker_bin_install() {
+docker_binstall() {
     has_cmd docker && return 1
 
     slog "Installing docker"
@@ -405,7 +405,7 @@ tiling_common_install() {
     slog "Tiling common packages installation done!"
 }
 
-hyprland_bin_install() {
+hyprland_binstall() {
     tiling_common_install
     slog "Installing hyprland"
 
@@ -415,7 +415,7 @@ hyprland_bin_install() {
     slog "hyprland installation done!"
 }
 
-sway_bin_install() {
+sway_binstall() {
     tiling_common_install
 
     slog "Installing sway"

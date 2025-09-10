@@ -23,9 +23,9 @@ cmd_check essential_install
 cmd_check cli-slim_install
 cmd_check cli_install
 cmd_check cpp_install
-cmd_check vscode_bin_install
-cmd_check terminal_bin_install
-cmd_check emacs_bin_install
+cmd_check vscode_binstall
+cmd_check terminal_binstall
+cmd_check emacs_binstall
 cmd_check ui_install
 cmd_check vm_install
 

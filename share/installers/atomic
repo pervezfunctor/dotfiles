@@ -100,7 +100,7 @@ flathub_install() {
     fi
 }
 
-kitty_bin_install() {
+kitty_binstall() {
     if ! is_desktop; then
         warn "Not running desktop, skipping kitty installation"
         return 1
@@ -134,11 +134,11 @@ kitty_bin_install() {
 }
 
 kitty_install() {
-    kitty_bin_install
+    kitty_binstall
     kitty_confstall
 }
 
-ghostty_bin_install() {
+ghostty_binstall() {
     has_cmd ghostty && return 1
 
     local VERSION
@@ -153,7 +153,7 @@ ghostty_bin_install() {
 }
 
 ghostty_install() {
-    ghostty_bin_install
+    ghostty_binstall
     ghostty_confstall
 }
 
