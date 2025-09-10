@@ -505,7 +505,7 @@ Remember to pick `Jetbrains Mono Nerd Font` as the font. Pick a nice theme like 
 ilmi distrobox
 ```
 
-### Generic Linux Desktop
+## Generic Linux Desktop
 
 This should work on almost any linux system/vm/container even without sudo privileges; You should have curl/wget and bash installed.
 
