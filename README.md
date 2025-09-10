@@ -256,7 +256,7 @@ bash -c "$(curl -sSL https://is.gd/egitif)" -- nixos
 
 Your nixos configuration will be stored in `~/.ilm/extras/nixos/config`. Add to git and push to github.
 
-You should be able to use the following command to update your system.
+You should be able to use the following command to update your system after you make changes to your configuration.
 
 ```bash
 sudo nixos-rebuild switch --flake ~/nixos-config#$(hostname)

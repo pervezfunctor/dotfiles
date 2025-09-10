@@ -348,31 +348,16 @@ nixos_mainstall() {
         err_exit "configuration.nix not found"
     fi
     if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
-        if ! sed -i '/^[[:space:]]*\.\/hardware-configuration\.nix/ a\    ./dev.nix' "$cfg_dir/configuration.nix"; then
-            err_exit "Failed to add dev.nix to configuration.nix"
-        fi
+        sed -i '/^[[:space:]]*\.\/hardware-configuration\.nix/ a\    ./dev.nix' "$cfg_dir/configuration.nix"
+    fi
+
+    if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
+        err_exit "Failed to add dev.nix to configuration.nix"
     fi
 
     slog "Rebuilding system with flake..."
     if ! sudo nixos-rebuild switch --flake "$cfg_dir#$(hostname)"; then
         err_exit "nixos-rebuild failed"
-    fi
-
-    cd "$cfg_dir" || err_exit "Failed to change directory to $cfg_dir"
-
-    slog "Initializing git repository..."
-    if ! git init; then
-        err_exit "Failed to initialize git repository in $cfg_dir"
-    fi
-
-    slog "Adding all files to git..."
-    if ! git add .; then
-        err_exit "Failed to add files to git in $cfg_dir"
-    fi
-
-    slog "Committing changes..."
-    if ! git commit -m "Initial commit"; then
-        err_exit "Failed to commit changes in $cfg_dir"
     fi
 }
 
