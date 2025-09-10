@@ -324,7 +324,7 @@ nixos_mainstall() {
         err_exit "nixos-config already exists, skipping nixos installation"
     fi
 
-    sudo cp -r /etc/nixos ~/nixos-config
+    cp -r /etc/nixos ~/nixos-config
     curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/extras/nixos/vm/flake.nix -o ~/nixos-config/flake.nix
     curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/extras/nixos/vm/dev.nix -o ~/nixos-config/dev.nix
 
