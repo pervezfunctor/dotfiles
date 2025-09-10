@@ -4,26 +4,40 @@
   nixpkgs.config.allowUnfree = true;
 
   environment.systemPackages = with pkgs; [
+    bat
     curl
-    devenv
     devbox
+    devenv
     distrobox
     eza
+    file
     fzf
     gh
+    ghostty
     git
+    git-delta
+    htop
+    jq
+    just
     neovim
     nerd-fonts.jetbrains-mono
+    newt
     nixd
     nixfmt-rfc-style
+    p7zip
+    procs
     ptyxis
     ripgrep
     shellcheck
     shfmt
+    stow
+    tealdeer
+    tmux
     trash-cli
+    unzip
     vscode
     wget
-    unzip
+    yq
     zoxide
   ];
 

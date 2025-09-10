@@ -58,5 +58,8 @@
   "workbench.sideBar.location": "right",
   // "workbench.activityBar.location": "hidden",
   "window.menuBarVisibility": "toggle",
-  "update.showReleaseNotes": false
+  "update.showReleaseNotes": false,
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "nixd",
+  "nix.formatterPath": "nixfmt"
 }
