@@ -294,7 +294,7 @@ dev-nix_mainstall() {
 
 dev-work_check() {
     dev_check
-    cmd_check docker portainer
+    cmd_check docker
 }
 
 dev-work_mainstall() {

@@ -118,7 +118,7 @@ nix_groupstall() {
 }
 
 docker_groupstall() {
-    docker_binstall
+    docker_install
     docker_confstall
     portainer_install
 }

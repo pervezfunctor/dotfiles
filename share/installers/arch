@@ -207,7 +207,7 @@ vm_install() {
     slog "vm installation done!"
 }
 
-docker_binstall() {
+docker_install() {
     has_cmd docker && return 1
 
     slog "Installing docker"
