@@ -326,8 +326,6 @@ code # opens vscode from distrobox container
 
 </details>
 
-<details>
-<summary>Conventional Linux</summary>
 
 ## Conventional Linux
 
@@ -337,7 +335,6 @@ If you don't have a personal desktop, just buy a mini pc. You could get a decent
 
 If you are fine with a server that's capable of running docker, you could buy N100/N150 mini pc, which should be around [150$](https://www.amazon.com/GMKtec-mini-pc-desktop-computer-n150/dp/B0DN51KD9D). You would be surprised how much such a cheap machine can do.
 
-</details>
 
 <details>
 <summary>Fedora Workstation</summary>
