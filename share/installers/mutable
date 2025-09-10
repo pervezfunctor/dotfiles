@@ -361,6 +361,8 @@ nixos_mainstall() {
     fi
 
     dotfiles_install
+    vscode_confstall
+    touch ~/.zshrc
 }
 
 # kwin_script_install() {
