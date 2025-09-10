@@ -6,33 +6,49 @@ All the following commands are meant to be run on a freshly installed system. If
 
 ## TLDR
 
-### MacOS
+<details>
 
-Installs vscode, docker and shell tools.
+<summary>MacOS</summary>
 
-```bash
-curl https://pkgx.sh | sh
-pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- work
-```
+  ### MacOS
 
-### Linux
+  Installs vscode, docker and shell tools.
 
-Installs vscode, docker and shell tools.
+  ```bash
+  curl https://pkgx.sh | sh
+  pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- work
+  ```
+</details>
 
-```bash
-bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- work
-```
+<details>
+<summary>Linux</summary>
 
+  ### Linux
 
-### Windows
+  Installs vscode, docker and shell tools.
 
-Pick what you want to install by running the following command in powershell as **administrator**. Note that you might have to restart your system multiple times. Execute the same script again after reboot.
+  ```bash
+  bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- work
+  ```
+</details>
 
-```powershell
-iwr -useb https://is.gd/vefawu | iex
-```
+<details>
+<summary>Windows</summary>
+
+  ### Windows
+
+  Pick what you want to install by running the following command in powershell as **administrator**. Note that you might have to restart your system multiple times. Execute the same script again after reboot.
+
+  ```powershell
+  iwr -useb https://is.gd/vefawu | iex
+  ```
+</details>
+
 
 ## Introduction
+
+<details>
+<summary>Linux></summary>
 
 ### Linux
 
@@ -72,7 +88,10 @@ git add .
 git commit -m "Initial commit"
 chsh -s $(which zsh)
 ```
+</details>
 
+<details>
+<summary>Windows</summary>
 
 ### Windows
 
@@ -129,7 +148,10 @@ Following might work too.
 ```powershell
 & ([scriptblock]::Create((iwr -useb https://dub.sh/NDyiu7a).Content)) -Components wsl-nixos
 ```
+</details>
 
+<details>
+<summary>MacOS</summary>
 
 ### MACOS
 
@@ -153,6 +175,8 @@ ilmi vscode docker tmux nvim # pick any tools you want
 ```
 
 You could also use [nix-darwin](https://github.com/nix-darwin/nix-darwin) or [home-manager](https://github.com/nix-community/home-manager) instead.
+
+</details>
 
 
 ## Popular Linux Distributions
@@ -182,6 +206,8 @@ source ~/.ilm/share/shellrc
 
 ## Recommended Linux Distributions
 
+<details>
+<summary>Bluefin/Aurora</summary>
 
 ### Bluefin/Aurora
 
@@ -218,6 +244,11 @@ and then use the following in `~/.bashrc` and/or `~/.zshrc`.
 ```bash
 source ~/.ilm/share/shellrc
 ```
+
+</details>
+
+<details>
+<summary>NixOS</summary>
 
 ### Nixos
 
@@ -278,6 +309,10 @@ You should be able to use the following command to update your system
 sudo nixos-rebuild switch --flake ~/nixos-config#$(hostname)
 ```
 
+</details>
+
+<details>
+<summary>Fedora Atomic</summary>
 
 ### Fedora Atomic(Silverblue, Kinoite, Sway Atomic)
 
@@ -296,6 +331,10 @@ dboxe ilm # enter distrobox container
 code # opens vscode from distrobox container
 ```
 
+</details>
+
+<details>
+<summary>Conventional Linux</summary>
 
 ## Conventional Linux
 
@@ -305,6 +344,10 @@ If you don't have a personal desktop, just buy a mini pc. You could get a decent
 
 If you are fine with a server that's capable of running docker, you could buy N100/N150 mini pc, which should be around [150$](https://www.amazon.com/GMKtec-mini-pc-desktop-computer-n150/dp/B0DN51KD9D). You would be surprised how much such a cheap machine can do.
 
+</details>
+
+<details>
+<summary>Fedora Workstation</summary>
 
 ### Fedora Workstation(42 only)
 
@@ -321,6 +364,10 @@ sudo dnf update -y
 ```
 
 Reboot your system.
+</details>
+
+<details>
+<summary>Debian Trixie</summary>
 
 ### Debian Trixie
 
@@ -336,6 +383,11 @@ sudo apt update && sudo apt upgrade -y && sudo apt install curl -y
 
 Reboot your system.
 
+</details>
+
+<details>
+<summary>OpenSUSE Tumbleweed</summary>
+
 ### OpenSUSE Tumbleweed
 
 OpenSUSE Tumbleweed is a rolling release distribution. It has the latest kernel and supports almost all hardware that linux supports. Even though it has the latest software, it's very stable, more stable than Fedora. Tumbleweed also has more packages available than any other convention linux os(like arch without AUR).
@@ -349,6 +401,11 @@ sudo zypper refresh && sudo zypper update -y
 ```
 
 Reboot your system.
+
+</details>
+
+<details>
+<summary>Arch Linux</summary>
 
 ### Arch Linux
 
@@ -369,6 +426,7 @@ Reboot your system.
 
 *Note*. If you are comfortable with terminal, and know what you need exactly, then archlinux is the simplest installer you could use for linux. With almost everything else, you will need to figure out ways, how to install and configure things the way you want and it's usually can be really hard.
 
+</details>
 
 ### Common instructions
 
