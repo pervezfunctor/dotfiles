@@ -73,7 +73,7 @@ ilmg vscode docker shell vm # pick any tools you want
 Optionally, install `nix`.
 
 ```bash
-ilmg nix
+ilmi nix
 ```
 
 </details>
@@ -136,6 +136,7 @@ Following might work too.
 ```powershell
 & ([scriptblock]::Create((iwr -useb https://dub.sh/NDyiu7a).Content)) -Components wsl-nixos
 ```
+
 </details>
 
 <details>
@@ -247,56 +248,15 @@ source ~/.ilm/share/shellrc
 
 Install [nixos](https://channels.nixos.org/) using [graphical iso](https://channels.nixos.org/nixos-25.05/latest-nixos-graphical-x86_64-linux.iso).
 
-Edit `/etc/nixos/configuration.nix` with `sudoedit` and add the following.
-
-```nix
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-```
-
-Create a minimal flake.nix.
+Execute the following script only on a freshly installed system.
 
 ```bash
-sudo tee > /etc/nixos/flake.nix > /dev/null << EOF
-{
-  description = "NixOS flake configuration";
-
-  inputs = { nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05"; };
-
-  outputs = { nixpkgs, ... }:
-    let
-      system = "x86_64-linux";
-      pkgs = import nixpkgs { inherit system; };
-    in {
-      nixosConfigurations = {
-        "$(hostname)" = pkgs.lib.nixosSystem {
-          inherit system;
-          modules = [ ./configuration.nix ];
-        };
-      };
-    };
-}
-EOF
+bash -c "$(curl -sSL https://is.gd/egitif)" -- nixos
 ```
 
-Run the following command to apply configuration.
+Your nixos configuration will be stored in `~/.ilm/extras/nixos/config`. Add to git and push to github.
 
-```bash
-sudo nixos-rebuild switch --flake /etc/nixos#$(hostname)
-```
-
-Store your configuration files in a git repository.
-
-```bash
-cp -r /etc/nixos ~/nixos-config
-cd ~/nixos-config
-git init
-git add .
-git commit -m "initial commit"
-```
-
-Don't forget to push your configuration to github.
-
-You should be able to use the following command to update your system
+You should be able to use the following command to update your system.
 
 ```bash
 sudo nixos-rebuild switch --flake ~/nixos-config#$(hostname)

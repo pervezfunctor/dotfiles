@@ -319,6 +319,20 @@ dbox-docker-dev_mainstall() {
     has_cmd zsh && zsh_confstall
 }
 
+nixos_mainstall() {
+    if dir_exists ~/nixos-config; then
+        err_exit "nixos-config already exists, skipping nixos installation"
+    fi
+
+    sudo cp /etc/nixos ~/nixos-config
+    curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/extras/nixos/vm/flake.nix -o ~/nixos-config/flake.nix
+    curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/extras/nixos/vm/dev.nix -o ~/nixos-config/dev.nix
+
+    grep -q './dev.nix' ~/nixos-config/configuration.nix ||
+        sed -i '/imports = \[/,/];/ s|^\(\s*./hardware-configuration.nix.*\)$|\1\n    ./dev.nix|' ~/nixos-config/configuration.nix
+    sudo nixos-rebuild switch --flake ~/nixos-config#"$(hostname)"
+}
+
 # kwin_script_install() {
 #   local SCRIPT="$1"
 
