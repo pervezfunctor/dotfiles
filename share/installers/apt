@@ -278,8 +278,8 @@ terminal_binstall() {
     if has_cmd ghostty; then
         slog "ghostty installed"
     else
-        si kitty
-        cmd_check kitty || si alacritty
+        si alacritty
+        cmd_check alacritty || si kitty
     fi
 
     slog "terminal installation done!"
