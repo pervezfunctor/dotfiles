@@ -96,6 +96,16 @@ terminal_config_install() {
 
 terminal_install() {
     jetbrains-mono_install
+
+    has_cmd ghostty && return 1
+    has_cmd kitty && return 1
+    has_cmd alacritty && return 1
+    has_cmd wezterm && return 1
+
+    if has_cmd flatpak && flatpak list | grep -q wezterm; then
+        return 1
+    fi
+
     terminal_binstall
 }
 
