@@ -359,6 +359,8 @@ nixos_mainstall() {
     if ! sudo nixos-rebuild switch --flake "$cfg_dir#$(hostname)"; then
         err_exit "nixos-rebuild failed"
     fi
+
+    dotfiles_install
 }
 
 # kwin_script_install() {
