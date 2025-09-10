@@ -1,14 +1,13 @@
 { pkgs, ... }:
 
 {
-  imports = [
-    ./hardware-configuration.nix
-    ./dev.nix
-  ];
+  imports = [ ./hardware-configuration.nix ./dev.nix ];
 
   boot.loader.grub.enable = true;
   boot.loader.grub.device = "/dev/sda";
   boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  virtualisation.vmware.guest.enable = true;
 
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
@@ -48,11 +47,7 @@
   users.users.pervez = {
     isNormalUser = true;
     description = "Pervez Iqbal";
-    extraGroups = [
-      "networkmanager"
-      "wheel"
-      "docker"
-    ];
+    extraGroups = [ "networkmanager" "wheel" "docker" ];
     shell = pkgs.zsh;
   };
 

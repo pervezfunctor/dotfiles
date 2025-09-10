@@ -1,5 +1,4 @@
-
-{ pkgs, ...}: 
+{ pkgs, ... }:
 
 {
   nixpkgs.config.allowUnfree = true;
@@ -33,17 +32,13 @@
     EDITOR = "nvim";
   };
 
-  virtualisation.vmware.guest.enable = true;
   virtualisation.docker.enable = true;
 
   services.openssh.enable = true;
 
   nix = {
     settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
+      experimental-features = [ "nix-command" "flakes" ];
       auto-optimise-store = true;
     };
     gc = {
@@ -60,11 +55,9 @@
       autosuggestions.enable = true;
       syntaxHighlighting.enable = true;
       enableCompletion = true;
-      
-      shellAliases = {
-        update-os = "sudo nixos-rebuild switch --flake .#";
-      };
-      
+
+      shellAliases = { update-os = "sudo nixos-rebuild switch --flake .#"; };
+
       shellInit = ''
         if [[ -d "$HOME/.ilm" ]]; then
           source "$HOME/.ilm/share/utils"

@@ -320,17 +320,60 @@ dbox-docker-dev_mainstall() {
 }
 
 nixos_mainstall() {
-    if dir_exists ~/nixos-config; then
+    local cfg_dir=~/nixos-config
+    local flake_url="${ILM_BASE_URL}/extras/nixos/vm/flake.nix"
+    local dev_url="${ILM_BASE_URL}/extras/nixos/vm/dev.nix"
+
+    if [ -d "$cfg_dir" ]; then
         err_exit "nixos-config already exists, skipping nixos installation"
     fi
 
-    cp -r /etc/nixos ~/nixos-config
-    curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/extras/nixos/vm/flake.nix -o ~/nixos-config/flake.nix
-    curl https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/extras/nixos/vm/dev.nix -o ~/nixos-config/dev.nix
+    slog "Copying /etc/nixos to $cfg_dir..."
+    if ! cp -r /etc/nixos "$cfg_dir"; then
+        err_exit "Failed to copy /etc/nixos"
+    fi
 
-    grep -q './dev.nix' ~/nixos-config/configuration.nix ||
-        sed -i '/imports = \[/,/];/ s|^\(\s*./hardware-configuration.nix.*\)$|\1\n    ./dev.nix|' ~/nixos-config/configuration.nix
-    sudo nixos-rebuild switch --flake ~/nixos-config#"$(hostname)"
+    slog "Fetching flake.nix..."
+    if ! curl -fsSL "$flake_url" -o "$cfg_dir/flake.nix"; then
+        err_exit "Failed to download flake.nix"
+    fi
+
+    slog "Fetching dev.nix..."
+    if ! curl -fsSL "$dev_url" -o "$cfg_dir/dev.nix"; then
+        err_exit "Failed to download dev.nix"
+    fi
+
+    slog "Ensuring dev.nix is imported..."
+    if [[ ! -f "$cfg_dir/configuration.nix" ]]; then
+        err_exit "configuration.nix not found"
+    fi
+    if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
+        if ! sed -i '/^[[:space:]]*\.\/hardware-configuration\.nix/ a\    ./dev.nix' "$cfg_dir/configuration.nix"; then
+            err_exit "Failed to add dev.nix to configuration.nix"
+        fi
+    fi
+
+    slog "Rebuilding system with flake..."
+    if ! sudo nixos-rebuild switch --flake "$cfg_dir#$(hostname)"; then
+        err_exit "nixos-rebuild failed"
+    fi
+
+    cd "$cfg_dir" || err_exit "Failed to change directory to $cfg_dir"
+
+    slog "Initializing git repository..."
+    if ! git init; then
+        err_exit "Failed to initialize git repository in $cfg_dir"
+    fi
+
+    slog "Adding all files to git..."
+    if ! git add .; then
+        err_exit "Failed to add files to git in $cfg_dir"
+    fi
+
+    slog "Committing changes..."
+    if ! git commit -m "Initial commit"; then
+        err_exit "Failed to commit changes in $cfg_dir"
+    fi
 }
 
 # kwin_script_install() {
