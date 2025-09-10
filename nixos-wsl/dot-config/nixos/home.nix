@@ -34,6 +34,8 @@
     nushell
     ripgrep
     sd
+    shellcheck
+    shfmt
     starship
     stow
     tmux
