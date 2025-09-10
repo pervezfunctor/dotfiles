@@ -113,7 +113,7 @@ shell_groupstall() {
 
 nix_groupstall() {
     nix_install
-    new-hms
+    hms
     # shell_config_install
 }
 

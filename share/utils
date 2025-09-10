@@ -1032,26 +1032,8 @@ file_check() {
     done
 }
 
-hms-wsl() {
-    nix run home-manager -- switch --flake "$DOT_DIR"/nixos-wsl/dot-config/home-manager\#nixos --impure -b bak
-}
-
-shms() {
-    nix run home-manager -- switch --flake "$DOT_DIR"/extras/nixos/config\#"${USER}" --impure -b bak
-}
-
-new-hms() {
-    nix run home-manager -- switch --flake "$DOT_DIR"/extras/nixos/hms\#"${USER}" --impure -b bak
-}
-
-# @TODO: Need to replace this
 hms() {
-    if is_wsl; then
-        hms-wsl
-        return 0
-    fi
-
-    nix run home-manager -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#"${USER}" --impure -b bak
+    nix run home-manager -- switch --flake "$DOT_DIR"/extras/home-manager#"${USER}" --impure -b bak
 }
 
 SUDO_KEEPALIVE_PID=""

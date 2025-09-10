@@ -2,7 +2,7 @@
 let
   aliases = {
     hms =
-      "nix run home-manager -- switch --flake ~/.ilm/home-manager/dot-config/home-manager#${vars.username} --impure -b bak";
+      "nix run home-manager -- switch --flake ~/.ilm/extras/home-manager/#${vars.username} --impure -b bak";
   };
 
   initContent = ''
