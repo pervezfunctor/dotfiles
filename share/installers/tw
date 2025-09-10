@@ -206,10 +206,6 @@ vm_install() {
         qemu-hw-usb-redirect qemu-ovmf-x86_64 qemu-tools qemu-ui-gtk \
         qemu-ui-opengl libguestfs-tools libosinfo
 
-    sudo systemctl enable --now libvirtd
-
-    cockpit_install
-
     vm-ui_install
 
     slog "libvirt installation done!"

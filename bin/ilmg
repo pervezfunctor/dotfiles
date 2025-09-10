@@ -3,21 +3,17 @@
 # shellcheck disable=SC1090
 source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 
-# all options
-# "base" "min" "shell-slim" "shell" "dev" "vbox-dev" "vm" "prog" "all" "nix" "sway" "hyprland" "slimbox" "box" "fullbox" "dbox" "nixbox" "tw-wslbox" "nixos-wslbox" "wslbox" "wsl" "centos-wsl" "centos-fast" "generic-ct" "generic" "fedora-atomic-tbox" "ublue" "fedora-atomic" "fedora-layered" "dbox-docker-dev" "box-default" "box-default-atomic"
-
 INSTALL_OPTIONS=(
     "work"
     "shell-slim"
     "shell"
+    "vscode"
+    "terminal"
+    "docker"
     "vm"
     "dev"
-    "dev-full"
-    # "docker"
-    # "distrobox"
-    # "nix"
-    # "vm"
-    # "vscode"
+    "nix"
+    "dev-nix"
     # "hyprland"
     # "sway"
 )
@@ -28,17 +24,24 @@ help() {
     echo "  work            shell, vscode, docker and terminal app."
     echo "  shell-slim      essential shell packages."
     echo "  shell           shell, and terminal app."
+    echo "  vscode          vscode and extensions."
+    echo "  terminal        terminal app and nerd fonts."
     echo "  vm              libvirt, virt-manager and gnome-boxes."
     echo "  dev             shell-slim, vscode, libvirt, distrobox and terminal app."
-    echo "  dev-full        dev with nix and incus."
+    echo "  nix             nix installation with home-manager."
+    echo "  dev-nix         nix installation with home-manager and vscode."
     echo "  help            shows this help."
     echo ""
 }
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        "${1}_mainstall"
-        return 0
+        if fn_exists "${1}_groupstall"; then
+            "${1}_groupstall"
+            return 0
+        else
+            err_exit "No such installer: $1"
+        fi
     fi
 
     if ! has_cmd gum; then

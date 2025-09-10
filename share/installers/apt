@@ -181,7 +181,7 @@ essential_install() {
 }
 
 cli-slim_install() {
-    si zsh git starship ripgrep gh zoxide eza just
+    si zsh git starship ripgrep gh zoxide eza
     fzf_install
 }
 
@@ -204,7 +204,7 @@ cli_install() {
     cli-slim_install
 
     si tmux pkg-config urlview plocate sd gdu hyperfine fd-find ugrep tealdeer \
-        direnv yq shellcheck shfmt htop bat jq git-delta dialog gum
+        direnv yq shellcheck shfmt htop bat jq git-delta dialog gum just
 
     has_cmd tldr && tldr --update
 
@@ -313,10 +313,6 @@ vm_install() {
     si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils \
         virgl-server qemu-utils spice-client-gtk spice-vdagent \
         cloud-image-utils libguestfs-tools libosinfo-bin jq
-
-    libvirt_confstall
-
-    cockpit_install
 
     vm-ui_install
 

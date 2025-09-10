@@ -273,10 +273,16 @@ hyprland_install() {
     slog "hyprland installation done!"
 }
 
+dev_check() {
+    shell-slim_check
+    cmd_check code distrobox
+}
+
 dev_mainstall() {
-    shell_mainstall
+    shell-slim_mainstall
     vscode_groupstall
     distrobox_install
+    dev_check
 }
 
 dev-nix_mainstall() {
@@ -286,9 +292,20 @@ dev-nix_mainstall() {
     incus_install
 }
 
+dev-work_check() {
+    dev_check
+    cmd_check docker portainer
+}
+
 dev-work_mainstall() {
     dev_mainstall
-    docker_install
+    docker_groupstall
+    dev-work_check
+}
+
+dev-work-full_check() {
+    dev-work_check
+    cmd_check incus
 }
 
 dev-work-full_mainstall() {
@@ -310,7 +327,6 @@ dbox-docker-dev_mainstall() {
 
     has_cmd zsh && zsh_confstall
 }
-
 
 # kwin_script_install() {
 #   local SCRIPT="$1"

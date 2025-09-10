@@ -1,5 +1,7 @@
 #! /usr/bin/env sh
 
+[ -n "$ILM_EXPORTS_LOADED" ] && return 0
+
 has_cmd() {
     command -v "$1" >/dev/null 2>&1
 }
@@ -67,3 +69,5 @@ fi
 # has_cmd firefox && export BROWSER=firefox
 # has_cmd alacritty && export TERM=alacritty
 # has_cmd qt5ct && export QT_QPA_PLATFORMTHEME=qt5ct
+
+export ILM_EXPORTS_LOADED=1

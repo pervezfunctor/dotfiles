@@ -209,10 +209,6 @@ bash_config_exists() {
     grep -q '\.ilm/share/bashrc' ~/.bashrc 2>/dev/null || grep -q 'source ${DOT_DIR}/share/bashrc' ~/.bashrc 2>/dev/null
 }
 
-bash_config_check() {
-    bash_config_exists || warn "bash config is not setup correctly"
-}
-
 bash_confstall() {
     slog "Configuring bash"
 

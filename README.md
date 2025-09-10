@@ -58,36 +58,24 @@ Install essential packages(gcc, make, tar, git etc)
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)"
 ```
 
-Restart your terminal and use `ilmi` to install additional tools you want.
+Restart your terminal and use `ilmg` to install additional tools you want.
 
 ```bash
-ilmi
+ilmg
 ```
 
 You could also do the following
 
 ```bash
-ilmi vscode docker shell vm # pick any tools you want
+ilmg vscode docker shell vm # pick any tools you want
 ```
 
 Optionally, install `nix`.
 
 ```bash
-ilmi nix
+ilmg nix
 ```
 
-and setup home-manager.
-
-```bash
-cp ~/.ilm/home-manager/dot-config/home-manager ~/.config/home-manager
-cd ~/.config/home-manager
-git init
-git add .
-./hms
-git add .
-git commit -m "Initial commit"
-chsh -s $(which zsh)
-```
 </details>
 
 <details>
@@ -162,19 +150,24 @@ Install homebrew and a few essentials with the following command.
 bash -c "$(curl -sSL https://is.gd/egitif)"
 ```
 
-Restart terminal and use `ilmi` to install additional tools.
+Restart terminal and use `ilmg` to install additional tools.
 
 ```bash
-ilmi
+ilmg
 ```
 
 Or
 
 ```bash
-ilmi vscode docker tmux nvim # pick any tools you want
+ilmg vscode docker
 ```
 
-You could also use [nix-darwin](https://github.com/nix-darwin/nix-darwin) or [home-manager](https://github.com/nix-community/home-manager) instead.
+Simple tools could be installed with `ilmi`.
+
+```bash
+ilmi tmux nvim
+```
+
 
 </details>
 
@@ -447,16 +440,12 @@ Sometimes setting your shell to zsh during installation, might not work. In that
 chsh -s $(which zsh)
 ```
 
-Reopen your terminal and you should see a nice zsh prompt. You must install a nerd font like `Jetbrains Mono Nerd Font`. You could install it with the following command.
-
-```bash
-ilmi jetbrains-mono
-```
+Reopen your terminal and you should see a nice zsh prompt. You must install a nerd font like `Jetbrains Mono Nerd Font`.
 
 As a developer you most probably need vscode. Install it with the following command.
 
 ```bash
-ilmi vscode
+ilmg vscode
 ```
 
 This will install `vscode`. It should also install some essential extensions. Open `vscode` and you should see a nice theme with jetbrains mono font.
@@ -464,7 +453,7 @@ This will install `vscode`. It should also install some essential extensions. Op
 If you need docker, I would highly recommend you install it in a virtual machine. If you prefer to install it on your host OS, you could use the following command.
 
 ```bash
-ilmi docker
+ilmg docker
 ```
 
 Note that `podman` and `docker` don't work well together. `podman` is installed by default in Fedora.
@@ -474,7 +463,7 @@ You should be able to use `vscode` and `devcontainers` without any issues. *You 
 I would highly recommend you install `libvirt` and `virt-manager` for creating and managing virtual machines. You could use the following command.
 
 ```bash
-ilmi vm
+ilmg vm
 ```
 
 *Once you reboot*, you should be able to create and use virtual machines.
@@ -508,7 +497,7 @@ vm console dev
 If you are not using Fedora, you need a better terminal. You could easily install `ptyxis` with the following command.
 
 ```bash
-ilmi flathub ptyxis
+ilmi ptyxis
 ```
 
 Remember to pick `Jetbrains Mono Nerd Font` as the font. Pick a nice theme like `Catppuccin Mocha`, `Tokyo Night` or `Everforest`.
@@ -548,13 +537,13 @@ ilmb zsh tmux nvim emacs # pick any
 If you are in a distrobox or in a virtual machine with desktop environment, you could install terminal with
 
 ```bash
-ilmi terminal jetbrains-mono
+ilmg terminal
 ```
 
 You can install vscode with
 
 ```bash
-ilmi vscode jetbrains-mono
+ilmg vscode
 ```
 
 I will try to provide similar commands for immutable/nixos distributions in the future.

@@ -1,19 +1,5 @@
 #! /usr/bin/env bash
 
-shell-slim_groupstall() {
-    if has_cmd cli-slim_install; then
-        cli-slim_install
-    else
-        warn "cli-slim_install not available, skipping cli installation"
-    fi
-    shell-slim_install
-}
-
-shell_groupstall() {
-    has_cmd cli_install && cli_install
-    shell_install
-}
-
 groupstall() {
     "$1"_groupstall
 }
@@ -22,8 +8,98 @@ mainstall() {
     "$1"_mainstall
 }
 
-base-group_check() {
-    cmd_check curl wget git trash tree tar unzip
+base_config_install() {
+    bash_confstall
+}
+
+min_config_install() {
+    base_config_install
+}
+
+shell-slim_config_install() {
+    min_config_install
+    git_confstall
+    zsh_confstall
+}
+
+shell_config_install() {
+    shell-slim_config_install
+    tmux_confstall
+    nvim_confstall astro
+    yazi_confstall
+}
+
+shell-slim_groupstall() {
+    if has_cmd cli-slim_install; then
+        cli-slim_install
+    else
+        warn "cli-slim_install not available, skipping cli installation"
+    fi
+
+    shell-slim_install
+    shell-slim_config_install
+}
+
+terminal_config_install() {
+    alacritty_confstall
+    kitty_confstall
+    ghostty_confstall
+    wezterm_confstall
+}
+
+terminal_install() {
+    jetbrains-mono_install
+    terminal_bin_install
+}
+
+terminal_groupstall() {
+    is_desktop || return 0
+    terminal_install
+    terminal_config_install
+}
+
+shell_groupstall() {
+    if has_cmd cli_install; then
+        cli_install
+    else
+        warn "cli_install not available, skipping cli installation"
+    fi
+
+    shell_install
+    terminal_groupstall
+    shell_config_install
+}
+
+nix_groupstall() {
+    nix_install
+    new-hms
+    # shell_config_install
+}
+
+docker_groupstall() {
+    docker_bin_install
+    docker_confstall
+    portainer_install
+}
+
+vm_groupstall() {
+    if has_cmd vm_install; then
+        vm_install
+    else
+        warn "vm_install not available, skipping vm installation"
+        return 1
+    fi
+
+    cockpit_install
+    libvirt_confstall
+}
+
+bash_config_check() {
+    bash_config_exists || warn "bash config is not setup correctly"
+}
+
+base_check() {
+    cmd_check curl wget git trash stow tree tar unzip
     dir_check "$DOT_DIR"
     bash_config_check
 }
@@ -38,20 +114,15 @@ base_main_install() {
     dotfiles_install
 }
 
-base_config_install() {
-    has_cmd bash && bash_confstall
-    git_confstall
-}
-
 base_mainstall() {
     base_main_install
     base_config_install
-    base-group_check
+    base_check
 }
 
-min-group_check() {
-    base-group_check
-    cmd_check micro zip unar gcc make
+min_check() {
+    base_check
+    cmd_check micro zip unar gcc make whiptail
 }
 
 min_main_install() {
@@ -63,112 +134,79 @@ min_main_install() {
     fi
 }
 
-min_config_install() {
-    base_config_install
-}
-
 min_mainstall() {
     min_main_install
     min_config_install
-    min-group_check
+    min_check
 }
 
-shell-slim-group_check() {
-    min-group_check
-    cmd_check trash rg gum starship zoxide bat eza gh fzf
-    cmd_check carapace shellcheck delta
-}
-
-terminal_groupstall() {
-    is_desktop || return 0
-
-    jetbrains-mono_install
-    terminal_bin_install
-}
-
-shell-slim_groupstall() {
-    shell-slim_install
-    terminal_groupstall
-}
-
-shell_groupstall() {
-    shell_install
-    terminal_groupstall
+shell-slim_check() {
+    min_check
+    cmd_check zsh rg starship zoxide eza gh fzf
 }
 
 shell-slim_main_install() {
     min_main_install
-}
-
-shell-slim_config_install() {
-    min_config_install
-    zsh_confstall
-    tmux_confstall
+    shell-slim_install
 }
 
 shell-slim_mainstall() {
     shell-slim_main_install
     shell-slim_config_install
-    shell-slim-group_check
+    shell-slim_check
 }
 
 nix_mainstall() {
-    min_mainstall
-    has_cmd si && si zsh git
+    min_main_install
+    has_cmd si && si zsh
 
-    nix_install
-    new-hms
-    shell_confstall
+    nix_groupstall
 }
 
-shell-group_check() {
-    shell-slim-group_check
-    cmd_check gh nvim zsh tmux lazygit sd bat brew htop btm atuin gawk
-    cmd_check shellcheck shfmt ug tldr fd direnv jq yq
-    # cmd_check cheat choose curlie direnv doggo dotenv procs
-    # cmd_check duf dust gdu hyperfine just
+shell_check() {
+    shell-slim_check
+    cmd_check tmux nvim lazygit sd bat brew htop atuin gawk carapace direnv \
+        shellcheck shfmt ug tldr fd direnv jq yq gum bat delta just dialog \
+        btm yazi
 }
 
 shell_main_install() {
-    min_main_install
-    shell_groupstall
-}
-
-shell_config_install() {
-    shell-slim_config_install
-    has_cmd nvim && nvim_confstall astro
-    has_cmd yazi && yazi_confstall
+    shell-slim_main_install
+    shell_install
+    terminal_install
 }
 
 shell_mainstall() {
     shell_main_install
     shell_config_install
-    shell-group_check
+    terminal_config_install
+    shell_check
 }
 
-docker_groupstall() {
-    docker_bin_install
-    docker_confstall
-    portainer_install
+vm_main_install() {
+    min_mainstall
+    vm_groupstall
 }
 
-vbox-dev_mainstall() {
-    docker_install
-    shell_mainstall
-    npm_install
+vm_check() {
+    min_check
+    cmd_check virt-install virsh jq virt-cat qemu-img wget xorriso
+    is_desktop && cmd_check virt-viewer virt-manager
 }
 
 vm_mainstall() {
-    min_mainstall
-    if has_cmd vm_install; then
-        vm_install
-    else
-        warn "vm_install not available, skipping vm installation"
-    fi
+    vm_main_install
+    vm_check
+}
+
+work_check() {
+    shell-slim_check
+    cmd_check code docker portainer
 }
 
 work_mainstall() {
     shell-slim_mainstall
     vscode_groupstall
-    docker_install
+    docker_groupstall
+    work_check
 }

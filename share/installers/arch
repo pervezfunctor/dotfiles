@@ -167,7 +167,6 @@ terminal_bin_install() {
     slog "terminal installation done!"
 }
 
-
 vm-ui_install() {
     is_desktop || return 1
 
@@ -202,10 +201,6 @@ vm_install() {
     si iptables-nft libvirt qemu-base virt-install bridge-utils dnsmasq jq \
         edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs \
         guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat
-
-    libvirt_confstall
-
-    cockpit_install
 
     vm-ui_install
 
@@ -281,5 +276,5 @@ firewall_setup() {
 
 pm_install() {
     si nmap net-tools iproute2 lm_sensors stress-ng taliscale wireguard-tools \
-     smartmontools memtest86+ glmark2
+        smartmontools memtest86+ glmark2
 }

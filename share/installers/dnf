@@ -140,7 +140,6 @@ ui_install() {
     slog "ui installation done!"
 }
 
-
 essential_install() {
     slog "Installing essential packages"
 
@@ -177,7 +176,7 @@ cli_install() {
     cli-slim_install
 
     local base_pkgs=(neovim ShellCheck shfmt tmux htop pkg-config urlview
-    plocate luarocks tealdeer lsd jq fd-find git-delta procs just dialog gum)
+        plocate luarocks tealdeer lsd jq fd-find git-delta procs just dialog gum)
 
     local fedora_pkgs=()
     if is_fedora; then
@@ -337,10 +336,6 @@ vm_install() {
         qemu-user-binfmt qemu-user-static qemu-system-x86_64 jq \
         coreos-installer bootc pykickstart lorax xorriso squashfs-tools bsdtar \
         snapper btrfs-progs grub2 grub2-tools libguestfs-tools libosinfo
-
-    libvirt_confstall
-
-    cockpit_install
 
     vm-ui_install
 
