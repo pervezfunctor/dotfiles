@@ -147,6 +147,7 @@ snap_install() {
 }
 
 ui_install() {
+    is_distrobox && return 1
     is_desktop || return 1
 
     slog "Installing ui..."
@@ -175,7 +176,7 @@ essential_install() {
         libbz2-dev liblzma-dev libsecret-tools build-essential \
         command-not-found libfuse2 zstd gawk whiptail
 
-    ui_install
+    is_distrobox || ui_install
 
     slog "Essential packages installation done!"
 }
@@ -317,7 +318,7 @@ vm_install() {
         virgl-server qemu-utils spice-client-gtk spice-vdagent \
         cloud-image-utils libguestfs-tools libosinfo-bin jq
 
-    vm-ui_install
+    is_distrobox || vm-ui_install
 
     slog "libvirt installation done!"
 }

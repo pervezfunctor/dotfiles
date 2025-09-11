@@ -150,7 +150,7 @@ essential_install() {
     si zip p7zip unar gawk readline-devel sqlite-devel libffi-devel \
         bzip2-devel xz-devel micro libsecret fuse fuse-libs zstd newt
 
-    ui_install
+    is_distrobox || ui_install
 
     slog "Essential packages installation done!"
 }
@@ -337,7 +337,7 @@ vm_install() {
         coreos-installer bootc pykickstart lorax xorriso squashfs-tools bsdtar \
         snapper btrfs-progs grub2 grub2-tools libguestfs-tools libosinfo
 
-    vm-ui_install
+    is_distrobox || vm-ui_install
 
     slog "libvirt installation done!"
 }

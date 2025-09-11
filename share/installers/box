@@ -77,7 +77,7 @@ zsh_boxstall() {
 
 terminal_boxstall() {
     terminal_binstall
-    jetbrains_nerd_font_install
+    jetbrains-mono_install
 
     has_cmd ghostty && ghostty_confstall
     has_cmd kitty && kitty_confstall

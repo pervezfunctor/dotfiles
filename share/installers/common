@@ -110,6 +110,7 @@ pixi-shell-slim_install() {
     has_cmd trash || pi trash-cli
     has_cmd rg || pi ripgrep
     has_cmd gum || pi go-gum
+    has_cmd whiptail || pi newt
 
     pis starship zoxide gh fzf eza
 }

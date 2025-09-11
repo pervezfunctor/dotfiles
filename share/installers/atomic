@@ -581,7 +581,7 @@ nerd_font_install() {
     smd ~/.local/share/fonts
 
     cascadia_nerd_font_install
-    jetbrains_nerd_font_install
+    jetbrains-mono_install
     monaspace_nerd_font_install
 }
 
@@ -752,7 +752,7 @@ generic_mainstall() {
     fi
 
     if is_desktop; then
-        jetbrains_nerd_font_install
+        jetbrains-mono_install
         flathub_install
         ptyxis_install
     fi
@@ -866,7 +866,7 @@ fedora-atomic-tbox_mainstall() {
 
     slog "Fedora Atomic Host setup"
 
-    jetbrains_nerd_font_install
+    jetbrains-mono_install
 
     slog "Installing apps"
     apps-slim_install
@@ -885,7 +885,7 @@ fedora-atomic_mainstall() {
     slog "Fedora Atomic Host setup"
 
     generic-ct_mainstall
-    jetbrains_nerd_font_install
+    jetbrains-mono_install
     atomic_distrobox_install
 
     slog "Installing apps"

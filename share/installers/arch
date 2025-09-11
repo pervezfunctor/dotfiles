@@ -117,7 +117,7 @@ essential_install() {
     sudo pkgfile --update
     sudo pacman -Fy
 
-    ui_install
+    is_distrobox || ui_install
 
     slog "Essential packages installation done!"
 }
@@ -214,7 +214,7 @@ vm_install() {
         edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs \
         guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat
 
-    vm-ui_install
+    is_distrobox || vm-ui_install
 
     slog "vm installation done!"
 }
