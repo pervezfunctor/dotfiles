@@ -227,7 +227,7 @@ EOF
     has_cmd wl-copy || PKGS+=("wl-clipboard")
     has_cmd virsh || PKGS+=("libvirt")
     has_cmd virt-install || PKGS+=("virt-install")
-    has_cmd virt-cat || PKGS+=("libguestfs-tools guestfs-tools")
+    has_cmd virt-cat || PKGS+=("libguestfs-tools" "guestfs-tools")
     has_cmd bootc || PKGS+=("bootc")
     has_cmd core-os-installer || PKGS+=("coreos-installer")
 
