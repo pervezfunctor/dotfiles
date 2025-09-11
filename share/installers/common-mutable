@@ -159,7 +159,7 @@ vm_groupstall() {
 
 min_check() {
     base_check
-    cmd_check micro zip unar gcc make whiptail
+    cmd_check micro zip gcc make whiptail
 }
 
 min_mainstall() {

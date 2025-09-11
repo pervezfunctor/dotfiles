@@ -17,6 +17,16 @@ update_packages() {
     fi
 }
 
+aur() {
+    if has_cmd paru; then
+        paru -S --noconfirm "$@"
+    elif has_cmd yay; then
+        yay -S --noconfirm "$@"
+    else
+        err_exit "paru or yay not installed, cannot install $1"
+    fi
+}
+
 arch_packages() {
     update_packages
 
@@ -69,7 +79,9 @@ sys_python_install() {
 }
 
 paru_install() {
-    has_cmd paru && return 1
+    has_cmd paru && return 0
+    has_cmd yay && return 0
+
     slog "Installing paru"
 
     frm /tmp/paru
@@ -79,7 +91,7 @@ paru_install() {
 }
 
 snap_install() {
-    paru -Sy --noconfirm snapd
+    aur snapd
     sudo systemctl enable --now snapd
 }
 
@@ -99,11 +111,11 @@ essential_install() {
 
     pkgx_install
 
-    si unarchiver zip tmux pkg-config fuse2 p7zip readline \
-        sqlite libffi zlib xz pkgfile libxcrypt-compat libsecret gawk \
-        base-devel micro newt
+    si unarchiver zip tmux pkg-config fuse2 p7zip xz readline micro libnewt \
+        sqlite libffi zlib pkgfile libxcrypt-compat libsecret gawk base-devel
 
     sudo pkgfile --update
+    sudo pacman -Fy
 
     ui_install
 
@@ -152,7 +164,7 @@ cpp_install() {
 vscode_binstall() {
     slog "Installing vscode"
 
-    paru -Sy --noconfirm visual-studio-code-bin
+    aur visual-studio-code-bin
 
     slog "vscode installation done!"
 
