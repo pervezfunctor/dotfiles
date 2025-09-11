@@ -150,6 +150,7 @@ work_groupstall() {
     vscode_groupstall
     docker_groupstall
 }
+
 vm_groupstall() {
     if has_cmd vm_install; then
         vm_install
@@ -215,7 +216,7 @@ vm_mainstall() {
 
 work_check() {
     shell-slim_check
-    cmd_check code docker portainer
+    cmd_check code docker
 }
 
 work_mainstall() {
