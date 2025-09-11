@@ -7,7 +7,7 @@
 
   imports = [
     ./vm.nix
-    ./virt/virtualbox.nix
+    # ./virt/virtualbox.nix
     # ./virt/vmware.nix
   ];
 }

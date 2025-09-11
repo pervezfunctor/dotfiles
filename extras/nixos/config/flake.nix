@@ -39,12 +39,27 @@
       url = "github:microvm-nix/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, agenix, stylix, home-manager, quadlet-nix, disko
-    , nixos-generators, microvm,
-    # nixvim,
-    ... }@inputs:
+  outputs =
+    {
+      nixpkgs,
+      agenix,
+      stylix,
+      home-manager,
+      quadlet-nix,
+      disko,
+      nixos-generators,
+      microvm,
+      nixos-wsl,
+      # nixvim,
+      ...
+    }@inputs:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
@@ -80,7 +95,8 @@
         ./system/ssh.nix
       ];
 
-      mkNixosSystem = modules:
+      mkNixosSystem =
+        modules:
         nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = {
@@ -90,7 +106,8 @@
           modules = modules;
         };
 
-      mkWSLSystem = modules: homeNix:
+      mkWSLSystem =
+        modules: homeNix:
         nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = {
@@ -119,22 +136,21 @@
                 users.nixos = import homeNix;
               };
             }
-          ] ++ modules;
+          ]
+          ++ modules;
         };
 
       mkUiSystem = extraModules: mkNixosSystem (uiModules ++ extraModules);
 
-      mkBareSystem = extraModules:
-        mkNixosSystem
-        (uiModules ++ extraModules ++ [ agenix.nixosModules.default ]);
+      mkBareSystem =
+        extraModules: mkNixosSystem (uiModules ++ extraModules ++ [ agenix.nixosModules.default ]);
 
-      mkSimpleVmSystem = extraModules:
-        mkNixosSystem (extraModules ++ guestModules);
+      mkSimpleVmSystem = extraModules: mkNixosSystem (extraModules ++ guestModules);
 
-      mkVmSystem = extraModules:
-        mkNixosSystem (uiModules ++ extraModules ++ guestModules);
+      mkVmSystem = extraModules: mkNixosSystem (uiModules ++ extraModules ++ guestModules);
 
-      mkNixosGenerateCommon = extraModules: format:
+      mkNixosGenerateCommon =
+        extraModules: format:
         nixos-generators.nixosGenerate {
           inherit system;
           specialArgs = {
@@ -142,20 +158,18 @@
             inherit inputs;
             inherit vars;
           };
-          modules = extraModules
-            ++ guestModules; # ++ [ { virtualisation.diskImage.size = "20G"; } ];
+          modules = extraModules ++ guestModules; # ++ [ { virtualisation.diskImage.size = "20G"; } ];
           format = format;
         };
 
       mkNixosGenerateVm = extraModules: mkNixosGenerateCommon extraModules "vm";
 
-      mkNixosGenerateProxmox = extraModules:
-        mkNixosGenerateCommon extraModules
-        ++ [ ./system/proxmox.nix ] "proxmox";
+      mkNixosGenerateProxmox =
+        extraModules: mkNixosGenerateCommon extraModules ++ [ ./system/proxmox.nix ] "proxmox";
 
-      mkAnywhereSystem = extraModules:
-        mkBareSystem (extraModules ++ [ disko.nixosModules.disko ]);
-    in {
+      mkAnywhereSystem = extraModules: mkBareSystem (extraModules ++ [ disko.nixosModules.disko ]);
+    in
+    {
       homeConfigurations = {
         "nixos" = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
