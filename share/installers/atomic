@@ -892,6 +892,7 @@ fedora-atomic_mainstall() {
     apps-slim_install
     fpi org.gnu.emacs
 
+    python_install
     is_gnome && gnome_confstall
     is_sway && sway_confstall
 
