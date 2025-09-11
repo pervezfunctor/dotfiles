@@ -97,10 +97,25 @@ terminal_config_install() {
 terminal_install() {
     jetbrains-mono_install
 
-    has_cmd ghostty && return 1
-    has_cmd kitty && return 1
-    has_cmd alacritty && return 1
-    has_cmd wezterm && return 1
+    if has_cmd ghostty; then
+        slog "ghostty already installed"
+        return 0
+    fi
+
+    if has_cmd kitty; then
+        slog "kitty already installed"
+        return 0
+    fi
+
+    if has_cmd alacritty; then
+        slog "alacritty already installed"
+        return 0
+    fi
+
+    if has_cmd wezterm; then
+        slog "wezterm already installed"
+        return 0
+    fi
 
     if has_cmd flatpak && flatpak list | grep -q wezterm; then
         return 1

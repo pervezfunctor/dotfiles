@@ -12,7 +12,9 @@
     eza
     file
     fzf
+    gcc
     gh
+    gnumake
     ghostty
     git
     git-delta

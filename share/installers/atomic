@@ -157,98 +157,6 @@ ghostty_install() {
     ghostty_confstall
 }
 
-rpm-ostree-libvirt_groups_setup() {
-    local NEEDED_GROUPS=(libvirt kvm qemu)
-
-    slog "[*] Syncing /usr/lib/group → /etc/group if missing..."
-
-    for grp in "${NEEDED_GROUPS[@]}"; do
-        if grep -qE "^${grp}:" /etc/group; then
-            slog "[+] Group '$grp' already in /etc/group"
-        else
-            if grep -qE "^${grp}:" /usr/lib/group; then
-                slog "[*] Copying '$grp' from /usr/lib/group to /etc/group"
-                grep -E "^${grp}:" /usr/lib/group | sudo tee -a /etc/group >/dev/null
-            else
-                slog "[!] Group '$grp' not found in /usr/lib/group, creating new system group"
-                sudo groupadd -r "$grp"
-            fi
-        fi
-
-        # could use group_exists and add_user_to_group
-        if id -nG "$USER" | grep -qw "$grp"; then
-            slog "[+] User '$USER' already in group '$grp'"
-        else
-            slog "[*] Adding user '$USER' to group '$grp'"
-            sudo usermod -aG "$grp" "$USER"
-        fi
-    done
-
-    echo
-    slog "[✔] Done. Please log out/in for group membership to apply."
-
-    sudo systemctl enable --now libvirtd
-}
-
-rpm-ostree_install() {
-    has_cmd rpm-ostree || err_exit "This script is only for rpm-ostree based systems"
-
-    slog "Installing packages"
-
-    local PKGS=()
-
-    if is_desktop; then
-        if ! has_cmd code; then
-            cat <<EOF | sudo tee /etc/yum.repos.d/vscode.repo
-[code]
-name=Visual Studio Code
-baseurl=https://packages.microsoft.com/yumrepos/vscode
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.microsoft.com/keys/microsoft.asc
-EOF
-        fi
-
-        PKGS+=(
-            "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
-            "code"
-        )
-
-        has_cmd virt-manager || PKGS+=("virt-manager")
-    fi
-
-    has_cmd stow || PKGS+=("stow")
-    has_cmd zsh || PKGS+=("zsh")
-    has_cmd git || PKGS+=("git")
-    has_cmd tmux || PKGS+=("tmux")
-    has_cmd gcc || PKGS+=("gcc")
-    has_cmd make || PKGS+=("make")
-    has_cmd openssl || PKGS+=("openssl")
-    has_cmd wl-copy || PKGS+=("wl-clipboard")
-    has_cmd virsh || PKGS+=("libvirt")
-    has_cmd virt-install || PKGS+=("virt-install")
-    has_cmd virt-cat || PKGS+=("libguestfs-tools" "guestfs-tools")
-    has_cmd bootc || PKGS+=("bootc")
-    has_cmd core-os-installer || PKGS+=("coreos-installer")
-
-    if [[ ${#PKGS[@]} -eq 0 ]]; then
-        slog "No packages to install"
-        sleep 3
-        return 0
-    fi
-
-    if has_cmd stow || has_cmd zsh || has_cmd gcc || has_cmd make ||
-        has_cmd tmux || has_cmd virsh ||
-        has_cmd virt-install || has_cmd code; then
-        warn "This script is supposed to be run only once"
-    fi
-
-    slog "Installing packages ${PKGS[*]}"
-    sudo rpm-ostree install -y "${PKGS[@]}"
-
-    warn "Installing packages done! Note that you need to reboot for the changes to take effect."
-}
-
 atomic_distrobox_install() {
     has_cmd distrobox && return 0
 
@@ -288,57 +196,6 @@ cmake_install() {
     slog "cmake installation done!"
 
     cmd_check cmake
-}
-
-generic-ct_mainstall() {
-    has_cmd curl || has_cmd wget || err_exit "Install curl and run this script again."
-
-    pixi_install
-    pis git curl wget
-
-    pkgx_install
-
-    slog "Installing shell tools with pixi"
-    pixi-shell-slim_install
-
-    slog "Installing shell tools with pixi done!"
-
-    dotfiles_install
-
-    starship_install
-    bash_confstall
-}
-
-generic_mainstall() {
-    generic-ct_mainstall
-
-    has_cmd zsh && zsh_boxstall
-    has_cmd tmux && tmux_boxstall
-
-    if has_cmd podman || has_cmd docker; then
-        atomic_distrobox_install
-    else
-        fail "No container runtime(docker or podman) installed, skipping distrobox installation"
-    fi
-
-    if is_desktop; then
-        jetbrains_nerd_font_install
-        flathub_install
-        ptyxis_install
-    fi
-}
-
-rpm-ostree-post_install() {
-    zsh_confstall
-    tmux_confstall
-    vscode_confstall
-    python_install
-    rpm-ostree-libvirt_groups_setup
-}
-
-rpm-ostree_mainstall() {
-    rpm-ostree_install
-    generic_mainstall
 }
 
 gnome-extensions_install() {
@@ -436,78 +293,6 @@ gnome_confstall() {
     gnome-extensions_install
 
     slog "gnome config done!"
-}
-
-fedora-atomic-tbox_mainstall() {
-    is_std_atomic || err_exit "This script is only for Atomic Host"
-
-    slog "Fedora Atomic Host setup"
-
-    jetbrains_nerd_font_install
-
-    slog "Installing apps"
-    apps-slim_install
-
-    slog "Setting up default distrobox for development"
-
-    # shellcheck disable=SC2119
-    tbox_default
-
-    slog "Fedora Atomic Host With default toolbox setup done!"
-}
-
-fedora-atomic_mainstall() {
-    is_std_atomic || err_exit "This script is only for Atomic Host"
-
-    slog "Fedora Atomic Host setup"
-
-    generic-ct_mainstall
-    jetbrains_nerd_font_install
-    atomic_distrobox_install
-
-    slog "Installing apps"
-    apps-slim_install
-    fpi org.gnu.emacs
-
-    is_gnome && gnome_confstall
-    is_sway && sway_confstall
-
-    slog "Setting up default distrobox for development"
-
-    # shellcheck disable=SC2119
-    dbox_with_home
-
-    stowdf emacs-nano
-
-    slog "Fedora Atomic Host setup done!"
-}
-
-fedora-layered_mainstall() {
-    is_std_atomic || err_exit "This script is only for Atomic Host"
-
-    slog "Fedora Atomic Host setup"
-
-    pixi_install
-    pkgx_install
-
-    pis wget
-    pixi-shell-slim_install
-
-    dotfiles_install
-    bash_confstall
-    zsh_boxstall
-
-    jetbrains-mono_install
-    atomic_distrobox_install
-    vscode_confstall
-    # docker_confstall
-
-    apps-slim_install
-
-    is_gnome && gnome_confstall
-    is_sway && sway_confstall
-
-    slog "Fedora layered setup done! Reboot your system."
 }
 
 vscode_flatpak_install() {
@@ -933,4 +718,217 @@ ublue_mainstall() {
         is_aurora && ujust aurora-cli
         is_bazzite && ujust bazzite-cli
     fi
+}
+
+generic-ct_mainstall() {
+    has_cmd curl || has_cmd wget || err_exit "Install curl and run this script again."
+
+    pixi_install
+    pis git curl wget
+
+    pkgx_install
+
+    slog "Installing shell tools with pixi"
+    pixi-shell-slim_install
+
+    slog "Installing shell tools with pixi done!"
+
+    dotfiles_install
+
+    starship_install
+    bash_confstall
+}
+
+generic_mainstall() {
+    generic-ct_mainstall
+
+    has_cmd zsh && zsh_boxstall
+    has_cmd tmux && tmux_boxstall
+
+    if has_cmd podman || has_cmd docker; then
+        atomic_distrobox_install
+    else
+        fail "No container runtime(docker or podman) installed, skipping distrobox installation"
+    fi
+
+    if is_desktop; then
+        jetbrains_nerd_font_install
+        flathub_install
+        ptyxis_install
+    fi
+}
+
+rpm-ostree-libvirt_groups_setup() {
+    local NEEDED_GROUPS=(libvirt kvm qemu)
+
+    slog "[*] Syncing /usr/lib/group → /etc/group if missing..."
+
+    for grp in "${NEEDED_GROUPS[@]}"; do
+        if grep -qE "^${grp}:" /etc/group; then
+            slog "[+] Group '$grp' already in /etc/group"
+        else
+            if grep -qE "^${grp}:" /usr/lib/group; then
+                slog "[*] Copying '$grp' from /usr/lib/group to /etc/group"
+                grep -E "^${grp}:" /usr/lib/group | sudo tee -a /etc/group >/dev/null
+            else
+                slog "[!] Group '$grp' not found in /usr/lib/group, creating new system group"
+                sudo groupadd -r "$grp"
+            fi
+        fi
+
+        # could use group_exists and add_user_to_group
+        if id -nG "$USER" | grep -qw "$grp"; then
+            slog "[+] User '$USER' already in group '$grp'"
+        else
+            slog "[*] Adding user '$USER' to group '$grp'"
+            sudo usermod -aG "$grp" "$USER"
+        fi
+    done
+
+    echo
+    slog "[✔] Done. Please log out/in for group membership to apply."
+
+    sudo systemctl enable --now libvirtd
+}
+
+rpm-ostree_install() {
+    has_cmd rpm-ostree || err_exit "This script is only for rpm-ostree based systems"
+
+    slog "Installing packages"
+
+    local PKGS=()
+
+    if is_desktop; then
+        if ! has_cmd code; then
+            cat <<EOF | sudo tee /etc/yum.repos.d/vscode.repo
+[code]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+EOF
+        fi
+
+        PKGS+=(
+            "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
+            "code"
+        )
+
+        has_cmd virt-manager || PKGS+=("virt-manager")
+    fi
+
+    has_cmd stow || PKGS+=("stow")
+    has_cmd zsh || PKGS+=("zsh")
+    has_cmd git || PKGS+=("git")
+    has_cmd tmux || PKGS+=("tmux")
+    has_cmd gcc || PKGS+=("gcc")
+    has_cmd make || PKGS+=("make")
+    has_cmd openssl || PKGS+=("openssl")
+    has_cmd wl-copy || PKGS+=("wl-clipboard")
+    has_cmd virsh || PKGS+=("libvirt")
+    has_cmd virt-install || PKGS+=("virt-install")
+    has_cmd virt-cat || PKGS+=("libguestfs-tools" "guestfs-tools")
+    has_cmd bootc || PKGS+=("bootc")
+    has_cmd core-os-installer || PKGS+=("coreos-installer")
+
+    if [[ ${#PKGS[@]} -eq 0 ]]; then
+        slog "No packages to install"
+        sleep 3
+        return 0
+    fi
+
+    if has_cmd stow || has_cmd zsh || has_cmd gcc || has_cmd make ||
+        has_cmd tmux || has_cmd virsh ||
+        has_cmd virt-install || has_cmd code; then
+        warn "This script is supposed to be run only once"
+    fi
+
+    slog "Installing packages ${PKGS[*]}"
+    sudo rpm-ostree install -y "${PKGS[@]}"
+
+    warn "Installing packages done! Note that you need to reboot for the changes to take effect."
+}
+
+rpm-ostree-post_install() {
+    vscode_confstall
+    python_install
+    rpm-ostree-libvirt_groups_setup
+}
+
+rpm-ostree_mainstall() {
+    rpm-ostree_install
+    generic_mainstall
+}
+
+fedora-atomic-tbox_mainstall() {
+    is_std_atomic || err_exit "This script is only for Atomic Host"
+
+    slog "Fedora Atomic Host setup"
+
+    jetbrains_nerd_font_install
+
+    slog "Installing apps"
+    apps-slim_install
+
+    slog "Setting up default distrobox for development"
+
+    # shellcheck disable=SC2119
+    tbox_default
+
+    slog "Fedora Atomic Host With default toolbox setup done!"
+}
+
+fedora-atomic_mainstall() {
+    is_std_atomic || err_exit "This script is only for Atomic Host"
+
+    slog "Fedora Atomic Host setup"
+
+    generic-ct_mainstall
+    jetbrains_nerd_font_install
+    atomic_distrobox_install
+
+    slog "Installing apps"
+    apps-slim_install
+    fpi org.gnu.emacs
+
+    is_gnome && gnome_confstall
+    is_sway && sway_confstall
+
+    slog "Setting up default distrobox for development"
+
+    # shellcheck disable=SC2119
+    dbox_with_home
+
+    stowdf emacs-nano
+
+    slog "Fedora Atomic Host setup done!"
+}
+
+fedora-layered_mainstall() {
+    is_std_atomic || err_exit "This script is only for Atomic Host"
+
+    slog "Fedora Atomic Host setup"
+
+    pixi_install
+    pkgx_install
+
+    pis wget
+    pixi-shell-slim_install
+
+    dotfiles_install
+    bash_confstall
+    zsh_boxstall
+
+    jetbrains-mono_install
+    atomic_distrobox_install
+    vscode_confstall
+    # docker_confstall
+
+    apps-slim_install
+
+    is_gnome && gnome_confstall
+    is_sway && sway_confstall
+
+    slog "Fedora layered setup done! Reboot your system."
 }
