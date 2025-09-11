@@ -145,6 +145,11 @@ docker_groupstall() {
     portainer_install
 }
 
+work_groupstall() {
+    shell-slim_groupstall
+    vscode_groupstall
+    docker_groupstall
+}
 vm_groupstall() {
     if has_cmd vm_install; then
         vm_install
@@ -214,8 +219,7 @@ work_check() {
 }
 
 work_mainstall() {
-    shell-slim_mainstall
-    vscode_groupstall
-    docker_groupstall
+    min_binstall
+    work_groupstall
     work_check
 }
