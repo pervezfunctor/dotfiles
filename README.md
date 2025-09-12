@@ -265,13 +265,13 @@ sudo nixos-rebuild switch --flake ~/nixos-config#$(hostname)
 
 ### Fedora Atomic(Silverblue, Kinoite, Sway Atomic)
 
-If you don't want to use rpm-ostree, then use distrobox for everything instead. I have multiple distrobox containers for different purposes. But they are brittle. Not everything works perfectly. Anyway, you could use the following command for such a setup.
+If you don't want to use rpm-ostree, then use distrobox for everything instead. I have multiple distrobox containers for different purposes. But they are a bit brittle.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif)" -- fedora-atomic
 ```
 
-Above command should install some basic tools on the host, but developer tools(`vscode`, `docker` etc.) are inside a distrobox container.
+Above command should install some basic tools on the host, but developer tools(`vscode`, `docker` etc.) are inside a distrobox container. This will take a long time to install.
 
 I will add more instructions to use distrobox and toolbox in the future. For now, you could use the following command to use `vscode` from distrobox container.
 

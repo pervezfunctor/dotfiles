@@ -18,8 +18,6 @@ let
 
 in {
   programs = {
-    home-manager.enable = true;
-
     eza.enable = true;
     fzf.enable = true;
     zoxide.enable = true;
