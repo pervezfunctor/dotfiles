@@ -657,16 +657,6 @@ rofi_confstall() {
     slog "rofi config done!"
 }
 
-box-default_mainstall() {
-    shell_mainstall
-    vscode_groupstall
-    jetbrains-mono_install
-
-    si firefox gnome-keyring wl-clipboard kitty libsecret
-    gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
-    systemctl --user enable --now dbus
-}
-
 sway-full_confstall() {
     sway-waybar_confstall
     foot_confstall
@@ -874,7 +864,7 @@ fedora-atomic-tbox_mainstall() {
     slog "Setting up default distrobox for development"
 
     # shellcheck disable=SC2119
-    tbox_default
+    tbox-dev
 
     slog "Fedora Atomic Host With default toolbox setup done!"
 }
@@ -899,7 +889,7 @@ fedora-atomic_mainstall() {
     slog "Setting up default distrobox for development"
 
     # shellcheck disable=SC2119
-    dbox_with_home
+    dbox-dev
 
     stowdf emacs-nano
 

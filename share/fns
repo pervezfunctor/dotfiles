@@ -911,22 +911,31 @@ syslogs() {
     sudo journalctl -b -p 3 -xn
 }
 
-default_dbox_exports() {
-    distrobox-export --bin "$(which stow)"
-    distrobox-export --bin "$(which wl-copy)"
-    distrobox-export --bin "$(which wl-paste)"
-    distrobox-export --bin "$(which code)"
-    distrobox-export --app "Visual Studio Code"
-    distrobox-export --app "kitty"
+dbox-dev_mainstall() {
+    shell-slim_mainstall
+    vscode_groupstall
+
+    si firefox gnome-keyring wl-clipboard libsecret
+    gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+    systemctl --user enable --now dbus
 }
 
-box-default-atomic_mainstall() {
-    box-default_mainstall
-    default_dbox_exports
+dbox_dev_exports() {
+    distrobox-export --bin "$(which stow)"
+    distrobox-export --bin "$(which code)"
+    distrobox-export --app "Visual Studio Code"
+    # distrobox-export --bin "$(which wl-copy)"
+    # distrobox-export --bin "$(which wl-paste)"
+    # distrobox-export --app "kitty"
+}
+
+dbox-dev-atomic_mainstall() {
+    dbox-dev_mainstall
+    dbox_dev_exports
 }
 
 # shellcheck disable=SC2120
-tbox_group() {
+tbox-group() {
     has_cmd toolbox || return 0
 
     toolbox --assumeyes create
@@ -935,22 +944,21 @@ tbox_group() {
     toolbox run bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$group"
 }
 
-tbox_default() {
-    tbox_group box-default-atomic
+tbox-dev() {
+    tbox-group dbox-dev-atomic
 }
 
-dbox_default() {
+dbox-dev-default() {
     has_cmd distrobox || return
 
     slog "Creating default distrobox"
     distrobox create --yes
-    # distrobox enter -- env -u PATH bash -ic "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
-    distrobox enter -nw --clean-path -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
+    distrobox enter -nw --clean-path -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic
     slog "Default distrobox created!"
 }
 
 # shellcheck disable=SC2120
-dbox_with_home() {
+dbox-dev() {
     if ! has_cmd distrobox; then
         fail "distrobox not installed, skipping distrobox creation"
         return 1
@@ -965,6 +973,6 @@ dbox_with_home() {
     distrobox list | grep -q "^${osname}$" && return
 
     "dbox-$os" "$osname"
-    distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- box-default-atomic
+    distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic
     slog "distrobox ${osname} created!"
 }
