@@ -8,19 +8,23 @@
     atuin
     bottom
     broot
+    carapace
     cheat
     choose
     curlie
+    delta
     dog
     duf
     dust
     dysk
+    fd
     gdu
     htop
     hyperfine
     jq
     just
     lazydocker
+    lazygit
     lsd
     neovim
     nushell
@@ -29,7 +33,9 @@
     shellcheck
     shfmt
     stress-ng
+    tealdeer
     xh
+    yazi
     yq
   ];
 }

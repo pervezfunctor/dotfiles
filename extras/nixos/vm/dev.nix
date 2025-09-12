@@ -6,18 +6,20 @@
   environment.systemPackages = with pkgs; [
     bat
     curl
+    delta
     devbox
     devenv
     distrobox
     eza
     file
+    fd
     fzf
     gcc
     gh
     gnumake
     ghostty
     git
-    git-delta
+    delta
     htop
     jq
     just
