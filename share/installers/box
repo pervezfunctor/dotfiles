@@ -90,15 +90,6 @@ terminal_boxstall() {
     fi
 }
 
-dbox_nix_setup() {
-    if ! has_cmd distrobox; then
-        warn "distrobox not installed, skipping distrobox creation"
-        return 1
-    fi
-
-    dbox_nix
-}
-
 slimbox_base() {
     cd "$HOME" || warn "could not cd to $HOME"
 
@@ -122,25 +113,6 @@ dbox_base() {
     [[ "$HOME" == *"boxes"* ]] || err_exit "This script is only for distrobox containers with isolated home directory"
 
     box_base "$1"
-}
-
-nixbox_base() {
-    is_wsl && err_exit "This script is not for wsl. Use nixos-wsl instead."
-
-    has_cmd curl || si curl
-
-    nix_install
-    # shellcheck disable=SC1091
-    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-
-    if has_cmd git; then
-        clone-update https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR"
-    else
-        nix run --extra-experimental-features 'nix-command flakes' nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR"
-    fi
-
-    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#stow -- -d "$DOT_DIR" -t "$HOME" --dotfiles -R home-manager
-    nix run --extra-experimental-features 'nix-command flakes' home-manager -- switch --flake "$DOT_DIR"/nixos-wsl/dot-config/home-manager\#nixos --impure -b bak
 }
 
 get_boxos() {
@@ -182,10 +154,6 @@ dbox_mainstall() {
     dbox_base "$(get_boxos)"
 }
 
-nixbox_mainstall() {
-    nixbox_base
-}
-
 tw-wslbox_mainstall() {
     is_tw || err_exit "This script is only for openSUSE Tumbleweed"
 
@@ -193,19 +161,11 @@ tw-wslbox_mainstall() {
     wslbox_base tw
 }
 
-nixos-wslbox_mainstall() {
-    is_wsl || err_exit "This script is only for NixOS WSL"
-
-    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR"
-    nix run --extra-experimental-features 'nix-command flakes' nixpkgs#stow -- -d "$DOT_DIR" -t "$HOME" --dotfiles -R nixos-wsl nvim
-    nix run --extra-experimental-features 'nix-command flakes' home-manager -- switch --impure -b bak
-}
-
 wslbox_mainstall() {
     if is_tw; then
         tw-wslbox_mainstall
-    elif is_nixos; then
-        nixos-wslbox_mainstall
+    # elif is_nixos; then
+    #     nixos-wslbox_mainstall
     else
         box_base "$(get_boxos)"
     fi

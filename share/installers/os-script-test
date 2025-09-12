@@ -98,6 +98,4 @@ cmd_check wslbox_mainstall
 cmd_check wsl_mainstall
 cmd_check wsl_mainstall
 cmd_check centos-wsl_mainstall
-cmd_check nixbox_mainstall
-cmd_check nixos-wslbox_mainstall
 cmd_check fullbox_mainstall

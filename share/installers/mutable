@@ -393,29 +393,6 @@ nixos_mainstall() {
 #   kwin_script_install "krohnkite.kwinscript"
 # }
 
-# home_manager_install() {
-#   has_cmd home-manager && return 0
-
-#   slog "Setting up home-manager"
-
-#   if ! dir_exists "$DOT_DIR"; then
-#     warn "could not clone dotfiles respository to $DOT_DIR, Quitting"
-#     return 1
-#   fi
-
-#   nix run home-manager --extra-experimental-features 'nix-command flakes' -- switch --flake "$DOT_DIR"/home-manager/dot-config/home-manager\#ilm --impure -b bak
-
-#   if file_exists /etc/nix/nix.conf; then
-#     if ! grep -q nix-command flakes /etc/nix/nix.conf 2>/dev/null; then
-#       slog "enabling flakes in /etc/nix/nix.conf"
-#       echo "extra-experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
-#     fi
-#   elif ! grep -q nix-command flakes "$XDG_CONFIG_HOME/nix/nix.conf" 2>/dev/null; then
-#     slog "enabling flakes in $XDG_CONFIG_HOME/nix/nix.conf"
-#     echo "extra-experimental-features = nix-command flakes" >>"$XDG_CONFIG_HOME/nix/nix.conf"
-#   fi
-# }
-
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-hotkeys.sh
 gnome_keybindings_install() {
     # Make it easy to resize undecorated windows

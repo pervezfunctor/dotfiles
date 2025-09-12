@@ -1,0 +1,195 @@
+#!/bin/bash
+
+# Reusable utility functions for file operations
+
+# create_backup - Create a timestamped backup of a file
+# create_backup - Create a timestamped backup of a file
+# Usage: create_backup <file_path>
+# Returns: backup file path on success (stdout), 1 on error
+create_backup() {
+  local file_path="$1"
+
+  if [[ ! -f "$file_path" ]]; then
+    echo "Error: File '$file_path' does not exist" >&2
+    return 1
+  fi
+
+  local backup_file
+  backup_file="${file_path}.backup.$(date +%s)"
+  if ! cp "$file_path" "$backup_file"; then
+    echo "Error: Failed to create backup at '$backup_file'" >&2
+    return 1
+  fi
+
+  echo "$backup_file"
+  return 0
+}
+
+cleanup_backup() {
+  local backup_file="$1"
+  if [[ -n "$backup_file" && -f "$backup_file" ]]; then
+    rm -f "$backup_file"
+  fi
+}
+
+validate_file_access() {
+  local file_path="$1"
+
+  if [[ ! -f "$file_path" ]]; then
+    echo "Error: Configuration file '$file_path' not found" >&2
+    return 1
+  fi
+
+  if [[ ! -w "$file_path" ]]; then
+    echo "Error: Configuration file '$file_path' is not writable" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+check_import_exists() {
+  local file_path="$1"
+  local import_statement="$2"
+
+  if grep -qF "$import_statement" "$file_path"; then
+    echo "Import '$import_statement' already exists in '$file_path'"
+    return 0
+  fi
+
+  return 1
+}
+
+validate_imports_block() {
+  local file_path="$1"
+
+  if ! grep -q '^\s*imports\s*=\s*\[' "$file_path"; then
+    echo "Error: No imports block found in '$file_path'" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+add_import_to_block() {
+  local file_path="$1"
+  local import_statement="$2"
+  local temp_file
+
+  temp_file=$(mktemp) || {
+    echo "Error: Failed to create temporary file" >&2
+    return 1
+  }
+
+  awk -v import="$import_statement" '
+        /^[[:space:]]*imports[[:space:]]*=[[:space:]]*\[/ {
+            print;
+            print "    " import;
+            next
+        }
+        { print }
+    ' "$file_path" >"$temp_file"
+
+  if ! validate_modification "$temp_file" "$import_statement"; then
+    rm -f "$temp_file"
+    return 1
+  fi
+
+  if ! mv "$temp_file" "$file_path"; then
+    echo "Error: Failed to apply changes" >&2
+    rm -f "$temp_file"
+    return 1
+  fi
+
+  return 0
+}
+
+validate_modification() {
+  local file_path="$1"
+  local import_statement="$2"
+
+  if [[ ! -s "$file_path" ]] || ! grep -qF "$import_statement" "$file_path"; then
+    echo "Error: Import was not properly added" >&2
+    return 1
+  fi
+}
+
+replace_nix_imports() {
+  local config_file="$1"
+  local import_to_add="$2"
+  local backup_file=""
+
+  if [[ $# -ne 2 ]]; then
+    echo "Usage: replace_nix_imports <config_file> <import_to_add>" >&2
+    return 1
+  fi
+
+  if check_import_exists "$config_file" "$import_to_add"; then
+    return 0
+  fi
+
+  if ! validate_file_access "$config_file"; then
+    return 1
+  fi
+
+  if ! validate_imports_block "$config_file"; then
+    return 1
+  fi
+
+  if ! backup_file=$(create_backup "$config_file"); then
+    return 1
+  fi
+
+  if ! add_import_to_block "$config_file" "$import_to_add"; then
+    echo "Error: Failed to add import. Restoring backup." >&2
+    restore_backup "$config_file" "$backup_file"
+    return 1
+  fi
+
+  echo "Successfully added '$import_to_add' to '$config_file'"
+  cleanup_backup "$backup_file"
+  return 0
+}
+
+# Example usage and test function
+test_replace_nix_imports() {
+  echo "Testing replace_nix_imports function..."
+
+  # Create a test configuration file
+  local test_file
+  test_file=$(mktemp)
+  cat >"$test_file" <<'EOF'
+{ config, pkgs, ... }:
+
+{
+  imports = [
+    ./hardware-configuration.nix
+  ];
+
+  # System configuration here
+  boot.loader.systemd-boot.enable = true;
+}
+EOF
+
+  echo "Original file:"
+  cat "$test_file"
+  echo -e "\n---\n"
+
+  # Test the function
+  if replace_nix_imports "$test_file" "./dev.nix"; then
+    echo "Modified file:"
+    cat "$test_file"
+  else
+    echo "Function failed!"
+  fi
+
+  # Test adding duplicate (should be idempotent)
+  echo -e "\n--- Testing duplicate addition ---\n"
+  replace_nix_imports "$test_file" "./dev.nix"
+
+  # Cleanup
+  rm -f "$test_file" "$test_file.backup".*
+}
+
+# Uncomment the line below to run tests
+# test_replace_nix_imports
