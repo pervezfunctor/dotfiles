@@ -1404,8 +1404,10 @@ environs() {
 
 common-installer() {
     while [[ "$#" -gt 0 ]]; do
-        if [[ "$1" == @* ]] && fn_exists "${1:1}_mainstall"; then
-            "${1:1}_mainstall"
+        if [[ "$1" == @* ]] && fn_exists "${1:1}_groupstall"; then
+            "${1:1}_groupstall"
+        elif [[ "$1" == @@* ]] && fn_exists "${1:2}_mainstall"; then
+            "${1:2}_mainstall"
         elif fn_exists "${1}_install"; then
             "${1}_install"
         elif fn_exists "${1}_boxstall"; then
@@ -1414,6 +1416,8 @@ common-installer() {
             "${1}_confstall"
         elif fn_exists "${1}_mainstall"; then
             "${1}_mainstall"
+        elif fn_exists "${1}_binstall"; then
+            "${1}_binstall"
         elif fn_exists "${1}"; then
             "${1}"
         else

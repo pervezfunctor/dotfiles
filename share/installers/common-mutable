@@ -162,7 +162,7 @@ nix_check() {
 
 nix_mainstall() {
     min_mainstall
-    has_cmd si && si zsh
+    has_cmd si && (has_cmd zsh || si zsh)
     nix_groupstall
     nix_check
 }

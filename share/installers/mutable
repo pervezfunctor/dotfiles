@@ -282,7 +282,6 @@ dev-nix_mainstall() {
     nix_mainstall
     vscode_groupstall
     jetbrains-mono_install
-    incus_install
 }
 
 dev-work_check() {
