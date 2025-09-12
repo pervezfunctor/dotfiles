@@ -34,7 +34,10 @@ main() {
     fi
     common-installer "$@"
 
-    if ! is_ublue && has_cmd zsh && [ "$(default_shell)" != "zsh" ]; then
+    if ! is_ublue &&
+        ! is_distrobox &&
+        has_cmd zsh &&
+        [ "$(default_shell)" != "zsh" ]; then
         set_zsh_as_default
     fi
 }

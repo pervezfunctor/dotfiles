@@ -1033,7 +1033,16 @@ file_check() {
 }
 
 hms() {
-    nix run home-manager -- switch --flake "$DOT_DIR"/extras/home-manager#"${USER}" --impure -b bak
+    local hms_dir
+    if dir_exists "$DOT_DIR/extras/home-manager"; then
+        hms_dir="$DOT_DIR/extras/home-manager"
+    elif dir_exists ~/home-manager-config; then
+        hms_dir=~/home-manager-config
+    else
+        err_exit "home-manager-config not found, cannot run hms"
+    fi
+
+    nix run home-manager -- switch --flake "$hms_dir"#"${USER}" --impure -b bak
 }
 
 SUDO_KEEPALIVE_PID=""
@@ -1107,7 +1116,9 @@ check_sudo_askpass() {
     fi
 }
 
-nix_dotfiles() {
+nix_dotfiles_install() {
+    dir_exists "$DOT_DIR" && return 0
+
     nix run nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 }
 
@@ -1133,6 +1144,7 @@ pkgx_install() {
 
 dotfiles_install() {
     if ! has_cmd git; then
+        warn "Using pkgx to install git for dotfiles"
         pkgx_install
         has_cmd pkgx && eval "$(pkgx +git)"
     fi
