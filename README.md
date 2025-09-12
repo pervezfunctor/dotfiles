@@ -70,11 +70,6 @@ You could also do the following
 ilmg vscode docker shell vm # pick any tools you want
 ```
 
-Optionally, install `nix`.
-
-```bash
-ilmi nix
-```
 
 </details>
 
