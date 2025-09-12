@@ -5,8 +5,8 @@
   home.homeDirectory = vars.homeDirectory;
 
   imports = [
-    ./packages.nix
-    ./programs.nix
+    ./core.nix
+    # ./programs.nix
   ];
 
   home.stateVersion = "25.11";
