@@ -278,6 +278,7 @@ dbox-ublue-all() {
     --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" \
     --home "$HOME"/.boxes/ubuntu-ublue \
     --name ubuntu-ublue
+
   distrobox create \
     --hostname fedora-ublue \
     --yes \
@@ -286,6 +287,7 @@ dbox-ublue-all() {
     --additional-packages "systemd" \
     --home "$HOME"/.boxes/fedora-ublue \
     --name fedora-ublue
+
   distrobox create \
     --hostname arch-ublue \
     --yes \
@@ -298,73 +300,42 @@ dbox-ublue-all() {
   slog "Creating Bluefin, Wolfi and Ublue distroboxes done!"
 }
 
-dbox-toolbox-all() {
-  slog "Creating toolbox distroboxes"
-
-  distrobox create \
-    --hostname fedora-toolbox \
-    --yes \
-    --image fedora-toolbox:latest \
-    --init \
-    --additional-packages "systemd" \
-    --home "$HOME"/.boxes/fedora-toolbox \
-    --name fedora-toolbox
-
-  distrobox create \
-    --hostname fedora-toolbox \
-    --yes \
-    --image fedora-toolbox:latest \
-    --init \
-    --additional-packages "systemd" \
-    --home "$HOME"/.boxes/fedora-toolbox \
-    --name fedora-toolbox
-
-  distrobox create \
-    --hostname arch-toolbox \
-    --yes \
-    --image arch-toolbox:latest \
-    --init \
-    --additional-packages "systemd" \
-    --home "$HOME"/.boxes/arch-toolbox \
-    --name arch-toolbox
-
-  distrobox create \
-    --hostname centos-toolbox \
-    --yes \
-    --image centos-toolbox:latest \
-    --init \
-    --additional-packages "systemd" \
-    --home "$HOME"/.boxes/centos-toolbox \
-    --name centos-toolbox
-
-  distrobox create \
-    --hostname debian-toolbox \
-    --yes \
-    --image debian-toolbox:latest \
-    --init \
-    --additional-packages "systemd" \
-    --home "$HOME"/.boxes/debian-toolbox \
-    --name debian-toolbox
-
-  distrobox create \
-    --hostname rockylinux-toolbox \
-    --yes \
-    --image rockylinux-toolbox:9 \
-    --home "$HOME"/.boxes/rockylinux-toolbox \
-    --name rockylinux-toolbox
-
-  slog "Creating toolbox distroboxes done!"
+dbox-alpine-toolbox() {
+  dbox_create alpine-toolbox quay.io/toolbx-images/alpine-toolbox:latest
 }
 
-dbox-with-init() {
-  slog "Creating distroboxes with init"
+dbox-arch-toolbox() {
+  dbox_create arch-toolbox quay.io/toolbx/arch-toolbox:latest \
+    --init \
+    --additional-packages "systemd"
+}
 
-  dbox-ubuntu-init
-  dbox-debian-init
-  dbox-arch-init
-  dbox-tw-init
-  dbox-fedora-init
-  dbox-alpine
+dbox-fedora-toolbox() {
+  dbox_create fedora-toolbox quay.io/fedora/fedora-toolbox:42 \
+    --init \
+    --additional-packages "systemd"
+}
 
-  slog "Done creating distroboxes with init"
+dbox-centos-toolbox() {
+  dbox_create centos-toolbox quay.io/toolbx-images/centos-toolbox:latest \
+    --init \
+    --additional-packages "systemd"
+}
+
+dbox-debian-toolbox() {
+  dbox_create debian-toolbox quay.io/toolbx-images/debian-toolbox:latest \
+    --init \
+    --additional-packages "systemd"
+}
+
+dbox-rockylinux-toolbox() {
+  dbox_create rockylinux-toolbox quay.io/toolbx-images/rockylinux-toolbox:latest \
+    --init \
+    --additional-packages "systemd"
+}
+
+dbox-ubuntu-toolbox() {
+  dbox_create ubuntu-toolbox quay.io/toolbx/ubuntu-toolbox:latest \
+    --init \
+    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries"
 }
