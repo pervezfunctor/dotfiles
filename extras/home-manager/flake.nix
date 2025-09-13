@@ -15,7 +15,13 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, nixos-wsl, ... }@inputs:
+  outputs =
+    {
+      nixpkgs,
+      home-manager,
+      nixos-wsl,
+      ...
+    }@inputs:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -23,20 +29,27 @@
         config.allowUnfree = true;
       };
       vars = import ./vars.nix;
-      mkHome modules = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
+      mkHome =
+        modules:
+        home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
 
-        extraSpecialArgs = { inherit vars; };
+          extraSpecialArgs = { inherit vars; };
 
-        modules = mkModules;
-      };
-    in {
+          modules = [ ./home.nix ] ++ modules;
+        };
+      mkPrograms = modules: mkHome [ ./programs.nix ] ++ modules;
+    in
+    {
       homeConfigurations = {
-        "${vars.username}" = mkHome [ ./home.nix ];
-        shell-slim = mkHome [ ./home.nix ./shell-slim.nix ];
-        shell = mkHome [ ./home.nix ./shell.nix ];
-        sys-shell = mkHome [ ./sys.nix ./home.nix ./shell.nix ];
-        programs = mkHome [ ./home.nix ./shell.nix ./programs.nix ];
+        "${vars.username}" = mkHome [ ];
+        shell-slim = mkHome [ ./shell-slim.nix ];
+        shell = mkHome [ ./shell.nix ];
+        sys-shell = mkHome [
+          ./sys.nix
+          ./shell.nix
+        ];
+        shell-full = mkPrograms [ ./shell.nix ];
       };
 
       wsl = nixpkgs.lib.nixosSystem {

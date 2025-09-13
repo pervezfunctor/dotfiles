@@ -1,8 +1,7 @@
 { vars, ... }:
 let
   aliases = {
-    hms =
-      "nix run home-manager -- switch --flake ~/.ilm/extras/home-manager/#${vars.username} --impure -b bak";
+    hms = "nix run home-manager -- switch --flake ~/.ilm/extras/home-manager/#${vars.username} --impure -b bak";
   };
 
   initContent = ''
@@ -17,7 +16,8 @@ let
     fi
   '';
 
-in {
+in
+{
   programs = {
     eza.enable = true;
     fzf.enable = true;
