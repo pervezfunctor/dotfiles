@@ -1,57 +1,55 @@
 #!/usr/bin/env bash
 
 if [ -z "$BASH_VERSION" ]; then
-    echo "This script must be run with bash."
-    exit 0
+  echo "This script must be run with bash."
+  exit 0
 fi
 
 if ((BASH_VERSINFO[0] < 5)); then
-    echo "❌ Bash version 5.x or higher is required."
-    exit 1
+  echo "❌ Bash version 5.x or higher is required."
+  exit 1
 fi
 
 if command -v curl &>/dev/null; then
-    # shellcheck disable=SC1090
-    source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
+  # shellcheck disable=SC1090
+  source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 elif command -v wget &>/dev/null; then
-    # shellcheck disable=SC1090
-    source <(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
+  # shellcheck disable=SC1090
+  source <(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 else
-    echo "curl or wget is not installed"
-    exit 1
+  echo "curl or wget is not installed"
+  exit 1
 fi
 
 main() {
-    if has_cmd "${1}_mainstall"; then
-        "${1}_mainstall"
-        shift 1
+  if has_cmd "${1}_mainstall"; then
+    "${1}_mainstall"
+    shift 1
+  else
+    if has_cmd min_mainstall; then
+      min_mainstall
     else
-        if has_cmd min_mainstall; then
-            min_mainstall
-        else
-            err_exit "unknown or unsupported $* options"
-        fi
+      err_exit "unknown or unsupported $* options"
     fi
-    common-installer "$@"
+  fi
+  common-installer "$@"
 
-    if ! is_ublue &&
-        ! is_distrobox &&
-        has_cmd zsh &&
-        [ "$(default_shell)" != "zsh" ]; then
-        set_zsh_as_default
-    fi
+  if ! is_ublue &&
+    ! is_distrobox &&
+    has_cmd zsh &&
+    [ "$(default_shell)" != "zsh" ]; then
+    set_zsh_as_default
+  fi
 }
 
 if [[ "$1" == "generic" ]] ||
-    [[ "$1" == "generic-ct" ]] ||
-    [[ "$1" == "fedora-atomic" ]] ||
-    is_ublue ||
-    is_multipass ||
-    is_distrobox; then
+  [[ "$1" == "generic-ct" ]] ||
+  [[ "$1" == "fedora-atomic" ]] ||
+  is_ublue ||
+  is_multipass ||
+  is_distrobox; then
 
-    export NOSUDO=1
+  export NOSUDO=1
 fi
 
 bootstrap "$@"
-
-slog "Installation done! Once you reboot you can use 'ilmi' command to install more packages"

@@ -21,6 +21,7 @@ dbox_create() {
     --name "$CONTAINER_NAME" \
     "$@"; then
     slog "Distrobox ${CONTAINER_NAME} created successfully"
+    slog "Use dboxe ${CONTAINER_NAME} to enter"
     return 0
   else
     fail "Failed to create distrobox ${CONTAINER_NAME}"
@@ -338,4 +339,14 @@ dbox-ubuntu-toolbox() {
   dbox_create ubuntu-toolbox quay.io/toolbx/ubuntu-toolbox:latest \
     --init \
     --additional-packages "systemd libpam-systemd"
+}
+
+dbox-toolbox-all() {
+  dbox-alpine-toolbox
+  dbox-arch-toolbox
+  dbox-fedora-toolbox
+  dbox-centos-toolbox
+  dbox-debian-toolbox
+  dbox-rockylinux-toolbox
+  dbox-ubuntu-toolbox
 }
