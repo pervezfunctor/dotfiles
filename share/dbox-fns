@@ -4,6 +4,30 @@
 
 has_cmd distrobox || return
 
+dbox_enter() {
+  distrobox enter -nw --clean-path --name "${1}"
+}
+
+dbox_exec() {
+  if [[ $# -lt 2 ]]; then
+    fail "Usage: dbox-exec <name> <command>"
+    return 1
+  fi
+  local CONTAINER_NAME=${1}
+  shift
+  dbox_enter "${CONTAINER_NAME}" -- "$@"
+}
+
+dbox_bash_exec() {
+  if [[ $# -lt 2 ]]; then
+    fail "Usage: dbox-bash-exec <name> <command>"
+    return 1
+  fi
+  local CONTAINER_NAME=${1}
+  shift
+  dbox_enter "${CONTAINER_NAME}" -- bash -c "$*"
+}
+
 dbox_create() {
   if [[ $# -lt 2 ]]; then
     fail "Usage: dbox-create <name> <image> [distrobox options]"
@@ -14,7 +38,15 @@ dbox_create() {
   local IMAGE=${2}
   shift 2
 
-  distrobox list | grep -q "^${CONTAINER_NAME}$" && return
+  if distrobox list | grep -q "^${CONTAINER_NAME}$"; then
+    slog "Distrobox ${CONTAINER_NAME} already exists, skipping creation"
+    return 0
+  fi
+
+  if dir_exists "$HOME/.boxes/${CONTAINER_NAME}"; then
+    fail "Directory $HOME/.boxes/${CONTAINER_NAME} already exists, refusing to create distrobox"
+    return 1
+  fi
 
   slog "Creating Ubuntu distrobox: ${CONTAINER_NAME}"
   if distrobox create \
@@ -225,9 +257,7 @@ dbox-alpine-edge() {
 }
 
 dbox-dev-default() {
-  has_cmd distrobox || return
 
-  slog "Creating default distrobox"
   distrobox create --yes
   distrobox enter -nw --clean-path -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic
   slog "Default distrobox created!"
@@ -235,8 +265,9 @@ dbox-dev-default() {
 
 # shellcheck disable=SC2120
 dbox-dev() {
-  if ! has_cmd distrobox; then
-    fail "distrobox not installed, skipping distrobox creation"
+  if [[ $# -lt 2 ]]; then
+    fail "Usage: dbox-dev <distro> <name>"
+    fail "Available distros: alpine, alpine-edge, arch, debian, fedora, ubuntu, tw, centos, rocky"
     return 1
   fi
 
@@ -244,13 +275,18 @@ dbox-dev() {
 
   local os
   os=${1:-fedora-init}
-  local osname
-  osname=${2:-ilm}
-  distrobox list | grep -q "^${osname}$" && return
+  local CONTAINER_NAME=${2:-ilm}
 
-  "dbox-$os" "$osname"
-  distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic
-  slog "distrobox ${osname} created!"
+  "dbox-$os" "$CONTAINER_NAME"
+
+  if distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic; then
+    slog "Distrobox ${CONTAINER_NAME} setup successfully"
+    slog "Use dboxe ${CONTAINER_NAME} to enter"
+    return 0
+  else
+    fail "Failed to setup distrobox ${CONTAINER_NAME}"
+    return 1
+  fi
 }
 
 dbox-create-main-install() {

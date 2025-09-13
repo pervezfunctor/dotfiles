@@ -23,15 +23,21 @@
         config.allowUnfree = true;
       };
       vars = import ./vars.nix;
+      mkHome modules = home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+
+        extraSpecialArgs = { inherit vars; };
+
+        modules = mkModules;
+      };
     in {
-      homeConfigurations."${vars.username}" =
-        home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-
-          extraSpecialArgs = { inherit vars; };
-
-          modules = [ ./home.nix ];
-        };
+      homeConfigurations = {
+        "${vars.username}" = mkHome [ ./home.nix ];
+        shell-slim = mkHome [ ./home.nix ./shell-slim.nix ];
+        shell = mkHome [ ./home.nix ./shell.nix ];
+        sys-shell = mkHome [ ./sys.nix ./home.nix ./shell.nix ];
+        programs = mkHome [ ./home.nix ./shell.nix ./programs.nix ];
+      };
 
       wsl = nixpkgs.lib.nixosSystem {
         inherit system;
