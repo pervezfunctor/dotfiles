@@ -110,7 +110,7 @@ dbox-docker() {
   dbox_create "${CONTAINER_NAME}" ghcr.io/ublue-os/docker-distrobox:latest \
     --init --unshare-all --root --no-entry \
     --volume /var/lib/docker \
-    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries"
+    --additional-packages "systemd libpam-systemd"
 
   distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-docker-dev starship snap vscode
 }
@@ -124,7 +124,7 @@ dbox-incus() {
     --init --unshare-all --root --no-entry \
     --volume /var/lib/incus:/var/lib/incus \
     --volume /lib/modules:/lib/modules:ro \
-    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries"
+    --additional-packages "systemd libpam-systemd"
 }
 
 dbox-alpine-edge-init() {
@@ -150,7 +150,7 @@ dbox-debian-init() {
 
   dbox_create "${CONTAINER_NAME}" debian:latest \
     --init \
-    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries"
+    --additional-packages "systemd libpam-systemd"
 }
 
 dbox-ubuntu-init() {
@@ -159,7 +159,7 @@ dbox-ubuntu-init() {
 
   dbox_create "${CONTAINER_NAME}" ubuntu:latest \
     --init \
-    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries"
+    --additional-packages "systemd libpam-systemd"
 }
 
 dbox-arch-init() {
@@ -275,7 +275,7 @@ dbox-ublue-all() {
     --yes \
     --image ghcr.io/ublue-os/ubuntu-toolbox:latest \
     --init \
-    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" \
+    --additional-packages "systemd libpam-systemd" \
     --home "$HOME"/.boxes/ubuntu-ublue \
     --name ubuntu-ublue
 
@@ -337,5 +337,5 @@ dbox-rockylinux-toolbox() {
 dbox-ubuntu-toolbox() {
   dbox_create ubuntu-toolbox quay.io/toolbx/ubuntu-toolbox:latest \
     --init \
-    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries"
+    --additional-packages "systemd libpam-systemd"
 }
