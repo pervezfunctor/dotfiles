@@ -2,6 +2,8 @@
 
 # shellcheck disable=SC2120
 
+has_cmd distrobox || return
+
 dbox_create() {
   if [[ $# -lt 2 ]]; then
     fail "Usage: dbox-create <name> <image> [distrobox options]"
@@ -11,6 +13,8 @@ dbox_create() {
   local CONTAINER_NAME=${1}
   local IMAGE=${2}
   shift 2
+
+  distrobox list | grep -q "^${CONTAINER_NAME}$" && return
 
   slog "Creating Ubuntu distrobox: ${CONTAINER_NAME}"
   if distrobox create \
@@ -27,6 +31,19 @@ dbox_create() {
     fail "Failed to create distrobox ${CONTAINER_NAME}"
     return 1
   fi
+}
+
+dbox_create_root() {
+  if [[ $# -lt 2 ]]; then
+    fail "Usage: dbox-create-root <name> <image> [distrobox options]"
+    return 1
+  fi
+
+  local CONTAINER_NAME=${1}
+  local IMAGE=${2}
+  shift 2
+
+  dbox_create "$CONTAINER_NAME" "$IMAGE" --root "$@"
 }
 
 dbox-ubuntu() {
@@ -86,9 +103,8 @@ dbox-wolfi() {
 
 dbox-virt-manager() {
   local CONTAINER_NAME=${1:-virt-manager}
-  dbox_create "${CONTAINER_NAME}" registry.opensuse.org/opensuse/distrobox:latest \
+  dbox_create_root "${CONTAINER_NAME}" registry.opensuse.org/opensuse/distrobox:latest \
     --pull \
-    --root \
     --init \
     --unshare-all \
     --additional-flags "-p 2222:22" \
@@ -97,8 +113,8 @@ dbox-virt-manager() {
 
 dbox-fedora-virt-manager() {
   local CONTAINER_NAME=${1:fedora-virt-manager}
-  dbox_create "${CONTAINER_NAME}" registry.fedoraproject.org/fedora:latest \
-    --pull --root --init --unshare-all \
+  dbox_create_root "${CONTAINER_NAME}" registry.fedoraproject.org/fedora:latest \
+    --pull --init --unshare-all \
     --additional-flags "-p 2222:22" \
     --init-hooks "dnf install -y --skip-unavailable openssh-server libvirt virt-install virt-manager && systemctl enable sshd.service && systemctl enable virtqemud.socket virtnetworkd.socket virtstoraged.socket virtnodedevd.socket && usermod -aG libvirt $USER"
 }
@@ -108,8 +124,8 @@ dbox-docker() {
   slog "Creating Docker distrobox: ${CONTAINER_NAME}"
   sudo mkdir -p /var/lib/docker
 
-  dbox_create "${CONTAINER_NAME}" ghcr.io/ublue-os/docker-distrobox:latest \
-    --init --unshare-all --root --no-entry \
+  dbox_create_root "${CONTAINER_NAME}" ghcr.io/ublue-os/docker-distrobox:latest \
+    --init --unshare-all --no-entry \
     --volume /var/lib/docker \
     --additional-packages "systemd libpam-systemd"
 
@@ -121,8 +137,8 @@ dbox-incus() {
   slog "Creating Incus distrobox: ${CONTAINER_NAME}"
   sudo mkdir -p /var/lib/incus
 
-  dbox_create "${CONTAINER_NAME}" ghcr.io/ublue-os/incus-distrobox:latest \
-    --init --unshare-all --root --no-entry \
+  dbox_create_root "${CONTAINER_NAME}" ghcr.io/ublue-os/incus-distrobox:latest \
+    --init --unshare-all --no-entry \
     --volume /var/lib/incus:/var/lib/incus \
     --volume /lib/modules:/lib/modules:ro \
     --additional-packages "systemd libpam-systemd"

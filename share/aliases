@@ -150,13 +150,20 @@ if has_cmd distrobox; then
     alias dboxl='distrobox list'
     alias dboxr='distrobox run'
     alias dboxc='distrobox create'
-    alias dboxd='distrobox rm'
+
+    dboxd() {
+        distrobox list | grep -q "^$1$" || return
+        distrobox rm "$@" && srm "$HOME/.boxes/$1"
+    }
 
     alias rdboxe='distrobox enter -nw --clean-path --root'
     alias rdboxl='distrobox list --root'
     alias rdboxr='distrobox run --root'
     alias rdboxc='distrobox create --root'
-    alias rdboxd='distrobox rm --root'
+    rdboxd() {
+        distrobox list --root | grep -q "^$1$" || return
+        distrobox rm --root "$@" && srm "$HOME/.boxes/$1"
+    }
 
     [[ "${CONTAINER_ID}" != "" ]] && alias on-host='distrobox-host-exec'
 fi
