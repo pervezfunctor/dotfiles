@@ -402,3 +402,56 @@ dbox-toolbox-all() {
   dbox-rockylinux-toolbox
   dbox-ubuntu-toolbox
 }
+
+dbox-nvidia-container-toolkit() {
+  if has_cmd podman; then
+    dbox_create example-nvidia-toolkit docker.io/nvidia/cuda \
+      --additional-flags "--gpus all"
+  elif has_cmd docker; then
+    dbox_create example-nvidia-toolkit docker.io/nvidia/cuda \
+      --additional-flags "--gpus all --device=nvidia.com/gpu=all"
+  else
+    warn "podman or docker not found"
+  fi
+}
+
+dbox-to-image() {
+  if has_cmd podman; then
+    podman container commit -p dbox_name "$1"
+    podman save "$1":latest | bzip2 >"$1".tar.bz
+  elif has_cmd docker; then
+    docker container commit -p dbox_name "$1"
+    docker save "${1}:latest" | gzip >"$1".tar.gz
+  fi
+}
+
+dbox-from-image() {
+  local dbox_name=${1:dbox}
+  slog "Creating distrobox from image $1"
+
+  if distrobox create \
+    --hostname "${dbox_name}" \
+    --yes \
+    --image "$1":latest \
+    --name "$dbox_name"; then
+    distrobox enter -nw --clean-path --name "$dbox_name"
+    slog "Done creating distrobox from image $1"
+  fi
+}
+
+dbox-nix() {
+  local CONTAINER_NAME=${1:-deb-nix}
+
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  srm "$HOME/.boxes/${CONTAINER_NAME}"
+
+  if dbox-debian-init "$CONTAINER_NAME"; then
+    distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- nix
+    slog "Done creating distrobox $CONTAINER_NAME"
+  fi
+}
+
+dbox-containers() {
+  podman ps -a -s
+}
