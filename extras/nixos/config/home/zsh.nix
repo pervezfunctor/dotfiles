@@ -38,6 +38,7 @@ in
 
         source "$HOME/.ilm/share/utils"
         source "$HOME/.ilm/share/fns"
+        source "$HOME/.ilm/share/dbox-fns"
         source "$HOME/.ilm/share/aliases"
       fi
     '';

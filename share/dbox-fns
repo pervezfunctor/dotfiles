@@ -1,0 +1,370 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC2120
+
+dbox_create() {
+  if [[ $# -lt 2 ]]; then
+    fail "Usage: dbox-create <name> <image> [distrobox options]"
+    return 1
+  fi
+
+  local CONTAINER_NAME=${1}
+  local IMAGE=${2}
+  shift 2
+
+  slog "Creating Ubuntu distrobox: ${CONTAINER_NAME}"
+  if distrobox create \
+    --hostname "${CONTAINER_NAME}" \
+    --yes \
+    --image "$IMAGE" \
+    --home "$HOME/.boxes/${CONTAINER_NAME}" \
+    --name "$CONTAINER_NAME" \
+    "$@"; then
+    slog "Distrobox ${CONTAINER_NAME} created successfully"
+    return 0
+  else
+    fail "Failed to create distrobox ${CONTAINER_NAME}"
+    return 1
+  fi
+}
+
+dbox-ubuntu() {
+  local CONTAINER_NAME=${1:-ubuntu}
+  dbox_create "${CONTAINER_NAME}" ubuntu:latest
+}
+
+dbox-arch() {
+  local CONTAINER_NAME=${1:-arch}
+  dbox_create "${CONTAINER_NAME}" archlinux:latest
+}
+
+dbox-fedora-minimal() {
+  local CONTAINER_NAME=${1:-fedora-minimal}
+  dbox_create "${CONTAINER_NAME}" registry.fedoraproject.org/fedora-minimal:latest
+}
+
+dbox-debian-slim() {
+  local CONTAINER_NAME=${1:-debian-slim}
+  dbox_create "${CONTAINER_NAME}" debian:trixie-slim
+}
+
+dbox-fedora() {
+  local CONTAINER_NAME=${1:-fedora}
+  dbox_create "${CONTAINER_NAME}" fedora:latest
+}
+
+dbox-centos() {
+  local CONTAINER_NAME=${1:-centos}
+  dbox_create "${CONTAINER_NAME}" centos:latest
+}
+
+dbox-debian() {
+  local CONTAINER_NAME=${1:-debian}
+  dbox_create "${CONTAINER_NAME}" debian:latest
+}
+
+dbox-rocky() {
+  local CONTAINER_NAME=${1:-rocky}
+  dbox_create "${CONTAINER_NAME}" rockylinux:9
+}
+
+dbox-tw() {
+  local CONTAINER_NAME=${1:-tw}
+  dbox_create "${CONTAINER_NAME}" opensuse/tumbleweed
+}
+
+dbox-bluefin() {
+  local CONTAINER_NAME=${1:-bluefin-cli}
+  dbox_create "${CONTAINER_NAME}" ghcr.io/ublue-os/bluefin-cli
+}
+
+dbox-wolfi() {
+  local CONTAINER_NAME=${1:-wolfi-ublue}
+  dbox_create "${CONTAINER_NAME}" ghcr.io/ublue-os/wolfi-toolbox
+}
+
+dbox-virt-manager() {
+  local CONTAINER_NAME=${1:-virt-manager}
+  dbox_create "${CONTAINER_NAME}" registry.opensuse.org/opensuse/distrobox:latest \
+    --pull \
+    --root \
+    --init \
+    --unshare-all \
+    --additional-flags "-p 2222:22" \
+    --init-hooks "zypper in -y --no-recommends openssh-server patterns-server-kvm_server patterns-server-kvm_tools qemu-extra qemu-linux-user qemu-hw-display-virtio-gpu-pci qemu-hw-display-virtio-gpu && systemctl enable sshd.service && systemctl enable virtqemud.socket virtnetworkd.socket virtstoraged.socket virtnodedevd.socket && usermod -aG libvirt $USER"
+}
+
+dbox-fedora-virt-manager() {
+  local CONTAINER_NAME=${1:fedora-virt-manager}
+  dbox_create "${CONTAINER_NAME}" registry.fedoraproject.org/fedora:latest \
+    --pull --root --init --unshare-all \
+    --additional-flags "-p 2222:22" \
+    --init-hooks "dnf install -y --skip-unavailable openssh-server libvirt virt-install virt-manager && systemctl enable sshd.service && systemctl enable virtqemud.socket virtnetworkd.socket virtstoraged.socket virtnodedevd.socket && usermod -aG libvirt $USER"
+}
+
+dbox-docker() {
+  local CONTAINER_NAME=${1:-docker}
+  slog "Creating Docker distrobox: ${CONTAINER_NAME}"
+  sudo mkdir -p /var/lib/docker
+
+  dbox_create "${CONTAINER_NAME}" ghcr.io/ublue-os/docker-distrobox:latest \
+    --init --unshare-all --root --no-entry \
+    --volume /var/lib/docker \
+    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries"
+
+  distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-docker-dev starship snap vscode
+}
+
+dbox-incus() {
+  local CONTAINER_NAME=${1:-incus}
+  slog "Creating Incus distrobox: ${CONTAINER_NAME}"
+  sudo mkdir -p /var/lib/incus
+
+  dbox_create "${CONTAINER_NAME}" ghcr.io/ublue-os/incus-distrobox:latest \
+    --init --unshare-all --root --no-entry \
+    --volume /var/lib/incus:/var/lib/incus \
+    --volume /lib/modules:/lib/modules:ro \
+    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries"
+}
+
+dbox-alpine-edge-init() {
+  local CONTAINER_NAME=${1:-alpine-edge-init}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:edge \
+    --init \
+    --additional-packages "openrc"
+}
+
+dbox-alpine-init() {
+  local CONTAINER_NAME=${1:-alpine-init}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
+    --init --additional-packages "openrc"
+}
+
+dbox-debian-init() {
+  local CONTAINER_NAME=${1:-debian-init}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" debian:latest \
+    --init \
+    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries"
+}
+
+dbox-ubuntu-init() {
+  local CONTAINER_NAME=${1:-ubuntu-init}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" ubuntu:latest \
+    --init \
+    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries"
+}
+
+dbox-arch-init() {
+  local CONTAINER_NAME=${1:-arch-init}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" archlinux:latest \
+    --yes \
+    --init \
+    --additional-packages "systemd"
+}
+
+dbox-tw-init() {
+  local CONTAINER_NAME=${1:-tw-init}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" opensuse/tumbleweed \
+    --init \
+    --additional-packages "systemd"
+}
+
+dbox-fedora-init() {
+  local CONTAINER_NAME=${1:-fedora-init}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" fedora:latest \
+    --init \
+    --additional-packages "systemd"
+}
+
+dbox-alpine() {
+  local CONTAINER_NAME=${1:-alpine}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
+    --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli"
+}
+
+dbox-alpine-edge() {
+  local CONTAINER_NAME=${1:-alpine-edge}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" \
+    quay.io/toolbx-images/alpine-toolbox:edge \
+    --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli"
+}
+
+dbox-dev-default() {
+  has_cmd distrobox || return
+
+  slog "Creating default distrobox"
+  distrobox create --yes
+  distrobox enter -nw --clean-path -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic
+  slog "Default distrobox created!"
+}
+
+# shellcheck disable=SC2120
+dbox-dev() {
+  if ! has_cmd distrobox; then
+    fail "distrobox not installed, skipping distrobox creation"
+    return 1
+  fi
+
+  slog "Creating default distrobox"
+
+  local os
+  os=${1:-fedora-init}
+  local osname
+  osname=${2:-ilm}
+  distrobox list | grep -q "^${osname}$" && return
+
+  "dbox-$os" "$osname"
+  distrobox enter -nw --clean-path --name "${osname}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic
+  slog "distrobox ${osname} created!"
+}
+
+dbox-create-main-install() {
+  if [[ $# -lt 2 ]]; then
+    fail "Usage: dbox-create-main-install <distro> <mainstall> [name]"
+    return 1
+  fi
+  local distro=$1
+  local mainstall=$2
+  local name=${3:-"${distro}-${mainstall}-test"}
+
+  "dbox-$distro-init" "$name"
+  distrobox enter -nw --clean-path --name "$name" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$mainstall"
+}
+
+dbox-create-group-install() {
+  if [[ $# -lt 2 ]]; then
+    fail "Usage: dbox-create-group-install <distro> <groupstall> [name]"
+    return 1
+  fi
+  local distro=$1
+  local groupstall=$2
+  local name=${3:-"${distro}-${groupstall}-test"}
+
+  "dbox-$distro-init" "$name"
+  distrobox enter -nw --clean-path --name "$name" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")"
+  distrobox enter -nw --clean-path --name "$name" -- ilmg "@$groupstall"
+}
+
+dbox-ublue-all() {
+  slog "Creating Bluefin, Wolfi and Ublue distroboxes"
+  dbox-bluefin
+  dbox-wolfi
+  dbox-docker
+  dbox-incus
+
+  distrobox create \
+    --hostname ubuntu-ublue \
+    --yes \
+    --image ghcr.io/ublue-os/ubuntu-toolbox:latest \
+    --init \
+    --additional-packages "systemd libpam-systemd pipewire-audio-client-libraries" \
+    --home "$HOME"/.boxes/ubuntu-ublue \
+    --name ubuntu-ublue
+  distrobox create \
+    --hostname fedora-ublue \
+    --yes \
+    --image ghcr.io/ublue-os/fedora-toolbox:latest \
+    --init \
+    --additional-packages "systemd" \
+    --home "$HOME"/.boxes/fedora-ublue \
+    --name fedora-ublue
+  distrobox create \
+    --hostname arch-ublue \
+    --yes \
+    --image ghcr.io/ublue-os/arch-distrobox:latest \
+    --init \
+    --additional-packages "systemd" \
+    --home "$HOME"/.boxes/arch-ublue \
+    --name arch-ublue
+
+  slog "Creating Bluefin, Wolfi and Ublue distroboxes done!"
+}
+
+dbox-toolbox-all() {
+  slog "Creating toolbox distroboxes"
+
+  distrobox create \
+    --hostname fedora-toolbox \
+    --yes \
+    --image fedora-toolbox:latest \
+    --init \
+    --additional-packages "systemd" \
+    --home "$HOME"/.boxes/fedora-toolbox \
+    --name fedora-toolbox
+
+  distrobox create \
+    --hostname fedora-toolbox \
+    --yes \
+    --image fedora-toolbox:latest \
+    --init \
+    --additional-packages "systemd" \
+    --home "$HOME"/.boxes/fedora-toolbox \
+    --name fedora-toolbox
+
+  distrobox create \
+    --hostname arch-toolbox \
+    --yes \
+    --image arch-toolbox:latest \
+    --init \
+    --additional-packages "systemd" \
+    --home "$HOME"/.boxes/arch-toolbox \
+    --name arch-toolbox
+
+  distrobox create \
+    --hostname centos-toolbox \
+    --yes \
+    --image centos-toolbox:latest \
+    --init \
+    --additional-packages "systemd" \
+    --home "$HOME"/.boxes/centos-toolbox \
+    --name centos-toolbox
+
+  distrobox create \
+    --hostname debian-toolbox \
+    --yes \
+    --image debian-toolbox:latest \
+    --init \
+    --additional-packages "systemd" \
+    --home "$HOME"/.boxes/debian-toolbox \
+    --name debian-toolbox
+
+  distrobox create \
+    --hostname rockylinux-toolbox \
+    --yes \
+    --image rockylinux-toolbox:9 \
+    --home "$HOME"/.boxes/rockylinux-toolbox \
+    --name rockylinux-toolbox
+
+  slog "Creating toolbox distroboxes done!"
+}
+
+dbox-with-init() {
+  slog "Creating distroboxes with init"
+
+  dbox-ubuntu-init
+  dbox-debian-init
+  dbox-arch-init
+  dbox-tw-init
+  dbox-fedora-init
+  dbox-alpine
+
+  slog "Done creating distroboxes with init"
+}

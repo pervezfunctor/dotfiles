@@ -7,52 +7,52 @@ source "$DOT_DIR/share/utils"
 source "$DOT_DIR/share/exports"
 
 if has_cmd /opt/homebrew/bin/brew; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -d /home/linuxbrew/.linuxbrew ]]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
 if [[ -d "$HOME/.pyenv" ]]; then
-    export PYENV_ROOT="$HOME/.pyenv"
-    spath_export "$PYENV_ROOT/bin"
-    eval "$(pyenv init -)"
+  export PYENV_ROOT="$HOME/.pyenv"
+  spath_export "$PYENV_ROOT/bin"
+  eval "$(pyenv init -)"
 elif has_cmd "$HOME/miniconda3/bin/conda"; then
-    if __conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2>/dev/null)"; then
-        eval "$__conda_setup"
+  if __conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2>/dev/null)"; then
+    eval "$__conda_setup"
+  else
+    if [[ -f "/$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
+      source_if_exists "/$HOME/miniconda3/etc/profile.d/conda.sh"
     else
-        if [[ -f "/$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
-            source_if_exists "/$HOME/miniconda3/etc/profile.d/conda.sh"
-        else
-            export PATH="/$HOME/miniconda3/bin:$PATH"
-        fi
+      export PATH="/$HOME/miniconda3/bin:$PATH"
     fi
-    unset __conda_setup
+  fi
+  unset __conda_setup
 fi
 
 if [[ -d "$HOME/.local/share/pnpm" ]]; then
-    # pnpm
-    export PNPM_HOME="$HOME/.local/share/pnpm"
-    export PATH="$PNPM_HOME:$PATH"
-    # pnpm end
+  # pnpm
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+  export PATH="$PNPM_HOME:$PATH"
+  # pnpm end
 
-    if [[ -f "$XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh" ]]; then
-        source_if_exists "$XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh"
-    fi
+  if [[ -f "$XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh" ]]; then
+    source_if_exists "$XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh"
+  fi
 
 fi
 
 vterm_printf() {
-    if [ -n "$TMUX" ] &&
-        { [ "${TERM%%-*}" = "tmux" ] ||
-            [ "${TERM%%-*}" = "screen" ]; }; then
-        # Tell tmux to pass the escape sequences through
-        printf "\ePtmux;\e\e]%s\007\e\\" "$1"
-    elif [ "${TERM%%-*}" = "screen" ]; then
-        # GNU screen (screen, screen-256color, screen-256color-bce)
-        printf "\eP\e]%s\007\e\\" "$1"
-    else
-        printf "\e]%s\e\\" "$1"
-    fi
+  if [ -n "$TMUX" ] &&
+    { [ "${TERM%%-*}" = "tmux" ] ||
+      [ "${TERM%%-*}" = "screen" ]; }; then
+    # Tell tmux to pass the escape sequences through
+    printf "\ePtmux;\e\e]%s\007\e\\" "$1"
+  elif [ "${TERM%%-*}" = "screen" ]; then
+    # GNU screen (screen, screen-256color, screen-256color-bce)
+    printf "\eP\e]%s\007\e\\" "$1"
+  else
+    printf "\e]%s\e\\" "$1"
+  fi
 }
 
 # has_cmd fzf && {
@@ -63,6 +63,7 @@ vterm_printf() {
 # }
 
 source_if_exists "$DOT_DIR/share/fns"
+source_if_exists "$DOT_DIR/share/dbox-fns"
 
 [[ $- == *i* ]] || return
 

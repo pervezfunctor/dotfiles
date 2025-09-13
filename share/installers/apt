@@ -3,384 +3,383 @@
 export DEBIAN_FRONTEND=noninteractive
 
 function si() {
-    local found=()
-    local not_found=()
+  local found=()
+  local not_found=()
 
-    for pkg in "$@"; do
-        if apt-cache show "$pkg" >/dev/null 2>&1; then
-            found+=("$pkg")
-        else
-            not_found+=("$pkg")
-        fi
-    done
+  for pkg in "$@"; do
+    if apt-cache show "$pkg" >/dev/null 2>&1; then
+      found+=("$pkg")
+    else
+      not_found+=("$pkg")
+    fi
+  done
 
-    sudo apt-get -qq -y install "${found[@]}"
+  sudo apt-get -qq -y install "${found[@]}"
 
-    for pkg in "${not_found[@]}"; do
-        warn "Package $pkg not found in apt repository"
-    done
+  for pkg in "${not_found[@]}"; do
+    warn "Package $pkg not found in apt repository"
+  done
 }
 
 fzf_install() {
-    if ! is_noble && ! is_bookworm; then
-        si fzf
-    else
-        warn "not installing fzf: too old version"
-    fi
+  if ! is_noble && ! is_bookworm; then
+    si fzf
+  else
+    warn "not installing fzf: too old version"
+  fi
 }
 
 pacstall_install() {
-    has_cmd pacstall && return 1
+  has_cmd pacstall && return 1
 
-    sudo bash -c "$(curl -fsSL https://pacstall.dev/q/install)"
+  sudo bash -c "$(curl -fsSL https://pacstall.dev/q/install)"
 }
 
 update_packages() {
-    slog "Updating packages..."
+  slog "Updating packages..."
 
-    if ! { sudo apt-get -qq update && sudo apt-get -qq upgrade -y; }; then
-        err_exit "apt-get update/upgrade failed, quitting"
-    fi
+  if ! { sudo apt-get -qq update && sudo apt-get -qq upgrade -y; }; then
+    err_exit "apt-get update/upgrade failed, quitting"
+  fi
 
-    slog "Updating packages done!"
+  slog "Updating packages done!"
 }
 
 ubuntu_packages() {
-    update_packages
+  update_packages
 
-    slog "Installing ubuntu packages..."
+  slog "Installing ubuntu packages..."
 
-    si git-core gh git-delta unzip wget curl net-tools iproute2 nmap gum eza \
-        trash-cli tar stow gcc make file tree bat ripgrep gawk starship \
-        zoxide fd-find htop sd batdialog whiptail tealdeer yq
+  si git-core gh git-delta unzip wget curl net-tools iproute2 nmap gum eza \
+    trash-cli tar stow gcc make file tree bat ripgrep gawk starship \
+    zoxide fd-find htop sd batdialog whiptail tealdeer yq
 
-    fzf_install
+  fzf_install
 
-    if is_desktop || is_distrobox; then
-        si wl-clipboard libsecret-tools
-    fi
+  if is_desktop || is_distrobox; then
+    si wl-clipboard libsecret-tools
+  fi
 
-    has_cmd tldr && tldr --update
+  has_cmd tldr && tldr --update
 
-    slog "Installing ubuntu packages done!"
+  slog "Installing ubuntu packages done!"
 }
 
 # shellcheck disable=SC2120
 debian_locale_install() {
-    LOCALE_TO_USE=${1:-en_US.UTF-8}
+  LOCALE_TO_USE=${1:-en_US.UTF-8}
 
-    if sudo apt install -y --reinstall locales &&
-        sudo sed -i "s/^# *$LOCALE_TO_USE UTF-8/$LOCALE_TO_USE UTF-8/" /etc/locale.gen &&
-        sudo locale-gen &&
-        sudo update-locale LANG="$LOCALE_TO_USE" LC_ALL="$LOCALE_TO_USE"; then
-        slog "Locales fixed. Current system locale:" && locale
-    else
-        warn "Failed to fix locales. Please check your locale settings."
-        return 1
-    fi
+  if sudo apt install -y --reinstall locales &&
+    sudo sed -i "s/^# *$LOCALE_TO_USE UTF-8/$LOCALE_TO_USE UTF-8/" /etc/locale.gen &&
+    sudo locale-gen &&
+    sudo update-locale LANG="$LOCALE_TO_USE" LC_ALL="$LOCALE_TO_USE"; then
+    slog "Locales fixed. Current system locale:" && locale
+  else
+    warn "Failed to fix locales. Please check your locale settings."
+    return 1
+  fi
 }
 
 # or
 locale-setup() {
-    slog "Setting locale to en_US.UTF-8..."
-    si locales
-    sudo locale-gen en_US.UTF-8
-    sudo update-locale LANG=en_US.UTF-8
+  slog "Setting locale to en_US.UTF-8..."
+  si locales
+  sudo locale-gen en_US.UTF-8
+  sudo update-locale LANG=en_US.UTF-8
 
-    slog "Setting keyboard layout to US..."
-    sudo localectl set-keymap us
-    sudo localectl set-x11-keymap us
+  slog "Setting keyboard layout to US..."
+  sudo localectl set-keymap us
+  sudo localectl set-x11-keymap us
 
-    echo "export LANGUAGE=en" | sudo tee -a /etc/default/locale
-    echo "export COUNTRY=US" | sudo tee -a /etc/default/locale
+  echo "export LANGUAGE=en" | sudo tee -a /etc/default/locale
+  echo "export COUNTRY=US" | sudo tee -a /etc/default/locale
 
-    # Force console keymap now (for immediate effect)
-    sudo loadkeys us
+  # Force console keymap now (for immediate effect)
+  sudo loadkeys us
 
-    slog "Configuration complete. You may need to reboot for all changes to take effect."
+  slog "Configuration complete. You may need to reboot for all changes to take effect."
 }
 
 debian_packages() {
-    update_packages
-    debian_locale_install
-    slog "Installing debian packages..."
+  update_packages
+  debian_locale_install
+  slog "Installing debian packages..."
 
-    si stow git-core gh git-delta lazygit unzip wget curl trash-cli tar \
-        net-tools iproute2 nmap gcc make file tree ripgrep zoxide fd-find htop \
-        gawk tealdeer dialog whiptail starship hyperfine jq direnv yq dysk bat \
-        just gum eza shellcheck shfmt broot duf sd xh atuin procs sd
+  si stow git-core gh git-delta lazygit unzip wget curl trash-cli tar \
+    net-tools iproute2 nmap gcc make file tree ripgrep zoxide fd-find htop \
+    gawk tealdeer dialog whiptail starship hyperfine jq direnv yq dysk bat \
+    just gum eza shellcheck shfmt broot duf sd xh atuin procs sd
 
-    fzf_install
+  fzf_install
 
-    if is_desktop || is_distrobox; then
-        si wl-clipboard libsecret-tools
-    fi
+  if is_desktop || is_distrobox; then
+    si wl-clipboard libsecret-tools
+  fi
 
-    has_cmd tldr && tldr --update
+  has_cmd tldr && tldr --update
 
-    slog "Installing debian packages done!"
+  slog "Installing debian packages done!"
 }
 
 core_install() {
-    update_packages
-    is_debian && debian_locale_install
+  update_packages
+  is_debian && debian_locale_install
 
-    slog "Installing core packages..."
+  slog "Installing core packages..."
 
-    is_ubuntu && si software-properties-common
-    si apt-transport-https ca-certificates gpg curl wget git-core trash-cli \
-        tar unzip tree file stow
+  is_ubuntu && si software-properties-common
+  si apt-transport-https ca-certificates gpg curl wget git-core trash-cli \
+    tar unzip tree file stow
 
-    slog "Core packages installation done!"
+  slog "Core packages installation done!"
 }
 
 snap_install() {
-    has_cmd snap && return 0
+  has_cmd snap && return 0
 
-    slog "Installing snap..."
-    si snapd
-    sudo systemctl enable --now snapd.socket
-    sudo systemctl enable --now snapd
+  slog "Installing snap..."
+  si snapd
+  sudo systemctl enable --now snapd.socket
+  sudo systemctl enable --now snapd
 
-    sudo snap install core
-    slog "snap installation done!"
+  sudo snap install core
+  slog "snap installation done!"
 }
 
 ui_install() {
-    is_distrobox && return 1
-    is_desktop || return 1
+  is_desktop || return 1
 
-    slog "Installing ui..."
+  slog "Installing ui..."
 
-    si gnome-keyring wl-clipboard flatpak
-    flathub_install
+  si gnome-keyring wl-clipboard flatpak
+  flathub_install
 
-    slog "ui installation done!"
+  slog "ui installation done!"
 }
 
 essential_install() {
-    slog "Installing essential packages..."
+  slog "Installing essential packages..."
 
-    pkgx_install
+  pkgx_install
 
-    if is_noble || is_bookworm; then
-        si perl
-        pkgx pkgm install stow
-    fi
+  if is_noble || is_bookworm; then
+    si perl
+    pkgx pkgm install stow
+  fi
 
-    if [ -d /run/systemd/system ] && ! is_debian; then
-        snap_install
-    fi
+  if [ -d /run/systemd/system ] && ! is_debian; then
+    snap_install
+  fi
 
-    si zip unar micro p7zip libreadline-dev libsqlite3-dev libffi-dev \
-        libbz2-dev liblzma-dev libsecret-tools build-essential \
-        command-not-found libfuse2 zstd gawk whiptail
+  si zip unar micro p7zip libreadline-dev libsqlite3-dev libffi-dev \
+    libbz2-dev liblzma-dev libsecret-tools build-essential \
+    command-not-found libfuse2 zstd gawk whiptail
 
-    is_distrobox || ui_install
+  is_distrobox || ui_install
 
-    slog "Essential packages installation done!"
+  slog "Essential packages installation done!"
 }
 
 cli-slim_install() {
-    si zsh git starship ripgrep gh zoxide eza
-    fzf_install
+  si zsh git starship ripgrep gh zoxide eza
+  fzf_install
 }
 
 sys_python_install() {
-    slog "Installing python..."
+  slog "Installing python..."
 
-    si python3 python3-venv python3-virtualenv python3-pip python3-setuptools \
-        python3-wheel python-is-python3 pipx
+  si python3 python3-venv python3-virtualenv python3-pip python3-setuptools \
+    python3-wheel python-is-python3 pipx
 
-    pipx install uv
+  pipx install uv
 
-    slog "Python installation done!"
+  slog "Python installation done!"
 
-    cmd_check uv
+  cmd_check uv
 }
 
 cli_install() {
-    slog "Installing cli tools using apt..."
+  slog "Installing cli tools using apt..."
 
-    cli-slim_install
+  cli-slim_install
 
-    si tmux pkg-config urlview plocate sd gdu hyperfine fd-find ugrep tealdeer \
-        direnv yq shellcheck shfmt htop bat jq git-delta dialog gum just
+  si tmux pkg-config urlview plocate sd gdu hyperfine fd-find ugrep tealdeer \
+    direnv yq shellcheck shfmt htop bat jq git-delta dialog gum just
 
-    has_cmd tldr && tldr --update
+  has_cmd tldr && tldr --update
 
-    sys_python_install
+  sys_python_install
 
-    slog "cli tools installation done!"
+  slog "cli tools installation done!"
 }
 
 cpp_install() {
-    slog "Installing C++..."
+  slog "Installing C++..."
 
-    si gcc gdb g++ libboost-all-dev catch2 clang llvm clang-tidy clang-format \
-        clang-tools libclang-dev clangd doxygen graphviz ccache cppcheck \
-        pre-commit valgrind systemtap ltrace strace lldb lld cmake
+  si gcc gdb g++ libboost-all-dev catch2 clang llvm clang-tidy clang-format \
+    clang-tools libclang-dev clangd doxygen graphviz ccache cppcheck \
+    pre-commit valgrind systemtap ltrace strace lldb lld cmake
 
-    conan_install
+  conan_install
 
-    cmd_check gcc g++ gdb clang clang-tidy clang-format
-    cmd_check cmake conan
+  cmd_check gcc g++ gdb clang clang-tidy clang-format
+  cmd_check cmake conan
 
-    slog "C++ installation done!"
+  slog "C++ installation done!"
 }
 
 vscode_binstall() {
-    has_cmd code && return 0
+  has_cmd code && return 0
 
-    slog "Installing vscode..."
+  slog "Installing vscode..."
 
-    if ! grep -q "https://packages.microsoft.com/repos/code stable main" /etc/apt/sources.list.d/vscode.list 2>/dev/null; then
-        echo "code code/add-microsoft-repo boolean true" | sudo debconf-set-selections
+  if ! grep -q "https://packages.microsoft.com/repos/code stable main" /etc/apt/sources.list.d/vscode.list 2>/dev/null; then
+    echo "code code/add-microsoft-repo boolean true" | sudo debconf-set-selections
 
-        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor >packages.microsoft.gpg
-        sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor >packages.microsoft.gpg
+    sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
 
-        echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
+    echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
 
-        rm -f packages.microsoft.gpg
-    fi
+    rm -f packages.microsoft.gpg
+  fi
 
-    sudo apt-get -qq update
-    si code
+  sudo apt-get -qq update
+  si code
 
-    slog "vscode installation done!"
+  slog "vscode installation done!"
 
-    cmd_check code
+  cmd_check code
 }
 
 windsurf_install() {
-    has_cmd windsurf && return 0
+  has_cmd windsurf && return 0
 
-    slog "Installing windsurf..."
+  slog "Installing windsurf..."
 
-    # first ceck if it's already added
-    if ! [ -f /etc/apt/sources.list.d/windsurf.list ]; then
-        curl -fsSL "https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/windsurf.gpg" | sudo gpg --dearmor -o /usr/share/keyrings/windsurf-stable-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/windsurf-stable-archive-keyring.gpg arch=amd64] https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/apt stable main" | sudo tee /etc/apt/sources.list.d/windsurf.list >/dev/null
-    fi
+  # first ceck if it's already added
+  if ! [ -f /etc/apt/sources.list.d/windsurf.list ]; then
+    curl -fsSL "https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/windsurf.gpg" | sudo gpg --dearmor -o /usr/share/keyrings/windsurf-stable-archive-keyring.gpg
+    echo "deb [signed-by=/usr/share/keyrings/windsurf-stable-archive-keyring.gpg arch=amd64] https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/apt stable main" | sudo tee /etc/apt/sources.list.d/windsurf.list >/dev/null
+  fi
 
-    sudo apt-get -qq update
-    si windsurf
+  sudo apt-get -qq update
+  si windsurf
 
-    slog "windsurf installation done!"
+  slog "windsurf installation done!"
 }
 
 terminal_binstall() {
-    slog "Installing terminal..."
-    if has_cmd snap; then
-        snap install ghostty --classic
-    fi
+  slog "Installing terminal..."
+  if has_cmd snap; then
+    snap install ghostty --classic
+  fi
 
-    if has_cmd ghostty; then
-        slog "ghostty installed"
-    else
-        si alacritty
-        cmd_check alacritty || si kitty
-    fi
+  if has_cmd ghostty; then
+    slog "ghostty installed"
+  else
+    si alacritty
+    cmd_check alacritty || si kitty
+  fi
 
-    slog "terminal installation done!"
+  slog "terminal installation done!"
 }
 
 vm-ui_install() {
-    is_desktop || return 1
+  is_desktop || return 1
 
-    slog "Installing virt ui packages..."
+  slog "Installing virt ui packages..."
 
-    si gnome-boxes
-    has_cmd virt-install && si virt-manager virt-viewer
+  si gnome-boxes
+  has_cmd virt-install && si virt-manager virt-viewer
 
-    slog "virt ui packages installation done!"
+  slog "virt ui packages installation done!"
 }
 
 cockpit_install() {
-    has_cmd cockpit && return 1
+  has_cmd cockpit && return 1
 
-    slog "Installing cockpit..."
+  slog "Installing cockpit..."
 
-    si cockpit cockpit-machines cockpit-networkmanager cockpit-packagekit \
-        cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged \
-        cockpit-system
+  si cockpit cockpit-machines cockpit-networkmanager cockpit-packagekit \
+    cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged \
+    cockpit-system
 
-    sudo systemctl enable --now cockpit.socket
+  sudo systemctl enable --now cockpit.socket
 
-    slog "cockpit installation done!"
+  slog "cockpit installation done!"
 }
 
 vm_install() {
-    slog "Installing libvirt..."
+  slog "Installing libvirt..."
 
-    si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils \
-        virgl-server qemu-utils spice-client-gtk spice-vdagent \
-        cloud-image-utils libguestfs-tools libosinfo-bin jq
+  si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils \
+    virgl-server qemu-utils spice-client-gtk spice-vdagent \
+    cloud-image-utils libguestfs-tools libosinfo-bin jq
 
-    is_distrobox || vm-ui_install
+  is_distrobox || vm-ui_install
 
-    slog "libvirt installation done!"
+  slog "libvirt installation done!"
 }
 
 incus_install() {
-    has_cmd incus && return 1
+  has_cmd incus && return 1
 
-    slog "Installing incus..."
+  slog "Installing incus..."
 
-    si qemu-system-x86 qemu-utils incus bridge-utils
+  si qemu-system-x86 qemu-utils incus bridge-utils
 
-    incus_confstall
+  incus_confstall
 
-    slog "incus-lts installation done!"
+  slog "incus-lts installation done!"
 }
 
 incus-latest_install() {
-    has_cmd incus && return 1
+  has_cmd incus && return 1
 
-    slog "Installing incus..."
+  slog "Installing incus..."
 
-    sudo mkdir -p /etc/apt/keyrings/
-    sudo curl -fsSL https://pkgs.zabbly.com/key.asc -o /etc/apt/keyrings/zabbly.asc
+  sudo mkdir -p /etc/apt/keyrings/
+  sudo curl -fsSL https://pkgs.zabbly.com/key.asc -o /etc/apt/keyrings/zabbly.asc
 
-    sh -c 'cat <<EOF > /etc/apt/sources.list.d/zabbly-incus-stable.sources\nEnabled: yes\nTypes: deb\nURIs: https://pkgs.zabbly.com/incus/stable\nSuites: $(. /etc/os-release && echo ${VERSION_CODENAME})\nComponents: main\nArchitectures: $(dpkg --print-architecture)\nSigned-By: /etc/apt/keyrings/zabbly.asc\n\nEOF'
-    sudo sh -c 'cat <<EOF > /etc/apt/sources.list.d/zabbly-incus-stable.sources\nEnabled: yes\nTypes: deb\nURIs: https://pkgs.zabbly.com/incus/stable\nSuites: $(. /etc/os-release && echo ${VERSION_CODENAME})\nComponents: main\nArchitectures: $(dpkg --print-architecture)\nSigned-By: /etc/apt/keyrings/zabbly.asc\n\nEOF'
+  sh -c 'cat <<EOF > /etc/apt/sources.list.d/zabbly-incus-stable.sources\nEnabled: yes\nTypes: deb\nURIs: https://pkgs.zabbly.com/incus/stable\nSuites: $(. /etc/os-release && echo ${VERSION_CODENAME})\nComponents: main\nArchitectures: $(dpkg --print-architecture)\nSigned-By: /etc/apt/keyrings/zabbly.asc\n\nEOF'
+  sudo sh -c 'cat <<EOF > /etc/apt/sources.list.d/zabbly-incus-stable.sources\nEnabled: yes\nTypes: deb\nURIs: https://pkgs.zabbly.com/incus/stable\nSuites: $(. /etc/os-release && echo ${VERSION_CODENAME})\nComponents: main\nArchitectures: $(dpkg --print-architecture)\nSigned-By: /etc/apt/keyrings/zabbly.asc\n\nEOF'
 
-    update_packages
+  update_packages
 
-    si incus bridge-utils qemu-system-x86 qemu-utils
+  si incus bridge-utils qemu-system-x86 qemu-utils
 
-    incus_confstall
+  incus_confstall
 
-    slog "incus installation done!"
+  slog "incus installation done!"
 }
 
 distrobox_install() {
-    has_cmd distrobox && return 1
+  has_cmd distrobox && return 1
 
-    slog "Installing distrobox..."
+  slog "Installing distrobox..."
 
-    si podman podman-toolbox podman-compose
-    slog "podman installation done!"
+  si podman podman-toolbox podman-compose
+  slog "podman installation done!"
 
-    si buildah distrobox
+  si buildah distrobox
 
-    slog "distrobox installation done!"
+  slog "distrobox installation done!"
 }
 
 sway_install() {
-    slog "Installing sway..."
+  slog "Installing sway..."
 
-    si sway swaylock swayidle wlogout wofi dunst firefox-esr foot kitty mpv \
-        wl-clipboard swaybg polkit-kde-agent-1 gnome-keyring libsecret-tools \
-        grim imagemagick pavucontrol sway-notification-center thunar nvtop \
-        thunar-archive-plugin cliphist slurp nwg-bar nwg-clipman nwg-displays \
-        nwg-look xdg-desktop-portal-gtk nm-connection-editor swappy tumbler \
-        network-manager-applet fonts-font-awesome fonts-noto-color-emoji gvfs \
-        fonts-noto fonts-noto-mono papirus-icon-theme bibata-cursor-theme imv \
-        fonts-inter fonts-jetbrains-mono udiskie
+  si sway swaylock swayidle wlogout wofi dunst firefox-esr foot kitty mpv \
+    wl-clipboard swaybg polkit-kde-agent-1 gnome-keyring libsecret-tools \
+    grim imagemagick pavucontrol sway-notification-center thunar nvtop \
+    thunar-archive-plugin cliphist slurp nwg-bar nwg-clipman nwg-displays \
+    nwg-look xdg-desktop-portal-gtk nm-connection-editor swappy tumbler \
+    network-manager-applet fonts-font-awesome fonts-noto-color-emoji gvfs \
+    fonts-noto fonts-noto-mono papirus-icon-theme bibata-cursor-theme imv \
+    fonts-inter fonts-jetbrains-mono udiskie
 
-    slog "sway installation done!"
+  slog "sway installation done!"
 }
 
 # sudo apt-get -qq -y install \
@@ -390,6 +389,6 @@ sway_install() {
 #   redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common wl-clipboard
 
 pm_install() {
-    si net-tools iproute2 nmap lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ \
-        glmark2
+  si net-tools iproute2 nmap lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ \
+    glmark2
 }

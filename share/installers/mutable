@@ -1,369 +1,392 @@
 #!/usr/bin/env bash
 
 nix_install() {
-    has_cmd nix && return 0
-    slog "Installing nix"
+  has_cmd nix && return 0
+  slog "Installing nix"
 
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm
+  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm
 
-    # @TODO: This probable fails in distrobox
-    source_if_exists /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+  # @TODO: This probable fails in distrobox
+  source_if_exists /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 
-    slog "nix installation done!"
+  slog "nix installation done!"
 
-    cmd_check nix nix-shell nix-env
+  cmd_check nix nix-shell nix-env
 }
 
 devbox_install() {
-    has_cmd devbox && return 0
+  has_cmd devbox && return 0
 
-    slog "Installing devbox"
-    curl -fsSL https://get.jetify.com/devbox | bash
+  slog "Installing devbox"
+  curl -fsSL https://get.jetify.com/devbox | bash
 
-    slog "devbox installation done!"
+  slog "devbox installation done!"
 
-    cmd_check devbox
+  cmd_check devbox
 }
 
 nix-no-init_install() {
-    has_cmd nix && return 0
+  has_cmd nix && return 0
 
-    slog "Installing nix"
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
-    slog "nix installation done!"
+  slog "Installing nix"
+  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
+  slog "nix installation done!"
 
-    cmd_check nix nix-shell nix-env
+  cmd_check nix nix-shell nix-env
 }
 
 emacs_binstall() {
-    slog "Installing emacs"
+  slog "Installing emacs"
 
-    if is_apt; then
-        echo "postfix postfix/main_mailer_type select No configuration" | sudo debconf-set-selections
-        si -y --no-install-recommends emacs
-    elif is_mac; then
-        brew tap railwaycat/emacsmacport
-        bi emacs-mac --with-modules
-        ln -s /usr/local/opt/emacs-mac/Emacs.app /Applications/Emacs.app
-    else
-        si emacs
-    fi
+  if is_apt; then
+    echo "postfix postfix/main_mailer_type select No configuration" | sudo debconf-set-selections
+    si -y --no-install-recommends emacs
+  elif is_mac; then
+    brew tap railwaycat/emacsmacport
+    bi emacs-mac --with-modules
+    ln -s /usr/local/opt/emacs-mac/Emacs.app /Applications/Emacs.app
+  else
+    si emacs
+  fi
 
-    slog "emacs installation done!"
+  slog "emacs installation done!"
 
-    cmd_check emacs
+  cmd_check emacs
 }
 
 go_install() {
-    if ! has_cmd go; then
-        slog "Installing go"
+  if ! has_cmd go; then
+    slog "Installing go"
 
-        sudo rm -rf /usr/local/go
-        VERSION=$(curl -sSL "https://go.dev/VERSION?m=text" | head -n 1)
-        frm "/tmp/${VERSION}.linux-amd64.tar.gz"
-        wget -nv "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz" -O /tmp/"${VERSION}.linux-amd64.tar.gz"
-        slog "Untar ${VERSION}.linux-amd64.tar.gz"
-        sudo tar -C /usr/local -xzf /tmp/"${VERSION}.linux-amd64.tar.gz"
-        frm "/tmp/${VERSION}.linux-amd64.tar.gz"
-        export PATH=$PATH:/usr/local/go/bin
+    sudo rm -rf /usr/local/go
+    VERSION=$(curl -sSL "https://go.dev/VERSION?m=text" | head -n 1)
+    frm "/tmp/${VERSION}.linux-amd64.tar.gz"
+    wget -nv "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz" -O /tmp/"${VERSION}.linux-amd64.tar.gz"
+    slog "Untar ${VERSION}.linux-amd64.tar.gz"
+    sudo tar -C /usr/local -xzf /tmp/"${VERSION}.linux-amd64.tar.gz"
+    frm "/tmp/${VERSION}.linux-amd64.tar.gz"
+    export PATH=$PATH:/usr/local/go/bin
 
-        slog "go installation done!"
+    slog "go installation done!"
 
-    fi
+  fi
 
-    if ! has_cmd go; then
-        warn "go not installed, skipping go dev tools"
-        return 1
-    fi
+  if ! has_cmd go; then
+    warn "go not installed, skipping go dev tools"
+    return 1
+  fi
 
-    go-tools_install
+  go-tools_install
 
-    slog "go dev tools installation done!"
+  slog "go dev tools installation done!"
 }
 
 multipass_install() {
-    has_cmd snap || snap_install
+  has_cmd snap || snap_install
 
-    if has_cmd snap; then
-        sudo snap install multipass
-    else
-        warn "snap not installed, skipping multipass installation"
-    fi
+  if has_cmd snap; then
+    sudo snap install multipass
+  else
+    warn "snap not installed, skipping multipass installation"
+  fi
 }
 
 vscode_groupstall() {
-    vscode_binstall
-    vscode-extensions_install
-    vscode_confstall
+  vscode_binstall
+  vscode-extensions_install
+  vscode_confstall
 }
 
 prog-group_check() {
-    cmd_check go rustc npm uv pyenv conda
+  cmd_check go rustc npm uv pyenv conda
 }
 
 prog_mainstall() {
-    vm_mainstall
-    go_install
-    rust_install
-    npm_install
-    prog-group_check
+  vm_mainstall
+  go_install
+  rust_install
+  npm_install
+  prog-group_check
 }
 
 all-group_check() {
-    cmd_check pixi emacs
+  cmd_check pixi emacs
 }
 
 all_mainstall() {
-    prog_mainstall
-    pixi_install
-    pkgx_install
+  prog_mainstall
+  pixi_install
+  pkgx_install
 
-    emacs_binstall
+  emacs_binstall
 
-    emacs_confstall
+  emacs_confstall
 
-    all-group_check
+  all-group_check
 }
 
 sway_mainstall() {
-    slog "Installing sway"
-    shell_mainstall
+  slog "Installing sway"
+  shell_mainstall
 
-    sway_install
+  sway_install
 
-    slog "sway instalation done!"
+  slog "sway instalation done!"
 }
 
 hyprland_mainstall() {
-    slog "Installing hyprland"
-    shell_mainstall
+  slog "Installing hyprland"
+  shell_mainstall
 
-    hyprland_install
+  hyprland_install
 
-    slog "hyprland instalation done!"
+  slog "hyprland instalation done!"
 }
 
 docker_install() {
-    has_cmd docker && return 0
+  has_cmd docker && return 0
 
-    slog "Installing docker..."
+  slog "Installing docker..."
 
-    frm /tmp/get-docker.sh
-    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-    sudo sh /tmp/get-docker.sh
-    frm /tmp/get-docker.sh
+  frm /tmp/get-docker.sh
+  curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+  sudo sh /tmp/get-docker.sh
+  frm /tmp/get-docker.sh
 
-    slog "Docker installation done!"
+  slog "Docker installation done!"
 }
 
 code_server_install() {
-    has_cmd code-server && return 1
+  has_cmd code-server && return 1
 
-    slog "Installing code-server"
-    curl -sSL https://code-server.dev/install.sh | sh
-    slog "code-server installation done!"
+  slog "Installing code-server"
+  curl -sSL https://code-server.dev/install.sh | sh
+  slog "code-server installation done!"
 
-    cmd_check code-server
+  cmd_check code-server
 
 }
 
 coder_install() {
-    slog "Installing coder"
-    curl -L https://coder.com/install.sh | sh
-    slog "coder installation done!"
+  slog "Installing coder"
+  curl -L https://coder.com/install.sh | sh
+  slog "coder installation done!"
 }
 
 permissive_selinux() {
-    sed -i 's/^SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
+  sed -i 's/^SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
 
-    sudo setenforce 0
-    if [[ "$(getenforce)" == "Permissive" ]]; then
-        slog "Successfully set SELinux to permissive mode."
-    else
-        err_exit "Failed to set SELinux to permissive mode. Quitting."
-    fi
+  sudo setenforce 0
+  if [[ "$(getenforce)" == "Permissive" ]]; then
+    slog "Successfully set SELinux to permissive mode."
+  else
+    err_exit "Failed to set SELinux to permissive mode. Quitting."
+  fi
 }
 
 foot_confstall() {
-    slog "foot config"
-    stowgf foot
-    slog "foot config done!"
+  slog "foot config"
+  stowgf foot
+  slog "foot config done!"
 }
 
 pyenv_install() {
-    if has_cmd pyenv; then
-        eval "$(pyenv init -)"
-        return 0
-    fi
-
-    slog "Installing pyenv"
-    sclone https://github.com/yyuu/pyenv.git ~/.pyenv
-    sclone https://github.com/yyuu/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv
-    slog "pyenv installation done!"
-
-    export PYENV_ROOT="$HOME/.pyenv"
-    export PATH="$PYENV_ROOT/bin:$PATH"
+  if has_cmd pyenv; then
     eval "$(pyenv init -)"
+    return 0
+  fi
 
-    cmd_check pyenv
+  slog "Installing pyenv"
+  sclone https://github.com/yyuu/pyenv.git ~/.pyenv
+  sclone https://github.com/yyuu/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv
+  slog "pyenv installation done!"
+
+  export PYENV_ROOT="$HOME/.pyenv"
+  export PATH="$PYENV_ROOT/bin:$PATH"
+  eval "$(pyenv init -)"
+
+  cmd_check pyenv
 }
 
 tailscale_install() {
-    has_cmd tailscale && return 0
+  has_cmd tailscale && return 0
 
-    slog "Installing tailscale"
-    curl -fsSL https://tailscale.com/install.sh | sh
-    slog "tailscale installation done!"
+  slog "Installing tailscale"
+  curl -fsSL https://tailscale.com/install.sh | sh
+  slog "tailscale installation done!"
 }
 
 portainer_install() {
-    if ! has_cmd docker; then
-        warn "docker not installed, skipping portainer"
-        return 1
-    fi
+  if ! has_cmd docker; then
+    warn "docker not installed, skipping portainer"
+    return 1
+  fi
 
-    if has_cmd docker && docker ps -a | grep -q portainer; then
-        slog "Portainer is already installed"
-        return 1
-    fi
+  if has_cmd docker && docker ps -a | grep -q portainer; then
+    slog "Portainer is already installed"
+    return 1
+  fi
 
-    sg docker -c '
+  sg docker -c '
     if ! docker volume inspect portainer_data &>/dev/null; then
         echo "Creating portainer_data volume"
         docker volume create portainer_data
         docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
     fi
     '
-    slog "Portainer installation done!"
+  slog "Portainer installation done!"
 }
 
 sway_install() {
-    slog "Installing sway..."
+  slog "Installing sway..."
 
-    sway_binstall
+  sway_binstall
 
-    if has_cmd pipx; then
-        pipx install i3ipc
-        pipx install autotiling
-    else
-        warn "pipx not installed, cannot install autotiling"
-    fi
+  if has_cmd pipx; then
+    pipx install i3ipc
+    pipx install autotiling
+  else
+    warn "pipx not installed, cannot install autotiling"
+  fi
 
-    slog "Installing sway done!"
+  slog "Installing sway done!"
 }
 
 hyprland_install() {
-    slog "Installing hyprland..."
+  slog "Installing hyprland..."
 
-    hyprland_binstall
+  hyprland_binstall
 
-    hyprland_confstall
-    hypr-waybar_confstall
-    kitty_confstall
-    rofi_confstall
-    wlogout_confstall
+  hyprland_confstall
+  hypr-waybar_confstall
+  kitty_confstall
+  rofi_confstall
+  wlogout_confstall
 
-    slog "hyprland installation done!"
+  slog "hyprland installation done!"
 }
 
 dev_check() {
-    shell-slim_check
-    cmd_check code distrobox
+  shell-slim_check
+  cmd_check code distrobox
 }
 
 dev_mainstall() {
-    shell-slim_mainstall
-    vscode_groupstall
-    distrobox_install
-    dev_check
+  shell-slim_mainstall
+  vscode_groupstall
+  distrobox_install
+  dev_check
 }
 
 dev-nix_mainstall() {
-    nix_mainstall
-    vscode_groupstall
-    jetbrains-mono_install
+  nix_mainstall
+  vscode_groupstall
+  jetbrains-mono_install
 }
 
 dev-work_check() {
-    dev_check
-    cmd_check docker
+  dev_check
+  cmd_check docker
 }
 
 dev-work_mainstall() {
-    dev_mainstall
-    docker_groupstall
-    dev-work_check
+  dev_mainstall
+  docker_groupstall
+  dev-work_check
 }
 
 dev-work-full_check() {
-    dev-work_check
-    cmd_check incus
+  dev-work_check
+  cmd_check incus
 }
 
 dev-work-full_mainstall() {
-    dev_work_mainsStall
-    incus_install
+  dev_work_mainsStall
+  incus_install
 }
 
 dbox-docker-dev_mainstall() {
-    is_ubuntu || err_exit "This script is only for Ubuntu"
-    has_cmd docker || err_exit "This script requires docker"
+  is_ubuntu || err_exit "This script is only for Ubuntu"
+  has_cmd docker || err_exit "This script requires docker"
 
-    docker_confstall
+  docker_confstall
 
-    min_mainstall
-    si firefox gnome-keyring wl-clipboard libsecret
+  min_mainstall
+  si firefox gnome-keyring wl-clipboard libsecret
 
-    starship_install
-    vscode_groupstall
+  starship_install
+  vscode_groupstall
 
-    has_cmd zsh && zsh_confstall
+  has_cmd zsh && zsh_confstall
+}
+
+dbox-dev_mainstall() {
+  shell-slim_mainstall
+  vscode_groupstall
+
+  si firefox gnome-keyring wl-clipboard libsecret
+  gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
+  systemctl --user enable --now dbus
+}
+
+dbox_dev_exports() {
+  distrobox-export --bin "$(which stow)"
+  distrobox-export --bin "$(which code)"
+  distrobox-export --app "Visual Studio Code"
+  # distrobox-export --bin "$(which wl-copy)"
+  # distrobox-export --bin "$(which wl-paste)"
+  # distrobox-export --app "kitty"
+}
+
+dbox-dev-atomic_mainstall() {
+  dbox-dev_mainstall
+  dbox_dev_exports
 }
 
 nixos_mainstall() {
-    local cfg_dir=~/nixos-config
-    local flake_url="${ILM_BASE_URL}/extras/nixos/vm/flake.nix"
-    local dev_url="${ILM_BASE_URL}/extras/nixos/vm/dev.nix"
+  local cfg_dir=~/nixos-config
+  local flake_url="${ILM_BASE_URL}/extras/nixos/vm/flake.nix"
+  local dev_url="${ILM_BASE_URL}/extras/nixos/vm/dev.nix"
 
-    if [ -d "$cfg_dir" ]; then
-        err_exit "nixos-config already exists, skipping nixos installation"
-    fi
+  if [ -d "$cfg_dir" ]; then
+    err_exit "nixos-config already exists, skipping nixos installation"
+  fi
 
-    slog "Copying /etc/nixos to $cfg_dir..."
-    if ! cp -r /etc/nixos "$cfg_dir"; then
-        err_exit "Failed to copy /etc/nixos"
-    fi
+  slog "Copying /etc/nixos to $cfg_dir..."
+  if ! cp -r /etc/nixos "$cfg_dir"; then
+    err_exit "Failed to copy /etc/nixos"
+  fi
 
-    slog "Fetching flake.nix..."
-    if ! curl -fsSL "$flake_url" -o "$cfg_dir/flake.nix"; then
-        err_exit "Failed to download flake.nix"
-    fi
+  slog "Fetching flake.nix..."
+  if ! curl -fsSL "$flake_url" -o "$cfg_dir/flake.nix"; then
+    err_exit "Failed to download flake.nix"
+  fi
 
-    slog "Fetching dev.nix..."
-    if ! curl -fsSL "$dev_url" -o "$cfg_dir/dev.nix"; then
-        err_exit "Failed to download dev.nix"
-    fi
+  slog "Fetching dev.nix..."
+  if ! curl -fsSL "$dev_url" -o "$cfg_dir/dev.nix"; then
+    err_exit "Failed to download dev.nix"
+  fi
 
-    slog "Ensuring dev.nix is imported..."
-    if [[ ! -f "$cfg_dir/configuration.nix" ]]; then
-        err_exit "configuration.nix not found"
-    fi
-    if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
-        sed -i '/^[[:space:]]*\.\/hardware-configuration\.nix/ a\    ./dev.nix' "$cfg_dir/configuration.nix"
-    fi
+  slog "Ensuring dev.nix is imported..."
+  if [[ ! -f "$cfg_dir/configuration.nix" ]]; then
+    err_exit "configuration.nix not found"
+  fi
+  if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
+    sed -i '/^[[:space:]]*\.\/hardware-configuration\.nix/ a\    ./dev.nix' "$cfg_dir/configuration.nix"
+  fi
 
-    if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
-        err_exit "Failed to add dev.nix to configuration.nix"
-    fi
+  if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
+    err_exit "Failed to add dev.nix to configuration.nix"
+  fi
 
-    slog "Rebuilding system with flake..."
-    if ! sudo nixos-rebuild switch --flake "$cfg_dir#$(hostname)"; then
-        err_exit "nixos-rebuild failed"
-    fi
+  slog "Rebuilding system with flake..."
+  if ! sudo nixos-rebuild switch --flake "$cfg_dir#$(hostname)"; then
+    err_exit "nixos-rebuild failed"
+  fi
 
-    dotfiles_install
-    vscode_confstall
-    touch ~/.zshrc
+  dotfiles_install
+  vscode_confstall
+  touch ~/.zshrc
 }
 
 # kwin_script_install() {
@@ -394,159 +417,159 @@ nixos_mainstall() {
 
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-hotkeys.sh
 gnome_keybindings_install() {
-    # Make it easy to resize undecorated windows
-    gsettings set org.gnome.desktop.wm.keybindings begin-resize "['<Super>BackSpace']"
+  # Make it easy to resize undecorated windows
+  gsettings set org.gnome.desktop.wm.keybindings begin-resize "['<Super>BackSpace']"
 
-    # Alt+F4 is very cumbersome
-    # gsettings set org.gnome.desktop.wm.keybindings close "['<Super>w']"
+  # Alt+F4 is very cumbersome
+  # gsettings set org.gnome.desktop.wm.keybindings close "['<Super>w']"
 
-    # Make it easy to maximize like you can fill left/right
-    # gsettings set org.gnome.desktop.wm.keybindings maximize "['<Super>Up']"
+  # Make it easy to maximize like you can fill left/right
+  # gsettings set org.gnome.desktop.wm.keybindings maximize "['<Super>Up']"
 
-    # For keyboards that only have a start/stop button for music, like Logitech MX Keys Mini
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys next "['<Shift>AudioPlay']"
+  # For keyboards that only have a start/stop button for music, like Logitech MX Keys Mini
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys next "['<Shift>AudioPlay']"
 
-    # Full-screen with title/navigation bar
-    # gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Shift>F11']"
+  # Full-screen with title/navigation bar
+  # gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Shift>F11']"
 
-    # # Use alt for pinned apps
-    # gsettings set org.gnome.shell.keybindings switch-to-application-1 "['<Alt>1']"
-    # gsettings set org.gnome.shell.keybindings switch-to-application-2 "['<Alt>2']"
-    # gsettings set org.gnome.shell.keybindings switch-to-application-3 "['<Alt>3']"
-    # gsettings set org.gnome.shell.keybindings switch-to-application-4 "['<Alt>4']"
-    # gsettings set org.gnome.shell.keybindings switch-to-application-5 "['<Alt>5']"
-    # gsettings set org.gnome.shell.keybindings switch-to-application-6 "['<Alt>6']"
-    # gsettings set org.gnome.shell.keybindings switch-to-application-7 "['<Alt>7']"
-    # gsettings set org.gnome.shell.keybindings switch-to-application-8 "['<Alt>8']"
-    # gsettings set org.gnome.shell.keybindings switch-to-application-9 "['<Alt>9']"
+  # # Use alt for pinned apps
+  # gsettings set org.gnome.shell.keybindings switch-to-application-1 "['<Alt>1']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-2 "['<Alt>2']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-3 "['<Alt>3']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-4 "['<Alt>4']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-5 "['<Alt>5']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-6 "['<Alt>6']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-7 "['<Alt>7']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-8 "['<Alt>8']"
+  # gsettings set org.gnome.shell.keybindings switch-to-application-9 "['<Alt>9']"
 
-    # # Use super for workspaces
-    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-1 "['<Super>1']"
-    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-2 "['<Super>2']"
-    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-3 "['<Super>3']"
-    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-4 "['<Super>4']"
-    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-5 "['<Super>5']"
-    # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-6 "['<Super>6']"
+  # # Use super for workspaces
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-1 "['<Super>1']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-2 "['<Super>2']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-3 "['<Super>3']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-4 "['<Super>4']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-5 "['<Super>5']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-6 "['<Super>6']"
 
-    # # Reserve slots for custom keybindings
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/']"
+  # # Reserve slots for custom keybindings
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/']"
 
-    # # Set ulauncher to Super+Space
-    # gsettings set org.gnome.desktop.wm.keybindings switch-input-source "@as []"
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name 'ulauncher-toggle'
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 'ulauncher-toggle'
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ binding '<Super>space'
+  # # Set ulauncher to Super+Space
+  # gsettings set org.gnome.desktop.wm.keybindings switch-input-source "@as []"
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name 'ulauncher-toggle'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 'ulauncher-toggle'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ binding '<Super>space'
 
-    # # Set flameshot (with the sh fix for starting under Wayland) on alternate print screen key
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ name 'Flameshot'
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ command 'sh -c -- "flameshot gui"'
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ binding '<Control>Print'
+  # # Set flameshot (with the sh fix for starting under Wayland) on alternate print screen key
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ name 'Flameshot'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ command 'sh -c -- "flameshot gui"'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ binding '<Control>Print'
 
-    # # Start a new alacritty window (rather than just switch to the already open one)
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ name 'alacritty'
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ command 'alacritty'
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ binding '<Shift><Alt>2'
+  # # Start a new alacritty window (rather than just switch to the already open one)
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ name 'alacritty'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ command 'alacritty'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ binding '<Shift><Alt>2'
 
-    # # Start a new Chrome window (rather than just switch to the already open one)
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ name 'new chrome'
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ command 'google-chrome'
-    # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ binding '<Shift><Alt>1'
+  # # Start a new Chrome window (rather than just switch to the already open one)
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ name 'new chrome'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ command 'google-chrome'
+  # gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ binding '<Shift><Alt>1'
 
-    # xdg-settings set default-web-browser google-chrome.desktop
+  # xdg-settings set default-web-browser google-chrome.desktop
 
-    # Install new extensions
+  # Install new extensions
 
-    # gext install tophat@fflewddur.github.io
-    # gext install space-bar@luchrioh
-    # gext install tactile@lundal.io
+  # gext install tophat@fflewddur.github.io
+  # gext install space-bar@luchrioh
+  # gext install tactile@lundal.io
 
-    # # Compile gsettings schemas in order to be able to set them
-    # sudo cp ~/.local/share/gnome-shell/extensions/tactile@lundal.io/schemas/org.gnome.shell.extensions.tactile.gschema.xml /usr/share/glib-2.0/schemas/
-    # sudo cp ~/.local/share/gnome-shell/extensions/just-perfection-desktop\@just-perfection/schemas/org.gnome.shell.extensions.just-perfection.gschema.xml /usr/share/glib-2.0/schemas/
-    # sudo cp ~/.local/share/gnome-shell/extensions/blur-my-shell\@aunetx/schemas/org.gnome.shell.extensions.blur-my-shell.gschema.xml /usr/share/glib-2.0/schemas/
-    # sudo cp ~/.local/share/gnome-shell/extensions/space-bar\@luchrioh/schemas/org.gnome.shell.extensions.space-bar.gschema.xml /usr/share/glib-2.0/schemas/
-    # sudo cp ~/.local/share/gnome-shell/extensions/tophat@fflewddur.github.io/schemas/org.gnome.shell.extensions.tophat.gschema.xml /usr/share/glib-2.0/schemas/
-    # sudo cp ~/.local/share/gnome-shell/extensions/AlphabeticalAppGrid\@stuarthayhurst/schemas/org.gnome.shell.extensions.AlphabeticalAppGrid.gschema.xml /usr/share/glib-2.0/schemas/
-    # sudo glib-compile-schemas /usr/share/glib-2.0/schemas/
+  # # Compile gsettings schemas in order to be able to set them
+  # sudo cp ~/.local/share/gnome-shell/extensions/tactile@lundal.io/schemas/org.gnome.shell.extensions.tactile.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo cp ~/.local/share/gnome-shell/extensions/just-perfection-desktop\@just-perfection/schemas/org.gnome.shell.extensions.just-perfection.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo cp ~/.local/share/gnome-shell/extensions/blur-my-shell\@aunetx/schemas/org.gnome.shell.extensions.blur-my-shell.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo cp ~/.local/share/gnome-shell/extensions/space-bar\@luchrioh/schemas/org.gnome.shell.extensions.space-bar.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo cp ~/.local/share/gnome-shell/extensions/tophat@fflewddur.github.io/schemas/org.gnome.shell.extensions.tophat.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo cp ~/.local/share/gnome-shell/extensions/AlphabeticalAppGrid\@stuarthayhurst/schemas/org.gnome.shell.extensions.AlphabeticalAppGrid.gschema.xml /usr/share/glib-2.0/schemas/
+  # sudo glib-compile-schemas /usr/share/glib-2.0/schemas/
 
-    # # Configure Tactile
-    # gsettings set org.gnome.shell.extensions.tactile col-0 1
-    # gsettings set org.gnome.shell.extensions.tactile col-1 2
-    # gsettings set org.gnome.shell.extensions.tactile col-2 1
-    # gsettings set org.gnome.shell.extensions.tactile col-3 0
-    # gsettings set org.gnome.shell.extensions.tactile row-0 1
-    # gsettings set org.gnome.shell.extensions.tactile row-1 1
-    # gsettings set org.gnome.shell.extensions.tactile gap-size 32
+  # # Configure Tactile
+  # gsettings set org.gnome.shell.extensions.tactile col-0 1
+  # gsettings set org.gnome.shell.extensions.tactile col-1 2
+  # gsettings set org.gnome.shell.extensions.tactile col-2 1
+  # gsettings set org.gnome.shell.extensions.tactile col-3 0
+  # gsettings set org.gnome.shell.extensions.tactile row-0 1
+  # gsettings set org.gnome.shell.extensions.tactile row-1 1
+  # gsettings set org.gnome.shell.extensions.tactile gap-size 32
 
-    # # Configure Just Perfection
-    # gsettings set org.gnome.shell.extensions.just-perfection animation 2
-    # gsettings set org.gnome.shell.extensions.just-perfection dash-app-running true
-    # gsettings set org.gnome.shell.extensions.just-perfection workspace true
-    # gsettings set org.gnome.shell.extensions.just-perfection workspace-popup false
+  # # Configure Just Perfection
+  # gsettings set org.gnome.shell.extensions.just-perfection animation 2
+  # gsettings set org.gnome.shell.extensions.just-perfection dash-app-running true
+  # gsettings set org.gnome.shell.extensions.just-perfection workspace true
+  # gsettings set org.gnome.shell.extensions.just-perfection workspace-popup false
 
-    # # Configure Blur My Shell
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.appfolder blur false
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.lockscreen blur false
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.screenshot blur false
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.window-list blur false
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.panel blur false
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.overview blur true
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.overview pipeline 'pipeline_default'
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock blur true
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock brightness 0.6
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock sigma 30
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock static-blur true
-    # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock style-dash-to-dock 0
+  # # Configure Blur My Shell
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.appfolder blur false
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.lockscreen blur false
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.screenshot blur false
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.window-list blur false
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.panel blur false
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.overview blur true
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.overview pipeline 'pipeline_default'
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock blur true
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock brightness 0.6
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock sigma 30
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock static-blur true
+  # gsettings set org.gnome.shell.extensions.blur-my-shell.dash-to-dock style-dash-to-dock 0
 
-    # # Configure Space Bar
-    # gsettings set org.gnome.shell.extensions.space-bar.behavior smart-workspace-names false
-    # gsettings set org.gnome.shell.extensions.space-bar.shortcuts enable-activate-workspace-shortcuts false
-    # gsettings set org.gnome.shell.extensions.space-bar.shortcuts enable-move-to-workspace-shortcuts true
-    # gsettings set org.gnome.shell.extensions.space-bar.shortcuts open-menu "@as []"
+  # # Configure Space Bar
+  # gsettings set org.gnome.shell.extensions.space-bar.behavior smart-workspace-names false
+  # gsettings set org.gnome.shell.extensions.space-bar.shortcuts enable-activate-workspace-shortcuts false
+  # gsettings set org.gnome.shell.extensions.space-bar.shortcuts enable-move-to-workspace-shortcuts true
+  # gsettings set org.gnome.shell.extensions.space-bar.shortcuts open-menu "@as []"
 
-    # # Configure TopHat
-    # gsettings set org.gnome.shell.extensions.tophat show-icons false
-    # gsettings set org.gnome.shell.extensions.tophat show-cpu false
-    # gsettings set org.gnome.shell.extensions.tophat show-disk false
-    # gsettings set org.gnome.shell.extensions.tophat show-mem false
-    # gsettings set org.gnome.shell.extensions.tophat network-usage-unit bits
+  # # Configure TopHat
+  # gsettings set org.gnome.shell.extensions.tophat show-icons false
+  # gsettings set org.gnome.shell.extensions.tophat show-cpu false
+  # gsettings set org.gnome.shell.extensions.tophat show-disk false
+  # gsettings set org.gnome.shell.extensions.tophat show-mem false
+  # gsettings set org.gnome.shell.extensions.tophat network-usage-unit bits
 
-    # # Configure AlphabeticalAppGrid
-    # gsettings set org.gnome.shell.extensions.alphabetical-app-grid folder-order-position 'end'
+  # # Configure AlphabeticalAppGrid
+  # gsettings set org.gnome.shell.extensions.alphabetical-app-grid folder-order-position 'end'
 
-    # app/com.github.rafostar.Clapper
-    # app/org.fedoraproject.MediaWriter
-    # app/com.github.tchx84.Flatseal
-    # app/io.github.flattool.Ignition
-    # app/io.github.flattool.Warehouse
-    # app/org.gnome.baobab
-    # app/org.gnome.Calculator
-    # app/org.gnome.Calendar
-    # app/org.gnome.Characters
-    # app/org.gnome.clocks
-    # app/org.gnome.Connections
-    # app/org.gnome.Contacts
-    # app/org.gnome.DejaDup
-    # app/org.gnome.Papers
-    # app/com.mattjakeman.ExtensionManager
-    # app/org.gnome.FileRoller
-    # app/org.gnome.font-viewer
-    # app/org.gnome.Logs
-    # app/org.gnome.Loupe
-    # app/org.gnome.Maps
-    # app/org.gnome.NautilusPreviewer
-    # app/org.gnome.World.PikaBackup
-    # app/org.gnome.TextEditor
-    # app/org.gnome.Weather
-    # app/io.missioncenter.MissionCenter
-    # app/org.mozilla.firefox
-    # app/org.mozilla.Thunderbird
-    # app/org.gustavoperedo.FontDownloader
-    # runtime/org.gtk.Gtk3theme.adw-gtk3/x86_64/3.22
-    # runtime/org.gtk.Gtk3theme.adw-gtk3-dark/x86_64/3.22
+  # app/com.github.rafostar.Clapper
+  # app/org.fedoraproject.MediaWriter
+  # app/com.github.tchx84.Flatseal
+  # app/io.github.flattool.Ignition
+  # app/io.github.flattool.Warehouse
+  # app/org.gnome.baobab
+  # app/org.gnome.Calculator
+  # app/org.gnome.Calendar
+  # app/org.gnome.Characters
+  # app/org.gnome.clocks
+  # app/org.gnome.Connections
+  # app/org.gnome.Contacts
+  # app/org.gnome.DejaDup
+  # app/org.gnome.Papers
+  # app/com.mattjakeman.ExtensionManager
+  # app/org.gnome.FileRoller
+  # app/org.gnome.font-viewer
+  # app/org.gnome.Logs
+  # app/org.gnome.Loupe
+  # app/org.gnome.Maps
+  # app/org.gnome.NautilusPreviewer
+  # app/org.gnome.World.PikaBackup
+  # app/org.gnome.TextEditor
+  # app/org.gnome.Weather
+  # app/io.missioncenter.MissionCenter
+  # app/org.mozilla.firefox
+  # app/org.mozilla.Thunderbird
+  # app/org.gustavoperedo.FontDownloader
+  # runtime/org.gtk.Gtk3theme.adw-gtk3/x86_64/3.22
+  # runtime/org.gtk.Gtk3theme.adw-gtk3-dark/x86_64/3.22
 
-    #     # Reveal week numbers in the Gnome calendar
-    #     gsettings set org.gnome.desktop.calendar show-weekdate true
+  #     # Reveal week numbers in the Gnome calendar
+  #     gsettings set org.gnome.desktop.calendar show-weekdate true
 }
 
 # ulauncher_install() {

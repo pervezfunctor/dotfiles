@@ -1,254 +1,242 @@
 #! /usr/bin/env bash
 
 base_config_install() {
-    dotfiles_install
-    bash_confstall
+  dotfiles_install
+  bash_confstall
 }
 
 min_config_install() {
-    base_config_install
+  base_config_install
 }
 
 shell-slim_config_install() {
-    min_config_install
-    git_confstall
-    zsh_confstall
+  min_config_install
+  git_confstall
+  zsh_confstall
 }
 
 shell_config_install() {
-    shell-slim_config_install
-    tmux_confstall
-    nvim_confstall astro
-    yazi_confstall
+  shell-slim_config_install
+  tmux_confstall
+  nvim_confstall astro
+  yazi_confstall
 }
 
 groupstall() {
-    "$1"_groupstall
+  "$1"_groupstall
 }
 
 mainstall() {
-    "$1"_mainstall
+  "$1"_mainstall
 }
 
 base_binstall() {
-    if has_cmd core_install; then
-        core_install
-    else
-        warn "core_install not available, skipping core installation"
-    fi
+  if has_cmd core_install; then
+    core_install
+  else
+    warn "core_install not available, skipping core installation"
+  fi
 }
 
 bash_config_check() {
-    bash_config_exists || warn "bash config is not setup correctly"
+  bash_config_exists || warn "bash config is not setup correctly"
 }
 
 base_check() {
-    cmd_check curl wget git trash stow tree tar unzip
-    dir_check "$DOT_DIR"
-    bash_config_check
+  cmd_check curl wget git trash stow tree tar unzip
+  dir_check "$DOT_DIR"
+  bash_config_check
 }
 
 base_mainstall() {
-    base_binstall
-    base_config_install
-    base_check
+  base_binstall
+  base_config_install
+  base_check
 }
 
 min_binstall() {
-    base_binstall
-    if has_cmd essential_install; then
-        essential_install
-    else
-        warn "essential_install not available, skipping essential installation"
-    fi
+  base_binstall
+  if has_cmd essential_install; then
+    essential_install
+  else
+    warn "essential_install not available, skipping essential installation"
+  fi
 }
 
 shell-slim_binstall() {
-    if has_cmd cli-slim_install; then
-        cli-slim_install
-    else
-        warn "cli-slim_install not available, skipping cli installation"
-    fi
-    shell-slim_install
+  if has_cmd cli-slim_install; then
+    cli-slim_install
+  else
+    warn "cli-slim_install not available, skipping cli installation"
+  fi
+  shell-slim_install
 }
 
 shell_binstall() {
-    if has_cmd cli_install; then
-        cli_install
-    else
-        warn "cli_install not available, skipping cli installation"
-    fi
-    shell_install
-    terminal_install
+  if has_cmd cli_install; then
+    cli_install
+  else
+    warn "cli_install not available, skipping cli installation"
+  fi
+  shell_install
+  terminal_install
 }
 
 shell-slim_groupstall() {
-    shell-slim_binstall
-    shell-slim_config_install
+  shell-slim_binstall
+  shell-slim_config_install
 }
 
 terminal_config_install() {
-    alacritty_confstall
-    kitty_confstall
-    ghostty_confstall
-    wezterm_confstall
+  alacritty_confstall
+  kitty_confstall
+  ghostty_confstall
+  wezterm_confstall
 }
 
 terminal_install() {
-    jetbrains-mono_install
+  jetbrains-mono_install
 
-    if has_cmd ghostty; then
-        slog "ghostty already installed"
-        return 0
+  for cmd in ghostty kitty alacritty wezterm; do
+    if has_cmd "$cmd"; then
+      slog "$cmd already installed"
+      return 0
     fi
+  done
 
-    if has_cmd kitty; then
-        slog "kitty already installed"
-        return 0
-    fi
+  if has_cmd flatpak && flatpak list | grep -q wezterm; then
+    slog "wezterm already installed via flatpak"
+    return 0
+  fi
 
-    if has_cmd alacritty; then
-        slog "alacritty already installed"
-        return 0
-    fi
-
-    if has_cmd wezterm; then
-        slog "wezterm already installed"
-        return 0
-    fi
-
-    if has_cmd flatpak && flatpak list | grep -q wezterm; then
-        return 1
-    fi
-
-    terminal_binstall
+  terminal_binstall
 }
 
 terminal_groupstall() {
-    is_desktop || return 0
-    terminal_install
-    terminal_config_install
+  is_desktop || return 0
+  terminal_install
+  terminal_config_install
 }
 
 shell_groupstall() {
-    shell_binstall
-    terminal_groupstall
-    shell_config_install
+  shell_binstall
+  terminal_groupstall
+  shell_config_install
 }
 
 nix_groupstall() {
-    nix_install
-    hms
-    touch ~/.zshrc
+  nix_install
+  hms
+  touch ~/.zshrc
 }
 
 home-manager_groupstall() {
-    is_nixos && err_exit "this installation is not for nixos, Quitting."
-    has_cmd home-manager && err_exit "home-manager already installed"
-    has_cmd nix || err_exit "nix not installed, cannot install home-manager."
-    dir_exists "$DOT_DIR" || err_exit "$DOT_DIR doesn't exist, cannot install home-manager."
-    dir_exists ~/home-manager-config && err_exit "home-manager-config already exists, skipping installation"
+  is_nixos && err_exit "this installation is not for nixos, Quitting."
+  has_cmd home-manager && err_exit "home-manager already installed"
+  has_cmd nix || err_exit "nix not installed, cannot install home-manager."
+  dir_exists "$DOT_DIR" || err_exit "$DOT_DIR doesn't exist, cannot install home-manager."
+  dir_exists ~/home-manager-config && err_exit "home-manager-config already exists, skipping installation"
 
-    cp -r "$DOT_DIR/extras/home-manager" ~/home-manager-config
-    nix run home-manager -- switch --flake ~/home-manager-config#"${USER}" --impure -b bak
-    touch ~/.zshrc
-    slog "home-manager installation done! Your home-manager config is at $HOME/home-manager-config"
+  cp -r "$DOT_DIR/extras/home-manager" ~/home-manager-config
+  nix run home-manager -- switch --flake ~/home-manager-config#"${USER}" --impure -b bak
+  touch ~/.zshrc
+  slog "home-manager installation done! Your home-manager config is at $HOME/home-manager-config"
 }
 
 nix_check() {
-    min_check
-    cmd_check home-manager nix devbox
+  min_check
+  cmd_check home-manager nix devbox
 }
 
 nix_mainstall() {
-    min_mainstall
-    has_cmd si && (has_cmd zsh || si zsh)
-    nix_groupstall
-    nix_check
+  min_mainstall
+  has_cmd si && (has_cmd zsh || si zsh)
+  nix_groupstall
+  nix_check
 }
 
 docker_groupstall() {
-    docker_install
-    docker_confstall
-    portainer_install
+  docker_install
+  docker_confstall
+  portainer_install
 }
 
 work_groupstall() {
-    shell-slim_groupstall
-    vscode_groupstall
-    docker_groupstall
+  shell-slim_groupstall
+  vscode_groupstall
+  docker_groupstall
 }
 
 vm_groupstall() {
-    if has_cmd vm_install; then
-        vm_install
-    else
-        warn "vm_install not available, skipping vm installation"
-        return 1
-    fi
+  if has_cmd vm_install; then
+    vm_install
+  else
+    warn "vm_install not available, skipping vm installation"
+    return 1
+  fi
 
-    cockpit_install
-    libvirt_confstall
+  cockpit_install
+  libvirt_confstall
 }
 
 min_check() {
-    base_check
-    cmd_check micro zip gcc make whiptail
+  base_check
+  cmd_check micro zip gcc make whiptail
 }
 
 min_mainstall() {
-    min_binstall
-    min_config_install
-    min_check
+  min_binstall
+  min_config_install
+  min_check
 }
 
 shell-slim_check() {
-    min_check
-    cmd_check zsh rg starship zoxide eza gh fzf
+  min_check
+  cmd_check zsh rg starship zoxide eza gh fzf
 }
 
 shell-slim_mainstall() {
-    min_mainstall
-    shell-slim_binstall
+  min_mainstall
+  shell-slim_binstall
 
-    shell-slim_config_install
-    shell-slim_check
+  shell-slim_config_install
+  shell-slim_check
 }
 
 shell_check() {
-    shell-slim_check
-    cmd_check tmux nvim lazygit sd bat brew htop atuin gawk carapace direnv \
-        shellcheck shfmt ug tldr fd direnv jq yq gum bat delta just dialog \
-        btm yazi
+  shell-slim_check
+  cmd_check tmux nvim lazygit sd bat brew htop atuin gawk carapace direnv \
+    shellcheck shfmt ug tldr fd direnv jq yq gum bat delta just dialog \
+    btm yazi
 }
 
 shell_mainstall() {
-    min_mainstall
-    shell_binstall
-    shell_config_install
-    terminal_config_install
-    shell_check
+  min_mainstall
+  shell_binstall
+  shell_config_install
+  terminal_config_install
+  shell_check
 }
 
 vm_check() {
-    min_check
-    cmd_check virt-install virsh jq virt-cat qemu-img wget xorriso
-    is_desktop && cmd_check virt-viewer virt-manager
+  min_check
+  cmd_check virt-install virsh jq virt-cat qemu-img wget xorriso
+  is_desktop && cmd_check virt-viewer virt-manager
 }
 
 vm_mainstall() {
-    min_mainstall
-    vm_groupstall
-    vm_check
+  min_mainstall
+  vm_groupstall
+  vm_check
 }
 
 work_check() {
-    shell-slim_check
-    cmd_check code docker
+  shell-slim_check
+  cmd_check code docker
 }
 
 work_mainstall() {
-    min_mainstall
-    work_groupstall
-    work_check
+  min_mainstall
+  work_groupstall
+  work_check
 }

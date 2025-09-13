@@ -8,62 +8,63 @@ source "$DOT_DIR/share/utils"
 [[ -d "$DOT_DIR" ]] || err_exit "Please clone dotfiles to $DOT_DIR"
 
 source_if_exists "$DOT_DIR/share/fns"
+source_if_exists "$DOT_DIR/share/dbox-fns"
 
 OPTIONS=("ubuntu" "debian" "arch" "fedora" "tumbleweed" "rocky" "bluefin" "bluefin-all" "toolboxes")
 
 help() {
-    echo "Usage: $0 [OPTION]"
-    echo "Options:"
-    echo "  ubuntu      Ubuntu distrobox."
-    echo "  debian      Debian distrobox."
-    echo "  arch        Arch distrobox."
-    echo "  fedora      Fedora distrobox."
-    echo "  rocky       Rocky Linux distrobox."
-    echo "  tumbleweed  OpenSUSE Tumbleweed distrobox."
-    echo "  bluefin     Bluefin distrobox."
-    echo "  bluefin-all All bluefin defined distroboxes(bluefin, wolfi, fedora, arch, ubuntu)."
-    echo "  toolboxes   All distroboxes from toolbox images(ubuntu, fedora, arch, centos, debian, rocky)."
-    echo "  help        Show this help."
-    echo ""
+  echo "Usage: $0 [OPTION]"
+  echo "Options:"
+  echo "  ubuntu      Ubuntu distrobox."
+  echo "  debian      Debian distrobox."
+  echo "  arch        Arch distrobox."
+  echo "  fedora      Fedora distrobox."
+  echo "  rocky       Rocky Linux distrobox."
+  echo "  tumbleweed  OpenSUSE Tumbleweed distrobox."
+  echo "  bluefin     Bluefin distrobox."
+  echo "  bluefin-all All bluefin defined distroboxes(bluefin, wolfi, fedora, arch, ubuntu)."
+  echo "  toolboxes   All distroboxes from toolbox images(ubuntu, fedora, arch, centos, debian, rocky)."
+  echo "  help        Show this help."
+  echo ""
 }
 
 main() {
-    if ! [[ "$#" -eq 0 ]]; then
-        slog "Installing $1 distrobox"
+  if ! [[ "$#" -eq 0 ]]; then
+    slog "Installing $1 distrobox"
 
-        if [[ "$1" == "bluefin" ]]; then
-            distrobox_ublue_all
-        elif [[ "$1" == "toolboxes" ]]; then
-            distrobox_toolbox_all
-        elif has_cmd "distrobox_create_$1"; then
-            "distrobox_create_$1"
-        else
-            err_exit "No installer found for $1"
-        fi
-
-        return 0
-    fi
-
-    if ! has_cmd gum; then
-        help
-        exit 0
-    fi
-
-    SELECTED_OPTION=$(igum choose "${OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
-
-    if [[ -n "$SELECTED_OPTION" ]]; then
-        echo ""
-        echo "Selected: $SELECTED_OPTION"
-        echo ""
-        bluefin
+    if [[ "$1" == "bluefin" ]]; then
+      distrobox_ublue_all
+    elif [[ "$1" == "toolboxes" ]]; then
+      distrobox_toolbox_all
+    elif has_cmd "distrobox_create_$1"; then
+      "distrobox_create_$1"
     else
-        slog "No option selected."
-        return 1
+      err_exit "No installer found for $1"
     fi
+
+    return 0
+  fi
+
+  if ! has_cmd gum; then
+    help
+    exit 0
+  fi
+
+  SELECTED_OPTION=$(igum choose "${OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
+
+  if [[ -n "$SELECTED_OPTION" ]]; then
+    echo ""
+    echo "Selected: $SELECTED_OPTION"
+    echo ""
+    bluefin
+  else
+    slog "No option selected."
+    return 1
+  fi
 }
 
 if [[ "$1" == "help" ]]; then
-    help
+  help
 else
-    CLICOLOR_FORCE=1 bootstrap "$@"
+  CLICOLOR_FORCE=1 bootstrap "$@"
 fi

@@ -265,32 +265,85 @@ sudo nixos-rebuild switch --flake ~/nixos-config#$(hostname)
 
 ### Fedora Atomic(Silverblue, Kinoite, Sway Atomic)
 
-If you don't want to use rpm-ostree, then use distrobox for everything instead. I have multiple distrobox containers for different purposes. But they are a bit brittle.
+If you don't want to use rpm-ostree, then you need to distrobox for everything instead. I have multiple distrobox containers for different purposes. But they are a bit brittle.
+
+First install very essential shell tools on host with the following command.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif)" -- fedora-atomic
 ```
 
-Above command should install some basic tools on the host, but developer tools(`vscode`, `docker` etc.) are inside a distrobox container. This will take a long time to install.
+For developer tools(`vscode`, `docker` etc.), restart your terminal and use the following command. This will take a long time to install. This works best on Silverblue.
 
-I will add more instructions to use distrobox and toolbox in the future. For now, you could use the following command to use `vscode` from distrobox container.
+```bash
+dbox-dev
+```
+
+I will add more instructions to use distrobox in the future. For now, you could use the following command to use `vscode` from distrobox container.
 
 ```bash
 dboxe ilm # enter distrobox container
 code # opens vscode from distrobox container
 ```
 
+After restarting your computer, at least, you should be able to launch `vscode` from host like any other application.
+
+
+</details>
+
+
+<details>
+
+<summary>rpm-ostree based fedora atomic</summary>
+
+### rpm-ostree based Setup
+
+I would recommend you don't spend too much time configuring everything in a distrobox and spend multiple frustrating hours trying to get everything to work. Use `rpm-ostree` instead once after installation and install essential tools you need. You should never have to use rpm-ostree again(in theory).
+
+Install essential development tools like `vscode`, and `virt-manager` with the following command.
+
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif)" -- rpm-ostree
+```
+
+After Installation, **reboot** your system and execute the following command.
+
+```bash
+ilmi rpm-ostree-post
+```
+
+If you need docker, you should install it in a vm, and use `vscode` to ssh into this virtual machine. `devcontainers` work really well using this approach.
+
+Generate ssh key, if you don't have it already.
+
+```bash
+ssh-keygen -t ed25519 -C "<your_email@example.com>"
+```
+
+Then create a vm with the following command. This will create a debian vm with docker, brew and dotfiles.
+
+```bash
+vm-create --distro debian --name dev --docker --brew --dotfiles --username debian --password debian min
+```
+
+You should not install anything on the host. You could use `distrobox` for command line tools. Use flatpak for desktop applications. Use `devcontainers` for development from `vscode`(or `jetbrains` or `neovim`). You could use `virt-install/virsh/virt-viewer` or `virt-manager` to create and manage virtual machines.
+
+**Note**: If your virtual machines do not get an IP address, edit `/etc/libvirt/network.conf` and add the following.
+
+```
+firewall_backend = "iptables"
+```
+
+and restart libvirtd service.
+
+```bash
+sudo systemctl restart libvirtd
+```
+
 </details>
 
 
 ## Conventional Linux
-
-If you are a developer, I would highly recommend using linux on your personal desktop. There are interesting things in happening in this space. As a developer you will have a lot of fun.
-
-If you don't have a personal desktop, just buy a mini pc. You could get a decent minipc for [$300-$400](https://www.amazon.com/AOOSTAR-GEM10-7840HS-Computer-OCULINK/dp/B0F2DW9HFC). Even a nuc could cost around [500$](https://www.amazon.com/ASUS-Barebones-ThunderboltTM-Bluetooth-Toolless/dp/B0F1BBSF76). You could use it as a desktop, development machine or a server.
-
-If you are fine with a server that's capable of running docker, you could buy N100/N150 mini pc, which should be around [150$](https://www.amazon.com/GMKtec-mini-pc-desktop-computer-n150/dp/B0DN51KD9D). You would be surprised how much such a cheap machine can do.
-
 
 <details>
 <summary>Fedora Workstation</summary>

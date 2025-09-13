@@ -11,6 +11,7 @@ let
 
       source "$HOME/.ilm/share/utils"
       source "$HOME/.ilm/share/fns"
+      source "$HOME/.ilm/share/dbox-fns"
       source "$HOME/.ilm/share/aliases"
       source "$HOME/.ilm/share/exports"
     fi

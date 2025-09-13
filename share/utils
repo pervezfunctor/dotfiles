@@ -6,1506 +6,1507 @@ export ILM_BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/ma
 export ILM_SETUP_URL="${ILM_BASE_URL}/share/installers/setup"
 
 group_exists() {
-    getent group "$1" >/dev/null 2>&1
+  getent group "$1" >/dev/null 2>&1
 }
 
 create_group() {
-    local group="$1"
+  local group="$1"
 
-    if group_exists "$group"; then
-        slog "Group $group already exists, skipping creation..."
-    else
-        slog "Creating group $group"
-        sudo groupadd "$group"
-    fi
+  if group_exists "$group"; then
+    slog "Group $group already exists, skipping creation..."
+  else
+    slog "Creating group $group"
+    sudo groupadd "$group"
+  fi
 
 }
 
 add_user_to_group() {
-    local user="$1"
-    local group="$2"
+  local user="$1"
+  local group="$2"
 
-    if ! group_exists "$group"; then
-        warn "Group $group does not exist, skipping adding user to group $group..."
-    fi
+  if ! group_exists "$group"; then
+    warn "Group $group does not exist, skipping adding user to group $group..."
+  fi
 
-    if id -nG "$user" | grep -qw "$group"; then
-        slog "User $user is already a member of group $group"
-    else
-        slog "Adding user $user to group $group"
-        sudo usermod -aG "$group" "$user"
-    fi
+  if id -nG "$user" | grep -qw "$group"; then
+    slog "User $user is already a member of group $group"
+  else
+    slog "Adding user $user to group $group"
+    sudo usermod -aG "$group" "$user"
+  fi
 }
 
 add_user_to_groups() {
-    local user="$1"
-    shift
-    for group in "$@"; do
-        add_user_to_group "$user" "$group"
-    done
+  local user="$1"
+  shift
+  for group in "$@"; do
+    add_user_to_group "$user" "$group"
+  done
 }
 
 generate_ssh_key() {
-    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" >/dev/null
+  ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" >/dev/null
 }
 
 ssh_key_path() {
-    if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
-        echo "${HOME}/.ssh/id_ed25519.pub"
-    elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
-        echo "${HOME}/.ssh/id_rsa.pub"
-    else
-        generate_ssh_key
-        echo "${HOME}/.ssh/id_ed25519.pub"
-    fi
-    return 0
+  if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
+    echo "${HOME}/.ssh/id_ed25519.pub"
+  elif [[ -f "${HOME}/.ssh/id_rsa.pub" ]]; then
+    echo "${HOME}/.ssh/id_rsa.pub"
+  else
+    generate_ssh_key
+    echo "${HOME}/.ssh/id_ed25519.pub"
+  fi
+  return 0
 }
 
 is_bash() {
-    [[ -n "$BASH_VERSION" ]]
+  [[ -n "$BASH_VERSION" ]]
 }
 
 check_bash() {
-    if ! is_bash; then
-        echo "This script must be run with bash."
-        exit 1
-    fi
+  if ! is_bash; then
+    echo "This script must be run with bash."
+    exit 1
+  fi
 }
 
 check_bash_version() {
-    local required_major=$1
-    local bash_major=${BASH_VERSINFO[0]}
+  local required_major=$1
+  local bash_major=${BASH_VERSINFO[0]}
 
-    if ((bash_major < required_major)); then
-        echo "❌ Bash version $required_major.x or higher is required."
-        echo "   You are using Bash ${bash_major}.${BASH_VERSINFO[1]}"
-        exit 1
-    fi
+  if ((bash_major < required_major)); then
+    echo "❌ Bash version $required_major.x or higher is required."
+    echo "   You are using Bash ${bash_major}.${BASH_VERSINFO[1]}"
+    exit 1
+  fi
 }
 
 gum_install() {
-    has_cmd gum && return 0
-    is_mac && return 1
+  has_cmd gum && return 0
+  is_mac && return 1
 
-    slog "Installing gum"
-    smd "$HOME/.local/bin"
-    local gum_file
-    gum_file="gum_0.16.2_Linux_x86_64"
-    if curl -sSL "https://github.com/charmbracelet/gum/releases/download/v0.16.2/${gum_file}.tar.gz" | tar -xz -C /tmp; then
-        mv "/tmp/${gum_file}/gum" ~/.local/bin/
-        slog "gum installation done!"
-    fi
+  slog "Installing gum"
+  smd "$HOME/.local/bin"
+  local gum_file
+  gum_file="gum_0.16.2_Linux_x86_64"
+  if curl -sSL "https://github.com/charmbracelet/gum/releases/download/v0.16.2/${gum_file}.tar.gz" | tar -xz -C /tmp; then
+    mv "/tmp/${gum_file}/gum" ~/.local/bin/
+    slog "gum installation done!"
+  fi
 
-    cmd_check gum
+  cmd_check gum
 }
 
 select-one() {
-    local PS3="Please enter your choice: "
-    select result in "$@"; do
-        if [[ -n "$result" ]]; then
-            break
-        fi
-    done
-    echo "$result"
+  local PS3="Please enter your choice: "
+  select result in "$@"; do
+    if [[ -n "$result" ]]; then
+      break
+    fi
+  done
+  echo "$result"
 }
 
 press_enter() {
-    echo "Press Enter to continue..."
-    read -r
+  echo "Press Enter to continue..."
+  read -r
 }
 
 is_ip() {
-    grep -oE '\b((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\b' "$1" 2>&1
+  grep -oE '\b((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\b' "$1" 2>&1
 }
 
 default_shell() {
-    basename "$(getent passwd "$USER" | cut -d: -f7)"
+  basename "$(getent passwd "$USER" | cut -d: -f7)"
 }
 
 safe_append() {
-    if ! grep -q "$1" "$2" 2>/dev/null; then
-        slog "Adding $1 to $2"
+  if ! grep -q "$1" "$2" 2>/dev/null; then
+    slog "Adding $1 to $2"
 
-        if [[ ! -f "$2" ]] && ! touch "$2" 2>/dev/null; then
-            fail "Cannot create or access $2 for appending"
-            return 1
-        fi
-
-        if ! echo "$1" >>"$2"; then
-            fail "Failed to append content to $2"
-            return 1
-        fi
-
-        return 0
+    if [[ ! -f "$2" ]] && ! touch "$2" 2>/dev/null; then
+      fail "Cannot create or access $2 for appending"
+      return 1
     fi
+
+    if ! echo "$1" >>"$2"; then
+      fail "Failed to append content to $2"
+      return 1
+    fi
+
+    return 0
+  fi
 }
 
 is_snap_working() {
-    has_cmd snap && systemctl is-active --quiet snapd.service 2>/dev/null && systemctl is-active --quiet snapd.socket 2>/dev/null
+  has_cmd snap && systemctl is-active --quiet snapd.service 2>/dev/null && systemctl is-active --quiet snapd.socket 2>/dev/null
 }
 
 safe_prepend() {
-    if ! grep -q "$1" "$2" 2>/dev/null; then
-        slog "Prepending $1 to $2"
-        local tmpfile
-        tmpfile=$(mktemp)
+  if ! grep -q "$1" "$2" 2>/dev/null; then
+    slog "Prepending $1 to $2"
+    local tmpfile
+    tmpfile=$(mktemp)
 
-        if ! echo "$1" | cat - "$2" >"$tmpfile"; then
-            fail "Failed to create temporary file for prepending"
-            rm -f "$tmpfile"
-            return 1
-        fi
-
-        if ! mv "$tmpfile" "$2"; then
-            fail "Failed to update $2 with prepended content"
-            rm -f "$tmpfile"
-            return 1
-        fi
+    if ! echo "$1" | cat - "$2" >"$tmpfile"; then
+      fail "Failed to create temporary file for prepending"
+      rm -f "$tmpfile"
+      return 1
     fi
+
+    if ! mv "$tmpfile" "$2"; then
+      fail "Failed to update $2 with prepended content"
+      rm -f "$tmpfile"
+      return 1
+    fi
+  fi
 }
 
 source_if_exists() {
-    # shellcheck disable=SC1090
-    [[ -f "$1" ]] && source "$1"
+  # shellcheck disable=SC1090
+  [[ -f "$1" ]] && source "$1"
 }
 
 source_curl() {
-    slog "Sourcing: $1"
-    local temp_file
-    temp_file=$(mktemp)
+  slog "Sourcing: $1"
+  local temp_file
+  temp_file=$(mktemp)
 
-    if has_cmd curl; then
-        if ! curl -sSL --fail "$1" -o "$temp_file"; then
-            warn "Failed to download $1"
-            rm -f "$temp_file"
-            return 1
-        fi
-    elif has_cmd wget; then
-        if ! wget -q --no-check-certificate "$1" -O "$temp_file"; then
-            warn "Failed to download $1"
-            rm -f "$temp_file"
-            return 1
-        fi
-    else
-        warn "curl or wget not found, Cannot source $1"
-        rm -f "$temp_file"
-        return 1
+  if has_cmd curl; then
+    if ! curl -sSL --fail "$1" -o "$temp_file"; then
+      warn "Failed to download $1"
+      rm -f "$temp_file"
+      return 1
     fi
-
-    # shellcheck disable=SC1090
-    if ! source "$temp_file"; then
-        warn "Cannot source $1"
+  elif has_cmd wget; then
+    if ! wget -q --no-check-certificate "$1" -O "$temp_file"; then
+      warn "Failed to download $1"
+      rm -f "$temp_file"
+      return 1
     fi
-
+  else
+    warn "curl or wget not found, Cannot source $1"
     rm -f "$temp_file"
-    return 0
+    return 1
+  fi
+
+  # shellcheck disable=SC1090
+  if ! source "$temp_file"; then
+    warn "Cannot source $1"
+  fi
+
+  rm -f "$temp_file"
+  return 0
 }
 
 sh_curl() {
-    slog "Executing code from $1"
+  slog "Executing code from $1"
 
-    local temp_file
-    temp_file=$(mktemp)
+  local temp_file
+  temp_file=$(mktemp)
 
-    if has_cmd curl; then
-        if ! curl -sSL --fail "$1" -o "$temp_file"; then
-            warn "Failed to download $1"
-            rm -f "$temp_file"
-            return 1
-        fi
-    elif has_cmd wget; then
-        if ! wget -q --no-check-certificate "$1" -O "$temp_file"; then
-            warn "Failed to download $1"
-            rm -f "$temp_file"
-            return 1
-        fi
-    else
-        warn "curl or wget not found, Cannot execute $1"
-        return 1
+  if has_cmd curl; then
+    if ! curl -sSL --fail "$1" -o "$temp_file"; then
+      warn "Failed to download $1"
+      rm -f "$temp_file"
+      return 1
     fi
-
-    # shellcheck disable=SC1090
-    if ! bash "$temp_file"; then
-        warn "Failed to execute $1"
-        rm -f "$temp_file"
-        return 1
+  elif has_cmd wget; then
+    if ! wget -q --no-check-certificate "$1" -O "$temp_file"; then
+      warn "Failed to download $1"
+      rm -f "$temp_file"
+      return 1
     fi
+  else
+    warn "curl or wget not found, Cannot execute $1"
+    return 1
+  fi
 
+  # shellcheck disable=SC1090
+  if ! bash "$temp_file"; then
+    warn "Failed to execute $1"
     rm -f "$temp_file"
-    return 0
+    return 1
+  fi
+
+  rm -f "$temp_file"
+  return 0
 }
 
 source_dotfile() {
-    if [ -d "$DOT_DIR" ]; then
-        local dotfile="$DOT_DIR/$1"
-        if [ -f "$dotfile" ]; then
-            slog "Sourcing local dotfile: $dotfile"
-            # shellcheck disable=SC1090
-            source "$dotfile"
-        else
-            fail "Local dotfile not found: $dotfile"
-            source_curl "$ILM_BASE_URL/$1"
-        fi
+  if [ -d "$DOT_DIR" ]; then
+    local dotfile="$DOT_DIR/$1"
+    if [ -f "$dotfile" ]; then
+      slog "Sourcing local dotfile: $dotfile"
+      # shellcheck disable=SC1090
+      source "$dotfile"
     else
-        slog "Dotfiles directory not found, sourcing from remote: $ILM_BASE_URL/$1"
-        source_curl "$ILM_BASE_URL/$1"
+      fail "Local dotfile not found: $dotfile"
+      source_curl "$ILM_BASE_URL/$1"
     fi
+  else
+    slog "Dotfiles directory not found, sourcing from remote: $ILM_BASE_URL/$1"
+    source_curl "$ILM_BASE_URL/$1"
+  fi
 }
 
 slog() {
-    printf '\r\033[2K  [ \033[00;34mINFO\033[0m ] %s\n' "$*"
+  printf '\r\033[2K  [ \033[00;34mINFO\033[0m ] %s\n' "$*"
 }
 
 fail() {
-    printf '\r\033[2K  [ \033[0;31mFAIL\033[0m ] %s\n' "$*"
+  printf '\r\033[2K  [ \033[0;31mFAIL\033[0m ] %s\n' "$*"
 }
 
 warn() {
-    printf '\r\033[2K  [ \033[00;33mWARN\033[0m ] %s\n' "$*"
+  printf '\r\033[2K  [ \033[00;33mWARN\033[0m ] %s\n' "$*"
 }
 
 success() {
-    printf '\r\033[2K  [ \033[00;32mOK\033[0m ] %s\n' "$*"
+  printf '\r\033[2K  [ \033[00;32mOK\033[0m ] %s\n' "$*"
 }
 
 err_exit() {
-    fail "$*"
-    sleep 3
-    exit 1
+  fail "$*"
+  sleep 3
+  exit 1
 }
 
 igum() {
-    local output
-    output=$(TERM=screen gum "$@" </dev/tty 2>/dev/tty)
-    echo "$output"
+  local output
+  output=$(TERM=screen gum "$@" </dev/tty 2>/dev/tty)
+  echo "$output"
 }
 
 dir_exists() {
-    [[ -d "$1" ]]
+  [[ -d "$1" ]]
 }
 
 file_exists() {
-    [[ -f "$1" ]]
+  [[ -f "$1" ]]
 }
 
 exists() {
-    [[ -e "$1" ]]
+  [[ -e "$1" ]]
 }
 
 has_cmd() {
-    command -v "$1" >/dev/null 2>&1
+  command -v "$1" >/dev/null 2>&1
 }
 
 sclone() {
-    if [ $# -lt 2 ]; then
-        fail "sclone requires at least 2 arguments"
-        return 1
-    fi
-
-    local dest=${*: -1}
-    local src=${*: -2:1}
-
-    frm "$dest"
-    if ! [ -d "$dest" ]; then
-        slog "Cloning $src to $dest"
-        git clone "$@"
-        return $?
-    fi
-
-    fail "$dest exists but is not a git repository"
+  if [ $# -lt 2 ]; then
+    fail "sclone requires at least 2 arguments"
     return 1
+  fi
+
+  local dest=${*: -1}
+  local src=${*: -2:1}
+
+  frm "$dest"
+  if ! [ -d "$dest" ]; then
+    slog "Cloning $src to $dest"
+    git clone "$@"
+    return $?
+  fi
+
+  fail "$dest exists but is not a git repository"
+  return 1
 }
 
 unstash() {
-    slog "Attempting to apply stashed changes after failed update..."
-    if git stash show -p | git apply --check >/dev/null 2>&1; then
-        if git stash apply; then
-            git stash drop >/dev/null
-        else
-            warn "Failed to apply stash despite no conflicts detected"
-        fi
+  slog "Attempting to apply stashed changes after failed update..."
+  if git stash show -p | git apply --check >/dev/null 2>&1; then
+    if git stash apply; then
+      git stash drop >/dev/null
     else
-        fail "Detected potential conflicts with stashed changes"
-        fail "Your changes are preserved in the stash. Use 'git stash apply' manually and resolve conflicts."
+      warn "Failed to apply stash despite no conflicts detected"
     fi
+  else
+    fail "Detected potential conflicts with stashed changes"
+    fail "Your changes are preserved in the stash. Use 'git stash apply' manually and resolve conflicts."
+  fi
 }
 
 clone-update() {
-    if [ $# -lt 2 ]; then
-        fail "sclone requires at least 2 arguments"
-        return 1
-    fi
-
-    local dest=${*: -1}
-    local src=${*: -2:1}
-
-    if ! [ -d "$dest" ]; then
-        slog "Cloning $src to $dest"
-        git clone "$@"
-        return $?
-    fi
-
-    if (cd "$dest" 2>/dev/null && git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
-        slog "Updating existing repository in $dest"
-
-        (
-            cd "$dest" || return 1
-
-            if [ "$(git remote get-url origin)" != "$src" ]; then
-                fail "Remote repository in $dest does not match the provided source, skipping update"
-                return 1
-            fi
-
-            local original_branch
-            original_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
-            if [ -z "$original_branch" ]; then
-                fail "Cannot determine current branch in $dest, skipping update"
-                return 1
-            fi
-
-            local default_branch
-            default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's#^refs/remotes/origin/##')
-            if [ -z "$default_branch" ]; then
-                fail "Cannot determine default branch in $dest, skipping update"
-                return 1
-            fi
-
-            local dirty
-            dirty=false
-            if [[ -n $(git status --porcelain) ]]; then
-                dirty=true
-            fi
-
-            if [ "$original_branch" != "$default_branch" ] && $dirty; then
-                fail "Repository is dirty AND not on the default branch, skipping update"
-                return 1
-            fi
-
-            local stashed=1
-            if $dirty; then
-                slog "Repository not clean, stashing changes"
-                if git stash --include-untracked; then
-                    stashed=0
-                else
-                    fail "Failed to stash changes"
-                    return 1
-                fi
-            fi
-
-            if [ "$original_branch" != "$default_branch" ]; then
-                slog "Switching to $default_branch branch for update"
-                if ! git checkout "$default_branch"; then
-                    fail "Failed to switch to $default_branch branch"
-                    return 1
-                fi
-            fi
-
-            if git pull --rebase; then
-                if [ "$original_branch" != "$default_branch" ]; then
-                    git checkout "$original_branch"
-                fi
-
-                if [ $stashed -eq 0 ]; then
-                    slog "Your changes are stashed"
-                    unstash
-                fi
-                return 0
-            else
-                warn "Update failed, aborting rebase"
-                git rebase --abort
-
-                if [ "$original_branch" != "$default_branch" ]; then
-                    slog "Attempting to switch back to $original_branch branch..."
-                    if ! git checkout "$original_branch"; then
-                        fail "CRITICAL: Failed to switch back to $original_branch after failed update! Repo may be in an inconsistent state."
-                    fi
-                fi
-
-                if [ $stashed -eq 0 ]; then
-                    unstash
-                fi
-                return 1
-            fi
-        )
-
-        # Return the exit status of the subshell
-        return $?
-    fi
-
-    fail "$dest exists but is not a git repository"
+  if [ $# -lt 2 ]; then
+    fail "sclone requires at least 2 arguments"
     return 1
+  fi
+
+  local dest=${*: -1}
+  local src=${*: -2:1}
+
+  if ! [ -d "$dest" ]; then
+    slog "Cloning $src to $dest"
+    git clone "$@"
+    return $?
+  fi
+
+  if (cd "$dest" 2>/dev/null && git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
+    slog "Updating existing repository in $dest"
+
+    (
+      cd "$dest" || return 1
+
+      if [ "$(git remote get-url origin)" != "$src" ]; then
+        fail "Remote repository in $dest does not match the provided source, skipping update"
+        return 1
+      fi
+
+      local original_branch
+      original_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+      if [ -z "$original_branch" ]; then
+        fail "Cannot determine current branch in $dest, skipping update"
+        return 1
+      fi
+
+      local default_branch
+      default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's#^refs/remotes/origin/##')
+      if [ -z "$default_branch" ]; then
+        fail "Cannot determine default branch in $dest, skipping update"
+        return 1
+      fi
+
+      local dirty
+      dirty=false
+      if [[ -n $(git status --porcelain) ]]; then
+        dirty=true
+      fi
+
+      if [ "$original_branch" != "$default_branch" ] && $dirty; then
+        fail "Repository is dirty AND not on the default branch, skipping update"
+        return 1
+      fi
+
+      local stashed=1
+      if $dirty; then
+        slog "Repository not clean, stashing changes"
+        if git stash --include-untracked; then
+          stashed=0
+        else
+          fail "Failed to stash changes"
+          return 1
+        fi
+      fi
+
+      if [ "$original_branch" != "$default_branch" ]; then
+        slog "Switching to $default_branch branch for update"
+        if ! git checkout "$default_branch"; then
+          fail "Failed to switch to $default_branch branch"
+          return 1
+        fi
+      fi
+
+      if git pull --rebase; then
+        if [ "$original_branch" != "$default_branch" ]; then
+          git checkout "$original_branch"
+        fi
+
+        if [ $stashed -eq 0 ]; then
+          slog "Your changes are stashed"
+          unstash
+        fi
+        return 0
+      else
+        warn "Update failed, aborting rebase"
+        git rebase --abort
+
+        if [ "$original_branch" != "$default_branch" ]; then
+          slog "Attempting to switch back to $original_branch branch..."
+          if ! git checkout "$original_branch"; then
+            fail "CRITICAL: Failed to switch back to $original_branch after failed update! Repo may be in an inconsistent state."
+          fi
+        fi
+
+        if [ $stashed -eq 0 ]; then
+          unstash
+        fi
+        return 1
+      fi
+    )
+
+    # Return the exit status of the subshell
+    return $?
+  fi
+
+  fail "$dest exists but is not a git repository"
+  return 1
 }
 
 fclone() {
-    if [ $# -lt 2 ]; then
-        fail "fclone requires at least 2 arguments"
-        return 1
-    fi
+  if [ $# -lt 2 ]; then
+    fail "fclone requires at least 2 arguments"
+    return 1
+  fi
 
-    local dest=${*: -1}
-    local src=${*: -2:1}
+  local dest=${*: -1}
+  local src=${*: -2:1}
 
-    srm "$dest"
+  srm "$dest"
 
-    if dir_exists "$dest"; then
-        fail "Destination directory $dest already exists. Cannot clone."
-        return 1
-    fi
+  if dir_exists "$dest"; then
+    fail "Destination directory $dest already exists. Cannot clone."
+    return 1
+  fi
 
-    slog "Cloning $src to $dest"
-    if ! git clone "$@"; then
-        fail "Failed to clone $src to $dest"
-        return 1
-    fi
-    return 0
+  slog "Cloning $src to $dest"
+  if ! git clone "$@"; then
+    fail "Failed to clone $src to $dest"
+    return 1
+  fi
+  return 0
 }
 
 smv() {
-    if [ $# -ne 2 ]; then
-        fail "smv requires exactly 2 arguments"
-        return 1
-    fi
+  if [ $# -ne 2 ]; then
+    fail "smv requires exactly 2 arguments"
+    return 1
+  fi
 
-    if [ ! -e "$1" ]; then
-        fail "$1 does not exist, cannot move to $2"
-        return 1
-    fi
+  if [ ! -e "$1" ]; then
+    fail "$1 does not exist, cannot move to $2"
+    return 1
+  fi
 
-    if mv "$1" "$2" 2>/dev/null; then
-        slog "Moved $1 to $2"
-        return 0
-    else
-        fail "Failed to move $1 to $2"
-        return 1
-    fi
+  if mv "$1" "$2" 2>/dev/null; then
+    slog "Moved $1 to $2"
+    return 0
+  else
+    fail "Failed to move $1 to $2"
+    return 1
+  fi
 }
 
 smd() {
-    [ -d "$1" ] && return 1
+  [ -d "$1" ] && return 1
 
-    slog "Creating directory $1"
-    mkdir -p "$1" 2>/dev/null
+  slog "Creating directory $1"
+  mkdir -p "$1" 2>/dev/null
 }
 
 fln() {
-    if ! [ -e "$1" ]; then
-        fail "$1 does not exist, link to $2 not created"
-        return 1
-    fi
+  if ! [ -e "$1" ]; then
+    fail "$1 does not exist, link to $2 not created"
+    return 1
+  fi
 
-    srm "$2"
-    slog "Creating link $2 to $1"
-    ln -s "$1" "$2"
+  srm "$2"
+  slog "Creating link $2 to $1"
+  ln -s "$1" "$2"
 }
 
 backup_file() {
-    local file="$1"
+  local file="$1"
 
-    if ! [[ -f "$file" ]]; then
-        warn "File $file does not exist, no backup created"
-        return 1
-    fi
+  if ! [[ -f "$file" ]]; then
+    warn "File $file does not exist, no backup created"
+    return 1
+  fi
 
-    local timestamp
-    timestamp=$(date +"%Y%m%d-%H%M%S")
-    local backup_path="${file}.backup-${timestamp}"
+  local timestamp
+  timestamp=$(date +"%Y%m%d-%H%M%S")
+  local backup_path="${file}.backup-${timestamp}"
 
-    if cp -f "$file" "$backup_path"; then
-        slog "Created backup of $(basename "$file") at $backup_path"
-        return 0
-    else
-        warn "Failed to create backup of $file"
-        return 1
-    fi
+  if cp -f "$file" "$backup_path"; then
+    slog "Created backup of $(basename "$file") at $backup_path"
+    return 0
+  else
+    warn "Failed to create backup of $file"
+    return 1
+  fi
 }
 
 srm() {
-    for f in "$@"; do
-        if [ -L "$f" ]; then
-            rm -f "$f" && slog "Removing link $f"
-        elif has_cmd trash-put; then
-            trash-put "$f" 2>/dev/null && slog "Trashed $f"
-        elif has_cmd trash; then
-            trash "$f" 2>/dev/null && slog "Trashed $f"
-        else
-            backup_file "$f"
-            rm -f "$f"
-        fi
-    done
+  for f in "$@"; do
+    if [ -L "$f" ]; then
+      rm -f "$f" && slog "Removing link $f"
+    elif has_cmd trash-put; then
+      trash-put "$f" 2>/dev/null && slog "Trashed $f"
+    elif has_cmd trash; then
+      trash "$f" 2>/dev/null && slog "Trashed $f"
+    else
+      backup_file "$f"
+      rm -f "$f"
+    fi
+  done
 }
 
 frm() {
-    for f in "$@"; do
-        if [ -L "$f" ]; then
-            rm -f "$f" && slog "Removing link $f"
-        elif has_cmd trash-put; then
-            trash-put "$f" 2>/dev/null && slog "Trashed $f"
-        elif has_cmd trash; then
-            trash "$f" 2>/dev/null && slog "Trashed $f"
-        else
-            warn "removing file $f"
-            rm -f "$f"
-        fi
-    done
+  for f in "$@"; do
+    if [ -L "$f" ]; then
+      rm -f "$f" && slog "Removing link $f"
+    elif has_cmd trash-put; then
+      trash-put "$f" 2>/dev/null && slog "Trashed $f"
+    elif has_cmd trash; then
+      trash "$f" 2>/dev/null && slog "Trashed $f"
+    else
+      warn "removing file $f"
+      rm -f "$f"
+    fi
+  done
 }
 
 safe-cp() {
-    if [ $# -ne 2 ]; then
-        fail "safe-cp requires exactly 2 arguments"
-        return 1
-    fi
+  if [ $# -ne 2 ]; then
+    fail "safe-cp requires exactly 2 arguments"
+    return 1
+  fi
 
-    if [ ! -e "$1" ]; then
-        fail "$1 does not exist, cannot copy to $2"
-        return 1
-    fi
+  if [ ! -e "$1" ]; then
+    fail "$1 does not exist, cannot copy to $2"
+    return 1
+  fi
 
-    if [ -e "$2" ]; then
-        warn "$2 already exists, cannot copy $1"
-        return 1
-    fi
+  if [ -e "$2" ]; then
+    warn "$2 already exists, cannot copy $1"
+    return 1
+  fi
 
-    slog "Copying $1 to $2"
-    if cp -r "$1" "$2" 2>/dev/null; then
-        return 0
-    else
-        fail "Failed to copy $1 to $2"
-        return 1
-    fi
+  slog "Copying $1 to $2"
+  if cp -r "$1" "$2" 2>/dev/null; then
+    return 0
+  else
+    fail "Failed to copy $1 to $2"
+    return 1
+  fi
 }
 
 fcp() {
-    if [ $# -ne 2 ]; then
-        fail "fcp requires exactly 2 arguments"
-        return 1
-    fi
+  if [ $# -ne 2 ]; then
+    fail "fcp requires exactly 2 arguments"
+    return 1
+  fi
 
-    if [ ! -e "$1" ]; then
-        fail "$1 does not exist, cannot copy to $2"
-        return 1
-    fi
+  if [ ! -e "$1" ]; then
+    fail "$1 does not exist, cannot copy to $2"
+    return 1
+  fi
 
-    srm "$2"
+  srm "$2"
 
-    slog "Copying $1 to $2"
-    if cp -r "$1" "$2" 2>/dev/null; then
-        return 0
-    else
-        fail "Failed to copy $1 to $2"
-        return 1
-    fi
+  slog "Copying $1 to $2"
+  if cp -r "$1" "$2" 2>/dev/null; then
+    return 0
+  else
+    fail "Failed to copy $1 to $2"
+    return 1
+  fi
 }
 
 fmv() {
-    if [ $# -ne 2 ]; then
-        fail "fmv requires exactly 2 arguments"
-        return 1
-    fi
+  if [ $# -ne 2 ]; then
+    fail "fmv requires exactly 2 arguments"
+    return 1
+  fi
 
-    if [ ! -e "$1" ]; then
-        warn "$1 does not exist, cannot move to $2"
-        return 1
-    fi
+  if [ ! -e "$1" ]; then
+    warn "$1 does not exist, cannot move to $2"
+    return 1
+  fi
 
-    srm "$2"
+  srm "$2"
 
-    slog "Moving $1 to $2"
-    if mv "$1" "$2" 2>/dev/null; then
-        return 0
-    else
-        fail "Failed to move $1 to $2"
-        return 1
-    fi
+  slog "Moving $1 to $2"
+  if mv "$1" "$2" 2>/dev/null; then
+    return 0
+  else
+    fail "Failed to move $1 to $2"
+    return 1
+  fi
 }
 
 omv() {
-    if [ $# -ne 2 ]; then
-        fail "omv requires exactly 2 arguments"
-        return 1
-    fi
+  if [ $# -ne 2 ]; then
+    fail "omv requires exactly 2 arguments"
+    return 1
+  fi
 
-    if [ -e "$1" ]; then
-        srm "$2"
-    else
-        return 1
-    fi
+  if [ -e "$1" ]; then
+    srm "$2"
+  else
+    return 1
+  fi
 
-    slog "Moving $1 to $2"
-    if mv "$1" "$2" 2>/dev/null; then
-        return 0
-    else
-        warn "Failed to move $1 to $2"
-        return 1
-    fi
+  slog "Moving $1 to $2"
+  if mv "$1" "$2" 2>/dev/null; then
+    return 0
+  else
+    warn "Failed to move $1 to $2"
+    return 1
+  fi
 }
 
 sln() {
-    if [[ $# -ne 2 ]]; then
-        fail "sln requires exactly 2 arguments"
-        return 1
-    fi
+  if [[ $# -ne 2 ]]; then
+    fail "sln requires exactly 2 arguments"
+    return 1
+  fi
 
-    if ! [[ -e "$1" ]]; then
-        fail "$1 does not exist, link to $2 not created"
-        return 1
-    fi
+  if ! [[ -e "$1" ]]; then
+    fail "$1 does not exist, link to $2 not created"
+    return 1
+  fi
 
-    if [[ -L "$2" ]]; then
-        srm "$2"
-    elif [[ -e "$2" ]]; then
-        warn "$2 exists and not a symbolic link! not creating link"
-        return 1
-    fi
+  if [[ -L "$2" ]]; then
+    srm "$2"
+  elif [[ -e "$2" ]]; then
+    warn "$2 exists and not a symbolic link! not creating link"
+    return 1
+  fi
 
-    slog "Creating link $2 to $1"
-    if ln -s "$1" "$2" 2>/dev/null; then
-        return 0
-    else
-        fail "Failed to create symbolic link from $2 to $1"
-        return 1
-    fi
+  slog "Creating link $2 to $1"
+  if ln -s "$1" "$2" 2>/dev/null; then
+    return 0
+  else
+    fail "Failed to create symbolic link from $2 to $1"
+    return 1
+  fi
 }
 
 spath_export() {
-    dir_exists "$1" && export PATH="$1:$PATH"
+  dir_exists "$1" && export PATH="$1:$PATH"
 }
 
 is_mac() {
-    [[ "$OSTYPE" == "darwin"* ]]
+  [[ "$OSTYPE" == "darwin"* ]]
 }
 
 get_os() {
-    local ID=""
-    if [ -f /etc/os-release ]; then
-        # shellcheck disable=SC1091
-        . /etc/os-release
-        ID=${ID:-$NAME}
-    elif [ -f /etc/lsb-release ]; then
-        # shellcheck disable=SC1091
-        . /etc/lsb-release
-        ID=${DISTRIB_ID}
-    elif [ -f /etc/redhat-release ]; then
-        ID=$(head -1 /etc/redhat-release | cut -d' ' -f1)
-    else
-        ID=$(uname -s)
-    fi
-    echo "$ID" | tr '[:upper:]' '[:lower:]'
+  local ID=""
+  if [ -f /etc/os-release ]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    ID=${ID:-$NAME}
+  elif [ -f /etc/lsb-release ]; then
+    # shellcheck disable=SC1091
+    . /etc/lsb-release
+    ID=${DISTRIB_ID}
+  elif [ -f /etc/redhat-release ]; then
+    ID=$(head -1 /etc/redhat-release | cut -d' ' -f1)
+  else
+    ID=$(uname -s)
+  fi
+  echo "$ID" | tr '[:upper:]' '[:lower:]'
 }
 
 is_debian() {
-    local ID
-    ID=$(get_os)
-    [[ "$ID" == *"debian"* ]]
+  local ID
+  ID=$(get_os)
+  [[ "$ID" == *"debian"* ]]
 }
 
 is_tw() {
-    local ID
-    ID=$(get_os)
-    [[ "$ID" == *"tumbleweed"* ]]
+  local ID
+  ID=$(get_os)
+  [[ "$ID" == *"tumbleweed"* ]]
 }
 
 is_arch() {
-    local ID
-    ID=$(get_os)
-    [[ "$ID" == *"arch"* ]] || [[ "$ID" == *"cachyos"* ]] || [[ "$ID" == *"endeavouros"* ]] || [[ "$ID" == *"manjaro"* ]] || [[ "$ID" == *"garuda"* ]]
+  local ID
+  ID=$(get_os)
+  [[ "$ID" == *"arch"* ]] || [[ "$ID" == *"cachyos"* ]] || [[ "$ID" == *"endeavouros"* ]] || [[ "$ID" == *"manjaro"* ]] || [[ "$ID" == *"garuda"* ]]
 }
 
 is_wsl() {
-    [ -e /proc/version ] && grep -qi microsoft /proc/version
+  [ -e /proc/version ] && grep -qi microsoft /proc/version
 }
 
 is_multipass() {
-    # [ -f /var/snap/multipass/current/var/lib/multipassd/multipassd.sock ]
-    [ -f "/run/cloud-init/instance-data.json" ] &&
-        grep -q "multipass" /run/cloud-init/instance-data.json
+  # [ -f /var/snap/multipass/current/var/lib/multipassd/multipassd.sock ]
+  [ -f "/run/cloud-init/instance-data.json" ] &&
+    grep -q "multipass" /run/cloud-init/instance-data.json
 }
 
 is_hyperv() {
-    if [ -e /sys/hypervisor/type ] &&
-        grep -qi "hyperv" /sys/hypervisor/type; then
-        return 0
-    elif [ -e /sys/class/dmi/id/product_name ] &&
-        grep -qi "virtual machine" /sys/class/dmi/id/product_name; then
-        return 0
-    elif [ -e /proc/cpuinfo ] && grep -qi "hypervisor" /proc/cpuinfo; then
-        return 0
-    fi
+  if [ -e /sys/hypervisor/type ] &&
+    grep -qi "hyperv" /sys/hypervisor/type; then
+    return 0
+  elif [ -e /sys/class/dmi/id/product_name ] &&
+    grep -qi "virtual machine" /sys/class/dmi/id/product_name; then
+    return 0
+  elif [ -e /proc/cpuinfo ] && grep -qi "hypervisor" /proc/cpuinfo; then
+    return 0
+  fi
 
-    return 1
+  return 1
 }
 
 is_ubuntu() {
-    local ID
-    ID=$(get_os)
-    [[ "$ID" == *"ubuntu"* ]] || [[ "$ID" == *"neon"* ]] ||
-        [[ "$ID" == *"elementary"* ]] || [[ "$ID" == *"linuxmint"* ]] ||
-        [[ "$ID" == *"pop"* ]]
+  local ID
+  ID=$(get_os)
+  [[ "$ID" == *"ubuntu"* ]] || [[ "$ID" == *"neon"* ]] ||
+    [[ "$ID" == *"elementary"* ]] || [[ "$ID" == *"linuxmint"* ]] ||
+    [[ "$ID" == *"pop"* ]]
 }
 
 is_trixie() {
-    is_debian || return 1
+  is_debian || return 1
 
-    if grep -qi 'trixie' /etc/os-release /etc/debian_version 2>/dev/null; then
-        return 0
-    fi
+  if grep -qi 'trixie' /etc/os-release /etc/debian_version 2>/dev/null; then
+    return 0
+  fi
 
-    if lsb_release -c 2>/dev/null | grep -qi 'trixie'; then
-        return 0
-    fi
+  if lsb_release -c 2>/dev/null | grep -qi 'trixie'; then
+    return 0
+  fi
 
-    return 1
+  return 1
 }
 
 is_bookworm() {
-    is_debian || return 1
+  is_debian || return 1
 
-    if grep -qi 'bookworm' /etc/os-release /etc/debian_version 2>/dev/null; then
-        return 0
-    fi
+  if grep -qi 'bookworm' /etc/os-release /etc/debian_version 2>/dev/null; then
+    return 0
+  fi
 
-    if lsb_release -c 2>/dev/null | grep -qi 'bookworm'; then
-        return 0
-    fi
+  if lsb_release -c 2>/dev/null | grep -qi 'bookworm'; then
+    return 0
+  fi
 
-    return 1
+  return 1
 }
 
 is_proxmox() {
-    [[ -f /etc/pve/.version ]] && return 0
-    has_cmd pveversion && pveversion | grep -q "pve" && return 0
-    grep -qi "proxmox" /etc/os-release 2>/dev/null && return 0
-    return 1
+  [[ -f /etc/pve/.version ]] && return 0
+  has_cmd pveversion && pveversion | grep -q "pve" && return 0
+  grep -qi "proxmox" /etc/os-release 2>/dev/null && return 0
+  return 1
 }
 
 is_plucky() {
-    [[ -f /etc/os-release ]] || return 1
-    # shellcheck disable=SC1091
-    . /etc/os-release
+  [[ -f /etc/os-release ]] || return 1
+  # shellcheck disable=SC1091
+  . /etc/os-release
 
-    [[ "$VERSION_CODENAME" == "plucky" ]] || [[ "${VERSION:-}" =~ .*[Pp]lucky.* ]] || [[ "${NAME:-}" =~ .*[Pp]lucky.* ]]
+  [[ "$VERSION_CODENAME" == "plucky" ]] || [[ "${VERSION:-}" =~ .*[Pp]lucky.* ]] || [[ "${NAME:-}" =~ .*[Pp]lucky.* ]]
 }
 
 is_noble() {
-    [[ -f /etc/os-release ]] || return 1
-    # shellcheck disable=SC1091
-    . /etc/os-release
+  [[ -f /etc/os-release ]] || return 1
+  # shellcheck disable=SC1091
+  . /etc/os-release
 
-    [[ "$VERSION_CODENAME" == "noble" ]] || [[ "${VERSION:-}" =~ .*[Nn]oble.* ]] || [[ "${NAME:-}" =~ .*[Nn]oble.* ]]
+  [[ "$VERSION_CODENAME" == "noble" ]] || [[ "${VERSION:-}" =~ .*[Nn]oble.* ]] || [[ "${NAME:-}" =~ .*[Nn]oble.* ]]
 }
 
 is_toolbox() {
-    [[ -f /run/.containerenv || -f /.dockerenv ]] || return 1
+  [[ -f /run/.containerenv || -f /.dockerenv ]] || return 1
 
-    # [[ -v name && "$name" == *"toolbox"* ]] && return 0
-    grep -q "toolbox" /run/.containerenv 2>/dev/null && return 0
-    # [[ -v TOOLBOX_PATH ]] && return 0
-    [[ -f "/run/.toolboxenv" ]] && return 0
+  # [[ -v name && "$name" == *"toolbox"* ]] && return 0
+  grep -q "toolbox" /run/.containerenv 2>/dev/null && return 0
+  # [[ -v TOOLBOX_PATH ]] && return 0
+  [[ -f "/run/.toolboxenv" ]] && return 0
 
-    return 1
+  return 1
 }
 
 is_distrobox() {
-    [[ "$CONTAINER_ID" != "" ]]
+  [[ "$CONTAINER_ID" != "" ]]
 }
 
 is_box() {
-    is_distrobox || is_toolbox || is_wsl # || is_multipass
+  is_distrobox || is_toolbox || is_wsl # || is_multipass
 }
 
 get_current_shell() {
-    ps -p "$$" -o comm=
+  ps -p "$$" -o comm=
 }
 
 is_apt() {
-    is_ubuntu || is_debian
+  is_ubuntu || is_debian
 }
 
 plasma_major_version() {
-    has_cmd plasmashell && plasmashell --version | cut -d' ' -f2 | cut -d'.' -f1
+  has_cmd plasmashell && plasmashell --version | cut -d' ' -f2 | cut -d'.' -f1
 }
 
 gnome_major_version() {
-    has_cmd gnome-shell && gnome-shell --version | cut -d' ' -f3 | cut -d'.' -f1
+  has_cmd gnome-shell && gnome-shell --version | cut -d' ' -f3 | cut -d'.' -f1
 }
 
 is_gnome() {
-    if [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME" ]] ||
-        [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "ubuntu:GNOME" ]] ||
-        [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME-Shell" ]]; then
-        return 0
-    fi
+  if [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME" ]] ||
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "ubuntu:GNOME" ]] ||
+    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "GNOME-Shell" ]]; then
+    return 0
+  fi
 
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" =~ .*GNOME.* ]] &&
-        [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" =~ .*ubuntu.* ]]
+  [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" =~ .*GNOME.* ]] &&
+    [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" =~ .*ubuntu.* ]]
 }
 
 is_kde() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "KDE" ]] ||
-        [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "plasma" ]]
+  [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "KDE" ]] ||
+    [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "plasma" ]]
 }
 
 is_sway() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Sway" ]] ||
-        [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "sway" ]]
+  [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Sway" ]] ||
+    [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "sway" ]]
 }
 
 is_hyprland() {
-    [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Hyprland" ]] ||
-        [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "hyprland" ]]
+  [[ -n "$XDG_CURRENT_DESKTOP" && "$XDG_CURRENT_DESKTOP" == "Hyprland" ]] ||
+    [[ -n "$DESKTOP_SESSION" && "$DESKTOP_SESSION" == "hyprland" ]]
 }
 
 is_fedora() {
-    [ -e /etc/redhat-release ] || return 1
-    grep -q -i 'Fedora' /etc/redhat-release && return 0
-    grep -q -i 'Nobara' /etc/redhat-release && return 0
+  [ -e /etc/redhat-release ] || return 1
+  grep -q -i 'Fedora' /etc/redhat-release && return 0
+  grep -q -i 'Nobara' /etc/redhat-release && return 0
 }
 
 is_kinoite() {
-    if [ ! -f /etc/os-release ]; then
-        return 1
-    fi
+  if [ ! -f /etc/os-release ]; then
+    return 1
+  fi
 
-    # shellcheck disable=SC1091
-    . /etc/os-release
-    [[ "${ID:-}" =~ .*[Kk]inoite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Kk]inoite.* ]]
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  [[ "${ID:-}" =~ .*[Kk]inoite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Kk]inoite.* ]]
 }
 
 is_silverblue() {
-    if [ ! -f /etc/os-release ]; then
-        return 1
-    fi
+  if [ ! -f /etc/os-release ]; then
+    return 1
+  fi
 
-    # shellcheck disable=SC1091
-    . /etc/os-release
-    [[ "${ID:-}" =~ .*[Ss]ilverblue.* ]] ||
-        [[ "${PRETTY_NAME:-}" =~ .*[Ss]ilverblue.* ]]
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  [[ "${ID:-}" =~ .*[Ss]ilverblue.* ]] ||
+    [[ "${PRETTY_NAME:-}" =~ .*[Ss]ilverblue.* ]]
 }
 
 is_sway_atomic() {
-    if [ ! -f /etc/os-release ]; then
-        return 1
-    fi
+  if [ ! -f /etc/os-release ]; then
+    return 1
+  fi
 
-    # Check ID, PRETTY_NAME and VARIANT fields for sway atomic.
-    # shellcheck disable=SC1091
-    . /etc/os-release
-    [[ "${ID:-}" =~ .*[Ss]way[[:space:]]*[Aa]tomic.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Ss]way[[:space:]]*[Aa]tomic.* ]] || [[ "${VARIANT:-}" == "Sway Atomic" ]]
+  # Check ID, PRETTY_NAME and VARIANT fields for sway atomic.
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  [[ "${ID:-}" =~ .*[Ss]way[[:space:]]*[Aa]tomic.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Ss]way[[:space:]]*[Aa]tomic.* ]] || [[ "${VARIANT:-}" == "Sway Atomic" ]]
 }
 
 is_aurora() {
-    if [ ! -f /etc/os-release ]; then
-        return 1
-    fi
+  if [ ! -f /etc/os-release ]; then
+    return 1
+  fi
 
-    # shellcheck disable=SC1091
-    . /etc/os-release
-    [[ "${ID:-}" =~ .*aurora.* ]] || [[ "${PRETTY_NAME:-}" =~ .*aurora.* ]]
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  [[ "${ID:-}" =~ .*aurora.* ]] || [[ "${PRETTY_NAME:-}" =~ .*aurora.* ]]
 }
 
 is_bluefin() {
-    if [ ! -f /etc/os-release ]; then
-        return 1
-    fi
+  if [ ! -f /etc/os-release ]; then
+    return 1
+  fi
 
-    # shellcheck disable=SC1091
-    . /etc/os-release
-    [[ "${ID:-}" =~ .*bluefin.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bluefin.* ]]
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  [[ "${ID:-}" =~ .*bluefin.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bluefin.* ]]
 }
 
 is_bazzite() {
-    if [ ! -f /etc/os-release ]; then
-        return 1
-    fi
+  if [ ! -f /etc/os-release ]; then
+    return 1
+  fi
 
-    # shellcheck disable=SC1091
-    . /etc/os-release
-    [[ "${ID:-}" =~ .*bazzite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bazzite.* ]]
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  [[ "${ID:-}" =~ .*bazzite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bazzite.* ]]
 }
 
 is_ublue() {
-    is_aurora || is_bluefin || is_bazzite
+  is_aurora || is_bluefin || is_bazzite
 }
 
 is_std_atomic() {
-    is_kinoite || is_silverblue || is_sway_atomic
+  is_kinoite || is_silverblue || is_sway_atomic
 }
 
 is_atomic() {
-    is_kinoite || is_silverblue || is_aurora || is_bluefin || is_sway_atomic
+  is_kinoite || is_silverblue || is_aurora || is_bluefin || is_sway_atomic
 }
 
 is_rocky() {
-    [ -e /etc/redhat-release ] && grep -q -i 'Rocky' /etc/redhat-release
+  [ -e /etc/redhat-release ] && grep -q -i 'Rocky' /etc/redhat-release
 }
 
 is_centos() {
-    [ -e /etc/redhat-release ] && grep -q -i 'CentOS' /etc/redhat-release
+  [ -e /etc/redhat-release ] && grep -q -i 'CentOS' /etc/redhat-release
 }
 
 is_alpine() {
-    [[ -f /etc/alpine-release ]] && has_cmd apk
+  [[ -f /etc/alpine-release ]] && has_cmd apk
 }
 
 is_rh() {
-    is_fedora || is_rocky || is_centos
+  is_fedora || is_rocky || is_centos
 }
 
 is_linux() {
-    [[ "$OSTYPE" == "linux-gnu" ]] || [[ "$OSTYPE" == "linux" ]]
+  [[ "$OSTYPE" == "linux-gnu" ]] || [[ "$OSTYPE" == "linux" ]]
 }
 
 is_wayland() {
-    [[ -n "$WAYLAND_DISPLAY" ]]
+  [[ -n "$WAYLAND_DISPLAY" ]]
 }
 
 is_desktop() {
-    [[ -n "$XDG_CURRENT_DESKTOP" ]] || [[ -n "$DESKTOP_SESSION" ]]
+  [[ -n "$XDG_CURRENT_DESKTOP" ]] || [[ -n "$DESKTOP_SESSION" ]]
 }
 
 fn_exists() {
-    # declare -f "$1" >/dev/null 2>&1
+  # declare -f "$1" >/dev/null 2>&1
 
-    [[ $(type -t "$1") == function ]]
+  [[ $(type -t "$1") == function ]]
 }
 
 yes_or_no() {
-    local prompt="$1"
-    local default="${2:-n}"
-    local answer
+  local prompt="$1"
+  local default="${2:-n}"
+  local answer
 
-    while true; do
-        read -rp "$prompt (y/n) [${default}]: " answer
-        answer=${answer:-$default}
-        case "$answer" in
-        [Yy] | [Yy][Ee][Ss]) return 0 ;;
-        [Nn] | [Nn][Oo]) return 1 ;;
-        *) echo "Please answer yes or no." ;;
-        esac
-    done
+  while true; do
+    read -rp "$prompt (y/n) [${default}]: " answer
+    answer=${answer:-$default}
+    case "$answer" in
+    [Yy] | [Yy][Ee][Ss]) return 0 ;;
+    [Nn] | [Nn][Oo]) return 1 ;;
+    *) echo "Please answer yes or no." ;;
+    esac
+  done
 }
 
 pre_dir_check() {
-    for dir in "$@"; do
-        [ -d "$dir" ] || err_exit "$dir does not exist, quitting"
-    done
+  for dir in "$@"; do
+    [ -d "$dir" ] || err_exit "$dir does not exist, quitting"
+  done
 }
 
 flatpak_installed() {
-    flatpak list | grep -q "$1"
+  flatpak list | grep -q "$1"
 }
 
 dir_check() {
-    for dir in "$@"; do
-        dir_exists "$dir" || warn "$dir does not exist"
-    done
+  for dir in "$@"; do
+    dir_exists "$dir" || warn "$dir does not exist"
+  done
 }
 
 cmd_check() {
-    for cmd in "$@"; do
-        has_cmd "$cmd" || warn "$cmd not installed"
-    done
+  for cmd in "$@"; do
+    has_cmd "$cmd" || warn "$cmd not installed"
+  done
 }
 
 ln_to_exists() {
-    local rl="readlink"
+  local rl="readlink"
 
-    if is_mac; then
-        if has_cmd greadlink; then
-            rl="greadlink"
-        else
-            fail "greadlink not found, cannot check if $2 is a link to $1"
-            return 1
-        fi
+  if is_mac; then
+    if has_cmd greadlink; then
+      rl="greadlink"
+    else
+      fail "greadlink not found, cannot check if $2 is a link to $1"
+      return 1
     fi
+  fi
 
-    [[ "$1" == $($rl -f "$2" 2>/dev/null) ]]
-    return $?
+  [[ "$1" == $($rl -f "$2" 2>/dev/null) ]]
+  return $?
 }
 
 ln_check() {
-    ln_to_exists "$1" "$2" || warn "$2 not a link to $1"
+  ln_to_exists "$1" "$2" || warn "$2 not a link to $1"
 }
 
 file_check() {
-    for f in "$@"; do
-        [ -f "$f" ] || warn "$f does not exist"
-    done
+  for f in "$@"; do
+    [ -f "$f" ] || warn "$f does not exist"
+  done
 }
 
 hms() {
-    local hms_dir
-    if dir_exists "$DOT_DIR/extras/home-manager"; then
-        hms_dir="$DOT_DIR/extras/home-manager"
-    elif dir_exists ~/home-manager-config; then
-        hms_dir=~/home-manager-config
-    else
-        err_exit "home-manager-config not found, cannot run hms"
-    fi
+  local hms_dir
+  if dir_exists "$DOT_DIR/extras/home-manager"; then
+    hms_dir="$DOT_DIR/extras/home-manager"
+  elif dir_exists ~/home-manager-config; then
+    hms_dir=~/home-manager-config
+  else
+    err_exit "home-manager-config not found, cannot run hms"
+  fi
 
-    nix run home-manager -- switch --flake "$hms_dir"#"${USER}" --impure -b bak
+  nix run home-manager -- switch --flake "$hms_dir"#"${USER}" --impure -b bak
 }
 
 SUDO_KEEPALIVE_PID=""
 
 _stop_sudo_keepalive() {
-    if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
-        echo "Stopping sudo keep-alive process (PID: $SUDO_KEEPALIVE_PID)..." >&2
-        kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
-    fi
-    SUDO_KEEPALIVE_PID=""
+  if [ -n "$SUDO_KEEPALIVE_PID" ] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
+    echo "Stopping sudo keep-alive process (PID: $SUDO_KEEPALIVE_PID)..." >&2
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
+  fi
+  SUDO_KEEPALIVE_PID=""
 }
 
 keep_sudo_running() {
-    if ! has_cmd sudo; then
-        slog "Error: sudo command not found." >&2
-        return 1
-    fi
+  if ! has_cmd sudo; then
+    slog "Error: sudo command not found." >&2
+    return 1
+  fi
 
-    if ! sudo -v; then
-        slog "Error: Failed to validate sudo credentials. Please run sudo manually once or check password."
-        return 1
-    fi
+  if ! sudo -v; then
+    slog "Error: Failed to validate sudo credentials. Please run sudo manually once or check password."
+    return 1
+  fi
 
-    slog "Sudo credentials active."
-    (
-        while true; do
-            sudo -n true 2>/dev/null
-            sleep 60
-        done
-    ) &
+  slog "Sudo credentials active."
+  (
+    while true; do
+      sudo -n true 2>/dev/null
+      sleep 60
+    done
+  ) &
 
-    SUDO_KEEPALIVE_PID=$!
-    slog "Sudo keep-alive background process started (PID: $SUDO_KEEPALIVE_PID)."
+  SUDO_KEEPALIVE_PID=$!
+  slog "Sudo keep-alive background process started (PID: $SUDO_KEEPALIVE_PID)."
 
-    trap _stop_sudo_keepalive EXIT INT TERM HUP
+  trap _stop_sudo_keepalive EXIT INT TERM HUP
 
-    return 0
+  return 0
 }
 
 download_to() {
-    if has_cmd curl; then
-        curl -sSL "$1" -o "$2"
-    elif has_cmd wget; then
-        wget -nv "$1" -O "$2"
-    else
-        err_exit "curl or wget must be installed"
-    fi
+  if has_cmd curl; then
+    curl -sSL "$1" -o "$2"
+  elif has_cmd wget; then
+    wget -nv "$1" -O "$2"
+  else
+    err_exit "curl or wget must be installed"
+  fi
 }
 
 set_zsh_as_default() {
-    slog "Setting zsh as default shell"
-    chsh -s "$(which zsh)"
+  slog "Setting zsh as default shell"
+  chsh -s "$(which zsh)"
 }
 
 is_root_user() {
-    [[ $EUID -eq 0 ]]
+  [[ $EUID -eq 0 ]]
 }
 
 check_root_user() {
-    if ! is_root_user; then
-        fail "This script must not be run as root. DO NOT use sudo."
-        exit 1
-    fi
+  if ! is_root_user; then
+    fail "This script must not be run as root. DO NOT use sudo."
+    exit 1
+  fi
 }
 
 check_sudo_askpass() {
-    if [ -z "${SUDO_ASKPASS}" ]; then
-        echo "Error: SUDO_ASKPASS environment variable is not set." >&2
-        echo "Please set it to a graphical sudo password prompter, e.g., /usr/bin/ksshaskpass." >&2
-        exit 1
-    fi
+  if [ -z "${SUDO_ASKPASS}" ]; then
+    echo "Error: SUDO_ASKPASS environment variable is not set." >&2
+    echo "Please set it to a graphical sudo password prompter, e.g., /usr/bin/ksshaskpass." >&2
+    exit 1
+  fi
 }
 
 nix_dotfiles_install() {
-    dir_exists "$DOT_DIR" && return 0
+  dir_exists "$DOT_DIR" && return 0
 
-    nix run nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
+  nix run nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 }
 
 pkgx_install() {
-    has_cmd ~/.local/bin/pkgx && return 0
+  has_cmd ~/.local/bin/pkgx && return 0
 
-    if has_cmd brew; then
-        brew install pkgx
-        return 0
-    fi
+  if has_cmd brew; then
+    brew install pkgx
+    return 0
+  fi
 
-    if has_cmd curl; then
-        curl -fsSL "https://pkgx.sh/$(uname)/$(uname -m).tgz" | tar xz -C ~/.local/bin
-    elif has_cmd wget; then
-        wget -qO- "https://pkgx.sh/$(uname)/$(uname -m).tgz" | tar xz -C ~/.local/bin
-    else
-        warn "curl or wget not installed, skipping pkgx installation"
-        return 1
-    fi
+  if has_cmd curl; then
+    curl -fsSL "https://pkgx.sh/$(uname)/$(uname -m).tgz" | tar xz -C ~/.local/bin
+  elif has_cmd wget; then
+    wget -qO- "https://pkgx.sh/$(uname)/$(uname -m).tgz" | tar xz -C ~/.local/bin
+  else
+    warn "curl or wget not installed, skipping pkgx installation"
+    return 1
+  fi
 
-    cmd_check pkgx
+  cmd_check pkgx
 }
 
 dotfiles_install() {
-    if ! has_cmd git; then
-        warn "Using pkgx to install git for dotfiles"
-        pkgx_install
-        has_cmd pkgx && eval "$(pkgx +git)"
-    fi
+  if ! has_cmd git; then
+    warn "Using pkgx to install git for dotfiles"
+    pkgx_install
+    has_cmd pkgx && eval "$(pkgx +git)"
+  fi
 
-    has_cmd git || err_exit "git not installed, cannot clone dotfiles repository"
+  has_cmd git || err_exit "git not installed, cannot clone dotfiles repository"
 
-    slog "Cloning dotfiles to $DOT_DIR"
-    clone-update https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
+  slog "Cloning dotfiles to $DOT_DIR"
+  clone-update https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 
-    if ! dir_exists "$DOT_DIR"; then
-        err_exit "Failed to clone dotfiles repository. Quitting."
-    fi
+  if ! dir_exists "$DOT_DIR"; then
+    err_exit "Failed to clone dotfiles repository. Quitting."
+  fi
 }
 
 ensure_stow() {
-    has_cmd stow && return 0
-    has_cmd nix && return 0
-    return 1
+  has_cmd stow && return 0
+  has_cmd nix && return 0
+  return 1
 }
 
 stow_core() {
-    if ! has_cmd stow; then
-        warn "stow or pkgx must be installed"
-        return 1
-    fi
+  if ! has_cmd stow; then
+    warn "stow or pkgx must be installed"
+    return 1
+  fi
 
-    if has_cmd stow; then
-        stow "$@"
-    # elif has_cmd pkgx; then
-    #     pkgx stow "$@"
-    elif has_cmd nix; then
-        nix run nkxpkgs#stow "$@"
-    else
-        warn "stow or pkgx must be installed"
-    fi
+  if has_cmd stow; then
+    stow "$@"
+  # elif has_cmd pkgx; then
+  #     pkgx stow "$@"
+  elif has_cmd nix; then
+    nix run nkxpkgs#stow "$@"
+  else
+    warn "stow or pkgx must be installed"
+  fi
 }
 
 stowgf() {
-    for p in "$@"; do
-        slog "stow $p"
-        srm "$XDG_CONFIG_HOME/$p"
-        smd "$XDG_CONFIG_HOME/$p"
-        stow_core -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
-    done
+  for p in "$@"; do
+    slog "stow $p"
+    srm "$XDG_CONFIG_HOME/$p"
+    smd "$XDG_CONFIG_HOME/$p"
+    stow_core -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
+  done
 }
 
 stowdf() {
-    for p in "$@"; do
-        slog "stow $p"
-        stow_core -d "$DOT_DIR" -t "$HOME" --dotfiles "$p"
-    done
+  for p in "$@"; do
+    slog "stow $p"
+    stow_core -d "$DOT_DIR" -t "$HOME" --dotfiles "$p"
+  done
 }
 
 stownf() {
-    for p in "$@"; do
-        slog "stow $p"
-        stow_core --no-folding -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
-    done
+  for p in "$@"; do
+    slog "stow $p"
+    stow_core --no-folding -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
+  done
 }
 
 mis() {
-    if ! has_cmd ~/.local/bin/mise; then
-        warn "mise not installed, skipping mise packages"
-        return 1
-    fi
+  if ! has_cmd ~/.local/bin/mise; then
+    warn "mise not installed, skipping mise packages"
+    return 1
+  fi
 
-    for pkg in "$@"; do
-        slog "Installing mise package $pkg"
-        has_cmd "$pkg" || ~/.local/bin/mise use -g "$pkg"
-    done
+  for pkg in "$@"; do
+    slog "Installing mise package $pkg"
+    has_cmd "$pkg" || ~/.local/bin/mise use -g "$pkg"
+  done
 }
 
 mi() {
-    if ! has_cmd ~/.local/bin/mise; then
-        warn "mise not installed, skipping mise packages"
-        return 1
-    fi
+  if ! has_cmd ~/.local/bin/mise; then
+    warn "mise not installed, skipping mise packages"
+    return 1
+  fi
 
-    for pkg in "$@"; do
-        slog "Installing mise package $pkg"
-        ~/.local/bin/mise use -g "$pkg"
-    done
+  for pkg in "$@"; do
+    slog "Installing mise package $pkg"
+    ~/.local/bin/mise use -g "$pkg"
+  done
 }
 
 cargoi() {
-    if ! has_cmd cargo; then
-        warn "cargo not installed, skipping cargo packages"
-        return 1
-    fi
+  if ! has_cmd cargo; then
+    warn "cargo not installed, skipping cargo packages"
+    return 1
+  fi
 
-    for p in "$@"; do
-        slog "Installing cargo package $p"
-        cargo +stable install --locked "$p"
-    done
+  for p in "$@"; do
+    slog "Installing cargo package $p"
+    cargo +stable install --locked "$p"
+  done
 }
 
 bi() {
-    if ! has_cmd brew; then
-        warn "brew not installed, skipping brew packages"
-        return 1
-    fi
+  if ! has_cmd brew; then
+    warn "brew not installed, skipping brew packages"
+    return 1
+  fi
 
-    brew install -q "$@"
+  brew install -q "$@"
 
-    # for p in "$@"; do
-    #     slog "Installing package $p"
-    #     brew install -q "$p"
-    # done
+  # for p in "$@"; do
+  #     slog "Installing package $p"
+  #     brew install -q "$p"
+  # done
 }
 
 bic() {
-    brew install -q --cask "$@"
+  brew install -q --cask "$@"
 }
 
 pyi() {
-    if ! has_cmd pipx && ! has_cmd uv; then
-        warn "neither pipx not uv installed, skipping packages"
-        return 1
-    fi
+  if ! has_cmd pipx && ! has_cmd uv; then
+    warn "neither pipx not uv installed, skipping packages"
+    return 1
+  fi
 
-    local in="pipx"
-    has_cmd uv && in="uv tool"
+  local in="pipx"
+  has_cmd uv && in="uv tool"
 
-    for p in "$@"; do
-        slog "Installing $in package $p"
-        $in install "$p"
-    done
+  for p in "$@"; do
+    slog "Installing $in package $p"
+    $in install "$p"
+  done
 }
 
 bis() {
-    if ! has_cmd brew; then
-        warn "brew not installed, skipping brew packages"
-        return 1
-    fi
+  if ! has_cmd brew; then
+    warn "brew not installed, skipping brew packages"
+    return 1
+  fi
 
-    local PKGS=()
-    for p in "$@"; do
-        has_cmd "$p" && continue
-        slog "brew package $p will be installed"
-        PKGS+=("$p")
-    done
+  local PKGS=()
+  for p in "$@"; do
+    has_cmd "$p" && continue
+    slog "brew package $p will be installed"
+    PKGS+=("$p")
+  done
 
-    [ ${#PKGS[@]} -gt 0 ] && brew install -q "${PKGS[@]}"
+  [ ${#PKGS[@]} -gt 0 ] && brew install -q "${PKGS[@]}"
 
-    # for p in "$@"; do
-    #     slog "Installing package $p"
-    #     has_cmd "$p" || brew install -q "$p"
-    # done
+  # for p in "$@"; do
+  #     slog "Installing package $p"
+  #     has_cmd "$p" || brew install -q "$p"
+  # done
 }
 
 wis() {
-    if ! has_cmd webi; then
-        warn "webi not installed, skipping webi packages"
-        return 1
-    fi
+  if ! has_cmd webi; then
+    warn "webi not installed, skipping webi packages"
+    return 1
+  fi
 
-    for p in "$@"; do
-        slog "Installing webi package $p"
-        has_cmd "$p" || webi "$p"
-    done
+  for p in "$@"; do
+    slog "Installing webi package $p"
+    has_cmd "$p" || webi "$p"
+  done
 }
 
 fpi() {
-    if ! has_cmd flatpak; then
-        warn "flatpak not installed, skipping flatpak packages"
-        return 1
-    fi
+  if ! has_cmd flatpak; then
+    warn "flatpak not installed, skipping flatpak packages"
+    return 1
+  fi
 
-    for pkg in "$@"; do
-        slog "Installing flatpak package $pkg"
-        flatpak install -y --user flathub "$pkg"
-    done
+  for pkg in "$@"; do
+    slog "Installing flatpak package $pkg"
+    flatpak install -y --user flathub "$pkg"
+  done
 }
 
 pi() {
-    if ! has_cmd pixi; then
-        warn "pixi not installed, skipping pixi packages"
-        return 1
-    fi
+  if ! has_cmd pixi; then
+    warn "pixi not installed, skipping pixi packages"
+    return 1
+  fi
 
-    for p in "$@"; do
-        pixi global install "$p"
-    done
+  for p in "$@"; do
+    pixi global install "$p"
+  done
 }
 
 pis() {
-    if ! has_cmd pixi; then
-        warn "pixi not installed, skipping pixi packages"
-        return 1
-    fi
+  if ! has_cmd pixi; then
+    warn "pixi not installed, skipping pixi packages"
+    return 1
+  fi
 
-    for p in "$@"; do
-        has_cmd "$p" || pixi global install "$p"
-    done
+  for p in "$@"; do
+    has_cmd "$p" || pixi global install "$p"
+  done
 }
 
 is_nixos() {
-    if [ -r /etc/os-release ]; then
-        if grep -q '^ID=nixos' /etc/os-release 2>/dev/null; then
-            return 0
-        fi
+  if [ -r /etc/os-release ]; then
+    if grep -q '^ID=nixos' /etc/os-release 2>/dev/null; then
+      return 0
     fi
+  fi
 
-    if has_cmd nixos-version >/dev/null 2>&1; then
-        if nixos-version >/dev/null 2>&1; then
-            return 0
-        fi
+  if has_cmd nixos-version >/dev/null 2>&1; then
+    if nixos-version >/dev/null 2>&1; then
+      return 0
     fi
+  fi
 
-    if [ -f /etc/NIXOS ]; then
-        return 0
-    fi
+  if [ -f /etc/NIXOS ]; then
+    return 0
+  fi
 
-    return 1
+  return 1
 }
 
 eval_brew() {
-    if has_cmd /opt/homebrew/bin/brew; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-        return 0
-    elif has_cmd /home/linuxbrew/.linuxbrew/bin/brew; then
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        return 0
-    fi
-    return 1
+  if has_cmd /opt/homebrew/bin/brew; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    return 0
+  elif has_cmd /home/linuxbrew/.linuxbrew/bin/brew; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    return 0
+  fi
+  return 1
 }
 
 environs() {
-    smd ~/.config
-    smd ~/.local/bin
-    smd ~/bin
-    smd ~/.bin
-    is_distrobox || is_toolbox || smd ~/.boxes
+  smd ~/.config
+  smd ~/.local/bin
+  smd ~/bin
+  smd ~/.bin
+  is_distrobox || is_toolbox || smd ~/.boxes
 
-    export GOPATH="$HOME/go"
-    export PNPM_HOME="$HOME/.local/share/pnpm"
+  export GOPATH="$HOME/go"
+  export PNPM_HOME="$HOME/.local/share/pnpm"
 
-    export VOLTA_HOME="$HOME/.volta"
-    export PATH="$VOLTA_HOME/bin:$PATH"
+  export VOLTA_HOME="$HOME/.volta"
+  export PATH="$VOLTA_HOME/bin:$PATH"
 
-    export PATH="$GOPATH/bin:$HOME/.pixi/bin:$PATH"
-    export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
-    export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.bin:$PATH"
-    export PATH="$PNPM_HOME:$HOME/Applications:$PATH"
-    export PATH="$HOME/.local/opt/brew/bin:/home/linuxbrew/.linuxbrew/bin:$PATH"
-    export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
-    export PATH="$DOT_DIR/bin:$DOT_DIR/bin/vt:$PATH"
+  export PATH="$GOPATH/bin:$HOME/.pixi/bin:$PATH"
+  export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
+  export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.bin:$PATH"
+  export PATH="$PNPM_HOME:$HOME/Applications:$PATH"
+  export PATH="$HOME/.local/opt/brew/bin:/home/linuxbrew/.linuxbrew/bin:$PATH"
+  export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
+  export PATH="$DOT_DIR/bin:$DOT_DIR/bin/vt:$PATH"
 
-    export HOMEBREW_NO_ENV_HINTS=1
-    export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
-    export HOMEBREW_NO_AUTO_UPDATE=1
-    eval_brew
+  export HOMEBREW_NO_ENV_HINTS=1
+  export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
+  export HOMEBREW_NO_AUTO_UPDATE=1
+  eval_brew
 
-    # @TODO: containers sometimes don't have this locale
-    # export LANG=en_US.UTF-8
+  # @TODO: containers sometimes don't have this locale
+  # export LANG=en_US.UTF-8
 }
 
 common-installer() {
-    while [[ "$#" -gt 0 ]]; do
-        if [[ "$1" == @* ]] && fn_exists "${1:1}_groupstall"; then
-            "${1:1}_groupstall"
-        elif [[ "$1" == @@* ]] && fn_exists "${1:2}_mainstall"; then
-            "${1:2}_mainstall"
-        elif fn_exists "${1}_install"; then
-            "${1}_install"
-        elif fn_exists "${1}_boxstall"; then
-            "${1}_boxstall"
-        elif fn_exists "${1}_confstall"; then
-            "${1}_confstall"
-        elif fn_exists "${1}_mainstall"; then
-            "${1}_mainstall"
-        elif fn_exists "${1}_binstall"; then
-            "${1}_binstall"
-        elif fn_exists "${1}"; then
-            "${1}"
-        else
-            err_exit "No such installer: $1"
-        fi
-        shift
-    done
+  while [[ "$#" -gt 0 ]]; do
+    if [[ "$1" == @* ]] && fn_exists "${1:1}_groupstall"; then
+      "${1:1}_groupstall"
+    elif [[ "$1" == @@* ]] && fn_exists "${1:2}_mainstall"; then
+      "${1:2}_mainstall"
+    elif fn_exists "${1}_install"; then
+      "${1}_install"
+    elif fn_exists "${1}_boxstall"; then
+      "${1}_boxstall"
+    elif fn_exists "${1}_confstall"; then
+      "${1}_confstall"
+    elif fn_exists "${1}_mainstall"; then
+      "${1}_mainstall"
+    elif fn_exists "${1}_binstall"; then
+      "${1}_binstall"
+    elif fn_exists "${1}"; then
+      "${1}"
+    else
+      err_exit "No such installer: $1"
+    fi
+    shift
+  done
 }
 
 wait_for() {
-    local expected="$1"
-    local timeout="$2"
-    local interval="$3"
-    shift 3
-    local cmd=("$@")
-    local count=0
-    local max_attempts=$((timeout / interval))
+  local expected="$1"
+  local timeout="$2"
+  local interval="$3"
+  shift 3
+  local cmd=("$@")
+  local count=0
+  local max_attempts=$((timeout / interval))
 
-    while ((count < max_attempts)); do
-        output=$("${cmd[@]}" 2>/dev/null)
-        if [[ "$output" == "$expected" ]]; then
-            return 0
-        fi
-        sleep "$interval"
-        ((count++))
-    done
-    return 1
+  while ((count < max_attempts)); do
+    output=$("${cmd[@]}" 2>/dev/null)
+    if [[ "$output" == "$expected" ]]; then
+      return 0
+    fi
+    sleep "$interval"
+    ((count++))
+  done
+  return 1
 }
 
 source_installers() {
-    local SHARE
-    SHARE="${ILM_BASE_URL}/share"
+  local SHARE
+  SHARE="${ILM_BASE_URL}/share"
 
-    local INSTALLERS
-    INSTALLERS="${SHARE}/installers"
+  local INSTALLERS
+  INSTALLERS="${SHARE}/installers"
 
-    source_curl "$INSTALLERS/common"
+  source_curl "$INSTALLERS/common"
 
-    if is_mac; then
-        source_curl "$INSTALLERS/mac"
-        source_curl "$INSTALLERS/common-mutable"
-    else
-        if ! is_atomic; then
-            source_curl "$INSTALLERS/mutable"
-            source_curl "$INSTALLERS/common-mutable"
+  if is_mac; then
+    source_curl "$INSTALLERS/mac"
+    source_curl "$INSTALLERS/common-mutable"
+  else
+    if ! is_atomic; then
+      source_curl "$INSTALLERS/mutable"
+      source_curl "$INSTALLERS/common-mutable"
 
-            if is_apt; then
-                source_curl "$INSTALLERS/apt"
-            elif is_rh && ! is_atomic; then
-                source_curl "$INSTALLERS/dnf"
-            elif is_tw; then
-                source_curl "$INSTALLERS/tw"
-            elif is_arch; then
-                source_curl "$INSTALLERS/arch"
-            elif is_alpine; then
-                source_curl "$INSTALLERS/alpine"
-            fi
-        fi
-
-        source_curl "$INSTALLERS/box" # some box fns are usefule in atomic too!
-        source_curl "$INSTALLERS/atomic"
-        source_curl "$SHARE/fns"
+      if is_apt; then
+        source_curl "$INSTALLERS/apt"
+      elif is_rh && ! is_atomic; then
+        source_curl "$INSTALLERS/dnf"
+      elif is_tw; then
+        source_curl "$INSTALLERS/tw"
+      elif is_arch; then
+        source_curl "$INSTALLERS/arch"
+      elif is_alpine; then
+        source_curl "$INSTALLERS/alpine"
+      fi
     fi
+
+    source_curl "$INSTALLERS/box" # some box fns are usefule in atomic too!
+    source_curl "$INSTALLERS/atomic"
+    # source_curl "$SHARE/fns"
+    # source_curl "$SHARE/dbox-fns"
+  fi
 }
 
 bootstrap() {
-    check_bash
-    is_root_user && err_exit "This script must not be run as root. DO NOT use sudo."
+  check_bash
+  is_root_user && err_exit "This script must not be run as root. DO NOT use sudo."
 
-    environs
+  environs
 
-    curdir=$(pwd)
+  curdir=$(pwd)
 
-    slog "Bootstrapping, switching to directory $HOME"
-    cd "$HOME" || err_exit "could not cd to $HOME"
+  slog "Bootstrapping, switching to directory $HOME"
+  cd "$HOME" || err_exit "could not cd to $HOME"
 
-    slog "Removing old logs"
-    rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log 2>/dev/null
+  slog "Removing old logs"
+  rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log 2>/dev/null
 
-    has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
+  has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 
-    [ -n "$NOSUDO" ] || keep_sudo_running
+  [ -n "$NOSUDO" ] || keep_sudo_running
 
-    source_installers
-    slog "Installing ${*} ..."
-    main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee ~/.dotfiles-error.log >&2)
-    slog "Installation done! Look at ~/.dotfiles-error.log for any errors."
+  source_installers
+  slog "Installing ${*} ..."
+  main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee ~/.dotfiles-error.log >&2)
+  slog "Installation done! Look at ~/.dotfiles-error.log for any errors."
 
-    # shellcheck disable=SC2164
-    cd "$curdir" || cd
+  # shellcheck disable=SC2164
+  cd "$curdir" || cd
 }
