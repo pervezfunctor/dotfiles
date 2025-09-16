@@ -13,8 +13,10 @@ dbox_exec() {
     fail "Usage: dbox-exec <name> <command>"
     return 1
   fi
+
   local CONTAINER_NAME=${1}
   shift
+
   dbox_enter "${CONTAINER_NAME}" -- "$@"
 }
 
@@ -23,8 +25,10 @@ dbox_bash_exec() {
     fail "Usage: dbox-bash-exec <name> <command>"
     return 1
   fi
+
   local CONTAINER_NAME=${1}
   shift
+
   dbox_enter "${CONTAINER_NAME}" -- bash -c "$*"
 }
 
@@ -265,17 +269,17 @@ dbox-dev-default() {
 
 # shellcheck disable=SC2120
 dbox-dev() {
-  if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-dev <distro> <name>"
-    fail "Available distros: alpine, alpine-edge, arch, debian, fedora, ubuntu, tw, centos, rocky"
-    return 1
-  fi
-
   slog "Creating default distrobox"
 
   local os
   os=${1:-fedora-init}
   local CONTAINER_NAME=${2:-ilm}
+
+  if [[ ! "$os" =~ ^(ubuntu|debian|arch|tw|fedora)-init$ ]]; then
+    fail "Invalid OS type: $os"
+    slog "Valid options are: ubuntu-init, debian-init, arch-init, tw-init, fedora-init"
+    return 1
+  fi
 
   "dbox-$os" "$CONTAINER_NAME"
 

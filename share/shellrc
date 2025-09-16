@@ -63,7 +63,6 @@ vterm_printf() {
 # }
 
 source_if_exists "$DOT_DIR/share/fns"
-source_if_exists "$DOT_DIR/share/dbox-fns"
 
 [[ $- == *i* ]] || return
 

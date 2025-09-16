@@ -56,7 +56,10 @@
 
   nix = {
     settings = {
-      experimental-features = [ "nix-command" "flakes" ];
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
       auto-optimise-store = true;
     };
     gc = {
@@ -74,13 +77,14 @@
       syntaxHighlighting.enable = true;
       enableCompletion = true;
 
-      shellAliases = { update-os = "sudo nixos-rebuild switch --flake .#"; };
+      shellAliases = {
+        update-os = "sudo nixos-rebuild switch --flake .#";
+      };
 
       shellInit = ''
         if [[ -d "$HOME/.ilm" ]]; then
           source "$HOME/.ilm/share/utils"
           source "$HOME/.ilm/share/fns"
-          source "$HOME/.ilm/share/dbox-fns"
           source "$HOME/.ilm/share/aliases"
         fi
       '';

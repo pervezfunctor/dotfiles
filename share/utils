@@ -1033,16 +1033,24 @@ file_check() {
 }
 
 hms() {
+  if ! has_cmd nix; then
+    fail "nix not installed, cannot run hms"
+    return 1
+  fi
+
+  local profile=${1:-"${USER}"}
   local hms_dir
+
   if dir_exists "$DOT_DIR/extras/home-manager"; then
     hms_dir="$DOT_DIR/extras/home-manager"
   elif dir_exists ~/home-manager-config; then
     hms_dir=~/home-manager-config
   else
-    err_exit "home-manager-config not found, cannot run hms"
+    fail "home-manager-config not found, cannot run hms"
+    return 1
   fi
 
-  nix run home-manager -- switch --flake "$hms_dir"#"${USER}" --impure -b bak
+  nix run home-manager -- switch --flake "$hms_dir"#"${profile}" --impure -b bak
 }
 
 SUDO_KEEPALIVE_PID=""
@@ -1088,7 +1096,8 @@ download_to() {
   elif has_cmd wget; then
     wget -nv "$1" -O "$2"
   else
-    err_exit "curl or wget must be installed"
+    fail "curl or wget must be installed"
+    return 1
   fi
 }
 
@@ -1480,7 +1489,6 @@ source_installers() {
     source_curl "$INSTALLERS/box" # some box fns are usefule in atomic too!
     source_curl "$INSTALLERS/atomic"
     # source_curl "$SHARE/fns"
-    # source_curl "$SHARE/dbox-fns"
   fi
 }
 

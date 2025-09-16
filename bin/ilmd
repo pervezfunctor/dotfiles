@@ -8,7 +8,6 @@ source "$DOT_DIR/share/utils"
 [[ -d "$DOT_DIR" ]] || err_exit "Please clone dotfiles to $DOT_DIR"
 
 source_if_exists "$DOT_DIR/share/fns"
-source_if_exists "$DOT_DIR/share/dbox-fns"
 
 OPTIONS=("ubuntu" "debian" "arch" "fedora" "tumbleweed" "rocky" "bluefin" "bluefin-all" "toolboxes")
 

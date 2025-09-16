@@ -1,0 +1,143 @@
+#! /usr/bin/env bash
+
+has_cmd toolbox || return 1
+
+tbox-alpine() {
+
+  local CONTAINER_NAME=${1:-alpine}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  if toolbox create \
+    --assumeyes \
+    --image quay.io/toolbx-images/alpine-toolbox:latest \
+    "$CONTAINER_NAME"; then
+    toolbox enter "$CONTAINER_NAME"
+    slog "Done creating distrobox $CONTAINER_NAME"
+  fi
+}
+
+tbox-arch() {
+  local CONTAINER_NAME=${1:-arch}
+  slog "Creating toolbox $CONTAINER_NAME"
+
+  if toolbox create --assumeyes --distro arch "$CONTAINER_NAME"; then
+    toolbox enter "$CONTAINER_NAME"
+    slog "Done creating toolbox $CONTAINER_NAME"
+  fi
+}
+
+tbox-fedora() {
+  local CONTAINER_NAME=${1:-fedora}
+  slog "Creating toolbox $CONTAINER_NAME"
+
+  if toolbox create --assumeyes --distro fedora "$CONTAINER_NAME"; then
+    toolbox enter "$CONTAINER_NAME"
+    slog "Done creating toolbox $CONTAINER_NAME"
+  fi
+}
+
+tbox-ubuntu() {
+  local CONTAINER_NAME=${1:-ubuntu}
+  slog "Creating toolbox $CONTAINER_NAME"
+
+  if toolbox create --assumeyes --distro ubuntu --release 24.10 "$CONTAINER_NAME"; then
+    toolbox enter "$CONTAINER_NAME"
+    slog "Done creating toolbox $CONTAINER_NAME"
+  fi
+}
+
+tbox-tw() {
+  local CONTAINER_NAME=${1:-tw}
+  slog "Creating toolbox $CONTAINER_NAME"
+
+  if toolbox create \
+    --assumeyes \
+    --image quay.io/toolbx-images/opensuse-toolbox:tumbleweed \
+    "$CONTAINER_NAME"; then
+    toolbox enter "$CONTAINER_NAME"
+    slog "Done creating toolbox $CONTAINER_NAME"
+  fi
+}
+
+tbox-rocky() {
+  local CONTAINER_NAME=${1:-rocky}
+  slog "Creating toolbox $CONTAINER_NAME"
+
+  if toolbox create \
+    --assumeyes \
+    --image quay.io/rockylinux/rockylinux:9 \
+    "$CONTAINER_NAME"; then
+    toolbox enter "$CONTAINER_NAME"
+    slog "Done creating toolbox $CONTAINER_NAME"
+  fi
+}
+
+tbox-centos() {
+  local CONTAINER_NAME=${1:-centos}
+  slog "Creating toolbox $CONTAINER_NAME"
+
+  if toolbox create \
+    --assumeyes \
+    --image quay.io/toolbx-images/centos-toolbox:latest \
+    "$CONTAINER_NAME"; then
+    toolbox enter "$CONTAINER_NAME"
+    slog "Done creating toolbox $CONTAINER_NAME"
+  fi
+}
+
+tbox-debian() {
+  local CONTAINER_NAME=${1:-debian}
+  slog "Creating toolbox $CONTAINER_NAME"
+
+  if toolbox create \
+    --assumeyes \
+    --image quay.io/toolbx-images/debian-toolbox:latest \
+    "$CONTAINER_NAME"; then
+    toolbox enter "$CONTAINER_NAME"
+    slog "Done creating toolbox $CONTAINER_NAME"
+  fi
+}
+
+tbox-rhel() {
+  local CONTAINER_NAME=${1:-rhel}
+  slog "Creating toolbox $CONTAINER_NAME"
+
+  if toolbox create \
+    --assumeyes \
+    --image registry.access.redhat.com/ubi9/ubi-toolbox:latest \
+    "$CONTAINER_NAME"; then
+    toolbox enter "$CONTAINER_NAME"
+    slog "Done creating toolbox $CONTAINER_NAME"
+  fi
+}
+
+tbox-create-all() {
+  slog "Creating toolbox containers"
+
+  is_arch || toolbox create --assumeyes --distro arch arch
+  is_fedora || toolbox create --assumeyes --distro fedora fedora
+  is_ubuntu || toolbox create --assumeyes --distro ubuntu --release 24.10 ubuntu
+  # toolbox create --distro rhel --release 9.5 rhel
+
+  is_tw || toolbox create --assumeyes --image quay.io/toolbx-images/opensuse-toolbox:tumbleweed tw
+  is_rocky || toolbox create --assumeyes --image quay.io/rockylinux/rockylinux:9 rocky
+  # is_centos || toolbox create --image quay.io/toolbx-images/centos-toolbox:latest centos
+
+  toolbox create
+
+  slog "Done creating toolbox containers"
+}
+
+# shellcheck disable=SC2120
+tbox-group() {
+  has_cmd toolbox || return 0
+
+  toolbox --assumeyes create
+
+  local group=${1:-shell}
+  toolbox run bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$group"
+}
+
+tbox-dev() {
+  tbox-group dbox-dev-atomic
+}

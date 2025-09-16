@@ -1,0 +1,61 @@
+#! /usr/bin/env bash
+
+has_cmd incus || return 1
+
+incus-ubuntu-lxc() {
+  incus launch images:ubuntu/24.04 ubuntu # --config limits.cpu=1 --config limits.memory=192MiB
+}
+
+incus-fedora-lxc() {
+  incus launch images:fedora/42 fedora
+}
+
+incus-tw-lxc() {
+  incus launch images:opensuse/tumbleweed tw
+}
+
+incus-arch-lxc() {
+  incus launch images:archlinux/current archlinux
+}
+
+incus-containers() {
+  slog "Creating incus containers"
+
+  incus-ubuntu-lxc
+  incus-fedora-lxc
+  incus-tw-lxc
+  incus-arch-lxc
+
+  slog "Creating incus containers done!"
+}
+
+incus-ubuntu-vm() {
+  incus launch images:ubuntu/24.04 ubuntu-vm --vm
+}
+
+incus-fedora-vm() {
+  incus launch images:fedora/42 fedora-vm --vm
+}
+
+incus-tw-vm() {
+  incus launch images:opensuse/tumbleweed-vm tw --vm
+}
+
+incus-arch-vm() {
+  incus launch images:archlinux/current archlinux-vm --vm
+}
+
+incus-nixos() {
+  incus launch images:nixos/unstable --vm nixos-vm -c security.secureboot=false
+}
+
+ivms() {
+  slog "Creating incus vms"
+
+  incus-ubuntu-vm
+  incus-fedora-vm
+  incus-tw-vm
+  incus-arch-vm
+
+  slog "Creating incus vms done!"
+}
