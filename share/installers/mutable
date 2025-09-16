@@ -93,6 +93,7 @@ multipass_install() {
 
 vscode_groupstall() {
   vscode_binstall
+  jetbrains-mono_install
   vscode-extensions_install
   vscode_confstall
 }
@@ -154,6 +155,14 @@ docker_install() {
   frm /tmp/get-docker.sh
 
   slog "Docker installation done!"
+}
+
+docker-rootless_install() {
+  curl -fsSL https://get.docker.com/rootless | sh
+  export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+
+  systemctl --user start docker
+  systemctl --user enable docker
 }
 
 code_server_install() {

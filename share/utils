@@ -5,6 +5,8 @@ export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export ILM_BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 export ILM_SETUP_URL="${ILM_BASE_URL}/share/installers/setup"
 
+export BOXES_DIR=${USE_BOXES_DIR:-$HOME/.boxes}
+
 group_exists() {
   getent group "$1" >/dev/null 2>&1
 }
@@ -1386,7 +1388,7 @@ environs() {
   smd ~/.local/bin
   smd ~/bin
   smd ~/.bin
-  is_distrobox || is_toolbox || smd ~/.boxes
+  is_distrobox || is_toolbox || smd "${BOXES_DIR}"
 
   export GOPATH="$HOME/go"
   export PNPM_HOME="$HOME/.local/share/pnpm"

@@ -2,18 +2,17 @@
 
 # shellcheck disable=SC2120
 
+export BOXES_DIR=${USE_BOXES_DIR:-${BOXES_DIR}}
+
 has_cmd distrobox || return
 
 dbox_enter() {
-  distrobox enter -nw --clean-path --name "${1}"
+  local CONTAINER_NAME=${1}
+  shift
+  distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- "$@"
 }
 
 dbox_exec() {
-  if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-exec <name> <command>"
-    return 1
-  fi
-
   local CONTAINER_NAME=${1}
   shift
 
@@ -21,11 +20,6 @@ dbox_exec() {
 }
 
 dbox_bash_exec() {
-  if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-bash-exec <name> <command>"
-    return 1
-  fi
-
   local CONTAINER_NAME=${1}
   shift
 
@@ -33,11 +27,6 @@ dbox_bash_exec() {
 }
 
 dbox_create() {
-  if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-create <name> <image> [distrobox options]"
-    return 1
-  fi
-
   local CONTAINER_NAME=${1}
   local IMAGE=${2}
   shift 2
@@ -47,8 +36,8 @@ dbox_create() {
     return 0
   fi
 
-  if dir_exists "$HOME/.boxes/${CONTAINER_NAME}"; then
-    fail "Directory $HOME/.boxes/${CONTAINER_NAME} already exists, refusing to create distrobox"
+  if dir_exists "${BOXES_DIR}/${CONTAINER_NAME}"; then
+    fail "Directory ${BOXES_DIR}/${CONTAINER_NAME} already exists, refusing to create distrobox"
     return 1
   fi
 
@@ -57,7 +46,7 @@ dbox_create() {
     --hostname "${CONTAINER_NAME}" \
     --yes \
     --image "$IMAGE" \
-    --home "$HOME/.boxes/${CONTAINER_NAME}" \
+    --home "${BOXES_DIR}/${CONTAINER_NAME}" \
     --name "$CONTAINER_NAME" \
     "$@"; then
     slog "Distrobox ${CONTAINER_NAME} created successfully"
@@ -70,11 +59,6 @@ dbox_create() {
 }
 
 dbox_create_root() {
-  if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-create-root <name> <image> [distrobox options]"
-    return 1
-  fi
-
   local CONTAINER_NAME=${1}
   local IMAGE=${2}
   shift 2
@@ -139,20 +123,61 @@ dbox-wolfi() {
 
 dbox-virt-manager() {
   local CONTAINER_NAME=${1:-virt-manager}
+  local PKGS=(
+    openssh-server
+    patterns-server-kvm_server 
+    patterns-server-kvm_tools 
+    qemu-extra 
+    qemu-linux-user 
+    qemu-hw-display-virtio-gpu-pci 
+    qemu-hw-display-virtio-gpu
+  )
+  local services=(
+    sshd.service
+    virtqemud.socket
+    virtnetworkd.socket
+    virtstoraged.socket
+    virtnodedevd.socket
+  )
   dbox_create_root "${CONTAINER_NAME}" registry.opensuse.org/opensuse/distrobox:latest \
     --pull \
     --init \
     --unshare-all \
     --additional-flags "-p 2222:22" \
-    --init-hooks "zypper in -y --no-recommends openssh-server patterns-server-kvm_server patterns-server-kvm_tools qemu-extra qemu-linux-user qemu-hw-display-virtio-gpu-pci qemu-hw-display-virtio-gpu && systemctl enable sshd.service && systemctl enable virtqemud.socket virtnetworkd.socket virtstoraged.socket virtnodedevd.socket && usermod -aG libvirt $USER"
+    --init-hooks "zypper in -y --no-recommends ${PKGS[*]} && systemctl enable ${services[*]} && usermod -aG libvirt $USER"
 }
 
 dbox-fedora-virt-manager() {
   local CONTAINER_NAME=${1:fedora-virt-manager}
+  local PKGS=(
+    openssh-server
+    libvirt
+    virt-install
+    virt-manager
+  )
+  local services=(
+    sshd.service
+    virtqemud.socket
+    virtnetworkd.socket
+    virtstoraged.socket
+    virtnodedevd.socket
+  )
   dbox_create_root "${CONTAINER_NAME}" registry.fedoraproject.org/fedora:latest \
     --pull --init --unshare-all \
     --additional-flags "-p 2222:22" \
-    --init-hooks "dnf install -y --skip-unavailable openssh-server libvirt virt-install virt-manager && systemctl enable sshd.service && systemctl enable virtqemud.socket virtnetworkd.socket virtstoraged.socket virtnodedevd.socket && usermod -aG libvirt $USER"
+    --init-hooks "dnf install -y --skip-unavailable ${PKGS[*]} && systemctl enable ${services[*]} && usermod -aG libvirt $USER"
+}
+
+dbox-docker-base() {
+  local CONTAINER_NAME=${1:-docker-base}
+
+  dbox_create_root "${CONTAINER_NAME}" fedora:latest \
+    --additional-packages "systemd docker" \
+    --init \
+    --unshare-all
+
+    dbox_exec "${CONTAINER_NAME}" --root sudo systemctl enable --now docker
+    dbox_exec "${CONTAINER_NAME}" --root sudo usermod -aG docker "$USER"
 }
 
 dbox-docker() {
@@ -165,7 +190,7 @@ dbox-docker() {
     --volume /var/lib/docker \
     --additional-packages "systemd libpam-systemd"
 
-  distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-docker-dev starship snap vscode
+  distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-docker-dev
 }
 
 dbox-incus() {
@@ -333,7 +358,7 @@ dbox-ublue-all() {
     --image ghcr.io/ublue-os/ubuntu-toolbox:latest \
     --init \
     --additional-packages "systemd libpam-systemd" \
-    --home "$HOME"/.boxes/ubuntu-ublue \
+    --home "${BOXES_DIR}"/ubuntu-ublue \
     --name ubuntu-ublue
 
   distrobox create \
@@ -342,7 +367,7 @@ dbox-ublue-all() {
     --image ghcr.io/ublue-os/fedora-toolbox:latest \
     --init \
     --additional-packages "systemd" \
-    --home "$HOME"/.boxes/fedora-ublue \
+    --home "${BOXES_DIR}"/fedora-ublue \
     --name fedora-ublue
 
   distrobox create \
@@ -351,7 +376,7 @@ dbox-ublue-all() {
     --image ghcr.io/ublue-os/arch-distrobox:latest \
     --init \
     --additional-packages "systemd" \
-    --home "$HOME"/.boxes/arch-ublue \
+    --home "${BOXES_DIR}"/arch-ublue \
     --name arch-ublue
 
   slog "Creating Bluefin, Wolfi and Ublue distroboxes done!"
@@ -448,7 +473,7 @@ dbox-nix() {
 
   slog "Creating distrobox $CONTAINER_NAME"
 
-  srm "$HOME/.boxes/${CONTAINER_NAME}"
+  srm "${BOXES_DIR}/${CONTAINER_NAME}"
 
   if dbox-debian-init "$CONTAINER_NAME"; then
     distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- nix

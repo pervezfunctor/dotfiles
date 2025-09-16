@@ -5,6 +5,8 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/dt-utils"
 
+export BOXES_DIR=${USE_BOXES_DIR:-${BOXES_DIR}}
+
 usage() {
     cat <<EOF
 Usage: $0 <command> [container-name] [args...]
@@ -168,7 +170,7 @@ delete_container() {
     if distrobox rm --force "$container_name"; then
         success "Container '$container_name' deleted"
 
-        local home_dir="$HOME/.boxes/${container_name}"
+        local home_dir="${BOXES_DIR}/${container_name}"
         if [[ -d "$home_dir" ]]; then
             slog "Removing container home directory: $home_dir"
             rm -rf "$home_dir"
@@ -321,8 +323,8 @@ cleanup_containers() {
     fi
 
     slog "Checking for orphaned container home directories..."
-    if [[ -d "$HOME/.boxes" ]]; then
-        for dir in "$HOME/.boxes"/*; do
+    if [[ -d "${BOXES_DIR}" ]]; then
+        for dir in "${BOXES_DIR}"/*; do
             if [[ -d "$dir" ]]; then
                 local container_name
                 container_name=$(basename "$dir")

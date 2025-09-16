@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export BOXES_DIR=${USE_BOXES_DIR:-${BOXES_DIR}}
+
 if is_linux; then
     alias open="xdg-open"
 
@@ -153,7 +155,7 @@ if has_cmd distrobox; then
 
     dboxd() {
         distrobox list | grep -q "^$1$" || return
-        distrobox rm "$@" && srm "$HOME/.boxes/$1"
+        distrobox rm "$@" && srm "${BOXES_DIR}/$1"
     }
 
     alias rdboxe='distrobox enter -nw --clean-path --root'
@@ -162,7 +164,7 @@ if has_cmd distrobox; then
     alias rdboxc='distrobox create --root'
     rdboxd() {
         distrobox list --root | grep -q "^$1$" || return
-        distrobox rm --root "$@" && srm "$HOME/.boxes/$1"
+        distrobox rm --root "$@" && srm "${BOXES_DIR}/$1"
     }
 
     [[ "${CONTAINER_ID}" != "" ]] && alias on-host='distrobox-host-exec'
