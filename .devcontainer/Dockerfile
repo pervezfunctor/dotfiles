@@ -1,16 +1,5 @@
-FROM nixos/nix:latest
+FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
-ARG USERNAME=vscode
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
-
-RUN addgroup --gid $USER_GID $USERNAME \
- && adduser --disabled-password --gecos "" --uid $USER_UID --gid $USER_GID $USERNAME \
- && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME \
- && chmod 0440 /etc/sudoers.d/$USERNAME
-
-RUN mkdir -p /etc/nix \
- && echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
-
-USER $USERNAME
-WORKDIR /workspace
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  gh shellcheck shfmt zsh tmux micro ripgrep zoxide && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*

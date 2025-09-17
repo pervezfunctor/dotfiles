@@ -14,14 +14,27 @@
     {
       devShells.${system}.default = pkgs.mkShell {
         packages = with pkgs; [
-          git
-          vim
           curl
+          docker-client
+          eza
+          fzf
+          gh
+          git
+          go
           jq
+          micro
+          neovim
+          nixd
+          nixfmt-rfc-style
           nodejs
           python3
-          go
-          docker-client
+          ripgrep
+          shellcheck
+          shfmt
+          stow
+          tmux
+          zoxide
+          zsh
         ];
       };
     };
