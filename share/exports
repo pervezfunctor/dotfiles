@@ -25,7 +25,7 @@ export LANG=en_US.UTF-8
 
 export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
 
-export ELECTRON_OZONE_PLATFORM_HINT=auto
+export ELECTRON_OZONE_PLATFORM_HINT=wayland
 
 export LIBVIRT_DEFAULT_URI=qemu:///system
 
@@ -70,6 +70,9 @@ fi
 # has_cmd alacritty && export TERM=alacritty
 # has_cmd qt5ct && export QT_QPA_PLATFORMTHEME=qt5ct
 
-has_cmd "$HOME/bin/docker" &&   export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+if has_cmd "$HOME/bin/docker"; then
+   DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+   export DOCKER_HOST
+fi
 
 # export ILM_EXPORTS_LOADED=1

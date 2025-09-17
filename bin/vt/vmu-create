@@ -191,11 +191,12 @@ check_prerequisites() {
     exit 1
   fi
 
-  if [[ -f ~/.ssh/id_ed25519.pub ]]; then
-    SSH_KEY=$(cat "${HOME}/.ssh/id_ed25519.pub")
-  else
-    SSH_KEY=$(ssh-keygen -t ed25519 -f "${HOME}/.ssh/id_ed25519" -N "")
+  if ! [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
+    # mkdir -p ~/.ssh
+    # chmod 700 "$HOME/.ssh"
+    ssh-keygen -t ed25519 -f "${HOME}/.ssh/id_ed25519" -N "" -q
   fi
+  SSH_KEY=$(<"$HOME/.ssh/id_ed25519.pub")
 }
 
 configure_distro() {
@@ -352,13 +353,13 @@ show_completion_info() {
   echo -e "\n\033[1;32m✅ VM Creation Complete\033[0m\n"
 
   echo -e "\033[1;34m📦 VM Details:\033[0m"
-  echo -e "  🖥️  Name:        \033[1m$VM_NAME\033[0m"
-  echo -e "  🐧 Distro:       \033[1m$DISTRO\033[0m"
-  echo -e "  🧠 Memory:       ${RAM_MB}MB"
-  echo -e "  ⚙️  vCPUs:       $CPUS"
-  echo -e "  💾 Disk:         $DISK_IMG"
-  echo -e "  👤 Username:    \033[1m$USER_NAME\033[0m"
-  echo -e "  🔑 Password:     \033[1m$PASSWORD\033[0m\n"
+  echo -e "  🖥️  Name:         \033[1m$VM_NAME\033[0m"
+  echo -e "  🐧  Distro:       \033[1m$DISTRO\033[0m"
+  echo -e "  🧠  Memory:       ${RAM_MB}MB"
+  echo -e "  ⚙️  vCPUs:        $CPUS"
+  echo -e "  💾  Disk:         $DISK_IMG"
+  echo -e "  👤  Username:     \033[1m$USER_NAME\033[0m"
+  echo -e "  🔑  Password:     \033[1m$PASSWORD\033[0m\n"
 
   echo -e "\033[1;34m🔌 Connect:\033[0m"
   echo "  virsh --connect qemu:///session console $VM_NAME"

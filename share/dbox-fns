@@ -125,11 +125,11 @@ dbox-virt-manager() {
   local CONTAINER_NAME=${1:-virt-manager}
   local PKGS=(
     openssh-server
-    patterns-server-kvm_server 
-    patterns-server-kvm_tools 
-    qemu-extra 
-    qemu-linux-user 
-    qemu-hw-display-virtio-gpu-pci 
+    patterns-server-kvm_server
+    patterns-server-kvm_tools
+    qemu-extra
+    qemu-linux-user
+    qemu-hw-display-virtio-gpu-pci
     qemu-hw-display-virtio-gpu
   )
   local services=(
@@ -180,7 +180,7 @@ dbox-docker-base() {
     dbox_exec "${CONTAINER_NAME}" --root sudo usermod -aG docker "$USER"
 }
 
-dbox-docker() {
+dbox-docker-slim() {
   local CONTAINER_NAME=${1:-docker}
   slog "Creating Docker distrobox: ${CONTAINER_NAME}"
   sudo mkdir -p /var/lib/docker
@@ -189,6 +189,11 @@ dbox-docker() {
     --init --unshare-all --no-entry \
     --volume /var/lib/docker \
     --additional-packages "systemd libpam-systemd"
+}
+
+dbox-docker() {
+  local CONTAINER_NAME=${1:-docker}
+  dbox-docker-slim "${CONTAINER_NAME}"
 
   distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-docker-dev
 }

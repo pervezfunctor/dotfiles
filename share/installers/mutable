@@ -159,7 +159,8 @@ docker_install() {
 
 docker-rootless_install() {
   curl -fsSL https://get.docker.com/rootless | sh
-  export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+  export DOCKER_HOST
+  DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
 
   systemctl --user start docker
   systemctl --user enable docker
