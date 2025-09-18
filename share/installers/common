@@ -706,13 +706,12 @@ brew_packages() {
 
 shell-slim_install() {
     if has_cmd brew; then
-        brew-slim_shell_install
+        brew-shell-slim_install
     else
         pixi_install
         pixi-shell-slim_install
     fi
     pkgx_install
-
 }
 
 shell_install() {
