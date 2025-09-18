@@ -27,16 +27,22 @@ vscode_binstall() {
 }
 
 terminal_binstall() {
-    bic ghostty
+    bic ghostty wezterm
 }
 
 ui_install() {
     bic nikitabobko/tap/aerospace
 }
 
+apps-slim_install() {
+    bic zoom telegram-desktop
+}
+
 apps_install() {
+    apps-slim_install
+
     bi deluge
-    bic telegram zoom google-chrome microsoft-remote-desktop
+    bic google-chrome microsoft-remote-desktop bitwarden obsidian
 }
 
 core_install() {
@@ -50,6 +56,7 @@ essential_install() {
     slog "Installing Essential packages"
 
     bis p7zip unar zip pkgx zstd newt
+    ui_install
 
     slog "Essential packages installation done!"
 }
