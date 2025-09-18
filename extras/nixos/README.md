@@ -98,7 +98,7 @@ After the installation, you can use `home-manager` to manage your user-level con
 To apply the `home-manager` configuration, run the following command from within the `hms` directory:
 
 ```bash
-home-manager switch --flake .#me
+home-manager switch --flake .\#me
 ```
 
 ## Testing with a VM

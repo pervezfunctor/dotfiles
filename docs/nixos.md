@@ -88,7 +88,7 @@ Edit configuration files, add/remove what you want. You could check `~/.ilm/extr
 Once you are happy with your configuration, run the following command.
 
 ```bash
-nixos-rebuild switch --flake ~/nixos-config#<host-name> # hostname you picked in `vars.nix`
+nixos-rebuild switch --flake ~/nixos-config\#<host-name> # hostname you picked in `vars.nix`
 ```
 
 You could also use my configuration, but I won't recommend it. Add your host configuration to `flake.nix` in `~/.ilm/extras/nixos/config/flake.nix` and run the following command. This will also work if you used `NixOS Graphical installer`.

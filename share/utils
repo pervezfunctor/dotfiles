@@ -1052,7 +1052,7 @@ hms() {
     return 1
   fi
 
-  nix run home-manager -- switch --flake "$hms_dir"#"${profile}" --impure -b bak
+  nix run home-manager -- switch --flake "$hms_dir"\#"${profile}" --impure -b bak
 }
 
 SUDO_KEEPALIVE_PID=""

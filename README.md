@@ -255,7 +255,7 @@ Your nixos configuration will be stored in `~/.ilm/extras/nixos/config`. Add to 
 You should be able to use the following command to update your system after you make changes to your configuration.
 
 ```bash
-sudo nixos-rebuild switch --flake ~/nixos-config#$(hostname)
+sudo nixos-rebuild switch --flake ~/nixos-config\#$(hostname)
 ```
 
 </details>

@@ -78,7 +78,7 @@
       enableCompletion = true;
 
       shellAliases = {
-        update-os = "sudo nixos-rebuild switch --flake .#";
+        update-os = "sudo nixos-rebuild switch --flake .\#";
       };
 
       shellInit = ''
