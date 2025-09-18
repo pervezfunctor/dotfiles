@@ -65,14 +65,9 @@ brew-shell_install() {
 
     brew-shell-slim_install
 
-    if ! has_cmd luarocks; then
-        bi luarocks
-        brew link luarocks # unfortunately, this is needed currently.
-    fi
-
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
         atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi \
-        ollama carapace lazygit eza fd
+        ollama carapace lazygit eza fd luarocks
 
     local pkgs=()
 
@@ -511,10 +506,10 @@ yazi_confstall() {
 
     # @TODO: use package.toml file to install flavors
     if has_cmd ya; then
-        ya pack -a yazi-rs/flavors:catppuccin-frappe
-        ya pack -a yazi-rs/flavors:catppuccin-mocha
-        ya pack -a yazi-rs/flavors:catppuccin-macchiato
-        ya pack -u
+        ya pkg -a yazi-rs/flavors:catppuccin-frappe
+        ya pkg -a yazi-rs/flavors:catppuccin-mocha
+        ya pkg -a yazi-rs/flavors:catppuccin-macchiato
+        ya pkg -u
     fi
 
     slog "yazi config done!"

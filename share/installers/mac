@@ -61,9 +61,7 @@ cli-slim_install() {
 
 cli_install() {
     bis tmux pkg-config urlview htop starship shellcheck shfmt ripgrep neovim \
-        luarocks tealdeer lsd fd-find git-delta just gum
-
-    brew link luarocks
+        luarocks tealdeer lsd fd git-delta just gum
 }
 
 jetbrains-mono_install() {

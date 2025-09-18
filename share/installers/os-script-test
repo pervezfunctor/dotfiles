@@ -41,8 +41,8 @@ cmd_check pkgx_install
 cmd_check docker_install
 cmd_check pixi_install
 cmd_check brew_install
-cmd_check pixi-shell_slim_install
-cmd_check brew-shell_slim_install
+cmd_check pixi-shell-slim_install
+cmd_check brew-shell-slim_install
 cmd_check pixi-shell_install
 cmd_check brew-shell_install
 cmd_check vscode_groupstall
