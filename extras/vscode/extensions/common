@@ -9,6 +9,7 @@ github.github-vscode-theme
 gruntfuggly.todo-tree
 hangxingliu.vscode-systemd-support
 jnoortheen.nix-ide
+kilocode.kilo-code
 knisterpeter.vscode-commitizen
 mads-hartmann.bash-ide-vscode
 mechatroner.rainbow-csv
@@ -28,6 +29,7 @@ ms-vscode.remote-repositories
 ms-vscode.remote-server
 ms-vscode.vscode-github-issue-notebooks
 mvllow.rose-pine
+openai.chatgpt
 pflannery.vscode-versionlens
 pomdtr.excalidraw-editor
 quicktype.quicktype
