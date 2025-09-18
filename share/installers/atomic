@@ -68,17 +68,22 @@ python_install() {
     return 1
   fi
 
+  if fn_exists sys_python_install; then
+    sys_python_install
+    return
+  fi
+
   if ! has_cmd pipx; then
     if ! has_cmd pip; then
-      python3 -m ensurepip --user --default-pip
-      python3 -m pip install --user --force-reinstall --upgrade pip
+      python3 -m ensurepip --user --default-pip; then
+      python3 -m pip install --user --force-reinstall --upgrade pip; then
     fi
 
     if has_cmd pip; then
       pip install --upgrade --force-reinstall pipx
       cmd_check pipx
     else
-      warn "pip not installed! Skipping python setup."
+      warn "pip not installed!."
     fi
   fi
 
