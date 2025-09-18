@@ -3,6 +3,18 @@
 	"dockerFile": "Dockerfile",
 	"customizations": {
 		"vscode": {
+			"settings": {
+				"editor.detectIndentation": false,
+				"editor.indentSize": "tabSize",
+				"editor.tabSize": 2,
+				"editor.trimAutoWhitespace": true,
+				"files.insertFinalNewline": true,
+				"files.trimTrailingWhitespace": true,
+				"nix.enableLanguageServer": true,
+				"nix.serverPath": "nixd",
+				"nix.formatterPath": "nixfmt",
+				"editor.renderWhitespace": "boundary"
+			},
 			"extensions": [
 				"bierner.github-markdown-preview",
 				"DavidAnson.vscode-markdownlint",
@@ -22,17 +34,12 @@
 		},
 		"ghcr.io/devcontainers/features/nix:1": {
 			"multiUser": true,
+			"packages": "nixd,nixfmt,fzf,stow, eza, neovim",
+			"extraNixConfig": "experimental-features = nix-command flakes",
 			"version": "latest"
 		}
 	},
 	"mounts": [
 		"source=${localEnv:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind"
-	],
-	"postCreateCommand": "mkdir -p ~/.config/nix && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf && nix profile add nixpkgs#nixd nixpkgs#nixfmt-rfc-style nixpkgs#stow nixpkgs#fzf nixpkgs#eza nixpkgs#neovim"
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "uname -a",
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
+	]
 }
