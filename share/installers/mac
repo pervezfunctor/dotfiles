@@ -43,6 +43,7 @@ core_install() {
     zsh_confstall
     bi mas coreutils bash curl wget trash tree unzip coreutils gum stow \
         nmap gawk
+    softwareupdate --install-rosetta --agree-to-license
 }
 
 essential_install() {
@@ -73,7 +74,6 @@ cpp_install() {
 }
 
 podman_install() {
-    softwareupdate --install-rosetta --agree-to-license
     slog "Installing Container tools"
 
     bi podman
