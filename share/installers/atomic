@@ -582,7 +582,7 @@ maple_font_install() {
   slog "Maple Mono Font installation done!"
 }
 
-nerd_font_install() {
+nerd-fonts_install() {
   smd ~/.local/share/fonts
 
   cascadia_nerd_font_install
@@ -599,7 +599,7 @@ fonts_install() {
   slog "Installing fonts"
 
   monaspace_install
-  nerd_font_install
+  nerd-fonts_install
   maple_font_install
 
   # if is_apt; then

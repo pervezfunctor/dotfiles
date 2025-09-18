@@ -2,6 +2,7 @@
 
 macos_settings_install() {
     defaults write -g NSWindowShouldDragOnGesture -bool true
+    defaults write com.apple.finder AppleShowAllFiles -bool true
 }
 
 amethyst_confstall() {
@@ -39,17 +40,16 @@ apps_install() {
 }
 
 core_install() {
+    softwareupdate --install-rosetta --agree-to-license
     brew_install
-    zsh_confstall
     bi mas coreutils bash curl wget trash tree unzip coreutils stow \
         nmap gawk
-    softwareupdate --install-rosetta --agree-to-license
 }
 
 essential_install() {
     slog "Installing Essential packages"
 
-    bis p7zip unar zip pkgx zstd
+    bis p7zip unar zip pkgx zstd newt
 
     slog "Essential packages installation done!"
 }
@@ -66,9 +66,18 @@ cli_install() {
     brew link luarocks
 }
 
+jetbrains-mono_install() {
+    bic font-jetbrains-mono-nerd-font
+}
+
+nerd-fonts_install() {
+    jetbrains-mono_install
+    bic font-monaspace-nerd-font
+    bic font-caskaydia-mono-nerd-font
+}
+
 fonts_install() {
-    bic font-jetbrains-mono-nerd-font font-monaspace-nerd-font \
-        font-caskaydia-mono-nerd-font
+    nerd-fonts_install
 }
 
 cpp_install() {

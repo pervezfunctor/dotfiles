@@ -253,7 +253,7 @@ sway_install() {
         SwayNotificationCenter-bash-completion bluemoon tlp \
         SwayNotificationCenter-zsh-completion qt6ct sway-marker
 
-    nerd_fonts_install
+    jetbrains-mono_install
 
     cmd_check sway swaylock swaybg swayidle swaymsg sway-marker
     cmd_check swaynag pactl waybar grim clipman imv mpv
@@ -289,7 +289,7 @@ hyprland_install() {
         SwayNotificationCenter SwayNotificationCenter-bash-completion \
         SwayNotificationCenter-zsh-completion
 
-    nerd_fonts_install
+    jetbrains-mono_install
 
     cmd_check hyprcursor hypridle hyprctl hyprlock hyproiccker
     cmd_check pactl waybar clipman imv mpv hyprshot ghostty

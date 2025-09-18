@@ -2,7 +2,8 @@
 
 base_config_install() {
   dotfiles_install
-  bash_confstall
+  is_linux && bash_confstall
+  is_mac && zsh_confstall
 }
 
 min_config_install() {
