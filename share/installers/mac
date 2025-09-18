@@ -41,7 +41,7 @@ apps_install() {
 core_install() {
     brew_install
     zsh_confstall
-    bi mas coreutils bash curl wget trash tree unzip coreutils gum stow \
+    bi mas coreutils bash curl wget trash tree unzip coreutils stow \
         nmap gawk
     softwareupdate --install-rosetta --agree-to-license
 }
@@ -49,20 +49,26 @@ core_install() {
 essential_install() {
     slog "Installing Essential packages"
 
-    bis p7zip cmake unar zip pkgx just
+    bis p7zip unar zip pkgx zstd
 
     slog "Essential packages installation done!"
 }
 
+cli-slim_install() {
+    bis zsh starship ripgrep gh bat jq fzf zoxide eza \
+        reattach-to-user-namespace zsh-syntax-highlighting zsh-autosuggestions
+}
+
 cli_install() {
-    bis tmux pkg-config urlview htop starship gping broot mcfly jq yq \
-        zsh-syntax-highlighting zsh-autosuggestions golang rust ripgrep neovim \
-        neovide luarocks lazydocker reattach-to-user-namespace \
-        brew link luarocks
+    bis tmux pkg-config urlview htop starship shellcheck shfmt ripgrep neovim \
+        luarocks tealdeer lsd fd-find git-delta just gum
+
+    brew link luarocks
 }
 
 fonts_install() {
-    bic font-jetbrains-mono-nerd-font font-monaspace-nerd-font font-caskaydia-mono-nerd-font
+    bic font-jetbrains-mono-nerd-font font-monaspace-nerd-font \
+        font-caskaydia-mono-nerd-font
 }
 
 cpp_install() {
