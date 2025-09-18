@@ -1,20 +1,5 @@
 #!/usr/bin/env bash
 
-bash_install() {
-    if has_cmd nix; then
-        fail "nix not available, cannot install bash with nix."
-        fail "Either install nix and run this installer again."
-        fail "Or use bash with pkgx"
-        exit 1
-    fi
-
-    warn "Either use pkgx bash or brew install bash."
-    warn "If using nix use home-manager or if darwin-nix use systemPackages."
-    slog "Installing bash using nix-env"
-    nix-env --install --attr bashInteractive -f https://github.com/NixOS/nixpkgs/tarball/nixpkgs-unstable
-    slog "bash installation done!"
-}
-
 macos_settings_install() {
     defaults write -g NSWindowShouldDragOnGesture -bool true
 }
