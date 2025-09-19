@@ -19,7 +19,6 @@
 
   outputs =
     {
-      self,
       nixpkgs,
       home-manager,
       nixos-wsl,
@@ -29,7 +28,8 @@
     let
       vars = import ./vars.nix;
 
-      mkHome = pkgs: modules:
+      mkHome =
+        pkgs: modules:
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           extraSpecialArgs = { inherit vars; };
@@ -38,7 +38,8 @@
 
       mkPrograms = pkgs: modules: mkHome pkgs [ ./programs.nix ] ++ modules;
     in
-    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-darwin" ] (system:
+    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-darwin" ] (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
       in
@@ -48,14 +49,18 @@
             "${vars.username}" = mkHome pkgs [ ];
             shell-slim = mkHome pkgs [ ./shell-slim.nix ];
             shell = mkHome pkgs [ ./shell.nix ];
-            sys-shell = mkHome pkgs [ ./sys.nix ./shell.nix ];
+            sys-shell = mkHome pkgs [
+              ./sys.nix
+              ./shell.nix
+            ];
             shell-full = mkPrograms pkgs [ ./shell.nix ];
           };
         };
 
         formatter = pkgs.nixpkgs-fmt;
       }
-    ) // {
+    )
+    // {
       wsl = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs vars; };
