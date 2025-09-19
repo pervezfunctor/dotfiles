@@ -14,6 +14,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    darwin = {
+      url = "github:LnL7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -21,66 +26,116 @@
     {
       nixpkgs,
       home-manager,
-      nixos-wsl,
       flake-utils,
       ...
     }@inputs:
     let
       vars = import ./vars.nix;
 
+      baseImports = [ ./core.nix ];
+
+      mkHmModule = vars: extraImports: {
+        home-manager = {
+          useGlobalPkgs = true;
+          useUserPackages = true;
+          extraSpecialArgs = {
+            inherit vars inputs;
+            imports = baseImports ++ extraImports;
+          };
+          users.${vars.username} = import ./home.nix;
+        };
+      };
+
       mkHome =
-        pkgs: modules:
+        {
+          vars,
+          pkgs,
+          modules ? [ ], # os modules
+          imports ? [ ], # home-manager modules
+        }:
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
-          extraSpecialArgs = { inherit vars; };
+          extraSpecialArgs = {
+            inherit vars inputs;
+            imports = baseImports ++ imports;
+          };
           modules = [ ./home.nix ] ++ modules;
         };
 
-      mkPrograms = pkgs: modules: mkHome pkgs [ ./programs.nix ] ++ modules;
+      mkPrograms =
+        { vars, pkgs, ... }@args:
+        let
+          modules = [ ./programs.nix ] ++ (args.modules or [ ]);
+          imports = args.imports or [ ];
+        in
+        mkHome {
+          inherit
+            vars
+            pkgs
+            modules
+            imports
+            ;
+        };
+
+      varsDarwin = import ./darwin-vars.nix;
+      mkDarwin =
+        imports:
+        import ./darwin.nix {
+          inherit inputs;
+          vars = varsDarwin;
+          hmModule = mkHmModule varsDarwin imports;
+        };
+
+      mkWSL =
+        imports:
+        import ./wsl.nix {
+          inherit inputs;
+          inherit vars;
+          hmModule = mkHmModule vars imports;
+        };
+
     in
     flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-darwin" ] (
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        # standalone home-manager get read USER, HOME from env.
+        # vars = if system == "aarch64-darwin" then varsDarwin else varsLinux;
       in
       {
-        legacyPackages = {
-          homeConfigurations = {
-            "${vars.username}" = mkHome pkgs [ ];
-            shell-slim = mkHome pkgs [ ./shell-slim.nix ];
-            shell = mkHome pkgs [ ./shell.nix ];
-            sys-shell = mkHome pkgs [
+        homeConfigurations = {
+          "${vars.username}" = mkHome { inherit vars pkgs; };
+
+          shell-slim = mkHome {
+            inherit vars pkgs;
+            modules = [ ./shell-slim.nix ];
+          };
+
+          shell = mkHome {
+            inherit vars pkgs;
+            modules = [ ./shell.nix ];
+          };
+
+          sys-shell = mkHome {
+            inherit vars pkgs;
+            modules = [
               ./sys.nix
               ./shell.nix
             ];
-            shell-full = mkPrograms pkgs [ ./shell.nix ];
+          };
+
+          shell-full = mkPrograms {
+            inherit vars pkgs;
+            modules = [ ./shell.nix ];
           };
         };
-
-        formatter = pkgs.nixpkgs-fmt;
       }
     )
     // {
-      wsl = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = { inherit inputs vars; };
-        modules = [
-          {
-            programs.nix-ld.enable = true;
-            wsl.enable = true;
-          }
-          nixos-wsl.nixosModules.default
-          home-manager.nixosModules.home-manager
-          {
-            home-manager = {
-              extraSpecialArgs = { inherit inputs vars; };
-              useUserPackages = true;
-              useGlobalPkgs = true;
-              backupFileExtension = "backup";
-              users.nixos = import ./home.nix;
-            };
-          }
-        ];
+      wsl = mkWSL [ ];
+
+      darwinConfigurations = {
+        "${varsDarwin.host}" = mkDarwin [ ];
       };
     };
 }

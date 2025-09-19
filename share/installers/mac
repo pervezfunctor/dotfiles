@@ -151,3 +151,13 @@ docker_install() {
 
     slog "docker installation done!"
 }
+
+nix-darwin_mainstall() {
+    min_mainstall
+    nix_install
+
+    dir_exists "$DOT_DIR/extras/home-manager" || err_exit "home-manager config folder does not exist, cannot install home-manager."
+    sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake "$DOT_DIR/extras/home-manager#mac"
+
+    cmd_check nix darwin-rebuild
+}

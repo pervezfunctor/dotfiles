@@ -1,13 +1,14 @@
-{ vars, ... }:
+{
+  vars,
+  imports ? [ ],
+  ...
+}:
 
 {
+  inherit imports;
+
   home.username = vars.username;
   home.homeDirectory = vars.homeDirectory;
-
-  imports = [
-    ./core.nix
-    # ./programs.nix
-  ];
 
   programs.home-manager.enable = true;
 

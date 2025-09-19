@@ -35,3 +35,4 @@ starship.nu
 tt.*
 vim/*.un~
 yazi/dot-config/yazi/package.toml
+.cache/
