@@ -41,6 +41,7 @@
     stress
     tcpdump
     udisks2
+    unzip
     usbutils
     vim
     wget

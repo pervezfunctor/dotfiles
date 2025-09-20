@@ -13,8 +13,30 @@ nixpkgs.lib.nixosSystem {
   modules = [
     {
       programs.nix-ld.enable = true;
-      # services.nix-daemon.enable = true;
+      wsl.defaultUser = "nixos";
       wsl.enable = true;
+      system.stateVersion = "25.11";
+
+      environment.systemPackages = with nixpkgs.legacyPackages.x86_64-linux; [
+        bash
+        coreutils
+        curl
+        dialog
+        gawk
+        gcc
+        git
+        glibc
+        gnugrep
+        gnumake
+        micro
+        newt
+        ripgrep
+        starship
+        tmux
+        wget
+        zsh
+        zstd
+      ];
     }
 
     nixos-wsl.nixosModules.default

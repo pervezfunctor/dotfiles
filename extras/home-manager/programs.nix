@@ -30,6 +30,14 @@ in
     starship = {
       enable = true;
       enableZshIntegration = true;
+      enableBashIntegration = true;
+    };
+
+    bash = {
+      enable = true;
+      initExtra = ''
+        source ~/.ilm/share/shellrc
+      '';
     };
 
     zsh = {

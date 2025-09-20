@@ -12,7 +12,7 @@
 
   programs.home-manager.enable = true;
 
-  home.stateVersion = "25.11";
+  home.stateVersion = "24.11";
 
   news.display = "silent";
 }
