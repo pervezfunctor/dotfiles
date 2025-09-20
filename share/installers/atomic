@@ -75,8 +75,8 @@ python_install() {
 
   if ! has_cmd pipx; then
     if ! has_cmd pip; then
-      python3 -m ensurepip --user --default-pip; then
-      python3 -m pip install --user --force-reinstall --upgrade pip; then
+      python3 -m ensurepip --user --default-pip
+      python3 -m pip install --user --force-reinstall --upgrade pip
     fi
 
     if has_cmd pip; then
