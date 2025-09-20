@@ -13,13 +13,18 @@
     };
   };
 
-  outputs = { nixpkgs, nixos-wsl, home-manager, ... }@inputs:
+  outputs =
+    {
+      nixpkgs,
+      nixos-wsl,
+      home-manager,
+      ...
+    }@inputs:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
-      # vars = import ./vars.nix { inherit pkgs; };
-
-    in {
+    in
+    {
       homeConfigurations."nixos" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [ ./home.nix ];
@@ -30,12 +35,15 @@
           inherit system;
           specialArgs = {
             inherit inputs;
-            # inherit vars;
           };
           modules = [
             {
               programs.nix-ld.enable = true;
               wsl.enable = true;
+              wsl.defaultUser = "nixos";
+              users.users."nixos".shell = pkgs.zsh;
+              programs.zsh.enable = true;
+              system.stateVersion = "25.11";
             }
 
             nixos-wsl.nixosModules.default
