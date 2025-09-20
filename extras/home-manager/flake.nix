@@ -28,6 +28,13 @@
     }@inputs:
     let
       vars = import ./vars.nix;
+
+      # validatedUsername =
+      #   if vars.username == "" then
+      #     throw "ERROR: Username is empty! Please ensure USER environment variable is set."
+      #   else
+      #     builtins.trace "DEBUG: Username is '${vars.username}'" vars.username;
+
       mkHome =
         {
           vars,
@@ -94,7 +101,7 @@
     in
     {
       homeConfigurations = {
-        "${vars.username}" = mkHome { inherit vars pkgs; };
+        ${vars.username} = mkHome { inherit vars pkgs; };
 
         shell-slim = mkHome {
           inherit vars pkgs;
@@ -133,16 +140,15 @@
 
       formatter = nixpkgs.legacyPackages.${system}.alejandra;
 
-      devShells = {
-        default = nixpkgs.legacyPackages.${system}.mkShell {
-          buildInputs = with nixpkgs.legacyPackages.${system}; [
-            home-manager
-            git
-          ];
-          shellHook = ''
-            echo "Home Manager development environment"
-          '';
-        };
+      devShells.default = pkgs.mkShell {
+        buildInputs = with pkgs; [
+          home-manager
+          git
+        ];
+        shellHook = ''
+          echo "Home Manager development environment"
+        '';
       };
     };
 }
+
