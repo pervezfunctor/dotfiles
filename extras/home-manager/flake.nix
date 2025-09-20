@@ -18,64 +18,40 @@
       url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
     {
       nixpkgs,
       home-manager,
-      flake-utils,
       ...
     }@inputs:
     let
       vars = import ./vars.nix;
-
-      baseImports = [ ./core.nix ];
-
-      mkHmModule = vars: extraImports: {
-        home-manager = {
-          useGlobalPkgs = true;
-          useUserPackages = true;
-          extraSpecialArgs = {
-            inherit vars inputs;
-            imports = baseImports ++ extraImports;
-          };
-          users.${vars.username} = import ./home.nix;
-        };
-      };
-
       mkHome =
         {
           vars,
           pkgs,
-          modules ? [ ], # os modules
-          imports ? [ ], # home-manager modules
+          imports ? [ ],
         }:
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           extraSpecialArgs = {
-            inherit vars inputs;
-            imports = baseImports ++ imports;
+            inherit vars inputs imports;
           };
-          modules = [ ./home.nix ] ++ modules;
+          modules = [ ./home.nix ];
         };
 
-      mkPrograms =
-        { vars, pkgs, ... }@args:
-        let
-          modules = [ ./programs.nix ] ++ (args.modules or [ ]);
-          imports = args.imports or [ ];
-        in
-        mkHome {
-          inherit
-            vars
-            pkgs
-            modules
-            imports
-            ;
+      mkHmModule = vars: imports: {
+        home-manager = {
+          useGlobalPkgs = true;
+          useUserPackages = true;
+          extraSpecialArgs = {
+            inherit vars inputs imports;
+          };
+          users.${vars.username} = import ./home.nix;
         };
+      };
 
       varsDarwin = import ./darwin-vars.nix;
       mkDarwin =
@@ -86,56 +62,87 @@
           hmModule = mkHmModule varsDarwin imports;
         };
 
+      varsWSL = {
+        username = "nixos";
+        homeDirectory = "/home/nixos";
+      };
       mkWSL =
         imports:
         import ./wsl.nix {
           inherit inputs;
-          inherit vars;
-          hmModule = mkHmModule vars imports;
+          vars = varsWSL;
+          hmModule = mkHmModule varsWSL imports;
         };
 
+      supportedSystems = [
+        "x86_64-linux"
+        "x86_64-darwin"
+      ];
+
+      system =
+        if builtins ? currentSystem then
+          (
+            if nixpkgs.lib.elem builtins.currentSystem supportedSystems then
+              builtins.currentSystem
+            else
+              throw "Unsupported system: ${builtins.currentSystem}"
+          )
+        else
+          throw "Could not determine current system";
+
+      pkgs = nixpkgs.legacyPackages.${system};
     in
-    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-darwin" ] (
-      system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        # standalone home-manager get read USER, HOME from env.
-        # vars = if system == "aarch64-darwin" then varsDarwin else varsLinux;
-      in
-      {
-        homeConfigurations = {
-          "${vars.username}" = mkHome { inherit vars pkgs; };
+    {
+      homeConfigurations = {
+        "${vars.username}" = mkHome { inherit vars pkgs; };
 
-          shell-slim = mkHome {
-            inherit vars pkgs;
-            modules = [ ./shell-slim.nix ];
-          };
-
-          shell = mkHome {
-            inherit vars pkgs;
-            modules = [ ./shell.nix ];
-          };
-
-          sys-shell = mkHome {
-            inherit vars pkgs;
-            modules = [
-              ./sys.nix
-              ./shell.nix
-            ];
-          };
-
-          shell-full = mkPrograms {
-            inherit vars pkgs;
-            modules = [ ./shell.nix ];
-          };
+        shell-slim = mkHome {
+          inherit vars pkgs;
+          imports = [ ./shell-slim.nix ];
         };
-      }
-    )
-    // {
-      wsl = mkWSL [ ];
+
+        shell = mkHome {
+          inherit vars pkgs;
+          imports = [ ./shell.nix ];
+        };
+
+        sys-shell = mkHome {
+          inherit vars pkgs;
+          imports = [
+            ./sys.nix
+            ./shell.nix
+          ];
+        };
+
+        shell-full = mkHome {
+          inherit vars pkgs;
+          imports = [
+            ./shell.nix
+            ./programs.nix
+          ];
+        };
+      };
+
+      nixosConfigurations = {
+        wsl = mkWSL [ ./shell.nix ];
+      };
 
       darwinConfigurations = {
         "${varsDarwin.host}" = mkDarwin [ ];
+      };
+
+      formatter = nixpkgs.legacyPackages.${system}.alejandra;
+
+      devShells = {
+        default = nixpkgs.legacyPackages.${system}.mkShell {
+          buildInputs = with nixpkgs.legacyPackages.${system}; [
+            home-manager
+            git
+          ];
+          shellHook = ''
+            echo "Home Manager development environment"
+          '';
+        };
       };
     };
 }

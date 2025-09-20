@@ -2,6 +2,38 @@
 let
   aliases = {
     hms = "nix run home-manager -- switch --flake ~/.ilm/extras/home-manager/\#${vars.username} --impure -b bak";
+
+    # Flake configuration discovery
+    "flake-configs" = "nix eval --json .#homeConfigurations --apply builtins.attrNames | jq -r '.[]'";
+    "flake-show" = "nix flake show . | head -20";
+    "flake-systems" = "nix eval --json . --apply 'flake: builtins.attrNames flake' | jq -r '.[]'";
+
+    # Home Manager shortcuts
+    "hm-switch" = "nix run home-manager -- switch --flake . --impure -b backup";
+    "hm-build" = "nix run home-manager -- build --flake . --impure";
+    "hm-diff" =
+      "nix run home-manager -- build --flake . --impure && nvd diff ~/.local/state/nix/profiles/home-manager{-*-link,}";
+
+    # Quick config switches (adjust config names as needed)
+    "hm-shell" = "nix run home-manager -- switch --flake .#shell --impure -b backup";
+    "hm-shell-slim" = "nix run home-manager -- switch --flake .#shell-slim --impure -b backup";
+    "hm-shell-full" = "nix run home-manager -- switch --flake .#shell-full --impure -b backup";
+    "hm-sys-shell" = "nix run home-manager -- switch --flake .#sys-shell --impure -b backup";
+
+    # NixOS shortcuts (if using WSL/NixOS)
+    "nos-switch" = "sudo nixos-rebuild switch --flake .";
+    "nos-build" = "sudo nixos-rebuild build --flake .";
+    "nos-test" = "sudo nixos-rebuild test --flake .";
+
+    # Development and maintenance
+    "flake-update" = "nix flake update";
+    "flake-check" = "nix flake check";
+    "flake-fmt" = "nix fmt";
+    "flake-dev" = "nix develop";
+
+    # Cleanup
+    "nix-clean" = "nix-collect-garbage -d && nix store optimise";
+    "hm-clean" = "nix run home-manager -- expire-generations '-7 days'";
   };
 
   initContent = ''
