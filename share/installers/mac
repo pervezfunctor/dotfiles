@@ -1,163 +1,182 @@
 #!/usr/bin/env bash
 
 macos_settings_install() {
-    defaults write -g NSWindowShouldDragOnGesture -bool true
-    defaults write com.apple.finder AppleShowAllFiles -bool true
+  defaults write -g NSWindowShouldDragOnGesture -bool true
+  defaults write com.apple.finder AppleShowAllFiles -bool true
 }
 
 amethyst_confstall() {
-    slog "amethyst config"
-    stowdf amethyst
-    slog "amethyst config done!"
+  slog "amethyst config"
+  stowdf amethyst
+  slog "amethyst config done!"
 
 }
 
 aerospace_confstall() {
-    slog "aerospace config"
-    stowgf aerospace
+  slog "aerospace config"
+  stowgf aerospace
 }
 
 macos_confstall() {
-    stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R aerospace
-    stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R amethyst
+  stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R aerospace
+  stow -d "$DOT_DIR" -t "$HOME" --dotfiles -R amethyst
 }
 
 vscode_binstall() {
-    bi visual-studio-code
+  bi visual-studio-code
 }
 
 terminal_binstall() {
-    bic ghostty wezterm
+  bic ghostty wezterm
 }
 
 ui_install() {
-    bic nikitabobko/tap/aerospace
+  bic nikitabobko/tap/aerospace
 }
 
 apps-slim_install() {
-    bic zoom telegram-desktop
+  bic zoom telegram-desktop
 }
 
 apps_install() {
-    apps-slim_install
+  apps-slim_install
 
-    bi deluge
-    bic google-chrome microsoft-remote-desktop bitwarden obsidian
+  bi deluge
+  bic google-chrome microsoft-remote-desktop bitwarden obsidian
 }
 
 core_install() {
-    softwareupdate --install-rosetta --agree-to-license
-    brew_install
-    bi mas coreutils bash curl wget trash tree unzip coreutils stow \
-        nmap gawk
+  softwareupdate --install-rosetta --agree-to-license
+  brew_install
+  bi mas coreutils bash curl wget trash tree unzip coreutils stow \
+    nmap gawk
 }
 
 essential_install() {
-    slog "Installing Essential packages"
+  slog "Installing Essential packages"
 
-    bis p7zip unar zip pkgx zstd newt
-    ui_install
+  bis p7zip unar zip pkgx zstd newt
+  ui_install
 
-    slog "Essential packages installation done!"
+  slog "Essential packages installation done!"
 }
 
 cli-slim_install() {
-    bis zsh starship ripgrep gh bat jq fzf zoxide eza \
-        reattach-to-user-namespace zsh-syntax-highlighting zsh-autosuggestions
+  bis zsh starship ripgrep gh bat jq fzf zoxide eza \
+    reattach-to-user-namespace zsh-syntax-highlighting zsh-autosuggestions
 }
 
 cli_install() {
-    bis tmux pkg-config urlview htop starship shellcheck shfmt ripgrep neovim \
-        luarocks tealdeer lsd fd git-delta just gum
+  bis tmux pkg-config urlview htop starship shellcheck shfmt ripgrep neovim \
+    luarocks tealdeer lsd fd git-delta just gum
 }
 
 jetbrains-mono_install() {
-    bic font-jetbrains-mono-nerd-font
+  bic font-jetbrains-mono-nerd-font
 }
 
 nerd-fonts_install() {
-    jetbrains-mono_install
-    bic font-monaspace-nerd-font
-    bic font-caskaydia-mono-nerd-font
+  jetbrains-mono_install
+  bic font-monaspace-nerd-font
+  bic font-caskaydia-mono-nerd-font
 }
 
 fonts_install() {
-    nerd-fonts_install
+  nerd-fonts_install
 }
 
 cpp_install() {
-    slog "Installing C++"
+  slog "Installing C++"
 
-    bi cmake boost catch2 ccache cppcheck pre-commit
+  bi cmake boost catch2 ccache cppcheck pre-commit
 
-    slog "C++ installation done!"
+  slog "C++ installation done!"
 }
 
 podman_install() {
-    slog "Installing Container tools"
+  slog "Installing Container tools"
 
-    bi podman
-    bic podman-desktop
-    podman machine init
-    podman machine start
-    dir_exists /Applications/Docker.app || bic docker
+  bi podman
+  bic podman-desktop
+  podman machine init
+  podman machine start
+  dir_exists /Applications/Docker.app || bic docker
 
-    slog "Container tools installation done!"
+  slog "Container tools installation done!"
 }
 
 vm_install() {
-    slog "Installing virtualization packages"
+  slog "Installing virtualization packages"
 
-    bi orbstack colima jq
+  bi orbstack colima jq
 
-    slog "Virtualization packages installation done!"
+  slog "Virtualization packages installation done!"
 }
 
 pyenv_mac_install() {
-    slog "Installing pyenv"
-    bi pyenv pyenv-virtualenv
+  slog "Installing pyenv"
+  bi pyenv pyenv-virtualenv
 }
 
 emacs_binstall() {
-    dir_exists /Applications/Emacs.app && return 0
-    dir_exists /usr/local/opt/emacs-mac && return 0
+  dir_exists /Applications/Emacs.app && return 0
+  dir_exists /usr/local/opt/emacs-mac && return 0
 
-    slog "Installing emacs"
+  slog "Installing emacs"
 
-    bic emacs-mac
+  bic emacs-mac
 
-    slog "emacs installation done!"
+  slog "emacs installation done!"
 }
 
 docker_install() {
-    has_cmd docker && return 0
-    dir_exists /Applications/Docker.app && return 0
+  has_cmd docker && return 0
+  dir_exists /Applications/Docker.app && return 0
 
-    slog "Installing docker"
+  slog "Installing docker"
 
-    if [ -f ~/Downloads/Docker.dmg ]; then
-        warn "Docker.dmg already exists, skipping download"
-    else
-        curl -sSL https://desktop.docker.com/mac/main/amd64/Docker.dmg -o ~/Downloads/Docker.dmg
-    fi
+  if [ -f ~/Downloads/Docker.dmg ]; then
+    warn "Docker.dmg already exists, skipping download"
+  else
+    curl -sSL https://desktop.docker.com/mac/main/amd64/Docker.dmg -o ~/Downloads/Docker.dmg
+  fi
 
-    if [ -d /Volumes/Docker ]; then
-        warn "Docker.dmg already mounted, unmounting"
-        sudo hdiutil detach /Volumes/Docker
-    fi
-    sudo hdiutil attach ~/Downloads/Docker.dmg
-    sudo /Volumes/Docker/Docker.app/Contents/MacOS/install
+  if [ -d /Volumes/Docker ]; then
+    warn "Docker.dmg already mounted, unmounting"
     sudo hdiutil detach /Volumes/Docker
+  fi
+  sudo hdiutil attach ~/Downloads/Docker.dmg
+  sudo /Volumes/Docker/Docker.app/Contents/MacOS/install
+  sudo hdiutil detach /Volumes/Docker
 
-    slog "docker installation done!"
+  slog "docker installation done!"
 }
 
 nix-darwin_mainstall() {
-    min_mainstall
-    nix_install
+  min_mainstall
+  nix_install
 
-    dir_exists "$DOT_DIR/extras/home-manager" || err_exit "home-manager config folder does not exist, cannot install home-manager."
-    sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake "$DOT_DIR/extras/home-manager#mac"
+  dir_exists "$DOT_DIR/extras/home-manager" || err_exit "home-manager config folder does not exist, cannot install home-manager."
 
-    cmd_check nix darwin-rebuild
+  local cfg_dir=~/nix-darwin-config
+
+  slog "Copying home-manager config to $cfg_dir..."
+  if ! cp -r "$DOT_DIR/extras/home-manager" "$cfg_dir"; then
+    err_exit "Failed to copy home-manager config"
+  fi
+
+  slog "Rebuilding system with flake..."
+  if ! sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake "$DOT_DIR/extras/home-manager#mac"; then
+    err_exit "nix-darwin-rebuild failed"
+  fi
+
+  touch ~/.zshrc
+  cmd_check nix darwin-rebuild
+
+  slog "nix-darwin installation done!"
+  slog "Your configuration is at $cfg_dir"
+  slog "Update your configuration, and run:"
+  slog "darwin-rebuild switch --flake $cfg_dir#mac"
+  slog "Commit and push your configuration to keep it safe."
+
 }
