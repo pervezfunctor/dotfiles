@@ -385,6 +385,38 @@ nixos_mainstall() {
   touch ~/.zshrc
 }
 
+nixos-wsl_mainstall() {
+  local cfg_dir=~/nixos-config
+
+  if [ -d "$cfg_dir" ]; then
+    err_exit "nixos-config already exists, skipping nixos installation"
+  fi
+
+  nix_dotfiles_install
+
+  slog "Copying nixos-wsl config to $cfg_dir..."
+  if ! cp -r "$DOT_DIR/extras/nixos-wsl/nixos" "$cfg_dir"; then
+    err_exit "Failed to copy nixos-wsl config"
+  fi
+  slog "Copying nix.conf to ~/.config..."
+  if ! cp -r "$DOT_DIR/extras/nixos-wsl/nix" "$HOME/.config"; then
+    err_exit "Failed to copy nix.conf"
+  fi
+
+  slog "Rebuilding system with flake..."
+  if ! sudo nixos-rebuild switch --flake "$cfg_dir\#$(hostname)"; then
+    err_exit "nixos-rebuild failed"
+  fi
+
+  slog "nixos-wsl installation done!"
+  slog "If something goes wrong you could rollback with:"
+  slog "sudo nixos-rebuild switch --rollback"
+  slog "Your configuration is at $cfg_dir"
+  slog "Update your configuration, and run:"
+  slog "sudo nixos-rebuild switch --flake $cfg_dir\#$(hostname)"
+  slog "Commit and push your configuration to keep it safe."
+}
+
 # kwin_script_install() {
 #   local SCRIPT="$1"
 
