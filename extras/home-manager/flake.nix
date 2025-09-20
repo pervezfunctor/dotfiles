@@ -131,7 +131,10 @@
       };
 
       nixosConfigurations = {
-        wsl = mkWSL [ ./shell.nix ];
+        wsl = mkWSL [
+          ./shell.nix
+          ./programs.nix
+        ];
       };
 
       darwinConfigurations = {

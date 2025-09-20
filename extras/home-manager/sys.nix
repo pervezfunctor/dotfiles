@@ -2,28 +2,22 @@
 {
   home.packages = with pkgs; [
     bash
+    coreutils
     curl
-    distrobox
     file
     gcc
-    ghostty
     git
     gnumake
     htop
     micro
-    nerd-fonts.jetbrains-mono
     newt
     p7zip
-    ptyxis
     trash-cli
     tree
-    tar
     fuse2
     fuse-overlayfs
     unzip
-    vscode
     wget
-    wl-clipboard
     xz
     zsh
     zstd

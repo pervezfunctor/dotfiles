@@ -22,6 +22,7 @@ nixpkgs.lib.nixosSystem {
         coreutils
         curl
         dialog
+        file
         gawk
         gcc
         git
@@ -30,9 +31,8 @@ nixpkgs.lib.nixosSystem {
         gnumake
         micro
         newt
-        ripgrep
-        starship
-        tmux
+        tree
+        unzip
         wget
         zsh
         zstd
