@@ -3,20 +3,20 @@
 # [ -n "$ILM_EXPORTS_LOADED" ] && return 0
 
 has_cmd() {
-    command -v "$1" >/dev/null 2>&1
+  command -v "$1" >/dev/null 2>&1
 }
 
 spath_export() {
-    if [ -d "$1" ]; then
-        export PATH="$1:$PATH"
-    fi
+  if [ -d "$1" ]; then
+    export PATH="$1:$PATH"
+  fi
 }
 
 source_if_exists() {
-    if [ -f "$1" ]; then
-        # shellcheck disable=SC1090
-        . "$1"
-    fi
+  if [ -f "$1" ]; then
+    # shellcheck disable=SC1090
+    . "$1"
+  fi
 }
 
 has_cmd nvim && export MANPAGER="nvim +Man!"
@@ -59,11 +59,11 @@ spath_export "$HOME/.pixi/bin"
 spath_export "${VOLTA_HOME}/bin"
 
 if [ -z "$XDG_DATA_HOME" ]; then
-    export XDG_DATA_HOME="$HOME/.local/share"
+  export XDG_DATA_HOME="$HOME/.local/share"
 fi
 
 if [ -z "$XDG_CACHE_HOME" ]; then
-    export XDG_CACHE_HOME="$HOME/.cache"
+  export XDG_CACHE_HOME="$HOME/.cache"
 fi
 
 # has_cmd firefox && export BROWSER=firefox
@@ -71,8 +71,15 @@ fi
 # has_cmd qt5ct && export QT_QPA_PLATFORMTHEME=qt5ct
 
 if has_cmd "$HOME/bin/docker"; then
-   DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
-   export DOCKER_HOST
+  DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+  export DOCKER_HOST
 fi
+
+# export FZF_DEFAULT_OPTS=" \
+#     --color=bg+:#313244,bg:#1E1E2E,spinner:#F5E0DC,hl:#F38BA8 \
+#     --color=fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC \
+#     --color=marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8 \
+#     --color=selected-bg:#45475A \
+#     --color=border:#6C7086,label:#CDD6F4"
 
 # export ILM_EXPORTS_LOADED=1

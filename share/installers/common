@@ -515,11 +515,19 @@ yazi_confstall() {
     slog "yazi config done!"
 }
 
+bat_confstall() {
+    slog "bat config"
+    stowgf bat
+    bat cache --build
+    slog "bat config done!"
+}
+
 all-confstall() {
     shell_confstall
 
     has_cmd atuin && atuin_confstall
     has_cmd yazi && yazi_confstall
+    has_cmd bat && bat_confstall
 
     has_cmd alacritty && alacritty_confstall
     has_cmd foot && foot_confstall
