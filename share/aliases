@@ -3,129 +3,159 @@
 export BOXES_DIR=${USE_BOXES_DIR:-${BOXES_DIR}}
 
 if is_linux; then
-    alias open="xdg-open"
+  alias open="xdg-open"
 
-    pbcopy() {
-        if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
-            wl-copy
-        else
-            xsel --clipboard --input
-        fi
-    }
+  pbcopy() {
+    if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+      wl-copy
+    else
+      xsel --clipboard --input
+    fi
+  }
 
-    pbpaste() {
-        if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
-            wl-paste --no-newline
-        else
-            xsel --clipboard --output
-        fi
-    }
+  pbpaste() {
+    if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+      wl-paste --no-newline
+    else
+      xsel --clipboard --output
+    fi
+  }
 fi
 
 alias m="mkdir -p"
 
 if has_cmd code; then
-    alias c='code'
-    alias c.='code .'
-    alias cs="code --password-store=gnome-libsecret"
-    alias dcode="XDG_CURRENT_DESKTOP=GNOME code" # distrobox code in kde
+  alias c='code'
+  alias c.='code .'
+  alias cs="code --password-store=gnome-libsecret"
+  alias dcode="XDG_CURRENT_DESKTOP=GNOME code" # distrobox code in kde
 fi
 
 if has_cmd pnpm; then
-    alias n='pnpm'
-    alias ni='pnpm install'
-    alias ne='pnpm exec'
-    alias nd='pnpm dev'
-    alias nt='pnpm types'
-    alias nc='pnpm ci'
-    alias ntt='pnpm test'
+  alias n='pnpm'
+  alias ni='pnpm install'
+  alias ne='pnpm exec'
+  alias nd='pnpm dev'
+  alias nt='pnpm types'
+  alias nc='pnpm ci'
+  alias ntt='pnpm test'
 fi
 
 sup() {
-    if is_ubuntu; then
-        sudo apt-get -qq update && sudo apt-get -qq -y upgrade
-    elif is_atomic; then
-        sudo rpm-ostree upgrade
-    elif is_rh; then
-        sudo dnf update -q -y && sudo dnf upgrade -q -y
-    elif is_tw; then
-        sudo zypper refresh && sudo zypper --non-interactive --quiet dup
-    elif is_mac; then
-        brew update && brew upgrade
-    elif is_arch; then
-        sudo pacman -Syu --noconfirm --quiet
-    else
-        echo "Unknown OS. Cannot upgrade."
-    fi
+  if is_ubuntu; then
+    sudo apt-get -qq update && sudo apt-get -qq -y upgrade
+  elif is_atomic; then
+    sudo rpm-ostree upgrade
+  elif is_rh; then
+    sudo dnf update -q -y && sudo dnf upgrade -q -y
+  elif is_tw; then
+    sudo zypper refresh && sudo zypper --non-interactive --quiet dup
+  elif is_mac; then
+    brew update && brew upgrade
+  elif is_arch; then
+    sudo pacman -Syu --noconfirm --quiet
+  else
+    echo "Unknown OS. Cannot upgrade."
+  fi
 }
 
 if is_ubuntu; then
-    alias sysi="sudo apt-get -qq -y install"
-    alias syss="apt-cache search"
-    alias sysr="sudo apt-get purge"
+  alias osi="sudo apt-get -qq -y install"
+  alias oss="apt-cache search"
+  alias osr="sudo apt-get purge"
 elif is_rh; then
-    alias sysi="sudo dnf -q -y install"
-    alias syss="dnf search"
-    alias sysr="sudo dnf remove"
+  alias osi="sudo dnf -q -y install"
+  alias oss="dnf search"
+  alias osr="sudo dnf remove"
 elif is_tw; then
-    alias sysi="sudo zypper --non-interactive --quiet install --auto-agree-with-licenses"
-    alias syss="zypper search"
-    alias sysr="sudo zypper remove"
+  alias osi="sudo zypper --non-interactive --quiet install --auto-agree-with-licenses"
+  alias oss="zypper search"
+  alias osr="sudo zypper remove"
 elif is_mac; then
-    alias sysi="brew install -q"
-    alias syss="brew search"
-    alias sysr="brew uninstall"
+  alias osi="brew install -q"
+  alias oss="brew search"
+  alias osr="brew uninstall"
 elif is_arch; then
-    alias sysi="sudo pacman -S --needed --quiet --noconfirm"
-    alias syss="pacman -Ss"
-    alias sysr="sudo pacman -R"
+  alias osi="sudo pacman -S --needed --quiet --noconfirm"
+  alias oss="pacman -Ss"
+  alias osr="sudo pacman -R"
 elif is_alpine; then
-    alias sysi="sudo apk add --no-cache"
-    alias syss="apk search"
-    alias sysr="sudo apk del"
+  alias osi="sudo apk add --no-cache"
+  alias oss="apk search"
+  alias osr="sudo apk del"
 elif is_nixos; then
-    alias syss="nix search nixpkgs"
+  alias oss="nix search nixpkgs"
+  alias osi="nix profile install"
+  alias osr="nix profile remove"
+
+  nix-update-wsl() {
+    local profile="${1:-wsl}"
+    if dir_exists ~/nixos-config; then
+      nix flake update ~/nixos-config
+      sudo nixos-rebuild switch --flake ~/nixos-config\#"${profile}"
+    elif dir_exists "$DOT_DIR/extras/home-manager"; then
+      nix flake update "$DOT_DIR/extras/home-manager"
+      sudo nixos-rebuild switch --flake ~/nixos-config\#"${profile}"
+    else
+      fail "Cannot find config ~/nixos-config or $DOT_DIR/extras/home-manager"
+      return 1
+    fi
+  }
+
+  nix-update-mac() {
+    local profile="${1:-mac}"
+    if dir_exists ~/darwin-config; then
+      nix flake update ~/darwin-config
+      sudo darwin-rebuild switch --flake ~/darwin-config\#"${profile}"
+    elif dir_exists "$DOT_DIR/extras/home-manager"; then
+      nix flake update "$DOT_DIR/extras/home-manager"
+      sudo darwin-rebuild switch --flake ~/darwin-config\#"${profile}"
+    else
+      fail "Cannot find config ~/darwin-config or $DOT_DIR/extras/home-manager"
+      return 1
+    fi
+  }
 fi
 
 if has_cmd git; then
-    alias git-unstage="git reset HEAD"
-    alias git-discard="git checkout --"
-    alias gst="git status"
-    alias gsu="git status -u"
-    alias tsgfm="git stash && ((git pull --rebase || git pull); git stash pop)"
+  alias git-unstage="git reset HEAD"
+  alias git-discard="git checkout --"
+  alias gst="git status"
+  alias gsu="git status -u"
+  alias tsgfm="git stash && ((git pull --rebase || git pull); git stash pop)"
 
-    alias gun="git-unstage"
-    alias gur="git-discard"
-    alias gcm="git commit -m"
-    alias gcne="git commit --no-edit"
-    alias gca="git commit --amend"
-    alias gcan="git commit --amend --no-edit"
+  alias gun="git-unstage"
+  alias gur="git-discard"
+  alias gcm="git commit -m"
+  alias gcne="git commit --no-edit"
+  alias gca="git commit --amend"
+  alias gcan="git commit --amend --no-edit"
 
-    alias Gcm="git commit --no-verify -m"
-    alias Gp="gp --no-verify"
-    alias Gcan="gcan --no-verify"
+  alias Gcm="git commit --no-verify -m"
+  alias Gp="gp --no-verify"
+  alias Gcan="gcan --no-verify"
 
-    alias g='git'
-    alias gs="git stash -u"
-    alias gst="git status"
-    alias gsu="git status -u"
-    alias gcan="git commit --amend --no-edit"
-    alias gsa='git stash apply'
-    alias gfm='git pull'
-    alias gp='git push'
-    alias gcm='git commit --message'
-    alias gia='git add'
-    alias gl='git log --topo-order --pretty=format:"%C(yellow)%h%C(reset)%C(black)%d%C(reset) %C(cyan)%ar%C(reset) %C(green)%an%C(reset)%n%C(white)%s%C(reset)"'
-    alias gco='git checkout'
-    alias gb='git branch'
-    alias gbc='git checkout -b'
-    alias gbc='git checkout -b'
-    alias gsl='git stash list'
-    gpp() {
-        safe_push "$@"
-    }
-    alias clone='gh repo clone'
-    alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
+  alias g='git'
+  alias gs="git stash -u"
+  alias gst="git status"
+  alias gsu="git status -u"
+  alias gcan="git commit --amend --no-edit"
+  alias gsa='git stash apply'
+  alias gfm='git pull'
+  alias gp='git push'
+  alias gcm='git commit --message'
+  alias gia='git add'
+  alias gl='git log --topo-order --pretty=format:"%C(yellow)%h%C(reset)%C(black)%d%C(reset) %C(cyan)%ar%C(reset) %C(green)%an%C(reset)%n%C(white)%s%C(reset)"'
+  alias gco='git checkout'
+  alias gb='git branch'
+  alias gbc='git checkout -b'
+  alias gbc='git checkout -b'
+  alias gsl='git stash list'
+  gpp() {
+    safe_push "$@"
+  }
+  alias clone='gh repo clone'
+  alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
 fi
 
 has_cmd nmap && alias nm="nmap -sC -sV -oN"
@@ -135,53 +165,53 @@ has_cmd code && alias c="code"
 has_cmd tmux && alias t="tmux"
 
 if has_cmd docker; then
-    alias d="docker"
-    alias dco="docker compose"
-    alias dps="docker ps"
-    alias dpa="docker ps -a"
-    alias dl="docker ps -l -q"
-    alias dx="docker exec -it"
-    alias dlogs="docker logs -f"
-    alias lzg='lazygit'
-    alias lzd='lazydocker'
+  alias d="docker"
+  alias dco="docker compose"
+  alias dps="docker ps"
+  alias dpa="docker ps -a"
+  alias dl="docker ps -l -q"
+  alias dx="docker exec -it"
+  alias dlogs="docker logs -f"
+  alias lzg='lazygit'
+  alias lzd='lazydocker'
 fi
 
 if has_cmd distrobox; then
-    alias dbox='distrobox'
-    alias dboxe='distrobox enter -nw --clean-path'
-    alias dboxl='distrobox list'
-    alias dboxr='distrobox run'
-    alias dboxc='distrobox create'
+  alias dbox='distrobox'
+  alias dboxe='distrobox enter -nw --clean-path'
+  alias dboxl='distrobox list'
+  alias dboxr='distrobox run'
+  alias dboxc='distrobox create'
 
-    dboxd() {
-        distrobox list | grep -q "^$1$" || return
-        distrobox rm "$@" && srm "${BOXES_DIR}/$1"
-    }
+  dboxd() {
+    distrobox list | grep -q "^$1$" || return
+    distrobox rm "$@" && srm "${BOXES_DIR}/$1"
+  }
 
-    alias rdboxe='distrobox enter -nw --clean-path --root'
-    alias rdboxl='distrobox list --root'
-    alias rdboxr='distrobox run --root'
-    alias rdboxc='distrobox create --root'
-    rdboxd() {
-        distrobox list --root | grep -q "^$1$" || return
-        distrobox rm --root "$@" && srm "${BOXES_DIR}/$1"
-    }
+  alias rdboxe='distrobox enter -nw --clean-path --root'
+  alias rdboxl='distrobox list --root'
+  alias rdboxr='distrobox run --root'
+  alias rdboxc='distrobox create --root'
+  rdboxd() {
+    distrobox list --root | grep -q "^$1$" || return
+    distrobox rm --root "$@" && srm "${BOXES_DIR}/$1"
+  }
 
-    [[ "${CONTAINER_ID}" != "" ]] && alias on-host='distrobox-host-exec'
+  [[ "${CONTAINER_ID}" != "" ]] && alias on-host='distrobox-host-exec'
 fi
 
 if has_cmd fastfetch; then
-    alias sys-info='fastfetch'
+  alias sys-info='fastfetch'
 elif has_cmd neofetch; then
-    alias sys-info='neofetch'
+  alias sys-info='neofetch'
 fi
 
 if has_cmd toolbox; then
-    alias tbox='toolbox'
-    alias tboxe='toolbox enter'
-    alias tboxl='toolbox list'
-    alias tboxr='toolbox run'
-    alias tboxc='toolbox create'
+  alias tbox='toolbox'
+  alias tboxe='toolbox enter'
+  alias tboxl='toolbox list'
+  alias tboxr='toolbox run'
+  alias tboxc='toolbox create'
 fi
 
 alias la=tree
@@ -207,150 +237,150 @@ alias .....="../../../../"
 alias ......="../../../../../"
 
 if has_cmd flatpak; then
-    alias fps="flatpak search"
-    alias fpr="flatpak run"
+  alias fps="flatpak search"
+  alias fpr="flatpak run"
 fi
 
 if [[ ! -v CONTAINER_ID ]] && has_cmd flatpak; then
-    FLATPAK_LIST=$(flatpak list)
+  FLATPAK_LIST=$(flatpak list)
 
-    alias_if_exists() {
-        local cmd="$1"
-        local flatpak_id="$2"
+  alias_if_exists() {
+    local cmd="$1"
+    local flatpak_id="$2"
 
-        if ! has_cmd "$cmd"; then
-            if echo "$FLATPAK_LIST" | grep -q "$flatpak_id"; then
-                eval "alias $cmd='flatpak run $flatpak_id'"
-            fi
-        fi
-    }
+    if ! has_cmd "$cmd"; then
+      if echo "$FLATPAK_LIST" | grep -q "$flatpak_id"; then
+        eval "alias $cmd='flatpak run $flatpak_id'"
+      fi
+    fi
+  }
 
-    alias_if_exists wezterm "org.wezfurlong.wezterm"
-    alias_if_exists clion "com.jetbrains.CLion"
-    alias_if_exists chrome "com.google.Chrome"
-    alias_if_exists code "com.visualstudio.code --password-store=gnome-libsecret"
-    alias_if_exists nvim "io.neovim.nvim"
-    alias_if_exists emacs "org.gnu.emacs"
+  alias_if_exists wezterm "org.wezfurlong.wezterm"
+  alias_if_exists clion "com.jetbrains.CLion"
+  alias_if_exists chrome "com.google.Chrome"
+  alias_if_exists code "com.visualstudio.code --password-store=gnome-libsecret"
+  alias_if_exists nvim "io.neovim.nvim"
+  alias_if_exists emacs "org.gnu.emacs"
 
-    unset FLATPAK_LIST
-    unset -f alias_if_exists
+  unset FLATPAK_LIST
+  unset -f alias_if_exists
 fi
 
 if [[ -d "$HOME/.local/share/pnpm" ]]; then
-    alias n='pnpm'
-    alias ni='pnpm install'
-    alias nid='pnpm install -D'
-    alias nb='pnpm build'
-    alias nl='pnpm lint:dev'
-    alias ne='pnpm exec'
-    alias nd='pnpm dev'
-    alias nc='pnpm ci'
-    alias nt='pnpm types:dev'
-    alias ntc='pnpm types'
-    alias ntt='pnpm test:dev'
-    alias nttc='pnpm test:dev'
-    alias nci='pnpm types && pnpm lint'
-    alias ndb='pnpm db'
-    alias ndbt='pnpm db:types'
-    alias ndbp='pnpm db:push'
-    alias ndbs='pnpm db:seed'
-    alias ndbst='pnpm db:studio'
-    alias ndbr='pnpm db:repl'
+  alias n='pnpm'
+  alias ni='pnpm install'
+  alias nid='pnpm install -D'
+  alias nb='pnpm build'
+  alias nl='pnpm lint:dev'
+  alias ne='pnpm exec'
+  alias nd='pnpm dev'
+  alias nc='pnpm ci'
+  alias nt='pnpm types:dev'
+  alias ntc='pnpm types'
+  alias ntt='pnpm test:dev'
+  alias nttc='pnpm test:dev'
+  alias nci='pnpm types && pnpm lint'
+  alias ndb='pnpm db'
+  alias ndbt='pnpm db:types'
+  alias ndbp='pnpm db:push'
+  alias ndbs='pnpm db:seed'
+  alias ndbst='pnpm db:studio'
+  alias ndbr='pnpm db:repl'
 fi
 
 if has_cmd eza; then
-    alias ls="eza -a --icons=auto --group-directories-first"
-    alias ll='eza -l --icons=auto --group-directories-first'
-    alias l1='eza -1'
-    alias l="eza -l --icons --git -a"
-    alias lt="eza --tree --level=2 --long --icons --git"
-    alias ltree="eza --tree --level=2  --icons --git"
-    # alias ls='eza -lh --group-directories-first --icons'
+  alias ls="eza -a --icons=auto --group-directories-first"
+  alias ll='eza -l --icons=auto --group-directories-first'
+  alias l1='eza -1'
+  alias l="eza -l --icons --git -a"
+  alias lt="eza --tree --level=2 --long --icons --git"
+  alias ltree="eza --tree --level=2  --icons --git"
+  # alias ls='eza -lh --group-directories-first --icons'
 
-    alias lt='eza --tree --level=2 --long --icons --git'
-    alias l.='eza -d .*'
+  alias lt='eza --tree --level=2 --long --icons --git'
+  alias l.='eza -d .*'
 else
-    alias l='ls -1A'  # Lists in one column, hidden files.
-    alias ll='ls -lh' # Lists human readable sizes.
-    alias lk='ll -Sr' # Lists sorted by size, largest last.
-    alias lt='ll -tr' # Lists sorted by date, most recent last.
+  alias l='ls -1A'  # Lists in one column, hidden files.
+  alias ll='ls -lh' # Lists human readable sizes.
+  alias lk='ll -Sr' # Lists sorted by size, largest last.
+  alias lt='ll -tr' # Lists sorted by date, most recent last.
 fi
 
 # ugrep for grep
 if has_cmd ug; then
-    alias fgrep='ug -F'
-    alias xzgrep='ug -z'
-    alias xzegrep='ug -zE'
-    alias xzfgrep='ug -zF'
+  alias fgrep='ug -F'
+  alias xzgrep='ug -z'
+  alias xzegrep='ug -zE'
+  alias xzfgrep='ug -zF'
 fi
 
 if has_cmd lazyvim && has_cmd nvim; then
-    alias lv="NVIM_APPNAME=lazyvim nvim"
+  alias lv="NVIM_APPNAME=lazyvim nvim"
 fi
 
 alias lsa='ls -a'
 alias lta='lt -a'
 
 if has_cmd fzf; then
-    alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
-    alias fv="fzf --bind 'enter:become(vim {})'"
+  alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
+  alias fv="fzf --bind 'enter:become(vim {})'"
 fi
 
 fcd() {
-    cd "$(find . -type d -not -path '*/.*' | fzf)" && l
+  cd "$(find . -type d -not -path '*/.*' | fzf)" && l
 }
 
 fvim() {
-    local file
-    file=$(find . -type f -not -path '*/.*' | fzf)
-    if [ -n "$file" ]; then
-        nvim "$file"
-    fi
+  local file
+  file=$(find . -type f -not -path '*/.*' | fzf)
+  if [ -n "$file" ]; then
+    nvim "$file"
+  fi
 }
 
 if has_cmd emacs; then
-    # export EDITOR="emacsclient -t"
-    # export VISUAL="emacsclient -c -n"
-    alias e="emacsclient -t"
-    alias ec="emacsclient -c -n"
-    alias en="emacs -nw"
+  # export EDITOR="emacsclient -t"
+  # export VISUAL="emacsclient -c -n"
+  alias e="emacsclient -t"
+  alias ec="emacsclient -c -n"
+  alias en="emacs -nw"
 fi
 
 if has_cmd bat; then
-    alias cat="bat"
+  alias cat="bat"
 elif has_cmd batcat; then
-    alias bat="batcat"
-    alias cat="batcat"
+  alias bat="batcat"
+  alias cat="batcat"
 fi
 
 if has_cmd virsh; then
-    alias vmsy="virsh --connect qemu:///system"
-    alias vmse="virsh --connect qemu:///session"
+  alias vmsy="virsh --connect qemu:///system"
+  alias vmse="virsh --connect qemu:///session"
 
-    alias vl="virsh list --all"
-    alias vs="virsh start"
-    alias vsh="virsh shutdown"
-    alias vd="virsh destroy"
-    alias vu="virsh undefine 2> /dev/null || virsh undefine --nvram"
-    alias vv="virt-viewer"
+  alias vl="virsh list --all"
+  alias vs="virsh start"
+  alias vsh="virsh shutdown"
+  alias vd="virsh destroy"
+  alias vu="virsh undefine 2> /dev/null || virsh undefine --nvram"
+  alias vv="virt-viewer"
 fi
 
 if has_cmd virt-install; then
-    alias vmsyc="virt-install --connect qemu:///system"
-    alias vmse="virt-install --connect qemu:///session"
+  alias vmsyc="virt-install --connect qemu:///system"
+  alias vmse="virt-install --connect qemu:///session"
 fi
 
 if has_cmd nixos-rebuild; then
-    alias nrf="sudo nixos-rebuild switch --flake"
-    alias nrb="sudo nixos-rebuild build --flake"
-    alias nrb-vm="sudo nixos-rebuild build-vm -I nixos-config="
+  alias nrf="sudo nixos-rebuild switch --flake"
+  alias nrb="sudo nixos-rebuild build --flake"
+  alias nrb-vm="sudo nixos-rebuild build-vm -I nixos-config="
 fi
 
 if has_cmd nixos-generate; then
-    alias ng-vm="nixos-generate -f vm -c"
-    alias ng-iso="nixos-generate -f install-iso -c"
-    alias ng-pvm="nixos-generate -f proxmox -c"
-    alias ng-pmox="nixos-generate -f proxmox -c"
+  alias ng-vm="nixos-generate -f vm -c"
+  alias ng-iso="nixos-generate -f install-iso -c"
+  alias ng-pvm="nixos-generate -f proxmox -c"
+  alias ng-pmox="nixos-generate -f proxmox -c"
 fi
 
 has_cmd home-manager && alias hmf="home-manager switch --impure -b bak --flake"

@@ -1,8 +1,7 @@
 { vars, ... }:
 let
   aliases = {
-    hms = "nix run home-manager -- switch --flake ~/.ilm/extras/home-manager/\#${vars.username} --impure -b bak";
-
+    update-os = "nix run home-manager -- switch --flake ~/.ilm/extras/home-manager/\#${vars.username} --impure -b bak";
     # Flake configuration discovery
     "flake-configs" = "nix eval --json .#homeConfigurations --apply builtins.attrNames | jq -r '.[]'";
     "flake-show" = "nix flake show . | head -20";

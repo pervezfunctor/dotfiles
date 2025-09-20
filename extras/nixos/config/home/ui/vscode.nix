@@ -40,7 +40,8 @@
         "editor.fontSize" = 15;
         "editor.formatOnPaste" = true;
         "editor.formatOnSave" = true;
-        "editor.indentSize" = 2;
+        "editor.indentSize" = "tabSize";
+        "editor.detectIndentation" = false;
         "editor.insertSpaces" = true;
         "editor.minimap.enabled" = false;
         "editor.renderWhitespace" = "boundary";

@@ -341,6 +341,9 @@ dbox-dev-atomic_mainstall() {
 
 nixos_mainstall() {
   local cfg_dir=~/nixos-config
+
+  dir_exists "$cfg_dir" && err_exit "$cfg_dir already exists, skipping nixos installation"
+
   local flake_url="${ILM_BASE_URL}/extras/nixos/vm/flake.nix"
   local dev_url="${ILM_BASE_URL}/extras/nixos/vm/dev.nix"
 

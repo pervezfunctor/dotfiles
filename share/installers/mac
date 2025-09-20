@@ -171,6 +171,9 @@ nix-darwin_mainstall() {
   fi
 
   touch ~/.zshrc
+  vscode_groupstall
+  docker_install
+
   cmd_check nix darwin-rebuild
 
   slog "nix-darwin installation done!"
@@ -178,5 +181,4 @@ nix-darwin_mainstall() {
   slog "Update your configuration, and run:"
   slog "darwin-rebuild switch --flake $cfg_dir#mac"
   slog "Commit and push your configuration to keep it safe."
-
 }

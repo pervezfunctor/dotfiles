@@ -84,7 +84,6 @@ system-update() {
 
   cd "$DOT_DIR" && git-up
   has_cmd devbox && devbox update
-  has_cmd hms && hms
 }
 
 remove_keyrings() {
