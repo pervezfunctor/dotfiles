@@ -1,45 +1,35 @@
 {
-	"name": "Markdown Editing",
-	"dockerFile": "Dockerfile",
-	"customizations": {
-		"vscode": {
-			"settings": {
-				"editor.detectIndentation": false,
-				"editor.indentSize": "tabSize",
-				"editor.tabSize": 2,
-				"editor.trimAutoWhitespace": true,
-				"files.insertFinalNewline": true,
-				"files.trimTrailingWhitespace": true,
-				"nix.enableLanguageServer": true,
-				"nix.serverPath": "nixd",
-				"nix.formatterPath": "nixfmt",
-				"editor.renderWhitespace": "boundary"
-			},
-			"extensions": [
-				"bierner.github-markdown-preview",
-				"DavidAnson.vscode-markdownlint",
-				"jnoortheen.nix-ide",
-				"mads-hartmann.bash-ide-vscode",
-				"shd101wyy.markdown-preview-enhanced",
-				"streetsidesoftware.code-spell-checker",
-				"timonwong.shellcheck",
-				"yzhang.markdown-all-in-one"
-			]
-		}
-	},
-	"features": {
-		"ghcr.io/devcontainers/features/github-cli:1": {
-			"installDirectlyFromGitHubRelease": true,
-			"version": "latest"
-		},
-		"ghcr.io/devcontainers/features/nix:1": {
-			"multiUser": true,
-			"packages": "nixd,nixfmt,fzf,stow, eza, neovim",
-			"extraNixConfig": "experimental-features = nix-command flakes",
-			"version": "latest"
-		}
-	},
-	"mounts": [
-		"source=${localEnv:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind"
-	]
-}
+  "name": "Markdown Editing",
+  "dockerFile": "Dockerfile",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.detectIndentation": false,
+        "editor.indentSize": "tabSize",
+        "editor.tabSize": 2,
+        "editor.trimAutoWhitespace": true,
+        "files.insertFinalNewline": true,
+        "files.trimTrailingWhitespace": true,
+        "nix.enableLanguageServer": true,
+        "nix.serverPath": "nixd",
+        "nix.formatterPath": "nixfmt",
+        "editor.renderWhitespace": "boundary",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/usr/bin/zsh"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "extensions": [
+          "bierner.github-markdown-preview",
+          "DavidAnson.vscode-markdownlint",
+          "jnoortheen.nix-ide",
+          "mads-hartmann.bash-ide-vscode",
+          "shd101wyy.markdown-preview-enhanced",
+          "streetsidesoftware.code-spell-checker",
+          "timonwong.shellcheck",
+          "yzhang.markdown-all-in-one"
+        ]
+      }
+    }
+  }
