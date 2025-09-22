@@ -6,6 +6,10 @@ export BOXES_DIR=${USE_BOXES_DIR:-${BOXES_DIR}}
 
 has_cmd distrobox || return
 
+dbox-logs() {
+  podman logs "$1"
+}
+
 dbox_enter() {
   local CONTAINER_NAME=${1}
   shift
@@ -303,7 +307,7 @@ dbox-dev() {
 
   local os
   os=${1:-fedora-init}
-  local CONTAINER_NAME=${2:-ilm}
+  local CONTAINER_NAME=${2:-dev}
 
   if [[ ! "$os" =~ ^(ubuntu|debian|arch|tw|fedora)-init$ ]]; then
     fail "Invalid OS type: $os"
@@ -323,9 +327,9 @@ dbox-dev() {
   fi
 }
 
-dbox-create-main-install() {
+dbox-mainstall() {
   if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-create-main-install <distro> <mainstall> [name]"
+    fail "Usage: dbox-mainstall <distro> <mainstall> [name]"
     return 1
   fi
   local distro=$1
@@ -336,9 +340,9 @@ dbox-create-main-install() {
   distrobox enter -nw --clean-path --name "$name" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$mainstall"
 }
 
-dbox-create-group-install() {
+dbox-groupstall() {
   if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-create-group-install <distro> <groupstall> [name]"
+    fail "Usage: dbox-groupstall <distro> <groupstall> [name]"
     return 1
   fi
   local distro=$1

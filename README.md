@@ -282,7 +282,7 @@ dbox-dev
 I will add more instructions to use distrobox in the future. For now, you could use the following command to use `vscode` from distrobox container.
 
 ```bash
-dboxe ilm # enter distrobox container
+dboxe dev # enter distrobox container
 code # opens vscode from distrobox container
 ```
 
