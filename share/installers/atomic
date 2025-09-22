@@ -203,7 +203,7 @@ cmake_install() {
   cmd_check cmake
 }
 
-gnome-extensions_install() {
+gnome-extensions-slim_install() {
   if ! has_cmd gext; then
     if ! has_cmd pipx; then
       warn "pipx not installed, skipping gnome extensions"
@@ -214,18 +214,23 @@ gnome-extensions_install() {
     cmd_check gext
   fi
 
-  slog "Installing gnome extensions"
-
   gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
-  gext install Vitals@CoreCoding.com
-  gext install tailscale@joaophi.github.com
-  gext install tilingshell@ferrarodomenico.com
-  gext install CoverflowAltTab@palatis.blogspot.com
   gext install just-perfection-desktop@just-perfection
   gext install blur-my-shell@aunetx
   gext install undecorate@sun.wxg@gmail.com
-  gext install AlphabeticalAppGrid@stuarthayhurst
   gext install switcher@landau.fi
+  gext install CoverflowAltTab@palatis.blogspot.com
+}
+
+gnome-extensions_install() {
+  slog "Installing gnome extensions"
+
+  gnome-extensions-slim_install
+
+  gext install Vitals@CoreCoding.com
+  gext install tailscale@joaophi.github.com
+  gext install tilingshell@ferrarodomenico.com
+  gext install AlphabeticalAppGrid@stuarthayhurst
 
   slog "gnome extensions installation done!"
 }
@@ -260,14 +265,24 @@ gnome-settings_install() {
   slog "gnome settings done!"
 }
 
-gnome-flatpaks_install() {
-  fpi page.tesk.Refine
-  fpi com.github.tchx84.Flatseal
+more-gnome-flatpaks_install() {
+  fpi com.github.PintaProject.Pinta
+  fpi com.github.rafostar.Clapper
   fpi io.github.flattool.Ignition
-  fpi io.github.flattool.Warehouse
-  fpi io.missioncenter.MissionCenter
+  fpi io.gitlab.adhami3310.Impression
+  fpi org.gnome.Firmware
   fpi org.gnome.World.PikaBackup
-  fpi org.gnome.Papers
+  fpi com.ranfdev.DistroShelf
+}
+
+gnome-flatpaks_install() {
+  fpi io.podman_desktop.PodmanDesktop
+  fpi sh.loft.devpod
+  fpi com.mattjakeman.ExtensionManager
+  fpi io.missioncenter.MissionCenter
+  fpi org.gnome.Logs
+  fpi org.gtk.Gtk3theme.adw-gtk3
+  fpi org.gtk.Gtk3theme.adw-gtk3-dark
 }
 
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
@@ -300,11 +315,20 @@ gnome_confstall() {
   slog "gnome config done!"
 }
 
-vscode_flatpak_install() {
+vscode-flatpak_confstall() {
+  slog "vscode flatpak config"
+
+  smd ~/.var/app/com.visualstudio.code/config/Code/User
+  safe-cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
+
+  vscode-extensions_confstall
+
+  slog "vscode fkatpak config done!"
+}
+
+vscode-flatpak_install() {
   fpi com.visualstudio.code
-  flatpak install com.visualstudio.code.tool.podman
-  alias code="flatpak run com.visualstudio.code"
-  xargs -L 1 flatpak run com.visualstudio.code --install-extension <"$DOT_DIR/extras/vscode/extensions/default"
+  fpi com.visualstudio.code.tool.podman/x86_64/stable
   vscode-flatpak_confstall
 }
 
@@ -349,9 +373,11 @@ apps-slim_install() {
   ptyxis_install
 
   has_cmd distrobox && fpi io.github.dvlv.boxbuddyrs
+  fpi page.tesk.Refine
+  fpi io.github.flattool.Warehouse
+  fpi com.github.tchx84.Flatseal
   fpi it.mijorus.gearlever
   is_atomic && fpi org.gnome.Boxes
-  fpi us.zoom.Zoom # unverified
 }
 
 apps_install() {
@@ -359,6 +385,7 @@ apps_install() {
 
   apps-slim_install
 
+  fpi us.zoom.Zoom # unverified
   fpi md.obsidian.Obsidian
   has_cmd podman && fpi io.podman_desktop.PodmanDesktop
   fpi org.telegram.desktop
@@ -367,6 +394,8 @@ apps_install() {
   fpi sh.cider.Cider
   fpi org.qbittorrent.qBittorrent
   fpi org.wireshark.Wireshark
+  fpi me.iepure.devtoolbox
+  fpi io.github.ronniedroid.concessio
 
   slog "Flatpak apps installation done!"
 }
@@ -622,15 +651,6 @@ starship_install() {
 
   smd ~/.local/bin
   curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
-}
-
-vscode-flatpak_confstall() {
-  slog "vscode config"
-
-  smd ~/.var/app/com.visualstudio.code/config/Code/User
-  safe-cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
-
-  slog "vscode config done!"
 }
 
 sway-waybar_confstall() {

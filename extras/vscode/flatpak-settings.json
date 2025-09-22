@@ -2,7 +2,6 @@
   "window.titleBarStyle": "custom",
   "editor.fontFamily": "'JetbrainsMono Nerd Font Mono', 'Source Code Pro', 'Droid Sans Mono', 'monospace', monospace",
   "editor.fontLigatures": true,
-  "editor.fontWeight": "600",
   "editor.fontSize": 15,
   "editor.acceptSuggestionOnEnter": "smart",
   "editor.autoIndent": "advanced",
@@ -63,5 +62,8 @@
   "workbench.commandPalette.preserveInput": true,
   "workbench.editor.highlightModifiedTabs": true,
   "workbench.colorTheme": "Catppuccin Mocha",
-  "workbench.iconTheme": "catppuccin-mocha"
+  "workbench.iconTheme": "catppuccin-mocha",
+  "dev.containers.dockerPath": "/app/tools/podman/bin/podman-remote",
+  "dev.containers.dockerComposePath": "podman compose",
+  "dev.containers.dockerSocketPath": "/var/run/podman.sock"
 }

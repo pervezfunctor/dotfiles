@@ -295,6 +295,10 @@ vscode_extensions_from_file() {
             slog "Installing extension: $extension"
             has_cmd code && code --install-extension "$extension"
             has_cmd code-insiders && code-insiders --install-extension "$extension"
+
+            if has_cmd flatpak && flatpak list | grep -q 'com.visualstudio.code'; then
+                flatpak run com.visualstudio.code --install-extension "$extension"
+            fi
         else
             slog "Extension already installed: $extension"
         fi
