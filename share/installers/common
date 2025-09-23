@@ -612,20 +612,24 @@ npm_install() {
 
     volta install node@latest
 
-    if has_cmd npm; then
-        npm install -g @anthropic-ai/claude-code
-        npm install -g @google/gemini-cli
-        npm install -g @qwen-code/qwen-code
-        npm install -g pnpm
-    else
-        warn "npm not installed! Skipping pnpm install."
-    fi
+    cmd_check volta npm
 }
 
-web_install() {
+ai-cli_install() {
+    has_cmd npm || npm_install
+
+    npm install -g @anthropic-ai/claude-code
+    npm install -g @google/gemini-cli
+    npm install -g @qwen-code/qwen-code
+    npm install -g @openai/codex
+    has_cmd gh && gh extension install github/gh-copilot
+}
+
+web_groupstall() {
     npm_install
 
     slog "Installing npm packages globally"
+    npm install -g pnpm
     npm install -g ndb @antfu/ni
     npm install -g tsx vite-node zx turbo
 

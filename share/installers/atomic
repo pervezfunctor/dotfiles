@@ -719,6 +719,7 @@ ublue_common_install() {
 
   dotfiles_install
   python_install
+  npm_install
   brew-shell-slim_install
   apps-slim_install
 
