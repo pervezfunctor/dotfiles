@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+nix-portable_install() {
+  smd ~/.local/bin
+  curl -L https://github.com/DavHau/nix-portable/releases/latest/download/nix-portable-"$(uname -m)" >~/.local/bin/nix-portable
+  chmod +x ~/.local/bin/nix-portable
+  cmd_check nix-portable
+}
+
 webi_install() {
   has_cmd ~/.local/bin/webi && return 0
 
