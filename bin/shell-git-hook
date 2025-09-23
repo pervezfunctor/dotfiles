@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+if ! command -v shfmt >/dev/null 2>&1; then
+  echo "shfmt not found. Install shfmt to format shell scripts." >&2
+  exit 1
+fi
+
+if ! command -v shellcheck >/dev/null 2>&1; then
+  echo "shellcheck not found. Install shellcheck to lint shell scripts." >&2
+  exit 1
+fi
+
+if [[ -z "${LEFTHOOK_FILES:-}" ]]; then
+  exit 0
+fi
+
+mapfile -t files < <(printf '%s\n' "${LEFTHOOK_FILES}")
+
+shell_files=()
+
+for file in "${files[@]}"; do
+  [[ -f "$file" ]] || continue
+
+  case "$file" in
+  *.sh | *.bash | *.zsh | *.ksh)
+    shell_files+=("$file")
+    continue
+    ;;
+  esac
+
+  # Detect extensionless scripts via their shebang.
+  if head -n 1 "$file" 2>/dev/null | grep -qE '^#!.*/(env )?(bash|sh)( |$)'; then
+    shell_files+=("$file")
+  fi
+done
+
+if ((${#shell_files[@]} == 0)); then
+  exit 0
+fi
+
+shfmt -w -- "${shell_files[@]}"
+shellcheck --color=never --format=gcc -- "${shell_files[@]}"
+
+git add -- "${shell_files[@]}"
+run_python_tools.sh run_shell_tools.sh

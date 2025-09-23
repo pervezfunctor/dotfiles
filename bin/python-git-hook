@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -z "${LEFTHOOK_FILES:-}" ]]; then
+  exit 0
+fi
+
+mapfile -t files < <(printf '%s\n' "${LEFTHOOK_FILES}")
+
+python_files=()
+
+for file in "${files[@]}"; do
+  [[ -f "$file" ]] || continue
+  case "$file" in
+    *.py)
+      python_files+=("$file")
+      ;;
+  esac
+done
+
+if ((${#python_files[@]} == 0)); then
+  exit 0
+fi
+
+run_ruff() {
+  if command -v uv >/dev/null 2>&1; then
+    uv run --project extras/stow ruff "$@"
+    return
+  fi
+
+  if command -v ruff >/dev/null 2>&1; then
+    ruff "$@"
+    return
+  fi
+
+  echo "Neither uv nor ruff is available. Install one to run Python formatting." >&2
+  exit 1
+}
+
+run_ruff format --respect-gitignore -- "${python_files[@]}"
+run_ruff check --fix --respect-gitignore -- "${python_files[@]}"
+
+git add -- "${python_files[@]}"
