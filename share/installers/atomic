@@ -710,7 +710,7 @@ hyprland_confstall() {
   slog "hypr config done!"
 }
 
-ublue_mainstall() {
+ublue_common_install() {
   if is_ublue && has_cmd git && has_cmd brew && has_cmd python3 && has_cmd code && has_cmd flatpak && has_cmd distrobox; then
     slog "Prerequisites met, installing uBlue OS"
   else
@@ -726,6 +726,11 @@ ublue_mainstall() {
   jetbrains-mono_install
   is_gnome && gnome_confstall
 
+}
+
+ublue_mainstall() {
+  ublue_common_install
+
   if [[ "$USER" == "pervez" ]]; then
     shell_confstall
   else
@@ -733,6 +738,38 @@ ublue_mainstall() {
     is_aurora && ujust aurora-cli
     is_bazzite && ujust bazzite-cli
   fi
+}
+
+ensure_nix_mount() {
+  [[ -d /nix ]] || err_exit "/nix does not exist, cannot mount nix store"
+
+  local subvol_path="/home/nix"
+  local mount_point="/nix"
+
+  if sudo btrfs subvolume show "$subvol_path" &>/dev/null; then
+    slog "Subvolume $subvol_path already exists, skipping creation"
+  else
+    sudo btrfs subvolume create "$subvol_path" || {
+      err_exit "Failed to create subvolume at $subvol_path"
+    }
+  fi
+
+  if findmnt -rno TARGET "$mount_point" &>/dev/null; then
+    slog "$mount_point already mounted, skipping"
+    return 0
+  fi
+
+  sudo mount -o subvol="$(basename "$subvol_path")" \
+    "$(df --output=source "$(dirname "$subvol_path")" | tail -1)" \
+    "$mount_point" || {
+    err_exit "Failed to mount $subvol_path at $mount_point"
+  }
+}
+
+bluenix_mainstall() {
+  ublue_common_install
+  ensure_nix_mount
+  nix_groupstall
 }
 
 generic-ct_mainstall() {
