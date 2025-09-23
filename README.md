@@ -200,38 +200,16 @@ source ~/.ilm/share/shellrc
 
 ### Bluefin/Aurora
 
-Give [Bluefin](https://projectbluefin.io)/[Aurora](https://getaurora.dev/en)/[Bazzite](https://bazzite.gg/) a try. Especially if you have an nvidia card.
-
-Unfortunately, there is no direct ISO of dx version available. You need to run the following command after installation.
+Give [Bluefin](https://projectbluefin.io)/[Aurora](https://getaurora.dev/en)/[Bazzite](https://bazzite.gg/) a try. After installation, run the following command. This will install `vscode`, `docker` and `libvirt`.
 
 ```bash
 ujust devmode
 ```
 
-You could instead create your own custom ublue distribution using [ublue template](https://github.com/ublue-os/image-template). if you have an nvidia card, you could instead use my [custom image](https://github.com/pervezfunctor/ilm-os). Currently I add virt-install. I intend to keep this simple. You could switch to my image with the following command(preferrably from Bazzite, Aurora or Kinoite).
-
-```bash
-sudo bootc switch ghcr.io/pervezfunctor/ilm-os:latest
-```
-
-Once you have your OS installed with any of the above approaches, you could configure vscode and shell with the following command.
+Reboot and configure vscode and shell tools with the following command.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif) -- ublue"
-```
-
-You could instead run the following.
-
-```bash
-ujust bluefin-cli  # for bluefin
-ujsut aurora-cli   # for aurora
-ujust bazzite-cli  # for bazzite
-```
-
-and then use the following in `~/.bashrc` and/or `~/.zshrc`.
-
-```bash
-source ~/.ilm/share/shellrc
 ```
 
 </details>
@@ -250,7 +228,7 @@ Execute the following script only on a freshly installed system.
 bash -c "$(curl -sSL https://is.gd/egitif)" -- nixos
 ```
 
-Your nixos configuration will be stored in `~/.ilm/extras/nixos/config`. Add to git and push to github.
+Your nixos configuration will be stored in `~/nixos-config`. Add to git and push to github.
 
 You should be able to use the following command to update your system after you make changes to your configuration.
 
