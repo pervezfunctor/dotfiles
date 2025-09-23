@@ -139,6 +139,11 @@ shell_groupstall() {
   shell_config_install
 }
 
+brew_groupstall() {
+  brew_install
+  brew-shell_install
+}
+
 nix_groupstall() {
   nix_install
   hms
@@ -219,9 +224,8 @@ shell-slim_check() {
 }
 
 shell-slim_mainstall() {
-  min_mainstall
+  min_binstall
   shell-slim_binstall
-
   shell-slim_config_install
   shell-slim_check
 }
@@ -234,7 +238,7 @@ shell_check() {
 }
 
 shell_mainstall() {
-  min_mainstall
+  min_binstall
   shell_binstall
   shell_config_install
   terminal_config_install
