@@ -228,8 +228,8 @@ shell-slim_mainstall() {
 
 shell_check() {
   shell-slim_check
-  cmd_check tmux nvim lazygit sd bat brew htop atuin gawk carapace direnv \
-    shellcheck shfmt ug tldr fd direnv jq yq gum bat delta just dialog \
+  cmd_check tmux nvim lazygit sd bat htop atuin gawk carapace direnv \
+    shellcheck shfmt ug tldr fdfind direnv jq yq gum bat delta just dialog \
     btm yazi
 }
 

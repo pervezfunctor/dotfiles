@@ -510,10 +510,10 @@ yazi_confstall() {
 
     # @TODO: use package.toml file to install flavors
     if has_cmd ya; then
-        ya pkg -a yazi-rs/flavors:catppuccin-frappe
-        ya pkg -a yazi-rs/flavors:catppuccin-mocha
-        ya pkg -a yazi-rs/flavors:catppuccin-macchiato
-        ya pkg -u
+        ya pkg add yazi-rs/flavors:catppuccin-frappe
+        ya pkg add yazi-rs/flavors:catppuccin-mocha
+        ya pkg add yazi-rs/flavors:catppuccin-macchiato
+        ya pkg upgrade
     fi
 
     slog "yazi config done!"
@@ -727,7 +727,6 @@ shell-slim_install() {
 
 shell_install() {
     shell-slim_install
-
     if has_cmd brew; then
         brew-shell_install
     else
