@@ -236,7 +236,7 @@ main() {
       if fn_exists "${service}_install"; then
         echo "Installing ${service}"
         sleep 5
-        execute_service "${service}_install"
+        "${service}_install"
       else
         echo "No installer found for $service"
       fi
