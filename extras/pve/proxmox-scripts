@@ -227,6 +227,19 @@ execute_service() {
 }
 
 main() {
+  if [[ $# -ne 0 ]]; then
+    for service in "$@"; do
+      if has_cmd "${service}_install"; then
+        echo "Installing ${service}"
+        sleep 5
+        execute_service "${service}_install"
+      else
+        echo "No installer found for $service"
+      fi
+    done
+    return 0
+  fi
+
   local category
   category=$(show_category_menu)
 
