@@ -165,15 +165,16 @@ show_dialog() {
     checklist_entries+=("$option" "$option" "off")
   done
 
-  local selected
-  if ! selected=$(whiptail --checklist "Select services to install" 20 60 15 \
+  local selected_output
+  if ! selected_output=$(whiptail --separate-output --checklist "Select services to install" 20 60 15 \
     "${checklist_entries[@]}" \
     3>&1 1>&2 2>&3); then
-    echo -n "Selection cancelled." >&2
+    printf '%s\n' "Selection cancelled." >&2
     return 1
   fi
 
-  read -r -a selected <<<"$selected"
+  local -a selected=()
+  mapfile -t selected <<<"$selected_output"
   echo "${selected[@]}"
 }
 
@@ -212,7 +213,7 @@ show_category_menu() {
     addon "Addons" \
     vm "Virtual Machines" \
     3>&1 1>&2 2>&3); then
-    echo -n "Selection cancelled." >&2
+    printf '%s\n' "Selection cancelled." >&2
     return 1
   fi
 
@@ -250,7 +251,7 @@ main() {
   echo "Selected services: ${selected[*]}"
 
   for service in "${selected[@]}"; do
-    echo "Installing $service in $category..."
+    echo "Installing $service($category)..."
     sleep 5
     execute_service "$category" "$service"
   done
