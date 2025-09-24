@@ -130,8 +130,8 @@ core_install() {
     slog "Installing core components..."
     si git-core micro zsh-theme-powerlevel9k zsh curl wget htop pciutils jq \
         smartmontools zfsutils-linux rsync whiptail dialog numactl fio stress \
-        usbutils restic ethtool nvme-cli lsof lm-sensors udisks2 \
-        proxmox-backup-client
+        usbutils restic ethtool nvme-cli lsof lm-sensors udisks2 dysk just duf \
+        proxmox-backup-client libguestfs-tools rclone stow ripgrep jq yq
 
     if ! dir_exists "$DOT_DIR"; then
         slog "Cloning dotfiles..."
