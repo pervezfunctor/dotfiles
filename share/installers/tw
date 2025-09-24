@@ -29,7 +29,7 @@ tw_packages() {
     si git gh git-delta unzip wget curl trash-cli tar stow gcc make file \
         starship gum wl-clipboard tree bat eza fzf ripgrep zoxide fd \
         htop sd tealdeer yazi cheat lazygit libsecret net-tools iproute2 nmap \
-        dialog newt
+        dialog newt python314 python314-pip python314-pipx
 
     has_cmd tldr && tldr --update
 
@@ -39,8 +39,8 @@ tw_packages() {
 sys_python_install() {
     slog "Installing python"
 
-    si python313 python313-virtualenv python313-pip python313-setuptools \
-        python313-pipx
+    si python314 python314-virtualenv python314-pip python314-setuptools \
+        python314-pipx
     pipx install uv
 
     slog "Python installation done!"

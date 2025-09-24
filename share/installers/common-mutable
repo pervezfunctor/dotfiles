@@ -94,7 +94,10 @@ shell_binstall() {
     warn "cli_install not available, skipping cli installation"
   fi
   shell_install
-  terminal_install
+
+  if is_desktop && ! is_distrobox; then
+    terminal_install
+  fi
 }
 
 shell-slim_groupstall() {
@@ -112,6 +115,11 @@ terminal_config_install() {
 terminal_install() {
   jetbrains-mono_install
 
+  if has_cmd flatpak && flatpak list | grep -q wezterm; then
+    slog "wezterm already installed via flatpak"
+    return 0
+  fi
+
   for cmd in ghostty kitty alacritty wezterm; do
     if has_cmd "$cmd"; then
       slog "$cmd already installed"
@@ -119,16 +127,15 @@ terminal_install() {
     fi
   done
 
-  if has_cmd flatpak && flatpak list | grep -q wezterm; then
-    slog "wezterm already installed via flatpak"
-    return 0
-  fi
-
   terminal_binstall
 }
 
 terminal_groupstall() {
-  is_desktop || return 0
+  if ! is_desktop; then
+    warn "Not running desktop, skipping terminal installation"
+    return 1
+  fi
+
   terminal_install
   terminal_config_install
 }

@@ -67,7 +67,8 @@ fedora_packages() {
 
     si git-core gh git-delta unzip wget curl trash-cli tar stow gcc make file \
         gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate \
-        cheat libsecret net-tools iproute nmap dialog newt
+        cheat libsecret net-tools iproute nmap dialog newt jq procs direnv yq \
+        python3 pipx python3-pip
 
     has_cmd tldr && tldr --update
 
@@ -176,7 +177,7 @@ cli_install() {
     cli-slim_install
 
     local base_pkgs=(neovim ShellCheck shfmt tmux htop pkg-config urlview
-        plocate luarocks tealdeer lsd jq fd-find git-delta procs just dialog gum)
+        plocate luarocks tealdeer lsd fd-find git-delta procs just dialog gum)
 
     local fedora_pkgs=()
     if is_fedora; then

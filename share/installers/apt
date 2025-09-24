@@ -51,8 +51,8 @@ ubuntu_packages() {
   slog "Installing ubuntu packages..."
 
   si git-core gh git-delta unzip wget curl net-tools iproute2 nmap gum eza \
-    trash-cli tar stow gcc make file tree bat ripgrep gawk starship \
-    zoxide fd-find htop sd batdialog whiptail tealdeer yq
+    trash-cli tar stow gcc make file tree bat ripgrep gawk starship pipx \
+    zoxide fd-find htop sd batdialog whiptail tealdeer yq python3 python3-pip
 
   fzf_install
 
@@ -105,10 +105,10 @@ debian_packages() {
   debian_locale_install
   slog "Installing debian packages..."
 
-  si stow git-core gh git-delta lazygit unzip wget curl trash-cli tar \
-    net-tools iproute2 nmap gcc make file tree ripgrep zoxide fd-find htop \
+  si stow git-core gh git-delta lazygit unzip wget curl trash-cli python3-pip \
+    net-tools iproute2 nmap gcc make file tree ripgrep zoxide fd-find htop tar \
     gawk tealdeer dialog whiptail starship hyperfine jq direnv yq dysk bat \
-    just gum eza shellcheck shfmt broot duf sd xh atuin procs sd
+    just gum eza shellcheck shfmt broot duf sd xh atuin procs sd python3 pipx
 
   fzf_install
 

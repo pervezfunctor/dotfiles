@@ -80,7 +80,6 @@ multipass_install() {
 vscode_groupstall() {
   vscode_binstall
   jetbrains-mono_install
-  vscode-extensions_install
   vscode_confstall
 }
 

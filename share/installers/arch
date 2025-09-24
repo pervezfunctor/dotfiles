@@ -35,7 +35,7 @@ arch_packages() {
     si git-core github-cli git-delta unzip wget curl trash-cli tar stow \
         gcc make file starship gum wl-clipboard tree bat eza fzf ripgrep \
         zoxide fd htop sd yazi bat tealdeer lazygit libsecret net-tools \
-        iproute2 nmap dialog newt
+        iproute2 nmap dialog newt python python-pipx python-pip
 
     has_cmd tldr && tldr --update
 

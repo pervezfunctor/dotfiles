@@ -811,7 +811,7 @@ generic_mainstall() {
     fail "No container runtime(docker or podman) installed, skipping distrobox installation"
   fi
 
-  if is_desktop; then
+  if is_desktop && ! is_distrobox; then
     jetbrains-mono_install
     flathub_install
     ptyxis_install

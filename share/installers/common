@@ -289,7 +289,7 @@ vscode_extensions_from_file() {
     installed_extensions=$(code --list-extensions)
 
     while read -r extension; do
-        [[ -z "$extension" || "$extension" =~ ^# ]] && continue
+        [[ "$extension" =~ ^[[:space:]]*(#|$) ]] && continue
 
         if ! grep -Fxqi "$extension" <<<"$installed_extensions"; then
             slog "Installing extension: $extension"
@@ -436,6 +436,7 @@ vscode_confstall() {
         smd "$XDG_CONFIG_HOME/Code/User"
         fmv "$XDG_CONFIG_HOME/Code/User/settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json.bak"
         safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json"
+
         # support code-insiders
         if dir_exists "$XDG_CONFIG_HOME/Code - Insiders/User"; then
             fmv "$XDG_CONFIG_HOME/Code - Insiders/User/settings.json" "$XDG_CONFIG_HOME/Code - Insiders/User/settings.json.bak"

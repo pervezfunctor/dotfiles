@@ -1,6 +1,5 @@
 # shellcheck disable=SC1091
 
-# shellcheck disable=SC2148
 export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 
 source "$DOT_DIR/share/utils"
@@ -10,35 +9,6 @@ if has_cmd /opt/homebrew/bin/brew; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -d /home/linuxbrew/.linuxbrew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-fi
-
-if [[ -d "$HOME/.pyenv" ]]; then
-  export PYENV_ROOT="$HOME/.pyenv"
-  spath_export "$PYENV_ROOT/bin"
-  eval "$(pyenv init -)"
-elif has_cmd "$HOME/miniconda3/bin/conda"; then
-  if __conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2>/dev/null)"; then
-    eval "$__conda_setup"
-  else
-    if [[ -f "/$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
-      source_if_exists "/$HOME/miniconda3/etc/profile.d/conda.sh"
-    else
-      export PATH="/$HOME/miniconda3/bin:$PATH"
-    fi
-  fi
-  unset __conda_setup
-fi
-
-if [[ -d "$HOME/.local/share/pnpm" ]]; then
-  # pnpm
-  export PNPM_HOME="$HOME/.local/share/pnpm"
-  export PATH="$PNPM_HOME:$PATH"
-  # pnpm end
-
-  if [[ -f "$XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh" ]]; then
-    source_if_exists "$XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh"
-  fi
-
 fi
 
 vterm_printf() {
@@ -61,6 +31,34 @@ vterm_printf() {
 #     export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
 #     export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
 # }
+
+if [[ -d "$HOME/.pyenv" ]]; then
+  export PYENV_ROOT="$HOME/.pyenv"
+  spath_export "$PYENV_ROOT/bin"
+  eval "$(pyenv init -)"
+fi
+
+if has_cmd "$HOME/miniconda3/bin/conda"; then
+  if __conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2>/dev/null)"; then
+    eval "$__conda_setup"
+  else
+    if [[ -f "/$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
+      source_if_exists "/$HOME/miniconda3/etc/profile.d/conda.sh"
+    else
+      export PATH="/$HOME/miniconda3/bin:$PATH"
+    fi
+  fi
+  unset __conda_setup
+fi
+
+if [[ -d "$HOME/.local/share/pnpm" ]]; then
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+  export PATH="$PNPM_HOME:$PATH"
+
+  if [[ -f "$XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh" ]]; then
+    source_if_exists "$XDG_CONFIG_HOME/tabtab/zsh/__tabtab.zsh"
+  fi
+fi
 
 source_if_exists "$DOT_DIR/share/fns"
 
