@@ -101,7 +101,10 @@
     in
     {
       homeConfigurations = {
-        ${vars.username} = mkHome { inherit vars pkgs; };
+        ${vars.username} = mkHome {
+          inherit vars pkgs;
+          imports = [./core.nix];
+        };
 
         shell-slim = mkHome {
           inherit vars pkgs;
