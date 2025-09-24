@@ -251,7 +251,8 @@ main() {
 
   for service in "${selected[@]}"; do
     echo "Installing $service in $category..."
-    # execute_service "$category" "$service"
+    sleep 5
+    execute_service "$category" "$service"
   done
 
   echo "Done!"
