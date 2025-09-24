@@ -1,4 +1,5 @@
 {
+  # pkgs,
   inputs,
   vars,
   hmModule,
@@ -19,6 +20,9 @@ darwin.lib.darwinSystem {
       users.users.${vars.username} = {
         home = vars.homeDirectory;
       };
+
+      # environment.systemPackages = with pkgs; [
+      # ];
     }
 
     home-manager.darwinModules.home-manager

@@ -141,7 +141,9 @@
       };
 
       darwinConfigurations = {
-        "${varsDarwin.host}" = mkDarwin [ ];
+        "${varsDarwin.host}" = mkDarwin [
+          ./core.nix
+        ];
       };
 
       formatter = nixpkgs.legacyPackages.${system}.alejandra;
