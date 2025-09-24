@@ -229,7 +229,7 @@ execute_service() {
 main() {
   if [[ $# -ne 0 ]]; then
     for service in "$@"; do
-      if has_cmd "${service}_install"; then
+      if fn_exists "${service}_install"; then
         echo "Installing ${service}"
         sleep 5
         execute_service "${service}_install"
