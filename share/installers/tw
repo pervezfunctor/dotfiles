@@ -126,9 +126,9 @@ cli_install() {
     cli-slim_install
 
     si neovim sd fd procs lazygit bottom xh plocate tealdeer urlview nushell \
-        lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk \
-        hyperfine cheat curlie lsd direnv yq tmux htop fd bat git-delta \
-        shfmt ShellCheck jq just dialog
+        lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk jq \
+        hyperfine cheat curlie lsd direnv yq tmux htop fd bat git-delta dust \
+        shfmt ShellCheck just dialog atuin broot choose
 
     has_cmd tldr && tldr --update
 
