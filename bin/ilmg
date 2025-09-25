@@ -14,8 +14,9 @@ INSTALL_OPTIONS=(
     "dev"
     "nix"
     "dev-nix"
-    # "hyprland"
-    # "sway"
+    "brew"
+    "home-manager"
+    "web"
 )
 
 help() {

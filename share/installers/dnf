@@ -240,8 +240,6 @@ vscode_binstall() {
 
 terminal_binstall() {
     has_cmd ghostty && return 1
-    has_cmd kitty && return 1
-    has_cmd alacritty && return 1
 
     if is_fedora; then
         slog "Installing ghostty"

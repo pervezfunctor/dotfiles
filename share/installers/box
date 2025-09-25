@@ -75,21 +75,6 @@ zsh_boxstall() {
     set_zsh_as_default
 }
 
-terminal_boxstall() {
-    terminal_binstall
-    jetbrains-mono_install
-
-    has_cmd ghostty && ghostty_confstall
-    has_cmd kitty && kitty_confstall
-    has_cmd alacritty && alacritty_confstall
-
-    if has_cmd flatpak; then
-        flathub_install
-        ptyxis_install
-        # ptyxis_confstall
-    fi
-}
-
 slimbox_base() {
     cd "$HOME" || warn "could not cd to $HOME"
 

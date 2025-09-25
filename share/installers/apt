@@ -270,6 +270,8 @@ windsurf_install() {
 }
 
 terminal_binstall() {
+  has_cmd ghostty && return 0
+
   slog "Installing terminal..."
   if has_cmd snap; then
     snap install ghostty --classic

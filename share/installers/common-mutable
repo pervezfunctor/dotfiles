@@ -93,11 +93,10 @@ shell_binstall() {
   else
     warn "cli_install not available, skipping cli installation"
   fi
-  shell_install
 
-  if is_desktop && ! is_distrobox; then
-    terminal_install
-  fi
+  is_distrobox || terminal_groupstall
+
+  shell_install
 }
 
 shell-slim_groupstall() {
@@ -112,37 +111,22 @@ terminal_config_install() {
   wezterm_confstall
 }
 
-terminal_install() {
-  jetbrains-mono_install
-
-  if has_cmd flatpak && flatpak list | grep -q wezterm; then
-    slog "wezterm already installed via flatpak"
-    return 0
-  fi
-
-  for cmd in ghostty kitty alacritty wezterm; do
-    if has_cmd "$cmd"; then
-      slog "$cmd already installed"
-      return 0
-    fi
-  done
-
-  terminal_binstall
-}
-
 terminal_groupstall() {
   if ! is_desktop; then
     warn "Not running desktop, skipping terminal installation"
     return 1
   fi
 
-  terminal_install
+  jetbrains-mono_install
+  terminal_binstall
   terminal_config_install
+
+  is_linux && ptyxis_install
 }
 
 shell_groupstall() {
   shell_binstall
-  terminal_groupstall
+  is_distrobox || terminal_groupstall
   shell_config_install
 }
 

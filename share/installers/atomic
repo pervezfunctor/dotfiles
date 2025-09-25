@@ -377,8 +377,6 @@ apps-slim_install() {
 
   flathub_install
 
-  ptyxis_install
-
   has_cmd distrobox && fpi io.github.dvlv.boxbuddyrs
   fpi page.tesk.Refine
   fpi io.github.flattool.Warehouse

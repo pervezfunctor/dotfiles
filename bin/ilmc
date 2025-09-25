@@ -6,25 +6,45 @@ source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs
 # all options
 # "bash" "zsh-min" "zsh" "tmux" "emacs-doom" "emacs" "emacs-slim" "nvim" "git" "vscode" "alacritty" "wezterm" "kitty" "ghostty" "atuin" "yazi" "shell" "mfoot" "gnome" "incus" "libvirt" "docker" "vscode-flatpak" "sway-waybar" "wlogout" "sway" "rofi" "sway-full" "hypr-waybar" "hyprland" "amethyst" "aerospac"
 
-INSTALL_OPTIONS=("nvim" "bash" "vscode_flatpak" "vscode" "zsh" "tmux" "emacs" "git" "gnome" "sway" "hyprland" "docker" "libvirt")
+INSTALL_OPTIONS=(
+    "zsh"
+    "tmux"
+    "nvim"
+    "vscode"
+    "emacs"
+    "git"
+    "docker"
+    "libvirt"
+    "gnome"
+    "sway"
+    "hyprland"
+    "incus"
+    "rofi"
+    "ghostty"
+    "vscode-flatpak"
+)
 
 SELECTED_OPTIONS=("zsh" "tmux" "nvim")
 
 help() {
     echo "Usage: $0 [OPTION1] [OPTION2] ..."
     echo "Options:"
-    echo "  zsh         zsh config with starship prompt and common plugins."
-    echo "  tmux        tmux config, catppuccin theme and common plugins."
-    echo "  nvim        lazyvim based config and plugins."
-    echo "  vscode      vscode settings and extensions."
-    echo "  emacs       doom emacs config."
-    echo "  git         git basic config."
-    echo "  sway        sway config with modern desktop tools."
-    echo "  hyprland    hyprland config with modern desktop tools."
-    echo "  gnome       gnome config and extensions."
-    echo "  docker      docker config to use without sudo."
-    echo "  libvirt     libvirt config to use without sudo."
-    echo "  help        show this help."
+    echo "  zsh             zsh config with starship prompt and common plugins."
+    echo "  tmux            tmux config, catppuccin theme and common plugins."
+    echo "  nvim            lazyvim based config and plugins."
+    echo "  vscode          vscode settings and extensions."
+    echo "  emacs           doom emacs config."
+    echo "  git             git basic config."
+    echo "  docker          docker config to use without sudo."
+    echo "  libvirt         libvirt config to use without sudo."
+    echo "  gnome           gnome config and extensions."
+    echo "  sway            sway config with modern desktop tools."
+    echo "  hyprland        hyprland config with modern desktop tools."
+    echo "  incus           incus config to use without sudo."
+    echo "  rofi            rofi-wayland config."
+    echo "  ghostty         ghostty config."
+    echo "  vscode-flatpak  vscode flatpak config."
+    echo "  help            show this help."
     echo ""
     echo ""
 }

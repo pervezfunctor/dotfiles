@@ -384,3 +384,7 @@ if has_cmd nixos-generate; then
 fi
 
 has_cmd home-manager && alias hmf="home-manager switch --impure -b bak --flake"
+
+if ! has_cmd nix && has_cmd nix-portable; then
+  alias nix-shell="nix-portable nix-shell"
+fi
