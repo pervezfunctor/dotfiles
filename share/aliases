@@ -385,6 +385,10 @@ fi
 
 has_cmd home-manager && alias hmf="home-manager switch --impure -b bak --flake"
 
+if has_cmd zoxide && has_cmd z; then
+  alias cd="z"
+fi
+
 if ! has_cmd nix && has_cmd nix-portable; then
   alias nix-shell="nix-portable nix-shell"
 fi
