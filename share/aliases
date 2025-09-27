@@ -391,4 +391,5 @@ fi
 
 if ! has_cmd nix && has_cmd nix-portable; then
   alias nix-shell="nix-portable nix-shell"
+  alias nix-dev="nix-portable nix develop"
 fi
