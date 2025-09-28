@@ -224,7 +224,7 @@
 
         "7945hx" = mkBareSystem [
           ./hosts/7945hx/hardware-configuration.nix
-          ./system/gnome.nix
+          ./system/cosmic.nix
           ./system/apps.nix
           ./system/vm-ui.nix
         ];
