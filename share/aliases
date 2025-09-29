@@ -17,7 +17,7 @@ if is_linux; then
     if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
       wl-paste --no-newline
     else
-      xsel --clipboard --output
+          xsel --clipboard --output
     fi
   }
 fi
@@ -28,6 +28,7 @@ if has_cmd code; then
   alias c='code'
   alias c.='code .'
   alias cs="code --password-store=gnome-libsecret"
+  alias fcode="flatpak run com.visualstudio.code --password-store=gnome-libsecret --enable-features=UseOzonePlatform --ozone-platform=wayland"
   alias dcode="XDG_CURRENT_DESKTOP=GNOME code" # distrobox code in kde
 fi
 
@@ -239,31 +240,6 @@ alias ......="../../../../../"
 if has_cmd flatpak; then
   alias fps="flatpak search"
   alias fpr="flatpak run"
-fi
-
-if [[ ! -v CONTAINER_ID ]] && has_cmd flatpak; then
-  FLATPAK_LIST=$(flatpak list)
-
-  alias_if_exists() {
-    local cmd="$1"
-    local flatpak_id="$2"
-
-    if ! has_cmd "$cmd"; then
-      if echo "$FLATPAK_LIST" | grep -q "$flatpak_id"; then
-        eval "alias $cmd='flatpak run $flatpak_id'"
-      fi
-    fi
-  }
-
-  alias_if_exists wezterm "org.wezfurlong.wezterm"
-  alias_if_exists clion "com.jetbrains.CLion"
-  alias_if_exists chrome "com.google.Chrome"
-  alias_if_exists code "com.visualstudio.code --password-store=gnome-libsecret"
-  alias_if_exists nvim "io.neovim.nvim"
-  alias_if_exists emacs "org.gnu.emacs"
-
-  unset FLATPAK_LIST
-  unset -f alias_if_exists
 fi
 
 if [[ -d "$HOME/.local/share/pnpm" ]]; then

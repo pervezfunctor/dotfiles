@@ -402,6 +402,8 @@ apps_install() {
   fpi me.iepure.devtoolbox
   fpi io.github.ronniedroid.concessio
 
+  flatpak-aliases-create
+
   slog "Flatpak apps installation done!"
 }
 

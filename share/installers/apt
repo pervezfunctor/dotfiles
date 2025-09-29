@@ -25,6 +25,7 @@ fzf_install() {
   if ! is_noble && ! is_bookworm; then
     si fzf
   else
+    sudo apt purge -y fzf
     warn "not installing fzf: too old version"
   fi
 }

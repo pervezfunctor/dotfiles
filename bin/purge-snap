@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ $EUID -ne 0 ]]; then
+   echo "[ERROR] This script must be run as sudo"
+   exit 1
+fi
+
+is_ubuntu() {
+    [[ -f /etc/os-release ]] && grep -qi 'ubuntu' /etc/os-release
+}
+
+if ! is_ubuntu; then
+    echo "[ERROR] This script is intended for Ubuntu systems only."
+    exit 1
+fi
+
+echo "[INFO] Listing installed snaps..."
+SNAPS=$(snap list 2>/dev/null | awk 'NR>1 {print $1}' || true)
+
+if [[ -n "$SNAPS" ]]; then
+    echo "[INFO] Removing installed snaps..."
+    # Remove snaps in reverse order to satisfy dependencies
+    for pkg in $SNAPS; do
+        echo "  -> Removing snap: $pkg"
+        snap remove --purge "$pkg" || true
+    done
+else
+    echo "[INFO] No snaps installed."
+fi
+
+echo "[INFO] Purging snapd package..."
+apt purge -y snapd || true
+
+echo "[INFO] Disabling and masking systemd services (if any)..."
+systemctl disable --now snapd.service snapd.socket snapd.seeded.service 2>/dev/null || true
+systemctl mask snapd 2>/dev/null || true
+
+echo "[INFO] Deleting leftover snap directories..."
+rm -rf ~/snap \
+       /snap \
+       /var/snap \
+       /var/lib/snapd \
+       /var/cache/snapd \
+       /var/log/snapd 2>/dev/null || true
+
+echo "[INFO] Creating APT preference to block snapd reinstallation..."
+mkdir -p /etc/apt/preferences.d
+cat <<'EOF' > /etc/apt/preferences.d/nosnap.pref
+Package: snapd
+Pin: release *
+Pin-Priority: -10
+EOF
+
+echo "[INFO] Refreshing package lists..."
+apt update -y
+
+echo "[SUCCESS] Snap has been completely removed and blocked from reinstalling."

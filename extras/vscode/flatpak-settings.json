@@ -65,5 +65,10 @@
   "workbench.iconTheme": "catppuccin-mocha",
   "dev.containers.dockerPath": "/app/tools/podman/bin/podman-remote",
   "dev.containers.dockerComposePath": "podman compose",
-  "dev.containers.dockerSocketPath": "/var/run/podman.sock"
+  "dev.containers.dockerSocketPath": "/var/run/podman.sock",
+  "remote.SSH.showLoginTerminal": true,
+  "remote.SSH.useLocalServer": false,
+  "remote.SSH.remotePlatform": {
+    "docker": "linux"
+  }
 }
