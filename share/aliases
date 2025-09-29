@@ -369,3 +369,43 @@ if ! has_cmd nix && has_cmd nix-portable; then
   alias nix-shell="nix-portable nix-shell"
   alias nix-dev="nix-portable nix develop"
 fi
+
+
+flatpak-alias() {
+  local cmd="$1"
+  local flatpak_id="$2"
+
+  if has_cmd "$cmd"; then
+    slog "$cmd already installed, skipping flatpak alias creation"
+    return 0
+  fi
+
+  if echo "$FLATPAK_LIST" | grep -qi "$flatpak_id"; then
+    echo "Creating alias for $cmd -> flatpak run $flatpak_id"
+    eval "alias $cmd='flatpak run $flatpak_id'"
+  fi
+
+}
+
+flatpak-aliases-create() {
+  if [[ -v CONTAINER_ID ]]; then
+    warn "In a container environment, skipping flatpak alias creation"
+    return 0
+  fi
+
+  if ! has_cmd flatpak; then
+    warn "flatpak not installed, skipping flatpak alias creation"
+    return 1
+  fi
+
+  FLATPAK_LIST=$(flatpak list --columns=application)
+
+  flatpak-alias wezterm "org.wezfurlong.wezterm" > /dev/null 2>&1
+  flatpak-alias clion "com.jetbrains.CLion" > /dev/null 2>&1
+  flatpak-alias chrome "com.google.Chrome" > /dev/null 2>&1
+  flatpak-alias code "com.visualstudio.code" > /dev/null 2>&1
+  flatpak-alias nvim "io.neovim.nvim" > /dev/null 2>&1
+  flatpak-alias emacs "org.gnu.emacs" > /dev/null 2>&1
+}
+
+flatpak-aliases-create

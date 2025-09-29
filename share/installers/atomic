@@ -406,8 +406,6 @@ apps_install() {
   fpi me.iepure.devtoolbox
   fpi io.github.ronniedroid.concessio
 
-  flatpak-aliases-create
-
   slog "Flatpak apps installation done!"
 }
 
@@ -955,13 +953,10 @@ fedora-atomic_mainstall() {
 
   slog "Installing apps"
   apps-slim_install
-  fpi org.gnu.emacs
 
   python_install
   is_gnome && gnome_confstall
   is_sway && sway_confstall
-
-  stowdf emacs-nano
 
   slog "Fedora Atomic Host setup done!"
 }

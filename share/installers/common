@@ -115,7 +115,7 @@ pixi-shell_install() {
 
     pis broot just lazydocker gdu nvim lazygit luarocks micro glances \
         cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi \
-        carapace direnv yq bat carapace shellcheck fd git-delta jq yq
+        carapace direnv yq bat carapace shellcheck fd git-delta jq yq go-shfmt
 
     local pkgs=()
     has_cmd ug || pkgs+=(ugrep)

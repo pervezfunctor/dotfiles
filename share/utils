@@ -1065,50 +1065,12 @@ _stop_sudo_keepalive() {
   SUDO_KEEPALIVE_PID=""
 }
 
-flatpak-alias() {
-  local cmd="$1"
-  local flatpak_id="$2"
-
-  if [[ -v CONTAINER_ID ]]; then
-    warn "In a container environment, skipping flatpak alias creation"
-    return 0
-  fi
-
-  if ! has_cmd flatpak; then
-    warn "flatpak not installed, skipping flatpak alias creation"
-    return 1
-  fi
-
-  local FLATPAK_LIST
-  FLATPAK_LIST=$(flatpak list --columns=application)
-
-  if has_cmd "$cmd"; then
-    slog "$cmd already installed, skipping flatpak alias creation"
-    return 0
-  fi
-
-  if echo "$FLATPAK_LIST" | grep -qi "$flatpak_id"; then
-    echo "Creating alias for $cmd -> flatpak run $flatpak_id"
-    eval "alias $cmd='flatpak run $flatpak_id'"
-  fi
-
-}
-
 password-ssh-config() {
   if ! sudo sed -i -E 's/^#?PasswordAuthentication[[:space:]]+(no|yes)/PasswordAuthentication yes/' /etc/ssh/sshd_config; then
       echo 'PasswordAuthentication yes' | sudo tee -a /etc/ssh/sshd_config >/dev/null
   fi
 
   sudo systemctl restart ssh || sudo systemctl restart sshd
-}
-
-flatpak-aliases-create() {
-  flatpak-alias wezterm "org.wezfurlong.wezterm"
-  flatpak-alias clion "com.jetbrains.CLion"
-  flatpak-alias chrome "com.google.Chrome"
-  flatpak-alias code "com.visualstudio.code"
-  flatpak-alias nvim "io.neovim.nvim"
-  flatpak-alias emacs "org.gnu.emacs"
 }
 
 keep_sudo_running() {
