@@ -301,18 +301,14 @@ dev-work-full_mainstall() {
 }
 
 dbox-docker-dev_mainstall() {
-  is_ubuntu || err_exit "This script is only for Ubuntu"
+  is_distrobox || err_exit "This script is only for Ubuntu distrobox container"
+  is_ubuntu || err_exit "This script is only for Ubuntu distrobox container"
   has_cmd docker || err_exit "This script requires docker"
 
+  base_mainstall
+  si openssh-server
+  password-ssh-config
   docker_confstall
-
-  min_mainstall
-  si firefox gnome-keyring wl-clipboard libsecret
-
-  starship_install
-  vscode_groupstall
-
-  has_cmd zsh && zsh_confstall
 }
 
 dbox-dev_mainstall() {
