@@ -56,6 +56,7 @@
       ]
     }
   },
+  "terminal.integrated.defaultProfile.linux": "bash",
   "editor.minimap.enabled": false,
   "git.autofetch": true,
   "window.commandCenter": true,
