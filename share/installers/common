@@ -273,11 +273,6 @@ tmux_confstall() {
 }
 
 vscode_extensions_from_file() {
-    if ! has_cmd code && ! has_cmd code-insiders; then
-        warn "'code' or 'code-insiders' not found, skipping vscode extensions installation."
-        return 1
-    fi
-
     local extensions_file="$1"
 
     if ! file_exists "$extensions_file"; then
