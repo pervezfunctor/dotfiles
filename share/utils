@@ -1103,12 +1103,12 @@ password-ssh-config() {
 }
 
 flatpak-aliases-create() {
-  flatpak_alias wezterm "org.wezfurlong.wezterm"
-  flatpak_alias clion "com.jetbrains.CLion"
-  flatpak_alias chrome "com.google.Chrome"
-  flatpak_alias code "com.visualstudio.code"
-  flatpak_alias nvim "io.neovim.nvim"
-  flatpak_alias emacs "org.gnu.emacs"
+  flatpak-alias wezterm "org.wezfurlong.wezterm"
+  flatpak-alias clion "com.jetbrains.CLion"
+  flatpak-alias chrome "com.google.Chrome"
+  flatpak-alias code "com.visualstudio.code"
+  flatpak-alias nvim "io.neovim.nvim"
+  flatpak-alias emacs "org.gnu.emacs"
 }
 
 keep_sudo_running() {

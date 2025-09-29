@@ -330,7 +330,7 @@ vscode-flatpak_confstall() {
   smd ~/.var/app/com.visualstudio.code/config/Code/User
   safe-cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
 
-  vscode-extensions_confstall
+  vscode-extensions_install
 
   slog "vscode flatpak config done!"
 }
@@ -799,6 +799,7 @@ generic-ct_mainstall() {
 
   starship_install
   bash_confstall
+  git_confstall
 }
 
 generic_mainstall() {
