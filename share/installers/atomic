@@ -325,12 +325,14 @@ gnome_confstall() {
 vscode-flatpak_confstall() {
   slog "vscode flatpak config"
 
+  flatpak-alias code com.visualstudio.code
+
   smd ~/.var/app/com.visualstudio.code/config/Code/User
   safe-cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
 
   vscode-extensions_confstall
 
-  slog "vscode fkatpak config done!"
+  slog "vscode flatpak config done!"
 }
 
 vscode-flatpak_install() {
