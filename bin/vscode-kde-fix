@@ -1,0 +1,4 @@
+flatpak override --user com.visualstudio.code --filesystem=xdg-run/kwallet
+flatpak override --user com.visualstudio.code --talk-name=org.kde.kwalletd6
+flatpak override --user com.visualstudio.code --env=KDE_SESSION_VERSION=6
+flatpak override --user com.visualstudio.code --env=XDG_CURRENT_DESKTOP=KDE
