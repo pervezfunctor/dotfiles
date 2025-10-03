@@ -67,7 +67,7 @@ brew-shell_install() {
 
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
         atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi \
-        ollama carapace lazygit eza fd luarocks
+        ollama carapace lazygit eza fd luarocks runme act
 
     local pkgs=()
 

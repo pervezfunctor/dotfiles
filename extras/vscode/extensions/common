@@ -6,6 +6,7 @@ codezombiech.gitignore
 docker.docker
 donjayamanne.githistory
 github.github-vscode-theme
+github.vscode-github-actions
 gruntfuggly.todo-tree
 hangxingliu.vscode-systemd-support
 jnoortheen.nix-ide
@@ -39,7 +40,9 @@ redhat.vscode-yaml
 rogalmic.bash-debug
 ryanluker.vscode-coverage-gutters
 sainnhe.everforest
+SanjulaGanepola.github-local-actions
 sclu1034.justfile
+stateful.runme
 tamasfe.even-better-toml
 thenuprojectcontributors.vscode-nushell-lang
 timonwong.shellcheck

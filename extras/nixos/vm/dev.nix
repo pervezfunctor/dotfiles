@@ -4,6 +4,7 @@
   nixpkgs.config.allowUnfree = true;
 
   environment.systemPackages = with pkgs; [
+    act
     bat
     curl
     delta
@@ -32,6 +33,7 @@
     procs
     ptyxis
     ripgrep
+    runme
     shellcheck
     shfmt
     stow
