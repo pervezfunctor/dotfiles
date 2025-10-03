@@ -1526,3 +1526,65 @@ bootstrap() {
   # shellcheck disable=SC2164
   cd "$curdir" || cd
 }
+
+ubuntu_version() {
+  [[ -f /etc/os-release ]] || return 1
+  # shellcheck disable=SC1091
+  . /etc/os-release
+
+  if is_ubuntu && [[ -n "${VERSION_ID:-}" ]]; then
+    echo "${VERSION_ID}"
+    return 0
+  fi
+
+  return 1
+}
+
+ubuntu_major_minor_version() {
+  local major
+  major=$(ubuntu_major_version)
+  local minor
+  minor=$(ubuntu_minor_version)
+
+  if [[ -n "$major" && -n "$minor" ]]; then
+    echo "$major $minor"
+  fi
+}
+
+ubuntu_major_version() {
+  local version
+  version=$(ubuntu_version)
+  [[ -n "$version" ]] && echo "${version%%.*}"
+}
+
+ubuntu_minor_version() {
+  local version
+  version=$(ubuntu_version)
+  [[ -n "$version" ]] && echo "${version#*.}" | cut -d'.' -f1
+}
+
+debian_version() {
+  [[ -f /etc/os-release ]] || return 1
+  # shellcheck disable=SC1091
+  . /etc/os-release
+
+  if is_debian && [[ -n "${VERSION_ID:-}" ]]; then
+    echo "${VERSION_ID%%.*}"
+    return 0
+  fi
+
+  return 1
+}
+
+fedora_version() {
+  [[ -f /etc/os-release ]] || return 1
+  # shellcheck disable=SC1091
+  . /etc/os-release
+
+  if is_fedora && [[ -n "${VERSION_ID:-}" ]]; then
+    echo "${VERSION_ID%%.*}"
+    return 0
+  fi
+
+  return 1
+}
