@@ -372,40 +372,95 @@ fi
 
 
 flatpak-alias() {
+  if [[ "$1" == "--quiet" ]]; then
+    local _quiet=1
+    shift
+  fi
+
   local cmd="$1"
   local flatpak_id="$2"
 
+  if [[ -z "$cmd" ]]; then
+    [[ -z "$_quiet" ]] && echo "❌ Command name is required" >&2
+    return 2
+  fi
+
+  if [[ -z "$flatpak_id" ]]; then
+    [[ -z "$_quiet" ]] && echo "❌ Flatpak ID is required" >&2
+    return 3
+  fi
+
+  if ! has_cmd flatpak; then
+    [[ -z "$_quiet" ]] && echo "❌ flatpak command not found" >&2
+    return 4
+  fi
+
   if has_cmd "$cmd"; then
-    slog "$cmd already installed, skipping flatpak alias creation"
+    [[ -z "$_quiet" ]] && echo "⚠️ $cmd already exists, skipping flatpak alias creation" >&2
+    return 5
+  fi
+
+  if [[ -z "${FLATPAK_LIST:-}" ]]; then
+    if ! FLATPAK_LIST=$(flatpak list --columns=application 2>/dev/null); then
+      [[ -z "$_quiet" ]] && echo "❌ Failed to retrieve flatpak application list" >&2
+      return 6
+    fi
+  fi
+
+  if echo "$FLATPAK_LIST" | grep -q "^${flatpak_id}$"; then
+    [[ -z "$_quiet" ]] && echo "✨ Creating alias for $cmd -> flatpak run $flatpak_id"
+    local alias_value
+    alias_value=$(printf 'flatpak run %s' "$flatpak_id")
+    if ! alias "$cmd"="$alias_value"; then
+      [[ -z "$_quiet" ]] && echo "❌ Failed to create alias for $cmd" >&2
+      return 7
+    fi
     return 0
+  else
+    [[ -z "$_quiet" ]] && echo "⚠️ Flatpak application '$flatpak_id' not installed, skipping alias creation for $cmd" >&2
+    return 8
   fi
-
-  if echo "$FLATPAK_LIST" | grep -qi "$flatpak_id"; then
-    echo "Creating alias for $cmd -> flatpak run $flatpak_id"
-    eval "alias $cmd='flatpak run $flatpak_id'"
-  fi
-
 }
 
 flatpak-aliases-create() {
   if [[ -v CONTAINER_ID ]]; then
-    warn "In a container environment, skipping flatpak alias creation"
+    warn "📦 In a container environment, skipping flatpak alias creation"
     return 0
   fi
 
   if ! has_cmd flatpak; then
-    warn "flatpak not installed, skipping flatpak alias creation"
+    warn "📦 flatpak not installed, skipping flatpak alias creation"
     return 1
   fi
 
-  FLATPAK_LIST=$(flatpak list --columns=application)
+  if ! FLATPAK_LIST=$(flatpak list --columns=application 2>/dev/null); then
+    warn "❌ Failed to retrieve flatpak application list"
+    return 1
+  fi
 
-  flatpak-alias wezterm "org.wezfurlong.wezterm" > /dev/null 2>&1
-  flatpak-alias clion "com.jetbrains.CLion" > /dev/null 2>&1
-  flatpak-alias chrome "com.google.Chrome" > /dev/null 2>&1
-  flatpak-alias code "com.visualstudio.code" > /dev/null 2>&1
-  flatpak-alias nvim "io.neovim.nvim" > /dev/null 2>&1
-  flatpak-alias emacs "org.gnu.emacs" > /dev/null 2>&1
+  local aliases=(
+    "wezterm:org.wezfurlong.wezterm"
+    "clion:com.jetbrains.CLion"
+    "chrome:com.google.Chrome"
+    "code:com.visualstudio.code"
+    "nvim:io.neovim.nvim"
+    "emacs:org.gnu.emacs"
+  )
+
+  local failed_aliases=()
+
+  for alias_def in "${aliases[@]}"; do
+    IFS=':' read -r cmd flatpak_id <<< "$alias_def"
+    if ! flatpak-alias --quiet "$cmd" "$flatpak_id"; then
+      failed_aliases+=("$cmd")
+    fi
+  done
+
+  if [[ ${#failed_aliases[@]} -gt 0 ]]; then
+    warn "❌ Failed to create aliases for: ${failed_aliases[*]}"
+  fi
+
+  unset FLATPAK_LIST
 }
 
 flatpak-aliases-create
