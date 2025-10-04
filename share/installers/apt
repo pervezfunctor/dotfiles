@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -23,7 +23,7 @@ function si() {
 
 is_legacy_apt() {
   # Returns true if running on Ubuntu < 25.04 or Debian < 13
-   [[ "$(ubuntu_major_version)" -lt 25 ]] || [[ "$(debian_version)" -lt 13 ]]
+  [[ "$(ubuntu_major_version)" -lt 25 ]] || [[ "$(debian_version)" -lt 13 ]]
 }
 
 fzf_install() {

@@ -12,6 +12,7 @@
     nautilus
     refine
     gearlever
+    warehouse
   ];
 
   environment.sessionVariables = {
@@ -65,7 +66,6 @@
   #   gnome-contacts
   #   gnome-initial-setup
   # ];
-
 
   # services.gnome.core-apps.enable = false;
   # services.gnome.core-developer-tools.enable = false;
