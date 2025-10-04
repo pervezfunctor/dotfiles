@@ -41,7 +41,7 @@ main() {
             "${1}_groupstall"
             return 0
         else
-            err_exit "No such installer: $1"
+            die "No such installer: $1"
         fi
     fi
 

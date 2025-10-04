@@ -184,7 +184,7 @@ commands_available() {
 }
 
 check_commands() {
-  commands_available "$@" || err_exit "Missing required commands, quitting"
+  commands_available "$@" || die "Missing required commands, quitting"
 }
 
 dirs_available() {
@@ -204,7 +204,7 @@ dirs_available() {
 }
 
 check_dirs() {
-  dirs_available "$@" || err_exit "Missing required directories, quitting"
+  dirs_available "$@" || die "Missing required directories, quitting"
 }
 
 create-ublue-nix-mount() {

@@ -13,7 +13,7 @@ update_packages() {
     slog "Updating Arch"
 
     if ! sudo pacman -Syu --noconfirm --quiet; then
-        err_exit "pacman update/upgrade failed, quitting"
+        die "pacman update/upgrade failed, quitting"
     fi
 }
 
@@ -23,7 +23,7 @@ aur() {
     elif has_cmd yay; then
         yay -S --noconfirm "$@"
     else
-        err_exit "paru or yay not installed, cannot install $1"
+        die "paru or yay not installed, cannot install $1"
     fi
 }
 

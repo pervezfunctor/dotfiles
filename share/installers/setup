@@ -29,7 +29,7 @@ main() {
     if has_cmd min_mainstall; then
       min_mainstall
     else
-      err_exit "unknown or unsupported $* options"
+      die "unknown or unsupported $* options"
     fi
   fi
   common-installer "$@"

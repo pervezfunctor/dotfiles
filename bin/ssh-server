@@ -12,7 +12,7 @@ else
 fi
 
 # Check if the script is run as root
-[[ "$(id -u)" != "0" ]] && err_exit "This script must be run as root" 1>&2
+[[ "$(id -u)" != "0" ]] && die "This script must be run as root" 1>&2
 
 # Determine the package manager
 if is_apt; then
@@ -22,7 +22,7 @@ elif is_rh; then
     pkg_manager="dnf"
     ssh_service="sshd"
 else
-    err_exit "Unsupported system"
+    die "Unsupported system"
 fi
 
 # Check if SSH server is installed

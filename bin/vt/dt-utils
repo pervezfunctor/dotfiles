@@ -12,7 +12,7 @@ dt_exists() {
 
 dt_check_exists() {
   local container_name="$1"
-  dt_exists "$container_name" || err_exit "Container '$container_name' not found"
+  dt_exists "$container_name" || die "Container '$container_name' not found"
 }
 
 dt_list() {

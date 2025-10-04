@@ -14,7 +14,7 @@ source_installers &>/dev/null
 if file_exists "$1"; then
   source "$1"
 else
-  err_exit "script $1 not found"
+  die "script $1 not found"
 fi
 
 cmd_check core_install

@@ -270,7 +270,7 @@ success() {
   printf '\r\033[2K  [ \033[00;32mOK\033[0m ] %s\n' "$*"
 }
 
-err_exit() {
+die() {
   fail "$*"
   sleep 3
   exit 1
@@ -988,7 +988,7 @@ yes_or_no() {
 
 pre_dir_check() {
   for dir in "$@"; do
-    [ -d "$dir" ] || err_exit "$dir does not exist, quitting"
+    [ -d "$dir" ] || die "$dir does not exist, quitting"
   done
 }
 
@@ -1168,13 +1168,13 @@ dotfiles_install() {
     has_cmd pkgx && eval "$(pkgx +git)"
   fi
 
-  has_cmd git || err_exit "git not installed, cannot clone dotfiles repository"
+  has_cmd git || die "git not installed, cannot clone dotfiles repository"
 
   slog "Cloning dotfiles to $DOT_DIR"
   clone-update https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 
   if ! dir_exists "$DOT_DIR"; then
-    err_exit "Failed to clone dotfiles repository. Quitting."
+    die "Failed to clone dotfiles repository. Quitting."
   fi
 }
 
@@ -1440,7 +1440,7 @@ common-installer() {
     elif fn_exists "${1}"; then
       "${1}"
     else
-      err_exit "No such installer: $1"
+      die "No such installer: $1"
     fi
     shift
   done
@@ -1502,14 +1502,14 @@ source_installers() {
 
 bootstrap() {
   check_bash
-  is_root_user && err_exit "This script must not be run as root. DO NOT use sudo."
+  is_root_user && die "This script must not be run as root. DO NOT use sudo."
 
   environs
 
   curdir=$(pwd)
 
   slog "Bootstrapping, switching to directory $HOME"
-  cd "$HOME" || err_exit "could not cd to $HOME"
+  cd "$HOME" || die "could not cd to $HOME"
 
   slog "Removing old logs"
   rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log 2>/dev/null

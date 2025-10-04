@@ -175,7 +175,7 @@ permissive_selinux() {
   if [[ "$(getenforce)" == "Permissive" ]]; then
     slog "Successfully set SELinux to permissive mode."
   else
-    err_exit "Failed to set SELinux to permissive mode. Quitting."
+    die "Failed to set SELinux to permissive mode. Quitting."
   fi
 }
 
@@ -301,9 +301,9 @@ dev-work-full_mainstall() {
 }
 
 dbox-docker-dev_mainstall() {
-  is_distrobox || err_exit "This script is only for Ubuntu distrobox container"
-  is_ubuntu || err_exit "This script is only for Ubuntu distrobox container"
-  has_cmd docker || err_exit "This script requires docker"
+  is_distrobox || die "This script is only for Ubuntu distrobox container"
+  is_ubuntu || die "This script is only for Ubuntu distrobox container"
+  has_cmd docker || die "This script requires docker"
 
   base_mainstall
   si openssh-server
@@ -337,45 +337,45 @@ dbox-dev-atomic_mainstall() {
 nixos_mainstall() {
   local cfg_dir=~/nixos-config
 
-  dir_exists "$cfg_dir" && err_exit "$cfg_dir already exists, skipping nixos installation"
+  dir_exists "$cfg_dir" && die "$cfg_dir already exists, skipping nixos installation"
 
   local flake_url="${ILM_BASE_URL}/extras/nixos/vm/flake.nix"
   local dev_url="${ILM_BASE_URL}/extras/nixos/vm/dev.nix"
 
   if [ -d "$cfg_dir" ]; then
-    err_exit "nixos-config already exists, skipping nixos installation"
+    die "nixos-config already exists, skipping nixos installation"
   fi
 
   slog "Copying /etc/nixos to $cfg_dir..."
   if ! cp -r /etc/nixos "$cfg_dir"; then
-    err_exit "Failed to copy /etc/nixos"
+    die "Failed to copy /etc/nixos"
   fi
 
   slog "Fetching flake.nix..."
   if ! curl -fsSL "$flake_url" -o "$cfg_dir/flake.nix"; then
-    err_exit "Failed to download flake.nix"
+    die "Failed to download flake.nix"
   fi
 
   slog "Fetching dev.nix..."
   if ! curl -fsSL "$dev_url" -o "$cfg_dir/dev.nix"; then
-    err_exit "Failed to download dev.nix"
+    die "Failed to download dev.nix"
   fi
 
   slog "Ensuring dev.nix is imported..."
   if [[ ! -f "$cfg_dir/configuration.nix" ]]; then
-    err_exit "configuration.nix not found"
+    die "configuration.nix not found"
   fi
   if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
     sed -i '/^[[:space:]]*\.\/hardware-configuration\.nix/ a\    ./dev.nix' "$cfg_dir/configuration.nix"
   fi
 
   if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
-    err_exit "Failed to add dev.nix to configuration.nix"
+    die "Failed to add dev.nix to configuration.nix"
   fi
 
   slog "Rebuilding system with flake..."
   if ! sudo nixos-rebuild switch --flake "$cfg_dir#$(hostname)"; then
-    err_exit "nixos-rebuild failed"
+    die "nixos-rebuild failed"
   fi
 
   dotfiles_install
@@ -387,23 +387,23 @@ nixos-wsl_mainstall() {
   local cfg_dir=~/nixos-config
 
   if [ -d "$cfg_dir" ]; then
-    err_exit "nixos-config already exists, skipping nixos installation"
+    die "nixos-config already exists, skipping nixos installation"
   fi
 
   nix_dotfiles_install
 
   slog "Copying nixos-wsl config to $cfg_dir..."
   if ! cp -r "$DOT_DIR/extras/nixos-wsl/nixos" "$cfg_dir"; then
-    err_exit "Failed to copy nixos-wsl config"
+    die "Failed to copy nixos-wsl config"
   fi
   slog "Copying nix.conf to ~/.config..."
   if ! cp -r "$DOT_DIR/extras/nixos-wsl/nix" "$HOME/.config"; then
-    err_exit "Failed to copy nix.conf"
+    die "Failed to copy nix.conf"
   fi
 
   slog "Rebuilding system with flake..."
   if ! sudo nixos-rebuild switch --flake "$cfg_dir\#$(hostname)"; then
-    err_exit "nixos-rebuild failed"
+    die "nixos-rebuild failed"
   fi
 
   slog "nixos-wsl installation done!"

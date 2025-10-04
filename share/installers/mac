@@ -151,18 +151,18 @@ nix-darwin_mainstall() {
   min_mainstall
   nix_install
 
-  dir_exists "$DOT_DIR/extras/home-manager" || err_exit "home-manager config folder does not exist, cannot install home-manager."
+  dir_exists "$DOT_DIR/extras/home-manager" || die "home-manager config folder does not exist, cannot install home-manager."
 
   local cfg_dir=~/nix-darwin-config
 
   slog "Copying home-manager config to $cfg_dir..."
   if ! cp -r "$DOT_DIR/extras/home-manager" "$cfg_dir"; then
-    err_exit "Failed to copy home-manager config"
+    die "Failed to copy home-manager config"
   fi
 
   slog "Rebuilding system with flake..."
   if ! sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake "$DOT_DIR/extras/home-manager#mac"; then
-    err_exit "nix-darwin-rebuild failed"
+    die "nix-darwin-rebuild failed"
   fi
 
   touch ~/.zshrc

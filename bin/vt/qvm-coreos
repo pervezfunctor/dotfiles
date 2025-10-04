@@ -74,7 +74,7 @@ parse_args() {
 
 check_prerequisites() {
   for cmd in curl jq qemu-system-x86_64 coreos-installer unxz qemu-img; do
-    has_cmd "$cmd" || err_exit "Install $cmd first"
+    has_cmd "$cmd" || die "Install $cmd first"
   done
 }
 

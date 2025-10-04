@@ -723,7 +723,7 @@ ublue_common_install() {
   if is_ublue && has_cmd git && has_cmd brew && has_cmd python3 && has_cmd code && has_cmd flatpak && has_cmd distrobox; then
     slog "Prerequisites met, installing uBlue OS"
   else
-    err_exit "Prerequisites not met. You need Aurora/Bluefin/Bazzite with git, just, brew, code, flatpak, distrobox and python3 installed."
+    die "Prerequisites not met. You need Aurora/Bluefin/Bazzite with git, just, brew, code, flatpak, distrobox and python3 installed."
   fi
 
   dotfiles_install
@@ -751,7 +751,7 @@ ublue_mainstall() {
 }
 
 ensure_nix_mount() {
-  [[ -d /nix ]] || err_exit "/nix does not exist, cannot mount nix store"
+  [[ -d /nix ]] || die "/nix does not exist, cannot mount nix store"
 
   local subvol_path="/home/nix"
   local mount_point="/nix"
@@ -760,7 +760,7 @@ ensure_nix_mount() {
     slog "Subvolume $subvol_path already exists, skipping creation"
   else
     sudo btrfs subvolume create "$subvol_path" || {
-      err_exit "Failed to create subvolume at $subvol_path"
+      die "Failed to create subvolume at $subvol_path"
     }
   fi
 
@@ -772,7 +772,7 @@ ensure_nix_mount() {
   sudo mount -o subvol="$(basename "$subvol_path")" \
     "$(df --output=source "$(dirname "$subvol_path")" | tail -1)" \
     "$mount_point" || {
-    err_exit "Failed to mount $subvol_path at $mount_point"
+    die "Failed to mount $subvol_path at $mount_point"
   }
 }
 
@@ -783,7 +783,7 @@ bluenix_mainstall() {
 }
 
 generic-ct_mainstall() {
-  has_cmd curl || has_cmd wget || err_exit "Install curl and run this script again."
+  has_cmd curl || has_cmd wget || die "Install curl and run this script again."
 
   pixi_install
   pis git curl wget
@@ -855,7 +855,7 @@ rpm-ostree-libvirt_groups_setup() {
 }
 
 rpm-ostree_install() {
-  has_cmd rpm-ostree || err_exit "This script is only for rpm-ostree based systems"
+  has_cmd rpm-ostree || die "This script is only for rpm-ostree based systems"
 
   slog "Installing packages"
 
@@ -925,7 +925,7 @@ rpm-ostree_mainstall() {
 }
 
 fedora-atomic-tbox_mainstall() {
-  is_std_atomic || err_exit "This script is only for Atomic Host"
+  is_std_atomic || die "This script is only for Atomic Host"
 
   slog "Fedora Atomic Host setup"
 
@@ -943,7 +943,7 @@ fedora-atomic-tbox_mainstall() {
 }
 
 fedora-atomic_mainstall() {
-  is_std_atomic || err_exit "This script is only for Atomic Host"
+  is_std_atomic || die "This script is only for Atomic Host"
 
   slog "Fedora Atomic Host setup"
 
@@ -962,7 +962,7 @@ fedora-atomic_mainstall() {
 }
 
 fedora-layered_mainstall() {
-  is_std_atomic || err_exit "This script is only for Atomic Host"
+  is_std_atomic || die "This script is only for Atomic Host"
 
   slog "Fedora Atomic Host setup"
 

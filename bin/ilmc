@@ -54,7 +54,7 @@ ilmc() {
         if fn_exists "${1}_confstall"; then
             "${1}_confstall"
         else
-            err_exit "No such config: $1"
+            die "No such config: $1"
         fi
         shift
     done

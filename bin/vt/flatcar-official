@@ -22,7 +22,7 @@ main() {
   fi
 
   for cmd in wget gpg; do
-    has_cmd "$cmd" || err_exit "Install $cmd first"
+    has_cmd "$cmd" || die "Install $cmd first"
   done
 
   local IGNITION_FILE

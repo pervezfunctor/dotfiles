@@ -12,21 +12,21 @@ else
 fi
 
 # Check if the script is run as root
-[[ $EUID -ne 0 ]] && err_exit "This script must be run as root" 1>&2
+[[ $EUID -ne 0 ]] && die "This script must be run as root" 1>&2
 
 # Check if username is provided
-[[ "$#" -ne 1 ]] && err_exit "Usage: $0 username" 1>&2
+[[ "$#" -ne 1 ]] && die "Usage: $0 username" 1>&2
 
 USERNAME=$1
 
 if id "$USERNAME" &>/dev/null; then
     echo "User '$USERNAME' already exists." >&2
     echo "Setting password for existing user..."
-    passwd "$USERNAME" || err_exit "Failed to set password"
+    passwd "$USERNAME" || die "Failed to set password"
 elif useradd -m "$USERNAME"; then
     slog "User created successfully"
 else
-    err_exit "Failed to create user"
+    die "Failed to create user"
 fi
 
 # Determine the sudo group based on the system
@@ -40,7 +40,7 @@ elif is_tw; then
     zypper install -y sudo
     SUDO_GROUP="wheel"
 else
-    err_exit "Unsupported system"
+    die "Unsupported system"
 fi
 
 if ! getent group "$SUDO_GROUP" >/dev/null; then

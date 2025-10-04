@@ -45,7 +45,7 @@ update_packages() {
   slog "Updating packages..."
 
   if ! { sudo apt-get -qq update && sudo apt-get -qq upgrade -y; }; then
-    err_exit "apt-get update/upgrade failed, quitting"
+    die "apt-get update/upgrade failed, quitting"
   fi
 
   slog "Updating packages done!"

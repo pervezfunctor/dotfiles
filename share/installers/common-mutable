@@ -142,13 +142,13 @@ nix_groupstall() {
 }
 
 home-manager_groupstall() {
-  is_nixos && err_exit "this installation is not for nixos, Quitting."
-  has_cmd home-manager && err_exit "home-manager already installed"
+  is_nixos && die "this installation is not for nixos, Quitting."
+  has_cmd home-manager && die "home-manager already installed"
 
   nix_install
 
-  dir_exists "$DOT_DIR" || err_exit "$DOT_DIR doesn't exist, cannot install home-manager."
-  dir_exists ~/home-manager-config && err_exit "home-manager-config already exists, skipping installation"
+  dir_exists "$DOT_DIR" || die "$DOT_DIR doesn't exist, cannot install home-manager."
+  dir_exists ~/home-manager-config && die "home-manager-config already exists, skipping installation"
 
   cp -r "$DOT_DIR/extras/home-manager" ~/home-manager-config
   hms shell-full

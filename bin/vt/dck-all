@@ -10,7 +10,7 @@ source "$(dirname "$0")/all-utils"
 DCK_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
 
 check_dck() {
-  has_cmd docker || err_exit "docker is not installed. Please install it first."
+  has_cmd docker || die "docker is not installed. Please install it first."
 }
 
 dck_exists() {

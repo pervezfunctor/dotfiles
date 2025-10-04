@@ -54,7 +54,7 @@ EOF
 install_distrobox() {
     slog "Installing distrobox using ilmi..."
 
-    has_cmd ilmi || err_exit "ilmi not found. Quitting"
+    has_cmd ilmi || die "ilmi not found. Quitting"
 
     ilmi ct
 

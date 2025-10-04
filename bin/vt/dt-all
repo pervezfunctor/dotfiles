@@ -14,8 +14,8 @@ dt_exists() {
 }
 
 check_prerequisites() {
-  has_cmd distrobox || err_exit "distrobox is not installed. Please install it first."
-  has_cmd dt || err_exit "dt is not in PATH."
+  has_cmd distrobox || die "distrobox is not installed. Please install it first."
+  has_cmd dt || die "dt is not in PATH."
 }
 
 create_all() {

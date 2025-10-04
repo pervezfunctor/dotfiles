@@ -10,7 +10,7 @@ update_packages() {
     slog "Updating Alpine"
 
     if ! { sudo apk update && sudo apk upgrade; }; then
-        err_exit "apk update/upgrade failed, quitting"
+        die "apk update/upgrade failed, quitting"
     fi
 }
 

@@ -32,7 +32,7 @@ EOF
 }
 
 check_distrobox() {
-    has_cmd distrobox || err_exit "distrobox is not installed. Please install it first."
+    has_cmd distrobox || die "distrobox is not installed. Please install it first."
 }
 
 dt_exists() {
