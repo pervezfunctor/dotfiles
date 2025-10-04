@@ -525,7 +525,7 @@ dbox_root_list() {
 }
 
 dbox_root_exists() {
-  distrobox list | grep -Fqx -- "${CONTAINER_NAME}"
+  distrobox list --root | grep -Fqx -- "${CONTAINER_NAME}"
 }
 
 dbox-root-ip() {
