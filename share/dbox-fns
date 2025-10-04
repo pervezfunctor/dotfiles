@@ -521,7 +521,7 @@ dbox-static-ip() {
 }
 
 dbox-list() {
-  distrobox list --no-color | tail -n +2 | awk '{print $1}' || distrobox list --root --no-color | tail -n +2 | awk '{print $1}'
+  distrobox list --no-color | tail -n +2 | awk '{print $3}' || distrobox list --root --no-color | tail -n +2 | awk '{print $3}'
 }
 
 dbox_exists() {
