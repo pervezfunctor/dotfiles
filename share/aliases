@@ -17,7 +17,7 @@ if is_linux; then
     if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
       wl-paste --no-newline
     else
-          xsel --clipboard --output
+      xsel --clipboard --output
     fi
   }
 fi
@@ -417,17 +417,17 @@ flatpak-alias() {
     fi
   fi
 
-  if echo "$FLATPAK_LIST" | grep -q "^${flatpak_id}$"; then
+  if printf '%s\n' "$FLATPAK_LIST" | grep -Fxq -- "$flatpak_id"; then
     [[ -z "$_quiet" ]] && echo "✨ Creating alias for $cmd -> flatpak run $flatpak_id"
-    local alias_value
-    alias_value=$(printf 'flatpak run %s' "$flatpak_id")
-    if ! alias "$cmd"="$alias_value"; then
+    local alias_def
+    printf -v alias_def "%s=%q" "$cmd" "flatpak run $flatpak_id"
+    if ! alias "$alias_def"; then
       [[ -z "$_quiet" ]] && echo "❌ Failed to create alias for $cmd" >&2
       return 7
     fi
     return 0
   else
-    [[ -z "$_quiet" ]] && echo "⚠️ Flatpak application '$flatpak_id' not installed, skipping alias creation for $cmd" >&2
+    [[ -z "$_quiet" ]] && echo "⚠️ Flatpak app '$flatpak_id' not installed, skipping alias creation for $cmd" >&2
     return 8
   fi
 }
@@ -465,7 +465,7 @@ flatpak-aliases-create() {
   local failed_aliases=()
 
   for alias_def in "${aliases[@]}"; do
-    IFS=':' read -r cmd flatpak_id <<< "$alias_def"
+    IFS=':' read -r cmd flatpak_id <<<"$alias_def"
     if ! flatpak-alias --quiet "$cmd" "$flatpak_id"; then
       failed_aliases+=("$cmd")
     fi
