@@ -183,6 +183,95 @@ if has_cmd distrobox; then
   alias dboxl='distrobox list'
   alias dboxr='distrobox run'
   alias dboxc='distrobox create'
+  alias dboxs='distrobox stop'
+  alias dboxu='distrobox upgrade'
+  alias dboxrm='distrobox rm'
+
+  dboxrc() {
+    if [ -z "$2" ]; then
+      echo "Usage: dboxrc <container_name> <command>"
+      return 1
+    fi
+    local container="$1"
+    shift
+    distrobox run --name "$container" -- "$@"
+  }
+
+  dboxsa() {
+    local containers
+    containers=$(distrobox list --no-color | awk 'NR>1 && $3 == "Up" {print $2}')
+    for container in $containers; do
+      echo "Stopping $container..."
+      distrobox stop "$container"
+    done
+  }
+
+  # List containers with details
+  dboxld() {
+    distrobox list --no-color | column -t -s '|'
+  }
+
+  # Export app from container to host
+  dboxexp() {
+    if [ -z "$2" ]; then
+      echo "Usage: dboxexp <container_name> <app_command>"
+      return 1
+    fi
+    distrobox export --name "$1" --app "$2" --export-path "$HOME/.local/bin"
+  }
+
+  # Import app from host to container
+  dboximp() {
+    if [ -z "$2" ]; then
+      echo "Usage: dboximp <container_name> <app_command>"
+      return 1
+    fi
+    distrobox enter --name "$1" -- distrobox-export --app "$2" --export-path "$HOME/.local/bin"
+  }
+
+  dboxesh() {
+    local shell="${2:-bash}"
+    if [ -z "$1" ]; then
+      echo "Usage: dboxesh <container_name> [shell]"
+      return 1
+    fi
+    distrobox enter --name "$1" --additional-flags "--shell $shell"
+  }
+
+  dboxmount() {
+    if [ -z "$3" ]; then
+      echo "Usage: dboxmount <container_name> <host_path> <container_path>"
+      return 1
+    fi
+    distrobox enter --name "$1" --additional-flags "--volume $2:$3"
+  }
+
+  dboxbackup() {
+    if [ -z "$1" ]; then
+      echo "Usage: dboxbackup <container_name>"
+      return 1
+    fi
+    local backup_dir="${BOXES_DIR:-$HOME/.local/share/distrobox}/backups"
+    mkdir -p "$backup_dir"
+    echo "Backing up $1 to $backup_dir/$1.tar.gz"
+    distrobox stop "$1" 2>/dev/null
+    cd "${BOXES_DIR:-$HOME/.local/share/distrobox}" && tar -czf "$backup_dir/$1.tar.gz" "$1"
+  }
+
+  dboxrestore() {
+    if [ -z "$1" ]; then
+      echo "Usage: dboxrestore <container_name>"
+      return 1
+    fi
+    local backup_dir="${BOXES_DIR:-$HOME/.local/share/distrobox}/backups"
+    if [ -f "$backup_dir/$1.tar.gz" ]; then
+      cd "${BOXES_DIR:-$HOME/.local/share/distrobox}" && tar -xzf "$backup_dir/$1.tar.gz"
+      echo "Restored $1 from backup"
+    else
+      echo "Backup not found: $backup_dir/$1.tar.gz"
+      return 1
+    fi
+  }
 
   dboxd() {
     distrobox list | grep -q "$1" || return
@@ -193,12 +282,18 @@ if has_cmd distrobox; then
   alias rdboxl='distrobox list --root'
   alias rdboxr='distrobox run --root'
   alias rdboxc='distrobox create --root'
+  alias rdboxs='distrobox stop --root'
+  alias rdboxu='distrobox upgrade --root'
+  alias rdboxrm='distrobox rm --root'
+
   rdboxd() {
     distrobox list --root | grep -q "$1" || return
     distrobox rm --root "$@" && srm "${BOXES_DIR}/$1"
   }
 
+  # Host integration aliases
   [[ "${CONTAINER_ID}" != "" ]] && alias on-host='distrobox-host-exec'
+  [[ "${CONTAINER_ID}" != "" ]] && alias host-cmd='distrobox-host-exec'
 fi
 
 if has_cmd fastfetch; then
