@@ -180,8 +180,8 @@ dbox-docker-base() {
     --init \
     --unshare-all
 
-    dbox_exec "${CONTAINER_NAME}" --root sudo systemctl enable --now docker
-    dbox_exec "${CONTAINER_NAME}" --root sudo usermod -aG docker "$USER"
+  dbox_exec "${CONTAINER_NAME}" --root sudo systemctl enable --now docker
+  dbox_exec "${CONTAINER_NAME}" --root sudo usermod -aG docker "$USER"
 }
 
 dbox-docker-slim() {
@@ -199,7 +199,9 @@ dbox-docker() {
   local CONTAINER_NAME=${1:-docker}
   dbox-docker-slim "${CONTAINER_NAME}"
 
-  distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-docker-dev
+  if distrobox enter -nw --clean-path --root --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-docker-dev; then
+    ssh-copy-id "${USER}@$(dbox-root-ssh docker)"
+  fi
 }
 
 dbox-incus() {
@@ -554,18 +556,18 @@ dbox-root-ip() {
   fi
 
   case "${CONTAINER_ENGINE}" in
-    podman)
-      if ! IP_ADDRESS=$(sudo podman inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}"); then
-        echo "Error: Failed to inspect podman container '${CONTAINER_NAME}'" >&2
-        return 1
-      fi
-      ;;
-    docker)
-      if ! IP_ADDRESS=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}"); then
-        echo "Error: Failed to inspect docker container '${CONTAINER_NAME}'" >&2
-        return 1
-      fi
-      ;;
+  podman)
+    if ! IP_ADDRESS=$(sudo podman inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}"); then
+      echo "Error: Failed to inspect podman container '${CONTAINER_NAME}'" >&2
+      return 1
+    fi
+    ;;
+  docker)
+    if ! IP_ADDRESS=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}"); then
+      echo "Error: Failed to inspect docker container '${CONTAINER_NAME}'" >&2
+      return 1
+    fi
+    ;;
   esac
 
   if [[ -z "${IP_ADDRESS}" ]]; then
@@ -632,7 +634,7 @@ dbox-root-ssh-tui() {
       fi
       ((i++))
     fi
-  done <<< "${CONTAINER_LIST}"
+  done <<<"${CONTAINER_LIST}"
 
   CONTAINER_NAME=$(whiptail --title "Distrobox SSH" \
     --menu "Select a container to SSH into (as ${USER} on port ${PORT}):" \
@@ -677,6 +679,30 @@ dbox_root_list-ips() {
         printf "%-20s %-15s\n" "${CONTAINER_NAME}" "N/A"
       fi
     fi
-  done <<< "${CONTAINER_LIST}"
+  done <<<"${CONTAINER_LIST}"
 }
 
+vscode-dbox-root-ssh() {
+  local CONTAINER_NAME=${1:-docker}
+  local USER=${2:-$USER}
+  local PORT=${3:-22}
+
+  if [[ -z "${CONTAINER_NAME}" ]]; then
+    echo "Usage: vscode-dbox-root-ssh <container-name> [user] [port] [open-code] [pubkey] [known-dir] [strict-host-key-checking]" >&2
+    echo "Connect VS Code to a root distrobox container via SSH" >&2
+    return 1
+  fi
+
+  local CONTAINER_IP
+  if ! CONTAINER_IP=$(dbox-root-ip "${CONTAINER_NAME}"); then
+    echo "Error: Could not determine IP address for container '${CONTAINER_NAME}'" >&2
+    return 1
+  fi
+
+  if ! has_cmd code; then
+    echo "VS Code not found."
+  fi
+
+  echo "Connecting to ${CONTAINER_NAME} at ${CONTAINER_IP}:${PORT} as ${USER}..."
+  code --remote "ssh-remote+${USER}@${CONTAINER_IP}" # -- "~-container-${CONTAINER_NAME}"
+}
