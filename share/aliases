@@ -370,6 +370,16 @@ if ! has_cmd nix && has_cmd nix-portable; then
   alias nix-dev="nix-portable nix develop"
 fi
 
+quiet-echo() {
+  if [[ "$1" == "--quiet" ]]; then
+    local _quiet=1
+    shift
+  fi
+
+  if [[ -z "$_quiet" ]]; then
+    echo "$@"
+  fi
+}
 
 flatpak-alias() {
   if [[ "$1" == "--quiet" ]]; then
@@ -423,19 +433,24 @@ flatpak-alias() {
 }
 
 flatpak-aliases-create() {
+  # --quiet
+  if [[ "$1" == "--quiet" ]]; then
+    local _quiet=1
+  fi
+
   if [[ -v CONTAINER_ID ]]; then
-    warn "📦 In a container environment, skipping flatpak alias creation"
+    [[ -z "$_quiet" ]] && echo "📦 In a container environment, skipping flatpak alias creation"
     return 0
   fi
 
   if ! has_cmd flatpak; then
-    warn "📦 flatpak not installed, skipping flatpak alias creation"
+    [[ -z "$_quiet" ]] && echo "📦 flatpak not installed, skipping flatpak alias creation"
     return 1
   fi
 
   if ! FLATPAK_LIST=$(flatpak list --columns=application 2>/dev/null); then
-    warn "❌ Failed to retrieve flatpak application list"
-    return 1
+    [[ -z "$_quiet" ]] && echo "❌ Failed to retrieve flatpak application list"
+    return 2
   fi
 
   local aliases=(
@@ -457,10 +472,10 @@ flatpak-aliases-create() {
   done
 
   if [[ ${#failed_aliases[@]} -gt 0 ]]; then
-    warn "❌ Failed to create aliases for: ${failed_aliases[*]}"
+    [[ -z "$_quiet" ]] && echo "❌ Failed to create aliases for: ${failed_aliases[*]}"
   fi
 
   unset FLATPAK_LIST
 }
 
-flatpak-aliases-create
+flatpak-aliases-create --quiet
