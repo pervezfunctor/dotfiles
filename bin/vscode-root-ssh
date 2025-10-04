@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+
+# Connect VS Code (or plain SSH) to a ROOT distrobox container via its dynamic IP.
+# Works with Podman or Docker. Minimal, modular, and idempotent.
+
+set -euo pipefail
+
+# --------------------------- Defaults ---------------------------
+NAME="${NAME:-docker}"  # container name
+PUBKEY="${PUBKEY:-$HOME/.ssh/id_ed25519.pub}"
+OPEN_CODE="${OPEN_CODE:-yes}"  # yes|no  (launch VS Code)
+KNOWN_DIR="${KNOWN_DIR:-$HOME/.ssh/known_hosts.d}"
+STRICT_HOST_KEY_CHECKING="${STRICT_HOST_KEY_CHECKING:-accept-new}"  # accept-new|no|yes
+
+# --------------------------- Helpers ----------------------------
+log() { printf '[codebox] %s\n' "$*" >&2; }
+die() { printf '[codebox] ERROR: %s\n' "$*" >&2; exit 1; }
+need() { command -v "$1" >/dev/null 2>&1 || die "Missing dependency: $1"; }
+
+SUDO="sudo"
+[[ ${EUID:-$(id -u)} -eq 0 ]] && SUDO=""
+
+# ------------------------- CLI / Usage --------------------------
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [-n NAME] [-k PUBKEY] [--no-code] [--strict yes|no|accept-new]
+Connect to a root Distrobox container (Podman/Docker) by dynamic IP.
+
+Options:
+  -n NAME             Container name (default: $NAME)
+  -k PUBKEY           SSH public key to authorize for root (default: $PUBKEY)
+  --no-code           Do not start VS Code; print SSH command instead
+  --strict MODE       StrictHostKeyChecking: yes|no|accept-new (default: $STRICT_HOST_KEY_CHECKING)
+  -h, --help          Show this help
+Environment:
+  NAME, PUBKEY, OPEN_CODE, KNOWN_DIR, STRICT_HOST_KEY_CHECKING
+EOF
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -n) NAME="$2"; shift 2 ;;
+      -k) PUBKEY="$2"; shift 2 ;;
+      --no-code) OPEN_CODE="no"; shift ;;
+      --strict) STRICT_HOST_KEY_CHECKING="$2"; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "Unknown argument: $1" ;;
+    esac
+  done
+}
+
+# --------------------- Backend / Container ----------------------
+has_podman() { command -v podman >/dev/null 2>&1; }
+has_docker() { command -v docker >/dev/null 2>&1; }
+
+container_exists_podman() { $SUDO podman container exists "$1"; }
+container_exists_docker() { $SUDO docker inspect "$1" >/dev/null 2>&1; }
+
+detect_backend() {
+  if has_podman && container_exists_podman "$NAME"; then
+    echo podman; return
+  fi
+  if has_docker && container_exists_docker "$NAME"; then
+    echo docker; return
+  fi
+  die "Container '$NAME' not found in podman or docker. Create with:
+  sudo distrobox create --root -n $NAME --image fedora:40"
+}
+
+start_container() {
+  case "$1" in
+    podman) $SUDO podman start "$NAME" >/dev/null 2>&1 || true ;;
+    docker) $SUDO docker start "$NAME" >/dev/null 2>&1 || true ;;
+  esac
+}
+
+in_box() {
+  # Run a command inside the container as root
+  $SUDO distrobox enter --root -n "$NAME" -- bash -lc "$*"
+}
+
+# ----------------- SSHD / Auth inside container ----------------
+ensure_pubkey() {
+  if [[ ! -f "$PUBKEY" ]]; then
+    log "No pubkey at $PUBKEY; generating a new ed25519 keypair..."
+    mkdir -p "$(dirname "$PUBKEY")"
+    ssh-keygen -t ed25519 -N "" -f "${PUBKEY%.*}" >/dev/null
+  fi
+}
+
+ensure_sshd_installed() {
+  # Best-effort installer; do not hard-fail if package manager mismatch
+  in_box '
+    set -e
+    if command -v sshd >/dev/null 2>&1; then exit 0; fi
+    if command -v dnf >/dev/null; then dnf -y install openssh-server >/dev/null
+    elif command -v microdnf >/dev/null; then microdnf install -y openssh-server >/dev/null
+    elif command -v apt-get >/dev/null; then apt-get update -y >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server >/dev/null
+    elif command -v pacman >/dev/null; then pacman -Sy --noconfirm openssh >/dev/null
+    elif command -v apk >/dev/null; then apk add --no-cache openssh >/dev/null
+    else echo "No known package manager; ensure sshd is installed." >&2
+    fi
+  '
+}
+
+ensure_host_keys_and_auth() {
+  local key_line
+  key_line="$(cat "$PUBKEY")"
+  in_box "
+    set -e
+    ssh-keygen -A >/dev/null 2>&1 || true
+    install -d -m 700 /root/.ssh
+    touch /root/.ssh/authorized_keys
+    chmod 600 /root/.ssh/authorized_keys
+    grep -qxF '$key_line' /root/.ssh/authorized_keys || echo '$key_line' >> /root/.ssh/authorized_keys
+  "
+}
+
+harden_sshd() {
+  in_box '
+    set -e
+    cfg=/etc/ssh/sshd_config
+    [[ -f "$cfg" ]] || exit 0
+    # keys only; allow root with key
+    if command -v sed >/dev/null; then
+      sed -i -E "s/^#?PasswordAuthentication .*/PasswordAuthentication no/; s/^#?PermitRootLogin .*/PermitRootLogin prohibit-password/" "$cfg" || true
+    fi
+  '
+}
+
+start_sshd() {
+  # Try systemd service names; fallback to background daemon
+  if ! in_box 'systemctl enable --now sshd >/dev/null 2>&1 || systemctl enable --now ssh >/dev/null 2>&1'; then
+    in_box 'sshd -D & disown || /usr/sbin/sshd -D & disown || /usr/sbin/sshd & disown; sleep 1' || true
+  fi
+}
+
+# ---------------------- IP / Known Hosts ------------------------
+get_ip() {
+  local backend="$1"
+  local ips
+  if [[ "$backend" == "podman" ]]; then
+    ips="$($SUDO podman inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$NAME" 2>/dev/null || true)"
+  else
+    ips="$($SUDO docker  inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$NAME" 2>/dev/null || true)"
+  fi
+  # Pick the first non-empty IP
+  for ip in $ips; do
+    [[ -n "$ip" && "$ip" != "null" ]] && { echo "$ip"; return; }
+  done
+  die "Could not determine container IP. Is the container running and on a bridged network?"
+}
+
+write_known_hosts() {
+  mkdir -p "$KNOWN_DIR"
+  # best-effort; ignore failure if sshd not yet ready
+  ssh-keyscan -H -p 22 "$1" >> "$KNOWN_DIR/$NAME" 2>/dev/null || true
+}
+
+# ----------------------- VS Code Launch -------------------------
+launch_code() {
+  need code
+  exec code --remote "ssh-remote+root@$1" -- "~-container-$NAME"
+}
+
+print_ssh_hint() {
+  echo "ssh root@$1 -o UserKnownHostsFile=$KNOWN_DIR/$NAME -o StrictHostKeyChecking=$STRICT_HOST_KEY_CHECKING"
+}
+
+# ----------------------------- Main -----------------------------
+main() {
+  parse_args "$@"
+
+  need distrobox
+  need ssh-keygen
+  # code is optional (only if OPEN_CODE=yes)
+
+  local backend
+  backend="$(detect_backend)"
+  log "Using backend: $backend"
+
+  start_container "$backend"
+  ensure_pubkey
+  ensure_sshd_installed
+  ensure_host_keys_and_auth
+  harden_sshd
+  start_sshd
+
+  local ip
+  ip="$(get_ip "$backend")"
+  log "Container IP: $ip"
+
+  write_known_hosts "$ip"
+
+  if [[ "$OPEN_CODE" == "yes" ]]; then
+    launch_code "$ip"
+  else
+    print_ssh_hint "$ip"
+  fi
+}
+
+main "$@"
