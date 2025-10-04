@@ -493,3 +493,190 @@ dbox-nix() {
 dbox-containers() {
   podman ps -a -s
 }
+
+dbox-static-network-create() {
+  local network=${1:-default}
+  local subnet=${2:-"192.168.100.0/24"}
+
+  podman network create --subnet="${subnet}" "${network}"
+}
+
+dbox-static-network-remove() {
+  local network=${1:-default}
+
+  podman network rm "${network}"
+}
+
+dbox-static-ip() {
+  local CONTAINER_NAME=${1:-static-box}
+  local IP_ADDR=${2:-"192.168.100.10"}
+
+  slog "Creating distrobox ${CONTAINER_NAME} with static IP ${IP_ADDR}"
+  distrobox create \
+    --yes \
+    --image ubuntu:22.04 \
+    --name "${CONTAINER_NAME}" \
+    --unshare-netns \
+    --additional-flags "--network default --ip ${IP_ADDR}"
+}
+
+dbox-list() {
+  distrobox list --no-color | tail -n +2 | awk '{print $1}'
+}
+
+dbox_exists() {
+  distrobox list | grep -Fqx -- "${CONTAINER_NAME}"
+}
+
+dbox-ip() {
+  local CONTAINER_NAME=${1}
+  local CONTAINER_ENGINE
+  local IP_ADDRESS
+
+  if [[ -z "${CONTAINER_NAME}" ]]; then
+    echo "Usage: dbox-ip <container-name>" >&2
+    echo "Shows the IP address of a distrobox container" >&2
+    return 1
+  fi
+
+  if ! dbox_exists "${CONTAINER_NAME}"; then
+    echo "Error: Container '${CONTAINER_NAME}' not found" >&2
+    return 1
+  fi
+
+  if has_cmd podman && podman ps -a --format "{{.Names}}" | grep -Fqx -- "${CONTAINER_NAME}"; then
+    CONTAINER_ENGINE="podman"
+  elif has_cmd docker && docker ps -a --format "{{.Names}}" | grep -Fqx -- "${CONTAINER_NAME}"; then
+    CONTAINER_ENGINE="docker"
+  else
+    echo "Error: Could not find container '${CONTAINER_NAME}' with podman or docker" >&2
+    return 1
+  fi
+
+  case "${CONTAINER_ENGINE}" in
+    podman)
+      if ! IP_ADDRESS=$(podman inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}"); then
+        echo "Error: Failed to inspect podman container '${CONTAINER_NAME}'" >&2
+        return 1
+      fi
+      ;;
+    docker)
+      if ! IP_ADDRESS=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}"); then
+        echo "Error: Failed to inspect docker container '${CONTAINER_NAME}'" >&2
+        return 1
+      fi
+      ;;
+  esac
+
+  if [[ -z "${IP_ADDRESS}" ]]; then
+    echo "Error: Container '${CONTAINER_NAME}' does not have an assigned IP address" >&2
+    return 1
+  fi
+
+  printf '%s\n' "${IP_ADDRESS}"
+}
+
+dbox-ssh() {
+  local CONTAINER_NAME=${1}
+  local USER=${2:-$USER}
+  local PORT=${3:-22}
+  local CONTAINER_IP
+
+  if [[ -z "${CONTAINER_NAME}" ]]; then
+    echo "Usage: dbox-ssh <container-name> [user] [port]" >&2
+    return 1
+  fi
+
+  if ! CONTAINER_IP=$(dbox-ip "${CONTAINER_NAME}"); then
+    echo "Error: Could not determine IP address for container '${CONTAINER_NAME}'" >&2
+    return 1
+  fi
+
+  echo "Connecting to ${CONTAINER_NAME} at ${CONTAINER_IP}:${PORT} as ${USER}..."
+  ssh -p "${PORT}" "${USER}@${CONTAINER_IP}"
+}
+
+check_whiptail() {
+  has_cmd whiptail && return 0
+
+  echo "Error: whiptail is not installed. Please install it to use dbox-ssh-tui."
+  echo "On Ubuntu/Debian: sudo apt install whiptail"
+  echo "On Fedora: sudo dnf install newt"
+  echo "On Arch: sudo pacman -S newt"
+}
+
+dbox-ssh-tui() {
+  local CONTAINER_LIST
+  local CONTAINER_NAME
+  local CONTAINER_IP
+  local USER=${1:-$USER}
+  local PORT=${2:-22}
+  local MENU_ITEMS=()
+  local i=0
+
+  check_whiptail || return 1
+
+  CONTAINER_LIST=$(dbox-list)
+
+  if [[ -z "${CONTAINER_LIST}" ]]; then
+    whiptail --title "Distrobox SSH" --msgbox "No distrobox containers found." 10 40
+    return 0
+  fi
+
+  while IFS= read -r CONTAINER_NAME; do
+    if [[ -n "${CONTAINER_NAME}" ]]; then
+      if CONTAINER_IP=$(dbox-ip "${CONTAINER_NAME}" 2>/dev/null); then
+        MENU_ITEMS+=("${CONTAINER_NAME}" "${CONTAINER_IP}")
+      else
+        MENU_ITEMS+=("${CONTAINER_NAME}" "IP not available")
+      fi
+      ((i++))
+    fi
+  done <<< "${CONTAINER_LIST}"
+
+  CONTAINER_NAME=$(whiptail --title "Distrobox SSH" \
+    --menu "Select a container to SSH into (as ${USER} on port ${PORT}):" \
+    20 60 10 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3)
+
+  if [[ $? -ne 0 || -z "${CONTAINER_NAME}" ]]; then
+    echo "Cancelled."
+    return 0
+  fi
+
+  if ! CONTAINER_IP=$(dbox-ip "${CONTAINER_NAME}"); then
+    whiptail --title "Error" --msgbox "Could not determine IP address for container '${CONTAINER_NAME}'" 10 40
+    return 1
+  fi
+
+  echo "Connecting to ${CONTAINER_NAME} at ${CONTAINER_IP}:${PORT} as ${USER}..."
+  ssh -p "${PORT}" "${USER}@${CONTAINER_IP}"
+}
+
+dbox-list-ips() {
+  local CONTAINER_LIST
+  local CONTAINER_NAME
+  local CONTAINER_IP
+
+  CONTAINER_LIST=$(dbox-list)
+
+  if [[ -z "${CONTAINER_LIST}" ]]; then
+    echo "No distrobox containers found."
+    return 0
+  fi
+
+  echo "Distrobox Containers and IP Addresses:"
+  echo "====================================="
+  printf "%-20s %-15s\n" "Container Name" "IP Address"
+  echo "-------------------------------------"
+
+  while IFS= read -r CONTAINER_NAME; do
+    if [[ -n "${CONTAINER_NAME}" ]]; then
+      if CONTAINER_IP=$(dbox-ip "${CONTAINER_NAME}" 2>/dev/null); then
+        printf "%-20s %-15s\n" "${CONTAINER_NAME}" "${CONTAINER_IP}"
+      else
+        printf "%-20s %-15s\n" "${CONTAINER_NAME}" "N/A"
+      fi
+    fi
+  done <<< "${CONTAINER_LIST}"
+}
+
