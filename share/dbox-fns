@@ -520,26 +520,26 @@ dbox-static-ip() {
     --additional-flags "--network default --ip ${IP_ADDR}"
 }
 
-dbox-list() {
-  distrobox list --no-color | tail -n +2 | awk '{print $3}' || distrobox list --root --no-color | tail -n +2 | awk '{print $3}'
+dbox_root_list() {
+  distrobox list --root --no-color | tail -n +2 | awk '{print $3}'
 }
 
-dbox_exists() {
+dbox_root_exists() {
   distrobox list | grep -Fqx -- "${CONTAINER_NAME}"
 }
 
-dbox-ip() {
+dbox-root-ip() {
   local CONTAINER_NAME=${1}
   local CONTAINER_ENGINE
   local IP_ADDRESS
 
   if [[ -z "${CONTAINER_NAME}" ]]; then
-    echo "Usage: dbox-ip <container-name>" >&2
+    echo "Usage: dbox-root-ip <container-name>" >&2
     echo "Shows the IP address of a distrobox container" >&2
     return 1
   fi
 
-  if ! dbox_exists "${CONTAINER_NAME}"; then
+  if ! dbox_root_exists "${CONTAINER_NAME}"; then
     echo "Error: Container '${CONTAINER_NAME}' not found" >&2
     return 1
   fi
@@ -576,18 +576,18 @@ dbox-ip() {
   printf '%s\n' "${IP_ADDRESS}"
 }
 
-dbox-ssh() {
+dbox-root-ssh() {
   local CONTAINER_NAME=${1}
   local USER=${2:-$USER}
   local PORT=${3:-22}
   local CONTAINER_IP
 
   if [[ -z "${CONTAINER_NAME}" ]]; then
-    echo "Usage: dbox-ssh <container-name> [user] [port]" >&2
+    echo "Usage: dbox-root-ssh <container-name> [user] [port]" >&2
     return 1
   fi
 
-  if ! CONTAINER_IP=$(dbox-ip "${CONTAINER_NAME}"); then
+  if ! CONTAINER_IP=$(dbox-root-ip "${CONTAINER_NAME}"); then
     echo "Error: Could not determine IP address for container '${CONTAINER_NAME}'" >&2
     return 1
   fi
@@ -599,13 +599,13 @@ dbox-ssh() {
 check_whiptail() {
   has_cmd whiptail && return 0
 
-  echo "Error: whiptail is not installed. Please install it to use dbox-ssh-tui."
+  echo "Error: whiptail is not installed. Please install it to use dbox-root-ssh-tui."
   echo "On Ubuntu/Debian: sudo apt install whiptail"
   echo "On Fedora: sudo dnf install newt"
   echo "On Arch: sudo pacman -S newt"
 }
 
-dbox-ssh-tui() {
+dbox-root-ssh-tui() {
   local CONTAINER_LIST
   local CONTAINER_NAME
   local CONTAINER_IP
@@ -616,7 +616,7 @@ dbox-ssh-tui() {
 
   check_whiptail || return 1
 
-  CONTAINER_LIST=$(dbox-list)
+  CONTAINER_LIST=$(dbox_root_list)
 
   if [[ -z "${CONTAINER_LIST}" ]]; then
     whiptail --title "Distrobox SSH" --msgbox "No distrobox containers found." 10 40
@@ -625,7 +625,7 @@ dbox-ssh-tui() {
 
   while IFS= read -r CONTAINER_NAME; do
     if [[ -n "${CONTAINER_NAME}" ]]; then
-      if CONTAINER_IP=$(dbox-ip "${CONTAINER_NAME}" 2>/dev/null); then
+      if CONTAINER_IP=$(dbox-root-ip "${CONTAINER_NAME}" 2>/dev/null); then
         MENU_ITEMS+=("${CONTAINER_NAME}" "${CONTAINER_IP}")
       else
         MENU_ITEMS+=("${CONTAINER_NAME}" "IP not available")
@@ -643,7 +643,7 @@ dbox-ssh-tui() {
     return 0
   fi
 
-  if ! CONTAINER_IP=$(dbox-ip "${CONTAINER_NAME}"); then
+  if ! CONTAINER_IP=$(dbox-root-ip "${CONTAINER_NAME}"); then
     whiptail --title "Error" --msgbox "Could not determine IP address for container '${CONTAINER_NAME}'" 10 40
     return 1
   fi
@@ -652,12 +652,12 @@ dbox-ssh-tui() {
   ssh -p "${PORT}" "${USER}@${CONTAINER_IP}"
 }
 
-dbox-list-ips() {
+dbox_root_list-ips() {
   local CONTAINER_LIST
   local CONTAINER_NAME
   local CONTAINER_IP
 
-  CONTAINER_LIST=$(dbox-list)
+  CONTAINER_LIST=$(dbox_root_list)
 
   if [[ -z "${CONTAINER_LIST}" ]]; then
     echo "No distrobox containers found."
@@ -671,7 +671,7 @@ dbox-list-ips() {
 
   while IFS= read -r CONTAINER_NAME; do
     if [[ -n "${CONTAINER_NAME}" ]]; then
-      if CONTAINER_IP=$(dbox-ip "${CONTAINER_NAME}" 2>/dev/null); then
+      if CONTAINER_IP=$(dbox-root-ip "${CONTAINER_NAME}" 2>/dev/null); then
         printf "%-20s %-15s\n" "${CONTAINER_NAME}" "${CONTAINER_IP}"
       else
         printf "%-20s %-15s\n" "${CONTAINER_NAME}" "N/A"
