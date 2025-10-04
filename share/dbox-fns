@@ -525,7 +525,7 @@ dbox_root_list() {
 }
 
 dbox_root_exists() {
-  distrobox list --root | grep -Fqx -- "${CONTAINER_NAME}"
+  distrobox list --root | grep -Fq -- "${CONTAINER_NAME}"
 }
 
 dbox-root-ip() {
@@ -544,7 +544,7 @@ dbox-root-ip() {
     return 1
   fi
 
-  if has_cmd podman && podman ps -a --format "{{.Names}}" | grep -Fqx -- "${CONTAINER_NAME}"; then
+  if has_cmd podman && sudo podman ps -a --format "{{.Names}}" | grep -Fqx -- "${CONTAINER_NAME}"; then
     CONTAINER_ENGINE="podman"
   elif has_cmd docker && docker ps -a --format "{{.Names}}" | grep -Fqx -- "${CONTAINER_NAME}"; then
     CONTAINER_ENGINE="docker"
@@ -555,7 +555,7 @@ dbox-root-ip() {
 
   case "${CONTAINER_ENGINE}" in
     podman)
-      if ! IP_ADDRESS=$(podman inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}"); then
+      if ! IP_ADDRESS=$(sudo podman inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}"); then
         echo "Error: Failed to inspect podman container '${CONTAINER_NAME}'" >&2
         return 1
       fi
