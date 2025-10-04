@@ -21,14 +21,13 @@ function si() {
   done
 }
 
-legacy_apt() {
+is_legacy_apt() {
   # Returns true if running on Ubuntu < 25.04 or Debian < 13
-  { is_ubuntu && [[ "$(ubuntu_major_version)" -lt 25 ]]; } ||
-  { is_debian && [[ "$(debian_version)" -lt 13 ]]; }
+   [[ "$(ubuntu_major_version)" -lt 25 ]] || [[ "$(debian_version)" -lt 13 ]]
 }
 
 fzf_install() {
-  if legacy_apt; then
+  if is_legacy_apt; then
     sudo apt purge -y fzf
     warn "not installing fzf: too old version"
   else
@@ -169,7 +168,7 @@ essential_install() {
 
   pkgx_install
 
-  if legacy_apt; then
+  if is_legacy_apt; then
     si perl
     pkgx pkgm install stow
   fi
