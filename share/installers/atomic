@@ -107,6 +107,10 @@ flathub_install() {
   if has_cmd flatpak; then
     slog "Adding flathub remote"
     flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+
+    fpi io.github.flattool.Warehouse
+    fpi com.github.tchx84.Flatseal
+
   else
     warn "flatpak not installed! Ignoring flathub config."
   fi
@@ -371,7 +375,16 @@ ptyxis_install() {
   slog "Ptyxis installation and configuration done!"
 }
 
+distrobox-ui_install() {
+  is_desktop || return 0
+
+  fpi io.podman_desktop.PodmanDesktop
+  fpi io.github.dvlv.boxbuddyrs
+}
+
 apps-slim_install() {
+  is_desktop || return 0
+
   if ! has_cmd flatpak; then
     if ! si flatpak; then
       warn "flatpak not installed, skipping flatpak apps"
@@ -381,10 +394,7 @@ apps-slim_install() {
 
   flathub_install
 
-  has_cmd distrobox && fpi io.github.dvlv.boxbuddyrs
   fpi page.tesk.Refine
-  fpi io.github.flattool.Warehouse
-  fpi com.github.tchx84.Flatseal
   fpi it.mijorus.gearlever
   is_atomic && fpi org.gnome.Boxes
 }
@@ -396,7 +406,6 @@ apps_install() {
 
   fpi us.zoom.Zoom # unverified
   fpi md.obsidian.Obsidian
-  has_cmd podman && fpi io.podman_desktop.PodmanDesktop
   fpi org.telegram.desktop
   fpi io.github.getnf.embellish
   fpi com.bitwarden.desktop
@@ -780,6 +789,15 @@ bluenix_mainstall() {
   ublue_common_install
   ensure_nix_mount
   nix_groupstall
+}
+
+distrobox_groupstall() {
+  if is_distrobox; then
+    warn "Installing distrobox inside distrobox is not recommended, skipping"
+  fi
+
+  distrobox_install
+  is_distrobox || distrobox-ui_install
 }
 
 generic-ct_mainstall() {

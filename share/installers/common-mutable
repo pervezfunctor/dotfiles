@@ -67,6 +67,12 @@ base_mainstall() {
   base_binstall
   base_config_install
   base_check
+
+  if key=$(ssh_key_path); then
+    slog "SSH key at: $key"
+  else
+    warn "Could not generate ssh key"
+  fi
 }
 
 min_binstall() {
@@ -194,6 +200,8 @@ vm_groupstall() {
     return 1
   fi
 
+  is_linux || return 0
+
   cockpit_install
   libvirt_confstall
 }
@@ -238,8 +246,13 @@ shell_mainstall() {
 
 vm_check() {
   min_check
-  cmd_check virt-install virsh jq virt-cat qemu-img wget xorriso
-  is_desktop && cmd_check virt-viewer virt-manager
+
+  if is_linux; then
+    cmd_check virt-install virsh jq virt-cat qemu-img wget xorriso
+    is_desktop && cmd_check virt-viewer virt-manager
+  elif is_mac; then
+    cmd_check jq colima orbstack
+  fi
 }
 
 vm_mainstall() {
@@ -256,5 +269,28 @@ work_check() {
 work_mainstall() {
   min_mainstall
   work_groupstall
+  apps-slim_install
+  work_check
+}
+
+desktop-slim_mainstall() {
+  shell-slim_mainstall
+  vm_groupstall
+  vscode_groupstall
+
+  apps-slim_install
+
+  vm_check
+  work_check
+}
+
+desktop_mainstall() {
+  shell_mainstall
+  vm_groupstall
+  vscode_groupstall
+
+  apps_install
+
+  vm_check
   work_check
 }
