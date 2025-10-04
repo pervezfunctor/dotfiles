@@ -5,17 +5,13 @@
 
 set -euo pipefail
 
+DOT_DIR
 # --------------------------- Defaults ---------------------------
-NAME="${NAME:-docker}"  # container name
+NAME="${NAME:-docker}" # container name
 PUBKEY="${PUBKEY:-$HOME/.ssh/id_ed25519.pub}"
-OPEN_CODE="${OPEN_CODE:-yes}"  # yes|no  (launch VS Code)
+OPEN_CODE="${OPEN_CODE:-yes}" # yes|no  (launch VS Code)
 KNOWN_DIR="${KNOWN_DIR:-$HOME/.ssh/known_hosts.d}"
-STRICT_HOST_KEY_CHECKING="${STRICT_HOST_KEY_CHECKING:-accept-new}"  # accept-new|no|yes
-
-# --------------------------- Helpers ----------------------------
-log() { printf '[codebox] %s\n' "$*" >&2; }
-die() { printf '[codebox] ERROR: %s\n' "$*" >&2; exit 1; }
-need() { command -v "$1" >/dev/null 2>&1 || die "Missing dependency: $1"; }
+STRICT_HOST_KEY_CHECKING="${STRICT_HOST_KEY_CHECKING:-accept-new}" # accept-new|no|yes
 
 SUDO="sudo"
 [[ ${EUID:-$(id -u)} -eq 0 ]] && SUDO=""
@@ -40,12 +36,27 @@ EOF
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      -n) NAME="$2"; shift 2 ;;
-      -k) PUBKEY="$2"; shift 2 ;;
-      --no-code) OPEN_CODE="no"; shift ;;
-      --strict) STRICT_HOST_KEY_CHECKING="$2"; shift 2 ;;
-      -h|--help) usage; exit 0 ;;
-      *) die "Unknown argument: $1" ;;
+    -n)
+      NAME="$2"
+      shift 2
+      ;;
+    -k)
+      PUBKEY="$2"
+      shift 2
+      ;;
+    --no-code)
+      OPEN_CODE="no"
+      shift
+      ;;
+    --strict)
+      STRICT_HOST_KEY_CHECKING="$2"
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *) die "Unknown argument: $1" ;;
     esac
   done
 }
@@ -59,10 +70,12 @@ container_exists_docker() { $SUDO docker inspect "$1" >/dev/null 2>&1; }
 
 detect_backend() {
   if has_podman && container_exists_podman "$NAME"; then
-    echo podman; return
+    echo podman
+    return
   fi
   if has_docker && container_exists_docker "$NAME"; then
-    echo docker; return
+    echo docker
+    return
   fi
   die "Container '$NAME' not found in podman or docker. Create with:
   sudo distrobox create --root -n $NAME --image fedora:40"
@@ -70,8 +83,8 @@ detect_backend() {
 
 start_container() {
   case "$1" in
-    podman) $SUDO podman start "$NAME" >/dev/null 2>&1 || true ;;
-    docker) $SUDO docker start "$NAME" >/dev/null 2>&1 || true ;;
+  podman) $SUDO podman start "$NAME" >/dev/null 2>&1 || true ;;
+  docker) $SUDO docker start "$NAME" >/dev/null 2>&1 || true ;;
   esac
 }
 
@@ -118,7 +131,8 @@ ensure_host_keys_and_auth() {
 }
 
 harden_sshd() {
-  in_box '
+  in_box "$(
+    cat <<'EOF'
     set -e
     cfg=/etc/ssh/sshd_config
     [[ -f "$cfg" ]] || exit 0
@@ -126,7 +140,8 @@ harden_sshd() {
     if command -v sed >/dev/null; then
       sed -i -E "s/^#?PasswordAuthentication .*/PasswordAuthentication no/; s/^#?PermitRootLogin .*/PermitRootLogin prohibit-password/" "$cfg" || true
     fi
-  '
+EOF
+  )"
 }
 
 start_sshd() {
@@ -143,11 +158,14 @@ get_ip() {
   if [[ "$backend" == "podman" ]]; then
     ips="$($SUDO podman inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$NAME" 2>/dev/null || true)"
   else
-    ips="$($SUDO docker  inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$NAME" 2>/dev/null || true)"
+    ips="$($SUDO docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$NAME" 2>/dev/null || true)"
   fi
   # Pick the first non-empty IP
   for ip in $ips; do
-    [[ -n "$ip" && "$ip" != "null" ]] && { echo "$ip"; return; }
+    [[ -n "$ip" && "$ip" != "null" ]] && {
+      echo "$ip"
+      return
+    }
   done
   die "Could not determine container IP. Is the container running and on a bridged network?"
 }
@@ -155,7 +173,7 @@ get_ip() {
 write_known_hosts() {
   mkdir -p "$KNOWN_DIR"
   # best-effort; ignore failure if sshd not yet ready
-  ssh-keyscan -H -p 22 "$1" >> "$KNOWN_DIR/$NAME" 2>/dev/null || true
+  ssh-keyscan -H -p 22 "$1" >>"$KNOWN_DIR/$NAME" 2>/dev/null || true
 }
 
 # ----------------------- VS Code Launch -------------------------

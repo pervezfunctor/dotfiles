@@ -51,6 +51,11 @@ generate_ssh_key() {
   ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" >/dev/null
 }
 
+ssh_key_exists() {
+  [[ -f "${HOME}/.ssh/id_ed25519.pub" ]] ||
+    [[ -f "${HOME}/.ssh/id_rsa.pub" ]]
+}
+
 ssh_key_path() {
   if [[ -f "${HOME}/.ssh/id_ed25519.pub" ]]; then
     echo "${HOME}/.ssh/id_ed25519.pub"
@@ -992,8 +997,14 @@ pre_dir_check() {
   done
 }
 
-flatpak_installed() {
+flatpak_app_installed() {
   flatpak list | grep -q "$1"
+}
+
+check_flatpak_app_installed() {
+  if ! flatpak_app_installed "$1"; then
+    warn "$1 flatpak app not installed"
+  fi
 }
 
 dir_check() {
@@ -1067,7 +1078,7 @@ _stop_sudo_keepalive() {
 
 password-ssh-config() {
   if ! sudo sed -i -E 's/^#?PasswordAuthentication[[:space:]]+(no|yes)/PasswordAuthentication yes/' /etc/ssh/sshd_config; then
-      echo 'PasswordAuthentication yes' | sudo tee -a /etc/ssh/sshd_config >/dev/null
+    echo 'PasswordAuthentication yes' | sudo tee -a /etc/ssh/sshd_config >/dev/null
   fi
 
   sudo systemctl restart ssh || sudo systemctl restart sshd
