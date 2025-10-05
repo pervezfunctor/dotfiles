@@ -7,15 +7,24 @@ nvim_boxstall() {
     has_cmd nvim && return 0
 
     if has_cmd brew; then
-        bi neovim luarocks lazygit
+        bis luarocks lazygit tectonic fd gdu fzf
+        has_cmd nvim || bi neovim
+        has_cmd tree-sitter || bi tree-sitter-cli
+        has_cmd rg || bi ripgrep
+        has_cmd btm || bi bottom
     elif has_cmd pixi; then
-        pi nvim luarocks lazygit
-    else
+        pis nvim luarocks lazygit tectonic gdu fd fzf
+        has_cmd tree-sitter || pi tree-sitter-cli
+        has_cmd rg || pi ripgrep
+        has_cmd btm || pi bottom
+    elif fn_exists si; then
         # has_cmd apk && si nvim
-        si neovim
-        si luarocks
-        si lazygit
+        si neovim luarocks lazygit gdu ripgrep bottom tree-sitter-cli fd-find fzf
+
         is_apt && warn "Older version of neovim is installed. Some features might not work."
+    else
+        warn "nvim not installed!"
+        return 1
     fi
 
     has_cmd nvim || warn "nvim not installed!"

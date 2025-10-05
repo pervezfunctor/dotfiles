@@ -641,6 +641,13 @@ web_groupstall() {
     fi
 }
 
+nvim_groupstall() {
+    nvim_boxstall
+    terminal_groupstall
+    npm_install
+    python_install
+}
+
 go-tools_install() {
     if ! has_cmd go; then
         warn "go not installed, skipping go dev tools"
