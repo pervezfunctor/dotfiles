@@ -5,14 +5,19 @@ in
 {
   imports = [
     ./packages.nix
-    ./programs.nix
     ./bash.nix
     ./zsh.nix
-    ./shell.nix
+    ./ui
+
     nixvim.homeModules.nixvim
-    ./nvim.nix
-    ./ui.nix
+
+    # ./programs
+    ./programs/programs.nix
+    ./programs/ghostty.nix
+    ./programs/nvim.nix
   ];
+
+  programs.home-manager.enable = true;
 
   home = {
     stateVersion = "25.11";

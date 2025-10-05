@@ -1,6 +1,14 @@
 { vars, ... }:
+
 {
   programs = {
+    gpg.enable = true;
+
+    # emacs.enable = true;
+    nushell.enable = true;
+    tmux.enable = true;
+    yazi.enable = true;
+
     git = {
       enable = true;
       userName = "${vars.gitUserName}";
@@ -25,7 +33,6 @@
       ];
     };
 
-    bash.enable = true;
     bat.enable = true;
     carapace.enable = true;
     direnv.enable = true;

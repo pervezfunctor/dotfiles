@@ -44,10 +44,10 @@
 # keybind = global:cmd+/=toggle_quick_terminal
 
 # theme = GitHub-Dark-Default
-theme = Everforest Dark - Hard
+theme = Everforest Dark   Hard
 # theme = rose-pine-moon
 
-# theme = catppuccin-mocha
+# theme = Catppuccin Mocha
 font-family = JetBrainsMono Nerd Font
 font-size = 12
 background-blur-radius = 20
