@@ -283,12 +283,9 @@ more-gnome-flatpaks_install() {
   fpi io.gitlab.adhami3310.Impression
   fpi org.gnome.Firmware
   fpi org.gnome.World.PikaBackup
-  fpi com.ranfdev.DistroShelf
 }
 
 gnome-flatpaks_install() {
-  fpi io.podman_desktop.PodmanDesktop
-  fpi sh.loft.devpod
   fpi com.mattjakeman.ExtensionManager
   fpi io.missioncenter.MissionCenter
   fpi org.gnome.Logs
@@ -380,6 +377,7 @@ distrobox-ui_install() {
 
   fpi io.podman_desktop.PodmanDesktop
   fpi io.github.dvlv.boxbuddyrs
+  # fpi com.ranfdev.DistroShelf
 }
 
 apps-slim_install() {
@@ -477,7 +475,7 @@ libvirt_confstall() {
     '
 }
 
-atomic_nvim_install() {
+atomic_nvim_binstall() {
   is_mac && return 0
 
   has_cmd nvim && return 0

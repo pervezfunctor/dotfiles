@@ -184,6 +184,7 @@ docker_groupstall() {
   docker_install
   docker_confstall
   portainer_install
+  is_linux && fpi sh.loft.devpod
 }
 
 work_groupstall() {
