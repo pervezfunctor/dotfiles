@@ -326,8 +326,6 @@ gnome_confstall() {
 vscode-flatpak_confstall() {
   slog "vscode flatpak config"
 
-  flatpak-alias code com.visualstudio.code
-
   flatpak override --user --nosocket=x11 --socket=wayland com.visualstudio.code
 
   smd ~/.var/app/com.visualstudio.code/config/Code/User
