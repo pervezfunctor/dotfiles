@@ -8,6 +8,7 @@
     coreutils
     curl
     dialog
+    doppler
     ethtool
     fio
     fuse2
@@ -30,6 +31,7 @@
     nmap
     numactl
     nvme-cli
+    gopass
     pciutils
     plocate
     proxmox-backup-client
