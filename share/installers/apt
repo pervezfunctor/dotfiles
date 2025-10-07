@@ -21,9 +21,16 @@ function si() {
   done
 }
 
+# Returns true if running on Ubuntu < 25.04 or Debian < 13
 is_legacy_apt() {
-  # Returns true if running on Ubuntu < 25.04 or Debian < 13
-  [[ "$(ubuntu_major_version)" -lt 25 ]] || [[ "$(debian_version)" -lt 13 ]]
+    local uver dver
+    uver=$(ubuntu_major_version 2>/dev/null)
+    dver=$(debian_version 2>/dev/null)
+
+    [[ -n "$uver" && "$uver" -lt 25 ]] && return 0
+    [[ -n "$dver" && "$dver" -lt 13 ]] && return 0
+
+    return 1
 }
 
 fzf_install() {
