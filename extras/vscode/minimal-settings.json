@@ -14,7 +14,7 @@
   "editor.gotoLocation.multipleDefinitions": "goto",
   "editor.gotoLocation.multipleImplementations": "goto",
   "editor.guides.indentation": false,
-  "editor.indentSize": "tabsize",
+  "editor.indentSize": "tabSize",
   "editor.inlineSuggest.enabled": true,
   "editor.insertSpaces": true,
   "editor.lightbulb.enabled": "off",
