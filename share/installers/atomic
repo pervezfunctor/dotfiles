@@ -110,7 +110,6 @@ flathub_install() {
 
     fpi io.github.flattool.Warehouse
     fpi com.github.tchx84.Flatseal
-
   else
     warn "flatpak not installed! Ignoring flathub config."
   fi
@@ -237,6 +236,10 @@ gnome-extensions_install() {
   slog "Installing gnome extensions"
 
   gnome-extensions-slim_install
+
+  if ! has_cmd gext; then
+    return 1
+  fi
 
   gext install Vitals@CoreCoding.com
   gext install tailscale@joaophi.github.com
