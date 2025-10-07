@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   imports = [
@@ -12,6 +12,7 @@
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.extraModprobeConfig = "options kvm_intel nested=1";
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
@@ -24,21 +25,27 @@
   i18n.defaultLocale = "en_US.UTF-8";
 
   i18n.extraLocaleSettings = {
-    LC_ADDRESS = "en_IN";
-    LC_IDENTIFICATION = "en_IN";
-    LC_MEASUREMENT = "en_IN";
-    LC_MONETARY = "en_IN";
-    LC_NAME = "en_IN";
-    LC_NUMERIC = "en_IN";
-    LC_PAPER = "en_IN";
-    LC_TELEPHONE = "en_IN";
-    LC_TIME = "en_IN";
+    LC_ADDRESS = "en_US.UTF-8";
+    LC_IDENTIFICATION = "en_US.UTF-8";
+    LC_MEASUREMENT = "en_US.UTF-8";
+    LC_MONETARY = "en_US.UTF-8";
+    LC_NAME = "en_US.UTF-8";
+    LC_NUMERIC = "en_US.UTF-8";
+    LC_PAPER = "en_US.UTF-8";
+    LC_TELEPHONE = "en_US.UTF-8";
+    LC_TIME = "en_US.UTF-8";
   };
 
-  services.xserver.enable = true;
+  # services.xserver.enable = true;
 
   services.displayManager.sddm.enable = true;
+  services.displayManager.sddm.wayland.enable = true;
   services.desktopManager.plasma6.enable = true;
+  environment.plasma6.excludePackages = with pkgs.kdePackages; [
+    konsole
+  ];
+
+  hardware.bluetooth.enable = true;
 
   services.xserver.xkb = {
     layout = "us";
@@ -88,7 +95,11 @@
     ELECTRON_OZONE_PLATFORM_HINT = "auto";
   };
 
+  programs.nix-ld.enable = true;
+
   environment.systemPackages = with pkgs; [
+    ansible
+    packer
     curl
     devbox
     devenv
@@ -101,25 +112,53 @@
     git
     lazydocker
     lazygit
+    libguestfs
+    guestfs-tools
     micro
     neovim
     nerd-fonts.jetbrains-mono
+    nix-ld
     nixd
     nixfmt-rfc-style
     ripgrep
     starship
     stow
     tealdeer
+    trash-cli
+    volta
     vscode
     wget
     zoxide
     zsh
   ];
 
-  virtualisation.docker.enable = true;
-  users.extraGroups.docker.members = [ "pervez " ];
+  virtualisation.docker = {
+    enable = true;
+
+    rootless = {
+      enable = true;
+      setSocketVariable = true;
+      daemon.settings = {
+        dns = [
+          "1.1.1.1"
+          "8.8.8.8"
+        ];
+      };
+    };
+  };
+  users.extraGroups.docker.members = [ "pervez" ];
 
   virtualisation.vmware.host.enable = true;
+
+  virtualisation = {
+    libvirtd = {
+      enable = true;
+      qemu.vhostUserPackages = [ pkgs.virtiofsd ];
+    };
+  };
+  programs.virt-manager.enable = true;
+  users.extraGroups.libvirtd.members = [ "pervez" ];
+  users.extraGroups.kvm.members = [ "pervez" ];
 
   programs.mtr.enable = true;
   programs.gnupg.agent = {
@@ -128,6 +167,13 @@
   };
 
   services.openssh.enable = true;
+
+  programs.direnv.enable = true;
+
+  networking.nftables.enable = true;
+
+  # virtualisation.incus.enable = true;
+  # users.extraGroups.incus.members = [ "pervez" ];
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
@@ -141,6 +187,6 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "25.05"; # Did you read the comment?
+  system.stateVersion = "25.11"; # Did you read the comment?
 
 }
