@@ -606,7 +606,10 @@ npm_install() {
         return 1
     fi
 
-    volta install node@latest
+    if ! has_cmd npm; then
+        slog "Setting up npm with volta"
+        volta install node@latest
+    fi
 
     cmd_check volta npm
 }
