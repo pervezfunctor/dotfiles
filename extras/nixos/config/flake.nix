@@ -229,6 +229,17 @@
           ./system/vm-ui.nix
         ];
 
+        "nuc12" = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            inherit inputs;
+            inherit vars;
+          };
+          modules = [
+            ./hosts/nuc12/configuration.nix
+          ];
+        };
+
         wsl = mkWSLSystem [ ] ./home.nix;
 
         basic-microvm = nixpkgs.lib.nixosSystem {
