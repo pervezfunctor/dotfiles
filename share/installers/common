@@ -621,6 +621,7 @@ ai-cli_install() {
     npm install -g @google/gemini-cli
     npm install -g @qwen-code/qwen-code
     npm install -g @openai/codex
+    npm install -g @charmland/crush
     has_cmd gh && gh extension install github/gh-copilot
 }
 

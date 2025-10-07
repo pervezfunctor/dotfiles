@@ -100,6 +100,12 @@
   environment.systemPackages = with pkgs; [
     ansible
     packer
+    claude-code
+    codex
+    crush
+    qwen-code
+    gemini-cli
+    copilot-cli
     curl
     devbox
     devenv
