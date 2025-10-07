@@ -183,7 +183,7 @@ home-manager_mainstall() {
 docker_groupstall() {
   docker_install
   docker_confstall
-  portainer_install
+
   is_linux && fpi sh.loft.devpod
 }
 

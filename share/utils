@@ -1484,7 +1484,7 @@ source_installers() {
 
   if is_mac; then
     source_curl "$INSTALLERS/mac"
-    source_curl "$INSTALLERS/common-mutable"
+    source_curl "$INSTALLERS/mac-linux"
     return
   fi
 
@@ -1494,8 +1494,8 @@ source_installers() {
 
   is_atomic && return
 
-  source_curl "$INSTALLERS/mutable"
-  source_curl "$INSTALLERS/common-mutable"
+  source_curl "$INSTALLERS/linux"
+  source_curl "$INSTALLERS/mac-linux"
 
   # Package manager specific installers
   if is_apt; then
