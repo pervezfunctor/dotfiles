@@ -164,6 +164,15 @@
   };
   users.extraGroups.docker.members = [ "pervez" ];
 
+  virtualisation = {
+    containers.enable = true;
+    podman = {
+      enable = true;
+      dockerCompat = false;
+      defaultNetwork.settings.dns_enabled = true;
+    };
+  };
+
   virtualisation.vmware.host.enable = true;
 
   virtualisation = {
