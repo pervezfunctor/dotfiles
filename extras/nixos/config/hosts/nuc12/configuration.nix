@@ -120,6 +120,9 @@
     nix-ld
     nixd
     nixfmt-rfc-style
+    openssl
+    pass
+    doppler
     ripgrep
     starship
     stow
@@ -128,23 +131,30 @@
     volta
     vscode
     wget
+    xorriso
     zoxide
     zsh
   ];
 
+  services.flatpak.enable = true;
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
+
   virtualisation.docker = {
     enable = true;
 
-    rootless = {
-      enable = true;
-      setSocketVariable = true;
-      daemon.settings = {
-        dns = [
-          "1.1.1.1"
-          "8.8.8.8"
-        ];
-      };
-    };
+    # rootless = {
+    #   enable = true;
+    #   setSocketVariable = true;
+    #   daemon.settings = {
+    #     dns = [
+    #       "1.1.1.1"
+    #       "8.8.8.8"
+    #     ];
+    #   };
+    # };
   };
   users.extraGroups.docker.members = [ "pervez" ];
 
@@ -171,6 +181,7 @@
   programs.direnv.enable = true;
 
   networking.nftables.enable = true;
+  networking.firewall.trustedInterfaces = [ "virbr0" ];
 
   # virtualisation.incus.enable = true;
   # users.extraGroups.incus.members = [ "pervez" ];
