@@ -98,10 +98,10 @@
             if nixpkgs.lib.elem builtins.currentSystem supportedSystems then
               builtins.currentSystem
             else
-              throw "Unsupported system: ${builtins.currentSystem}"
+              throw "ERROR: Unsupported system '${builtins.currentSystem}'. Supported systems are: ${builtins.concatStringsSep ", " supportedSystems}"
           )
         else
-          throw "Could not determine current system";
+          "x86_64-linux";
 
       pkgs = nixpkgs.legacyPackages.${system};
     in
