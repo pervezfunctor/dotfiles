@@ -10,40 +10,42 @@ All the following commands are meant to be run on a freshly installed system. If
 
 <summary>MacOS</summary>
 
-  ### MacOS
+### MacOS
 
-  Installs vscode, docker and shell tools.
+Installs vscode, docker and shell tools.
 
-  ```bash
-  curl https://pkgx.sh | sh
-  pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- work
-  ```
+```bash
+curl https://pkgx.sh | sh
+pkgx bash -c "$(curl -sSL https://is.gd/egitif)" -- work
+```
+
 </details>
 
 <details>
 <summary>Linux</summary>
 
-  ### Linux
+### Linux
 
-  Installs vscode, docker and shell tools.
+Installs vscode, docker and shell tools.
 
-  ```bash
-  bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- work
-  ```
+```bash
+bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- work
+```
+
 </details>
 
 <details>
 <summary>Windows</summary>
 
-  ### Windows
+### Windows
 
-  Pick what you want to install by running the following command in powershell as **administrator**. Note that you might have to restart your system multiple times. Execute the same script again after reboot.
+Pick what you want to install by running the following command in powershell as **administrator**. Note that you might have to restart your system multiple times. Execute the same script again after reboot.
 
-  ```powershell
-  iwr -useb https://is.gd/vefawu | iex
-  ```
+```powershell
+iwr -useb https://is.gd/vefawu | iex
+```
+
 </details>
-
 
 ## Introduction
 
@@ -69,7 +71,6 @@ You could also do the following
 ```bash
 ilmg vscode docker shell vm # pick any tools you want
 ```
-
 
 </details>
 
@@ -139,7 +140,6 @@ Following might work too.
 
 ### MACOS
 
-
 Install homebrew and a few essentials with the following command.
 
 ```bash
@@ -164,17 +164,13 @@ Simple tools could be installed with `ilmi`.
 ilmi tmux nvim
 ```
 
-
 </details>
 
-
 ## Popular Linux Distributions
-
 
 ### Ubuntu
 
 Use [Omakub](https://omakub.org/) if you are using Ubuntu LTS.
-
 
 ### Arch Linux
 
@@ -191,7 +187,6 @@ Add the following to your `~/.bashrc` and/or `~/.zshrc`.
 ```bash
 source ~/.ilm/share/shellrc
 ```
-
 
 ## Recommended Linux Distributions
 
@@ -216,7 +211,6 @@ bash -c "$(curl -sSL https://is.gd/egitif) -- ublue"
 
 <details>
 <summary>NixOS</summary>
-
 
 ### Nixos
 
@@ -260,15 +254,13 @@ dbox-dev
 I will add more instructions to use distrobox in the future. For now, you could use the following command to use `vscode` from distrobox container.
 
 ```bash
-dboxe dev # enter distrobox container
+dbe dev # enter distrobox container
 code # opens vscode from distrobox container
 ```
 
 After restarting your computer, at least, you should be able to launch `vscode` from host like any other application.
 
-
 </details>
-
 
 <details>
 
@@ -308,7 +300,7 @@ You should not install anything on the host. You could use `distrobox` for comma
 
 **Note**: If your virtual machines do not get an IP address, edit `/etc/libvirt/network.conf` and add the following.
 
-```
+```sh
 firewall_backend = "iptables"
 ```
 
@@ -319,7 +311,6 @@ sudo systemctl restart libvirtd
 ```
 
 </details>
-
 
 ## Conventional Linux
 
@@ -341,6 +332,7 @@ sudo dnf update -y
 ```
 
 Reboot your system.
+
 </details>
 
 <details>
@@ -392,7 +384,6 @@ If you want to learn how linux works and different moving parts in a linux deskt
 
 You could later either use [archinstall](https://archinstall.readthedocs.io/en/latest/) or use a distriution like [CachyOS](https://cachyos.org/download/) to install arch linux.
 
-
 Once you have installed archlinux using any of the approaches above, make sure you update your system. Use the following command.
 
 ```bash
@@ -408,7 +399,6 @@ Reboot your system.
 ### Common instructions
 
 For all of the above operating systems, you could *follow the same instructions* below.
-
 
 Install modern shell tools with the following command.
 
@@ -496,13 +486,11 @@ ilmi distrobox
 
 This should work on almost any linux system/vm/container even without sudo privileges; You should have curl/wget and bash installed.
 
-
 This will only install shell tools.
 
 ```bash
 bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- generic
 ```
-
 
 ## Linux Development Container/VM(mutable distributions only)
 
@@ -531,7 +519,6 @@ ilmg vscode
 ```
 
 I will try to provide similar commands for immutable/nixos distributions in the future.
-
 
 ## Proxmox
 

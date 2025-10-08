@@ -54,7 +54,7 @@ dbox_create() {
     --name "$CONTAINER_NAME" \
     "$@"; then
     slog "Distrobox ${CONTAINER_NAME} created successfully"
-    slog "Use dboxe ${CONTAINER_NAME} to enter"
+    slog "Use dbe ${CONTAINER_NAME} to enter"
     return 0
   else
     fail "Failed to create distrobox ${CONTAINER_NAME}"
@@ -67,7 +67,14 @@ dbox_create_root() {
   local IMAGE=${2}
   shift 2
 
-  dbox_create "$CONTAINER_NAME" "$IMAGE" --root "$@"
+  if dbox_create "$CONTAINER_NAME" "$IMAGE" --root "$@"; then
+    slog "Distrobox ${CONTAINER_NAME} created successfully"
+    slog "Use rdbe --root ${CONTAINER_NAME} to enter"
+    return 0
+  else
+    fail "Failed to create distrobox ${CONTAINER_NAME}"
+    return 1
+  fi
 }
 
 dbox-ubuntu() {
@@ -321,7 +328,7 @@ dbox-dev() {
 
   if distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic; then
     slog "Distrobox ${CONTAINER_NAME} setup successfully"
-    slog "Use dboxe ${CONTAINER_NAME} to enter"
+    slog "Use dbe ${CONTAINER_NAME} to enter"
     return 0
   else
     fail "Failed to setup distrobox ${CONTAINER_NAME}"
