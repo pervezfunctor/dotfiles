@@ -8,6 +8,7 @@
     gum
     newt
     ripgrep
+    starship
     stow
     tmux
     trash-cli

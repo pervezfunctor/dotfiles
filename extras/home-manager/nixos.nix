@@ -4,11 +4,14 @@
   hmModule,
   osImports ? [ ],
   nixpkgs ? inputs.nixpkgs,
-  pkgs,
   home-manager ? inputs.home-manager,
 }:
-nixpkgs.lib.nixosSystem {
+let
   system = "x86_64-linux";
+  pkgs = nixpkgs.legacyPackages.${system};
+in
+nixpkgs.lib.nixosSystem {
+  inherit system;
   specialArgs = { inherit inputs vars; };
 
   modules = [

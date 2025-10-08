@@ -29,19 +29,28 @@
     let
       vars = import ./vars.nix;
 
-      # validatedUsername =
-      #   if vars.username == "" then
-      #     throw "ERROR: Username is empty! Please ensure USER environment variable is set."
-      #   else
-      #     builtins.trace "DEBUG: Username is '${vars.username}'" vars.username;
+      supportedSystems = [
+        "x86_64-linux"
+        "aarch64-darwin"
+      ];
+
+      system =
+        if builtins ? currentSystem then
+          (
+            if nixpkgs.lib.elem builtins.currentSystem supportedSystems then
+              builtins.currentSystem
+            else
+              throw "ERROR: Unsupported system '${builtins.currentSystem}'. Supported systems are: ${builtins.concatStringsSep ", " supportedSystems}"
+          )
+        else
+          "x86_64-linux";
 
       mkHome =
         {
-          pkgs,
           imports ? [ ],
         }:
         home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+          pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = {
             inherit vars inputs imports;
           };
@@ -77,43 +86,19 @@
       mkNixos =
         imports: osImports:
         import ./nixos.nix {
-          inherit
-            inputs
-            osImports
-            vars
-            pkgs
-            ;
-
+          inherit inputs osImports vars;
           hmModule = mkHmModule imports;
         };
-
-      supportedSystems = [
-        "x86_64-linux"
-        "aarch64-darwin"
-      ];
-
-      system =
-        if builtins ? currentSystem then
-          (
-            if nixpkgs.lib.elem builtins.currentSystem supportedSystems then
-              builtins.currentSystem
-            else
-              throw "ERROR: Unsupported system '${builtins.currentSystem}'. Supported systems are: ${builtins.concatStringsSep ", " supportedSystems}"
-          )
-        else
-          "x86_64-linux";
-
-      pkgs = nixpkgs.legacyPackages.${system};
     in
     {
       homeConfigurations = {
         ${vars.username} = mkHome {
-          inherit vars pkgs;
+          inherit vars;
           imports = [ ./home/core.nix ];
         };
 
         shell-slim = mkHome {
-          inherit vars pkgs;
+          inherit vars;
           imports = [
             ./home/core.nix
             ./home/shell-slim.nix
@@ -121,7 +106,7 @@
         };
 
         shell = mkHome {
-          inherit vars pkgs;
+          inherit vars;
           imports = [
             ./home/core.nix
             ./home/shell-slim.nix
@@ -130,40 +115,42 @@
         };
 
         shell-full = mkHome {
-          inherit vars pkgs;
+          inherit vars;
+          imports = [
+            ./home/core.nix
+            ./home/shell-slim.nix
+            ./home/shell.nix
+            ./home/programs.nix
+          ];
+        };
+
+        all = mkHome {
+          inherit vars;
           imports = [ ./home ];
         };
       };
 
       nixosConfigurations = {
         wsl = mkWSL [ ./home/core.nix ] [ ];
-
-        nixos =
-          mkNixos
-            [
-              ./home/core.nix
-              ./home/shell-slim.nix
-              ./home/shell.nix
-            ]
-            [ ];
+        "${vars.hostname}" = mkNixos [ ./home ] [ ];
       };
 
       darwinConfigurations = {
-        "${vars.host}" = mkDarwin [
+        "${vars.hostname}" = mkDarwin [
           ./home/core.nix
         ];
       };
 
-      formatter = nixpkgs.legacyPackages.${system}.alejandra;
+      # formatter = nixpkgs.legacyPackages.${system}.alejandra;
 
-      devShells.default = pkgs.mkShell {
-        buildInputs = with pkgs; [
-          home-manager
-          git
-        ];
-        shellHook = ''
-          echo "Home Manager development environment"
-        '';
-      };
+      # devShells.default = pkgs.mkShell {
+      #   buildInputs = with pkgs; [
+      #     home-manager
+      #     git
+      #   ];
+      #   shellHook = ''
+      #     echo "Home Manager development environment"
+      #   '';
+      # };
     };
 }
