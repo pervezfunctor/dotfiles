@@ -37,7 +37,6 @@
 
       mkHome =
         {
-          vars,
           pkgs,
           imports ? [ ],
         }:
@@ -49,7 +48,7 @@
           modules = [ ./home.nix ];
         };
 
-      mkHmModule = vars: imports: {
+      mkHmModule = imports: {
         home-manager = {
           useGlobalPkgs = true;
           useUserPackages = true;
@@ -60,35 +59,32 @@
         };
       };
 
-      varsDarwin = import ./darwin-vars.nix;
       mkDarwin =
         imports:
         import ./darwin.nix {
-          inherit inputs;
-          vars = varsDarwin;
-          hmModule = mkHmModule varsDarwin imports;
-        };
+          inherit inputs vars;
 
-      varsWSL = {
-        username = "nixos";
-        homeDirectory = "/home/nixos";
-      };
+          hmModule = mkHmModule imports;
+        };
 
       mkWSL =
         imports: osImports:
         import ./wsl.nix {
-          inherit inputs osImports;
-          vars = varsWSL;
-          hmModule = mkHmModule varsWSL imports;
+          inherit inputs osImports vars;
+          hmModule = mkHmModule imports;
         };
 
       mkNixos =
         imports: osImports:
         import ./nixos.nix {
-          inherit inputs osImports;
-          vars = vars;
-          inherit pkgs;
-          hmModule = mkHmModule vars imports;
+          inherit
+            inputs
+            osImports
+            vars
+            pkgs
+            ;
+
+          hmModule = mkHmModule imports;
         };
 
       supportedSystems = [
@@ -153,7 +149,7 @@
       };
 
       darwinConfigurations = {
-        "${varsDarwin.host}" = mkDarwin [
+        "${vars.host}" = mkDarwin [
           ./home/core.nix
         ];
       };

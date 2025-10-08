@@ -1,0 +1,102 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+
+show_usage() {
+    echo "Usage: $0 [output_file]"
+    echo "  output_file: Path to the output vars.nix file (default: extras/home-manager/vars.nix)"
+    echo ""
+    echo "Examples:"
+    echo "  $0"
+    echo "  $0 /path/to/custom/vars.nix"
+    echo "  $0 ../config/vars.nix"
+}
+
+die() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+get_username() {
+    local username
+    username=$(whoami 2>/dev/null) || die "Failed to get username"
+    echo "$username"
+}
+
+get_home_directory() {
+    local username="$1"
+    local home_dir
+    home_dir=$(eval echo "~$username" 2>/dev/null) || die "Failed to get home directory for user: $username"
+    echo "$home_dir"
+}
+
+get_hostname() {
+    local hostname
+    hostname=$(hostname 2>/dev/null) || die "Failed to get hostname"
+    echo "$hostname"
+}
+
+get_timezone() {
+    local timezone
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        timezone=$(readlink /etc/localtime 2>/dev/null | sed 's|^.*zoneinfo/||' || \
+                  systemsetup -gettimezone 2>/dev/null | awk '{print $3}' || \
+                  echo "UTC")
+    else
+        timezone=$(timedatectl show --property=Timezone --value 2>/dev/null || \
+                  cat /etc/timezone 2>/dev/null || \
+                  echo "UTC")
+    fi
+
+    if [[ ! "$timezone" =~ ^[A-Za-z_]+/[A-Za-z_]+$ ]] && [[ "$timezone" != "UTC" ]]; then
+        echo "Warning: Unusual timezone format detected: $timezone, using UTC as fallback" >&2
+        timezone="UTC"
+    fi
+
+    echo "$timezone"
+}
+
+if [[ $# -gt 1 ]]; then
+    die "Too many arguments. Use -h for help."
+elif [[ $# -eq 1 ]]; then
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        show_usage
+        exit 0
+    fi
+    OUTPUT_FILE="$1"
+else
+    die "Output file argument is required. Use -h for help."
+fi
+
+USERNAME=$(get_username)
+HOME_DIRECTORY=$(get_home_directory "$USERNAME")
+HOSTNAME=$(get_hostname)
+TIMEZONE=$(get_timezone)
+
+OUTPUT_DIR=$(dirname "$OUTPUT_FILE")
+
+if [[ ! -d "$OUTPUT_DIR" ]]; then
+    mkdir -p "$OUTPUT_DIR" || die "Failed to create directory: $OUTPUT_DIR"
+fi
+
+if [[ -f "$OUTPUT_FILE" && ! -w "$OUTPUT_FILE" ]] || [[ ! -w "$OUTPUT_DIR" ]]; then
+    die "No write permission for: $OUTPUT_FILE"
+fi
+
+{
+    echo "{"
+    echo "  # System information for Nix configuration"
+    echo "  username = \"$USERNAME\";"
+    echo "  homeDirectory = \"$HOME_DIRECTORY\";"
+    echo "  hostname = \"$HOSTNAME\";"
+    echo "  timezone = \"$TIMEZONE\";"
+    echo "}"
+} > "$OUTPUT_FILE" || die "Failed to write to: $OUTPUT_FILE"
+
+echo "Successfully created $OUTPUT_FILE with the following values:"
+echo "  username: $USERNAME"
+echo "  homeDirectory: $HOME_DIRECTORY"
+echo "  hostname: $HOSTNAME"
+echo "  timezone: $TIMEZONE"

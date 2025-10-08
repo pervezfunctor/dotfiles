@@ -16,9 +16,13 @@ main() {
     fi
   fi
 
-  if is_mac; then
-    file_exists "${NIX_CONFIG_DIR}/darwin-vars.nix" || die "darwin-vars.nix not found! Exiting..."
+  file_exists "${NIX_CONFIG_DIR}/darwin-vars.nix" || {
+    warn "darwin-vars.nix not found! Creating..."
+    nix-vars-create "$NIX_CONFIG_DIR/darwin-vars.nix"
+    file_exists "${NIX_CONFIG_DIR}/darwin-vars.nix" || die "Failed to create darwin-vars.nix! Exiting..."
+  }
 
+  if is_mac; then
     NIX_PROFILE=${1:"${NIX_CONFIG_DIR}#$(hostname)"}
     sudo darwin-rebuild switch --flake "$NIX_PROFILE"
     return $?
@@ -31,8 +35,10 @@ main() {
   fi
 
   if is_nixos; then
-    file_exists "${NIX_CONFIG_DIR}/vars.nix" || die "vars.nix not found! Exiting..."
-    file_exists "${NIX_CONFIG_DIR}/hardware-configuration.nix" || die "hardware-configuration.nix not found! Exiting..."
+    file_exists "${NIX_CONFIG_DIR}/hardware-configuration.nix" || {
+      warn "hardware-configuration.nix not found! Creating..."
+      cp /etc/nixos/hardware-configuration.nix "$NIX_CONFIG_DIR/" || die "Failed to copy hardware-configuration.nix!"
+    }
 
     NIX_PROFILE=${1:"${NIX_CONFIG_DIR}#${USER}"}
     sudo nixos-rebuild switch --flake "$NIX_PROFILE"
