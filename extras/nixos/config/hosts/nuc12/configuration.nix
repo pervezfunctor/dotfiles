@@ -105,6 +105,7 @@
     copilot-cli
     curl
     devbox
+    devcontainer
     devenv
     distrobox
     eza
