@@ -87,9 +87,6 @@
   environment.sessionVariables = {
     EDITOR = "code --wait";
     NIXOS_OZONE_WL = "1";
-    MOZ_ENABLE_WAYLAND = "1";
-    ELECTRON_ENABLE_SCALE_FACTOR = "true";
-    ELECTRON_OZONE_PLATFORM_HINT = "auto";
   };
 
   programs.nix-ld.enable = true;
