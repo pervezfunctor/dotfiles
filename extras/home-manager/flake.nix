@@ -93,12 +93,10 @@
     {
       homeConfigurations = {
         ${vars.username} = mkHome {
-          inherit vars;
           imports = [ ./home/core.nix ];
         };
 
         shell-slim = mkHome {
-          inherit vars;
           imports = [
             ./home/core.nix
             ./home/shell-slim.nix
@@ -106,7 +104,6 @@
         };
 
         shell = mkHome {
-          inherit vars;
           imports = [
             ./home/core.nix
             ./home/shell-slim.nix
@@ -115,7 +112,6 @@
         };
 
         shell-full = mkHome {
-          inherit vars;
           imports = [
             ./home/core.nix
             ./home/shell-slim.nix
@@ -125,7 +121,6 @@
         };
 
         all = mkHome {
-          inherit vars;
           imports = [ ./home ];
         };
       };
