@@ -4,28 +4,30 @@
   hmModule,
   osImports ? [ ],
   nixpkgs ? inputs.nixpkgs,
-  nixos-wsl ? inputs.nixos-wsl,
+  pkgs,
   home-manager ? inputs.home-manager,
 }:
 nixpkgs.lib.nixosSystem {
   system = "x86_64-linux";
   specialArgs = { inherit inputs vars; };
 
-  imports = [
-    ./system/nixos/core.nix
-    ./system/core.nix
-  ]
-  ++ osImports;
-
   modules = [
+    ./hardware-configuration.nix
+
+    ./system/nixos
+    ./system/core.nix
+    ./system/ui.nix
+  ]
+  ++ osImports
+  ++ [
     {
-      programs.nix-ld.enable = true;
-      wsl.defaultUser = "nixos";
-      wsl.enable = true;
-      system.stateVersion = "25.11";
+      environment.systemPackages = with pkgs; [
+        wl-clipboard
+        ptyxis
+        nerd-fonts.jetbrains-mono
+      ];
     }
 
-    nixos-wsl.nixosModules.default
     home-manager.nixosModules.home-manager
     hmModule
   ];

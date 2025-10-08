@@ -1,3 +1,9 @@
 #! /usr/bin/env bash
 
+# check if vars.nix exists, else exit
+if [ ! -f ./vars.nix ]; then
+  echo "vars.nix not found! Exiting..."
+  exit 1
+fi
+
 nix run home-manager -- switch --flake .#"${USER}" --impure -b bak

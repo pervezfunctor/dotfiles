@@ -73,12 +73,22 @@
         username = "nixos";
         homeDirectory = "/home/nixos";
       };
+
       mkWSL =
-        imports:
+        imports: osImports:
         import ./wsl.nix {
-          inherit inputs;
+          inherit inputs osImports;
           vars = varsWSL;
           hmModule = mkHmModule varsWSL imports;
+        };
+
+      mkNixos =
+        imports: osImports:
+        import ./nixos.nix {
+          inherit inputs osImports;
+          vars = vars;
+          inherit pkgs;
+          hmModule = mkHmModule vars imports;
         };
 
       supportedSystems = [
@@ -103,46 +113,48 @@
       homeConfigurations = {
         ${vars.username} = mkHome {
           inherit vars pkgs;
-          imports = [./core.nix];
+          imports = [ ./home/core.nix ];
         };
 
         shell-slim = mkHome {
           inherit vars pkgs;
-          imports = [ ./shell-slim.nix ];
+          imports = [
+            ./home/core.nix
+            ./home/shell-slim.nix
+          ];
         };
 
         shell = mkHome {
           inherit vars pkgs;
-          imports = [ ./shell.nix ];
-        };
-
-        sys-shell = mkHome {
-          inherit vars pkgs;
           imports = [
-            ./sys.nix
-            ./shell.nix
+            ./home/core.nix
+            ./home/shell-slim.nix
+            ./home/shell.nix
           ];
         };
 
         shell-full = mkHome {
           inherit vars pkgs;
-          imports = [
-            ./shell.nix
-            ./programs.nix
-          ];
+          imports = [ ./home ];
         };
       };
 
       nixosConfigurations = {
-        wsl = mkWSL [
-          ./shell.nix
-          ./programs.nix
-        ];
+        wsl = mkWSL [ ./home/core.nix ] [ ];
+
+        nixos =
+          mkNixos
+            [
+              ./home/core.nix
+              ./home/shell-slim.nix
+              ./home/shell.nix
+            ]
+            [ ];
       };
 
       darwinConfigurations = {
         "${varsDarwin.host}" = mkDarwin [
-          ./core.nix
+          ./home/core.nix
         ];
       };
 

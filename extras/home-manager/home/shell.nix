@@ -1,9 +1,5 @@
 { pkgs, ... }:
 {
-  imports = [
-    ./shell-slim.nix
-  ];
-
   home.packages = with pkgs; [
     atuin
     bottom
@@ -15,6 +11,8 @@
     delta
     dog
     duf
+    doppler
+    pass
     dust
     dysk
     fd

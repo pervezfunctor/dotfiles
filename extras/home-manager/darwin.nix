@@ -1,14 +1,16 @@
 {
-  # pkgs,
   inputs,
   vars,
   hmModule,
+  osImports ? [ ],
   darwin ? inputs.darwin,
   home-manager ? inputs.home-manager,
 }:
 darwin.lib.darwinSystem {
   system = "aarch64-darwin";
   specialArgs = { inherit inputs vars; };
+
+  imports = [ ./system/core.nix ] ++ osImports;
 
   modules = [
     {
@@ -20,9 +22,6 @@ darwin.lib.darwinSystem {
       users.users.${vars.username} = {
         home = vars.homeDirectory;
       };
-
-      # environment.systemPackages = with pkgs; [
-      # ];
     }
 
     home-manager.darwinModules.home-manager
