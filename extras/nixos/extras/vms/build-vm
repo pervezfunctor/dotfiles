@@ -6,5 +6,5 @@ echo "Building $CONFIG"
 nix build .#"${CONFIG}"
 
 # if flakes is not enabled, then
-#nixos-rebuild build-vm -I nixos-config="${CONFIG}" # or
-#nix-build '<nixpkgs/nixos>' -A config.system.build.vm -I nixos-config="${CONFIG}"
+#nixos-rebuild build-vm -I nix-config="${CONFIG}" # or
+#nix-build '<nixpkgs/nixos>' -A config.system.build.vm -I nix-config="${CONFIG}"

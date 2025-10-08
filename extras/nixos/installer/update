@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-NIXOS_CONFIG_DIR="${HOME}/nixos-config"
+NIXOS_CONFIG_DIR="${HOME}/nix-config"
 HM_CONFIG_DIR="${HOME}/hms-config"
 
 slog() {

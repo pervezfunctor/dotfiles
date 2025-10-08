@@ -7,8 +7,8 @@ source "$DOT_DIR/share/utils"
 
 main() {
   if [ -z "$NIX_CONFIG_DIR" ]; then
-    if dir_exists "$DOT_DIR/nixos-config"; then
-      export NIX_CONFIG_DIR="$DOT_DIR/nixos-config"
+    if dir_exists "$DOT_DIR/nix-config"; then
+      export NIX_CONFIG_DIR="$DOT_DIR/nix-config"
     elif dir_exists "$DOT_DIR/extras/home-manager"; then
       export NIX_CONFIG_DIR="$DOT_DIR/extras/home-manager"
     else

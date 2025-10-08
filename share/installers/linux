@@ -314,7 +314,7 @@ dbox-dev-atomic_mainstall() {
 }
 
 nixos_mainstall() {
-  local cfg_dir=~/nixos-config
+  local cfg_dir=~/nix-config
 
   dir_exists "$cfg_dir" && die "$cfg_dir already exists, skipping nixos installation"
 
@@ -322,7 +322,7 @@ nixos_mainstall() {
   local dev_url="${ILM_BASE_URL}/extras/nixos/vm/dev.nix"
 
   if [ -d "$cfg_dir" ]; then
-    die "nixos-config already exists, skipping nixos installation"
+    die "nix-config already exists, skipping nixos installation"
   fi
 
   slog "Copying /etc/nixos to $cfg_dir..."
@@ -363,10 +363,10 @@ nixos_mainstall() {
 }
 
 nixos-wsl_mainstall() {
-  local cfg_dir=~/nixos-config
+  local cfg_dir=~/nix-config
 
   if [ -d "$cfg_dir" ]; then
-    die "nixos-config already exists, skipping nixos installation"
+    die "nix-config already exists, skipping nixos installation"
   fi
 
   nix_dotfiles_install

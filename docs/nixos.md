@@ -78,9 +78,9 @@ Or use the same configuration used for the installer with the following.
 
 ```bash
 git clone --depth=1 https://github.com/pervezfunctor/dotfiles.git ~/.ilm
-mkdir -p ~/nixos-config
-cp -r ~/.ilm/extras/nixos/installer ~/nixos-config
-cp /etc/nixos/hardware-configuration.nix ~/nixos-config
+mkdir -p ~/nix-config
+cp -r ~/.ilm/extras/nixos/installer ~/nix-config
+cp /etc/nixos/hardware-configuration.nix ~/nix-config
 ```
 
 Edit configuration files, add/remove what you want. You could check `~/.ilm/extras/nixos/config` for reference.
@@ -88,7 +88,7 @@ Edit configuration files, add/remove what you want. You could check `~/.ilm/extr
 Once you are happy with your configuration, run the following command.
 
 ```bash
-nixos-rebuild switch --flake ~/nixos-config\#<host-name> # hostname you picked in `vars.nix`
+nixos-rebuild switch --flake ~/nix-config\#<host-name> # hostname you picked in `vars.nix`
 ```
 
 You could also use my configuration, but I won't recommend it. Add your host configuration to `flake.nix` in `~/.ilm/extras/nixos/config/flake.nix` and run the following command. This will also work if you used `NixOS Graphical installer`.

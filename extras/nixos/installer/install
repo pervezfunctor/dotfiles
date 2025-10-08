@@ -23,7 +23,7 @@ setup_config() {
   info "Generating NixOS configuration..."
 
   local temp_dir
-  temp_dir="$(mktemp -d -t nixos-config.XXXXXX)"
+  temp_dir="$(mktemp -d -t nix-config.XXXXXX)"
 
   temp_dir_cleanup() {
     rm -rf -- "$temp_dir"

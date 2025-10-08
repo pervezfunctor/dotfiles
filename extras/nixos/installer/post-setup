@@ -4,9 +4,9 @@ set -euo pipefail
 
 DOTFILES_DIR="${HOME}/.ilm"
 DOTFILES_REPO="https://github.com/pervezfunctor/dotfiles.git"
-NIXOS_CONFIG_DIR="${HOME}/nixos-config"
+NIXOS_CONFIG_DIR="${HOME}/nix-config"
 HM_CONFIG_DIR="${HOME}/hms-config"
-TEMP_NIXOS_CONFIG_DIR="/tmp/nixos-config-gen-$"
+TEMP_NIXOS_CONFIG_DIR="/tmp/nix-config-gen-$"
 
 slog() {
   printf '\r\033[2K [ \033[00;34mINFO\033[0m ] %s\n' "$*"
@@ -21,7 +21,7 @@ has_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
-TEMP_NIXOS_CONFIG_DIR=$(mktemp -d -t nixos-config.XXXXXX)
+TEMP_NIXOS_CONFIG_DIR=$(mktemp -d -t nix-config.XXXXXX)
 
 cleanup() {
   slog "Cleaning up temporary files..."

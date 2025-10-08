@@ -189,7 +189,7 @@ mount_partitions() {
 setup_config() {
   info "Generating NixOS configuration..."
 
-  NIXOS_TEMP_DIR="$(mktemp -d -t nixos-config.XXXXXX)"
+  NIXOS_TEMP_DIR="$(mktemp -d -t nix-config.XXXXXX)"
 
   if ! nixos-generate-config --root "$NIXOS_TEMP_DIR"; then
     echo "❌ Failed to generate NixOS config" >&2

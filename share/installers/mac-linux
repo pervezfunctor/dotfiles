@@ -141,25 +141,45 @@ brew_groupstall() {
   brew-shell_install
 }
 
-nix_groupstall() {
-  nix_install
-  hms
+home-manager_install() {
+  if ! has_cmd nix; then
+    warn "nix not installed, skipping home-manager installation"
+    return 1
+  fi
+
+  if dir_exists ~/nix-config; then
+    slog "$HOME/nix-config exists, skipping home-manager installation"
+    return 0
+  fi
+
+  if ! dir_exists "$DOT_DIR/extras/home-manager"; then
+    nix_dotfiles_install
+  fi
+
+  if ! dir_exists "$DOT_DIR/extras/home-manager"; then
+    warn "could not setup dotfiles, cannot install home-manager."
+    return 1
+  fi
+
+  if ! cp -r "$DOT_DIR/extras/home-manager" ~/nix-config; then
+    warn "Failed to copy home-manager config to $HOME/nix-config"
+    return 1
+  fi
+
+  slog "nix-config copied to $HOME/nix-config. Running hms to apply configuration."
+
+  local profile=${1:-shell}
+  hms "$profile"
+
   touch ~/.zshrc
+  return 0
 }
 
-home-manager_groupstall() {
-  is_nixos && die "this installation is not for nixos, Quitting."
-  has_cmd home-manager && die "home-manager already installed"
-
+nix_groupstall() {
+  local profile=${1:-shell-slim}
   nix_install
-
-  dir_exists "$DOT_DIR" || die "$DOT_DIR doesn't exist, cannot install home-manager."
-  dir_exists ~/home-manager-config && die "home-manager-config already exists, skipping installation"
-
-  cp -r "$DOT_DIR/extras/home-manager" ~/home-manager-config
-  hms shell-full
+  home-manager_install "$profile"
   touch ~/.zshrc
-  slog "home-manager installation done! Your home-manager config is at $HOME/home-manager-config"
 }
 
 nix_check() {
@@ -170,14 +190,8 @@ nix_check() {
 nix_mainstall() {
   min_mainstall
   has_cmd si && (has_cmd zsh || si zsh)
-  nix_groupstall
+  nix_groupstall shell
   nix_check
-}
-
-home-manager_mainstall() {
-  min_mainstall
-  has_cmd si && (has_cmd zsh || si zsh)
-  home-manager_groupstall
 }
 
 docker_groupstall() {

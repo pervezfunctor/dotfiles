@@ -1054,12 +1054,12 @@ hms() {
   local profile=${1:-"${USER}"}
   local hms_dir
 
-  if dir_exists "$DOT_DIR/extras/home-manager"; then
+  if dir_exists ~/nix-config; then
+    hms_dir=~/nix-config
+  elif dir_exists "$DOT_DIR/extras/home-manager"; then
     hms_dir="$DOT_DIR/extras/home-manager"
-  elif dir_exists ~/home-manager-config; then
-    hms_dir=~/home-manager-config
   else
-    fail "home-manager-config not found, cannot run hms"
+    fail "nix-config not found, cannot run hms"
     return 1
   fi
 
