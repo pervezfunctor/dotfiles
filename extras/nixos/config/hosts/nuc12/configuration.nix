@@ -17,7 +17,6 @@
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
   networking.hostName = "nixos";
-  #   networking.wireless.enable = true;
   networking.networkmanager.enable = true;
 
   time.timeZone = "Asia/Kolkata";
@@ -35,8 +34,6 @@
     LC_TELEPHONE = "en_US.UTF-8";
     LC_TIME = "en_US.UTF-8";
   };
-
-  # services.xserver.enable = true;
 
   services.displayManager.sddm.enable = true;
   services.displayManager.sddm.wayland.enable = true;
@@ -148,20 +145,8 @@
     binfmt = true;
   };
 
-  virtualisation.docker = {
-    enable = true;
+  virtualisation.docker.enable = true;
 
-    # rootless = {
-    #   enable = true;
-    #   setSocketVariable = true;
-    #   daemon.settings = {
-    #     dns = [
-    #       "1.1.1.1"
-    #       "8.8.8.8"
-    #     ];
-    #   };
-    # };
-  };
   users.extraGroups.docker.members = [ "pervez" ];
 
   virtualisation = {
@@ -198,21 +183,5 @@
   networking.nftables.enable = true;
   networking.firewall.trustedInterfaces = [ "virbr0" ];
 
-  # virtualisation.incus.enable = true;
-  # users.extraGroups.incus.members = [ "pervez" ];
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "25.11"; # Did you read the comment?
-
+  system.stateVersion = "25.11";
 }
