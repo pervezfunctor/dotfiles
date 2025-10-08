@@ -166,6 +166,8 @@ home-manager_install() {
     return 1
   fi
 
+  nix-vars-create "$HOME/nix-config/vars.nix"
+
   slog "nix-config copied to $HOME/nix-config. Running hms to apply configuration."
 
   local profile=${1:-shell}
