@@ -212,7 +212,8 @@ vm_install() {
 
     si iptables-nft libvirt qemu-base virt-install bridge-utils dnsmasq jq \
         edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs \
-        guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat
+        guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat \
+        xmlstarlet
 
     is_distrobox || vm-ui_install
 

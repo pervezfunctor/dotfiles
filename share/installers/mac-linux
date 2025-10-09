@@ -265,7 +265,7 @@ vm_check() {
   min_check
 
   if is_linux; then
-    cmd_check virt-install virsh jq virt-cat qemu-img wget xorriso
+    cmd_check virt-install virt-xml virsh jq virt-cat qemu-img wget xorriso
     is_desktop && cmd_check virt-viewer virt-manager
   elif is_mac; then
     cmd_check jq colima orbstack

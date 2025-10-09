@@ -330,7 +330,7 @@ vm_install() {
 
   si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils \
     virgl-server qemu-utils spice-client-gtk spice-vdagent \
-    cloud-image-utils libguestfs-tools libosinfo-bin jq
+    cloud-image-utils libguestfs-tools libosinfo-bin jq xmlstarlet
 
   is_distrobox || vm-ui_install
 

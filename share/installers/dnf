@@ -332,7 +332,7 @@ vm_install() {
         qemu qemu-kvm qemu-img qemu-ui-spice-core qemu-ui-spice-app \
         qemu-char-spice qemu-audio-spice qemu-device-usb-redirect \
         qemu-device-display-virtio-vga qemu-device-display-virtio-gpu \
-        qemu-user-binfmt qemu-user-static qemu-system-x86_64 jq \
+        qemu-user-binfmt qemu-user-static qemu-system-x86_64 jq xmlstarlet \
         coreos-installer bootc pykickstart lorax xorriso squashfs-tools bsdtar \
         snapper btrfs-progs grub2 grub2-tools libguestfs-tools libosinfo
 

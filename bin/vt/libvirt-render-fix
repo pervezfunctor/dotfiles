@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: $0 <domain-name> [/dev/dri/renderD128]" >&2
+  exit 1
+fi
+
+virt-xml "$1" --edit --graphics type=spice,gl=on,rendernode=/dev/dri/renderD128
