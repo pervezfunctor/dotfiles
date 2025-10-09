@@ -154,12 +154,8 @@ dbox-virt-manager() {
     patterns-server-kvm_tools
     qemu-extra
     qemu-linux-user
-    qemu-hw-display-virtio-gpu-pci
     qemu-hw-display-virtio-gpu
-    qemu-ui-gtk
     qemu-ui-opengl
-    qemu-ui-spice-core
-    qemu-ui-spice-app
     qemu-spice
     spice-gtk
     libvirglrenderer1
