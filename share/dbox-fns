@@ -82,7 +82,7 @@ dbox_create_root() {
 
   if dbox_create "$CONTAINER_NAME" "$IMAGE" --root "$@"; then
     slog "Distrobox ${CONTAINER_NAME} created successfully"
-    slog "Use rdbe --root ${CONTAINER_NAME} to enter"
+    slog "Use rdbe ${CONTAINER_NAME} to enter"
     return 0
   else
     fail "Failed to create distrobox ${CONTAINER_NAME}"
