@@ -1,0 +1,110 @@
+#! /usr/bin/env /bash
+
+# Function that returns a string via stdout
+# Returns 0 on success, 1 on error
+# Error messages go to stderr
+get_user_info() {
+    local username="$1"
+
+    # Validate input
+    if [[ -z "$username" ]]; then
+        echo "Error: Username is required" >&2
+        return 1
+    fi
+
+    # Simulate some processing
+    if [[ "$username" == "invalid" ]]; then
+        echo "Error: Invalid username provided" >&2
+        return 1
+    fi
+
+    # Return the string via stdout
+    echo "UserInfo:$username:Active"
+    return 0
+}
+
+# Another example: Reading a configuration value
+read_config() {
+    local key="$1"
+    local config_file="config.txt"
+
+    if [[ ! -f "$config_file" ]]; then
+        echo "Error: Config file not found" >&2
+        return 1
+    fi
+
+    local value
+    value=$(grep "^$key=" "$config_file" | cut -d'=' -f2)
+
+    if [[ -z "$value" ]]; then
+        echo "Error: Key '$key' not found in config" >&2
+        return 1
+    fi
+
+    echo "$value"
+    return 0
+}
+
+# ===== RECOMMENDED APPROACHES TO CALL THESE FUNCTIONS =====
+
+echo "=== Approach 1: Capture output and check return code separately ==="
+output=$(get_user_info "john")
+status=$?
+
+if [[ $status -eq 0 ]]; then
+    echo "Success! Got: $output"
+else
+    echo "Function failed with status: $status"
+fi
+
+echo -e "\n=== Approach 2: Check status immediately with if statement ==="
+if output=$(get_user_info "alice"); then
+    echo "Success! Got: $output"
+else
+    echo "Function failed"
+fi
+
+echo -e "\n=== Approach 3: Inline check with || for error handling ==="
+output=$(get_user_info "bob") || {
+    echo "Failed to get user info, using default"
+    output="default_user"
+}
+echo "Using: $output"
+
+echo -e "\n=== Approach 4: Exit script on error (strict mode) ==="
+set -e  # Exit on any error
+output=$(get_user_info "charlie")
+echo "Got: $output"
+set +e  # Disable exit on error
+
+echo -e "\n=== Example with error case ==="
+if output=$(get_user_info "invalid"); then
+    echo "Success: $output"
+else
+    echo "Failed as expected (error message was shown above)"
+fi
+
+echo -e "\n=== Example with missing argument ==="
+if output=$(get_user_info); then
+    echo "Success: $output"
+else
+    echo "Failed as expected (error message was shown above)"
+fi
+
+# ===== BEST PRACTICES SUMMARY =====
+cat << 'EOF'
+
+=== BEST PRACTICES ===
+
+1. OUTPUT: Use 'echo' to stdout for return values
+2. ERRORS: Use 'echo "Error: ..." >&2' for error messages (stderr)
+3. STATUS: Return 0 for success, 1 (or other non-zero) for errors
+4. CALLING: Capture output with $(...) and check $? or use if statement
+
+Key advantages:
+- Separates data (stdout) from errors (stderr)
+- Allows piping and redirection
+- Standard Unix convention
+- Easy to test and debug
+
+EOF
