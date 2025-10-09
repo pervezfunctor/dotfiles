@@ -1,0 +1,410 @@
+#!/usr/bin/env bash
+
+# shellcheck shell=bash
+
+## Logging system for Bash scripts
+##
+## Overview
+## --------
+## This module provides a reusable logging framework that combines terminal
+## output, coloured levels, timestamped records, and file-based auditing.  It is
+## designed to be sourced into other Bash scripts and offers the following key
+## capabilities:
+##
+##   - Structured log messages containing ISO-8601 UTC timestamps and level tags.
+##   - Configurable log level thresholds (TRACE, DEBUG, INFO, WARN, FAIL/ERROR).
+##   - Optional ANSI colour codes when writing to interactive terminals, with
+##     auto-detection and manual overrides.
+##   - Dedicated log files per severity plus files capturing redirected stdout
+##     and stderr streams for post-run inspection.
+##   - Quiet mode for suppressing terminal output while still persisting logs.
+##   - Idempotent initialisation so scripts can source and re-initialise safely,
+##     including force-reset functionality.
+##
+## Usage
+## -----
+##   1. Source the script inside your Bash program:
+##        source "/path/to/share/logs"
+##
+##   2. (Optional) Configure environment variables before sourcing:
+##        LOG_DIR=/tmp/mylogs LOG_LEVEL=DEBUG LOG_USE_COLOR=always source ...
+##
+##   3. Initialise logging, typically near the top of your script:
+##        log_init --session my-job
+##
+##      Options:
+##        --dir/-d <path>        Override output directory (default: $LOG_DIR or $DOT_DIR/logs).
+##        --session/-s <name>    Custom session prefix for log files (default: timestamp).
+##        --no-redirect          Do not redirect stdout/stderr automatically.
+##        --redirect             Force stream redirection (default).
+##        --force                Reinitialise even if already initialised.
+##
+##   4. Emit log messages using the helper functions:
+##        log_info "Starting job"
+##        log_warn "Non-critical issue detected"
+##        log_fail "Operation failed"
+##
+##      Each helper also accepts `--quiet` as the first argument to silence
+##      terminal output while still writing to log files:
+##        log_warn --quiet "Detailed warning stored silently"
+##
+##   5. Optional controls:
+##        log_set_level WARN        # Raise threshold to WARN and above
+##        log_redirect_stdstreams   # (Re)attach stdout/stderr to their files
+##
+## Log Files
+## ---------
+## With a session name of "backup", the following files are created inside the
+## resolved log directory:
+##   backup.info.log    - TRACE/DEBUG/INFO messages (and higher)
+##   backup.warn.log    - WARN messages
+##   backup.fail.log    - FAIL/ERROR messages
+##   backup.stdout.log  - Captured stdout when redirection is enabled
+##   backup.stderr.log  - Captured stderr when redirection is enabled
+##
+## Environment Variables
+## ---------------------
+##   LOG_LEVEL           Default severity threshold (default: INFO).
+##   LOG_USE_COLOR       "auto", "always", or "never" (default: auto).
+##   LOG_DISABLE_REDIRECT  Set to 1 to disable automatic stream redirection.
+##   LOG_DIR             Initial log directory (falls back to $DOT_DIR/logs or $HOME/logs).
+##   LOG_SESSION         Session name (default: timestamp).
+##   LOG_INFO_FILE, LOG_WARN_FILE, LOG_FAIL_FILE,
+##   LOG_STDOUT_FILE, LOG_STDERR_FILE
+##                       Respectively the destinations after log_init.
+
+LOG_LEVEL=${LOG_LEVEL:-INFO}
+LOG_USE_COLOR=${LOG_USE_COLOR:-auto}
+LOG_DISABLE_REDIRECT=${LOG_DISABLE_REDIRECT:-0}
+LOG_DIR=${LOG_DIR:-}
+LOG_SESSION=${LOG_SESSION:-}
+LOG_INFO_FILE=${LOG_INFO_FILE:-}
+LOG_WARN_FILE=${LOG_WARN_FILE:-}
+LOG_FAIL_FILE=${LOG_FAIL_FILE:-}
+LOG_STDOUT_FILE=${LOG_STDOUT_FILE:-}
+LOG_STDERR_FILE=${LOG_STDERR_FILE:-}
+LOG_STDSTREAM_REDIRECTED=${LOG_STDSTREAM_REDIRECTED:-}
+LOGGING_INITIALIZED=${LOGGING_INITIALIZED:-}
+LOG_STDOUT_SAVED=${LOG_STDOUT_SAVED:-}
+LOG_STDERR_SAVED=${LOG_STDERR_SAVED:-}
+
+__log_default_dir() {
+  if [[ -n "${LOG_DIR:-}" ]]; then
+    printf '%s\n' "$LOG_DIR"
+  elif [[ -n "${DOT_DIR:-}" ]]; then
+    printf '%s\n' "${DOT_DIR%/}/logs"
+  else
+    printf '%s\n' "${HOME:-.}/logs"
+  fi
+}
+
+__log_normalise_level() {
+  local level=${1:-INFO}
+  level=$(printf '%s' "$level" | tr '[:lower:]' '[:upper:]')
+  case "$level" in
+    TRACE|DEBUG|INFO|WARN|FAIL|ERROR)
+      printf '%s\n' "$level"
+      ;;
+    *)
+      printf 'INFO\n'
+      ;;
+  esac
+}
+
+__log_level_value() {
+  case "$1" in
+    TRACE) printf '10\n' ;;
+    DEBUG) printf '20\n' ;;
+    INFO)  printf '30\n' ;;
+    WARN)  printf '40\n' ;;
+    FAIL|ERROR) printf '50\n' ;;
+    *)     printf '30\n' ;;
+  esac
+}
+
+__log_level_label() {
+  case "$1" in
+    TRACE) printf 'TRACE' ;;
+    DEBUG) printf 'DEBUG' ;;
+    INFO)  printf 'INFO' ;;
+    WARN)  printf 'WARN' ;;
+    FAIL|ERROR) printf 'FAIL' ;;
+    *)     printf 'INFO' ;;
+  esac
+}
+
+__log_level_fd() {
+  case "$1" in
+    WARN|FAIL|ERROR) printf '2\n' ;;
+    *)               printf '1\n' ;;
+  esac
+}
+
+__log_level_colour() {
+  case "$1" in
+    TRACE) printf '0;37' ;;  # light grey
+    DEBUG) printf '0;36' ;;  # cyan
+    INFO)  printf '0;34' ;;  # blue
+    WARN)  printf '0;33' ;;  # yellow
+    FAIL|ERROR) printf '0;31' ;;  # red
+    *)     printf '0;34' ;;
+  esac
+}
+
+__log_file_for_level() {
+  case "$1" in
+    WARN) printf '%s\n' "${LOG_WARN_FILE:-}" ;;
+    FAIL|ERROR) printf '%s\n' "${LOG_FAIL_FILE:-}" ;;
+    TRACE|DEBUG|INFO|*) printf '%s\n' "${LOG_INFO_FILE:-}" ;;
+  esac
+}
+
+__log_timestamp() {
+  if command -v gdate >/dev/null 2>&1; then
+    gdate -u +'%Y-%m-%dT%H:%M:%S.%3NZ'
+  else
+    date -u +'%Y-%m-%dT%H:%M:%S.%3NZ'
+  fi
+}
+
+__log_should_colour() {
+  local fd=$1
+  case "$LOG_USE_COLOR" in
+    never|0) return 1 ;;
+    always|1) return 0 ;;
+    auto|*) [[ -t $fd ]] ;;
+  esac
+}
+
+__log_prepare_files() {
+  local file
+  for file in "$@"; do
+    [[ -n "$file" ]] || continue
+    if [[ ! -f "$file" ]]; then
+      : >"$file"
+    fi
+  done
+}
+
+log_init() {
+  local target_dir
+  local session_name
+  local do_redirect=1
+  local force_reset=0
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -d|--dir)
+        if [[ $# -lt 2 ]]; then
+          printf 'log_init: --dir option requires a value\n' >&2
+          return 1
+        fi
+        target_dir=$2
+        shift 2
+        ;;
+      -s|--session|--name)
+        if [[ $# -lt 2 ]]; then
+          printf 'log_init: --session option requires a value\n' >&2
+          return 1
+        fi
+        session_name=$2
+        shift 2
+        ;;
+      --no-redirect)
+        do_redirect=0
+        shift
+        ;;
+      --redirect)
+        do_redirect=1
+        shift
+        ;;
+      --force)
+        force_reset=1
+        shift
+        ;;
+      *)
+        shift
+        ;;
+    esac
+  done
+
+  if [[ -n "${LOGGING_INITIALIZED:-}" && "$force_reset" -ne 1 ]]; then
+    return 0
+  fi
+
+  if (( force_reset == 1 )); then
+    LOG_STDSTREAM_REDIRECTED=
+  fi
+
+  target_dir=${target_dir:-$(__log_default_dir)}
+  session_name=${session_name:-${LOG_SESSION:-$(date +'%Y%m%d-%H%M%S')}}
+
+  mkdir -p "$target_dir"
+
+  LOG_DIR=$target_dir
+  LOG_SESSION=$session_name
+  LOG_INFO_FILE="${LOG_DIR%/}/${LOG_SESSION}.info.log"
+  LOG_WARN_FILE="${LOG_DIR%/}/${LOG_SESSION}.warn.log"
+  LOG_FAIL_FILE="${LOG_DIR%/}/${LOG_SESSION}.fail.log"
+  LOG_STDOUT_FILE="${LOG_DIR%/}/${LOG_SESSION}.stdout.log"
+  LOG_STDERR_FILE="${LOG_DIR%/}/${LOG_SESSION}.stderr.log"
+
+  __log_prepare_files \
+    "$LOG_INFO_FILE" \
+    "$LOG_WARN_FILE" \
+    "$LOG_FAIL_FILE" \
+    "$LOG_STDOUT_FILE" \
+    "$LOG_STDERR_FILE"
+
+  local disable_redirect
+  disable_redirect="${LOG_DISABLE_REDIRECT:-0}"
+  if (( disable_redirect != 1 && do_redirect == 1 )); then
+    log_redirect_stdstreams
+  fi
+
+  LOGGING_INITIALIZED=1
+}
+
+log_set_level() {
+  LOG_LEVEL="$(__log_normalise_level "$1")"
+}
+
+log_redirect_stdstreams() {
+  if [[ -n "${LOG_STDSTREAM_REDIRECTED:-}" ]]; then
+    return 0
+  fi
+
+  if [[ -z "${LOG_STDOUT_FILE:-}" || -z "${LOG_STDERR_FILE:-}" ]]; then
+    log_init --no-redirect --force
+  fi
+
+  if [[ -z "${LOG_STDOUT_SAVED:-}" ]]; then
+    exec 3>&1
+    LOG_STDOUT_SAVED=1
+  fi
+
+  if [[ -z "${LOG_STDERR_SAVED:-}" ]]; then
+    exec 4>&2
+    LOG_STDERR_SAVED=1
+  fi
+
+  exec > >(tee -a "$LOG_STDOUT_FILE" >&3)
+  exec 2> >(tee -a "$LOG_STDERR_FILE" >&4)
+
+  LOG_STDSTREAM_REDIRECTED=1
+}
+
+__log_write() {
+  local quiet=0
+  if [[ "${1:-}" == "--quiet" ]]; then
+    quiet=1
+    shift
+  fi
+
+  local level
+  level=$(__log_normalise_level "$1")
+  shift
+  local message="$*"
+
+  [[ -n "${LOGGING_INITIALIZED:-}" ]] || log_init
+
+  local threshold
+  threshold=$(__log_level_value "$LOG_LEVEL")
+  local current
+  current=$(__log_level_value "$level")
+
+  if (( current < threshold )); then
+    return 0
+  fi
+
+  local timestamp
+  timestamp=$(__log_timestamp)
+  local label
+  label=$(__log_level_label "$level")
+  local fd
+  fd=$(__log_level_fd "$level")
+  local colour
+  colour=$(__log_level_colour "$level")
+  local file
+  file=$(__log_file_for_level "$level")
+  local line
+
+  printf -v line '[%s] [%s] %s\n' "$timestamp" "$label" "$message"
+
+  if [[ -n "$file" ]]; then
+    printf '%s' "$line" >>"$file"
+  fi
+
+  if (( fd == 1 )) && [[ -n "${LOG_STDOUT_FILE:-}" ]]; then
+    printf '%s' "$line" >>"$LOG_STDOUT_FILE"
+  elif (( fd == 2 )) && [[ -n "${LOG_STDERR_FILE:-}" ]]; then
+    printf '%s' "$line" >>"$LOG_STDERR_FILE"
+  fi
+
+  if (( quiet == 0 )); then
+    if __log_should_colour "$fd"; then
+      if (( fd == 1 )); then
+        printf '\r\033[2K[%s] [ \033[%sm%s\033[0m ] %s\n' \
+          "$timestamp" "$colour" "$label" "$message" >&1
+      else
+        printf '\r\033[2K[%s] [ \033[%sm%s\033[0m ] %s\n' \
+          "$timestamp" "$colour" "$label" "$message" >&2
+      fi
+    else
+      if (( fd == 1 )); then
+        printf '[%s] [ %s ] %s\n' "$timestamp" "$label" "$message" >&1
+      else
+        printf '[%s] [ %s ] %s\n' "$timestamp" "$label" "$message" >&2
+      fi
+    fi
+  fi
+}
+
+log_trace() {
+  if [[ "${1:-}" == "--quiet" ]]; then
+    shift
+    __log_write --quiet TRACE "$@"
+  else
+    __log_write TRACE "$@"
+  fi
+}
+
+log_debug() {
+  if [[ "${1:-}" == "--quiet" ]]; then
+    shift
+    __log_write --quiet DEBUG "$@"
+  else
+    __log_write DEBUG "$@"
+  fi
+}
+
+log_info() {
+  if [[ "${1:-}" == "--quiet" ]]; then
+    shift
+    __log_write --quiet INFO "$@"
+  else
+    __log_write INFO "$@"
+  fi
+}
+
+log_warn() {
+  if [[ "${1:-}" == "--quiet" ]]; then
+    shift
+    __log_write --quiet WARN "$@"
+  else
+    __log_write WARN "$@"
+  fi
+}
+
+log_fail() {
+  if [[ "${1:-}" == "--quiet" ]]; then
+    shift
+    __log_write --quiet FAIL "$@"
+  else
+    __log_write FAIL "$@"
+  fi
+}
+
+slog() { log_info "$@"; }
+warn() { log_warn "$@"; }
+fail() { log_fail "$@"; }
