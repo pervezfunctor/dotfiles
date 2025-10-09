@@ -134,6 +134,7 @@ dbox-wolfi() {
 
 dbox-virt-manager() {
   local CONTAINER_NAME=${1:-virt-manager}
+
   local PKGS=(
     openssh-server
     patterns-server-kvm_server
@@ -142,7 +143,16 @@ dbox-virt-manager() {
     qemu-linux-user
     qemu-hw-display-virtio-gpu-pci
     qemu-hw-display-virtio-gpu
+    qemu-ui-gtk
+    qemu-ui-opengl
+    qemu-ui-spice-core
+    qemu-ui-spice-app
+    qemu-spice
+    spice-gtk
+    libvirglrenderer1
+    xmlstarlet
   )
+
   local services=(
     sshd.service
     virtqemud.socket
@@ -150,6 +160,7 @@ dbox-virt-manager() {
     virtstoraged.socket
     virtnodedevd.socket
   )
+
   dbox_create_root "${CONTAINER_NAME}" registry.opensuse.org/opensuse/distrobox:latest \
     --pull \
     --init \
@@ -220,7 +231,9 @@ dbox-incus() {
     --init --unshare-all --no-entry \
     --volume /var/lib/incus:/var/lib/incus \
     --volume /lib/modules:/lib/modules:ro \
-    --additional-packages "systemd libpam-systemd"
+    # --device /dev/vsock \
+    --additional-packages "systemd libpam-systemd" \
+    --init-hooks "usermod -aG incus-admin ${USER}"
 }
 
 dbox-alpine-edge-init() {
