@@ -104,6 +104,7 @@ shell_binstall() {
   is_distrobox || terminal_groupstall
 
   shell_install
+  brew_install
 }
 
 shell-slim_groupstall() {
@@ -135,6 +136,7 @@ shell_groupstall() {
   shell_binstall
   is_distrobox || terminal_groupstall
   shell_config_install
+  brew_install
 }
 
 brew_groupstall() {
@@ -201,7 +203,9 @@ docker_groupstall() {
   docker_install
   docker_confstall
 
-  is_linux && fpi sh.loft.devpod
+  is_linux || return 0
+  is_desktop || return 0
+  is_distrobox || fpi sh.loft.devpod
 }
 
 work_groupstall() {

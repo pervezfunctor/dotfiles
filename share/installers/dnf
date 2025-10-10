@@ -295,7 +295,7 @@ docker_install() {
     docker_fedora_repo
 
     si docker-ce docker-ce-cli containerd.io docker-buildx-plugin \
-        docker-compose-plugin
+        docker-compose-plugin dive slim
 
     slog "docker installation done!"
 }
@@ -420,4 +420,14 @@ sway_binstall() {
     si sway-config-fedora kitty
 
     slog "sway installation done!"
+}
+
+system-docker_install() {
+    has_cmd docker && return 1
+
+    slog "Installing docker using os packages..."
+
+    si docker docker-compose
+
+    slog "docker installation done!"
 }

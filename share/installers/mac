@@ -51,7 +51,6 @@ essential_install() {
   slog "Installing Essential packages"
 
   bis p7zip unar zip pkgx zstd newt
-  ui_install
 
   slog "Essential packages installation done!"
 }
@@ -135,6 +134,8 @@ docker_install() {
   else
     curl -sSL https://desktop.docker.com/mac/main/amd64/Docker.dmg -o ~/Downloads/Docker.dmg
   fi
+
+  bis dive
 
   if [ -d /Volumes/Docker ]; then
     warn "Docker.dmg already mounted, unmounting"

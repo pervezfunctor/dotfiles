@@ -400,3 +400,11 @@ pm_install() {
   si net-tools iproute2 nmap lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ \
     glmark2
 }
+
+system-docker_binstall() {
+  has_cmd docker && return 1
+
+  slog "Installing docker using os packages..."
+
+  si docker.io docker-compose-v2 slim
+}

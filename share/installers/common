@@ -67,7 +67,7 @@ brew-shell_install() {
 
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
         atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi \
-        ollama carapace lazygit eza fd luarocks runme act
+        ollama carapace lazygit eza fd luarocks runme act mask
 
     local pkgs=()
 
@@ -113,8 +113,8 @@ pixi-shell-slim_install() {
 pixi-shell_install() {
     pixi-shell-slim_install
 
-    pis broot just lazydocker gdu nvim lazygit luarocks micro glances \
-        cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi \
+    pis broot just lazydocker gdu nvim lazygit luarocks micro glances mask \
+        cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi act \
         carapace direnv yq bat carapace shellcheck fd git-delta jq yq go-shfmt
 
     local pkgs=()
@@ -601,14 +601,14 @@ npm_install() {
         curl https://get.volta.sh | bash
     fi
 
-    if ! has_cmd volta; then
+    if ! has_cmd ~/.volta/bin/volta; then
         warn "volta not installed! Skipping npm setup."
         return 1
     fi
 
     if ! has_cmd npm; then
         slog "Setting up npm with volta"
-        volta install node@latest
+        ~/.volta/bin/volta install node@latest
     fi
 
     cmd_check volta npm

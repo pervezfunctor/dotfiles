@@ -212,7 +212,7 @@ docker_install() {
 
     slog "Installing docker"
 
-    si docker docker-compose docker-compose-switch
+    si docker docker-compose docker-compose-switch dive slim
 
     slog "docker installation done!"
 }

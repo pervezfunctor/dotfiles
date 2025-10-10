@@ -111,13 +111,13 @@ ssh_vmu() {
     exit 1
   fi
 
-  if [[ ! -f ~/.vm-ports ]]; then
+  if [[ ! -f ~/.vmu-ports ]]; then
     echo "No VMs found"
     exit 1
   fi
 
   local entry
-  entry=$(grep -m1 "^$VM " ~/.vm-ports) || {
+  entry=$(grep -m1 "^$VM " ~/.vmu-ports) || {
     echo "VM $VM not found"
     exit 1
   }
