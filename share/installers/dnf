@@ -334,7 +334,8 @@ vm_install() {
         qemu-device-display-virtio-vga qemu-device-display-virtio-gpu \
         qemu-user-binfmt qemu-user-static qemu-system-x86_64 jq xmlstarlet \
         coreos-installer bootc pykickstart lorax xorriso squashfs-tools bsdtar \
-        snapper btrfs-progs grub2 grub2-tools libguestfs-tools libosinfo
+        snapper btrfs-progs grub2 grub2-tools libguestfs-tools libosinfo \
+        osinfo-db edk2-ovmf dmidecode osinfo-db-tools
 
     is_distrobox || vm-ui_install
 

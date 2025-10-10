@@ -33,8 +33,8 @@ git-checkout-previous-file() {
 }
 
 osquery-update-db() {
-  if ! has_cmd osqueryi; then
-    warn "osqueryi not installed, cannot update osquery database"
+  if ! has_cmd osinfo-db-import; then
+    warn "osinfo-db-import not installed, cannot update osquery database"
     return 1
   fi
 
