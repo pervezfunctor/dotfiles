@@ -44,7 +44,7 @@
 # keybind = global:cmd+/=toggle_quick_terminal
 
 # theme = GitHub-Dark-Default
-theme = Everforest Dark   Hard
+# theme = Everforest Dark Hard
 # theme = rose-pine-moon
 
 # theme = Catppuccin Mocha
