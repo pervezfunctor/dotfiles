@@ -69,25 +69,34 @@
       };
 
       mkDarwin =
-        imports:
+        {
+          homeImports,
+          osImports ? [ ],
+        }:
         import ./darwin.nix {
-          inherit inputs vars;
+          inherit inputs vars osImports;
 
-          hmModule = mkHmModule imports;
+          hmModule = mkHmModule homeImports;
         };
 
       mkWSL =
-        imports: osImports:
+        {
+          homeImports,
+          osImports ? [ ],
+        }:
         import ./wsl.nix {
           inherit inputs osImports vars;
-          hmModule = mkHmModule imports;
+          hmModule = mkHmModule homeImports;
         };
 
       mkNixos =
-        imports: osImports:
+        {
+          homeImports,
+          osImports ? [ ],
+        }:
         import ./nixos.nix {
           inherit inputs osImports vars;
-          hmModule = mkHmModule imports;
+          hmModule = mkHmModule homeImports;
         };
     in
     {
@@ -126,14 +135,17 @@
       };
 
       nixosConfigurations = {
-        wsl = mkWSL [ ./home/core.nix ] [ ];
-        "${vars.hostname}" = mkNixos [ ./home ] [ ];
+        wsl = mkWSL { homeImports = [ ./home/core.nix ]; };
+
+        "${vars.hostname}" = mkNixos { homeImports = [ ./home ]; };
       };
 
       darwinConfigurations = {
-        "${vars.hostname}" = mkDarwin [
-          ./home/core.nix
-        ];
+        "${vars.hostname}" = mkDarwin {
+          homeImports = [
+            ./home/core.nix
+          ];
+        };
       };
 
       # formatter = nixpkgs.legacyPackages.${system}.alejandra;
