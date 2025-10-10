@@ -13,6 +13,7 @@ MEMORY="8192"
 DISK_SIZE="30G"
 BRIDGE="default"
 OS_VARIANT="linux"
+DISTRO="arch"
 
 check_whiptail() {
   if ! has_cmd whiptail; then
@@ -71,7 +72,7 @@ configure_ubuntu() {
   BASE_IMAGE_NAME="${RELEASE}-server-cloudimg-amd64.img"
   DOWNLOAD_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${BASE_IMAGE_NAME}"
   USER_GROUPS=("sudo" "adm" "sambashare")
-  OS_VARIANT="ubuntu25.04"
+  OS_VARIANT="ubuntu25.10"
 }
 
 configure_debian() {
@@ -158,10 +159,20 @@ generate_cloud_init() {
   local pub_key
   pub_key=$(cat "$SSH_KEY")
 
+  local openssh_pkg
+  case "$DISTRO" in
+  arch | tw | tumbleweed)
+    openssh_pkg="openssh"
+    ;;
+  *)
+    openssh_pkg="openssh-server"
+    ;;
+  esac
+
   local -a packages=(
     "qemu-guest-agent"
     "curl"
-    "openssh-server"
+    "$openssh_pkg"
   )
 
   cat >"${USER_DATA}" <<EOF

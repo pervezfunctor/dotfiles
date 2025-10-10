@@ -212,9 +212,9 @@ configure_distro() {
     OS_VARIANT="debian13"
     ;;
   ubuntu)
-    IMG_URL="https://cloud-images.ubuntu.com/plucky/current/plucky-server-cloudimg-amd64.img"
-    BASE_IMG="${BASE_IMG_DIR}/plucky-server-cloudimg-amd64.img"
-    OS_VARIANT="ubuntu25.04"
+    IMG_URL="https://cloud-images.ubuntu.com/questing/current/questing-server-cloudimg-amd64.img"
+    BASE_IMG="${BASE_IMG_DIR}/questing-server-cloudimg-amd64.img"
+    OS_VARIANT="ubuntu25.10"
     ;;
   fedora)
     IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"

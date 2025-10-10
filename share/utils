@@ -792,6 +792,14 @@ is_plucky() {
   [[ "$VERSION_CODENAME" == "plucky" ]] || [[ "${VERSION:-}" =~ .*[Pp]lucky.* ]] || [[ "${NAME:-}" =~ .*[Pp]lucky.* ]]
 }
 
+is_questing() {
+  [[ -f /etc/os-release ]] || return 1
+  # shellcheck disable=SC1091
+  . /etc/os-release
+
+  [[ "$VERSION_CODENAME" == "questing" ]] || [[ "${VERSION:-}" =~ .*[Qq]uesting.* ]] || [[ "${NAME:-}" =~ .*[Qq]uesting.* ]]
+}
+
 is_noble() {
   [[ -f /etc/os-release ]] || return 1
   # shellcheck disable=SC1091

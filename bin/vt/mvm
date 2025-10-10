@@ -41,6 +41,7 @@ SUPPORTED DISTRIBUTIONS:
     noble                   Ubuntu 24.04 LTS
     oracular                Ubuntu 24.10
     plucky                  Ubuntu 25.04
+    questing                Ubuntu 25.10
 
 EXAMPLES:
     $0 install                      # Install Multipass

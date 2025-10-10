@@ -50,7 +50,7 @@ configure_alpine() {
 
 configure_ubuntu() {
     VM_NAME=${VM_NAME:=ubuntu}
-    RELEASE=${RELEASE:=plucky} # 25.10
+    RELEASE=${RELEASE:=questing} # 25.10
 
     IMG_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${RELEASE}-server-cloudimg-amd64.img"
     BASE_IMG_NAME="${RELEASE}.img"
@@ -58,7 +58,7 @@ configure_ubuntu() {
     # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
 
     # Only support the default release
-    OS_VARIANT="ubuntu25.04"
+    OS_VARIANT="ubuntu25.10"
 }
 configure_tw() {
     VM_NAME=${VM_NAME:=tw}
@@ -162,7 +162,7 @@ OPTIONS:
 
 DISTRIBUTION-SPECIFIC OPTIONS:
     Ubuntu:
-        Default release: plucky (25.10)
+        Default release: questing (25.10)
     Fedora:
         Default release: 42
     Arch:
