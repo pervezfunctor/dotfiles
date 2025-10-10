@@ -15,7 +15,7 @@
       macos-option-as-alt = true;
       background-opacity = 0.90;
       # theme = "Catppuccin Mocha";
-      theme = "Everforest Dark   Hard";
+      theme = "Everforest Dark Hard";
 
       # keybind = [
       #   "ctrl+h=goto_split:left"
