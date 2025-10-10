@@ -69,10 +69,6 @@ ubuntu_packages() {
 
   fzf_install
 
-  if is_desktop || is_distrobox; then
-    si wl-clipboard libsecret-tools
-  fi
-
   has_cmd tldr && tldr --update
 
   slog "Installing ubuntu packages done!"
@@ -164,7 +160,7 @@ ui_install() {
 
   slog "Installing ui..."
 
-  si gnome-keyring wl-clipboard flatpak
+  si libsecret-tools gnome-keyring wl-clipboard flatpak
   flathub_install
 
   slog "ui installation done!"
@@ -187,8 +183,6 @@ essential_install() {
   si zip unar micro p7zip libreadline-dev libsqlite3-dev libffi-dev \
     libbz2-dev liblzma-dev libsecret-tools build-essential \
     command-not-found libfuse2 zstd gawk whiptail
-
-  is_distrobox || ui_install
 
   slog "Essential packages installation done!"
 }
@@ -332,8 +326,6 @@ vm_install() {
     virgl-server qemu-utils spice-client-gtk spice-vdagent jq xmlstarlet \
     cloud-image-utils libguestfs-tools osinfo-db edk2-ovmf dmidecode \
     osinfo-db-tools
-
-  is_distrobox || vm-ui_install
 
   slog "libvirt installation done!"
 }

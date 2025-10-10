@@ -107,8 +107,6 @@ essential_install() {
     si unar zip micro-editor 7zip readline-devel sqlite3-devel libffi-devel \
         libbz2-devel xz-devel gum libsecret gawk newt
 
-    is_distrobox || ui_install
-
     slog "Essential packages installation done!"
 }
 
@@ -205,8 +203,6 @@ vm_install() {
         qemu-hw-display-virtio-gpu qemu-hw-display-virtio-vga qemu-hw-usb-host \
         qemu-hw-usb-redirect qemu-ovmf-x86_64 qemu-tools qemu-ui-gtk \
         qemu-ui-opengl libguestfs-tools libosinfo
-
-    is_distrobox || vm-ui_install
 
     slog "libvirt installation done!"
 }
