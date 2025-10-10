@@ -241,7 +241,6 @@ dbox-incus() {
     --init --unshare-all --no-entry \
     --volume /var/lib/incus:/var/lib/incus \
     --volume /lib/modules:/lib/modules:ro \
-    # --device /dev/vsock \
     --additional-packages "systemd libpam-systemd" \
     --init-hooks "usermod -aG incus-admin ${USER}"
 }
