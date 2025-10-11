@@ -696,7 +696,7 @@ function Install-MultipassVM {
         return
     }
 
-    Write-Host "Setting up Ubuntu 24.10 VM in Multipass..." -ForegroundColor Cyan
+    Write-Host "Setting up Ubuntu 25.10 VM in Multipass..." -ForegroundColor Cyan
 
     if (multipass list | Select-String "ubuntu-ilm") {
         Write-Host "Ubuntu VM 'ubuntu-ilm' already exists. Skipping..." -ForegroundColor Yellow
@@ -707,15 +707,15 @@ function Install-MultipassVM {
 
     Start-Sleep -Seconds 5
 
-    Write-Host "Creating Ubuntu 24.10 VM with 8GB RAM and 20GB disk..." -ForegroundColor Cyan
-    multipass launch oracular --name ubuntu-ilm --memory 8G --disk 20G
+    Write-Host "Creating Ubuntu 25.10 VM with 8GB RAM and 20GB disk..." -ForegroundColor Cyan
+    multipass launch questing --name ubuntu-ilm --memory 8G --disk 20G
 
     Start-Sleep -Seconds 5
 
     Write-Host "Running shell installer script..." -ForegroundColor Cyan
     multipass exec ubuntu-ilm -- bash -c "curl -sSL https://is.gd/egitif | bash -s -- min"
 
-    Write-Host "Ubuntu 24.10 VM setup complete!" -ForegroundColor Green
+    Write-Host "Ubuntu 25.10 VM setup complete!" -ForegroundColor Green
     multipass info ubuntu-ilm
 
     Write-Host "To access your VM, use: multipass shell ubuntu-ilm" -ForegroundColor Cyan
@@ -901,25 +901,25 @@ function Initialize-CentOSWSL {
 }
 
 
-function Install-Ubuntu2504 {
-    Write-Host "Installing Ubuntu 25.04 on WSL..." -ForegroundColor Cyan
+function Install-Ubuntu2510 {
+    Write-Host "Installing Ubuntu 25.10 on WSL..." -ForegroundColor Cyan
 
     $installedDistros = wsl --list --quiet
-    if ($installedDistros -contains "Ubuntu-25.04") {
-        Write-Host "Ubuntu 25.04 is already installed." -ForegroundColor Yellow
+    if ($installedDistros -contains "Ubuntu-25.10") {
+        Write-Host "Ubuntu 25.10 is already installed." -ForegroundColor Yellow
         return
     }
 
-    Write-Host "Downloading Ubuntu 25.04 WSL image (this may take time)..." -ForegroundColor Cyan
+    Write-Host "Downloading Ubuntu 25.10 WSL image (this may take time)..." -ForegroundColor Cyan
 
     $tempDir = "$env:TEMP"
     $wslFile = "$tempDir\ubuntu.wsl"
-    $downloadUrl = "https://releases.ubuntu.com/plucky/ubuntu-25.04-wsl-amd64.wsl"
+    $downloadUrl = "https://releases.ubuntu.com/questing/ubuntu-25.10-wsl-amd64.wsl"
 
     $ProgressPreference = 'SilentlyContinue'
     try {
         if (Test-Path $wslFile) {
-            Write-Host "Ubuntu 25.04 WSL image already downloaded." -ForegroundColor Cyan
+            Write-Host "Ubuntu 25.10 WSL image already downloaded." -ForegroundColor Cyan
         }
         else {
             Invoke-WebRequest -Uri $downloadUrl -OutFile $wslFile -UseBasicParsing
@@ -947,7 +947,7 @@ function Install-Ubuntu2504 {
     Remove-Item -Path $wslFile -Force
 
     Write-Host "Ubuntu installed successfully!" -ForegroundColor Green
-    Write-Host "To start Ubuntu, open a terminal and type: wsl -d Ubuntu-25.04" -ForegroundColor Cyan
+    Write-Host "To start Ubuntu, open a terminal and type: wsl -d Ubuntu-25.10" -ForegroundColor Cyan
 }
 
 function Install-NixOSWSL {
@@ -1449,7 +1449,7 @@ $availableComponents = [ordered]@{
     "wsl-fedora"       = "Install Fedora WSL"
     "wsl-centos"       = "Install CentOS WSL"
     "wsl-nixos"        = "Install NixOS WSL"
-    "wsl-ubuntu-25.04" = "Install Ubuntu 25.04 WSL"
+    "wsl-ubuntu-25.10" = "Install Ubuntu 25.10 WSL"
     # "scoop"          = "Install Scoop"
     "all"              = "Install All Components"
 }
@@ -1646,7 +1646,7 @@ function Install-SelectedComponents {
             "wsl-fedora" { Install-WSLDistro -DistroName "FedoraLinux-42" }
             "wsl-centos" { Install-CentOSWSL }
             "wsl-nixos" { Install-NixOSWSL }
-            "wsl-ubuntu-25.04" { Install-Ubuntu2504 }
+            "wsl-ubuntu-25.10" { Install-Ubuntu2510 }
             # "scoop" { Install-Scoop }
             default { Write-Host "Unknown component: $component" -ForegroundColor Red }
         }
