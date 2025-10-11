@@ -26,7 +26,7 @@
       nwg-look
       swayidle
       libsecret
-      rofi-wayland
+      rofi
       swaynotificationcenter
       networkmanagerapplet
       wl-clipboard

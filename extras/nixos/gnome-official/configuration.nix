@@ -132,11 +132,6 @@
   services.openssh.enable = true;
   networking.firewall.enable = true;
 
-  settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
-
   nix = {
     gc = {
       automatic = true;

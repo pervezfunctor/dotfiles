@@ -61,5 +61,34 @@
   "update.showReleaseNotes": false,
   "nix.enableLanguageServer": true,
   "nix.serverPath": "nixd",
-  "nix.formatterPath": "nixfmt"
+  "nix.formatterPath": "nixfmt",
+  "kilo-code.allowedCommands": [
+    "awk",
+    "bash",
+    "bin/vt/vm",
+    "cd",
+    "column",
+    "cut",
+    "devcontainer",
+    "distrobox",
+    "docker",
+    "echo",
+    "find",
+    "git",
+    "grep",
+    "head",
+    "ip",
+    "nix",
+    "nmcli",
+    "podman",
+    "rg",
+    "sed",
+    "tail",
+    "virsh",
+    "virt-cat"
+  ],
+  "kilo-code.deniedCommands": [
+    "rm",
+    "trash"
+  ]
 }

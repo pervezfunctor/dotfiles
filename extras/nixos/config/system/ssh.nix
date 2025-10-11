@@ -1,6 +1,7 @@
-{ config, ... }:
+{ config, vars, ... }:
 {
-  users.users.root.openssh.authorizedKeys.keys = config.users.users.me.openssh.authorizedKeys.keys;
+  users.users.root.openssh.authorizedKeys.keys =
+    config.users.users."${vars.username}".openssh.authorizedKeys.keys;
   services.openssh = {
     enable = true;
     settings = {

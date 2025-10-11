@@ -1,21 +1,10 @@
-{ inputs, vars, ... }:
-let
-  nixvim = inputs.nixvim;
-in
 {
-  imports = [
-    ./packages.nix
-    ./bash.nix
-    ./zsh.nix
-    ./ui
-
-    nixvim.homeModules.nixvim
-
-    # ./programs
-    ./programs/programs.nix
-    ./programs/ghostty.nix
-    ./programs/nvim.nix
-  ];
+  vars,
+  imports,
+  ...
+}:
+{
+  inherit imports;
 
   programs.home-manager.enable = true;
 

@@ -11,16 +11,15 @@ nixpkgs.lib.nixosSystem {
   system = "x86_64-linux";
   specialArgs = { inherit inputs vars; };
 
-  imports = [
+  modules = [
     ./system/nixos/core.nix
     ./system/core.nix
   ]
-  ++ osImports;
-
-  modules = [
+  ++ osImports
+  ++ [
     {
       programs.nix-ld.enable = true;
-      wsl.defaultUser = "nixos";
+      wsl.defaultUser = vars.username;
       wsl.enable = true;
       system.stateVersion = "25.11";
     }

@@ -10,9 +10,11 @@ darwin.lib.darwinSystem {
   system = "aarch64-darwin";
   specialArgs = { inherit inputs vars; };
 
-  imports = [ ./system/core.nix ] ++ osImports;
-
   modules = [
+    ./system/core.nix
+  ]
+  ++ osImports
+  ++ [
     {
       system.stateVersion = 6;
       nix.enable = false;

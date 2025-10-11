@@ -1,4 +1,4 @@
-{ vars, ... }:
+{ vars, lib, ... }:
 
 let
   btrfsOpts = [
@@ -81,5 +81,11 @@ in
         };
       };
     };
+  };
+
+  fileSystems."/" = {
+    device = lib.mkForce "/dev/disk/by-partlabel/disk-main-ROOT";
+    fsType = "btrfs";
+    options = btrfsOpts ++ [ "subvol=@" ];
   };
 }

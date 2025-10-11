@@ -1,5 +1,7 @@
 { vars, ... }:
 {
+  networking.nftables.enable = true;
+
   virtualisation.lxc.enable = true;
   virtualisation.incus = {
     enable = true;

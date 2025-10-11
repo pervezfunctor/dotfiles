@@ -44,6 +44,7 @@
               users.users."nixos".shell = pkgs.zsh;
               programs.zsh.enable = true;
               system.stateVersion = "25.11";
+              nixpkgs.config.allowUnfree = true;
             }
 
             nixos-wsl.nixosModules.default

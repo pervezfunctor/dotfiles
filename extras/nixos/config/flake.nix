@@ -57,13 +57,49 @@
       nixos-generators,
       microvm,
       nixos-wsl,
-      # nixvim,
+      nixvim,
       ...
     }@inputs:
     let
       system = "x86_64-linux";
-      pkgs = import nixpkgs { inherit system; };
+      pkgs = import nixpkgs {
+        inherit system;
+        config = {
+          allowUnfree = true;
+        };
+      };
       vars = import ./vars.nix { inherit pkgs; };
+
+      commonHomeModules = [
+        ./home/packages.nix
+        ./home/bash.nix
+        ./home/zsh.nix
+        ./home/ui
+      ];
+
+      homeModules = commonHomeModules ++ [
+        nixvim.homeModules.nixvim
+        ./home/programs
+      ];
+
+      mkHomeModule = homeModules: {
+        home-manager = {
+          extraSpecialArgs = {
+            inherit inputs;
+            inherit vars;
+          };
+
+          useUserPackages = true;
+          useGlobalPkgs = true;
+          backupFileExtension = "backup";
+          users.${vars.username} = import ./home {
+            inherit vars;
+            imports = homeModules;
+          };
+        };
+      };
+
+      defaultHomeModule = mkHomeModule commonHomeModules;
 
       commonModules = [
         stylix.nixosModules.stylix
@@ -71,28 +107,16 @@
         quadlet-nix.nixosModules.quadlet
         # nixvim.nixosModules.nixvim
         home-manager.nixosModules.home-manager
-        {
-          home-manager = {
-            extraSpecialArgs = {
-              inherit inputs;
-              inherit vars;
-            };
-
-            useUserPackages = true;
-            useGlobalPkgs = true;
-            backupFileExtension = "backup";
-            users.${vars.username} = import ./home/home.nix;
-          };
-        }
       ];
 
       uiModules = commonModules ++ [ ./system/ui.nix ];
 
-      guestModules = commonModules ++ [
+      guestModules = [
         ./system/systemd-boot.nix
         ./system/guest.nix
         ./system/user.nix
         ./system/ssh.nix
+        ./system/virt/rootfs.nix
       ];
 
       mkNixosSystem =
@@ -106,6 +130,7 @@
           modules = modules;
         };
 
+      # WIP
       mkWSLSystem =
         modules: homeNix:
         nixpkgs.lib.nixosSystem {
@@ -141,13 +166,18 @@
         };
 
       mkUiSystem = extraModules: mkNixosSystem (uiModules ++ extraModules);
+      mkUiWithHome = extraModules: mkUiSystem ([ defaultHomeModule ] ++ extraModules);
 
-      mkBareSystem =
+      mkBareMetalSystem =
         extraModules: mkNixosSystem (uiModules ++ extraModules ++ [ agenix.nixosModules.default ]);
+      mkBareMetalWithHome = extraModules: mkBareMetalSystem (extraModules ++ [ defaultHomeModule ]);
 
-      mkSimpleVmSystem = extraModules: mkNixosSystem (extraModules ++ guestModules);
+      mkSimpleVmSystem = extraModules: mkNixosSystem (commonModules ++ guestModules ++ extraModules);
+      mkSimpleVmWithHome = extraModules: mkSimpleVmSystem ([ defaultHomeModule ] ++ extraModules);
 
-      mkVmSystem = extraModules: mkNixosSystem (uiModules ++ extraModules ++ guestModules);
+      mkVmSystem =
+        extraModules: mkNixosSystem (commonModules ++ guestModules ++ uiModules ++ extraModules);
+      mkVmWithHome = extraModules: mkVmSystem ([ defaultHomeModule ] ++ extraModules);
 
       mkNixosGenerateCommon =
         extraModules: format:
@@ -158,71 +188,43 @@
             inherit inputs;
             inherit vars;
           };
-          modules = extraModules ++ guestModules; # ++ [ { virtualisation.diskImage.size = "20G"; } ];
+          modules = commonModules ++ guestModules ++ extraModules; # ++ [ { virtualisation.diskImage.size = "20G"; } ];
           format = format;
         };
 
       mkNixosGenerateVm = extraModules: mkNixosGenerateCommon extraModules "vm";
+      mkNixosGenerateVmWithHome = extraModules: mkNixosGenerateVm (extraModules ++ [ defaultHomeModule ]);
 
       mkNixosGenerateProxmox =
-        extraModules: mkNixosGenerateCommon extraModules ++ [ ./system/proxmox.nix ] "proxmox";
+        extraModules: mkNixosGenerateCommon (extraModules ++ [ ./system/proxmox.nix ]) "proxmox";
+      mkNixosGenerateProxmoxWithHome =
+        extraModules: mkNixosGenerateProxmox (extraModules ++ [ defaultHomeModule ]);
 
-      mkAnywhereSystem = extraModules: mkBareSystem (extraModules ++ [ disko.nixosModules.disko ]);
+      mkAnywhereSystem = extraModules: mkBareMetalSystem (extraModules ++ [ disko.nixosModules.disko ]);
+      mkAnywhereWithHome = extraModules: mkAnywhereSystem (extraModules ++ [ defaultHomeModule ]);
     in
     {
       homeConfigurations = {
         "nixos" = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
-          modules = [ ./home.nix ];
+          modules = [ defaultHomeModule ];
         };
 
         ${vars.username} = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = { inherit inputs vars; };
-          modules = [
-            # nixvim.homeManagerModules.nixvim
-            # stylix.homeModules.stylix
-            ./home/home.nix
-          ];
+          modules = [ defaultHomeModule ];
         };
       };
 
       nixosConfigurations = {
-        server = mkNixosSystem (commonModules ++ [ ./system/ssh.nix ]);
-
-        gnome = mkUiSystem [ ./system/gnome.nix ];
-        gnome-vm = mkVmSystem [ ./system/gnome.nix ];
-
-        kde = mkUiSystem [ ./system/kde.nix ];
-        kde-vm = mkVmSystem [ ./system/kde.nix ];
-
-        sway = mkUiSystem [ ./system/sway.nix ];
-        sway-vm = mkVmSystem [ ./system/sway.nix ];
-
-        docker-vm = mkSimpleVmSystem [ ./system/virt/docker.nix ];
-        incus-vm = mkSimpleVmSystem [ ./system/virt/incus.nix ];
-        podman-vm = mkSimpleVmSystem [ ./system/virt/podman.nix ];
-
-        anywhere."${vars.hostName}" = mkAnywhereSystem [
-          ./system/disko-config.nix
-          ./system/gnome.nix
-          ./system/ssh.nix
-          ./hosts/${vars.hostName}/hardware-configuration.nix
-        ];
-
-        um580 = mkBareSystem [
+        "um580" = mkBareMetalWithHome [
           ./hosts/um580/hardware-configuration.nix
           ./hosts/um580/fs.nix
           ./system/sway.nix
         ];
 
-        # run with nix build .#ng-vm
-        ng-vm = mkNixosGenerateVm [ ];
-
-        # run with nix build .#ng-pmox
-        ng-pmox = mkNixosGenerateProxmox [ ];
-
-        "7945hx" = mkBareSystem [
+        "7945hx" = mkBareMetalWithHome [
           ./hosts/7945hx/hardware-configuration.nix
           ./system/cosmic.nix
           ./system/apps.nix
@@ -240,8 +242,37 @@
           ];
         };
 
-        wsl = mkWSLSystem [ ] ./home.nix;
+        # examples
 
+        # default = mkNixosSystem [
+        #   uiModules
+        #   mkHomeModule
+        #   [
+        #     ./home/packages.nix
+        #     ./home/zsh.nix
+        #   ]
+        # ];
+
+        # server = mkNixosSystem (commonModules ++ [ ./system/ssh.nix ]);
+        # gnome = mkUiWithHome [ ./system/gnome.nix ];
+        # kde = mkUiWithHome [ ./system/kde.nix ];
+        # sway = mkUiWithHome [ ./system/sway.nix ];
+
+        # virtual machines
+        kde-vm = mkVmSystem [ ./system/kde.nix ];
+        gnome-vm = mkVmSystem [ ./system/gnome.nix ];
+        sway-vm = mkVmWithHome [ ./system/sway.nix ];
+        docker-vm = mkSimpleVmWithHome [ ./system/virt/docker.nix ];
+        incus-vm = mkSimpleVmWithHome [ ./system/virt/incus.nix ];
+        podman-vm = mkSimpleVmWithHome [ ./system/virt/podman.nix ];
+
+        "anywhere-${vars.hostName}" = mkAnywhereWithHome [
+          ./system/disko-config.nix
+          ./system/gnome.nix
+          ./system/ssh.nix
+        ];
+
+        # WIP
         basic-microvm = nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = {
@@ -284,6 +315,12 @@
             }
           ];
         };
+      };
+
+      packages.${system} = {
+        # use with nix build .#ng-vm
+        ng-vm = mkNixosGenerateVmWithHome [ ];
+
       };
     };
 }

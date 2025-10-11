@@ -7,35 +7,40 @@
     alejandra
     atuin
     bacon
-    cargo-info
     carapace
+    cargo-info
     delta
     devbox
     devenv
-    eza
     du-dust
     dua
     duf
     espanso
     evil-helix
+    eza
     fastfetch
     fd
     fselect
     gh
+    ghostscript
     gitui
     gum
     htop
     hurl
     hyperfine
+    imagemagick
     jq
     just
     kondo
     lazygit
+    luarocks
     mask
+    mermaid-cli
     micro-with-wl-clipboard
     mprocs
     navi
     ncspot
+    neovim
     nixd
     nixfmt-rfc-style
     presenterm
@@ -52,6 +57,7 @@
     starship
     stow
     tealdeer
+    tectonic
     tokei
     trash-cli
     tree
