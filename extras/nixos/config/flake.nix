@@ -89,10 +89,11 @@
         ./home/zsh.nix
         ./home/gtk.nix
         ./home/vscode.nix
-        ./home/ghostty.nix
       ];
 
       homeModules = commonHomeModules ++ [
+        ./home/vscode-settings.nix
+        ./home/ghostty.nix
         nixvim.homeModules.nixvim
         ./home/programs.nix
         catppuccin.homeModules.catppuccin

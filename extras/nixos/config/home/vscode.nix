@@ -5,15 +5,19 @@
 
     profiles.default = {
       extensions = with pkgs.vscode-extensions; [
-        catppuccin.catppuccin-vsc
-        catppuccin.catppuccin-vsc-icons
         charliermarsh.ruff
         codezombiech.gitignore
+        docker.docker
         donjayamanne.githistory
         github.github-vscode-theme
+        github.vscode-github-actions
         gruntfuggly.todo-tree
         jnoortheen.nix-ide
+        kilocode.kilo-code
         mads-hartmann.bash-ide-vscode
+        mechatroner.rainbow-csv
+        mhutchie.git-graph
+        ms-azuretools.vscode-containers
         ms-azuretools.vscode-docker
         ms-python.debugpy
         ms-python.python
@@ -21,14 +25,16 @@
         ms-vscode-remote.remote-containers
         ms-vscode-remote.remote-ssh
         ms-vscode-remote.remote-ssh-edit
-        mvllow.rose-pine
+        ms-vscode.remote-explorer
+        quicktype.quicktype
         redhat.vscode-yaml
         tamasfe.even-better-toml
         thenuprojectcontributors.vscode-nushell-lang
         timonwong.shellcheck
+        usernamehw.errorlens
+        vincaslt.highlight-matching-tag
         yzhang.markdown-all-in-one
         zxh404.vscode-proto3
-        # sclu1034.justfile
       ];
 
       #   userSettings = {

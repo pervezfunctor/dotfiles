@@ -35,12 +35,40 @@
 
     "window.titleBarStyle" = "custom";
 
-    "workbench.colorTheme" = "Catppuccin Mocha";
     "workbench.sideBar.location" = "right";
     "docker.extension.enableComposeLanguageServer" = true;
     "github.copilot.enable" = {
       "*" = false;
     };
     "workbench.startupEditor" = "none";
+    "kilo-code.allowedCommands" = [
+      "awk"
+      "bash"
+      "bin/vt/vm"
+      "cd"
+      "column"
+      "cut"
+      "devcontainer"
+      "distrobox"
+      "docker"
+      "echo"
+      "find"
+      "git"
+      "grep"
+      "head"
+      "ip"
+      "nix"
+      "nmcli"
+      "podman"
+      "rg"
+      "sed" 
+      "tail"
+      "virsh"
+      "virt-cat"
+  ];
+  "kilo-code.deniedCommands" = [
+    "rm"
+    "trash"
+  ];  
   };
 }
