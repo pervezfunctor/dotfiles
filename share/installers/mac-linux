@@ -82,7 +82,8 @@ min_binstall() {
   else
     warn "essential_install not available, skipping essential installation"
   fi
-  is_distrobox || has_cmd ui_install && ui_install
+  is_distrobox && return 0
+  has_cmd ui_install && ui_install
 }
 
 shell-slim_binstall() {
@@ -222,7 +223,9 @@ vm_groupstall() {
     return 1
   fi
 
-  is_distrobox || has_cmd vm-ui_install && vm-ui_install
+  if ! is_distrobox; then
+   has_cmd vm-ui_install && vm-ui_install
+  fi
 
   is_linux || return 0
 

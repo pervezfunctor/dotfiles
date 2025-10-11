@@ -121,7 +121,7 @@ debian_packages() {
 
   fzf_install
 
-  if is_desktop || is_distrobox; then
+  if is_desktop; then
     si wl-clipboard libsecret-tools
   fi
 

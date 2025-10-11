@@ -833,11 +833,13 @@ generic_mainstall() {
     fail "No container runtime(docker or podman) installed, skipping distrobox installation"
   fi
 
-  if is_desktop && ! is_distrobox; then
-    jetbrains-mono_install
-    flathub_install
-    ptyxis_install
-  fi
+  is_desktop || return 0
+  is is_distrobox && return 0
+
+  jetbrains-mono_install
+  flathub_install
+  ptyxis_install
+
 }
 
 rpm-ostree-libvirt_groups_setup() {
