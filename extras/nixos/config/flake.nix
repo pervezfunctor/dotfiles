@@ -2,9 +2,21 @@
   description = "ILM NixOS configuration";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    agenix.url = "github:ryantm/agenix";
+
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
+
     flake-parts.url = "github:hercules-ci/flake-parts";
+
+    catppuccin = {
+      url = "github:catppuccin/nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -58,6 +70,7 @@
       microvm,
       nixos-wsl,
       nixvim,
+      catppuccin,
       ...
     }@inputs:
     let
@@ -74,12 +87,15 @@
         ./home/packages.nix
         ./home/bash.nix
         ./home/zsh.nix
-        ./home/ui
+        ./home/gtk.nix
+        ./home/vscode.nix
+        ./home/ghostty.nix
       ];
 
       homeModules = commonHomeModules ++ [
         nixvim.homeModules.nixvim
-        ./home/programs
+        ./home/programs.nix
+        catppuccin.homeModules.catppuccin
       ];
 
       mkHomeModule = homeModules: {
@@ -92,19 +108,20 @@
           useUserPackages = true;
           useGlobalPkgs = true;
           backupFileExtension = "backup";
-          users.${vars.username} = import ./home {
+          users.${vars.username} = import ./home.nix {
             inherit vars;
             imports = homeModules;
           };
         };
       };
 
-      defaultHomeModule = mkHomeModule commonHomeModules;
+      defaultHomeModule = mkHomeModule homeModules;
 
       commonModules = [
         stylix.nixosModules.stylix
         ./system/configuration.nix
         quadlet-nix.nixosModules.quadlet
+        catppuccin.nixosModules.catppuccin
         # nixvim.nixosModules.nixvim
         home-manager.nixosModules.home-manager
       ];
@@ -211,7 +228,7 @@
         };
 
         ${vars.username} = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
+          inherit pkgs;
           extraSpecialArgs = { inherit inputs vars; };
           modules = [ defaultHomeModule ];
         };
@@ -220,7 +237,7 @@
       nixosConfigurations = {
         "um580" = mkBareMetalWithHome [
           ./hosts/um580/hardware-configuration.nix
-          ./hosts/um580/fs.nix
+          ./hosts/generic/fs.nix
           ./system/sway.nix
         ];
 

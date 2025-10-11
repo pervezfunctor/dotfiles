@@ -1,4 +1,4 @@
-{ vars, ... }:
+{ ... }:
 
 {
   programs = {
@@ -9,12 +9,6 @@
     tmux.enable = true;
     yazi.enable = true;
 
-    git = {
-      enable = true;
-      userName = "${vars.gitUserName}";
-      userEmail = "${vars.gitUserEmail}";
-    };
-
     starship = {
       enable = true;
       enableZshIntegration = true;
@@ -22,16 +16,16 @@
       enableNushellIntegration = true;
     };
 
-    atuin = {
-      enable = true;
-      enableZshIntegration = true;
-      enableBashIntegration = true;
-      enableNushellIntegration = true;
-      flags = [
-        "--disable-up-arrow"
-        "--disable-ctrl-r"
-      ];
-    };
+    # atuin = {
+    #   enable = true;
+    #   enableZshIntegration = true;
+    #   enableBashIntegration = true;
+    #   enableNushellIntegration = true;
+    #   flags = [
+    #     "--disable-up-arrow"
+    #     "--disable-ctrl-r"
+    #   ];
+    # };
 
     bat.enable = true;
     carapace.enable = true;
@@ -39,5 +33,12 @@
     eza.enable = true;
     fzf.enable = true;
     zoxide.enable = true;
+
+  };
+
+  catppuccin = {
+    enable = true;
+    flavor = "mocha";
+    accent = "rosewater";
   };
 }

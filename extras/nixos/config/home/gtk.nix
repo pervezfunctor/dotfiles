@@ -98,12 +98,12 @@
 
     "org/gnome/desktop/interface" = {
       gtk-theme = "Adwaita-dark";
-      icon-theme = "Adwaita-dark";
-      cursor-theme = "Adwaita";
+      accent-color = "purple";
       color-scheme = "prefer-dark";
       gtk-key-theme = "Emacs";
-      accent-color = "purple";
       monospace-font-name = "JetbrainsMono Nerd Font 11";
+      # icon-theme = "Adwaita-dark";
+      # cursor-theme = "Adwaita";
     };
 
     "org/gnome/mutter" = {
