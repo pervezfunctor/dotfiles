@@ -319,9 +319,9 @@ gnome_confstall() {
   fi
 
   gnome-settings_install
-  #   gnome_keybindings_install
-  gnome-flatpaks_install
-  gnome-extensions_install
+  gnome-extensions-slim_install
+  # gnome_keybindings_install
+  # gnome-flatpaks_install
 
   slog "gnome config done!"
 }
