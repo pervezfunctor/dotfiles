@@ -426,16 +426,16 @@ vscode_confstall() {
     slog "vscode config"
 
     if is_mac; then
-        safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$HOME/Library/Application Support/Code/User/settings.json"
+        safe_cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$HOME/Library/Application Support/Code/User/settings.json"
     else
         smd "$XDG_CONFIG_HOME/Code/User"
         fmv "$XDG_CONFIG_HOME/Code/User/settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json.bak"
-        safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json"
+        safe_cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json"
 
         # support code-insiders
         if dir_exists "$XDG_CONFIG_HOME/Code - Insiders/User"; then
             fmv "$XDG_CONFIG_HOME/Code - Insiders/User/settings.json" "$XDG_CONFIG_HOME/Code - Insiders/User/settings.json.bak"
-            safe-cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code - Insiders/User/settings.json"
+            safe_cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code - Insiders/User/settings.json"
         fi
     fi
 

@@ -286,7 +286,7 @@ dbox-docker-dev_mainstall() {
 
   base_mainstall
   si openssh-server
-  password-ssh-config
+  password_ssh_config
   docker_confstall
 }
 

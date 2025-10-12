@@ -5,9 +5,29 @@
 source "$DOT_DIR/share/utils"
 source "$(dirname "$0")/vt-utils"
 
+if [[ -z ${DT_ROOT_ARGS+x} ]]; then
+  DT_ROOT_ARGS=()
+fi
+
+dt_distrobox() {
+  command distrobox "${DT_ROOT_ARGS[@]}" "$@"
+}
+
+dt_set_root_args() {
+  DT_ROOT_ARGS=("$@")
+}
+
+dt_enable_root_mode() {
+  dt_set_root_args --root
+}
+
+dt_disable_root_mode() {
+  dt_set_root_args
+}
+
 dt_exists() {
   local container_name="$1"
-  distrobox list | grep -q "\b${container_name}\b" || return 1
+  dt_distrobox list | grep -q "\b${container_name}\b" || return 1
 }
 
 dt_check_exists() {
@@ -19,7 +39,7 @@ dt_list() {
   slog "Listing all distrobox containers..."
 
   echo
-  distrobox list
+  dt_distrobox list
 
   if has_cmd podman; then
     echo
@@ -44,7 +64,7 @@ dt_state() {
   slog "Status for container '$container_name':"
 
   local engine
-  engine=$(distrobox list | grep "\b${container_name}\b" | awk '{print $NF}' | head -1)
+  engine=$(dt_distrobox list | grep "\b${container_name}\b" | awk '{print $NF}' | head -1)
   if [[ -n "$engine" ]]; then
     slog "Container engine details:"
     if has_cmd podman; then

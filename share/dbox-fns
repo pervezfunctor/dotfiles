@@ -180,7 +180,7 @@ dbox-virt-manager() {
 }
 
 dbox-fedora-virt-manager() {
-  local CONTAINER_NAME=${1:fedora-virt-manager}
+  local CONTAINER_NAME=${1:-fedora-virt-manager}
   local PKGS=(
     openssh-server
     libvirt

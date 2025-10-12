@@ -9,9 +9,12 @@ export BOXES_DIR=${USE_BOXES_DIR:-${BOXES_DIR}}
 
 usage() {
     cat <<EOF
-Usage: $0 <command> [container-name] [args...]
+Usage: $0 [--root] <command> [container-name] [args...]
 
 Manage distrobox containers similar to VM management.
+
+OPTIONS:
+    --root                 Run distrobox commands with distrobox --root
 
 COMMANDS:
     install                 Install container tools (distrobox, podman, etc.) using ilmi
@@ -132,7 +135,7 @@ stop_container() {
 
     slog "Stopping container '$container_name'..."
 
-    if distrobox stop "$container_name"; then
+    if dt_distrobox stop "$container_name"; then
         success "Container '$container_name' stopped"
     else
         fail "Failed to stop container '$container_name'"
@@ -147,7 +150,7 @@ restart_container() {
     slog "Restarting container '$container_name'..."
     stop_container "$container_name"
 
-    while distrobox list | grep -q "\b${container_name}\b"; do
+    while dt_distrobox list | grep -q "\b${container_name}\b"; do
         sleep 1
     done
 
@@ -167,7 +170,7 @@ delete_container() {
     fi
 
     slog "Deleting container '$container_name'..."
-    if distrobox rm --force "$container_name"; then
+    if dt_distrobox rm --force "$container_name"; then
         success "Container '$container_name' deleted"
 
         local home_dir="${BOXES_DIR}/${container_name}"
@@ -187,7 +190,7 @@ enter_container() {
     dt_check_exists "$container_name"
 
     slog "Entering container '$container_name'..."
-    distrobox enter -nw --clean-path --name "$container_name"
+    dt_distrobox enter -nw --clean-path --name "$container_name"
 }
 
 run_in_container() {
@@ -198,7 +201,7 @@ run_in_container() {
     dt_check_exists "$container_name"
 
     slog "Running command in container '$container_name': $command"
-    distrobox enter -nw --clean-path --name "$container_name" -- "$@"
+    dt_distrobox enter -nw --clean-path --name "$container_name" -- "$@"
 }
 
 export_app() {
@@ -234,7 +237,7 @@ upgrade_container() {
     dt_check_exists "$container_name"
 
     slog "Upgrading packages in container '$container_name'..."
-    if distrobox upgrade "$container_name"; then
+    if dt_distrobox upgrade "$container_name"; then
         success "Container '$container_name' upgraded successfully"
     else
         fail "Failed to upgrade container '$container_name'"
@@ -314,7 +317,7 @@ cleanup_containers() {
             while IFS= read -r container; do
                 if [[ -n "$container" ]]; then
                     slog "Removing stopped container: $container"
-                    distrobox rm --force "$container" 2>/dev/null || true
+                    dt_distrobox rm --force "$container" 2>/dev/null || true
                 fi
             done <<<"$stopped_containers"
         fi
@@ -328,7 +331,7 @@ cleanup_containers() {
             if [[ -d "$dir" ]]; then
                 local container_name
                 container_name=$(basename "$dir")
-                if ! distrobox list | grep -q "\b${container_name}\b"; then
+                if ! dt_distrobox list | grep -q "\b${container_name}\b"; then
                     warn "Found orphaned directory: $dir"
                     read -p "Remove orphaned directory $dir? (y/N): " -r
                     if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -343,10 +346,16 @@ cleanup_containers() {
     success "Cleanup complete"
 }
 
-# Main command handling
 if [[ $# -eq 0 ]]; then
     usage
     exit 1
+fi
+
+if [[ "${1:-}" == "--root" ]]; then
+    shift
+    dt_enable_root_mode
+else
+    dt_disable_root_mode
 fi
 
 command="$1"

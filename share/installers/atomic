@@ -332,7 +332,7 @@ vscode-flatpak_confstall() {
   flatpak override --user --nosocket=x11 --socket=wayland com.visualstudio.code
 
   smd ~/.var/app/com.visualstudio.code/config/Code/User
-  safe-cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
+  safe_cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
 
   vscode-extensions_install
 

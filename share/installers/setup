@@ -32,7 +32,7 @@ main() {
       die "unknown or unsupported $* options"
     fi
   fi
-  common-installer "$@"
+  common_installer "$@"
 
   if ! is_ublue &&
     ! is_distrobox &&

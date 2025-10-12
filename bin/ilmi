@@ -57,7 +57,7 @@ help() {
 
 main() {
     if ! [[ "$#" -eq 0 ]]; then
-        common-installer "$@"
+        common_installer "$@"
         return 0
     fi
 
@@ -81,7 +81,7 @@ main() {
         echo ""
         slog "Selected: ${SELECTED_OPTIONS[*]}. Installing..."
         echo ""
-        common-installer "${SELECTED_OPTIONS[@]}"
+        common_installer "${SELECTED_OPTIONS[@]}"
         slog "Installation complete."
     else
         slog "No options selected."

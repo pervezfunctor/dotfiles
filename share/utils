@@ -106,7 +106,7 @@ gum_install() {
   cmd_check gum
 }
 
-select-one() {
+select_one() {
   local PS3="Please enter your choice: "
   select result in "$@"; do
     if [[ -n "$result" ]]; then
@@ -337,9 +337,9 @@ unstash() {
   fi
 }
 
-clone-update() {
+clone_update() {
   if [ $# -lt 2 ]; then
-    fail "sclone requires at least 2 arguments"
+    fail "clone_update requires at least 2 arguments"
     return 1
   fi
 
@@ -556,9 +556,9 @@ frm() {
   done
 }
 
-safe-cp() {
+safe_cp() {
   if [ $# -ne 2 ]; then
-    fail "safe-cp requires exactly 2 arguments"
+    fail "safe_cp requires exactly 2 arguments"
     return 1
   fi
 
@@ -576,7 +576,7 @@ safe-cp() {
   if cp -r "$1" "$2" 2>/dev/null; then
     return 0
   else
-    fail "Failed to copy $1 to $2"
+    fail "safe_cp error: failed to copy $1 to $2"
     return 1
   fi
 }
@@ -1084,7 +1084,7 @@ _stop_sudo_keepalive() {
   SUDO_KEEPALIVE_PID=""
 }
 
-password-ssh-config() {
+password_ssh_config() {
   if ! sudo sed -i -E 's/^#?PasswordAuthentication[[:space:]]+(no|yes)/PasswordAuthentication yes/' /etc/ssh/sshd_config; then
     echo 'PasswordAuthentication yes' | sudo tee -a /etc/ssh/sshd_config >/dev/null
   fi
@@ -1190,7 +1190,7 @@ dotfiles_install() {
   has_cmd git || die "git not installed, cannot clone dotfiles repository"
 
   slog "Cloning dotfiles to $DOT_DIR"
-  clone-update https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
+  clone_update https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 
   if ! dir_exists "$DOT_DIR"; then
     die "Failed to clone dotfiles repository. Quitting."
@@ -1440,7 +1440,7 @@ environs() {
   # export LANG=en_US.UTF-8
 }
 
-common-installer() {
+common_installer() {
   while [[ "$#" -gt 0 ]]; do
     if [[ "$1" == @* ]] && fn_exists "${1:1}_groupstall"; then
       "${1:1}_groupstall"
