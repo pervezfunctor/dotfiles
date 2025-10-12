@@ -96,7 +96,7 @@ dck_create() {
     local image_name
     case "$distro" in
     ubuntu)
-        image_name="ubuntu:latest"
+        image_name="ubuntu:questing"
         ;;
     debian)
         image_name="debian:latest"

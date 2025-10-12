@@ -65,7 +65,7 @@ ubuntu_packages() {
 
   si git-core gh git-delta unzip wget curl net-tools iproute2 nmap gum eza \
     trash-cli tar stow gcc make file tree bat ripgrep gawk starship pipx \
-    zoxide fd-find htop sd batdialog whiptail tealdeer yq python3 python3-pip
+    zoxide fd-find htop sd bat dialog whiptail tealdeer yq python3 python3-pip
 
   fzf_install
 

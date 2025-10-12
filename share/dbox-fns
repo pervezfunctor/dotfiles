@@ -92,7 +92,7 @@ dbox_create_root() {
 
 dbox-ubuntu() {
   local CONTAINER_NAME=${1:-ubuntu}
-  dbox_create "${CONTAINER_NAME}" ubuntu:latest
+  dbox_create "${CONTAINER_NAME}" ubuntu:questing
 }
 
 dbox-arch() {
@@ -275,7 +275,7 @@ dbox-ubuntu-init() {
   local CONTAINER_NAME=${1:-ubuntu-init}
   slog "Creating distrobox $CONTAINER_NAME"
 
-  dbox_create "${CONTAINER_NAME}" ubuntu:latest \
+  dbox_create "${CONTAINER_NAME}" ubuntu:questing \
     --init \
     --additional-packages "systemd libpam-systemd"
 }

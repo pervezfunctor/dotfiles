@@ -38,6 +38,8 @@ COMMANDS:
     logs <vm-name>      Show cloud-init logs
     disk <vm-name>      Show VM disk usage
     cmd <virsh-args>    Run virsh command with qemu:///system connection
+    net <command>       Manage libvirt virtual networks (see 'vm net' command)
+    start-libvirt       Start the libvirtd service
 
 EXAMPLES:
     $0 list                    # List all VMs
@@ -114,6 +116,65 @@ list_vme() {
   virsh --connect qemu:///system list --all
 }
 
+net_usage() {
+  cat <<EOF
+Usage: $0 net <command> [network-name]
+EOF
+  echo
+  cat <<EOF
+Manage libvirt virtual networks.
+EOF
+  echo
+  cat <<EOFCOMMANDS
+    list                List all virtual networks
+    info <network-name> Show details of a specific network
+    start <network-name> Start a specific network
+    auto-start <network-name> Set a network to start on boot
+    stop <network-name> Stop a specific network
+    delete <network-name> Delete a specific network
+EOFCOMMANDS
+  echo
+  cat <<EOFEXAMPLES
+EXAMPLES:
+    $0 net list                    # List all virtual networks
+    $0 net info default            # Show details of 'default' network
+    $0 net start default           # Start 'default' network
+    $0 net delete old-network      # Delete 'old-network'
+EOFEXAMPLES
+}
+
+net_vme() {
+  local command
+  command="$1"
+  shift
+  case "$command" in
+  list)
+    virsh --connect qemu:///system net-list --all
+    ;;
+  info)
+    virsh --connect qemu:///system net-info "$@"
+    ;;
+  start)
+    virsh --connect qemu:///system net-start "$@"
+    ;;
+  auto-start)
+    virsh --connect qemu:///system net-autostart "$@"
+    ;;
+  stop)
+    virsh --connect qemu:///system net-destroy "$@"
+    ;;
+  delete)
+    virsh --connect qemu:///system net-destroy "$@" >/dev/null 2>&1 || true
+    virsh --connect qemu:///system net-undefine "$@"
+    ;;
+  *)
+    echo "Unknown net command: $1"
+    net_usage
+    exit 1
+    ;;
+  esac
+}
+
 main() {
   if [[ $# -eq 0 ]]; then
     usage
@@ -127,6 +188,9 @@ main() {
   vm_name="${2:-}"
 
   case "$command" in
+  start-libvirt)
+    sudo systemctl start libvirtd
+    ;;
   list | ls)
     list_vme
     ;;
@@ -165,6 +229,9 @@ main() {
     ;;
   show-ip)
     show_ip_vme "$vm_name"
+    ;;
+  net)
+    net_vme "${@:2}"
     ;;
   logs)
     logs_vme "$vm_name"
