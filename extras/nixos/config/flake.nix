@@ -60,6 +60,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       agenix,
       stylix,
@@ -299,37 +300,43 @@
           };
           modules = [
             microvm.nixosModules.microvm
+            ./system/packages.nix
+            ./system/ssh.nix
+            ./system/user.nix
+
             {
+              system.stateVersion = "25.11";
               networking.hostName = "basic-microvm";
               microvm.hypervisor = "cloud-hypervisor";
 
-              # microvm.shares = [
-              #   {
-              #     tag = "ro-store";
-              #     source = "/nix/store";
-              #     mountPoint = "/nix/.ro-store";
-              #   }
+              microvm = {
+                volumes = [
+                  {
+                    mountPoint = "/var";
+                    image = "var.img";
+                    size = 256;
+                  }
+                ];
+                shares = [
+                  {
+                    tag = "ro-store";
+                    source = "/nix/store";
+                    mountPoint = "/nix/.ro-store";
+                  }
+                ];
 
-              #   # {
-              #   #   proto = "virtiofs";
-              #   #   tag = "home";
-              #   #   source = "home";
-              #   #   mountPoint = "/home";
-              #   # }
-              # ];
+                socket = "control.socket";
+                # vcpu = 4;
+                # mem = 8192;
+                # interfaces = "";
+                # devices = "";
+                # user = "";
+                # forwardPorts = "";
+                # kernelParams = "";
+                # storeOnDisk = "";
+                # writableStoreOverlay = "";
+              };
 
-              # microvm.vcpu = 2;
-              # microvm.mem = 4096;
-              # microvm.interfaces = "";
-              # microvm.volumes = "";
-              # microvm.shares = "";
-              # microvm.devices = "";
-              # microvm.socket = "";
-              # microvm.user = "";
-              # microvm.forwardPorts = "";
-              # microvm.kernelParams = "";
-              # microvm.storeOnDisk = "";
-              # microvm.writableStoreOverlay = "";
             }
           ];
         };
@@ -338,7 +345,7 @@
       packages.${system} = {
         # use with nix build .#ng-vm
         ng-vm = mkNixosGenerateVmWithHome [ ];
-
+        basic-microvm = self.nixosConfigurations.basic-microvm.config.microvm.declaredRunner;
       };
     };
 }
