@@ -40,6 +40,9 @@ main() {
         if fn_exists "${1}_groupstall"; then
             "${1}_groupstall"
             return 0
+        elif fn_exists "${1}_install"; then
+            "${1}_install"
+            return 0
         else
             die "No such installer: $1"
         fi

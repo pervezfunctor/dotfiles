@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, vars, ... }:
 
 {
   nix = {
@@ -24,7 +24,7 @@
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
-  time.timeZone = "Asia/Kolkata";
+  time.timeZone = if vars ? timeZone then vars.timeZone else "Asia/Kolkata";
 
   i18n.defaultLocale = "en_US.UTF-8";
 

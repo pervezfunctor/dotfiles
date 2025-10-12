@@ -41,13 +41,13 @@ get_timezone() {
 
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS
-        timezone=$(readlink /etc/localtime 2>/dev/null | sed 's|^.*zoneinfo/||' || \
-                  systemsetup -gettimezone 2>/dev/null | awk '{print $3}' || \
-                  echo "UTC")
+        timezone=$(readlink /etc/localtime 2>/dev/null | sed 's|^.*zoneinfo/||' ||
+            systemsetup -gettimezone 2>/dev/null | awk '{print $3}' ||
+            echo "UTC")
     else
-        timezone=$(timedatectl show --property=Timezone --value 2>/dev/null || \
-                  cat /etc/timezone 2>/dev/null || \
-                  echo "UTC")
+        timezone=$(timedatectl show --property=Timezone --value 2>/dev/null ||
+            cat /etc/timezone 2>/dev/null ||
+            echo "UTC")
     fi
 
     if [[ ! "$timezone" =~ ^[A-Za-z_]+/[A-Za-z_]+$ ]] && [[ "$timezone" != "UTC" ]]; then
@@ -91,12 +91,12 @@ fi
     echo "  username = \"$USERNAME\";"
     echo "  homeDirectory = \"$HOME_DIRECTORY\";"
     echo "  hostname = \"$HOSTNAME\";"
-    echo "  timezone = \"$TIMEZONE\";"
+    echo "  timeZone = \"$TIMEZONE\";"
     echo "}"
-} > "$OUTPUT_FILE" || die "Failed to write to: $OUTPUT_FILE"
+} >"$OUTPUT_FILE" || die "Failed to write to: $OUTPUT_FILE"
 
 echo "Successfully created $OUTPUT_FILE with the following values:"
 echo "  username: $USERNAME"
 echo "  homeDirectory: $HOME_DIRECTORY"
 echo "  hostname: $HOSTNAME"
-echo "  timezone: $TIMEZONE"
+echo "  timeZone: $TIMEZONE"

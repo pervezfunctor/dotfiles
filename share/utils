@@ -1452,6 +1452,8 @@ common-installer() {
       "${1}_boxstall"
     elif fn_exists "${1}_confstall"; then
       "${1}_confstall"
+    elif fn_exists "$1_groupstall"; then
+      "$1_groupstall"
     elif fn_exists "${1}_mainstall"; then
       "${1}_mainstall"
     elif fn_exists "${1}_binstall"; then
