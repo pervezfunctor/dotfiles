@@ -174,17 +174,15 @@ home-manager_install() {
 
   slog "nix-config copied to $HOME/nix-config. Running hms to apply configuration."
 
-  local profile=${1:-shell}
-  hms "$profile"
+  hms
 
   touch ~/.zshrc
   return 0
 }
 
 nix_groupstall() {
-  local profile=${1:-shell-slim}
   nix_install
-  home-manager_install "$profile"
+  home-manager_install
   touch ~/.zshrc
 }
 
@@ -224,7 +222,7 @@ vm_groupstall() {
   fi
 
   if ! is_distrobox; then
-   has_cmd vm-ui_install && vm-ui_install
+    has_cmd vm-ui_install && vm-ui_install
   fi
 
   is_linux || return 0
