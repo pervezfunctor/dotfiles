@@ -400,10 +400,16 @@ Reboot your system.
 
 For all of the above operating systems, you could *follow the same instructions* below.
 
-Install modern shell tools with the following command.
+Install essentials and setup this repository with the following command.
 
 ```bash
-bash -c "$(curl -sSL https://is.gd/egitif)" -- shell-slim
+bash -c "$(curl -sSL https://is.gd/egitif)"
+```
+
+Install shell tools with the following command.
+
+```bash
+ilmg shell-slim # or shell for more tools
 ```
 
 This command should setup your zsh, tmux and install tools like `ripgrep`, `eza`, `fzf`, `zoxide`, `bat`, `git-delta` etc.
@@ -414,15 +420,15 @@ Sometimes setting your shell to zsh during installation, might not work. In that
 chsh -s $(which zsh)
 ```
 
-Reopen your terminal and you should see a nice zsh prompt. You must install a nerd font like `Jetbrains Mono Nerd Font`.
+Reopen your terminal and you should see a nice zsh prompt.
 
-As a developer you most probably need vscode. Install it with the following command.
+Install vscode with the following command.
 
 ```bash
 ilmg vscode
 ```
 
-This will install `vscode`. It should also install some essential extensions. Open `vscode` and you should see a nice theme with jetbrains mono font.
+This will install `vscode`. It should also install some essential extensions. Open `vscode` and you should see a nice theme with jetbrains mono font. If you need your previous settings, look at the logs for location of the backup.
 
 If you need docker, I would highly recommend you install it in a virtual machine. If you prefer to install it on your host OS, you could use the following command.
 
@@ -430,7 +436,7 @@ If you need docker, I would highly recommend you install it in a virtual machine
 ilmg docker
 ```
 
-Note that `podman` and `docker` don't work well together. `podman` is installed by default in Fedora.
+Note that `podman` and `docker` might not work well together. `podman` is installed by default in Fedora.
 
 You should be able to use `vscode` and `devcontainers` without any issues. *You must reboot after installing docker*.
 
@@ -468,7 +474,7 @@ You could also use the following command for console access to vm.
 vm console dev
 ```
 
-If you are not using Fedora, you need a better terminal. You could easily install `ptyxis` with the following command.
+If you are don't already have `ptyxis` insalled, you could easily install `ptyxis` with the following command.
 
 ```bash
 ilmi ptyxis
@@ -481,6 +487,62 @@ Remember to pick `Jetbrains Mono Nerd Font` as the font. Pick a nice theme like 
 ```bash
 ilmi distrobox
 ```
+
+Some helper functions for distrobox are available. For example you could create and enter a debian distrobox container with systemd with the following commands.
+
+```bash
+dbox-debian-init my-dbox
+dbe my-dbox
+```
+
+You could have a distrobox container setup with this repository using the following.
+
+```bash
+dbox-mainstall debian shell-slim my-dbox2
+dbe my-dbox2
+```
+
+Install nix and home-manager with the following command.
+
+```bash
+ilmg nix
+```
+This will install nix and home-manager. Your configuration will be stored in ~/nix-config. Add to git and push to github.
+
+After you make changes run the following command to apply changes.
+
+```bash
+hms
+```
+
+For example, change the following in `flake.nix`
+
+```nix
+${vars.username} = mkHome {
+        imports = [ ./home/core.nix ];
+};
+```
+
+to
+
+```nix
+${vars.username} = mkHome {
+        imports = [ ./home/core.nix ./home/shell.nix ];
+};
+```
+
+Install homebrew/linuxbrew with the following command.
+
+```bash
+ilmg brew
+```
+
+Install ai cli tools like claude with
+
+```bash
+ilmi ai-cli
+```
+
 
 ## Generic Linux Desktop
 
