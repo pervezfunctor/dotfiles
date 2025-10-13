@@ -202,7 +202,7 @@ vm_install() {
         qemu-ui-spice-app qemu-char-spice qemu-audio-spice jq xmlstarlet \
         qemu-hw-display-virtio-gpu qemu-hw-display-virtio-vga qemu-hw-usb-host \
         qemu-hw-usb-redirect qemu-ovmf-x86_64 qemu-tools qemu-ui-gtk \
-        qemu-ui-opengl libguestfs-tools libosinfo openssl
+        qemu-ui-opengl libguestfs guestfs-tools libosinfo openssl
 
     slog "libvirt installation done!"
 }
