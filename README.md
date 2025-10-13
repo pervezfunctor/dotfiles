@@ -498,7 +498,7 @@ dbe my-dbox
 You could have a distrobox container setup with this repository using the following.
 
 ```bash
-dbox-mainstall debian shell-slim my-dbox2
+dbox-main-install debian shell-slim my-dbox2
 dbe my-dbox2
 ```
 
@@ -507,6 +507,7 @@ Install nix and home-manager with the following command.
 ```bash
 ilmg nix
 ```
+
 This will install nix and home-manager. Your configuration will be stored in ~/nix-config. Add to git and push to github.
 
 After you make changes run the following command to apply changes.
@@ -542,7 +543,6 @@ Install ai cli tools like claude with
 ```bash
 ilmi ai-cli
 ```
-
 
 ## Generic Linux Desktop
 

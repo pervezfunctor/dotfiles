@@ -358,9 +358,9 @@ dbox-dev() {
   fi
 }
 
-dbox-mainstall() {
+dbox-main-install() {
   if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-mainstall <distro> <mainstall> [name]"
+    fail "Usage: dbox-main-install <distro> <mainstall> [name]"
     return 1
   fi
   local distro=$1
@@ -371,9 +371,9 @@ dbox-mainstall() {
   distrobox enter -nw --clean-path --name "$name" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$mainstall"
 }
 
-dbox-groupstall() {
+dbox-group-install() {
   if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-groupstall <distro> <groupstall> [name]"
+    fail "Usage: dbox-group-install <distro> <groupstall> [name]"
     return 1
   fi
   local distro=$1
