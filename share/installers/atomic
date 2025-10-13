@@ -686,13 +686,6 @@ wlogout_confstall() {
   slog "wlogout config done!"
 }
 
-sway_confstall() {
-  has_cmd sway || return 1
-  slog "sway config"
-  stowgf sway
-  slog "sway config done!"
-}
-
 rofi_confstall() {
   has_cmd rofi || return 1
 
@@ -701,11 +694,17 @@ rofi_confstall() {
   slog "rofi config done!"
 }
 
-sway-full_confstall() {
+sway_confstall() {
+  if ! has_cmd sway; then
+    warn "sway not available, skipping sway config"
+    return 1
+  fi
+
+  stowgf sway
+
   sway-waybar_confstall
   foot_confstall
   kitty_confstall
-  sway_confstall
   rofi_confstall
   wlogout_confstall
 }

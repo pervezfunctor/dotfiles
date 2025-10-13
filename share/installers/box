@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 nvim_boxstall() {
-    srm ~/.config/nvim
-    ln -s "$DOT_DIR/nvim/dot-config/nvim" ~/.config/nvim
+    astrovim_confstall
 
     if has_cmd brew; then
         bis luarocks lazygit tectonic fd gdu fzf

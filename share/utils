@@ -677,6 +677,10 @@ spath_export() {
   dir_exists "$1" && export PATH="$1:$PATH"
 }
 
+spath_export_unsafe() {
+  export PATH="$1:$PATH"
+}
+
 is_mac() {
   [[ "$OSTYPE" == "darwin"* ]]
 }
@@ -1418,18 +1422,17 @@ environs() {
   is_distrobox || is_toolbox || smd "${BOXES_DIR}"
 
   export GOPATH="$HOME/go"
-  export PNPM_HOME="$HOME/.local/share/pnpm"
+  # export PNPM_HOME="$HOME/.local/share/pnpm"
 
   export VOLTA_HOME="$HOME/.volta"
-  export PATH="$VOLTA_HOME/bin:$PATH"
+  spath_export_unsafe "$VOLTA_HOME/bin"
 
-  export PATH="$GOPATH/bin:$HOME/.pixi/bin:$PATH"
-  export PATH="/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin:$PATH"
-  export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.bin:$PATH"
-  export PATH="$PNPM_HOME:$HOME/Applications:$PATH"
-  export PATH="$HOME/.local/opt/brew/bin:/home/linuxbrew/.linuxbrew/bin:$PATH"
-  export PATH="$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry:$PATH"
-  export PATH="$DOT_DIR/bin:$DOT_DIR/bin/vt:$PATH"
+  spath_export_unsafe "$HOME/Applications:$GOPATH/bin:$HOME/.pixi/bin"
+  spath_export_unsafe "/usr/bin:/snap/bin:/usr/local/go/bin:$HOME/bin"
+  spath_export_unsafe "$HOME/.local/bin:$HOME/bin:$HOME/.bin"
+  spath_export_unsafe "$HOME/.local/opt/brew/bin:/home/linuxbrew/.linuxbrew/bin"
+  spath_export_unsafe "$XDG_CONFIG_HOME/emacs/bin:$HOME/.local/share/pypoetry"
+  spath_export_unsafe "$DOT_DIR/bin:$DOT_DIR/bin/vt"
 
   export HOMEBREW_NO_ENV_HINTS=1
   export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1

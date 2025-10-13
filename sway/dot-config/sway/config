@@ -31,7 +31,6 @@ set $screenlock 'swaylock --config ~/.ilm/suseway/dot-config/swaylock.conf'
 set $menu_window $rofi_cmd -show window
 set $wob wob --config /etc/sway/wob/wob.ini
 
-exec env.sh
 exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
 exec /usr/libexec/lxqt-policykit-agent
 # exec /usr/libexec/polkit-gnome-authentication-agent-1
@@ -366,7 +365,6 @@ for_window [app_id="lxqt-policykit-agent"] {
     move position center
 }
 
-# Fedora Sway
-exec fedora.sh
+exec ~/.config/sway/fedora.sh
 
 # include '$(/usr/libexec/sway/layered-include "/usr/share/sway/config.d/*.conf" "/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf")'

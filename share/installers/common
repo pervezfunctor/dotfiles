@@ -365,21 +365,49 @@ emacs-slim_confstall() {
     slog "emacs slim installation done!"
 }
 
-nvim_confstall() {
-    local profile="${1:-nvim}"
-
-    slog "nvim config"
-
+nvim_cleanup() {
     frm "$XDG_CONFIG_HOME/nvim.bak"
     omv "$XDG_CONFIG_HOME/nvim" "$XDG_CONFIG_HOME/nvim.bak"
     frm "$HOME/.local/share/nvim"
     frm "$HOME/.local/state/nvim"
     frm "$HOME/.cache/nvim"
+}
+
+nvim_confstall() {
+    local profile="${1:-nvim}"
+
+    slog "nvim config"
+
+    nvim_cleanup
 
     stowgf "$profile"
     # nvim --headless "+Lazy! sync" +qa
 
     slog "nvim config done!"
+}
+
+astrovim_confstall() {
+    local profile="${1:-nvim}"
+
+    slog "nvim config"
+
+    dir_exists ~/.config/astrovim || {
+        git clone --depth 1 https://github.com/AstroNvim/template ~/.config/astrovim
+        frm ~/.config/nvim/.git
+    }
+    sln ~/.config/astrovim ~/.config/nvim
+
+    slog "nvim config done!"
+}
+
+lazyvim_confstall() {
+    nvim_cleanup
+
+    dir_exists ~/.config/lazyvim || {
+        git clone --depth 1 https://github.com/LazyVim/starter ~/.config/lazyvim
+        frm ~/.config/nvim/.git
+    }
+    sln ~/.config/lazyvim ~/.config/nvim
 }
 
 git_conf() {
@@ -606,10 +634,7 @@ npm_install() {
         return 1
     fi
 
-    if ! has_cmd npm; then
-        slog "Setting up npm with volta"
-        ~/.volta/bin/volta install node@latest
-    fi
+    volta install node@latest
 
     cmd_check volta npm
 }
