@@ -333,7 +333,7 @@ vm_install() {
         qemu-user-binfmt qemu-user-static qemu-system-x86_64 jq xmlstarlet \
         coreos-installer bootc pykickstart lorax xorriso squashfs-tools bsdtar \
         snapper btrfs-progs grub2 grub2-tools libguestfs-tools libosinfo \
-        osinfo-db edk2-ovmf dmidecode osinfo-db-tools
+        osinfo-db edk2-ovmf dmidecode osinfo-db-tools openssl
 
     slog "libvirt installation done!"
 }
@@ -417,7 +417,8 @@ sway_binstall() {
     slog "Installing sway"
 
     si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway
-    si sway-config-fedora kitty
+    si sway-config-fedora wlogout
+    terminal_binstall
 
     slog "sway installation done!"
 }

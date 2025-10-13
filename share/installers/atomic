@@ -675,7 +675,7 @@ starship_install() {
 sway-waybar_confstall() {
   slog "waybar config"
   has_cmd waybar || return 1
-  stowgf waybar
+  stowgf sway-waybar
   slog "waybar config done!"
 }
 
