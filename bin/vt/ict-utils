@@ -74,22 +74,36 @@ ict_check_running() {
   fi
 }
 
+ict_check_exists_running() {
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
+  ict_check_running "$container_name" || return 1
+}
+
 ict_ip() {
   local container_name="$1"
 
-  if ! ict_exists "$container_name"; then
+  ict_check_exists_running "$container_name" || return 1
+
+  local address_list
+  if ! address_list=$(incus list "^${container_name}$" --format csv --columns 4 2>/dev/null); then
+    fail "Unable to fetch network information for container '$container_name'"
     return 1
   fi
 
-  if ! ict_running "$container_name"; then
-    return 2
-  fi
+  address_list=${address_list%\"$'\n'}
+  address_list=${address_list#\"}
 
   local ip
-  ip=$(incus list "^${container_name}$" --format csv --columns 4 | head -1 | cut -d',' -f1 | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1)
+  ip=$(printf '%s\n' "$address_list" | awk '/\((eth|enp|ens|eno|wlp|lan)/ {print $1; exit}')
 
   if [[ -z "$ip" ]]; then
-    return 3
+    ip=$(printf '%s\n' "$address_list" | awk '{match($0, /([0-9]{1,3}\.){3}[0-9]{1,3}/, m); if (m[0]) {print m[0]; exit}}')
+  fi
+
+  if [[ -z "$ip" ]]; then
+    fail "No suitable IP address found for container '$container_name'"
+    return 1
   fi
 
   echo "$ip"
@@ -99,13 +113,7 @@ ict_ip() {
 ict_ssh() {
   local container_name="$1"
   local username="${2:-}"
-  ict_check_exists "$container_name" || return 1
-
-  if ! ict_running "$container_name"; then
-    fail "Container '$container_name' is not running"
-    slog "Start it with: $0 start $container_name"
-    return 1
-  fi
+  ict_check_exists_running "$container_name" || return 1
 
   # Auto-detect username if not provided
   if [[ -z "$username" ]]; then
@@ -115,31 +123,16 @@ ict_ssh() {
 
   local ip
   if ip=$(ict_ip "$container_name"); then
+    local connect_timeout="${ICT_SSH_CONNECT_TIMEOUT:-15}"
     slog "Connecting to $container_name ($ip) as $username..."
-    ssh "$username@$ip"
+    if ! ssh -o "ConnectTimeout=${connect_timeout}" "$username@$ip"; then
+      local ssh_exit=$?
+      fail "SSH connection failed for container '$container_name' (exit code: ${ssh_exit})"
+      return "$ssh_exit"
+    fi
     return 0
   else
-    local ret=$?
-
-    case $ret in
-    1)
-      fail "Container '$container_name' not found"
-      ;;
-    2)
-      fail "Container '$container_name' is not running"
-      slog "Start it with: $0 start $container_name"
-      ;;
-    3)
-      fail "Could not determine IP address for container '$container_name'"
-      slog "Container may still be starting up. Try again in a few moments."
-      ;;
-    *)
-      fail "Unexpected error retrieving IP for container '$container_name'"
-      return 1
-      ;;
-    esac
-
-    return 1
+    return $?
   fi
 
 }

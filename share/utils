@@ -260,19 +260,21 @@ source_dotfile() {
 }
 
 slog() {
-  printf '\r\033[2K  [ \033[00;34mINFO\033[0m ] %s\n' "$*"
+  printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*" >>"$HOME/.dotfiles-slog"
 }
 
 fail() {
-  printf '\r\033[2K  [ \033[0;31mFAIL\033[0m ] %s\n' "$*"
+  printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >>"$HOME/.dotfiles-fail"
+  printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >&2
 }
 
 warn() {
-  printf '\r\033[2K  [ \033[00;33mWARN\033[0m ] %s\n' "$*"
+  printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >>"$HOME/.dotfiles-warn"
+  printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >&2
 }
 
 success() {
-  printf '\r\033[2K  [ \033[00;32mOK\033[0m ] %s\n' "$*"
+  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*" >>"$HOME/.dotfiles-fail"
 }
 
 die() {

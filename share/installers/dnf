@@ -428,7 +428,7 @@ system-docker_install() {
 
     slog "Installing docker using os packages..."
 
-    si docker docker-compose
+    si docker docker-cli docker-compose
 
     slog "docker installation done!"
 }

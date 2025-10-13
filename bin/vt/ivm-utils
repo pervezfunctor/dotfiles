@@ -56,8 +56,12 @@ ivm_running() {
 
 ivm_check_exists_running() {
   local vm_name="$1"
-  if ! ivm_running "$vm_name"; then
-    fail "VM '$vm_name' is not running (state: $state)"
+  ivm_check_exists "$vm_name" || return 1
+
+  local state
+  state=$(ivm_state "$vm_name")
+  if [[ "$state" != "RUNNING" ]]; then
+    fail "VM '$vm_name' is not running (state: ${state:-unknown})"
     return 1
   fi
 }
@@ -94,84 +98,26 @@ ivm_list() {
 #   return 1
 # }
 
-# ivm_ip() {
-#     local vm_name="$1"
-
-#     if ! incus info "$vm_name" &>/dev/null; then
-#         return 1
-#     fi
-
-#     local state
-#     state=$(incus info "$vm_name" | grep "Status:" | awk '{print $2}')
-
-#     if [[ "$state" != "Running" ]]; then
-#         return 2
-#     fi
-
-#     local ip
-#     ip=$(incus list "$vm_name" --format csv -c 4 | cut -d' ' -f1)
-
-#     if [[ -z "$ip" || "$ip" == "-" ]]; then
-#         return 3
-#     fi
-
-#     echo "$ip"
-#     return 0
-# }
-
-# ivm_ip() {
-#     slog "Getting VM IP address..."
-
-#     local ip
-#     local max_attempts=30
-#     local attempt=0
-
-#     while [[ $attempt -lt $max_attempts ]]; do
-#         ip=$(incus list "$VM_NAME" --format csv --columns 4 | head -1 | cut -d' ' -f1)
-
-#         if [[ -n "$ip" && "$ip" != "-" ]]; then
-#             echo "$ip"
-#             return 0
-#         fi
-
-#         sleep 2
-#         ((attempt++))
-#     done
-
-#     warn "Could not determine VM IP address"
-#     return 1
-# }
-
 ivm_ip() {
   local vm_name="$1"
 
-  if ! incus info "$vm_name" >/dev/null 2>&1; then
+  ivm_check_exists_running "$vm_name" || return 1
+
+  local address_list
+  if ! address_list=$(incus list "^${vm_name}$" --format csv --columns 4 2>/dev/null); then
+    fail "Unable to fetch network information for VM '$vm_name'"
     return 1
   fi
 
-  local state
-  state=$(ivm_state "$vm_name")
+  address_list=${address_list%\"$'\n'}
+  address_list=${address_list#\"}
 
-  if [[ "$state" != "RUNNING" ]]; then
-    return 2
-  fi
-
-  # Try to get IP from incus list with network info
   local ip
-  ip=$(incus list "^${vm_name}$" --format csv --columns 4 | head -1 | cut -d',' -f1 | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1)
-
-  # If that fails, try getting it from incus info
-  if [[ -z "$ip" ]]; then
-    ip=$(incus info "$vm_name" | grep -A 20 "Network usage:" | grep -oE 'inet ([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1 | cut -d' ' -f2)
-  fi
-
-  # If still no IP, try alternative method
-  if [[ -z "$ip" ]]; then
-    ip=$(incus exec "$vm_name" -- ip -4 addr show | grep -oE 'inet ([0-9]{1,3}\.){3}[0-9]{1,3}' | grep -v '127.0.0.1' | head -1 | cut -d' ' -f2 2>/dev/null)
-  fi
+  ip=$(printf '%s\n' "$address_list" | awk '/\((enp|eth)/ {print $1; exit}')
 
   if [[ -z "$ip" ]]; then
-    return 3
+    fail "No suitable IP address found for VM '$vm_name'"
+    return 1
   fi
 
   echo "$ip"
@@ -180,40 +126,16 @@ ivm_ip() {
 
 ivm_show_ip() {
   local vm_name="$1"
-  ivm_check_exists "$vm_name" || return 1
-
   local ip
-  ip=$(ivm_ip "$vm_name")
-  local ret=$?
-
-  case $ret in
-  1)
-    fail "VM '$vm_name' not found"
+  if ! ip=$(ivm_ip "$vm_name"); then
     return 1
-    ;;
-  2)
-    fail "VM '$vm_name' is not running"
-    slog "Start it with: $0 start $vm_name"
-    return 1
-    ;;
-  3)
-    fail "Could not determine IP address for VM '$vm_name'"
-    slog "VM may still be starting up. Try again in a few moments."
-    return 1
-    ;;
-  0)
-    echo "$ip"
-    return 0
-    ;;
-  esac
+  fi
+  echo "$ip"
 }
 
 ivm_ssh() {
   local vm_name="$1"
   local username="${2:-}"
-  ivm_check_exists "$vm_name" || return 1
-
-  ivm_check_exists_running "$vm_name" || return 1
 
   if [[ -z "$username" ]]; then
     fail "Username required. Usage: $0 ssh <vm_name> <username>"
@@ -221,27 +143,11 @@ ivm_ssh() {
   fi
 
   local ip
-  ip=$(ivm_ip "$vm_name")
-  local ret=$?
+  if ! ip=$(ivm_ip "$vm_name"); then
+    return 1
+  fi
 
-  case $ret in
-  1)
-    fail "VM '$vm_name' not found"
-    return 1
-    ;;
-  2)
-    fail "VM '$vm_name' is not running"
-    slog "Start it with: $0 start $vm_name"
-    return 1
-    ;;
-  3)
-    fail "Could not determine IP address for VM '$vm_name'"
-    slog "VM may still be starting up. Try again in a few moments."
-    return 1
-    ;;
-  0)
-    slog "Connecting to $vm_name ($ip) as $username..."
-    ssh "$username@$ip"
-    ;;
-  esac
+  local connect_timeout="${IVM_SSH_CONNECT_TIMEOUT:-15}"
+  slog "Connecting to $vm_name ($ip) as $username..."
+  ssh -o "ConnectTimeout=${connect_timeout}" "$username@$ip"
 }
