@@ -221,22 +221,22 @@ show_container_config() {
 
 show_logs() {
     local container_name="$1"
-    local log_type="${2:-instance}"
+    local log_type="${2:-console}"
     ict_check_exists "$container_name" || return 1
 
     local state
     state=$(ict_state "$container_name")
 
     case "$log_type" in
-    instance)
-        slog "Showing instance logs for container '$container_name'..."
-        echo
-        incus info "$container_name" --show-log
-        ;;
     console)
         slog "Showing console logs for container '$container_name'..."
         echo
         incus console "$container_name" --show-log
+        ;;
+    instance)
+        slog "Showing instance logs for container '$container_name'..."
+        echo
+        incus info "$container_name" --show-log
         ;;
     system)
         if [[ "$state" != "RUNNING" ]]; then

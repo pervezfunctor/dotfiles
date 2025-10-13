@@ -16,11 +16,10 @@ create_group() {
 
   if group_exists "$group"; then
     slog "Group $group already exists, skipping creation..."
-  else
-    slog "Creating group $group"
-    sudo groupadd "$group"
+    return 1
   fi
 
+  sudo groupadd "$group" || slog "adding group $group failed"
 }
 
 add_user_to_group() {
@@ -29,14 +28,15 @@ add_user_to_group() {
 
   if ! group_exists "$group"; then
     warn "Group $group does not exist, skipping adding user to group $group..."
+    return 1
   fi
 
   if id -nG "$user" | grep -qw "$group"; then
     slog "User $user is already a member of group $group"
-  else
-    slog "Adding user $user to group $group"
-    sudo usermod -aG "$group" "$user"
+    return 0
   fi
+
+  sudo usermod -aG "$group" "$user" || fail "$user couldn't be added to group $group"
 }
 
 add_user_to_groups() {
