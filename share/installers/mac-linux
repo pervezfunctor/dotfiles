@@ -229,6 +229,7 @@ vm_groupstall() {
 
   cockpit_install
   libvirt_confstall
+  has_cmd osinfo-db-import && sudo osinfo-db-import --system --latest
 }
 
 min_check() {
