@@ -68,7 +68,7 @@ core_install() {
     slog "Core packages installation done!"
 }
 
-sys_python_install() {
+system-python_install() {
     slog "Installing python"
 
     si python python-pipx python-pip python-setuptools python-wheel \
@@ -141,7 +141,7 @@ cli_install() {
 
     has_cmd tldr && tldr --update
 
-    sys_python_install
+    system-python_install
 
     slog "cli tools installation done!"
 }

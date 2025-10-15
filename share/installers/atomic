@@ -72,25 +72,25 @@ uv_install() {
 python_install() {
   slog "Installing python tools"
 
-  if fn_exists sys_python_install; then
-    sys_python_install
+  if fn_exists system-python_install; then
+    system-python_install
     return 0
   fi
 
-  if ! has_cmd pipx; then
-    if has_cmd brew; then
-      bis pipx
-    elif ! has_cmd pip; then
-      python3 -m ensurepip --user --default-pip
-      python3 -m pip install --user --force-reinstall --upgrade pip
-    fi
+  # if ! has_cmd pipx; then
+  #   if has_cmd brew; then
+  #     bis pipx
+  #   elif ! has_cmd pip; then
+  #     python3 -m ensurepip --user --default-pip
+  #     python3 -m pip install --user --force-reinstall --upgrade pip
+  #   fi
 
-    if has_cmd pip; then
-      pip install --upgrade --force-reinstall pipx
-    else
-      warn "pip not installed!."
-    fi
-  fi
+  #   if has_cmd pip; then
+  #     pip install --upgrade --force-reinstall pipx
+  #   else
+  #     warn "pip not installed!."
+  #   fi
+  # fi
 
   uv_install
 
@@ -426,13 +426,12 @@ incus_confstall() {
   sudo usermod -aG incus-admin "$USER"
 
   sudo systemctl enable --now incus.socket
-  sudo systemctl enable --now incus.service
-  sudo systemctl enable --now libvirtd
+  # sudo systemctl enable --now incus.service
 
   sudo incus admin init --minimal
-  sudo incus network set incusbr0 ipv4.dhcp true
+  # sudo incus network set incusbr0 ipv4.dhcp true
   # sudo incus network set incusbr0 ipv4.dns.mode managed
-  sudo incus config set core.https_address=127.0.0.1:8443
+  # sudo incus config set core.https_address=127.0.0.1:8443
 
   if has_cmd firewalld; then
     sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
@@ -748,11 +747,11 @@ ublue_common_install() {
   fi
 
   if ! current_user_in_group "docker"; then
-    if ujust dx-group; then
-      slog "Rebooting..."
-      sleep 5
-      sudo reboot
-    fi
+    ujust dx-group
+    incus_confstall
+    slog "Rebooting..."
+    sleep 5
+    sudo reboot
   fi
 
   dotfiles_install

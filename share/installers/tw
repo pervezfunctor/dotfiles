@@ -36,7 +36,7 @@ tw_packages() {
     slog "Installing packages done!"
 }
 
-sys_python_install() {
+system-python_install() {
     slog "Installing python"
 
     si python314 python314-virtualenv python314-pip python314-setuptools \
@@ -130,7 +130,7 @@ cli_install() {
 
     has_cmd tldr && tldr --update
 
-    sys_python_install
+    system-python_install
 
     slog "cli tools installation done!"
 }

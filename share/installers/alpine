@@ -39,7 +39,7 @@ core_install() {
     slog "Core packages installation done!"
 }
 
-sys_python_install() {
+system-python_install() {
     slog "Installing python"
 
     si python3 py3-virtualenv pipx uv
@@ -53,7 +53,7 @@ essential_install() {
     slog "Installing essential packages"
 
     pkgx_install
-    sys_python_install
+    system-python_install
 
     si zip micro p7zip net-tools iproute2 nmap gcc make fzf gawk just
 
