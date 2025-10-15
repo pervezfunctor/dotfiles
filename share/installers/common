@@ -45,7 +45,7 @@ brew-shell-slim_install() {
         return 1
     fi
 
-    bis gh gum stow tmux fzf zoxide starship
+    bis gh stow tmux fzf zoxide starship eza
 
     bi bash-preexec
 
@@ -67,7 +67,8 @@ brew-shell_install() {
 
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
         atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi \
-        ollama carapace lazygit eza fd luarocks runme act mask devcontainer
+        ollama carapace lazygit fd luarocks runme act mask devcontainer gum \
+        nixfmt
 
     local pkgs=()
 

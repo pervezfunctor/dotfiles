@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-has_cmd incus || return 1
+has_cmd incus || return 0
 
 incus-ubuntu-lxc() {
   incus launch images:ubuntu/24.04 ubuntu # --config limits.cpu=1 --config limits.memory=192MiB

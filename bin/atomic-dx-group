@@ -1,0 +1,23 @@
+#! /usr/bin/env bash
+
+# Unfortunately on Bluefin LTS, 'ujust dx-group' is absent. So copy/paste it here.
+
+atomic_group_add() {
+    local group_name="$1"
+    if ! grep -q "^$group_name:" /etc/group; then
+        echo "Appending $group_name to /etc/group"
+        grep "^$group_name:" /usr/lib/group | sudo tee -a /etc/group > /dev/null
+    fi
+}
+
+atomic_dx_group() {
+    local GROUPS_ADD=("docker" "incus-admin" "lxd" "libvirt")
+    for GROUP_ADD in "${GROUPS_ADD[@]}" ; do
+        atomic_group_add "$GROUP_ADD"
+        pkexec usermod -aG "$GROUP_ADD" "$USER"
+    done
+
+    echo "Reboot system and log back in to use docker, incus-admin, lxd, libvirt."
+}
+
+atomic_dx_group "$@"

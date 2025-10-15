@@ -4,7 +4,7 @@
 
 export BOXES_DIR=${USE_BOXES_DIR:-${BOXES_DIR}}
 
-has_cmd distrobox || return
+has_cmd distrobox || return 0
 
 dbox-logs() {
   podman logs "$1"

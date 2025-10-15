@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
+
+export DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
+source "$DOT_DIR/share/utils"
+source "$DOT_DIR/share/fns"
 
 trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
 
@@ -9,12 +15,13 @@ cmd_vme() {
 }
 
 check_prerequisites() {
-  for cmd in virsh virt-cat vme-create trash; do
+  for cmd in virsh vme-create trash; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-      echo "Error: Required command '$cmd' is not available."
+      echo "❌  Required command '$cmd' is not available."
       exit 1
     fi
   done
+  # command -v virt-cat >/dev/null 2>&1 || echo "⚠️  virt-cat not available, some commands won't work"
 }
 
 usage() {
@@ -37,6 +44,7 @@ COMMANDS:
     info <vm-name>      Show VM status and info
     logs <vm-name>      Show cloud-init logs
     disk <vm-name>      Show VM disk usage
+    ssh <vm-name> [user] SSH into VM (auto-detects user if omitted)
     cmd <virsh-args>    Run virsh command with qemu:///system connection
     net <command>       Manage libvirt virtual networks (see 'vm net' command)
     start-libvirt       Start the libvirtd service
@@ -48,6 +56,7 @@ EXAMPLES:
     $0 create debian           # Create debian VM
     $0 start debian            # Start 'debian' VM
     $0 delete old-vm           # Delete 'old-vm' completely
+    $0 ssh debian              # SSH into 'debian' VM
 EOF
 }
 
@@ -114,6 +123,112 @@ show_ip_vme() {
 
 list_vme() {
   virsh --connect qemu:///system list --all
+}
+
+resolve_vm_name() {
+  local name="$1"
+  if [[ -n "$name" ]]; then
+    printf '%s\n' "$name"
+    return 0
+  fi
+
+  local vms selected rc
+  if ! vms=$(virsh --connect qemu:///system list --all 2>/dev/null | awk 'NR>2 && $0 !~ /^[-[:space:]]*$/ {print $2}'); then
+    echo "Error: failed to list virtual machines" >&2
+    return 1
+  fi
+
+  if [[ -z "$vms" ]]; then
+    echo "Error: no virtual machines found" >&2
+    return 1
+  fi
+
+  selected=$(printf '%s\n' "$vms" | fzf-select 'VM > ')
+  rc=$?
+  if [[ $rc -ne 0 || -z "$selected" ]]; then
+    if [[ $rc -eq 127 ]]; then
+      echo "Error: fzf is not installed or not in PATH" >&2
+    else
+      echo "Cancelled" >&2
+    fi
+    return 1
+  fi
+
+  printf '%s\n' "$selected"
+}
+
+detect_user_for_vm() {
+  # Heuristic username detection by VM name; default to ubuntu
+  # Usage: detect_user_for_vm <vmname> -> echoes username
+  local name lower
+  name="$1"
+  lower="${name,,}"
+  if [[ "$lower" == *coreos* ]]; then
+    printf '%s\n' coreos
+  elif [[ "$lower" == *fedora* ]]; then
+    printf '%s\n' fedora
+  elif [[ "$lower" == *debian* || "$lower" == *bookworm* || "$lower" == *bullseye* || "$lower" == *trixie* ]]; then
+    printf '%s\n' debian
+  elif [[ "$lower" == *arch* ]]; then
+    printf '%s\n' arch
+  else
+    printf '%s\n' ubuntu
+  fi
+}
+
+get_ip_for_vm() {
+  local ip_with_mask
+  ip_with_mask=$(virsh --connect qemu:///system domifaddr --source agent "$1" 2>/dev/null |
+    awk '$1 ~ /^(enp|eth)/ && $3 ~ /ipv4/ {print $4; exit}') || true
+
+  if [[ -n "$ip_with_mask" ]]; then
+    printf '%s\n' "$ip_with_mask" | cut -d'/' -f1
+    return 0
+  fi
+
+  # Fallback: first non-loopback IPv4 if enp*/eth* not found
+  virsh --connect qemu:///system domifaddr --source agent "$1" 2>/dev/null |
+    awk '/ipv4/ && $1 !~ /^lo$/ {print $4}' |
+    head -n1 |
+    cut -d'/' -f1
+}
+
+ssh_vme() {
+  local vm user ip
+  vm="$1"
+  user="${2:-}"
+
+  if [[ -z "$vm" ]]; then
+    echo "Error: VM name required for ssh"
+    echo "Usage: $0 ssh <vm-name> [user]"
+    exit 1
+  fi
+
+  if [[ -z "$user" ]]; then
+    user=$(detect_user_for_vm "$vm")
+  fi
+
+  ip=$(get_ip_for_vm "$vm")
+  if [[ -z "$ip" ]]; then
+    echo "Error: could not determine IP for VM '$vm'"
+    echo "- Ensure the VM is running and QEMU guest agent is installed."
+    echo "- Try: $0 start $vm; then wait a few seconds."
+    exit 1
+  fi
+
+  local connect_timeout
+  connect_timeout=${VME_SSH_CONNECT_TIMEOUT:-15}
+  if ! [[ "$connect_timeout" =~ ^[0-9]+$ ]]; then
+    connect_timeout=15
+  fi
+
+  echo "Connecting: ssh ${user}@${ip} (timeout: ${connect_timeout}s)"
+  exec ssh \
+    -o StrictHostKeyChecking=no \
+    -o UserKnownHostsFile=/dev/null \
+    -o ConnectTimeout="${connect_timeout}" \
+    -o ConnectionAttempts=1 \
+    "${user}@${ip}"
 }
 
 net_usage() {
@@ -198,43 +313,82 @@ main() {
     cmd_vme "${@:2}"
     ;;
   disk)
-    disk_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    disk_vme "$target"
     ;;
   info | status)
-    status_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    status_vme "$target"
     ;;
   create | new)
     vme-create "${@:2}"
     ;;
   autostart)
-    autostart_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    autostart_vme "$target"
     ;;
   start | boot)
-    start_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    start_vme "$target"
     ;;
   stop | shutdown)
-    shutdown_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    shutdown_vme "$target"
     ;;
   restart | reboot)
-    reboot_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    reboot_vme "$target"
     ;;
   destroy | kill | force-stop)
-    force_stop_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    force_stop_vme "$target"
     ;;
   delete | rm)
-    delete_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    delete_vme "$target"
     ;;
   console)
-    console_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    console_vme "$target"
     ;;
   show-ip)
-    show_ip_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    show_ip_vme "$target"
     ;;
   net)
     net_vme "${@:2}"
     ;;
   logs)
-    logs_vme "$vm_name"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    logs_vme "$target"
+    ;;
+  ssh)
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    ssh_vme "$target" "${3:-}"
     ;;
   --help | -h)
     usage

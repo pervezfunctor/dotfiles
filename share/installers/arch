@@ -136,7 +136,8 @@ cli_install() {
     si neovim tmux shellcheck shfmt python-pynvim zsh-completions bat jq yq \
         luarocks duf lazygit ugrep git-delta navi sd gdu hyperfine fd lsd xh \
         htop nushell bottom plocate tealdeer television dysk yazi pixi procs \
-        dust direnv atuin broot glances curlie superfile choose just dialog gum
+        dust direnv atuin broot glances curlie superfile choose just dialog \
+        gum lazydocker
 
     has_cmd tldr && tldr --update
 
