@@ -64,31 +64,29 @@ uv_install() {
     curl -LsSf https://astral.sh/uv/install.sh | sh
   fi
 
-  cmd_check uv
+  if ! has_cmd pipx; then
+    has_cmd uv && uv tool install pipx
+  fi
 }
 
 python_install() {
   slog "Installing python tools"
 
-  if ! has_cmd python3; then
-    warn "python3 not installed! Skipping python setup."
-    return 1
-  fi
-
   if fn_exists sys_python_install; then
     sys_python_install
-    return
+    return 0
   fi
 
   if ! has_cmd pipx; then
-    if ! has_cmd pip; then
+    if has_cmd brew; then
+      bis pipx
+    elif ! has_cmd pip; then
       python3 -m ensurepip --user --default-pip
       python3 -m pip install --user --force-reinstall --upgrade pip
     fi
 
     if has_cmd pip; then
       pip install --upgrade --force-reinstall pipx
-      cmd_check pipx
     else
       warn "pip not installed!."
     fi
@@ -97,6 +95,7 @@ python_install() {
   uv_install
 
   slog "Python tools installation done!"
+  cmd_check pipx uv
 }
 
 flathub_install() {
@@ -215,13 +214,13 @@ cmake_install() {
 
 gnome-extensions-slim_install() {
   if ! has_cmd gext; then
-    if ! has_cmd pipx; then
-      warn "pipx not installed, skipping gnome extensions"
-      return 1
-    fi
-
+    has_cmd pipx || uv_install
     pipx install gnome-extensions-cli --system-site-packages
-    cmd_check gext
+  fi
+
+  if ! has_cmd gext; then
+    warn "gext not found, skipping gnome extensions"
+    return 1
   fi
 
   gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
@@ -236,10 +235,7 @@ gnome-extensions_install() {
   slog "Installing gnome extensions"
 
   gnome-extensions-slim_install
-
-  if ! has_cmd gext; then
-    return 1
-  fi
+  has_cmd gext || return 1
 
   gext install Vitals@CoreCoding.com
   gext install tailscale@joaophi.github.com
@@ -549,19 +545,26 @@ docker_confstall() {
   sudo systemctl start containerd
 }
 
+pyi() {
+  if ! has_cmd pipx && ! has_cmd uv; then
+    warn "neither pipx not uv installed, skipping packages"
+    return 1
+  fi
+
+  local in="pipx"
+  has_cmd uv && in="uv tool"
+
+  for p in "$@"; do
+    slog "Installing $in package $p"
+    $in install "$p"
+  done
+}
+
 conan_install() {
   has_cmd conan && return 1
 
   slog "Installing conan"
-  if has_cmd uv; then
-    uv tool install conan
-  elif has_cmd pipx; then
-    pipx install conan
-  else
-    python_install
-    pipx install conan
-  fi
-
+  pyi conan
   slog "conan installation done!"
 
   cmd_check conan
@@ -729,10 +732,24 @@ hyprland_confstall() {
 }
 
 ublue_common_install() {
-  if is_ublue && has_cmd git && has_cmd brew && has_cmd python3 && has_cmd code && has_cmd flatpak && has_cmd distrobox; then
+  if is_ublue && has_cmd git && has_cmd brew && has_cmd flatpak; then
     slog "Prerequisites met, installing uBlue OS"
   else
-    die "Prerequisites not met. You need Aurora/Bluefin/Bazzite with git, just, brew, code, flatpak, distrobox and python3 installed."
+    die "Prerequisites not met. You need Aurora/Bluefin/Bazzite with git, brew and flatpak installed."
+  fi
+
+  if ! has_cmd code && ! has_cmd virt-install && ! has_cmd docker; then
+    ujust devmode
+    slog "Rebooting..."
+    sleep 5
+    sudo reboot
+  fi
+
+  if ! current_user_in_group "docker"; then
+    ujust dx-group
+    slog "Rebooting..."
+    sleep 5
+    sudo reboot
   fi
 
   dotfiles_install
@@ -743,8 +760,7 @@ ublue_common_install() {
 
   vscode_confstall
   jetbrains-mono_install
-  is_gnome && gnome_confstall
-
+  is_gnome && gnome-settings_install
 }
 
 ublue_mainstall() {
