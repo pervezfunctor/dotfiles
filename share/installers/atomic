@@ -399,6 +399,7 @@ apps_install() {
 
   apps-slim_install
 
+  fpi org.fedoraproject.MediaWriter
   fpi us.zoom.Zoom # unverified
   fpi md.obsidian.Obsidian
   fpi org.telegram.desktop
