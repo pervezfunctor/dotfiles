@@ -739,28 +739,33 @@ ublue_common_install() {
   fi
 
   if ! has_cmd code && ! has_cmd virt-install && ! has_cmd docker; then
-    ujust devmode
-    slog "Rebooting..."
-    sleep 5
-    sudo reboot
+    if ujust devmode; then
+      slog "Rebooting..."
+      sleep 5
+      sudo reboot
+    fi
   fi
 
   if ! current_user_in_group "docker"; then
-    ujust dx-group
-    slog "Rebooting..."
-    sleep 5
-    sudo reboot
+    if ujust dx-group; then
+      slog "Rebooting..."
+      sleep 5
+      sudo reboot
+    fi
   fi
 
   dotfiles_install
   python_install
   npm_install
+  ai-cli_install
   brew-shell-slim_install
   apps-slim_install
 
   vscode_confstall
   jetbrains-mono_install
   is_gnome && gnome-settings_install
+  ujust install-system-flatpaks
+  ujust update
 }
 
 ublue_mainstall() {
@@ -909,8 +914,9 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 EOF
     fi
 
+    sudo rpm --import https://packages.microsoft.com/config/fedora/42/prod.repo
     PKGS+=(
-      "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
+      # "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
       "code"
     )
 
