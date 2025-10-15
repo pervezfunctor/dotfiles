@@ -11,6 +11,34 @@ group_exists() {
   getent group "$1" >/dev/null 2>&1
 }
 
+current_user_in_group() {
+  groups | grep -qw "$1"
+}
+
+atomic_group_exists() {
+  grep -q "^$1:" /etc/group
+}
+
+atomic_add_user_to_group() {
+  local group="$1"
+  local user="${2:-$USER}"
+
+  if ! atomic_group_exists "$group"; then
+    warn "Group $group does not exist, skipping adding user to group $group..."
+    return 1
+  fi
+  grep "^$group:" /usr/lib/group | sudo tee -a /etc/group >/dev/null
+}
+
+atomic_add_user_to_groups() {
+  local user="$1"
+  local groups="${*:2}"
+
+  for group in $groups; do
+    atomic_add_user_to_group "$group" "$user"
+  done
+}
+
 create_group() {
   local group="$1"
 
@@ -920,7 +948,7 @@ is_aurora() {
 
   # shellcheck disable=SC1091
   . /etc/os-release
-  [[ "${ID:-}" =~ .*aurora.* ]] || [[ "${PRETTY_NAME:-}" =~ .*aurora.* ]]
+  [[ "${ID,,}" =~ .*aurora.* ]] || [[ "${PRETTY_NAME,,}" =~ .*aurora.* ]] || [[ "${NAME,,}" =~ .*aurora.* ]]
 }
 
 is_bluefin() {
@@ -930,7 +958,7 @@ is_bluefin() {
 
   # shellcheck disable=SC1091
   . /etc/os-release
-  [[ "${ID:-}" =~ .*bluefin.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bluefin.* ]]
+  [[ "${ID,,}" =~ .*bluefin.* ]] || [[ "${PRETTY_NAME,,}" =~ .*bluefin.* ]] || [[ "${NAME,,}" =~ .*bluefin.* ]]
 }
 
 is_bazzite() {
@@ -940,7 +968,7 @@ is_bazzite() {
 
   # shellcheck disable=SC1091
   . /etc/os-release
-  [[ "${ID:-}" =~ .*bazzite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*bazzite.* ]]
+  [[ "${ID,,}" =~ .*bazzite.* ]] || [[ "${PRETTY_NAME,,}" =~ .*bazzite.* ]] || [[ "${NAME,,}" =~ .*bazzite.* ]]
 }
 
 is_ublue() {
