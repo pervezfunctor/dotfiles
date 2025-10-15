@@ -53,22 +53,22 @@ ublue_cli_install() {
 
 main() {
     dotfiles_install
-    python_install
+    uv_install
     brew-shell-slim_install
     apps-slim_install
 
     vscode_confstall
     jetbrains-mono_install
     config_setup
-    is_gnome && gnome_confstall
+    is_gnome && gnome-settings_install
+    has_cmd ugrep || ublue_cli_install
+    git_confstall
+    nvim_confstall astro
 
     if [[ "$USER" == "pervez" ]]; then
-        slog "Setting up ublue for myself"
+        slog "Setting up ublue for pervez"
         ublue_cpp_setup
         ublue_emacs_setup
-        nvim_confstall astro
-        git_confstall
-        ublue_cli_install
     fi
 }
 
