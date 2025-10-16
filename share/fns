@@ -38,7 +38,8 @@ osquery-update-db() {
     return 1
   fi
 
-  sudo osinfo-db-import --system --latest
+  # sudo osinfo-db-import --system --latest
+  osinfo-db-import --local --latest
 }
 
 function safe_push() {

@@ -127,7 +127,7 @@ configure_distribution() {
   esac
 
   USERNAME=${USERNAME:-"$DISTRO"}
-  PASSWORD=${PASSWORD:=$USERNAME}
+  PASSWORD=${PASSWORD:-$(default_username "$DISTRO")}
   PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 }
 
@@ -182,6 +182,7 @@ manage_etc_hosts: true
 
 users:
   - name: $USERNAME
+    shell: /bin/bash
     groups:
 $(printf "      - %s\n" "${USER_GROUPS[@]}")
     sudo: ['ALL=(ALL) NOPASSWD:ALL']

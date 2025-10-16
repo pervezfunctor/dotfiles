@@ -7,6 +7,10 @@ set -euo pipefail
 source "$(dirname "$0")/vm-utils"
 source "$(dirname "$0")/tmux-utils"
 
+vme_exists() {
+  virsh dominfo "$1" &>/dev/null
+}
+
 VM_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "tumbleweed")
 
 SESSION_NAME="VME_TMUX"

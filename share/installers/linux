@@ -206,6 +206,17 @@ pyenv_install() {
 tailscale_install() {
   has_cmd tailscale && return 0
 
+  fn_exists si && si tailscale && return 0
+  if has_cmd pixi; then
+    pis tailscale
+    return 0
+  fi
+
+  if has_cmd brew; then
+    bis tailscale
+    return 0
+  fi
+
   slog "Installing tailscale"
   curl -fsSL https://tailscale.com/install.sh | sh
   slog "tailscale installation done!"
