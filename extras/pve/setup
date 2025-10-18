@@ -57,6 +57,24 @@ ct-templates_install() {
     done
 }
 
+tailscale_install() {
+    has_cmd tailscale && return 0
+
+    sudo mkdir -p --mode=0755 /usr/share/keyrings
+
+    if ! file_exists /usr/share/keyrings/tailscale-archive-keyring.gpg; then
+        curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+    fi
+
+    if ! file_exists /etc/apt/sources.list.d/tailscale.list; then
+        curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list
+    fi
+
+    sudo apt-get update && sudo apt-get install tailscale
+
+    sudo tailscale up
+}
+
 vm-templates_install() {
     slog "Installing VM templates..."
     local current_dir
