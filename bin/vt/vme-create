@@ -17,7 +17,7 @@ DISTRO="arch"
 
 check_whiptail() {
   if ! has_cmd whiptail; then
-    echo "Error: whiptail is not installed. Please install it to use interactive mode." >&2
+    fail "whiptail is not installed. Please install it to use interactive mode."
     exit 1
   fi
 }
@@ -102,6 +102,15 @@ configure_tw() {
   OS_VARIANT="opensusetumbleweed"
 }
 
+generate_password() {
+  has_cmd pass && PASSWORD=$(pass generate "$(hostname)/${VM_NAME}" 12) && return 0
+  has_cmd pwgen && PASSWORD=$(pwgen 12 1) && return 0
+  has_cmd openssl && PASSWORD=$(openssl rand -base64 12) && return 0
+
+  PASSWORD=${USERNAME:-program}
+  return 0
+}
+
 configure_distribution() {
   case "$DISTRO" in
   arch)
@@ -120,30 +129,31 @@ configure_distribution() {
     configure_tw
     ;;
   *)
-    echo "Unknown distribution: $DISTRO"
+    fail "Unknown distribution: $DISTRO"
     usage
     exit 1
     ;;
   esac
 
-  USERNAME=${USERNAME:-"$DISTRO"}
-  PASSWORD=${PASSWORD:-$(default_username "$DISTRO")}
+  USERNAME=${USERNAME:-$USER}
+  [[ -z "$PASSWORD" ]] && generate_password
+
   PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 }
 
 download_base_image() {
   if [ -f "${BASE_IMAGE}" ]; then
-    echo "Base image '${BASE_IMAGE}' already exists. Skipping download."
+    info "Base image '${BASE_IMAGE}' already exists. Skipping download."
     return 0
   fi
 
-  echo "Downloading base image from $DOWNLOAD_URL..."
+  slog "Downloading base image from $DOWNLOAD_URL..."
   if ! sudo wget -q --show-progress "$DOWNLOAD_URL" -O "${BASE_IMAGE}"; then
-    echo "Error: Failed to download base image." >&2
+    fail "Failed to download base image."
   else
     sudo chown root:kvm "${BASE_IMAGE}"
     sudo chmod 644 "${BASE_IMAGE}"
-    echo "Base image downloaded successfully."
+    success "Base image downloaded successfully."
   fi
 }
 
@@ -184,23 +194,23 @@ users:
   - name: $USERNAME
     shell: /bin/bash
     groups:
-$(printf "      - %s\n" "${USER_GROUPS[@]}")
+$(for g in "${USER_GROUPS[@]}"; do printf "      - %s\n" "$g"; done)
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
-    passwd: "$PASSWORD_HASH"
+    passwd: $PASSWORD_HASH
     ssh_authorized_keys:
-      - "$pub_key"
+      - |
+        $pub_key
 
 package_update: true
 packages:
-$(printf "  - %s\n" "${packages[@]}")
+$(for p in "${packages[@]}"; do printf "  - %s\n" "$p"; done)
 
 ssh_pwauth: false
 disable_root: true
 
 runcmd:
-  - systemctl enable --now sshd || true
-
+  - systemctl enable --now sshd || systemctl enable --now ssh || true
   - systemctl enable --now qemu-guest-agent || true
 EOF
 
@@ -233,13 +243,13 @@ check_prerequisites() {
 }
 
 create_disk() {
-  echo "Creating and resizing disk for ${VM_NAME} at ${VM_DISK}..."
+  slog "Creating and resizing disk for ${VM_NAME} at ${VM_DISK}..."
   sudo qemu-img create -f qcow2 -b "${BASE_IMAGE}" -F qcow2 "${VM_DISK}" "${DISK_SIZE}"
-  echo "Disk created successfully."
+  success "Disk created successfully."
 }
 
 create_vm() {
-  echo "Creating VM '${VM_NAME}'..."
+  slog "Creating VM '${VM_NAME}'..."
 
   virt-install \
     --connect qemu:///system \
@@ -256,24 +266,46 @@ create_vm() {
     --console pty,target_type=serial \
     --noautoconsole
 
-  echo "✅ VM creation process started for '${VM_NAME}'."
+  success "VM creation process started for '${VM_NAME}'."
 }
 
 show_completion_info() {
-  echo "✅ VM should be up in few minutes. You can check the status with:"
-  echo "  virsh domstate ${VM_NAME}"
   echo
-  echo "Once the VM is up, you can get IP address with:"
-  echo "  virsh domifaddr ${VM_NAME} --source agent"
+  printf '\033[1;32m╭─────────────────────────────────────────────────────────────╮\033[0m\n'
+  printf '\033[1;32m│\033[1;37m                     VM CREATED SUCCESSFULLY!                \033[1;32m│\033[0m\n'
+  printf '\033[1;32m╰─────────────────────────────────────────────────────────────╯\033[0m\n'
   echo
-  echo "Once you get IP from the above command, you can connect to it with:"
-  echo "  ssh ${USERNAME}@<IP_ADDRESS>"
+
+  printf '\033[1;36m📋 VM INFORMATION:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  printf '\033[1mVM Name:\033[0m    \033[0;33m%s\033[0m\n' "$VM_NAME"
+  printf '\033[1mUsername:\033[0m   \033[0;33m%s\033[0m\n' "$USERNAME"
+  printf '\033[1mPassword:\033[0m   \033[0;33m%s\033[0m\n' "$PASSWORD"
   echo
-  echo "Provide password if prompted: ${PASSWORD}."
+
+  printf '\033[1;36m🔍 STATUS CHECK:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  info 'Check if the VM is running with:'
+  info '  virsh domstate %s' "$VM_NAME"
   echo
-  echo "To troubleshoot, access the serial console with:"
-  echo "  virsh console ${VM_NAME}"
-  echo " You need to exit the console with Ctrl+]."
+
+  printf '\033[1;36m🌐 NETWORK ACCESS:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  info 'Once the VM is up, get its IP address with:'
+  info '  virsh domifaddr %s --source agent' "$VM_NAME"
+  echo
+  info 'Then connect to it using SSH:'
+  info '  ssh %s@<IP_ADDRESS>' "$USERNAME"
+  echo
+
+  printf '\033[1;36m🔧 TROUBLESHOOTING:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  info 'If you need to access the serial console:'
+  info '  virsh console %s' "$VM_NAME"
+  printf '  \033[0;90m(Exit with Ctrl+])\033[0m\n'
+  echo
+
+  success "VM '${VM_NAME}' creation process completed successfully!"
   echo
 }
 
@@ -336,7 +368,7 @@ parse_args() {
       exit 0
       ;;
     *)
-      echo "Unknown option: $1"
+      fail "Unknown option: $1"
       usage
       exit 1
       ;;
@@ -363,9 +395,9 @@ main() {
   slog "Starting VM creation process for '${VM_NAME}'..."
   echo
 
-  echo "Using vCPUs: ${VCPUS}"
-  echo "Using memory: ${MEMORY} MB"
-  echo "Using disk size: ${DISK_SIZE}"
+  info "Using vCPUs: ${VCPUS}"
+  info "Using memory: ${MEMORY} MB"
+  info "Using disk size: ${DISK_SIZE}"
   echo
   sleep 1
 
