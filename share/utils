@@ -657,12 +657,7 @@ safe_cp() {
   fi
 
   slog "Copying $1 to $2"
-  if cp -r "$1" "$2" 2>/dev/null; then
-    return 0
-  else
-    fail "safe_cp error: failed to copy $1 to $2"
-    return 1
-  fi
+  cp -r "$1" "$2"
 }
 
 fcp() {

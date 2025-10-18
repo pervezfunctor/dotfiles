@@ -459,7 +459,7 @@ vscode_confstall() {
         smd "$XDG_CONFIG_HOME/Code/User"
         fmv "$XDG_CONFIG_HOME/Code/User/settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json.bak"
         safe_cp "$DOT_DIR/extras/vscode/minimal-settings.json" "$XDG_CONFIG_HOME/Code/User/settings.json"
-        safe_cp "$DOT_DIR/extras/vscode/argv.json" "$XDG_CONFIG_HOME/.vscode/argv.json"
+        # safe_cp "$DOT_DIR/extras/vscode/argv.json" "$XDG_CONFIG_HOME/.vscode/argv.json"
 
         # support code-insiders
         if dir_exists "$XDG_CONFIG_HOME/Code - Insiders/User"; then
