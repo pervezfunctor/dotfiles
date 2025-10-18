@@ -56,9 +56,8 @@ brew-shell-slim_install() {
 }
 
 brew-shell_install() {
-    # bi ffmpeg sevenzip poppler imagemagick
-    # bis gping ncdu httpie font-symbols-only-nerd-font
-    # bi glab
+    # bi ffmpeg sevenzip poppler
+    # bis gping ncdu httpie
     # bi -q glances
 
     slog "shell tools with brew"
@@ -68,10 +67,12 @@ brew-shell_install() {
     bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
         atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi \
         ollama carapace lazygit fd luarocks runme act mask devcontainer gum \
-        nixfmt
+        nixfmt pass tailscale age imagemagick
 
     local pkgs=()
 
+    has_cmd bw || pkgs+=(bitwarden-cli)
+    has_cmd whiptail || pkgs+=(newt)
     has_cmd tv || pkgs+=(television)
     has_cmd ug || pkgs+=(ugrep)
     has_cmd nvim || pkgs+=(neovim)
@@ -88,8 +89,6 @@ brew-shell_install() {
     has_cmd llama-server || pkgs+=(llama.cpp)
 
     [ ${#pkgs[@]} -gt 0 ] && bis "${pkgs[@]}"
-
-    alias gdu=gdu-go
 
     if is_linux; then
         brew install stress-ng topgrade
