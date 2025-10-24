@@ -1,42 +1,184 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
-SRC_DIR="${1:-.}"
-TARGET_DIR="${2:-$HOME}"
+# bstow - Link dotfiles from SRC_DIR into TARGET_DIR by converting "dot-*" to ".*"
+# Usage: bstow [SRC_DIR [TARGET_DIR]]
+
+SCRIPT_NAME="${0##*/}"
+
 TS="$(date +%Y%m%d-%H%M%S)"
 
-mkdir -p "$TARGET_DIR"
+# Logging helpers
+log_info() { echo "ℹ️  $*"; }
+log_warn() { echo "⚠️  $*" >&2; }
+log_error() { echo "❌ $*" >&2; }
+log_success() { echo "✅ $*"; }
 
-cd "$SRC_DIR"
+usage() {
+  cat <<EOF
+Usage: $SCRIPT_NAME [SRC_DIR [TARGET_DIR]]
 
-echo "Linking from $SRC_DIR to $TARGET_DIR"
+Links files and directories that match 'dot-*' from SRC_DIR into TARGET_DIR,
+renaming the leading 'dot-' to '.' (e.g., dot-config -> .config).
 
-find . -name 'dot-*' | while read -r path; do
-  rel_path="${path#./}"
-  renamed_path="${rel_path/#dot-/.}"
-  target_path="$TARGET_DIR/$renamed_path"
-  source_abs_path="$(realpath "$rel_path")"
+Arguments:
+  SRC_DIR     Source directory to scan for 'dot-*' entries. Defaults to current directory.
+  TARGET_DIR  Destination directory to place symlinks. Defaults to \$HOME.
 
-  # Create parent directories for target path if missing
-  mkdir -p "$(dirname "$target_path")"
+Options:
+  -h, --help  Show this help and exit.
 
-  # Handle conflict if target exists
-  if [[ -e "$target_path" || -L "$target_path" ]]; then
-    if [[ -L "$target_path" ]]; then
-      link_target="$(readlink "$target_path")"
-      if [[ "$link_target" == "$source_abs_path" ]]; then
-        echo "✓ Already linked: $target_path → $link_target"
-        continue
-      fi
-    fi
-    # Backup conflicting file/symlink
-    backup="$target_path.$TS.bak"
-    echo "⚠️  Backing up: $target_path → $backup"
-    mv "$target_path" "$backup"
+Behavior:
+  - Existing correct symlinks are left as-is.
+  - Conflicting files/symlinks are backed up with a .$TS.bak suffix before linking.
+EOF
+}
+
+on_error() {
+  local exit_code="${1:-1}"
+  local line="${2:-?}"
+  log_error "Unexpected error at line $line (exit code $exit_code). Aborting."
+  exit "$exit_code"
+}
+trap 'on_error $? $LINENO' ERR
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    log_error "Required command '$1' not found in PATH"
+    exit 127
+  }
+}
+
+parse_args() {
+  SRC_DIR="."
+  TARGET_DIR="${HOME}"
+
+  # handle help
+  if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    usage
+    exit 0
   fi
 
-  # Create symlink
+  if [[ "${1:-}" != "" ]]; then
+    SRC_DIR="$1"
+  fi
+  if [[ "${2:-}" != "" ]]; then
+    TARGET_DIR="$2"
+  fi
+
+  if [[ "${3:-}" != "" ]]; then
+    log_error "Too many arguments."
+    usage
+    exit 2
+  fi
+}
+
+validate_input() {
+  # Ensure required utilities
+  require_cmd find
+  require_cmd realpath
+  require_cmd readlink
+  require_cmd mkdir
+  require_cmd ln
+  require_cmd mv
+  require_cmd date
+
+  # Normalize paths
+  SRC_ABS="$(realpath -m "$SRC_DIR")"
+  TARGET_ABS="$(realpath -m "$TARGET_DIR" 2>/dev/null || true)"
+
+  if [[ ! -d "$SRC_ABS" ]]; then
+    log_error "Source directory not found or not a directory: $SRC_DIR"
+    exit 2
+  fi
+
+  if [[ -z "$TARGET_ABS" ]]; then
+    # create if missing
+    mkdir -p "$TARGET_DIR"
+    TARGET_ABS="$(realpath -m "$TARGET_DIR")"
+  fi
+
+  if [[ ! -d "$TARGET_ABS" ]]; then
+    log_error "Target exists but is not a directory: $TARGET_DIR"
+    exit 2
+  fi
+
+  if [[ "$SRC_ABS" == "$TARGET_ABS" ]]; then
+    log_error "Source and target directories must differ. SRC_DIR=$SRC_ABS TARGET_DIR=$TARGET_ABS"
+    exit 2
+  fi
+}
+
+link_one() {
+  local rel_path="$1"
+
+  local renamed_path="${rel_path/#dot-/.}"
+  local target_path="$TARGET_ABS/$renamed_path"
+  local source_abs_path
+  source_abs_path="$(realpath "$rel_path")"
+
+  # Ensure parent directory exists
+  mkdir -p "$(dirname "$target_path")"
+
+  # Handle existing target
+  if [[ -e "$target_path" || -L "$target_path" ]]; then
+    if [[ -L "$target_path" ]]; then
+      local link_target
+      link_target="$(readlink "$target_path")"
+      if [[ "$link_target" == "$source_abs_path" ]]; then
+        log_success "Already linked: $target_path → $link_target"
+        ((count_already++))
+        return 0
+      fi
+    fi
+    local backup="${target_path}.${TS}.bak"
+    log_warn "Backing up: $target_path → $backup"
+    mv "$target_path" "$backup"
+    ((count_backed_up++))
+  fi
+
   ln -s "$source_abs_path" "$target_path"
-  echo "→ Linked: $target_path → $source_abs_path"
-done
+  log_info "Linked: $target_path → $source_abs_path"
+  ((count_linked++))
+}
+
+process_paths() {
+  local found=0
+  while IFS= read -r -d '' path; do
+    ((found++))
+    local rel_path="${path#./}"
+    ((count_total++))
+    link_one "$rel_path"
+  done < <(find . -name 'dot-*' -print0)
+
+  if [[ "$found" -eq 0 ]]; then
+    log_warn "No entries matching 'dot-*' found in $SRC_ABS"
+  fi
+}
+
+summary() {
+  echo
+  echo "Summary:"
+  echo "  total scanned:  $count_total"
+  echo "  linked:         $count_linked"
+  echo "  already linked: $count_already"
+  echo "  backed up:      $count_backed_up"
+}
+
+main() {
+  parse_args "$@"
+  validate_input
+
+  log_info "Linking from $SRC_ABS to $TARGET_ABS"
+  cd "$SRC_ABS"
+
+  declare -i count_total=0
+  declare -i count_linked=0
+  declare -i count_already=0
+  declare -i count_backed_up=0
+
+  process_paths
+  summary
+}
+
+main "$@"

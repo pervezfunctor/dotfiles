@@ -1,19 +1,362 @@
 #!/usr/bin/env bash
 set -e
 
-INCUS_SUBNET="10.105.245.0/24"
+# Default subnet if none provided
+DEFAULT_SUBNET="10.105.245.0/24"
 
-echo "[+] Enabling IPv4 forwarding..."
-sudo sysctl -w net.ipv4.ip_forward=1
-sudo bash -c 'echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-incus-ipforward.conf'
+# Function to display usage information
+usage() {
+  echo "Usage: $0 [SUBNET] [BRIDGE]"
+  echo "Fix Incus networking for Docker containers"
+  echo ""
+  echo "Arguments:"
+  echo "  SUBNET    Network subnet in CIDR notation (e.g., 10.105.245.0/24)"
+  echo "            If not provided, defaults to $DEFAULT_SUBNET"
+  echo "  BRIDGE    Network bridge name (e.g., incusbr0)"
+  echo "            If not provided, defaults to incusbr0"
+  echo ""
+  echo "Examples:"
+  echo "  $0                           # Uses default subnet and bridge"
+  echo "  $0 192.168.1.0/24            # Uses custom subnet with default bridge"
+  echo "  $0 192.168.1.0/24 mybr0      # Uses custom subnet and bridge"
+  echo "  $0 '' mybr0                  # Uses default subnet with custom bridge"
+  exit 1
+}
 
-echo "[+] Fixing iptables POSTROUTING MASQUERADE rule for Incus bridge..."
-# Remove existing rule if present
-sudo iptables -t nat -D POSTROUTING -s "$INCUS_SUBNET" -j MASQUERADE 2>/dev/null || true
-# Add clean MASQUERADE rule
-sudo iptables -t nat -A POSTROUTING -s "$INCUS_SUBNET" -j MASQUERADE
+# Function to validate IP subnet format
+validate_subnet() {
+  local subnet=$1
 
-echo "[+] Setting iptables FORWARD policy to ACCEPT..."
-sudo iptables -P FORWARD ACCEPT
+  # Use ip command to validate CIDR notation
+  if ! ip route get "$subnet" &>/dev/null; then
+    echo "Error: Invalid subnet format. Expected CIDR notation (e.g., 10.105.245.0/24)"
+    return 1
+  fi
 
-echo "[✓] Incus networking fixed. Containers should now have internet access."
+  return 0
+}
+
+
+# Function to check all prerequisites
+check_prerequisites() {
+  local missing_prereqs=0
+
+  # Check if running as root or with sudo access
+  if [[ $EUID -ne 0 ]]; then
+    echo "[+] This script requires root privileges. Checking sudo access..."
+    if ! sudo -n true 2>/dev/null; then
+      echo "[!] Error: This script requires root privileges. Please run with sudo or as root."
+      missing_prereqs=1
+    fi
+  fi
+
+  # Check if required commands are available
+  local required_commands=("ip" "sysctl")
+  for cmd in "${required_commands[@]}"; do
+    if ! command -v "$cmd" &>/dev/null; then
+      echo "[!] Error: Required command '$cmd' is not available."
+      missing_prereqs=1
+    fi
+  done
+
+  # Check if at least one packet filtering tool is available
+  if ! command -v iptables &>/dev/null && ! command -v nft &>/dev/null; then
+    echo "[!] Error: Neither iptables nor nftables is available."
+    missing_prereqs=1
+  fi
+
+  # Check if /proc/sys/net/ipv4/ip_forward exists
+  if [[ ! -f /proc/sys/net/ipv4/ip_forward ]]; then
+    echo "[!] Error: IPv4 forwarding not supported on this system."
+    missing_prereqs=1
+  fi
+
+  # Check if we can write to /etc/sysctl.d/
+  local sysctl_dir="/etc/sysctl.d"
+  if [[ ! -d "$sysctl_dir" ]] || ! sudo test -w "$sysctl_dir"; then
+    echo "[!] Error: Cannot write to $sysctl_dir. Check permissions."
+    missing_prereqs=1
+  fi
+
+  if [[ $missing_prereqs -ne 0 ]]; then
+    echo "[!] Prerequisites check failed. Please resolve the issues above and try again."
+    return 1
+  fi
+
+  echo "[+] All prerequisites satisfied."
+  return 0
+}
+
+# Function to configure firewalld
+configure_firewalld() {
+  local bridge_name=${1:-incusbr0}
+
+  # Check if firewalld is available and running
+  if ! command -v firewall-cmd &>/dev/null; then
+    echo "[+] firewalld not available, skipping firewalld configuration"
+    return 0
+  fi
+
+  if ! systemctl is-active firewalld &>/dev/null; then
+    echo "[+] firewalld not running, skipping firewalld configuration"
+    return 0
+  fi
+
+  echo "[+] Configuring firewalld for bridge: $bridge_name"
+
+  # Add bridge interface to trusted zone
+  if sudo firewall-cmd --zone=trusted --change-interface="$bridge_name" --permanent; then
+    echo "[+] Added $bridge_name to trusted zone permanently"
+  else
+    echo "[!] Failed to add $bridge_name to trusted zone"
+    return 1
+  fi
+
+  # Reload firewalld configuration
+  if sudo firewall-cmd --reload; then
+    echo "[+] Reloaded firewalld configuration"
+  else
+    echo "[!] Failed to reload firewalld configuration"
+    return 1
+  fi
+
+  return 0
+}
+
+# Function to configure UFW
+configure_ufw() {
+  local bridge_name=${1:-incusbr0}
+
+  # Check if UFW is available
+  if ! command -v ufw &>/dev/null; then
+    echo "[+] UFW not available, skipping UFW configuration"
+    return 0
+  fi
+
+  echo "[+] Configuring UFW for bridge: $bridge_name"
+
+  # Allow forwarding on the bridge interface
+  if sudo ufw allow in on "$bridge_name"; then
+    echo "[+] Allowed incoming traffic on $bridge_name"
+  else
+    echo "[!] Failed to allow incoming traffic on $bridge_name"
+    return 1
+  fi
+
+  # Allow forwarding from the bridge interface
+  if sudo ufw allow out on "$bridge_name"; then
+    echo "[+] Allowed outgoing traffic on $bridge_name"
+  else
+    echo "[!] Failed to allow outgoing traffic on $bridge_name"
+    return 1
+  fi
+
+  # Reload UFW configuration
+  if sudo ufw reload; then
+    echo "[+] Reloaded UFW configuration"
+  else
+    echo "[!] Failed to reload UFW configuration"
+    return 1
+  fi
+
+  return 0
+}
+
+# Function to configure nftables
+configure_nft() {
+  local bridge_name=${1:-incusbr0}
+
+  # Check if nft is available
+  if ! command -v nft &>/dev/null; then
+    echo "[+] nft not available, skipping nftables configuration"
+    return 0
+  fi
+
+  echo "[+] Configuring nftables for bridge: $bridge_name"
+
+  # Check if filter table exists, create it if it doesn't
+  if ! nft list table ip filter &>/dev/null; then
+    echo "[+] Creating filter table in nftables"
+    if sudo nft add table ip filter; then
+      echo "[+] Created filter table"
+    else
+      echo "[!] Failed to create filter table"
+      return 1
+    fi
+  fi
+
+  # Check if DOCKER-USER chain exists, create it if it doesn't
+  if ! nft list chain ip filter DOCKER-USER &>/dev/null; then
+    echo "[+] Creating DOCKER-USER chain in nftables"
+    if sudo nft add chain ip filter DOCKER-USER; then
+      echo "[+] Created DOCKER-USER chain"
+    else
+      echo "[!] Failed to create DOCKER-USER chain"
+      return 1
+    fi
+  fi
+
+  # Add rule to accept incoming traffic from bridge
+  if sudo nft insert rule ip filter DOCKER-USER iifname "$bridge_name" counter accept; then
+    echo "[+] Added rule to accept incoming traffic from $bridge_name"
+  else
+    echo "[!] Failed to add rule for incoming traffic from $bridge_name"
+    return 1
+  fi
+
+  # Add rule to accept related/established traffic to bridge
+  if sudo nft insert rule ip filter DOCKER-USER oifname "$bridge_name" ct state related,established counter accept; then
+    echo "[+] Added rule to accept related/established traffic to $bridge_name"
+  else
+    echo "[!] Failed to add rule for related/established traffic to $bridge_name"
+    return 1
+  fi
+
+  return 0
+}
+
+# Function to configure IPv4 forwarding
+configure_ipv4_forwarding() {
+  local subnet=$1
+  echo "[+] Configuring IPv4 forwarding for subnet: $subnet"
+
+  # Check and enable IPv4 forwarding if needed
+  local current_forwarding
+  if [[ -f /proc/sys/net/ipv4/ip_forward ]]; then
+    current_forwarding=$(cat /proc/sys/net/ipv4/ip_forward)
+  else
+    current_forwarding="0"
+  fi
+
+  if [[ "$current_forwarding" == "1" ]]; then
+    echo "[+] IPv4 forwarding is already enabled"
+  else
+    echo "[+] Enabling IPv4 forwarding..."
+    if sudo sysctl -w net.ipv4.ip_forward=1; then
+      echo "[+] IPv4 forwarding enabled successfully"
+    else
+      echo "[!] Failed to enable IPv4 forwarding"
+      return 1
+    fi
+  fi
+
+  # Check and persist sysctl configuration if needed
+  local config_file="/etc/sysctl.d/99-incus-ipforward.conf"
+  if [[ -f "$config_file" ]] && grep -q "net.ipv4.ip_forward=1" "$config_file"; then
+    echo "[+] IPv4 forwarding configuration already persisted"
+  else
+    echo "[+] Persisting IPv4 forwarding configuration..."
+    if sudo bash -c 'echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-incus-ipforward.conf'; then
+      echo "[+] IPv4 forwarding configuration persisted"
+    else
+      echo "[!] Failed to persist IPv4 forwarding configuration"
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
+# Function to configure iptables rules
+configure_iptables() {
+  local subnet=$1
+
+  # Check if iptables is available
+  if ! command -v iptables &>/dev/null; then
+    echo "[+] iptables not available, skipping iptables configuration"
+    return 0
+  fi
+
+  echo "[+] Configuring iptables rules for subnet: $subnet"
+
+  # Check and update iptables MASQUERADE rule if needed
+  echo "[+] Checking iptables POSTROUTING MASQUERADE rule for Incus bridge..."
+  if sudo iptables -t nat -S POSTROUTING | grep -q "POSTROUTING -s $subnet -j MASQUERADE"; then
+    echo "[+] MASQUERADE rule for $subnet already exists"
+  else
+    echo "[+] Adding new MASQUERADE rule for $subnet..."
+    if sudo iptables -t nat -A POSTROUTING -s "$subnet" -j MASQUERADE; then
+      echo "[+] Added new MASQUERADE rule"
+    else
+      echo "[!] Failed to add MASQUERADE rule"
+      return 1
+    fi
+  fi
+
+  # Check and update FORWARD policy if needed
+  echo "[+] Checking iptables FORWARD policy..."
+  local current_policy
+  current_policy=$(sudo iptables -L FORWARD | head -1 | grep -o 'policy [A-Z]*' | cut -d' ' -f2)
+  if [[ "$current_policy" == "ACCEPT" ]]; then
+    echo "[+] FORWARD policy is already set to ACCEPT"
+  else
+    echo "[+] Setting iptables FORWARD policy to ACCEPT..."
+    if sudo iptables -P FORWARD ACCEPT; then
+      echo "[+] FORWARD policy set to ACCEPT"
+    else
+      echo "[!] Failed to set FORWARD policy"
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
+# Main function
+main() {
+  # Check for help flag
+  if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    usage
+  fi
+
+  # Set subnet from parameter or use default
+  local subnet="${1:-$DEFAULT_SUBNET}"
+  local bridge_name="${2:-incusbr0}"
+
+  # Validate the subnet
+  if ! validate_subnet "$subnet"; then
+    echo ""
+    usage
+  fi
+
+  echo "[+] Using subnet: $subnet"
+  echo "[+] Using bridge: $bridge_name"
+
+  # Check all prerequisites
+  if ! check_prerequisites; then
+    exit 1
+  fi
+
+  # Configure IPv4 forwarding
+  if ! configure_ipv4_forwarding "$subnet"; then
+    echo "[!] Failed to configure IPv4 forwarding"
+    exit 1
+  fi
+
+  # Configure firewall management tools (firewalld and ufw)
+  if ! configure_firewalld "$bridge_name"; then
+    echo "[!] Failed to configure firewalld"
+    exit 1
+  fi
+
+  if ! configure_ufw "$bridge_name"; then
+    echo "[!] Failed to configure UFW"
+    exit 1
+  fi
+
+  # Configure packet filtering tools (nftables and iptables)
+  if ! configure_nft "$bridge_name"; then
+    echo "[!] Failed to configure nftables"
+    exit 1
+  fi
+
+  if ! configure_iptables "$subnet"; then
+    echo "[!] Failed to configure iptables rules"
+    exit 1
+  fi
+
+  echo "[✓] Incus networking configured for subnet $subnet with bridge $bridge_name. Containers should now have internet access."
+}
+
+# Run main function with all arguments
+main "$@"

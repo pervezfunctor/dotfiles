@@ -1,148 +1,421 @@
 #!/usr/bin/env bash
 
-_git-up-internal() {
-    if ! command git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        printf "Error: Not a git repository.\n" >&2
-        return 1
-    fi
+set -euo pipefail
 
-    local remote="${GIT_REMOTE:-origin}"
-    printf "Using remote: %s\n" "$remote"
+# git-up: Update git branch by fetching and rebasing
+# Usage: git-up [directory]
+# Environment: GIT_REMOTE (default: origin)
 
-    local current_branch
-    current_branch=$(command git symbolic-ref --short HEAD 2>/dev/null) || current_branch=$(command git rev-parse --abbrev-ref HEAD 2>/dev/null)
-    if [[ -z "$current_branch" ]] || [[ "$current_branch" == "HEAD" ]]; then
-        printf "Error: Cannot determine current branch or HEAD is detached.\n" >&2
-        return 1
-    fi
+show_help() {
+  cat <<EOF
+Usage: git-up [directory]
 
-    printf "Current branch: %s\n" "$current_branch"
-    printf "Fetching from %s...\n" "$remote"
-    if ! command git fetch "$remote" --prune; then
-        printf "Error: Failed to fetch from remote '%s'.\n" "$remote" >&2
-        return 1
-    fi
+Updates the current git branch by fetching from remote and rebasing.
+Automatically stashes and restores local changes if needed.
 
-    local remote_ref="refs/remotes/$remote/$current_branch"
-    if ! command git show-ref --verify --quiet "$remote_ref"; then
-        printf "Branch '%s' does not have a tracking branch on remote '%s', skipping update.\n" "$current_branch" "$remote"
-        return 0
-    fi
+Options:
+  -h, --help    Show this help message
 
-    local local_commit remote_commit base
-    local_commit=$(command git rev-parse HEAD)
-    remote_commit=$(command git rev-parse "$remote_ref")
-    if [[ "$local_commit" == "$remote_commit" ]]; then
-        printf "Branch '%s' is already up to date with '%s/%s'.\n" "$current_branch" "$remote" "$current_branch"
-        return 0
-    fi
-    if command git merge-base --is-ancestor "$remote_commit" HEAD; then
-        base=$(command git merge-base HEAD "$remote_ref")
-        if [[ "$base" == "$remote_commit" ]] && [[ "$local_commit" != "$remote_commit" ]]; then
-            printf "Branch '%s' is ahead of '%s/%s'. No pull needed.\n" "$current_branch" "$remote" "$current_branch"
-            return 0
-        fi
-        printf "Branch '%s' has diverged from '%s/%s'. Proceeding with rebase.\n" "$current_branch" "$remote" "$current_branch"
-    fi
+Environment Variables:
+  GIT_REMOTE    Remote to use (default: origin)
 
-    local stash_created=1
-    local stash_index="stash@{0}"
-    local stash_message
-    stash_message="git-up auto-stash on $current_branch at $(date +"%Y-%m-%d %H:%M:%S")"
+Examples:
+  git-up              # Update current directory
+  git-up ~/project    # Update specific directory
 
-    if [[ -n "$(command git status --porcelain=v1)" ]]; then
-        printf "Local changes detected. Stashing...\n" >&2
-        if command git stash push --include-untracked --message "$stash_message"; then
-            stash_created=0
-            printf "Stashed changes with message: %s (%s)\n" "$stash_message" "$stash_index" >&2
-        else
-            printf "Error: Failed to stash changes. Aborting update.\n" >&2
-            return 1
-        fi
-    else
-        printf "Working directory clean. No stash needed.\n"
-    fi
-
-    printf "Updating branch '%s' by rebasing onto '%s/%s'...\n" "$current_branch" "$remote" "$current_branch"
-    local pull_success=1
-
-    if command git pull --rebase "$remote" "$current_branch"; then
-        printf "Update successful.\n"
-        pull_success=0
-    else
-        local pull_exit_code=$?
-        printf "Error: 'git pull --rebase' failed (exit code %d). Aborting rebase...\n" "$pull_exit_code" >&2
-        if command git rebase --abort; then
-            printf "Rebase aborted successfully.\n" >&2
-        else
-            printf "Warning: 'git rebase --abort' failed. May not have been in rebase state.\n" >&2
-        fi
-        pull_success=$pull_exit_code
-    fi
-
-    local final_exit_code=$pull_success
-
-    if [[ $stash_created -eq 0 ]]; then
-        if [[ $pull_success -eq 0 ]]; then
-            printf "Applying stashed changes (%s)...\n" "$stash_index" >&2
-        else
-            printf "Restoring stashed changes (%s) after failed update...\n" "$stash_index" >&2
-        fi
-
-        if command git stash apply "$stash_index"; then
-            printf "Stashed changes applied successfully.\n" >&2
-            printf "Dropping applied stash (%s)...\n" "$stash_index" >&2
-            if ! command git stash drop "$stash_index"; then
-                local drop_exit_code=$?
-                printf "Warning: Failed to drop stash '%s' (exit code %d) after successful apply.\n" "$stash_index" "$drop_exit_code" >&2
-                if [[ $final_exit_code -eq 0 ]]; then
-                    final_exit_code=$drop_exit_code
-                fi
-            fi
-        else
-            local apply_exit_code=$?
-            printf "\nWarning: Failed to apply stashed changes (exit code %d).\n" "$apply_exit_code" >&2
-            printf "Your changes remain in the stash ('%s').\n" "$stash_index" >&2
-            printf "You may need to resolve conflicts and apply manually ('git stash apply %s').\n" "$stash_index" >&2
-
-            if [[ $final_exit_code -eq 0 ]]; then
-                final_exit_code=$apply_exit_code
-            fi
-        fi
-    fi
-
-    if [[ $final_exit_code -eq 0 ]]; then
-        printf "git-up completed successfully.\n"
-    else
-        printf "git-up finished with errors (exit code %d).\n" "$final_exit_code" >&2
-    fi
-
-    return "$final_exit_code"
+Exit Codes:
+  0  Success
+  1  Error occurred
+  2  Already up to date or ahead of remote
+EOF
 }
 
+# Validates that the current directory is a git repository
+# Returns: 0 if valid repo, 1 otherwise
+validate_git_repo() {
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    printf "Error: Not a git repository.\n" >&2
+    return 1
+  fi
+  return 0
+}
+
+# Validates that the specified remote exists
+# Args: $1 - remote name
+# Returns: 0 if remote exists, 1 otherwise
+validate_remote() {
+  local remote="$1"
+
+  if ! git remote get-url "$remote" >/dev/null 2>&1; then
+    printf "Error: Remote '%s' does not exist.\n" "$remote" >&2
+    return 1
+  fi
+
+  printf "Using remote: %s\n" "$remote" >&2
+  return 0
+}
+
+# Gets the current branch name
+# Returns: branch name on stdout, exit code 1 if detached HEAD
+get_current_branch() {
+  local current_branch
+  current_branch=$(git symbolic-ref --short HEAD 2>/dev/null) ||
+    current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+  if [[ -z "$current_branch" ]] || [[ "$current_branch" == "HEAD" ]]; then
+    printf "Error: Cannot determine current branch or HEAD is detached.\n" >&2
+    return 1
+  fi
+
+  printf "%s" "$current_branch"
+  return 0
+}
+
+# Fetches updates from the specified remote
+# Args: $1 - remote name
+# Returns: 0 on success, 1 on failure
+fetch_from_remote() {
+  local remote="$1"
+
+  printf "Fetching from %s...\n" "$remote" >&2
+  if ! git fetch "$remote" --prune; then
+    printf "Error: Failed to fetch from remote '%s'.\n" "$remote" >&2
+    return 1
+  fi
+  return 0
+}
+
+# Checks if the current branch has a tracking branch on remote
+# Args: $1 - remote name, $2 - branch name
+# Returns: 0 if tracking branch exists, 1 otherwise
+check_remote_branch() {
+  local remote="$1"
+  local current_branch="$2"
+  local remote_ref="refs/remotes/$remote/$current_branch"
+
+  if ! git show-ref --verify --quiet "$remote_ref"; then
+    printf "Branch '%s' does not have a tracking branch on remote '%s', skipping update.\n" \
+      "$current_branch" "$remote" >&2
+    return 1
+  fi
+  return 0
+}
+
+# Determines the relationship between local and remote branch
+# Args: $1 - remote name, $2 - branch name
+# Returns: 0 to proceed with update, 2 if already up-to-date or ahead
+check_branch_status() {
+  local remote="$1"
+  local current_branch="$2"
+  local remote_ref="refs/remotes/$remote/$current_branch"
+
+  local local_commit remote_commit base
+  local_commit=$(git rev-parse HEAD)
+  remote_commit=$(git rev-parse "$remote_ref")
+
+  # Already up to date
+  if [[ "$local_commit" == "$remote_commit" ]]; then
+    printf "Branch '%s' is already up to date with '%s/%s'.\n" \
+      "$current_branch" "$remote" "$current_branch" >&2
+    return 2
+  fi
+
+  # Calculate merge base to determine relationship
+  base=$(git merge-base HEAD "$remote_ref")
+
+  if [[ "$base" == "$local_commit" ]]; then
+    # Local is behind remote - need to update
+    return 0
+  elif [[ "$base" == "$remote_commit" ]]; then
+    # Local is ahead of remote
+    printf "Branch '%s' is ahead of '%s/%s'. No pull needed.\n" \
+      "$current_branch" "$remote" "$current_branch" >&2
+    return 2
+  else
+    # Branches have diverged
+    printf "Branch '%s' has diverged from '%s/%s'. Proceeding with rebase.\n" \
+      "$current_branch" "$remote" "$current_branch" >&2
+    return 0
+  fi
+}
+
+# Checks if working tree has uncommitted changes
+# Returns: 0 if dirty, 1 if clean
+is_working_tree_dirty() {
+  [[ -n "$(git status --porcelain)" ]]
+}
+
+# Stashes local changes if any exist
+# Args: $1 - current branch name
+# Returns: stash reference on stdout, exit code 0 on success, 1 on failure
+stash_changes() {
+  local current_branch="$1"
+  local stash_message
+  stash_message="git-up auto-stash on $current_branch at $(date +"%Y-%m-%d %H:%M:%S")"
+
+  if is_working_tree_dirty; then
+    printf "Local changes detected. Stashing...\n" >&2
+
+    if git stash push --include-untracked --message "$stash_message" >/dev/null 2>&1; then
+      # Latest stash is always stash@{0}
+      local stash_ref="stash@{0}"
+      printf "Stashed changes with message: %s (%s)\n" "$stash_message" "$stash_ref" >&2
+      printf "%s" "$stash_ref"
+      return 0
+    else
+      printf "Error: Failed to stash changes. Aborting update.\n" >&2
+      return 1
+    fi
+  else
+    printf "Working directory clean. No stash needed.\n" >&2
+    printf ""
+    return 0
+  fi
+}
+
+# Checks if git is currently in a rebase state
+# Returns: 0 if in rebase, 1 otherwise
+is_rebase_in_progress() {
+  local git_dir
+  git_dir=$(git rev-parse --git-dir)
+
+  [[ -d "$git_dir/rebase-merge" ]] || [[ -d "$git_dir/rebase-apply" ]]
+}
+
+# Updates the branch by rebasing onto remote
+# Args: $1 - remote name, $2 - branch name
+# Returns: 0 on success, non-zero on failure
+update_branch() {
+  local remote="$1"
+  local current_branch="$2"
+
+  printf "Updating branch '%s' by rebasing onto '%s/%s'...\n" \
+    "$current_branch" "$remote" "$current_branch" >&2
+
+  if git pull --rebase "$remote" "$current_branch"; then
+    printf "Update successful.\n" >&2
+    return 0
+  else
+    local pull_exit_code=$?
+    printf "Error: 'git pull --rebase' failed (exit code %d).\n" "$pull_exit_code" >&2
+
+    # Check if we're in a rebase state
+    if is_rebase_in_progress; then
+      printf "Rebase is in progress. Checking for conflicts...\n" >&2
+
+      # Check for unmerged paths (conflicts)
+      if [[ -n "$(git diff --name-only --diff-filter=U 2>/dev/null)" ]]; then
+        printf "Conflicts detected during rebase. Aborting rebase...\n" >&2
+      fi
+
+      if git rebase --abort 2>/dev/null; then
+        printf "Rebase aborted successfully.\n" >&2
+      else
+        printf "Warning: 'git rebase --abort' failed. May not have been in rebase state.\n" >&2
+      fi
+    fi
+
+    return "$pull_exit_code"
+  fi
+}
+
+# Verifies that a stash reference exists
+# Args: $1 - stash reference
+# Returns: 0 if exists, 1 otherwise
+stash_exists() {
+  local stash_ref="$1"
+  git stash list | grep -q "^${stash_ref}:"
+}
+
+# Restores previously stashed changes
+# Args: $1 - stash reference, $2 - update success status (0 = success)
+# Returns: 0 on success, non-zero on failure
+restore_stash() {
+  local stash_ref="$1"
+  local update_success="$2"
+
+  if [[ -z "$stash_ref" ]]; then
+    return 0 # No stash to restore
+  fi
+
+  # Verify stash still exists (could be removed by another process)
+  if ! stash_exists "$stash_ref"; then
+    printf "Warning: Stash '%s' no longer exists. It may have been removed.\n" "$stash_ref" >&2
+    return 0
+  fi
+
+  if [[ $update_success -eq 0 ]]; then
+    printf "Applying stashed changes (%s)...\n" "$stash_ref" >&2
+  else
+    printf "Restoring stashed changes (%s) after failed update...\n" "$stash_ref" >&2
+  fi
+
+  if git stash apply "$stash_ref"; then
+    printf "Stashed changes applied successfully.\n" >&2
+    printf "Dropping applied stash (%s)...\n" "$stash_ref" >&2
+
+    # Verify stash still exists before dropping (race condition check)
+    if stash_exists "$stash_ref"; then
+      if ! git stash drop "$stash_ref"; then
+        local drop_exit_code=$?
+        printf "Warning: Failed to drop stash '%s' (exit code %d) after successful apply.\n" \
+          "$stash_ref" "$drop_exit_code" >&2
+        return "$drop_exit_code"
+      fi
+    else
+      printf "Warning: Stash '%s' was already removed.\n" "$stash_ref" >&2
+    fi
+    return 0
+  else
+    local apply_exit_code=$?
+    printf "\nWarning: Failed to apply stashed changes (exit code %d).\n" "$apply_exit_code" >&2
+    printf "Your changes remain in the stash ('%s').\n" "$stash_ref" >&2
+    printf "You may need to resolve conflicts and apply manually ('git stash apply %s').\n" \
+      "$stash_ref" >&2
+
+    printf "\nWARNING: Resetting working directory to clean state.\n" >&2
+    printf "Uncommitted changes from failed stash apply will be lost!\n" >&2
+    printf "Press Ctrl+C within 3 seconds to abort...\n" >&2
+    sleep 3
+
+    git reset --hard HEAD >/dev/null 2>&1
+    printf "Working directory reset to HEAD.\n" >&2
+
+    return "$apply_exit_code"
+  fi
+}
+
+# Checks if .gitmodules file was changed in last update
+# Returns: 0 if changed, 1 if unchanged
+gitmodules_changed() {
+  local git_root
+  git_root=$(git rev-parse --show-toplevel)
+
+  if [[ -f "$git_root/.gitmodules" ]]; then
+    ! git diff --quiet 'HEAD@{1}' HEAD -- .gitmodules 2>/dev/null
+  else
+    return 1
+  fi
+}
+
+# Updates git submodules if they exist and were modified
+# Returns: 0 on success, 1 on failure
+update_submodules() {
+  local git_root
+  git_root=$(git rev-parse --show-toplevel)
+
+  if [[ ! -f "$git_root/.gitmodules" ]]; then
+    return 0 # No submodules
+  fi
+
+  # Only update if .gitmodules changed or it's a fresh checkout
+  if gitmodules_changed || [[ ! -d "$git_root/.git/modules" ]]; then
+    printf "Updating submodules...\n" >&2
+    if ! git submodule update --init --recursive; then
+      printf "Warning: Failed to update submodules.\n" >&2
+      return 1
+    fi
+  else
+    printf "Submodules unchanged, skipping update.\n" >&2
+  fi
+
+  return 0
+}
+
+# Internal implementation of git-up
+# Returns: final exit code
+_git-up-internal() {
+  local remote="${GIT_REMOTE:-origin}"
+
+  validate_git_repo || return 1
+  validate_remote "$remote" || return 1
+
+  local current_branch
+  current_branch=$(get_current_branch) || return 1
+  printf "Current branch: %s\n" "$current_branch" >&2
+
+  fetch_from_remote "$remote" || return 1
+
+  check_remote_branch "$remote" "$current_branch" || return $?
+
+  check_branch_status "$remote" "$current_branch"
+  local status_result=$?
+  if [[ $status_result -eq 2 ]]; then
+    return 0 # Already up to date or ahead
+  fi
+
+  local stash_ref
+  stash_ref=$(stash_changes "$current_branch") || return 1
+
+  update_branch "$remote" "$current_branch"
+  local update_success=$?
+
+  local restore_result=0
+  if [[ -n "$stash_ref" ]]; then
+    restore_stash "$stash_ref" "$update_success"
+    restore_result=$?
+  fi
+
+  update_submodules
+  local submodule_result=$?
+
+  # Determine final exit code
+  local final_exit_code=$update_success
+  if [[ $update_success -eq 0 && $restore_result -ne 0 ]]; then
+    final_exit_code=$restore_result
+  elif [[ $final_exit_code -eq 0 && $submodule_result -ne 0 ]]; then
+    final_exit_code=$submodule_result
+  fi
+
+  if [[ $final_exit_code -eq 0 ]]; then
+    printf "git-up completed successfully.\n" >&2
+  else
+    printf "git-up finished with errors (exit code %d).\n" "$final_exit_code" >&2
+  fi
+
+  return "$final_exit_code"
+}
+
+# Main entry point
+# Args: $1 - optional target directory (default: current directory)
+# Returns: exit code from _git-up-internal
 git-up() {
-    local target_dir="${1:-.}"
-    local exit_code=0
+  # Handle help flag
+  if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    show_help
+    return 0
+  fi
 
-    if [[ ! -d "$target_dir" ]]; then
-        printf "Error: Directory '%s' does not exist.\n" "$target_dir" >&2
-        return 1
+  local target_dir="${1:-.}"
+  local exit_code=0
+  local original_dir
+
+  original_dir=$(pwd)
+
+  if [[ ! -d "$target_dir" ]]; then
+    printf "Error: Directory '%s' does not exist.\n" "$target_dir" >&2
+    return 1
+  fi
+
+  if ! pushd "$target_dir" >/dev/null; then
+    printf "Error: Could not change directory to '%s'.\n" "$target_dir" >&2
+    return 1
+  fi
+
+  _git-up-internal
+  exit_code=$?
+
+  if ! popd >/dev/null; then
+    printf "Error: Could not change back to original directory from '%s'.\n" "$(pwd)" >&2
+    printf "Attempting to return to '%s'...\n" "$original_dir" >&2
+    if ! cd "$original_dir" 2>/dev/null; then
+      printf "Critical error: Failed to return to original directory '%s'.\n" "$original_dir" >&2
+      printf "You are currently in: '%s'\n" "$(pwd)" >&2
     fi
+    [[ $exit_code -eq 0 ]] && exit_code=1
+  fi
 
-    if ! pushd "$target_dir" >/dev/null; then
-        printf "Error: Could not change directory to '%s'.\n" "$target_dir" >&2
-        return 1
-    fi
-
-    _git-up-internal
-    exit_code=$?
-
-    if ! popd >/dev/null; then
-        printf "Error: Could not change back to original directory from '%s' using popd.\n" "$(pwd)" >&2
-        [[ $exit_code -eq 0 ]] && exit_code=1
-    fi
-
-    return "$exit_code"
+  return "$exit_code"
 }
 
 git-up "$@"

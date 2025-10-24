@@ -1,11 +1,144 @@
 #!/usr/bin/env bash
 
-VM_NAME=${1:-ubuntu-ilm}
-USERNAME=${2:-ubuntu}
+# Script to SSH into a multipass VM
+# Usage: mssh [VM_NAME] [USERNAME]
+#   VM_NAME: Name of the multipass VM (default: ubuntu-ilm)
+#   USERNAME: Username for SSH connection (default: ubuntu)
 
-if ! multipass list | grep -q "${VM_NAME}"; then
-  echo "VM ${VM_NAME} not found"
+show_usage() {
+  cat << EOF
+Usage: mssh [OPTIONS] [VM_NAME] [USERNAME]
+
+SSH into a multipass VM with ease.
+
+Arguments:
+  VM_NAME    Name of the multipass VM (default: ubuntu-ilm)
+  USERNAME   Username for SSH connection (default: ubuntu)
+
+Options:
+  -h, --help     Show this help message and exit
+  -l, --list     List available multipass VMs
+
+Examples:
+  mssh                           # Connect to ubuntu-ilm as ubuntu user
+  mssh my-vm                     # Connect to my-vm as ubuntu user
+  mssh my-vm myuser              # Connect to my-vm as myuser
+  mssh --list                    # List available VMs
+
+EOF
+}
+
+list_vms() {
+  echo "Available multipass VMs:"
+  multipass list --format table | grep -v "Name\|^--"
+}
+
+validate_vm_name() {
+  local vm_name="$1"
+
+  if [[ -z "$vm_name" ]]; then
+    echo "Error: VM name cannot be empty" >&2
+    return 1
+  fi
+
+  if [[ "$vm_name" =~ [[:space:]] ]]; then
+    echo "Error: VM name cannot contain whitespace" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+validate_username() {
+  local username="$1"
+
+  if [[ -z "$username" ]]; then
+    echo "Error: Username cannot be empty" >&2
+    return 1
+  fi
+
+  if [[ "$username" =~ [[:space:]] ]]; then
+    echo "Error: Username cannot contain whitespace" >&2
+    return 1
+  fi
+
+  if [[ ! "$username" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
+    echo "Error: Username must start with a letter or underscore and contain only letters, numbers, underscores, or hyphens" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+    show_usage
+    exit 0
+    ;;
+    -l|--list)
+    list_vms
+    exit 0
+    ;;
+    -*)
+    echo "Error: Unknown option $1" >&2
+    echo "Use 'mssh --help' for usage information." >&2
+    exit 1
+    ;;
+  *)
+      # Positional arguments
+      if [[ -z "$VM_NAME" ]]; then
+        VM_NAME="$1"
+      elif [[ -z "$USERNAME" ]]; then
+        USERNAME="$1"
+      else
+        echo "Error: Too many arguments" >&2
+        echo "Use 'mssh --help' for usage information." >&2
+        exit 1
+      fi
+      shift
+      ;;
+  esac
+  shift
+done
+
+# Set defaults if not provided
+VM_NAME=${VM_NAME:-ubuntu-ilm}
+USERNAME=${USERNAME:-ubuntu}
+
+# Validate arguments
+if ! validate_vm_name "$VM_NAME"; then
   exit 1
 fi
 
-ssh "${USERNAME}"@"$(multipass info "${VM_NAME}" | awk '/IPv4/ {print $2}')"
+if ! validate_username "$USERNAME"; then
+  exit 1
+fi
+
+# Check if multipass is installed
+if ! command -v multipass &> /dev/null; then
+  echo "Error: multipass is not installed or not in PATH" >&2
+  exit 1
+fi
+
+# Check if VM exists
+if ! multipass list | grep -q "${VM_NAME}"; then
+  echo "Error: VM '${VM_NAME}' not found" >&2
+  echo "Available VMs:"
+  list_vms
+  exit 1
+fi
+
+# Get VM IP address
+VM_IP=$(multipass info "${VM_NAME}" | awk '/IPv4/ {print $2}')
+
+if [[ -z "$VM_IP" ]]; then
+  echo "Error: Could not retrieve IP address for VM '${VM_NAME}'" >&2
+  echo "Make sure the VM is running and has network connectivity." >&2
+  exit 1
+fi
+
+# Connect to VM
+echo "Connecting to ${USERNAME}@${VM_IP} (${VM_NAME})..."
+ssh "${USERNAME}"@"${VM_IP}"

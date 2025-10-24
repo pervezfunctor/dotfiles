@@ -1,13 +1,168 @@
 #!/bin/bash
 
+# Script to create or update a libvirt default network with a specified subnet prefix
+# Usage: default-network-in-vm [SUBNET_PREFIX]
+# Example: default-network-in-vm 192.168.124
+
 set -e
 
-SUBNET_PREFIX="192.168.124"
+# Default subnet prefix if none provided
+DEFAULT_SUBNET_PREFIX="192.168.124"
+SUBNET_PREFIX="${1:-$DEFAULT_SUBNET_PREFIX}"
 
-UUID=$(uuidgen)
-MAC=$(printf '52:54:00:%02x:%02x:%02x' $((RANDOM % 256)) $((RANDOM % 256)) $((RANDOM % 256)))
+# Temporary file for network XML
+TEMP_XML="/tmp/default-network-$$.xml"
 
-cat >/tmp/default.xml <<EOF
+# Cleanup function to remove temporary file
+cleanup() {
+  if [ -f "$TEMP_XML" ]; then
+    rm -f "$TEMP_XML"
+  fi
+}
+
+# Set trap to cleanup on exit
+trap cleanup EXIT
+
+# Usage function
+usage() {
+  echo "Usage: $0 [SUBNET_PREFIX]"
+  echo ""
+  echo "Create or update a libvirt default network with the specified subnet prefix."
+  echo ""
+  echo "Arguments:"
+  echo "  SUBNET_PREFIX    The subnet prefix (e.g., 192.168.124)"
+  echo "                   If not provided, defaults to $DEFAULT_SUBNET_PREFIX"
+  echo ""
+  echo "Examples:"
+  echo "  $0 192.168.124    # Create network with 192.168.124.0/24"
+  echo "  $0 10.0.0         # Create network with 10.0.0.0/24"
+  echo "  $0                # Create network with default subnet $DEFAULT_SUBNET_PREFIX.0/24"
+  exit 1
+}
+
+# Validate subnet prefix format
+validate_subnet_prefix() {
+  local prefix="$1"
+
+  # Check if prefix is in valid format (xxx.xxx.xxx)
+  if ! echo "$prefix" | grep -qE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'; then
+    echo "[ERROR] Invalid subnet prefix format: $prefix"
+    echo "[ERROR] Expected format: xxx.xxx.xxx (e.g., 192.168.124)"
+    exit 1
+  fi
+
+  # Extract octets and validate range
+  local first
+  first=$(echo "$prefix" | cut -d. -f1)
+  local second
+  second=$(echo "$prefix" | cut -d. -f2)
+  local third
+  third=$(echo "$prefix" | cut -d. -f3)
+
+  for octet in "$first" "$second" "$third"; do
+    if [ "$octet" -lt 0 ] || [ "$octet" -gt 255 ]; then
+      echo "[ERROR] Invalid octet in subnet prefix: $octet (must be 0-255)"
+      exit 1
+    fi
+  done
+
+  # Check for reserved network ranges
+  if [ "$first" -eq 127 ]; then
+    echo "[WARNING] Using loopback network range (127.x.x.x)"
+  fi
+
+  if [ "$first" -eq 169 ] && [ "$second" -eq 254 ]; then
+    echo "[WARNING] Using link-local network range (169.254.x.x)"
+  fi
+}
+
+# Check if virsh is available
+check_dependencies() {
+  if ! command -v virsh >/dev/null 2>&1; then
+    echo "[ERROR] virsh command not found. Please install libvirt."
+    exit 1
+  fi
+
+  # Check if libvirtd is running
+  if ! virsh list >/dev/null 2>&1; then
+    echo "[ERROR] libvirtd is not running or accessible. Please start libvirtd service."
+    exit 1
+  fi
+}
+
+# Check if network already exists with the same configuration
+check_existing_network() {
+  local same_config=false
+
+  # Check if network exists
+  if virsh net-list --all | grep -q "default"; then
+    echo "[INFO] Default network already exists"
+
+    # Get current network XML
+    local current_xml
+    current_xml=$(virsh net-dumpxml default 2>/dev/null || echo "")
+
+    if [ -n "$current_xml" ]; then
+      # Extract current IP address
+      local current_ip
+      current_ip=$(echo "$current_xml" | grep -oP 'ip address=[^ ]+' | cut -d"'" -f2)
+
+      if [ -n "$current_ip" ]; then
+        local current_prefix
+        current_prefix="${current_ip%.*}"
+
+        if [ "$current_prefix" = "$SUBNET_PREFIX" ]; then
+          same_config=true
+          echo "[INFO] Default network already configured with subnet ${SUBNET_PREFIX}.0/24"
+        fi
+      fi
+    fi
+  fi
+
+  if [ "$same_config" = true ]; then
+    echo "[SUCCESS] No changes needed - network already configured correctly"
+    exit 0
+  fi
+
+  return 0
+}
+
+# Execute virsh command with error handling
+run_virsh() {
+  local cmd="$1"
+  local desc="$2"
+
+  echo "[INFO] $desc..."
+
+  if ! eval "virsh $cmd"; then
+    echo "[ERROR] Failed to $desc"
+    echo "[ERROR] Command: virsh $cmd"
+    exit 1
+  fi
+}
+
+# Main execution
+main() {
+  # Handle help flag
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    usage
+  fi
+
+  # Validate subnet prefix
+  validate_subnet_prefix "$SUBNET_PREFIX"
+
+  # Check dependencies
+  check_dependencies
+
+  # Check existing network configuration
+  check_existing_network
+
+  # Generate unique values
+  UUID=$(uuidgen)
+  MAC=$(printf '52:54:00:%02x:%02x:%02x' $((RANDOM % 256)) $((RANDOM % 256)) $((RANDOM % 256)))
+
+  # Create network XML
+  cat >"$TEMP_XML" <<EOF
 <network>
   <name>default</name>
   <uuid>$UUID</uuid>
@@ -19,22 +174,24 @@ cat >/tmp/default.xml <<EOF
       <range start='${SUBNET_PREFIX}.2' end='${SUBNET_PREFIX}.254' />
     </dhcp>
   </ip>
-  </network>
+</network>
 EOF
 
-echo "[INFO] Destroying existing default network if active..."
-virsh net-destroy default || true
+  # Network operations
+  if virsh net-list | grep -q "default.*active"; then
+    run_virsh "net-destroy default" "Destroying existing default network"
+  fi
 
-echo "[INFO] Undefining existing default network..."
-virsh net-undefine default || true
+  if virsh net-list --all | grep -q "default"; then
+    run_virsh "net-undefine default" "Undefining existing default network"
+  fi
 
-echo "[INFO] Defining new default network with subnet ${SUBNET_PREFIX}.0/24"
-virsh net-define /tmp/default.xml
+  run_virsh "net-define $TEMP_XML" "Defining new default network with subnet ${SUBNET_PREFIX}.0/24"
+  run_virsh "net-autostart default" "Enabling autostart for default network"
+  run_virsh "net-start default" "Starting default network"
 
-echo "[INFO] Enabling autostart for default network"
-virsh net-autostart default
+  echo "[SUCCESS] Default network redefined to ${SUBNET_PREFIX}.0/24"
+}
 
-echo "[INFO] Starting default network"
-virsh net-start default
-
-echo "[SUCCESS] Default network redefined to ${SUBNET_PREFIX}.0/24"
+# Execute main function
+main "$@"

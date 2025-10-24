@@ -2,58 +2,208 @@
 
 set -euo pipefail
 
-if [[ $EUID -ne 0 ]]; then
-   echo "[ERROR] This script must be run as sudo"
-   exit 1
-fi
+# Default verbosity level
+VERBOSE=false
 
-is_ubuntu() {
-    [[ -f /etc/os-release ]] && grep -qi 'ubuntu' /etc/os-release
+# Function to display usage information
+usage() {
+  echo "Usage: $0 [-v|--verbose]"
+  echo "  -v, --verbose    Enable verbose output"
+  echo "This script removes snap packages and prevents reinstallation."
+  exit 1
 }
 
-if ! is_ubuntu; then
-    echo "[ERROR] This script is intended for Ubuntu systems only."
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  -v | --verbose)
+    VERBOSE=true
+    shift
+    ;;
+  -h | --help)
+    usage
+    ;;
+  *)
+    echo "[ERROR] Unknown option: $1"
+    usage
+    ;;
+  esac
+done
+
+# Logging functions
+log_info() {
+  echo "[INFO] $1"
+}
+
+log_error() {
+  echo "[ERROR] $1" >&2
+}
+
+log_warn() {
+  echo "[WARN] $1" >&2
+}
+
+log_verbose() {
+  if [[ "$VERBOSE" == "true" ]]; then
+    echo "[VERBOSE] $1"
+  fi
+}
+
+# Cleanup function to handle script interruption
+cleanup() {
+  log_warn "Script interrupted. Cleaning up..."
+  # Add any necessary cleanup here
+  exit 130
+}
+
+# Set up trap to catch interrupts
+trap cleanup SIGINT SIGTERM
+
+# Function to check if a command exists
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+# Function to validate system requirements
+validate_requirements() {
+  log_verbose "Validating system requirements..."
+
+  # Check if running as root
+  if [[ $EUID -ne 0 ]]; then
+    log_error "This script must be run as root or with sudo"
     exit 1
+  fi
+
+  # Check if required commands exist
+  local required_commands=("snap" "apt" "systemctl" "rm")
+  for cmd in "${required_commands[@]}"; do
+    if ! command_exists "$cmd"; then
+      log_error "Required command not found: $cmd"
+      exit 1
+    fi
+    log_verbose "Command found: $cmd"
+  done
+}
+
+# Function to check if system is Ubuntu
+is_ubuntu() {
+  if [[ ! -f /etc/os-release ]]; then
+    log_error "Cannot determine OS: /etc/os-release not found"
+    return 1
+  fi
+
+  if grep -qi 'ubuntu' /etc/os-release; then
+    log_verbose "Ubuntu system detected"
+    return 0
+  else
+    log_error "This script is intended for Ubuntu systems only."
+    return 1
+  fi
+}
+
+# Function to execute command with error handling
+execute_command() {
+  local cmd="$1"
+  local description="$2"
+  local ignore_error="${3:-false}"
+
+  log_verbose "Executing: $cmd"
+
+  if eval "$cmd"; then
+    log_verbose "Command succeeded: $description"
+    return 0
+  else
+    local exit_code=$?
+    if [[ "$ignore_error" == "true" ]]; then
+      log_warn "Command failed (ignored): $description"
+      return 0
+    else
+      log_error "Command failed: $description"
+      log_error "Command was: $cmd"
+      log_error "Exit code: $exit_code"
+      return $exit_code
+    fi
+  fi
+}
+
+# Validate requirements
+validate_requirements
+
+# Check if system is Ubuntu
+if ! is_ubuntu; then
+  exit 1
 fi
 
-echo "[INFO] Listing installed snaps..."
-SNAPS=$(snap list 2>/dev/null | awk 'NR>1 {print $1}' || true)
+log_info "Listing installed snaps..."
+if ! execute_command "snap list 2>/dev/null | awk 'NR>1 {print $1}'" "List installed snaps" "true"; then
+  log_warn "Failed to list installed snaps"
+  SNAPS=""
+else
+  SNAPS=$(snap list 2>/dev/null | awk 'NR>1 {print $1}' || true)
+fi
 
 if [[ -n "$SNAPS" ]]; then
-    echo "[INFO] Removing installed snaps..."
-    # Remove snaps in reverse order to satisfy dependencies
-    for pkg in $SNAPS; do
-        echo "  -> Removing snap: $pkg"
-        snap remove --purge "$pkg" || true
-    done
+  log_info "Removing installed snaps..."
+  # Remove snaps in reverse order to satisfy dependencies
+  for pkg in $SNAPS; do
+    log_info "  -> Removing snap: $pkg"
+    if ! execute_command "snap remove --purge \"$pkg\"" "Remove snap package: $pkg" "true"; then
+      log_warn "Failed to remove snap: $pkg"
+    fi
+  done
 else
-    echo "[INFO] No snaps installed."
+  log_info "No snaps installed."
 fi
 
-echo "[INFO] Purging snapd package..."
-apt purge -y snapd || true
+log_info "Purging snapd package..."
+execute_command "apt purge -y snapd" "Purge snapd package" "true"
 
-echo "[INFO] Disabling and masking systemd services (if any)..."
-systemctl disable --now snapd.service snapd.socket snapd.seeded.service 2>/dev/null || true
-systemctl mask snapd 2>/dev/null || true
+log_info "Disabling and masking systemd services (if any)..."
+execute_command "systemctl disable --now snapd.service snapd.socket snapd.seeded.service 2>/dev/null" "Disable snapd services" "true"
+execute_command "systemctl mask snapd 2>/dev/null" "Mask snapd service" "true"
 
-echo "[INFO] Deleting leftover snap directories..."
-rm -rf ~/snap \
-       /snap \
-       /var/snap \
-       /var/lib/snapd \
-       /var/cache/snapd \
-       /var/log/snapd 2>/dev/null || true
+log_info "Deleting leftover snap directories..."
+# Define directories to remove
+SNAP_DIRS=(
+  "$HOME/snap"
+  "/snap"
+  "/var/snap"
+  "/var/lib/snapd"
+  "/var/cache/snapd"
+  "/var/log/snapd"
+)
 
-echo "[INFO] Creating APT preference to block snapd reinstallation..."
-mkdir -p /etc/apt/preferences.d
-cat <<'EOF' > /etc/apt/preferences.d/nosnap.pref
+for dir in "${SNAP_DIRS[@]}"; do
+  if [[ -d "$dir" ]]; then
+    log_verbose "Removing directory: $dir"
+    if ! execute_command "rm -rf \"$dir\" 2>/dev/null" "Remove directory: $dir" "true"; then
+      log_warn "Failed to remove directory: $dir"
+    fi
+  else
+    log_verbose "Directory does not exist: $dir"
+  fi
+done
+
+log_info "Creating APT preference to block snapd reinstallation..."
+if ! execute_command "mkdir -p /etc/apt/preferences.d" "Create preferences directory" "false"; then
+  log_error "Failed to create APT preferences directory"
+  exit 1
+fi
+
+# Create the preference file
+if ! execute_command "cat <<'EOF' > /etc/apt/preferences.d/nosnap.pref
 Package: snapd
 Pin: release *
 Pin-Priority: -10
-EOF
+EOF" "Create APT preference file" "false"; then
+  log_error "Failed to create APT preference file"
+  exit 1
+fi
 
-echo "[INFO] Refreshing package lists..."
-apt update -y
+log_info "Refreshing package lists..."
+if ! execute_command "apt update -y" "Update package lists" "false"; then
+  log_error "Failed to update package lists"
+  exit 1
+fi
 
-echo "[SUCCESS] Snap has been completely removed and blocked from reinstalling."
+log_info "Snap has been completely removed and blocked from reinstalling."

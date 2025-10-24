@@ -1,37 +1,103 @@
 #!/usr/bin/env bash
 
-if command -v curl >/dev/null; then
+# Source utility functions
+source_utils() {
+  if command -v curl >/dev/null; then
     # shellcheck disable=SC1090
     source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
-elif command -v wget >/dev/null; then
+  elif command -v wget >/dev/null; then
     # shellcheck disable=SC1090
     source <(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
-else
+  else
     echo "curl or wget not found. Please install curl or wget and try again."
     exit 1
-fi
+  fi
+}
 
 # Check if the script is run as root
-[[ "$(id -u)" != "0" ]] && die "This script must be run as root" 1>&2
+check_root() {
+  [[ "$(id -u)" != "0" ]] && die "This script must be run as root" 1>&2
+}
 
-# Determine the package manager
-if is_apt; then
+# Determine the package manager and SSH service name
+detect_package_manager() {
+  if is_apt; then
     pkg_manager="apt-get"
     ssh_service="ssh"
-elif is_rh; then
+  elif is_rh; then
     pkg_manager="dnf"
     ssh_service="sshd"
-else
+  elif is_arch; then
+    pkg_manager="pacman"
+    ssh_service="sshd"
+  elif is_tw; then
+    pkg_manager="zypper"
+    ssh_service="sshd"
+  else
     die "Unsupported system"
-fi
+  fi
+}
 
-# Check if SSH server is installed
-if ! command -v sshd &>/dev/null; then
+# Install SSH server if not already installed
+install_ssh_server() {
+  if ! command -v sshd &>/dev/null; then
     slog "SSH server is not installed. Installing now..."
-    $pkg_manager install -y openssh-server
-fi
+    if [[ "$pkg_manager" == "pacman" ]]; then
+      $pkg_manager -S --noconfirm openssh
+    else
+      $pkg_manager install -y openssh-server
+    fi
+  fi
+}
 
-# Start the SSH server
-systemctl enable --now "$ssh_service"
+# Configure SSH to allow password authentication
+configure_password_authentication() {
+  slog "Configuring SSH to allow password authentication..."
+  if ! sudo sed -i -E 's/^#?PasswordAuthentication[[:space:]]+(no|yes)/PasswordAuthentication yes/' /etc/ssh/sshd_config; then
+    echo 'PasswordAuthentication yes' | sudo tee -a /etc/ssh/sshd_config >/dev/null
+  fi
+}
 
-slog "SSH server is now running."
+# Change SSH port from 22 to 2222
+configure_ssh_port() {
+  slog "Changing SSH port to 2222..."
+  if ! sudo sed -i -E 's/^#?Port[[:space:]]+[0-9]+/Port 2222/' /etc/ssh/sshd_config; then
+    echo 'Port 2222' | sudo tee -a /etc/ssh/sshd_config >/dev/null
+  fi
+}
+
+# Disable root SSH login
+disable_root_login() {
+  slog "Disabling root SSH login..."
+  if ! sudo sed -i -E 's/^#?PermitRootLogin[[:space:]]+(yes|no|prohibit-password|without-password)/PermitRootLogin no/' /etc/ssh/sshd_config; then
+    echo 'PermitRootLogin no' | sudo tee -a /etc/ssh/sshd_config >/dev/null
+  fi
+}
+
+# Start and enable SSH service
+start_ssh_service() {
+  slog "Starting SSH service..."
+  systemctl enable --now "$ssh_service"
+}
+
+# Display completion message
+show_completion_message() {
+  slog "SSH server is now running with password authentication enabled on port 2222."
+  slog "Root login has been disabled for security."
+}
+
+# Main function to orchestrate the setup
+main() {
+  source_utils
+  check_root
+  detect_package_manager
+  install_ssh_server
+  configure_password_authentication
+  configure_ssh_port
+  disable_root_login
+  start_ssh_service
+  show_completion_message
+}
+
+# Execute main function
+main "$@"

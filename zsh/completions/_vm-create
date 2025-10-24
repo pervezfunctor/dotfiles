@@ -1,0 +1,64 @@
+# shellcheck shell=bash
+#compdef vm-create
+# Zsh completion for vm-create script
+# shellcheck disable=SC2034,SC2016,SC2128,SC2086,SC2154
+
+_vm_create() {
+  local -a distributions
+  distributions=(
+    'ubuntu:Ubuntu Linux (default: questing 25.10)'
+    'fedora:Fedora Linux (default: 42)'
+    'arch:Arch Linux (default: latest)'
+    'debian:Debian Linux (default: trixie 13)'
+    'alpine:Alpine Linux (default: 3.22)'
+    'tumbleweed:openSUSE Tumbleweed (default: latest)'
+    'opensuse:openSUSE Tumbleweed (alias for tumbleweed)'
+    'tw:openSUSE Tumbleweed (short alias)'
+  )
+
+  local -a common_options
+  common_options=(
+    "--distro[Distribution to install]:distribution:_values -s 'distributions' \$distributions"
+    '--name[VM name]:name:'
+    '--memory[RAM in MB]:memory:(1024 2048 4096 8192 12288 16384)'
+    '--vcpus[Number of vCPUs]:vcpus:(1 2 4 6 8 12 16)'
+    '--disk-size[Disk size]:disk_size:(20G 40G 60G 80G 100G 120G)'
+    '--ssh-key[SSH public key path]:_files'
+    '--bridge[Network bridge]:bridge:(virbr0 br0 bridge0 default)'
+    '--username[VM username]:username:(ubuntu user admin devops tester)'
+    '--password[Set password for VM user]:password:'
+    '--docker[Install Docker in the VM]'
+    '--brew[Install Homebrew and essential development tools]'
+    '--nix[Install Nix using Determinate Systems installer]'
+    '--dotfiles[Install dotfiles with specified options (must be last)]:dotfiles:->dotfiles'
+    '--help[Show this help]'
+    '-h[Show this help]'
+  )
+
+  local -a dotfiles_options
+  dotfiles_options=(
+    'shell:Install full shell environment'
+    'shell-slim:Install minimal shell environment'
+    'docker:Install Docker configuration'
+    'python:Install Python development environment'
+    'code-server:Install code-server'
+    'nvim:Install Neovim configuration'
+    'zsh:Install Zsh configuration'
+    'tmux:Install Tmux configuration'
+  )
+
+  _arguments -C "${common_options[@]}" && return 0
+
+  case "$state" in
+  dotfiles)
+    _describe 'dotfiles options' dotfiles_options
+    ;;
+  esac
+
+  # If no option is being typed, suggest distributions
+  if [[ $CURRENT -eq 2 ]]; then
+    _describe 'distributions' distributions
+  fi
+}
+
+_vm_create "$@"

@@ -103,10 +103,10 @@ ensure_libvirt_default_net() {
 }
 
 check_tmux() {
-  if ! has_cmd tmux; then
-    fail "tmux is not installed. Please install it first."
-    exit 1
-  fi
+  has_cmd tmux && return 0
+
+  fail "tmux is not installed. Please install it first."
+  exit 1
 }
 
 incus_instance_exists() {
@@ -244,63 +244,33 @@ get_host_nic() {
   ip route show default | awk '/default/ {print $5}'
 }
 
-# wait_for_ssh() {
-#   local vm_name=$1
-#   local max_attempts=60 # 5 minutes max
-#   local attempt=0
+check_and_add_port_forward() {
+  local vm_name=$1
+  local host_port=${2:-2222}
+  local guest_port=${3:-22}
 
-#   echo "Waiting for VM to be ready and SSH accessible..."
+  echo "Checking existing port forwards for VM: $vm_name"
 
-#   while [ $attempt -lt $max_attempts ]; do
-#     # First check if VM is running
-#     if [ "$(virsh --connect qemu:///session domstate "$vm_name")" = "running" ]; then
-#       # Try to add port forwarding (idempotent)
-#       virsh --connect qemu:///session qemu-monitor-command "$vm_name" \
-#         --hmp "hostfwd_add ::2222-:22" 2>/dev/null || true
+  local network_info
+  network_info=$(virsh --connect qemu:///session \
+    qemu-monitor-command "$vm_name" \
+    --hmp "info network" 2>/dev/null || echo "")
 
-#       # Test if SSH port is responding
-#       if timeout 5 bash -c "</dev/tcp/localhost/2222" 2>/dev/null; then
-#         echo "SSH is ready!"
-#         return 0
-#       fi
-#     fi
+  if echo "$network_info" | grep -q "TCP\[HOST_FORWARD\].*:${host_port}-"; then
+    echo "Port forwarding already exists for port $host_port"
+    return 0
+  fi
 
-#     echo "Attempt $((attempt + 1))/$max_attempts - VM not ready yet..."
-#     sleep 5
-#     ((attempt++))
-#   done
-
-#   echo "Timeout waiting for VM to be ready"
-#   return 1
-# }
-
-# check_and_add_port_forward() {
-#   local vm_name=$1
-#   local host_port=${2:-2222}
-#   local guest_port=${3:-22}
-
-#   echo "Checking existing port forwards for VM: $vm_name"
-
-#   # Get current network info
-#   network_info=$(virsh --connect qemu:///session qemu-monitor-command "$vm_name" \
-#     --hmp "info network" 2>/dev/null || echo "")
-
-#   # Check if our port forwarding already exists
-#   if echo "$network_info" | grep -q "TCP\[HOST_FORWARD\].*:${host_port}-"; then
-#     echo "Port forwarding already exists for port $host_port"
-#     return 0
-#   fi
-
-#   echo "Adding port forwarding: localhost:$host_port -> guest:$guest_port"
-#   if virsh --connect qemu:///session qemu-monitor-command "$vm_name" \
-#     --hmp "hostfwd_add ::${host_port}-:${guest_port}"; then
-#     echo "Port forwarding added successfully"
-#     return 0
-#   else
-#     echo "Failed to add port forwarding"
-#     return 1
-#   fi
-# }
+  echo "Adding port forwarding: localhost:$host_port -> guest:$guest_port"
+  if virsh --connect qemu:///session qemu-monitor-command "$vm_name" \
+    --hmp "hostfwd_add ::${host_port}-:${guest_port}"; then
+    echo "Port forwarding added successfully"
+    return 0
+  else
+    echo "Failed to add port forwarding"
+    return 1
+  fi
+}
 
 LIBVIRT_ISO_POOL_PATH="/srv/libvirt/images/iso"
 LIBVIRT_ISO_POOL_NAME="iso-pool"

@@ -3,18 +3,18 @@
 IMAGES_DIR="/var/lib/libvirt/images"
 LOG_FILE="/tmp/vm-manager.log"
 
-function log_and_show() {
+log_and_show() {
   TITLE=$1
   MESSAGE=$2
   echo "[$(date)] $TITLE: $MESSAGE" >>"$LOG_FILE"
   whiptail --title "$TITLE" --msgbox "$MESSAGE" 20 80
 }
 
-function show_log() {
+show_log() {
   whiptail --textbox "$LOG_FILE" 30 100
 }
 
-function inputbox_or_cancel() {
+inputbox_or_cancel() {
   local prompt="$1"
   local height=${2:-8}
   local width=${3:-60}
@@ -28,7 +28,7 @@ function inputbox_or_cancel() {
   echo "$result"
 }
 
-function select_vm() {
+select_vm() {
   local VMS
   VMS=$(virsh list --all --name | awk NF)
 
@@ -49,7 +49,7 @@ function select_vm() {
   echo "$SELECTED_VM"
 }
 
-function create_vm() {
+create_vm() {
   VM_NAME=$1
   ISO_PATH=$2
   DISK_SIZE=$3
@@ -78,26 +78,26 @@ function create_vm() {
     --noautoconsole 2>&1 | tee -a "$LOG_FILE" | whiptail --title "VM Installation" --msgbox "$(cat -)" 20 80
 }
 
-function list_vms() {
+list_vms() {
   virsh list --all 2>&1 | tee -a "$LOG_FILE" | whiptail --title "VM List" --msgbox "$(cat -)" 20 80
 }
 
-function start_vm() {
+start_vm() {
   VM_NAME=$1
   virsh start "$VM_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Start VM" --msgbox "$(cat -)" 20 80
 }
 
-function stop_vm() {
+stop_vm() {
   VM_NAME=$1
   virsh shutdown "$VM_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Stop VM" --msgbox "$(cat -)" 20 80
 }
 
-function force_stop_vm() {
+force_stop_vm() {
   VM_NAME=$1
   virsh destroy "$VM_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Force Stop VM" --msgbox "$(cat -)" 20 80
 }
 
-function delete_vm() {
+delete_vm() {
   VM_NAME=$1
   DISK_PATH=$(virsh domblklist "$VM_NAME" | awk '/^vda/ {print $2}')
 
@@ -112,7 +112,7 @@ function delete_vm() {
   log_and_show "Delete VM" "VM $VM_NAME deleted."
 }
 
-function add_storage_pool() {
+add_storage_pool() {
   POOL_NAME=$1
   POOL_PATH=$2
 
@@ -124,7 +124,7 @@ function add_storage_pool() {
   log_and_show "Storage Pool Added" "Storage pool $POOL_NAME added at $POOL_PATH."
 }
 
-function remove_storage_pool() {
+remove_storage_pool() {
   POOL_NAME=$1
 
   virsh pool-destroy "$POOL_NAME" 2>&1 | tee -a "$LOG_FILE" | whiptail --title "Destroy Pool" --msgbox "$(cat -)" 20 80

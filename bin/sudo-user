@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
 if command -v curl >/dev/null; then
-    # shellcheck disable=SC1090
-    source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
+  # shellcheck disable=SC1090
+  source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 elif command -v wget >/dev/null; then
-    # shellcheck disable=SC1090
-    source <(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
+  # shellcheck disable=SC1090
+  source <(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 else
-    echo "curl or wget not found. Please install curl or wget and try again."
-    exit 1
+  echo "curl or wget not found. Please install curl or wget and try again."
+  exit 1
 fi
 
 # Check if the script is run as root
@@ -20,32 +20,35 @@ fi
 USERNAME=$1
 
 if id "$USERNAME" &>/dev/null; then
-    echo "User '$USERNAME' already exists." >&2
-    echo "Setting password for existing user..."
-    passwd "$USERNAME" || die "Failed to set password"
+  echo "User '$USERNAME' already exists." >&2
+  echo "Setting password for existing user..."
+  passwd "$USERNAME" || die "Failed to set password"
 elif useradd -m "$USERNAME"; then
-    slog "User created successfully"
+  slog "User created successfully"
 else
-    die "Failed to create user"
+  die "Failed to create user"
 fi
 
 # Determine the sudo group based on the system
 if is_apt; then
-    apt-get update && apt-get install -y sudo
-    SUDO_GROUP="sudo"
+  apt-get update && apt-get install -y sudo
+  SUDO_GROUP="sudo"
 elif is_rh; then
-    dnf install -y sudo
-    SUDO_GROUP="wheel"
+  dnf install -y sudo
+  SUDO_GROUP="wheel"
 elif is_tw; then
-    zypper install -y sudo
-    SUDO_GROUP="wheel"
+  zypper install -y sudo
+  SUDO_GROUP="wheel"
+elif is_arch; then
+  pacman -Sy --noconfirm sudo
+  SUDO_GROUP="wheel"
 else
-    die "Unsupported system"
+  die "Unsupported system"
 fi
 
 if ! getent group "$SUDO_GROUP" >/dev/null; then
-    echo "Creating group '$SUDO_GROUP'..."
-    groupadd "$SUDO_GROUP"
+  echo "Creating group '$SUDO_GROUP'..."
+  groupadd "$SUDO_GROUP"
 fi
 
 # Add the user to the sudo group
