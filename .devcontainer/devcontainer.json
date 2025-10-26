@@ -19,18 +19,18 @@
             "path": "/usr/bin/zsh"
           }
         },
-        "terminal.integrated.defaultProfile.linux": "zsh",
-        "extensions": [
-          "bierner.github-markdown-preview",
-          "DavidAnson.vscode-markdownlint",
-          "jnoortheen.nix-ide",
-          "mads-hartmann.bash-ide-vscode",
-          "shd101wyy.markdown-preview-enhanced",
-          "streetsidesoftware.code-spell-checker",
-          "timonwong.shellcheck",
-          "yzhang.markdown-all-in-one"
-        ]
-      }
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      },
+      "extensions": [
+        "bierner.github-markdown-preview",
+        "DavidAnson.vscode-markdownlint",
+        "jnoortheen.nix-ide",
+        "mads-hartmann.bash-ide-vscode",
+        "shd101wyy.markdown-preview-enhanced",
+        "streetsidesoftware.code-spell-checker",
+        "timonwong.shellcheck",
+        "yzhang.markdown-all-in-one"
+      ]
     }
   }
 }

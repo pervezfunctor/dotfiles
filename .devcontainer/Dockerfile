@@ -6,16 +6,20 @@ RUN apt-get update && \
   apt-get install -y --no-install-recommends \
   ca-certificates \
   curl \
-  sudo \
-  gnupg \
-  git \
+  eza \
+  fzf \
   gh \
-  shellcheck \
-  shfmt \
-  zsh \
-  tmux \
+  git \
+  gnupg \
   micro \
   ripgrep \
+  shellcheck \
+  shfmt \
+  starship \
+  stow \
+  sudo \
+  tmux \
+  zsh \
   zoxide && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
@@ -40,10 +44,10 @@ RUN nix profile add \
   nixpkgs#nixd \
   nixpkgs#nixfmt-rfc-style \
   nixpkgs#alejandra \
-  nixpkgs#stow \
-  nixpkgs#fzf \
-  nixpkgs#eza \
   nixpkgs#neovim
 
 WORKDIR /workspace
 USER vscode
+
+RUN echo 'eval "$(starship init zsh)"' >> /home/vscode/.zshrc
+
