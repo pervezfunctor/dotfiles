@@ -16,6 +16,7 @@ nix_install() {
 
 base_config_install() {
   dotfiles_install
+  has_cmd git && git_confstall
   is_linux && bash_confstall
   is_mac && zsh_confstall
 }
@@ -26,7 +27,6 @@ min_config_install() {
 
 shell-slim_config_install() {
   min_config_install
-  git_confstall
   zsh_confstall
 }
 

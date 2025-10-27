@@ -1,6 +1,5 @@
 #! /usr/bin/env sh
 
-[ -n "$ILM_EXPORTS_LOADED" ] && return 0
 
 has_cmd() {
   command -v "$1" >/dev/null 2>&1
@@ -84,4 +83,3 @@ fi
 #     --color=selected-bg:#45475A \
 #     --color=border:#6C7086,label:#CDD6F4"
 
-export ILM_EXPORTS_LOADED=1
