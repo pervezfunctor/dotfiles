@@ -517,17 +517,25 @@ rust_install() {
   cmd_check rustc
 }
 
-docker_confstall() {
-  if ! has_cmd docker; then
-    warn "docker not installed, skipping docker post install configuration"
-    return 1
-  fi
+lazydocker_install() {
+  has_cmd lazydocker && return 0
+
+  slog "Installing lazydocker"
 
   if has_cmd brew; then
     bi jesseduffield/lazydocker/lazydocker
     bis lazydocker
   elif has_cmd pixi; then
     pis lazydocker
+  else
+    warn "cannot install lazydocker"
+  fi
+}
+
+docker_confstall() {
+  if ! has_cmd docker; then
+    warn "docker not installed, skipping docker post install configuration"
+    return 1
   fi
 
   if ! grep -q docker /etc/group 2>/dev/null; then

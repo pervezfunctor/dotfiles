@@ -200,11 +200,11 @@ nix_mainstall() {
 
 docker_groupstall() {
   docker_install
-  docker_confstall
 
   is_linux || return 0
-  is_desktop || return 0
   is_distrobox || fpi sh.loft.devpod
+  docker_confstall
+  lazydocker_install
 }
 
 work_groupstall() {
