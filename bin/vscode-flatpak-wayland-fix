@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+flatpak override --user --nosocket=x11 --socket=wayland com.visualstudio.code
