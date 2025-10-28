@@ -296,8 +296,9 @@ dbox-docker-dev_mainstall() {
   has_cmd docker || die "This script requires docker"
 
   base_mainstall
-  si openssh-server
-  password_ssh_config
+  sudo apt purge -y fzf
+  si openssh-server micro
+  ssh_password_auth_enable
   docker_confstall
 }
 

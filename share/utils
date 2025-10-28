@@ -1167,7 +1167,7 @@ _stop_sudo_keepalive() {
   SUDO_KEEPALIVE_PID=""
 }
 
-password_ssh_config() {
+ssh_password_auth_enable() {
   if ! sudo sed -i -E 's/^#?PasswordAuthentication[[:space:]]+(no|yes)/PasswordAuthentication yes/' /etc/ssh/sshd_config; then
     echo 'PasswordAuthentication yes' | sudo tee -a /etc/ssh/sshd_config >/dev/null
   fi

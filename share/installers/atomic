@@ -106,9 +106,6 @@ flathub_install() {
   if has_cmd flatpak; then
     slog "Adding flathub remote"
     flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
-
-    fpi io.github.flattool.Warehouse
-    fpi com.github.tchx84.Flatseal
   else
     warn "flatpak not installed! Ignoring flathub config."
   fi
@@ -389,6 +386,8 @@ apps-slim_install() {
 
   flathub_install
 
+  fpi io.github.flattool.Warehouse
+  fpi com.github.tchx84.Flatseal
   fpi page.tesk.Refine
   fpi it.mijorus.gearlever
   is_atomic && fpi org.gnome.Boxes
@@ -841,6 +840,16 @@ generic-ct_mainstall() {
   git_confstall
 }
 
+fedora-atomic-dbox_mainstall() {
+  jetbrains-mono_install
+  flathub_install
+  ptyxis_install
+  atomic_distrobox_install
+  dbox-docker
+  dbox-nix
+  vscode-flatpak_install
+}
+
 generic_mainstall() {
   generic-ct_mainstall
 
@@ -859,7 +868,6 @@ generic_mainstall() {
   jetbrains-mono_install
   flathub_install
   ptyxis_install
-
 }
 
 rpm-ostree-libvirt_groups_setup() {
