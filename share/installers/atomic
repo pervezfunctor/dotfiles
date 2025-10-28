@@ -458,6 +458,8 @@ libvirt_confstall() {
     libvirt_group=libvirt
   fi
 
+  has_cmd authselect && sudo authselect enable-feature with-libvirt
+
   sg "$libvirt_group" -c '
     if ! virsh --connect qemu:///system net-list --all | grep -q default; then
         # virsh net-define /usr/share/libvirt/networks/default.xml
@@ -922,6 +924,10 @@ rpm-ostree-libvirt_groups_setup() {
   sudo systemctl enable --now libvirtd
 }
 
+rpm_installed() {
+  rpm -q "$1" &>/dev/null
+}
+
 rpm-ostree_install() {
   has_cmd rpm-ostree || die "This script is only for rpm-ostree based systems"
 
@@ -929,9 +935,8 @@ rpm-ostree_install() {
 
   local PKGS=()
 
-  if is_desktop; then
-    if ! has_cmd code; then
-      cat <<EOF | sudo tee /etc/yum.repos.d/vscode.repo
+  if ! has_cmd code && ! file_exists /etc/yum.repos.d/vscode.repo; then
+    cat <<EOF | sudo tee /etc/yum.repos.d/vscode.repo
 [code]
 name=Visual Studio Code
 baseurl=https://packages.microsoft.com/yumrepos/vscode
@@ -939,17 +944,15 @@ enabled=1
 gpgcheck=1
 gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 EOF
-    fi
-
-    sudo rpm --import https://packages.microsoft.com/config/fedora/42/prod.repo
-    PKGS+=(
-      # "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
-      "code"
-    )
-
-    has_cmd virt-manager || PKGS+=("virt-manager")
   fi
 
+  sudo rpm --import https://packages.microsoft.com/config/fedora/42/prod.repo
+  PKGS+=(
+    # "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
+    "code"
+  )
+
+  has_cmd virt-manager || PKGS+=("virt-manager")
   has_cmd stow || PKGS+=("stow")
   has_cmd zsh || PKGS+=("zsh")
   has_cmd git || PKGS+=("git")
@@ -958,11 +961,12 @@ EOF
   has_cmd make || PKGS+=("make")
   has_cmd openssl || PKGS+=("openssl")
   has_cmd wl-copy || PKGS+=("wl-clipboard")
-  has_cmd virsh || PKGS+=("libvirt")
+  has_cmd virsh || PKGS+=("libvirt libvirt-nss")
   has_cmd virt-install || PKGS+=("virt-install")
   has_cmd virt-cat || PKGS+=("libguestfs-tools" "guestfs-tools")
   has_cmd bootc || PKGS+=("bootc")
   has_cmd core-os-installer || PKGS+=("coreos-installer")
+  has_cmd gnome-keyring || PKGS+=("gnome-keyring")
 
   if [[ ${#PKGS[@]} -eq 0 ]]; then
     slog "No packages to install"
