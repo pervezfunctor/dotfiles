@@ -322,12 +322,12 @@ gnome_confstall() {
 vscode-flatpak_confstall() {
   slog "vscode flatpak config"
 
-  flatpak override --user --nosocket=x11 --socket=wayland com.visualstudio.code
-
   smd ~/.var/app/com.visualstudio.code/config/Code/User
   safe_cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
 
   vscode-extensions_install
+
+  flatpak override --user --nosocket=x11 --socket=wayland com.visualstudio.code
 
   slog "vscode flatpak config done!"
 }
@@ -857,15 +857,28 @@ generic_mainstall() {
 
   jetbrains-mono_install
   flathub_install
+  apps-slim_install
   ptyxis_install
+  vscode-flatpak_install
 }
 
 fedora-atomic-dbox_mainstall() {
   generic_mainstall
 
-  dbox-docker
-  dbox-nix
-  vscode-flatpak_install
+  # shellcheck disable=SC1091
+  source "${ILM_BASE_URL}/share/dbox-fns"
+
+  if fn_exists dbox-docker; then
+    dbox-docker
+  else
+    warn "cannot setup docker distrobox container"
+  fi
+
+  if fn_exists dbox-nix; then
+    dbox-nix
+  else
+    warn "Cannot setup nix distrobox container"
+  fi
 }
 
 rpm-ostree-libvirt_groups_setup() {
