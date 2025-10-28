@@ -3,7 +3,12 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-readonly HOMEBREW_DIR="/var/homebrew"
+export DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
+
+# shellcheck disable=SC1091
+source "${DOT_DIR}/share/utils"
+
+readonly HOMEBREW_DIR="/var/home/linuxbrew"
 readonly PROFILE_FILE="/etc/profile.d/homebrew.sh"
 
 get_user_info() {
@@ -40,7 +45,7 @@ setup_homebrew_directory() {
 
 install_homebrew() {
   local user_name="$1"
-  local homebrew_path="$HOMEBREW_DIR/Homebrew"
+  local homebrew_path="$HOMEBREW_DIR/.linuxbrew"
 
   slog "Installing Homebrew for user: $user_name"
 
