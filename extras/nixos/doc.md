@@ -46,7 +46,7 @@ cd router-flake
 ### 2. Generate SSH Key (for user login)
 
 ```bash
-ssh-keygen -t ed25519 -C "router access"
+ssh-keygen -t ed25519
 ```
 
 Copy the **public key** and paste it in `users.users.router.openssh.authorizedKeys.keys` in the flake config.
