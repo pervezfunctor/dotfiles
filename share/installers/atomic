@@ -876,7 +876,7 @@ fedora-atomic-dbox_mainstall() {
   generic_mainstall
 
   # shellcheck disable=SC1091
-  source "${ILM_BASE_URL}/share/dbox-fns"
+  source_curl "${ILM_BASE_URL}/share/dbox-fns"
 
   if fn_exists dbox-docker; then
     dbox-docker
