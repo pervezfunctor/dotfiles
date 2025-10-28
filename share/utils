@@ -968,6 +968,16 @@ is_kinoite() {
   [[ "${ID:-}" =~ .*[Kk]inoite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Kk]inoite.* ]]
 }
 
+is_cosmic-atomic() {
+  if [ ! -f /etc/os-release ]; then
+    return 1
+  fi
+
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  [[ "${ID:-}" =~ .*[Cc]osmic.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Cc]osmic.* ]]
+}
+
 is_silverblue() {
   if [ ! -f /etc/os-release ]; then
     return 1
@@ -1025,7 +1035,7 @@ is_ublue() {
 }
 
 is_std_atomic() {
-  is_kinoite || is_silverblue || is_sway_atomic
+  is_kinoite || is_silverblue || is_sway_atomic || is_cosmic_atomic
 }
 
 is_atomic() {
