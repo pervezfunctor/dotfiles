@@ -1039,7 +1039,7 @@ is_std_atomic() {
 }
 
 is_atomic() {
-  is_kinoite || is_silverblue || is_aurora || is_bluefin || is_sway_atomic
+  is_kinoite || is_silverblue || is_sway_atomic || is_cosmic_atomic || is_ublue
 }
 
 is_rocky() {
