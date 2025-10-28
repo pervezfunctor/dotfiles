@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+readonly HOMEBREW_DIR="/var/homebrew"
+readonly PROFILE_FILE="/etc/profile.d/homebrew.sh"
+
+get_user_info() {
+  local user_name
+  user_name=${SUDO_USER:-$(logname 2>/dev/null || echo "root")}
+
+  if ! id -u "$user_name" >/dev/null 2>&1; then
+    die "User '$user_name' does not exist"
+  fi
+
+  echo "$user_name"
+}
+
+setup_homebrew_directory() {
+  local user_name="$1"
+
+  slog "Setting up Homebrew directory: $HOMEBREW_DIR"
+
+  # Create directory if it doesn't exist
+  if [[ ! -d "$HOMEBREW_DIR" ]]; then
+    sudo mkdir -p "$HOMEBREW_DIR" || die "Failed to create Homebrew directory"
+    slog "Created Homebrew directory"
+  else
+    slog "Homebrew directory already exists"
+  fi
+
+  # Set ownership
+  if ! sudo chown -R "$user_name":"$user_name" "$HOMEBREW_DIR"; then
+    die "Failed to set ownership of Homebrew directory"
+  fi
+
+  success "Homebrew directory setup complete"
+}
+
+install_homebrew() {
+  local user_name="$1"
+  local homebrew_path="$HOMEBREW_DIR/Homebrew"
+
+  slog "Installing Homebrew for user: $user_name"
+
+  # Check if Homebrew is already installed
+  if [[ -d "$homebrew_path" && -x "$homebrew_path/bin/brew" ]]; then
+    slog "Homebrew already installed at $homebrew_path"
+  else
+    slog "Cloning Homebrew repository"
+    sudo -u "$user_name" bash -c "
+      set -euo pipefail
+      if [[ ! -d \"$homebrew_path\" ]]; then
+        git clone --depth=1 https://github.com/Homebrew/brew \"$homebrew_path\" || {
+          echo \"Failed to clone Homebrew repository\" >&2
+          exit 1
+        }
+      fi
+    " || die "Failed to clone Homebrew"
+  fi
+
+  # Update Homebrew
+  slog "Updating Homebrew"
+  sudo -u "$user_name" bash -c "
+    set -euo pipefail
+    eval \"\$($homebrew_path/bin/brew shellenv)\"
+    brew update --quiet || {
+      echo \"Failed to update Homebrew\" >&2
+      exit 1
+    }
+  " || die "Failed to update Homebrew"
+
+  success "Homebrew installation complete"
+}
+
+setup_profile_snippet() {
+  local brew_path="$1"
+  local snippet="eval \"\$($brew_path/bin/brew shellenv)\""
+
+  slog "Setting up profile snippet: $PROFILE_FILE"
+
+  if [[ -f "$PROFILE_FILE" ]]; then
+    if grep -Fq "$snippet" "$PROFILE_FILE"; then
+      slog "Profile snippet already exists and is correct"
+      return 0
+    else
+      slog "Profile snippet exists but is incorrect, updating"
+    fi
+  fi
+
+  # Create/update profile snippet
+  if ! echo "$snippet" >"$PROFILE_FILE"; then
+    die "Failed to create profile snippet"
+  fi
+
+  if ! chmod 644 "$PROFILE_FILE"; then
+    die "Failed to set permissions on profile snippet"
+  fi
+
+  success "Profile snippet setup complete"
+}
+
+verify_installation() {
+  local user_name="$1"
+
+  slog "Verifying Homebrew installation"
+
+  if ! sudo -u "$user_name" bash -c "
+    set -euo pipefail
+    source $PROFILE_FILE
+    brew --version
+  "; then
+    die "Homebrew verification failed"
+  fi
+
+  success "Homebrew verification successful"
+}
+
+main() {
+  slog "Starting Homebrew installation for atomic systems"
+
+  has_cmd git
+
+  # local user_name
+  # user_name=$(get_user_info)
+
+  setup_homebrew_directory "$USER"
+  install_homebrew "$USER"
+  # setup_profile_snippet "$HOMEBREW_DIR/Homebrew"
+  # verify_installation "$user_name"
+
+  success "Homebrew installed successfully under $HOMEBREW_DIR"
+  slog "Persistent across atomic updates. Logout and relogin to activate."
+}
+
+main "$@"
