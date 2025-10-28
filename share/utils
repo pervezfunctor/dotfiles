@@ -968,7 +968,7 @@ is_kinoite() {
   [[ "${ID:-}" =~ .*[Kk]inoite.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Kk]inoite.* ]]
 }
 
-is_cosmic-atomic() {
+is_cosmic_atomic() {
   if [ ! -f /etc/os-release ]; then
     return 1
   fi
