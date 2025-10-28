@@ -975,7 +975,7 @@ is_cosmic-atomic() {
 
   # shellcheck disable=SC1091
   . /etc/os-release
-  [[ "${ID:-}" =~ .*[Cc]osmic.* ]] || [[ "${PRETTY_NAME:-}" =~ .*[Cc]osmic.* ]]
+  [[ "${ID:-}" =~ .*COSMIC.* ]] || [[ "${PRETTY_NAME:-}" =~ .*COSMIC.* ]]
 }
 
 is_silverblue() {
