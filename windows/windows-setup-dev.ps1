@@ -1432,15 +1432,17 @@ function Copy-ConfigFromDotfiles {
 # Define available components with preserved order
 $availableComponents = [ordered]@{
     "windows-update"   = "Update Windows"
-    "wsl"              = "Install Hyper-V and WSL"
-    "multipass"        = "Install Multipass"
+    "debloat"          = "Debloat Windows"
 
-    "nerd-fonts"       = "Install Nerd Fonts"
     "capslock"         = "Set CapsLock as Control"
+    "nerd-fonts"       = "Install Nerd Fonts"
     "vscode"           = "Install VS Code"
     "devtools"         = "Install Development Tools"
     "dotfiles"         = "Initialize Dotfiles"
     "apps"             = "Install Applications"
+
+    "wsl"              = "Install Hyper-V and WSL"
+    "multipass"        = "Install Multipass"
 
     "multipass-vm"     = "Install Multipass VM"
     "wsl-ubuntu"       = "Install Ubuntu WSL"
@@ -1460,6 +1462,51 @@ function Debug-Variable {
         [object]$Value
     )
     Write-Host "DEBUG: $Name = $($Value | ConvertTo-Json -Compress)" -ForegroundColor Magenta
+}
+
+function Initialize-Debloat {
+    Write-Host "Initializing Windows debloat process..." -ForegroundColor Cyan
+    Write-Host "This will download and execute a debloat script from https://debloat.raphi.re/" -ForegroundColor Yellow
+    Write-Host "This script helps remove unnecessary Windows bloatware and telemetry." -ForegroundColor Yellow
+
+    $confirmation = Read-Host "Do you want to continue? (y/n)"
+    if ($confirmation -ne 'y' -and $confirmation -ne 'Y') {
+        Write-Host "Debloat process cancelled by user." -ForegroundColor Yellow
+        return
+    }
+
+    try {
+        Write-Host "Downloading debloat script..." -ForegroundColor Cyan
+        $debloatScript = irm "https://debloat.raphi.re/" -UseBasicParsing -ErrorAction Stop
+
+        if ([string]::IsNullOrEmpty($debloatScript)) {
+            Write-Host "Failed to download debloat script: Empty response" -ForegroundColor Red
+            return
+        }
+
+        Write-Host "Executing debloat script..." -ForegroundColor Cyan
+        $scriptBlock = [scriptblock]::Create($debloatScript)
+
+        # Execute the script with error handling
+        # The execution policy is already set at the script level (lines 36-41)
+        # and will be restored at the end of the script (lines 1747-1751)
+        & $scriptBlock
+
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Debloat process completed successfully!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "Debloat process completed with warnings. Exit code: $LASTEXITCODE" -ForegroundColor Yellow
+        }
+    }
+    catch {
+        Write-Host "Failed to execute debloat script: $_" -ForegroundColor Red
+        Write-Host "Please check your internet connection and try again." -ForegroundColor Yellow
+    }
+    catch {
+        Write-Host "Failed to execute debloat script: $_" -ForegroundColor Red
+        Write-Host "Please check your internet connection and try again." -ForegroundColor Yellow
+    }
 }
 
 function Show-Menu {
@@ -1558,7 +1605,10 @@ function Initialize-SSHKey {
 
     New-Directory -Path "$env:USERPROFILE\.ssh" | Out-Null
 
-    if ((Test-Path "$env:USERPROFILE\.ssh\id_ed25519.pub")) {
+    $privateKeyPath = "$env:USERPROFILE\.ssh\id_ed25519"
+    $publicKeyPath = "$env:USERPROFILE\.ssh\id_ed25519.pub"
+
+    if ((Test-Path $privateKeyPath) -or (Test-Path $publicKeyPath)) {
         Write-Host "SSH key already exists." -ForegroundColor Yellow
         return
     }
@@ -1568,16 +1618,8 @@ function Initialize-SSHKey {
         return
     }
 
-    $comment = "$env:USERNAME@$env:COMPUTERNAME"
-    $path = "$env:USERPROFILE\.ssh\id_ed25519"
-
-    if ((Test-Path "$path")) {
-        Write-Host "SSH key already exists." -ForegroundColor Yellow
-        return
-    }
-
     Write-Host "Generating new SSH key..." -ForegroundColor Cyan
-    ssh-keygen --% -t ed25519 -f "$path" -N "" -C "$comment"
+    ssh-keygen --% -t ed25519 -f "$privateKeyPath" -N ""
 
     Write-Host "SSH key generated successfully!" -ForegroundColor Green
 }
@@ -1629,15 +1671,17 @@ function Install-SelectedComponents {
 
         switch ($component) {
             "windows-update" { Update-Windows }
+
+            "capslock" { Set-CapsLockAsControl }
+            "nerd-fonts" { Install-Chocolatey; Install-NerdFonts }
+            "vscode" { Install-VSCode; Install-VSCodeExtensions }
+            "devtools" { Install-DevTools; Install-CppTools }
+            "dotfiles" { Initialize-Dotfiles }
+            "apps" { Install-Apps }
+            "debloat" { Initialize-Debloat }
+
             "wsl" { Install-HyperV-WSL }
             "multipass" { Install-Multipass }
-
-            "nerd-fonts" { Install-Chocolatey; Install-NerdFonts }
-            "devtools" { Install-DevTools; Install-CppTools }
-            "vscode" { Install-VSCode; Install-VSCodeExtensions }
-            "apps" { Install-Apps }
-            "dotfiles" { Initialize-Dotfiles }
-            "capslock" { Set-CapsLockAsControl }
 
             "multipass-vm" { Install-MultipassVM; Initialize-MultipassVMSSH }
             "wsl-ubuntu" { Install-WSLDistro -DistroName "Ubuntu-24.04" }
@@ -1672,7 +1716,7 @@ function Main {
     if ($null -eq $Components -or $Components.Count -eq 0) {
         # Pass the Components array as PreSelected to Show-Menu
         Write-Host "Running in interactive mode with preselected components: $($Components -join ', ')" -ForegroundColor Cyan
-        $selectedComponents = Show-Menu -PreSelected @("nerd-fonts", "vscode", "wsl", "wsl-ubuntu")
+        $selectedComponents = Show-Menu -PreSelected @("nerd-fonts", "vscode", "wsl", "wsl-ubuntu-25.10")
     }
     else {
         # Non-interactive mode, use provided components
