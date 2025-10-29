@@ -8,15 +8,15 @@ readonly SCRIPT_NAME
 # Array of supported distributions
 readonly SUPPORTED_DISTRIBUTIONS=("debian" "fedora" "ubuntu" "alpine" "centos" "tumbleweed" "arch")
 
-# Template ID to VM ID mapping
-declare -A TEMPLATE_VM_MAPPING=(
-  ["debian"]="201:111"
-  ["fedora"]="202:112"
-  ["ubuntu"]="203:113"
-  ["alpine"]="204:114"
-  ["centos"]="205:115"
-  ["tumbleweed"]="206:116"
-  ["arch"]="207:117"
+# Template ID mapping (VM IDs will be assigned incrementally starting from START_VM_ID)
+declare -A TEMPLATE_MAPPING=(
+  ["debian"]="201"
+  ["fedora"]="202"
+  ["ubuntu"]="203"
+  ["alpine"]="204"
+  ["centos"]="205"
+  ["tumbleweed"]="206"
+  ["arch"]="207"
 )
 
 # Logging functions
@@ -72,6 +72,7 @@ display_usage() {
 
 📋 Options:
   -s, --storage STORAGE            💾 Proxmox storage target for cloned VMs (default: local-lvm)
+  -i, --start-vm-id START_VM_ID    🔢 Starting VM ID for incremental assignment (default: 111)
   -f, --failed-only                 🚨 Only create VMs for distributions that failed previously
   -l, --list                        📋 List supported distributions and their template/VM ID mappings
   -h, --help                        ❓ Display this help message
@@ -79,8 +80,9 @@ display_usage() {
   --dry-run                         🔍 Show what would be done without executing
 
 📝 Examples:
-  $SCRIPT_NAME                                    # Create all VMs with defaults
-  $SCRIPT_NAME -s local-zfs                       # Use custom storage for cloned VMs
+  $SCRIPT_NAME                                    # Create all VMs with defaults (starting from VM ID 111)
+  $SCRIPT_NAME -i 121                             # Create all VMs starting from VM ID 121
+  $SCRIPT_NAME -s local-zfs -i 151                # Use custom storage and start from VM ID 151
   $SCRIPT_NAME -f                                 # Only retry failed distributions
   $SCRIPT_NAME --dry-run                          # Preview what would be done
   $SCRIPT_NAME --list                             # List template/VM ID mappings
@@ -92,6 +94,7 @@ EOF
 parse_arguments() {
   # Default values
   PROXMOX_STORAGE="local-lvm"
+  START_VM_ID=111
   FAILED_ONLY=false
   LIST_ONLY=false
   DRY_RUN=false
@@ -100,6 +103,10 @@ parse_arguments() {
     case $1 in
     -s | --storage)
       PROXMOX_STORAGE="$2"
+      shift 2
+      ;;
+    -i | --start-vm-id)
+      START_VM_ID="$2"
       shift 2
       ;;
     -f | --failed-only)
@@ -135,12 +142,14 @@ parse_arguments() {
 list_distributions() {
   echo "📋 Supported distributions and their template/VM ID mappings:"
   echo ""
+  echo "  Starting VM ID: $START_VM_ID (VMs will be assigned incrementally)"
+  echo ""
 
+  local vm_id=$START_VM_ID
   for distro in "${SUPPORTED_DISTRIBUTIONS[@]}"; do
-    local mapping="${TEMPLATE_VM_MAPPING[$distro]}"
-    local template_id="${mapping%:*}"
-    local vm_id="${mapping#*:}"
+    local template_id="${TEMPLATE_MAPPING[$distro]}"
     echo "  🐧 $distro (Template ID: $template_id → VM ID: $vm_id)"
+    ((vm_id++))
   done
   echo ""
 }
@@ -148,8 +157,7 @@ list_distributions() {
 # Check if a VM template exists
 template_exists() {
   local distro="$1"
-  local mapping="${TEMPLATE_VM_MAPPING[$distro]}"
-  local template_id="${mapping%:*}"
+  local template_id="${TEMPLATE_MAPPING[$distro]}"
 
   # In dry-run mode, assume templates exist
   if [[ "${DRY_RUN:-false}" == "true" ]]; then
@@ -166,8 +174,7 @@ template_exists() {
 # Check if a VM already exists
 vm_exists() {
   local distro="$1"
-  local mapping="${TEMPLATE_VM_MAPPING[$distro]}"
-  local vm_id="${mapping#*:}"
+  local vm_id="$2"
 
   # In dry-run mode, assume VMs don't exist
   if [[ "${DRY_RUN:-false}" == "true" ]]; then
@@ -184,13 +191,15 @@ vm_exists() {
 # Get distributions to process
 get_distributions_to_process() {
   local distributions_to_process=()
+  local vm_id=$START_VM_ID
 
   if [[ "$FAILED_ONLY" == "true" ]]; then
     # Only include distributions that don't have VMs yet but have templates
     for distro in "${SUPPORTED_DISTRIBUTIONS[@]}"; do
-      if template_exists "$distro" && ! vm_exists "$distro"; then
+      if template_exists "$distro" && ! vm_exists "$distro" "$vm_id"; then
         distributions_to_process+=("$distro")
       fi
+      ((vm_id++))
     done
   else
     # Include all supported distributions that have templates
@@ -198,6 +207,7 @@ get_distributions_to_process() {
       if template_exists "$distro"; then
         distributions_to_process+=("$distro")
       fi
+      ((vm_id++))
     done
   fi
 
@@ -207,9 +217,8 @@ get_distributions_to_process() {
 # Create VM for a single distribution
 create_vm() {
   local distro="$1"
-  local mapping="${TEMPLATE_VM_MAPPING[$distro]}"
-  local template_id="${mapping%:*}"
-  local vm_id="${mapping#*:}"
+  local vm_id="$2"
+  local template_id="${TEMPLATE_MAPPING[$distro]}"
   local vm_name="${distro}-vm"
 
   log_info "Creating VM for $distro from template $template_id..."
@@ -259,23 +268,28 @@ main() {
   local failed_distributions=()
   local successful_distributions=()
 
+  local vm_id=$START_VM_ID
+
   for distro in "${distributions_to_process[@]}"; do
     if ! template_exists "$distro"; then
       log_warn "$distro template does not exist, skipping..."
+      ((vm_id++))
       continue
     fi
 
-    if vm_exists "$distro"; then
-      log_warn "$distro VM already exists, skipping..."
+    if vm_exists "$distro" "$vm_id"; then
+      log_warn "$distro VM already exists (ID: $vm_id), skipping..."
+      ((vm_id++))
       continue
     fi
 
-    if create_vm "$distro"; then
+    if create_vm "$distro" "$vm_id"; then
       successful_distributions+=("$distro")
     else
       failed_distributions+=("$distro")
     fi
 
+    ((vm_id++))
     echo "" # Add spacing between distributions
   done
 

@@ -94,6 +94,7 @@ vm-templates_install() {
 ct-all_install() {
     slog "Creating containers from all templates..."
     local template_dir="/var/lib/vz/template/cache"
+    local ct_id=100
 
     if ! dir_exists "$template_dir"; then
         error "Template directory not found: $template_dir"
@@ -105,7 +106,7 @@ ct-all_install() {
             local template_name
             template_name=$(basename "$template")
             slog "Creating LXC from template: $template_name"
-            create_lxc_from_template "$template_name" || warn "Failed to create LXC from $template_name"
+            create_lxc_from_template "$template_name" "$((ct_id++))" || warn "Failed to create LXC from $template_name"
         fi
     done
 }
@@ -177,11 +178,12 @@ core_install() {
 
 create_lxc_from_template() {
     local template="$1"
-    slog "Creating LXC from template: $template"
+    local ct_id="$2"
+    slog "Creating LXC from template: $template with ID: $ct_id"
     local distro
     distro=$(echo "$template" | cut -d'.' -f1)
 
-    if ! pct create 101 /var/lib/vz/template/cache/"$template" \
+    if ! pct create "$ct_id" /var/lib/vz/template/cache/"$template" \
         --hostname my-"$distro"-ct \
         --memory 1024 \
         --cores 1 \
