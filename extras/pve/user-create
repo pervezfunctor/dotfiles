@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+LOGFILE="/var/log/create-proxmox-user.log"
+exec > >(tee -a "$LOGFILE") 2>&1
+
+log() { echo "[$(date '+%F %T')] [INFO] ℹ️  $*"; }
+warn() { echo "[$(date '+%F %T')] [WARN] ⚠️  $*" >&2; }
+error() {
+  echo "[$(date '+%F %T')] [ERROR] ❌ $*" >&2
+  exit 1
+}
+
+usage() {
+  echo "Usage: $0 <username> [--admin]"
+  echo "  --admin    Grant full Administrator privileges"
+  exit 1
+}
+
+check_root() {
+  [[ $EUID -eq 0 ]] || error "Must be run as root."
+}
+
+ensure_admins_group() {
+  if ! pveum group list | awk '{print $1}' | grep -qx "admins"; then
+    log "Creating Proxmox group 'admins'. 👥"
+    pveum groupadd admins -comment "Administrative users"
+  else
+    log "'admins' group already exists. ✅"
+  fi
+}
+
+create_system_user() {
+  local user="$1"
+  if ! id "$user" &>/dev/null; then
+    log "Creating system user '$user'. 👤"
+    useradd -m -s /bin/bash "$user"
+    passwd "$user"
+  else
+    log "System user '$user' already exists. ✅"
+  fi
+}
+
+create_proxmox_user() {
+  local user="$1"
+  if ! pveum user list | awk '{print $1}' | grep -qx "${user}@pam"; then
+    log "Creating Proxmox user '${user}@pam'. 🔐"
+    pveum useradd "${user}@pam" -comment "PAM user for Proxmox"
+  else
+    log "Proxmox user '${user}@pam' already exists. ✅"
+  fi
+  pveum usermod "${user}@pam" -group admins
+}
+
+assign_privileges() {
+  local user="$1"
+  local is_admin="$2"
+  if "$is_admin"; then
+    log "Assigning Administrator privileges. 👑"
+    pveum aclmod / -user "${user}@pam" -role Administrator
+  else
+    log "Assigning Auditor (read-only) privileges. 👁️"
+    pveum aclmod / -user "${user}@pam" -role PVEAuditor
+  fi
+}
+
+configure_ssh() {
+  local user="$1"
+  local conf="/etc/ssh/sshd_config"
+  local backup
+  backup="${conf}.backup.$(date +%Y%m%d_%H%M%S)"
+
+  log "Creating backup of SSH config at $backup 💾"
+  cp "$conf" "$backup"
+
+  log "Hardening SSH configuration. 🔒"
+  sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' "$conf"
+  sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' "$conf"
+
+  if ! grep -q "^AllowUsers" "$conf"; then
+    echo "AllowUsers $user" >>"$conf"
+  elif ! grep -q "$user" "$conf"; then
+    sed -i "s/^AllowUsers.*/& $user/" "$conf"
+  fi
+
+  if systemctl reload ssh 2>/dev/null; then
+    log "Reloaded SSH service. 🔄"
+  else
+    systemctl restart ssh
+    log "Restarted SSH service. 🔄"
+  fi
+}
+
+main() {
+  [[ $# -lt 1 ]] && usage
+  local username="$1"
+  local is_admin=false
+  [[ "${2:-}" == "--admin" ]] && is_admin=true
+
+  check_root
+  log "Starting user setup for '$username' (admin=$is_admin). 🚀"
+
+  ensure_admins_group
+  create_system_user "$username"
+  create_proxmox_user "$username"
+  assign_privileges "$username" "$is_admin"
+  configure_ssh "$username"
+
+  log "User '$username' created successfully. 🎉"
+  if "$is_admin"; then
+    log "Privileges: Full Administrator 👑"
+  else
+    log "Privileges: Auditor (read-only) 👁️"
+  fi
+  log "Login via SSH or Web UI as '${username}@pam'. 🔑"
+  log "Root SSH login disabled. See $LOGFILE for details. 📝"
+}
+
+main "$@"
