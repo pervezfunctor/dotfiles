@@ -1,0 +1,44 @@
+# Example configuration file for vm-template
+# Copy this file to 'options' in the same directory as the script
+# Uncomment and modify the values you want to override
+
+# Proxmox storage target (default: local-lvm)
+# PROXMOX_STORAGE="local-lvm"
+
+# Unique ID for the new VM (default: auto-assigned based on distro)
+# VM_ID=""
+
+# Name for the VM (default: auto-assigned based on distro)
+# VM_NAME=""
+
+# URL of the cloud image (default: latest for the distro)
+# IMAGE_URL=""
+
+# Size of the VM disk (default: 32G)
+# DISK_SIZE="32G"
+
+# VM memory in MB (default: 8192)
+# MEMORY="8192"
+
+# Number of CPU cores (default: 4)
+# CORES="4"
+
+# Username for cloud-init (default: distro-specific)
+# USERNAME=""
+
+# Password for cloud-init (default: empty, set via CLOUD_INIT_PASSWORD)
+# PASSWORD=""
+
+# Path to SSH public key file (default: empty, set via SSH_KEY_PATH)
+# SSH_KEY=""
+
+# Expected SHA256 checksum of the image (optional but recommended)
+# EXPECTED_CHECKSUM=""
+
+# Number of download retry attempts (default: 3)
+# DOWNLOAD_RETRY_ATTEMPTS="3"
+
+# You can also use environment variable expansion:
+# USERNAME="${CLOUD_INIT_USER:-debian}"
+# PASSWORD="${CLOUD_INIT_PASSWORD:-}"
+# SSH_KEY="${SSH_KEY_PATH:-}"
