@@ -13,9 +13,7 @@ readonly COMMUNITY_SCRIPTS_BASE="https://raw.githubusercontent.com/community-scr
 
 declare -g CORE=0
 declare -g CT_TEMPLATES=0
-declare -g VM_TEMPLATES=0
 declare -g CT_ALL=0
-declare -g VM_ALL=0
 declare -g ALL=0
 
 check_proxmox() {
@@ -30,6 +28,24 @@ cpu-governor_install() {
 
 post-install_install() {
     bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pve-install.sh)"
+}
+
+tailscale_install() {
+    has_cmd tailscale && return 0
+
+    sudo mkdir -p --mode=0755 /usr/share/keyrings
+
+    if ! file_exists /usr/share/keyrings/tailscale-archive-keyring.gpg; then
+        curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+    fi
+
+    if ! file_exists /etc/apt/sources.list.d/tailscale.list; then
+        curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list
+    fi
+
+    sudo apt-get update && sudo apt-get install tailscale
+
+    sudo tailscale up
 }
 
 ct-templates_install() {
@@ -57,44 +73,10 @@ ct-templates_install() {
     done
 }
 
-tailscale_install() {
-    has_cmd tailscale && return 0
-
-    sudo mkdir -p --mode=0755 /usr/share/keyrings
-
-    if ! file_exists /usr/share/keyrings/tailscale-archive-keyring.gpg; then
-        curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
-    fi
-
-    if ! file_exists /etc/apt/sources.list.d/tailscale.list; then
-        curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list
-    fi
-
-    sudo apt-get update && sudo apt-get install tailscale
-
-    sudo tailscale up
-}
-
-vm-templates_install() {
-    slog "Installing VM templates..."
-    local current_dir
-    current_dir="$(dirname "$0")"
-    local distros=("debian" "fedora" "ubuntu" "alpine" "centos")
-
-    for distro in "${distros[@]}"; do
-        if file_exists "$current_dir/vm-template"; then
-            slog "Creating $distro VM template..."
-            "$current_dir/vm-template" --distro "$distro" || warn "Failed to create $distro template"
-        else
-            warn "VM template script not found: $current_dir/vm-template"
-        fi
-    done
-}
-
 ct-all_install() {
     slog "Creating containers from all templates..."
     local template_dir="/var/lib/vz/template/cache"
-    local ct_id=100
+    local ct_id=150
 
     if ! dir_exists "$template_dir"; then
         fail "Template directory not found: $template_dir"
@@ -107,27 +89,6 @@ ct-all_install() {
             template_name=$(basename "$template")
             slog "Creating LXC from template: $template_name"
             create_lxc_from_template "$template_name" "$((ct_id++))" || warn "Failed to create LXC from $template_name"
-        fi
-    done
-}
-
-vm-all_install() {
-    slog "Creating VMs from all templates..."
-    local templates=(
-        "211:201:debian-vm"
-        "212:202:fedora-vm"
-        "213:203:ubuntu-vm"
-        "214:204:alpine-vm"
-        "215:205:centos-vm"
-    )
-
-    for template_info in "${templates[@]}"; do
-        IFS=':' read -r source_id dest_id vm_name <<<"$template_info"
-        if qm status "$source_id" >/dev/null 2>&1; then
-            slog "Cloning VM $source_id to $dest_id ($vm_name)"
-            qm clone "$source_id" "$dest_id" --name "$vm_name" || warn "Failed to clone VM $source_id"
-        else
-            warn "Source VM $source_id not found"
         fi
     done
 }
@@ -188,7 +149,7 @@ create_lxc_from_template() {
     distro=$(echo "$distro" | tr '[:upper:]' '[:lower:]')
 
     # Create a valid hostname (max 63 chars, no underscores, alphanumeric and hyphens only)
-    local hostname="my-${distro}-ct"
+    local hostname="${distro}-ct"
     hostname=$(echo "$hostname" | sed 's/[^a-z0-9-]//g' | sed 's/--*/-/g')
 
     # Ensure hostname doesn't exceed 63 characters
@@ -200,11 +161,14 @@ create_lxc_from_template() {
 
     if ! pct create "$ct_id" /var/lib/vz/template/cache/"$template" \
         --hostname "$hostname" \
-        --memory 1024 \
-        --cores 1 \
+        --memory 4096 \
+        --cores 2 \
         --rootfs local-lvm:8 \
         --net0 name=eth0,bridge=vmbr0,ip=dhcp \
-        --storage local-lvm; then
+        --storage local-lvm \
+        --console 1 \
+        --tty 2 \
+        --unprivileged 1; then
         fail "Failed to create LXC from $template"
         return 1
     fi
@@ -219,9 +183,7 @@ Proxmox VE Installation and Configuration Script
 
 OPTIONS:
     ct-templates      Install container templates
-    vm-templates      Install VM templates
     ct-all            Create all containers from templates
-    vm-all            Create all VMs from templates
     all               Install everything
     help|-h|--help              Show this help message
 
@@ -236,9 +198,7 @@ parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
         ct-templates) CT_TEMPLATES=1 ;;
-        vm-templates) VM_TEMPLATES=1 ;;
         ct-all) CT_ALL=1 ;;
-        vm-all) VM_ALL=1 ;;
         all) ALL=1 ;;
         help | -h | --help)
             usage
@@ -262,23 +222,18 @@ main() {
     if [[ $# -eq 0 ]]; then
         CORE=1
         CT_TEMPLATES=1
-        VM_TEMPLATES=1
     else
         parse_args "$@"
 
         if [[ $ALL -eq 1 ]]; then
             CT_TEMPLATES=1
-            VM_TEMPLATES=1
             CT_ALL=1
-            VM_ALL=1
         fi
     fi
 
     [[ $CORE -eq 1 ]] && core_install
     [[ $CT_TEMPLATES -eq 1 ]] && ct-templates_install
-    [[ $VM_TEMPLATES -eq 1 ]] && vm-templates_install
     [[ $CT_ALL -eq 1 ]] && ct-all_install
-    [[ $VM_ALL -eq 1 ]] && vm-all_install
 
     slog "Installation done!"
 }
