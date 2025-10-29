@@ -1,0 +1,348 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091
+
+set -euo pipefail
+
+export DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
+source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/utils"
+
+trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
+
+check_prerequisites() {
+  if ! command -v pct >/dev/null 2>&1; then
+    echo "❌  Required command 'pct' is not available."
+    echo "This script must be run on a Proxmox host."
+    exit 1
+  fi
+}
+
+usage() {
+  cat <<EOF
+Usage: $0 <command> [ct-id]
+
+Manage LXC containers on Proxmox. These are lightweight containers using the pct command.
+
+COMMANDS:
+    list                List all containers
+    create  ARGS        Create a new container (same arguments as lxc-create)
+    start <ct-id>       Start a container
+    stop <ct-id>        Stop a container
+    restart <ct-id>     Restart a container
+    shutdown <ct-id>    Gracefully stop a container
+    delete <ct-id>      Delete a container completely
+    console <ct-id>     Connect to container console
+    exec <ct-id> CMD    Execute command in container
+    ssh <ct-id>         SSH into container (requires SSH setup)
+    show-ip <ct-id>     Show container IP address
+    info <ct-id>        Show container status and information
+    status <ct-id>      Show container status
+    enter <ct-id>       Enter container namespace
+    snapshot <ct-id> [name] Create snapshot of container
+    rollback <ct-id> <name> Rollback to snapshot
+    templates           List available templates
+    help                Show this help message
+
+EXAMPLES:
+    $0 list                    # List all containers
+    $0 show-ip 100             # Show IP address of container 100
+    $0 status 100              # Show status of container 100
+    $0 start 100               # Start container 100
+    $0 stop 100                # Stop container 100
+    $0 delete 100              # Delete container 100
+    $0 console 100             # Connect to container console
+    $0 exec 100 -- apt update  # Run command in container
+    $0 ssh 100                 # SSH into container 100
+EOF
+}
+
+list_ct() {
+  pct list
+}
+
+status_ct() {
+  check_container "$1"
+  pct status "$1"
+}
+
+info_ct() {
+  check_container "$1"
+  pct config "$1"
+}
+
+start_ct() {
+  check_container "$1"
+  pct start "$1"
+}
+
+stop_ct() {
+  check_container "$1"
+  pct stop "$1"
+}
+
+shutdown_ct() {
+  check_container "$1"
+  pct shutdown "$1"
+}
+
+restart_ct() {
+  check_container "$1"
+  pct reboot "$1"
+}
+
+delete_ct() {
+  check_container "$1"
+
+  # Stop container if running
+  if pct status "$1" | grep -q "status: running"; then
+    echo "Stopping container $1..."
+    pct stop "$1"
+  fi
+
+  echo "Deleting container $1..."
+  pct destroy "$1"
+}
+
+console_ct() {
+  check_container "$1"
+  pct console "$1"
+}
+
+exec_ct() {
+  local ctid="$1"
+  shift
+  check_container "$ctid"
+  pct exec "$ctid" -- "$@"
+}
+
+enter_ct() {
+  check_container "$1"
+  pct enter "$1"
+}
+
+show_ip_ct() {
+  check_container "$1"
+
+  # Try to get IP from different sources
+  local ip=""
+
+  # Method 1: Try to get from network config
+  if pct status "$1" | grep -q "status: running"; then
+    ip=$(pct exec "$1" -- hostname -I 2>/dev/null | awk '{print $1}' || true)
+  fi
+
+  # Method 2: Try to get from Proxmox network info
+  if [[ -z "$ip" ]]; then
+    ip=$(pct config "$1" | grep -E "ip[0-9]*=" | head -n1 | cut -d'=' -f2 | cut -d',' -f1 | tr -d '"' || true)
+  fi
+
+  if [[ -n "$ip" && "$ip" != "dhcp" ]]; then
+    echo "Container $1 IP: $ip"
+  else
+    echo "Could not determine IP for container $1"
+    echo "Container may not be running or may be using DHCP"
+  fi
+}
+
+ssh_ct() {
+  local ctid="$1"
+  check_container "$ctid"
+
+  local ip
+  ip=$(pct exec "$ctid" -- hostname -I 2>/dev/null | awk '{print $1}' || true)
+
+  if [[ -z "$ip" ]]; then
+    echo "Error: could not determine IP for container '$ctid'"
+    echo "- Ensure the container is running"
+    echo "- Ensure SSH server is installed in the container"
+    echo "- Try: $0 start $ctid; then wait a few seconds."
+    exit 1
+  fi
+
+  echo "Connecting: ssh root@$ip"
+  exec ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@$ip"
+}
+
+snapshot_ct() {
+  local ctid="$1"
+  local snapname="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
+
+  check_container "$ctid"
+  echo "Creating snapshot '$snapname' for container $ctid..."
+  pct snapshot "$ctid" "$snapname"
+}
+
+rollback_ct() {
+  local ctid="$1"
+  local snapname="$2"
+
+  check_container "$ctid"
+  echo "Rolling back container $ctid to snapshot '$snapname'..."
+  pct rollback "$ctid" "$snapname"
+}
+
+templates_ct() {
+  echo "Available LXC templates:"
+  pveam available
+}
+
+resolve_ct_id() {
+  local id="$1"
+  if [[ -n "$id" ]]; then
+    printf '%s\n' "$id"
+    return 0
+  fi
+
+  local containers selected rc
+  if ! containers=$(pct list 2>/dev/null | awk 'NR>1 && $0 !~ /^[-[:space:]]*$/ {print $1}'); then
+    echo "Error: failed to list containers" >&2
+    return 1
+  fi
+
+  if [[ -z "$containers" ]]; then
+    echo "Error: no containers found" >&2
+    return 1
+  fi
+
+  selected=$(printf '%s\n' "$containers" | fzf-select 'Container > ')
+  rc=$?
+  if [[ $rc -ne 0 || -z "$selected" ]]; then
+    if [[ $rc -eq 127 ]]; then
+      echo "Error: fzf is not installed or not in PATH" >&2
+    else
+      echo "Cancelled" >&2
+    fi
+    return 1
+  fi
+
+  printf '%s\n' "$selected"
+}
+
+main() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  check_prerequisites
+
+  local command ct_id
+  command="$1"
+  ct_id="${2:-}"
+
+  case "$command" in
+  list | ls)
+    list_ct
+    ;;
+  status)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    status_ct "$target"
+    ;;
+  info)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    info_ct "$target"
+    ;;
+  create | new)
+    # Forward to lxc-create script
+    "$(dirname "$0")/lxc-create" "${@:2}"
+    ;;
+  start | boot)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    start_ct "$target"
+    ;;
+  stop)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    stop_ct "$target"
+    ;;
+  shutdown)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    shutdown_ct "$target"
+    ;;
+  restart | reboot)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    restart_ct "$target"
+    ;;
+  delete | rm)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    delete_ct "$target"
+    ;;
+  console)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    console_ct "$target"
+    ;;
+  exec)
+    if [[ -z "$ct_id" ]]; then
+      echo "Error: Container ID required for exec command"
+      echo "Usage: $0 exec <ct-id> -- <command>"
+      exit 1
+    fi
+    check_container "$ct_id"
+    shift
+    exec_ct "$ct_id" "$@"
+    ;;
+  enter)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    enter_ct "$target"
+    ;;
+  show-ip)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    show_ip_ct "$target"
+    ;;
+  ssh)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    ssh_ct "$target"
+    ;;
+  snapshot)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    snapshot_ct "$target" "${3:-}"
+    ;;
+  rollback)
+    {
+      target=$(resolve_ct_id "$ct_id")
+    } || exit 1
+    if [[ -z "${3:-}" ]]; then
+      echo "Error: Snapshot name required for rollback"
+      echo "Usage: $0 rollback <ct-id> <snapshot-name>"
+      exit 1
+    fi
+    rollback_ct "$target" "$3"
+    ;;
+  templates)
+    templates_ct
+    ;;
+  --help | -h | help)
+    usage
+    ;;
+  *)
+    echo "Error: Unknown command: $command"
+    usage
+    ;;
+  esac
+}
+
+main "$@"
