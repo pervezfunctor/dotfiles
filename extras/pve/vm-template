@@ -260,7 +260,7 @@ display_usage() {
 🚀 Usage: $SCRIPT_NAME -D DISTRO [OPTIONS]
 
 📋 Required:
-  -D, --distro DISTRO              🐧 Distribution: debian, fedora, ubuntu, alpine, or centos
+  -D, --distro DISTRO              🐧 Distribution: debian, fedora, ubuntu, alpine, centos, or tumbleweed
 
 📋 Options:
   -s, --storage STORAGE            💾 Proxmox storage target (default: local-lvm)
@@ -409,8 +409,14 @@ configure_distribution() {
     IMAGE_URL=${IMAGE_URL:-"https://cloud.centos.org/centos/10-stream/x86_64/images/CentOS-Stream-GenericCloud-10-20241118.0.x86_64.qcow2"}
     USERNAME=${USERNAME:-centos}
     ;;
+  tumbleweed | tw)
+    VM_ID=${VM_ID:-206}
+    VM_NAME=${VM_NAME:-tumbleweed-template}
+    IMAGE_URL=${IMAGE_URL:-"https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"}
+    USERNAME=${USERNAME:-opensuse}
+    ;;
   *)
-    log_error "Unsupported distribution: '$DISTRO'. Supported: debian, fedora, ubuntu, alpine, centos"
+    log_error "Unsupported distribution: '$DISTRO'. Supported: debian, fedora, ubuntu, alpine, centos, tumbleweed"
     ;;
   esac
 
@@ -500,8 +506,8 @@ create_vm() {
     --tags "template,${DISTRO}"
   )
 
-  # Ubuntu needs UEFI boot
-  if [[ "$DISTRO" == "ubuntu" ]]; then
+  # Ubuntu and Tumbleweed need UEFI boot
+  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "tumbleweed" ]]; then
     qm_create_args+=(--bios ovmf --efidisk0 "$PROXMOX_STORAGE:0,pre-enrolled-keys=0")
   fi
 
@@ -530,11 +536,11 @@ attach_disk() {
   echo "🔌 Attaching disk to VM..."
 
   local disk_target
-  if [[ "$DISTRO" == "ubuntu" ]]; then
+  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "tumbleweed" ]]; then
     disk_target="virtio0"
     if ! qm set "$VM_ID" --scsihw virtio-scsi-pci \
       --virtio0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on"; then
-      log_error "Failed to attach disk to Ubuntu VM"
+      log_error "Failed to attach disk to $DISTRO VM"
       return 1
     fi
   else
@@ -554,7 +560,7 @@ resize_disk() {
   echo "📏 Resizing disk to $DISK_SIZE..."
 
   local disk_target
-  if [[ "$DISTRO" == "ubuntu" ]]; then
+  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "tumbleweed" ]]; then
     disk_target="virtio0"
   else
     disk_target="scsi0"
@@ -573,7 +579,7 @@ configure_boot() {
   echo "🔧 Configuring boot options..."
 
   local disk_target
-  if [[ "$DISTRO" == "ubuntu" ]]; then
+  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "tumbleweed" ]]; then
     disk_target="virtio0"
   else
     disk_target="scsi0"

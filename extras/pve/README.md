@@ -8,7 +8,7 @@ This repository contains scripts that automate the creation of VM templates in P
 Creates Debian VM templates in Proxmox VE.
 
 ### vm-template
-Creates VM templates for multiple distributions (Debian, Fedora, Ubuntu, Alpine, CentOS) in Proxmox VE.
+Creates VM templates for multiple distributions (Debian, Fedora, Ubuntu, Alpine, CentOS, openSUSE Tumbleweed) in Proxmox VE.
 
 ## Features
 
@@ -162,6 +162,7 @@ The `vm-template` script supports multiple Linux distributions and provides the 
 - **Ubuntu** (ID: 203) - Latest Ubuntu cloud image with UEFI support
 - **Alpine** (ID: 204) - Latest Alpine cloud image
 - **CentOS** (ID: 205) - Latest CentOS Stream cloud image
+- **openSUSE Tumbleweed** (ID: 206) - Latest openSUSE Tumbleweed cloud image with UEFI support
 
 ### Usage Examples
 
@@ -174,6 +175,9 @@ The `vm-template` script supports multiple Linux distributions and provides the 
 
 # Create a Fedora template with custom settings
 ./vm-template -D fedora -i 1001 -n my-fedora-template -C "sha256:abcdef..."
+
+# Create an openSUSE Tumbleweed template
+./vm-template -D tumbleweed -k ~/.ssh/id_rsa.pub -m 4096
 
 # Create with environment variables
 export CLOUD_INIT_USER="admin"
@@ -197,6 +201,80 @@ SSH_KEY="${SSH_KEY_PATH:-}"
 ```
 
 See `vm-options.example` for a complete template.
+
+## vm-templates-create-all Script Features
+
+The `vm-templates-create-all` script automates the creation of VM templates for all supported distributions in a single run.
+
+### Features
+
+- **Batch creation**: Creates templates for all supported distributions at once
+- **Selective creation**: Option to retry only failed distributions
+- **Dry-run mode**: Preview what would be done without executing
+- **Progress tracking**: Shows which distributions are being processed
+- **Error handling**: Continues with other distributions if one fails
+- **Summary reporting**: Provides detailed success/failure summary
+
+### Usage Examples
+
+```bash
+# Create all templates with default settings
+./vm-templates-create-all
+
+# Create all templates with custom storage, memory, and cores
+./vm-templates-create-all -s local-zfs -m 4096 -c 2
+
+# Create all templates using SSH key authentication
+./vm-templates-create-all -k ~/.ssh/id_rsa.pub
+
+# Only retry distributions that failed previously
+./vm-templates-create-all -f
+
+# Preview what would be done without executing
+./vm-templates-create-all --dry-run
+
+# List all supported distributions and their VM IDs
+./vm-templates-create-all --list
+```
+
+### Command Line Options
+
+- `-s, --storage STORAGE`: Proxmox storage target (default: local-lvm)
+- `-d, --disk-size DISK_SIZE`: Size of VM disks (default: 32G)
+- `-m, --memory MEMORY`: VM memory in MB (default: 8192)
+- `-c, --cores CORES`: Number of CPU cores (default: 4)
+- `-u, --username USERNAME`: Username for cloud-init (default: distro-specific)
+- `-p, --password PASSWORD`: Password for cloud-init (default: empty, use CLOUD_INIT_PASSWORD)
+- `-k, --ssh-key SSH_KEY`: Path to SSH public key file (default: empty, use SSH_KEY_PATH)
+- `-f, --failed-only`: Only create templates for distributions that failed previously
+- `-l, --list`: List supported distributions and their default VM IDs
+- `-h, --help`: Display help message
+- `--debug`: Enable debug logging
+- `--dry-run`: Show what would be done without executing
+
+### Workflow
+
+1. The script checks for existing templates and skips them
+2. Processes each distribution in sequence
+3. Provides real-time feedback on progress
+4. Generates a summary of successful and failed creations
+5. Failed distributions can be retried with the `-f` flag
+
+### Example Output
+
+```
+🚀 Starting VM template creation for all distributions
+ℹ️  [INFO] 2025-10-30 00:35:59 - Processing distributions: debian fedora ubuntu alpine centos tumbleweed
+ℹ️  [INFO] 2025-10-30 00:35:59 - Creating template for debian...
+✅ [SUCCESS] 2025-10-30 00:36:15 - debian template created successfully
+
+ℹ️  [INFO] 2025-10-30 00:36:15 - Creating template for fedora...
+✅ [SUCCESS] 2025-10-30 00:36:32 - fedora template created successfully
+
+📊 Summary:
+✅ [SUCCESS] 2025-10-30 00:37:45 - Successfully created templates for: debian fedora ubuntu alpine centos tumbleweed
+✅ [SUCCESS] 2025-10-30 00:37:45 - All templates created successfully!
+```
 
 ## License
 
