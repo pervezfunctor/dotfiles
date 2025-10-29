@@ -20,7 +20,7 @@ declare -g ALL=0
 
 check_proxmox() {
     file_exists "/etc/pve/local/pve-ssl.pem" && return 0
-    error "This script is designed to run on Proxmox VE"
+    fail "This script is designed to run on Proxmox VE"
     exit 1
 }
 
@@ -97,7 +97,7 @@ ct-all_install() {
     local ct_id=100
 
     if ! dir_exists "$template_dir"; then
-        error "Template directory not found: $template_dir"
+        fail "Template directory not found: $template_dir"
         return 1
     fi
 
@@ -155,7 +155,7 @@ core_install() {
     if ! dir_exists "$DOT_DIR"; then
         slog "Cloning dotfiles..."
         git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR" || {
-            error "Failed to clone dotfiles"
+            fail "Failed to clone dotfiles"
             return 1
         }
     fi
@@ -181,16 +181,31 @@ create_lxc_from_template() {
     local ct_id="$2"
     slog "Creating LXC from template: $template with ID: $ct_id"
     local distro
-    distro=$(echo "$template" | cut -d'.' -f1)
+    # Extract just the base distro name (first part before any hyphen or underscore)
+    distro=$(echo "$template" | cut -d'-' -f1 | sed 's/_.*//')
+
+    # Clean up the distro name to be DNS-compliant
+    distro=$(echo "$distro" | tr '[:upper:]' '[:lower:]')
+
+    # Create a valid hostname (max 63 chars, no underscores, alphanumeric and hyphens only)
+    local hostname="my-${distro}-ct"
+    hostname=$(echo "$hostname" | sed 's/[^a-z0-9-]//g' | sed 's/--*/-/g')
+
+    # Ensure hostname doesn't exceed 63 characters
+    if [[ ${#hostname} -gt 63 ]]; then
+        hostname="${hostname:0:60}-ct"
+    fi
+
+    slog "Using hostname: $hostname for template: $template"
 
     if ! pct create "$ct_id" /var/lib/vz/template/cache/"$template" \
-        --hostname my-"$distro"-ct \
+        --hostname "$hostname" \
         --memory 1024 \
         --cores 1 \
         --rootfs local-lvm:8 \
         --net0 name=eth0,bridge=vmbr0,ip=dhcp \
         --storage local-lvm; then
-        error "Failed to create LXC from $template"
+        fail "Failed to create LXC from $template"
         return 1
     fi
     return 0
