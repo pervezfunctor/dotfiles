@@ -1,0 +1,40 @@
+# Example configuration file for debian-vm-template
+# Copy this file to 'options' in the same directory as the script
+# Uncomment and modify the values you want to override
+
+# Proxmox storage target (default: local-lvm)
+# PROXMOX_STORAGE="local-lvm"
+
+# Unique ID for the new VM (default: 9100)
+# VM_ID="9100"
+
+# Name for the VM (default: debian-template)
+# VM_NAME="debian-template"
+
+# URL of the Debian cloud image
+# DEBIAN_IMAGE_URL="https://cdimage.debian.org/cdimage/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2"
+
+# Size of the VM disk (default: 32G)
+# DISK_SIZE="32G"
+
+# VM memory in MB (default: 8192)
+# MEMORY="8192"
+
+# Number of CPU cores (default: 4)
+# CORES="4"
+
+# Username for cloud-init (default: debian)
+# USERNAME="debian"
+
+# Password for cloud-init (default: empty - set via environment variable)
+# PASSWORD=""
+
+# Expected SHA256 checksum of the image (optional but recommended)
+# EXPECTED_CHECKSUM=""
+
+# Number of download retry attempts (default: 3)
+# DOWNLOAD_RETRY_ATTEMPTS="3"
+
+# You can also use environment variable expansion:
+# USERNAME="${CLOUD_INIT_USER:-debian}"
+# PASSWORD="${CLOUD_INIT_PASSWORD:-}"

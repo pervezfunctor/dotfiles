@@ -125,10 +125,17 @@ validate_url() {
 
 validate_storage() {
   local storage="$1"
-  if ! pvesm status "$storage" &>/dev/null; then
+  log_debug "Validating storage: $storage"
+  log_debug "Running command: pvesm status | grep -q \"^$storage \""
+
+  # Check if storage exists in the output of pvesm status
+  if ! pvesm status | grep -q "^$storage "; then
     log_error "Storage '$storage' not found or not accessible"
+    log_debug "Available storages: $(pvesm status)"
     return 1
   fi
+
+  log_debug "Storage validation passed for: $storage"
   return 0
 }
 

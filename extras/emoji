@@ -1,0 +1,30 @@
+👥 for group creation
+✅ for existing items
+👤 for user creation
+🔐 for Proxmox user creation
+👑 for administrator privileges
+👁️ for auditor privileges
+🔒 for SSH hardening
+🔄 for SSH service reload/restart
+🚀 for script start
+🎉 for successful completion
+🔑 for login information
+📝 for log file reference
+
+🧩  Using Advanced Settings
+🆔  Virtual Machine ID: 108
+📦  Machine Type: q35
+💾  Disk Size: 32G
+💾  Disk Cache: None
+🏠  Hostname: debian
+🖥️  CPU Model: Host
+🧠  CPU Cores: 4
+🛠️  RAM Size: 16384
+🌉  Bridge: vmbr0
+🔗  MAC Address: 02:B9:4F:FE:28:80
+🏷️  VLAN: Default
+⚙️  Interface MTU Size: Default
+☁️  Configure Cloud-init: yes
+🌐  Start VM when completed: yes
+🚀  Creating a Debian 13 VM using the above advanced settings
+✔️  Using local-lvm for Storage Location.

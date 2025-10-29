@@ -2,159 +2,520 @@
 
 set -euo pipefail
 
-PROXMOX_STORAGE="local-lvm"
-VM_ID=9100
-VM_NAME="debian-template"
-DEBIAN_IMAGE_URL="https://cdimage.debian.org/cdimage/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2"
-DISK_SIZE="32G"
-MEMORY="8192"
-CORES="4"
-USERNAME="pervez"
-PASSWORD="program"
+DEFAULT_PROXMOX_STORAGE="local-lvm"
+DEFAULT_VM_ID=9100
+DEFAULT_VM_NAME="debian-template"
+DEFAULT_DEBIAN_IMAGE_URL="https://cdimage.debian.org/cdimage/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2"
+DEFAULT_DISK_SIZE="32G"
+DEFAULT_MEMORY="8192"
+DEFAULT_CORES="4"
+DEFAULT_USERNAME="${CLOUD_INIT_USER:-debian}"
+DEFAULT_PASSWORD="${CLOUD_INIT_PASSWORD:-}"
 
-usage() {
-  echo "Usage: $0 -i VM_ID -n VM_NAME -s STORAGE -u DEBIAN_IMAGE_URL [--disk-size DISK_SIZE] [--memory MEMORY] [--cores CORES] [--username USERNAME] [--password PASSWORD]"
-  echo
-  echo "Options:"
+PROXMOX_STORAGE="$DEFAULT_PROXMOX_STORAGE"
+VM_ID="$DEFAULT_VM_ID"
+VM_NAME="$DEFAULT_VM_NAME"
+DEBIAN_IMAGE_URL="$DEFAULT_DEBIAN_IMAGE_URL"
+DISK_SIZE="$DEFAULT_DISK_SIZE"
+MEMORY="$DEFAULT_MEMORY"
+CORES="$DEFAULT_CORES"
+USERNAME="$DEFAULT_USERNAME"
+PASSWORD="$DEFAULT_PASSWORD"
 
-  echo "  -s, --storage STORAGE           Proxmox storage target (e.g., local-lvm)"
-  echo "  -i, --vm-id VM_ID               Unique ID for the new VM"
-  echo "  -n, --vm-name VM_NAME           Name for the VM"
-  echo "  -d, --disk-size DISK_SIZE       Size of the VM disk (default: 20G)"
-  echo "  -m, --memory MEMORY             VM memory in MB (default: 2048)"
-  echo "  -c, --cores CORES               Number of CPU cores (default: 4)"
-  echo "  -u, --username USERNAME         Username for cloud-init (default: pervez)"
-  echo "  -p, --password PASSWORD         Password for cloud-init (default: program)"
-  echo "  -U, --url DEBIAN_IMAGE_URL      URL of the Debian cloud image"
-  echo "  -h, --help                      Display this help message"
-  exit 1
+log_info() {
+  echo "ℹ️  [INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-  -s | --storage)
-    PROXMOX_STORAGE="$2"
-    shift
-    ;;
-  -i | --vm-id)
-    VM_ID="$2"
-    shift
-    ;;
-  -n | --vm-name)
-    VM_NAME="$2"
-    shift
-    ;;
-  -d | --disk-size)
-    DISK_SIZE="$2"
-    shift
-    ;;
-  -m | --memory)
-    MEMORY="$2"
-    shift
-    ;;
-  -c | --cores)
-    CORES="$2"
-    shift
-    ;;
-  -u | --username)
-    USERNAME="$2"
-    shift
-    ;;
-  -p | --password)
-    PASSWORD="$2"
-    shift
-    ;;
-  -U | --url)
-    DEBIAN_IMAGE_URL="$2"
-    shift
-    ;;
-  -h | --help) usage ;;
-  *)
-    echo "Unknown parameter: $1"
-    usage
-    ;;
-  esac
-  shift
-done
+log_error() {
+  echo "❌ [ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
 
-CUR_DIR=$(dirname "$0")
+log_warn() {
+  echo "⚠️  [WARN] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
 
-# Read options from options file, from the same directory as the script
-if [ -f "$CUR_DIR/options" ]; then
-  # shellcheck disable=SC1091
-  source "$CUR_DIR/options"
-fi
+log_debug() {
+  if [[ "${DEBUG:-0}" == "1" ]]; then
+    echo "🐛 [DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+  fi
+}
 
-echo "Downloading Debian image..."
+log_success() {
+  echo "✅ [SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
 
-if ! [ -f /tmp/debian-cloud.qcow2 ]; then
-  wget -O /tmp/debian-cloud.qcow2 "$DEBIAN_IMAGE_URL"
-fi
+cleanup_on_error() {
+  local exit_code=$?
+  if [[ $exit_code -ne 0 ]]; then
+    log_error "Script failed with exit code $exit_code"
 
-if ! [ -f /tmp/debian-cloud.qcow2 ]; then
-  echo "Failed to download Debian image."
-  exit 1
-fi
+    if qm status "$VM_ID" &>/dev/null; then
+      log_warn "Cleaning up partially created VM $VM_ID"
+      qm destroy "$VM_ID" --destroy-unreferenced-disks 1 &>/dev/null || true
+    fi
 
-echo "Creating VM $VM_NAME with ID $VM_ID..."
+    if [[ -f "/tmp/debian-cloud.qcow2" ]]; then
+      log_debug "Cleaning up downloaded image"
+      rm -f "/tmp/debian-cloud.qcow2" || true
+    fi
+  fi
+  exit $exit_code
+}
 
-if ! qm create "$VM_ID" --name "$VM_NAME" \
-  --memory "$MEMORY" \
-  --cores "$CORES" \
-  --ostype l26 \
-  --agent 1 \
-  --cpu host \
-  --net0 virtio,bridge=vmbr0; then
-  echo "Failed to create VM."
-  exit 1
-fi
+trap cleanup_on_error EXIT
 
-echo "Importing disk to Proxmox storage..."
+validate_vm_id() {
+  local vm_id="$1"
+  if ! [[ "$vm_id" =~ ^[0-9]+$ ]]; then
+    log_error "VM ID must be a positive integer"
+    return 1
+  fi
 
-if ! qm importdisk "$VM_ID" /tmp/debian-cloud.qcow2 "$PROXMOX_STORAGE"; then
-  echo "Failed to import disk."
-  exit 1
-fi
+  if qm status "$vm_id" &>/dev/null; then
+    log_error "VM with ID $vm_id already exists"
+    return 1
+  fi
 
-echo "Attaching disk to VM..."
-if ! qm set "$VM_ID" --scsihw virtio-scsi-pci \
-  --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1"; then
-  echo "Failed to attach disk."
-  exit 1
-fi
+  return 0
+}
 
-echo "Resizing disk to $DISK_SIZE..."
-if ! qm resize "$VM_ID" scsi0 "$DISK_SIZE"; then
-  echo "Failed to resize disk."
-  exit 1
-fi
+validate_disk_size() {
+  local disk_size="$1"
+  if ! [[ "$disk_size" =~ ^[0-9]+[KMGT]? ]]; then
+    log_error "Invalid disk size format: $disk_size. Use format like '32G', '1024M', etc."
+    return 1
+  fi
+  return 0
+}
 
-echo "Configuring boot options..."
-if ! qm set "$VM_ID" --boot c --bootdisk scsi0; then
-  echo "Failed to configure boot options."
-  exit 1
-fi
+validate_memory() {
+  local memory="$1"
+  if ! [[ "$memory" =~ ^[0-9]+$ ]]; then
+    log_error "Memory must be a positive integer in MB"
+    return 1
+  fi
+  return 0
+}
 
-echo "Adding cloud-init drive..."
-if ! qm set "$VM_ID" --ide2 "$PROXMOX_STORAGE":cloudinit; then
-  echo "Failed to add cloud-init drive."
-  exit 1
-fi
+validate_cores() {
+  local cores="$1"
+  if ! [[ "$cores" =~ ^[0-9]+$ ]]; then
+    log_error "CPU cores must be a positive integer"
+    return 1
+  fi
+  return 0
+}
 
-echo "Configuring cloud-init..."
-if ! qm set "$VM_ID" --serial0 socket \
-  --vga serial0 \
-  --ipconfig0 ip=dhcp \
-  --cipassword "$PASSWORD" \
-  --ciuser "$USERNAME"; then
-  echo "Failed to configure cloud-init."
-  exit 1
-fi
+validate_url() {
+  local url="$1"
+  if ! [[ "$url" =~ ^https?:// ]]; then
+    log_error "Invalid URL format: $url"
+    return 1
+  fi
+  return 0
+}
 
-echo "Converting VM to template..."
-if ! qm template "$VM_ID"; then
-  echo "Failed to convert VM to template."
-  exit 1
-fi
+validate_storage() {
+  local storage="$1"
+  if ! pvesm status "$storage" &>/dev/null; then
+    log_error "Storage '$storage' not found or not accessible"
+    return 1
+  fi
+  return 0
+}
 
-echo "Debian template $VM_NAME created successfully."
+validate_credentials() {
+  if [[ -z "$USERNAME" ]]; then
+    log_error "Username cannot be empty"
+    return 1
+  fi
+
+  if [[ -z "$PASSWORD" ]]; then
+    log_warn "No password provided. You will need to set one manually or use SSH keys."
+    log_warn "Set CLOUD_INIT_PASSWORD environment variable to provide a password."
+  fi
+
+  return 0
+}
+
+verify_image_checksum() {
+  local image_path="$1"
+  local expected_checksum="${EXPECTED_CHECKSUM:-}"
+
+  if [[ -z "$expected_checksum" ]]; then
+    log_warn "No checksum provided. Skipping verification."
+    return 0
+  fi
+
+  log_info "Verifying image checksum..."
+  local actual_checksum
+  actual_checksum=$(sha256sum "$image_path" | cut -d' ' -f1)
+
+  if [[ "$actual_checksum" == "$expected_checksum" ]]; then
+    log_success "Checksum verification passed"
+    return 0
+  else
+    log_error "Checksum verification failed"
+    log_error "Expected: $expected_checksum"
+    log_error "Actual:   $actual_checksum"
+    return 1
+  fi
+}
+
+validate_all_parameters() {
+  log_info "Validating parameters..."
+
+  validate_vm_id "$VM_ID" || return 1
+  validate_disk_size "$DISK_SIZE" || return 1
+  validate_memory "$MEMORY" || return 1
+  validate_cores "$CORES" || return 1
+  validate_url "$DEBIAN_IMAGE_URL" || return 1
+  validate_storage "$PROXMOX_STORAGE" || return 1
+  validate_credentials || return 1
+
+  log_info "All parameters validated successfully"
+  return 0
+}
+
+load_options_file() {
+  local cur_dir
+  cur_dir=$(dirname "$0")
+  local options_file="$cur_dir/options"
+
+  if [[ -f "$options_file" ]]; then
+    log_info "Loading options from $options_file"
+
+    # Validate options file syntax before sourcing
+    if ! bash -n "$options_file"; then
+      log_error "Options file has syntax errors: $options_file"
+      return 1
+    fi
+
+    # Create a temporary subshell to safely load the options
+    (
+      # Export current environment to allow variable expansion
+      export PROXMOX_STORAGE VM_ID VM_NAME DEBIAN_IMAGE_URL DISK_SIZE MEMORY CORES USERNAME PASSWORD EXPECTED_CHECKSUM
+
+      # Source the options file
+      # shellcheck disable=SC1091
+      source "$options_file"
+
+      # Output the variables to be captured by the parent
+      echo "PROXMOX_STORAGE='${PROXMOX_STORAGE:-$DEFAULT_PROXMOX_STORAGE}'"
+      echo "VM_ID='${VM_ID:-$DEFAULT_VM_ID}'"
+      echo "VM_NAME='${VM_NAME:-$DEFAULT_VM_NAME}'"
+      echo "DEBIAN_IMAGE_URL='${DEBIAN_IMAGE_URL:-$DEFAULT_DEBIAN_IMAGE_URL}'"
+      echo "DISK_SIZE='${DISK_SIZE:-$DEFAULT_DISK_SIZE}'"
+      echo "MEMORY='${MEMORY:-$DEFAULT_MEMORY}'"
+      echo "CORES='${CORES:-$DEFAULT_CORES}'"
+      echo "USERNAME='${USERNAME:-$DEFAULT_USERNAME}'"
+      echo "PASSWORD='${PASSWORD:-$DEFAULT_PASSWORD}'"
+      echo "EXPECTED_CHECKSUM='${EXPECTED_CHECKSUM:-}'"
+    ) | while IFS='=' read -r key value; do
+      # Evaluate the value to allow variable expansion
+      eval "$key=$value"
+    done
+
+    log_success "Options loaded successfully"
+  else
+    log_debug "No options file found at $options_file, using defaults"
+  fi
+}
+
+display_usage() {
+  cat <<EOF
+🚀 Usage: $0 -i VM_ID -n VM_NAME -s STORAGE -u DEBIAN_IMAGE_URL [--disk-size DISK_SIZE] [--memory MEMORY] [--cores CORES] [--username USERNAME] [--password PASSWORD]
+
+📋 Options:
+  -s, --storage STORAGE           💾 Proxmox storage target (e.g., local-lvm)
+  -i, --vm-id VM_ID               🔢 Unique ID for the new VM
+  -n, --vm-name VM_NAME           🏷️  Name for the VM
+  -d, --disk-size DISK_SIZE       💿 Size of the VM disk (default: 32G)
+  -m, --memory MEMORY             🧠 VM memory in MB (default: 8192)
+  -c, --cores CORES               ⚙️  Number of CPU cores (default: 4)
+  -u, --username USERNAME         👤 Username for cloud-init (default: debian)
+  -p, --password PASSWORD         🔐 Password for cloud-init (default: empty, use CLOUD_INIT_PASSWORD)
+  -U, --url DEBIAN_IMAGE_URL      🌐 URL of the Debian cloud image
+  -C, --checksum CHECKSUM         🔐 Expected SHA256 checksum of the image
+  -h, --help                      ❓ Display this help message
+  --debug                         🐛 Enable debug logging
+EOF
+  exit 0
+}
+
+parse_arguments() {
+  while [[ "$#" -gt 0 ]]; do
+    case $1 in
+    -s | --storage)
+      PROXMOX_STORAGE="$2"
+      shift 2
+      ;;
+    -i | --vm-id)
+      VM_ID="$2"
+      shift 2
+      ;;
+    -n | --vm-name)
+      VM_NAME="$2"
+      shift 2
+      ;;
+    -d | --disk-size)
+      DISK_SIZE="$2"
+      shift 2
+      ;;
+    -m | --memory)
+      MEMORY="$2"
+      shift 2
+      ;;
+    -c | --cores)
+      CORES="$2"
+      shift 2
+      ;;
+    -u | --username)
+      USERNAME="$2"
+      shift 2
+      ;;
+    -p | --password)
+      PASSWORD="$2"
+      shift 2
+      ;;
+    -U | --url)
+      DEBIAN_IMAGE_URL="$2"
+      shift 2
+      ;;
+    -C | --checksum)
+      EXPECTED_CHECKSUM="$2"
+      shift 2
+      ;;
+    -h | --help)
+      display_usage
+      ;;
+    --debug)
+      export DEBUG=1
+      shift
+      ;;
+    *)
+      log_error "Unknown parameter: $1"
+      display_usage
+      ;;
+    esac
+  done
+}
+
+download_with_retry() {
+  local url="$1"
+  local output="$2"
+  local max_attempts="${DOWNLOAD_RETRY_ATTEMPTS:-3}"
+  local attempt=1
+
+  while [[ $attempt -le $max_attempts ]]; do
+    log_info "Download attempt $attempt of $max_attempts..."
+
+    if wget --progress=bar:force --timeout=30 --tries=1 -O "$output" "$url" 2>&1 |
+      stdbuf -oL tr '\r' '\n' | grep --line-buffered -oE '[0-9]+%' |
+      while read -r percent; do
+        log_debug "Download progress: $percent"
+      done; then
+      return 0
+    fi
+
+    if [[ $attempt -lt $max_attempts ]]; then
+      log_warn "Download attempt $attempt failed, retrying in 5 seconds..."
+      sleep 5
+      rm -f "$output" # Clean up partial download
+    fi
+
+    ((attempt++))
+  done
+
+  log_error "Failed to download after $max_attempts attempts"
+  return 1
+}
+
+download_debian_image() {
+  local image_path="/tmp/debian-cloud.qcow2"
+
+  echo "📥 Downloading Debian image from $DEBIAN_IMAGE_URL..."
+
+  if [[ -f "$image_path" ]]; then
+    log_success "Debian image already exists at $image_path"
+    verify_image_checksum "$image_path" || return 1
+    return 0
+  fi
+
+  # Download with retry logic
+  if ! download_with_retry "$DEBIAN_IMAGE_URL" "$image_path"; then
+    log_error "Failed to download Debian image"
+    return 1
+  fi
+
+  if [[ ! -f "$image_path" ]]; then
+    log_error "Downloaded image not found at $image_path"
+    return 1
+  fi
+
+  # Verify checksum if provided
+  verify_image_checksum "$image_path" || return 1
+
+  log_success "Debian image downloaded successfully"
+  return 0
+}
+
+create_vm() {
+  echo "🖥️  Creating VM $VM_NAME with ID $VM_ID..."
+
+  if ! qm create "$VM_ID" --name "$VM_NAME" \
+    --memory "$MEMORY" \
+    --cores "$CORES" \
+    --ostype l26 \
+    --agent 1 \
+    --cpu host \
+    --net0 virtio,bridge=vmbr0; then
+    log_error "Failed to create VM"
+    return 1
+  fi
+
+  log_success "VM created successfully"
+  return 0
+}
+
+import_disk() {
+  echo "💾 Importing disk to Proxmox storage $PROXMOX_STORAGE..."
+
+  if ! qm importdisk "$VM_ID" /tmp/debian-cloud.qcow2 "$PROXMOX_STORAGE"; then
+    log_error "Failed to import disk"
+    return 1
+  fi
+
+  log_success "Disk imported successfully"
+  return 0
+}
+
+attach_disk() {
+  echo "🔌 Attaching disk to VM..."
+
+  if ! qm set "$VM_ID" --scsihw virtio-scsi-pci \
+    --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1"; then
+    log_error "Failed to attach disk"
+    return 1
+  fi
+
+  log_success "Disk attached successfully"
+  return 0
+}
+
+resize_disk() {
+  echo "📏 Resizing disk to $DISK_SIZE..."
+
+  if ! qm resize "$VM_ID" scsi0 "$DISK_SIZE"; then
+    log_error "Failed to resize disk"
+    return 1
+  fi
+
+  log_success "Disk resized successfully"
+  return 0
+}
+
+configure_boot() {
+  echo "🔧 Configuring boot options..."
+
+  if ! qm set "$VM_ID" --boot c --bootdisk scsi0; then
+    log_error "Failed to configure boot options"
+    return 1
+  fi
+
+  log_success "Boot options configured successfully"
+  return 0
+}
+
+add_cloud_init_drive() {
+  echo "☁️  Adding cloud-init drive..."
+
+  if ! qm set "$VM_ID" --ide2 "$PROXMOX_STORAGE":cloudinit; then
+    log_error "Failed to add cloud-init drive"
+    return 1
+  fi
+
+  log_success "Cloud-init drive added successfully"
+  return 0
+}
+
+configure_cloud_init() {
+  echo "⚙️  Configuring cloud-init..."
+
+  local cloud_init_args=(
+    "--serial0" "socket"
+    "--vga" "serial0"
+    "--ipconfig0" "ip=dhcp"
+    "--ciuser" "$USERNAME"
+  )
+
+  # Only add password if it's provided
+  if [[ -n "$PASSWORD" ]]; then
+    cloud_init_args+=("--cipassword" "$PASSWORD")
+    log_debug "Setting cloud-init password"
+  else
+    log_warn "No password provided - you'll need to set one manually or use SSH keys"
+  fi
+
+  if ! qm set "$VM_ID" "${cloud_init_args[@]}"; then
+    log_error "Failed to configure cloud-init"
+    return 1
+  fi
+
+  log_success "Cloud-init configured successfully"
+  return 0
+}
+
+convert_to_template() {
+  echo "📦 Converting VM to template..."
+
+  if ! qm template "$VM_ID"; then
+    log_error "Failed to convert VM to template"
+    return 1
+  fi
+
+  log_success "VM converted to template successfully"
+  return 0
+}
+
+display_configuration() {
+  echo "📋 Configuration:"
+  echo "  🔢 VM ID: $VM_ID"
+  echo "  🏷️  VM Name: $VM_NAME"
+  echo "  💾 Storage: $PROXMOX_STORAGE"
+  echo "  💿 Disk Size: $DISK_SIZE"
+  echo "  🧠 Memory: $MEMORY MB"
+  echo "  ⚙️  CPU Cores: $CORES"
+  echo "  👤 Username: $USERNAME"
+  echo "  🔐 Password: ${PASSWORD:+[SET]}${PASSWORD:-[NOT SET]}"
+  echo "  🌐 Image URL: $DEBIAN_IMAGE_URL"
+  if [[ -n "${EXPECTED_CHECKSUM:-}" ]]; then
+    echo "  🔐 Checksum: ${EXPECTED_CHECKSUM:0:16}..."
+  fi
+}
+
+main() {
+  echo "🚀 Starting Debian VM template creation process"
+
+  load_options_file
+
+  parse_arguments "$@"
+
+  validate_all_parameters || exit 1
+
+  display_configuration
+
+  download_debian_image || exit 1
+  create_vm || exit 1
+  import_disk || exit 1
+  attach_disk || exit 1
+  resize_disk || exit 1
+  configure_boot || exit 1
+  add_cloud_init_drive || exit 1
+  configure_cloud_init || exit 1
+  convert_to_template || exit 1
+
+  log_success "Debian template $VM_NAME created successfully"
+}
+
+main "$@"
