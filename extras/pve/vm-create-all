@@ -1,0 +1,301 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+readonly SCRIPT_NAME
+
+# Array of supported distributions
+readonly SUPPORTED_DISTRIBUTIONS=("debian" "fedora" "ubuntu" "alpine" "centos" "tumbleweed")
+
+# Template ID to VM ID mapping
+declare -A TEMPLATE_VM_MAPPING=(
+  ["debian"]="201:211"
+  ["fedora"]="202:212"
+  ["ubuntu"]="203:213"
+  ["alpine"]="204:214"
+  ["centos"]="205:215"
+  ["tumbleweed"]="206:216"
+)
+
+# Logging functions
+log_info() {
+  echo "ℹ️  [INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+log_warn() {
+  echo "⚠️  [WARN] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+log_error() {
+  echo "❌ [ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+log_success() {
+  echo "✅ [SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+log_debug() {
+  if [[ "${DEBUG:-0}" == "1" ]]; then
+    echo "🐛 [DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+  fi
+}
+
+# Get the directory where this script is located
+get_script_dir() {
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  echo "$script_dir"
+}
+
+# Check if qm command is available (Proxmox) - skip in dry-run mode
+check_prerequisites() {
+  # Check if qm command is available (Proxmox) - skip in dry-run mode
+  if [[ "$DRY_RUN" != "true" ]] && ! command -v qm >/dev/null 2>&1; then
+    log_error "The 'qm' command is required. This script must be run on a Proxmox host."
+    return 1
+  fi
+
+  log_debug "Prerequisites check passed"
+  return 0
+}
+
+# Display usage information
+display_usage() {
+  cat <<EOF
+🚀 Usage: $SCRIPT_NAME [OPTIONS]
+
+📋 Description:
+  Creates VMs from all available VM templates using the qm clone command.
+  Supported distributions: debian, fedora, ubuntu, alpine, centos, tumbleweed
+
+📋 Options:
+  -s, --storage STORAGE            💾 Proxmox storage target for cloned VMs (default: local-lvm)
+  -f, --failed-only                 🚨 Only create VMs for distributions that failed previously
+  -l, --list                        📋 List supported distributions and their template/VM ID mappings
+  -h, --help                        ❓ Display this help message
+  --debug                           🐛 Enable debug logging
+  --dry-run                         🔍 Show what would be done without executing
+
+📝 Examples:
+  $SCRIPT_NAME                                    # Create all VMs with defaults
+  $SCRIPT_NAME -s local-zfs                       # Use custom storage for cloned VMs
+  $SCRIPT_NAME -f                                 # Only retry failed distributions
+  $SCRIPT_NAME --dry-run                          # Preview what would be done
+  $SCRIPT_NAME --list                             # List template/VM ID mappings
+
+EOF
+}
+
+# Parse command line arguments
+parse_arguments() {
+  # Default values
+  PROXMOX_STORAGE="local-lvm"
+  FAILED_ONLY=false
+  LIST_ONLY=false
+  DRY_RUN=false
+
+  while [[ "$#" -gt 0 ]]; do
+    case $1 in
+    -s | --storage)
+      PROXMOX_STORAGE="$2"
+      shift 2
+      ;;
+    -f | --failed-only)
+      FAILED_ONLY=true
+      shift
+      ;;
+    -l | --list)
+      LIST_ONLY=true
+      shift
+      ;;
+    -h | --help)
+      display_usage
+      exit 0
+      ;;
+    --debug)
+      export DEBUG=1
+      shift
+      ;;
+    --dry-run)
+      DRY_RUN=true
+      shift
+      ;;
+    *)
+      log_error "Unknown parameter: $1"
+      display_usage
+      exit 1
+      ;;
+    esac
+  done
+}
+
+# List supported distributions and their template/VM ID mappings
+list_distributions() {
+  echo "📋 Supported distributions and their template/VM ID mappings:"
+  echo ""
+
+  for distro in "${SUPPORTED_DISTRIBUTIONS[@]}"; do
+    local mapping="${TEMPLATE_VM_MAPPING[$distro]}"
+    local template_id="${mapping%:*}"
+    local vm_id="${mapping#*:}"
+    echo "  🐧 $distro (Template ID: $template_id → VM ID: $vm_id)"
+  done
+  echo ""
+}
+
+# Check if a VM template exists
+template_exists() {
+  local distro="$1"
+  local mapping="${TEMPLATE_VM_MAPPING[$distro]}"
+  local template_id="${mapping%:*}"
+
+  # In dry-run mode, assume templates exist
+  if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    return 0
+  fi
+
+  if qm list 2>/dev/null | awk -v id="$template_id" '$1 == id { found=1 } END { exit !found }'; then
+    return 0 # Template exists
+  else
+    return 1 # Template doesn't exist
+  fi
+}
+
+# Check if a VM already exists
+vm_exists() {
+  local distro="$1"
+  local mapping="${TEMPLATE_VM_MAPPING[$distro]}"
+  local vm_id="${mapping#*:}"
+
+  # In dry-run mode, assume VMs don't exist
+  if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    return 1
+  fi
+
+  if qm list 2>/dev/null | awk -v id="$vm_id" '$1 == id { found=1 } END { exit !found }'; then
+    return 0 # VM exists
+  else
+    return 1 # VM doesn't exist
+  fi
+}
+
+# Get distributions to process
+get_distributions_to_process() {
+  local distributions_to_process=()
+
+  if [[ "$FAILED_ONLY" == "true" ]]; then
+    # Only include distributions that don't have VMs yet but have templates
+    for distro in "${SUPPORTED_DISTRIBUTIONS[@]}"; do
+      if template_exists "$distro" && ! vm_exists "$distro"; then
+        distributions_to_process+=("$distro")
+      fi
+    done
+  else
+    # Include all supported distributions that have templates
+    for distro in "${SUPPORTED_DISTRIBUTIONS[@]}"; do
+      if template_exists "$distro"; then
+        distributions_to_process+=("$distro")
+      fi
+    done
+  fi
+
+  echo "${distributions_to_process[@]}"
+}
+
+# Create VM for a single distribution
+create_vm() {
+  local distro="$1"
+  local mapping="${TEMPLATE_VM_MAPPING[$distro]}"
+  local template_id="${mapping%:*}"
+  local vm_id="${mapping#*:}"
+  local vm_name="${distro}-vm"
+
+  log_info "Creating VM for $distro from template $template_id..."
+  log_debug "Command: qm clone $template_id $vm_id --name $vm_name --storage $PROXMOX_STORAGE"
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log_info "[DRY RUN] Would execute: qm clone $template_id $vm_id --name $vm_name --storage $PROXMOX_STORAGE"
+    return 0
+  fi
+
+  # Execute the qm clone command
+  if qm clone "$template_id" "$vm_id" --name "$vm_name" --storage "$PROXMOX_STORAGE"; then
+    log_success "$distro VM created successfully (ID: $vm_id)"
+    return 0
+  else
+    log_error "Failed to create $distro VM"
+    return 1
+  fi
+}
+
+# Main function
+main() {
+  echo "🚀 Starting VM creation from all templates"
+
+  parse_arguments "$@"
+
+  if [[ "$LIST_ONLY" == "true" ]]; then
+    list_distributions
+    exit 0
+  fi
+
+  check_prerequisites || exit 1
+
+  local distributions_to_process
+  read -ra distributions_to_process <<<"$(get_distributions_to_process)"
+
+  if [[ ${#distributions_to_process[@]} -eq 0 ]]; then
+    log_info "No distributions to process. This could mean:"
+    log_info "  - No templates exist yet (run vm-templates-create-all first)"
+    log_info "  - All VMs have already been created"
+    log_info "  - Use --list to see available templates and VMs"
+    exit 0
+  fi
+
+  log_info "Processing distributions: ${distributions_to_process[*]}"
+
+  local failed_distributions=()
+  local successful_distributions=()
+
+  for distro in "${distributions_to_process[@]}"; do
+    if ! template_exists "$distro"; then
+      log_warn "$distro template does not exist, skipping..."
+      continue
+    fi
+
+    if vm_exists "$distro"; then
+      log_warn "$distro VM already exists, skipping..."
+      continue
+    fi
+
+    if create_vm "$distro"; then
+      successful_distributions+=("$distro")
+    else
+      failed_distributions+=("$distro")
+    fi
+
+    echo "" # Add spacing between distributions
+  done
+
+  # Summary
+  echo "📊 Summary:"
+  if [[ ${#successful_distributions[@]} -gt 0 ]]; then
+    log_success "Successfully created VMs for: ${successful_distributions[*]}"
+  fi
+
+  if [[ ${#failed_distributions[@]} -gt 0 ]]; then
+    log_error "Failed to create VMs for: ${failed_distributions[*]}"
+    echo ""
+    log_info "You can retry only the failed distributions with:"
+    log_info "  $SCRIPT_NAME -f"
+    exit 1
+  fi
+
+  log_success "All VMs created successfully!"
+}
+
+# Execute main function if script is run directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

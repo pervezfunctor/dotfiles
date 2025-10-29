@@ -10,6 +10,12 @@ Creates Debian VM templates in Proxmox VE.
 ### vm-template
 Creates VM templates for multiple distributions (Debian, Fedora, Ubuntu, Alpine, CentOS, openSUSE Tumbleweed) in Proxmox VE.
 
+### vm-templates-create-all
+Creates VM templates for all supported distributions in a single run.
+
+### vm-create-all
+Creates VMs from all available VM templates in a single run.
+
 ## Features
 
 - **Secure credential handling**: Uses environment variables instead of hardcoded passwords
@@ -275,6 +281,89 @@ The `vm-templates-create-all` script automates the creation of VM templates for 
 ✅ [SUCCESS] 2025-10-30 00:37:45 - Successfully created templates for: debian fedora ubuntu alpine centos tumbleweed
 ✅ [SUCCESS] 2025-10-30 00:37:45 - All templates created successfully!
 ```
+
+## vm-create-all Script Features
+
+The `vm-create-all` script automates the creation of VMs from all available VM templates in a single run.
+
+### Features
+
+- **Batch VM creation**: Creates VMs from all available templates at once
+- **Template validation**: Checks if templates exist before attempting to clone
+- **Selective creation**: Option to retry only failed distributions
+- **Dry-run mode**: Preview what would be done without executing
+- **Progress tracking**: Shows which distributions are being processed
+- **Error handling**: Continues with other distributions if one fails
+- **Summary reporting**: Provides detailed success/failure summary
+
+### VM ID Mapping
+
+The script uses the following template-to-VM ID mappings:
+- **Debian** (Template ID: 201 → VM ID: 211)
+- **Fedora** (Template ID: 202 → VM ID: 212)
+- **Ubuntu** (Template ID: 203 → VM ID: 213)
+- **Alpine** (Template ID: 204 → VM ID: 214)
+- **CentOS** (Template ID: 205 → VM ID: 215)
+- **openSUSE Tumbleweed** (Template ID: 206 → VM ID: 216)
+
+### Usage Examples
+
+```bash
+# Create all VMs with default settings
+./vm-create-all
+
+# Create all VMs using custom storage
+./vm-create-all -s local-zfs
+
+# Only retry distributions that failed previously
+./vm-create-all -f
+
+# Preview what would be done without executing
+./vm-create-all --dry-run
+
+# List all supported distributions and their template/VM ID mappings
+./vm-create-all --list
+```
+
+### Command Line Options
+
+- `-s, --storage STORAGE`: Proxmox storage target for cloned VMs (default: local-lvm)
+- `-f, --failed-only`: Only create VMs for distributions that failed previously
+- `-l, --list`: List supported distributions and their template/VM ID mappings
+- `-h, --help`: Display help message
+- `--debug`: Enable debug logging
+- `--dry-run`: Show what would be done without executing
+
+### Workflow
+
+1. The script checks for existing templates and skips distributions without templates
+2. Checks if VMs already exist and skips them
+3. Processes each distribution in sequence
+4. Provides real-time feedback on progress
+5. Generates a summary of successful and failed creations
+6. Failed distributions can be retried with the `-f` flag
+
+### Example Output
+
+```
+🚀 Starting VM creation from all templates
+ℹ️  [INFO] 2025-10-30 00:45:12 - Processing distributions: debian fedora ubuntu alpine centos tumbleweed
+ℹ️  [INFO] 2025-10-30 00:45:12 - Creating VM for debian from template 201...
+✅ [SUCCESS] 2025-10-30 00:45:18 - debian VM created successfully (ID: 211)
+
+ℹ️  [INFO] 2025-10-30 00:45:18 - Creating VM for fedora from template 202...
+✅ [SUCCESS] 2025-10-30 00:45:25 - fedora VM created successfully (ID: 212)
+
+📊 Summary:
+✅ [SUCCESS] 2025-10-30 00:46:15 - Successfully created VMs for: debian fedora ubuntu alpine centos tumbleweed
+✅ [SUCCESS] 2025-10-30 00:46:15 - All VMs created successfully!
+```
+
+### Prerequisites
+
+- VM templates must exist (run `vm-templates-create-all` first)
+- Sufficient storage space on the target Proxmox storage
+- Appropriate permissions in Proxmox
 
 ## License
 
