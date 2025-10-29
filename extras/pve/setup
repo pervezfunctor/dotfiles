@@ -166,7 +166,7 @@ create_lxc_from_template() {
         --rootfs local-lvm:8 \
         --net0 name=eth0,bridge=vmbr0,ip=dhcp \
         --storage local-lvm \
-        --console 1 \
+        --console 0 \
         --tty 2 \
         --unprivileged 1; then
         fail "Failed to create LXC from $template"
