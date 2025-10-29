@@ -6,7 +6,7 @@ SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 readonly SCRIPT_NAME
 
 # Array of supported distributions
-readonly SUPPORTED_DISTRIBUTIONS=("debian" "fedora" "ubuntu" "alpine" "centos" "tumbleweed")
+readonly SUPPORTED_DISTRIBUTIONS=("debian" "fedora" "ubuntu" "alpine" "centos" "tumbleweed" "arch")
 
 # Logging functions
 log_info() {
@@ -71,7 +71,7 @@ display_usage() {
 
 📋 Description:
   Creates VM templates for all supported distributions using the vm-template script.
-  Supported distributions: debian, fedora, ubuntu, alpine, centos, tumbleweed
+  Supported distributions: debian, fedora, ubuntu, alpine, centos, tumbleweed, arch
 
 📋 Options:
   -s, --storage STORAGE            💾 Proxmox storage target (default: local-lvm)
@@ -188,6 +188,7 @@ list_distributions() {
     alpine) vm_id="204" ;;
     centos) vm_id="205" ;;
     tumbleweed) vm_id="206" ;;
+    arch) vm_id="207" ;;
     esac
     echo "  🐧 $distro (VM ID: $vm_id)"
   done
@@ -206,6 +207,7 @@ template_exists() {
   alpine) vm_id="204" ;;
   centos) vm_id="205" ;;
   tumbleweed) vm_id="206" ;;
+  arch) vm_id="207" ;;
   esac
 
   # In dry-run mode, assume templates don't exist

@@ -6,16 +6,17 @@ SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 readonly SCRIPT_NAME
 
 # Array of supported distributions
-readonly SUPPORTED_DISTRIBUTIONS=("debian" "fedora" "ubuntu" "alpine" "centos" "tumbleweed")
+readonly SUPPORTED_DISTRIBUTIONS=("debian" "fedora" "ubuntu" "alpine" "centos" "tumbleweed" "arch")
 
 # Template ID to VM ID mapping
 declare -A TEMPLATE_VM_MAPPING=(
-  ["debian"]="201:211"
-  ["fedora"]="202:212"
-  ["ubuntu"]="203:213"
-  ["alpine"]="204:214"
-  ["centos"]="205:215"
-  ["tumbleweed"]="206:216"
+  ["debian"]="201:111"
+  ["fedora"]="202:112"
+  ["ubuntu"]="203:113"
+  ["alpine"]="204:114"
+  ["centos"]="205:115"
+  ["tumbleweed"]="206:116"
+  ["arch"]="207:117"
 )
 
 # Logging functions
@@ -67,7 +68,7 @@ display_usage() {
 
 📋 Description:
   Creates VMs from all available VM templates using the qm clone command.
-  Supported distributions: debian, fedora, ubuntu, alpine, centos, tumbleweed
+  Supported distributions: debian, fedora, ubuntu, alpine, centos, tumbleweed, arch
 
 📋 Options:
   -s, --storage STORAGE            💾 Proxmox storage target for cloned VMs (default: local-lvm)

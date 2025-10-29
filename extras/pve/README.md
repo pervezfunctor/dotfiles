@@ -8,7 +8,7 @@ This repository contains scripts that automate the creation of VM templates in P
 Creates Debian VM templates in Proxmox VE.
 
 ### vm-template
-Creates VM templates for multiple distributions (Debian, Fedora, Ubuntu, Alpine, CentOS, openSUSE Tumbleweed) in Proxmox VE.
+Creates VM templates for multiple distributions (Debian, Fedora, Ubuntu, Alpine, CentOS, openSUSE Tumbleweed, Arch Linux) in Proxmox VE.
 
 ### vm-templates-create-all
 Creates VM templates for all supported distributions in a single run.
@@ -169,6 +169,7 @@ The `vm-template` script supports multiple Linux distributions and provides the 
 - **Alpine** (ID: 204) - Latest Alpine cloud image
 - **CentOS** (ID: 205) - Latest CentOS Stream cloud image
 - **openSUSE Tumbleweed** (ID: 206) - Latest openSUSE Tumbleweed cloud image with UEFI support
+- **Arch Linux** (ID: 207) - Latest Arch Linux cloud image
 
 ### Usage Examples
 
@@ -184,6 +185,9 @@ The `vm-template` script supports multiple Linux distributions and provides the 
 
 # Create an openSUSE Tumbleweed template
 ./vm-template -D tumbleweed -k ~/.ssh/id_rsa.pub -m 4096
+
+# Create an Arch Linux template
+./vm-template -D arch -k ~/.ssh/id_rsa.pub -m 4096
 
 # Create with environment variables
 export CLOUD_INIT_USER="admin"
@@ -305,6 +309,7 @@ The script uses the following template-to-VM ID mappings:
 - **Alpine** (Template ID: 204 → VM ID: 214)
 - **CentOS** (Template ID: 205 → VM ID: 215)
 - **openSUSE Tumbleweed** (Template ID: 206 → VM ID: 216)
+- **Arch Linux** (Template ID: 207 → VM ID: 217)
 
 ### Usage Examples
 

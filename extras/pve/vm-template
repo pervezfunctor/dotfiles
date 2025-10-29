@@ -260,7 +260,7 @@ display_usage() {
 🚀 Usage: $SCRIPT_NAME -D DISTRO [OPTIONS]
 
 📋 Required:
-  -D, --distro DISTRO              🐧 Distribution: debian, fedora, ubuntu, alpine, centos, or tumbleweed
+  -D, --distro DISTRO              🐧 Distribution: debian, fedora, ubuntu, alpine, centos, tumbleweed, or arch
 
 📋 Options:
   -s, --storage STORAGE            💾 Proxmox storage target (default: local-lvm)
@@ -415,8 +415,14 @@ configure_distribution() {
     IMAGE_URL=${IMAGE_URL:-"https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"}
     USERNAME=${USERNAME:-opensuse}
     ;;
+  arch)
+    VM_ID=${VM_ID:-207}
+    VM_NAME=${VM_NAME:-arch-template}
+    IMAGE_URL=${IMAGE_URL:-"https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"}
+    USERNAME=${USERNAME:-arch}
+    ;;
   *)
-    log_error "Unsupported distribution: '$DISTRO'. Supported: debian, fedora, ubuntu, alpine, centos, tumbleweed"
+    log_error "Unsupported distribution: '$DISTRO'. Supported: debian, fedora, ubuntu, alpine, centos, tumbleweed, arch"
     ;;
   esac
 
@@ -500,6 +506,7 @@ create_vm() {
     --memory "$MEMORY"
     --cores "$CORES"
     --ostype l26
+    --machine q35
     --agent 1
     --cpu host
     --net0 "virtio,bridge=vmbr0"
