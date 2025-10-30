@@ -217,9 +217,9 @@ resize_vm() {
     exit 1
   fi
 
-  # Find the first disk
+  # Find the first disk (exclude cdrom devices)
   local disk
-  disk=$(qm config "$vmid" | grep -E "^(scsi|virtio|sata|ide)[0-9]+:" | head -n1 | cut -d':' -f1 || true)
+  disk=$(qm config "$vmid" | grep -E "^(scsi|virtio|sata|ide)[0-9]+:" | grep -v "media=cdrom" | head -n1 | cut -d':' -f1 || true)
 
   if [[ -z "$disk" ]]; then
     echo "Error: No disk found for VM $vmid"
