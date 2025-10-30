@@ -17,21 +17,30 @@ declare -g CT_ALL=0
 declare -g ALL=0
 
 check_proxmox() {
+    echo "Checking if running on Proxmox VE..."
     file_exists "/etc/pve/local/pve-ssl.pem" && return 0
     fail "This script is designed to run on Proxmox VE"
     exit 1
 }
 
 cpu-governor_install() {
+    echo "Installing CPU governor scaling..."
     bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/scaling-governor.sh)"
+    echo "CPU governor scaling installation done!"
 }
 
 post-install_install() {
+    echo "Running post PVE installation script..."
     bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pve-install.sh)"
+    echo "Post PVE installation script done!"
 }
 
 tailscale_install() {
-    has_cmd tailscale && return 0
+    echo "Installing Tailscale..."
+    has_cmd tailscale && {
+        echo "Tailscale already installed!"
+        return 0
+    }
 
     sudo mkdir -p --mode=0755 /usr/share/keyrings
 
@@ -46,13 +55,14 @@ tailscale_install() {
     sudo apt-get update && sudo apt-get install tailscale
 
     sudo tailscale up
+    echo "Tailscale installation and setup done!"
 }
 
 ct-templates_install() {
-    slog "Installing container templates..."
+    echo "Installing container templates..."
 
     if ! has_cmd pveam; then
-        warn "pveam command not found. Is Proxmox VE installed?"
+        echo "pveam command not found. Is Proxmox VE installed?"
         return 1
     fi
 
@@ -60,14 +70,11 @@ ct-templates_install() {
         "ubuntu.*standard"
         "debian.*standard"
         "fedora.*default"
-        "centos.*default"
-        "opensuse.*default"
-        "alpine.*default"
     )
 
     local available_templates
     if ! available_templates=$(pveam available 2>&1); then
-        warn "Failed to retrieve available templates: $available_templates"
+        echo "Failed to retrieve available templates: $available_templates"
         return 1
     fi
 
@@ -76,34 +83,38 @@ ct-templates_install() {
 
     for pattern in "${templates[@]}"; do
         local template
-        template=$(echo "$available_templates" | awk '{print $2}' | grep -E "^${pattern}" | sort -V | tail -n 1)
+        echo "looking for template matching pattern: $pattern"
+
+        template=$(echo "$available_templates" |
+            awk '{print $2}' |
+            grep -E "${pattern}" |
+            sort -V |
+            tail -n 1)
+        echo "got template: $template"
 
         if [[ -n "$template" ]]; then
             if pveam list local 2>/dev/null | grep -q "$template"; then
-                slog "Template already exists: $template"
-                ((downloaded++))
-                continue
-            fi
-
-            slog "Downloading template: $template"
-            if pveam download local "$template" 2>&1 | grep -v '^$'; then
-                ((downloaded++))
+                echo "Template already exists: $template"
+                ((downloaded++)) || true
+            elif pveam download local "$template"; then
+                echo "Downloaded template: $template"
+                ((downloaded++)) || true
             else
-                warn "Failed to download $template"
-                ((failed++))
+                echo "Failed to download $template"
+                ((failed++)) || true
             fi
         else
-            warn "No template found for pattern: $pattern"
-            ((failed++))
+            echo "No template found for pattern: $pattern"
+            ((failed++)) || true
         fi
     done
 
-    slog "Template installation complete: $downloaded succeeded, $failed failed"
+    echo "Container templates installation done: $downloaded succeeded, $failed failed"
     return 0
 }
 
 ct-all_install() {
-    slog "Creating containers from all templates..."
+    echo "Creating containers from all templates..."
     local template_dir="/var/lib/vz/template/cache"
     local ct_id=150
 
@@ -116,45 +127,51 @@ ct-all_install() {
         if file_exists "$template"; then
             local template_name
             template_name=$(basename "$template")
-            slog "Creating LXC from template: $template_name"
-            create_lxc_from_template "$template_name" "$((ct_id++))" || warn "Failed to create LXC from $template_name"
+            echo "Creating LXC from template: $template_name"
+            create_lxc_from_template "$template_name" "$((ct_id++))" || echo "Failed to create LXC from $template_name"
         fi
     done
+
+    echo "Creating containers from all templates done!"
 }
 
 si() {
+    echo "Installing packages: $*"
     local packages=("$@")
     for package in "${packages[@]}"; do
         if ! has_cmd "$package"; then
-            slog "Installing $package..."
-            apt-get -qq -y --no-install-recommends install "$package" || warn "Failed to install $package"
+            echo "Installing $package..."
+            apt-get -qq -y --no-install-recommends install "$package" || echo "Failed to install $package"
         fi
     done
+    echo "Package installation done!"
 }
 
 core_install() {
+    echo "Starting core installation..."
     post-install_install
     cpu-governor_install
 
-    slog "Installing core components..."
+    echo "Installing core components..."
     si git-core micro zsh-theme-powerlevel9k zsh curl wget htop pciutils jq \
         smartmontools zfsutils-linux rsync whiptail dialog numactl fio stress \
         usbutils restic ethtool nvme-cli lsof lm-sensors udisks2 dysk just duf \
         proxmox-backup-client libguestfs-tools rclone stow ripgrep jq yq gum fzf
 
     if ! dir_exists "$DOT_DIR"; then
-        slog "Cloning dotfiles..."
+        echo "Cloning dotfiles..."
         git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR" || {
             fail "Failed to clone dotfiles"
             return 1
         }
+        echo "Dotfiles cloned slogfully!"
     fi
 
     local timestamp
     timestamp=$(date +%Y%m%d-%H%M%S)
 
     if file_exists ~/.zshrc; then
-        slog "Backing up .zshrc"
+        echo "Backing up .zshrc"
         mv ~/.zshrc "/tmp/.zshrc.backup-$timestamp"
     fi
 
@@ -163,13 +180,13 @@ core_install() {
     fi
     ln -sf "$DOT_DIR/share/dot-zshrc" ~/.zshrc
 
-    success "Core installation completed"
+    echo "Core installation completed!"
 }
 
 create_lxc_from_template() {
     local template="$1"
     local ct_id="$2"
-    slog "Creating LXC from template: $template with ID: $ct_id"
+    echo "Creating LXC from template: $template with ID: $ct_id"
     local distro
     # Extract just the base distro name (first part before any hyphen or underscore)
     distro=$(echo "$template" | cut -d'-' -f1 | sed 's/_.*//')
@@ -186,7 +203,7 @@ create_lxc_from_template() {
         hostname="${hostname:0:60}-ct"
     fi
 
-    slog "Using hostname: $hostname for template: $template"
+    echo "Using hostname: $hostname for template: $template"
 
     if ! pct create "$ct_id" /var/lib/vz/template/cache/"$template" \
         --hostname "$hostname" \
@@ -201,6 +218,7 @@ create_lxc_from_template() {
         fail "Failed to create LXC from $template"
         return 1
     fi
+    echo "LXC creation from template $template with ID $ct_id done!"
     return 0
 }
 
@@ -224,6 +242,7 @@ EOF
 }
 
 parse_args() {
+    echo "Parsing command line arguments..."
     while [[ $# -gt 0 ]]; do
         case $1 in
         ct-templates) CT_TEMPLATES=1 ;;
@@ -241,10 +260,11 @@ parse_args() {
         esac
         shift
     done
+    echo "Command line arguments parsed!"
 }
 
 main() {
-    slog "Starting Proxmox installation script..."
+    echo "Starting Proxmox installation script..."
     check_root_user
     check_proxmox
 
@@ -264,7 +284,7 @@ main() {
     [[ $CT_TEMPLATES -eq 1 ]] && ct-templates_install
     [[ $CT_ALL -eq 1 ]] && ct-all_install
 
-    slog "Installation done!"
+    echo "Proxmox installation script completed slogfully!"
 }
 
 main "$@"
