@@ -50,27 +50,56 @@ tailscale_install() {
 
 ct-templates_install() {
     slog "Installing container templates..."
+
+    if ! has_cmd pveam; then
+        warn "pveam command not found. Is Proxmox VE installed?"
+        return 1
+    fi
+
     local templates=(
         "ubuntu.*standard"
         "debian.*standard"
         "fedora.*default"
         "centos.*default"
-        "archlinux-base"
         "opensuse.*default"
         "alpine.*default"
     )
 
+    local available_templates
+    if ! available_templates=$(pveam available 2>&1); then
+        warn "Failed to retrieve available templates: $available_templates"
+        return 1
+    fi
+
+    local downloaded=0
+    local failed=0
+
     for pattern in "${templates[@]}"; do
         local template
-        template=$(pveam available | awk '{print $2}' | grep -E "^${pattern}" | sort -r | head -n 1)
+        template=$(echo "$available_templates" | awk '{print $2}' | grep -E "^${pattern}" | sort -V | tail -n 1)
 
         if [[ -n "$template" ]]; then
+            if pveam list local 2>/dev/null | grep -q "$template"; then
+                slog "Template already exists: $template"
+                ((downloaded++))
+                continue
+            fi
+
             slog "Downloading template: $template"
-            pveam download local "$template" || warn "Failed to download $template"
+            if pveam download local "$template" 2>&1 | grep -v '^$'; then
+                ((downloaded++))
+            else
+                warn "Failed to download $template"
+                ((failed++))
+            fi
         else
             warn "No template found for pattern: $pattern"
+            ((failed++))
         fi
     done
+
+    slog "Template installation complete: $downloaded succeeded, $failed failed"
+    return 0
 }
 
 ct-all_install() {
