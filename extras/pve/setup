@@ -140,7 +140,7 @@ core_install() {
     si git-core micro zsh-theme-powerlevel9k zsh curl wget htop pciutils jq \
         smartmontools zfsutils-linux rsync whiptail dialog numactl fio stress \
         usbutils restic ethtool nvme-cli lsof lm-sensors udisks2 dysk just duf \
-        proxmox-backup-client libguestfs-tools rclone stow ripgrep jq yq
+        proxmox-backup-client libguestfs-tools rclone stow ripgrep jq yq gum fzf
 
     if ! dir_exists "$DOT_DIR"; then
         slog "Cloning dotfiles..."
