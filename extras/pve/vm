@@ -1,0 +1,418 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091
+
+set -euo pipefail
+
+export DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
+source "$DOT_DIR/share/utils"
+source "$(dirname "${BASH_SOURCE[0]}")/utils"
+
+trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
+
+check_prerequisites() {
+  if ! command -v qm >/dev/null 2>&1; then
+    echo "❌  Required command 'qm' is not available."
+    echo "This script must be run on a Proxmox host."
+    exit 1
+  fi
+}
+
+usage() {
+  cat <<EOF
+Usage: $0 <command> [vm-id]
+
+Manage QEMU/KVM virtual machines on Proxmox. These are full virtual machines using the qm command.
+
+COMMANDS:
+    list                List all virtual machines
+    create  ARGS        Create a new VM (forwards to vm-template script)
+    start <vm-id>       Start a virtual machine
+    stop <vm-id>        Stop a virtual machine
+    restart <vm-id>     Restart a virtual machine
+    shutdown <vm-id>    Gracefully stop a virtual machine
+    delete <vm-id>      Delete a virtual machine completely
+    console <vm-id>     Connect to VM console
+    exec <vm-id> CMD    Execute command in VM (requires QEMU agent)
+    ssh <vm-id>         SSH into VM (requires SSH setup)
+    show-ip <vm-id>     Show VM IP address
+    info <vm-id>        Show VM status and information
+    status <vm-id>      Show VM status
+    snapshot <vm-id> [name] Create snapshot of VM
+    rollback <vm-id> <name> Rollback to snapshot
+    clone <vm-id> <new-id> Clone VM to new ID
+    resize <vm-id> <size> Resize VM disk
+    templates           List available VM templates
+    help                Show this help message
+
+EXAMPLES:
+    $0 list                    # List all VMs
+    $0 show-ip 100             # Show IP address of VM 100
+    $0 status 100              # Show status of VM 100
+    $0 start 100               # Start VM 100
+    $0 stop 100                # Stop VM 100
+    $0 delete 100              # Delete VM 100
+    $0 console 100             # Connect to VM console
+    $0 exec 100 -- apt update  # Run command in VM
+    $0 ssh 100                 # SSH into VM 100
+    $0 clone 100 101           # Clone VM 100 to new VM 101
+    $0 resize 100 40G          # Resize VM 100 disk to 40G
+EOF
+}
+
+list_vm() {
+  qm list
+}
+
+status_vm() {
+  check_vm "$1"
+  qm status "$1"
+}
+
+info_vm() {
+  check_vm "$1"
+  qm config "$1"
+}
+
+start_vm() {
+  check_vm "$1"
+  qm start "$1"
+}
+
+stop_vm() {
+  check_vm "$1"
+  qm stop "$1"
+}
+
+shutdown_vm() {
+  check_vm "$1"
+  qm shutdown "$1"
+}
+
+restart_vm() {
+  check_vm "$1"
+  qm reboot "$1"
+}
+
+delete_vm() {
+  check_vm "$1"
+
+  # Stop VM if running
+  if qm status "$1" | grep -q "status: running"; then
+    echo "Stopping VM $1..."
+    qm stop "$1"
+  fi
+
+  echo "Deleting VM $1..."
+  qm destroy "$1"
+}
+
+console_vm() {
+  check_vm "$1"
+  qm terminal "$1"
+}
+
+exec_vm() {
+  local vmid="$1"
+  shift
+  check_vm "$vmid"
+  qm guest exec "$vmid" -- "$@"
+}
+
+show_ip_vm() {
+  check_vm "$1"
+
+  # Try to get IP from QEMU agent
+  local ip=""
+
+  if qm status "$1" | grep -q "status: running"; then
+    # Method 1: Try QEMU agent
+    ip=$(qm guest cmd "$1" network-get-interfaces 2>/dev/null |
+      jq -r '.[] | select(.["ip-addresses"] != null) | .["ip-addresses"][] | select(.["ip-address-type"] == "ipv4") | .["ip-address"]' 2>/dev/null |
+      grep -v '^127\.' | head -n1 || true)
+  fi
+
+  # Method 2: Try to get from Proxmox network info
+  if [[ -z "$ip" ]]; then
+    ip=$(qm config "$1" | grep -E "ipconfig[0-9]*=" | head -n1 | cut -d'=' -f2 | cut -d',' -f1 | cut -d'=' -f2 | tr -d '"' || true)
+  fi
+
+  if [[ -n "$ip" && "$ip" != "dhcp" ]]; then
+    echo "VM $1 IP: $ip"
+  else
+    echo "Could not determine IP for VM $1"
+    echo "VM may not be running or may be using DHCP"
+    echo "Ensure QEMU agent is installed and running in the VM"
+  fi
+}
+
+ssh_vm() {
+  local vmid="$1"
+  check_vm "$vmid"
+
+  local ip
+  ip=$(qm guest cmd "$vmid" network-get-interfaces 2>/dev/null |
+    jq -r '.[] | select(.["ip-addresses"] != null) | .["ip-addresses"][] | select(.["ip-address-type"] == "ipv4") | .["ip-address"]' 2>/dev/null |
+    grep -v '^127\.' | head -n1 || true)
+
+  if [[ -z "$ip" ]]; then
+    echo "Error: could not determine IP for VM '$vmid'"
+    echo "- Ensure the VM is running"
+    echo "- Ensure QEMU agent is installed and running in the VM"
+    echo "- Ensure SSH server is installed in the VM"
+    echo "- Try: $0 start $vmid; then wait a few seconds."
+    exit 1
+  fi
+
+  echo "Connecting: ssh root@$ip"
+  exec ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@$ip"
+}
+
+snapshot_vm() {
+  local vmid="$1"
+  local snapname="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
+
+  check_vm "$vmid"
+  echo "Creating snapshot '$snapname' for VM $vmid..."
+  qm snapshot "$vmid" "$snapname"
+}
+
+rollback_vm() {
+  local vmid="$1"
+  local snapname="$2"
+
+  check_vm "$vmid"
+  echo "Rolling back VM $vmid to snapshot '$snapname'..."
+  qm rollback "$vmid" "$snapname"
+}
+
+clone_vm() {
+  local vmid="$1"
+  local newid="$2"
+
+  check_vm "$vmid"
+
+  if ! [[ "$newid" =~ ^[0-9]+$ ]]; then
+    echo "Error: New VM ID must be a number"
+    exit 1
+  fi
+
+  if qm status "$newid" &>/dev/null; then
+    echo "Error: VM with ID $newid already exists"
+    exit 1
+  fi
+
+  echo "Cloning VM $vmid to new VM $newid..."
+  qm clone "$vmid" "$newid" --full
+}
+
+resize_vm() {
+  local vmid="$1"
+  local size="$2"
+
+  check_vm "$vmid"
+
+  if ! [[ "$size" =~ ^[0-9]+[KMGT]? ]]; then
+    echo "Error: Invalid size format. Use format like '40G', '1024M', etc."
+    exit 1
+  fi
+
+  # Find the first disk
+  local disk
+  disk=$(qm config "$vmid" | grep -E "^(scsi|virtio|sata|ide)[0-9]+:" | head -n1 | cut -d':' -f1 || true)
+
+  if [[ -z "$disk" ]]; then
+    echo "Error: No disk found for VM $vmid"
+    exit 1
+  fi
+
+  echo "Resizing disk $disk for VM $vmid to $size..."
+  qm resize "$vmid" "$disk" "$size"
+}
+
+templates_vm() {
+  echo "Available VM templates:"
+  echo "Use vm-template script to create new templates:"
+  echo "  $(dirname "$0")/vm-template -D debian"
+  echo "  $(dirname "$0")/vm-template -D ubuntu"
+  echo "  $(dirname "$0")/vm-template -D fedora"
+  echo ""
+  echo "Existing templates:"
+  qm list | awk 'NR>1 && $2 ~ /template/ {print $1 " " $2}'
+}
+
+resolve_vm_id() {
+  local id="$1"
+  if [[ -n "$id" ]]; then
+    printf '%s\n' "$id"
+    return 0
+  fi
+
+  local vms selected rc
+  if ! vms=$(qm list 2>/dev/null | awk 'NR>1 && $0 !~ /^[-[:space:]]*$/ {print $1}'); then
+    echo "Error: failed to list VMs" >&2
+    return 1
+  fi
+
+  if [[ -z "$vms" ]]; then
+    echo "Error: no VMs found" >&2
+    return 1
+  fi
+
+  selected=$(printf '%s\n' "$vms" | fzf-select 'VM > ')
+  rc=$?
+  if [[ $rc -ne 0 || -z "$selected" ]]; then
+    if [[ $rc -eq 127 ]]; then
+      echo "Error: fzf is not installed or not in PATH" >&2
+    else
+      echo "Cancelled" >&2
+    fi
+    return 1
+  fi
+
+  printf '%s\n' "$selected"
+}
+
+main() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  check_prerequisites
+
+  local command vm_id
+  command="$1"
+  vm_id="${2:-}"
+
+  case "$command" in
+  list | ls)
+    list_vm
+    ;;
+  status)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    status_vm "$target"
+    ;;
+  info)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    info_vm "$target"
+    ;;
+  create | new)
+    # Forward to vm-template script
+    "$(dirname "$0")/vm-template" "${@:2}"
+    ;;
+  start | boot)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    start_vm "$target"
+    ;;
+  stop)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    stop_vm "$target"
+    ;;
+  shutdown)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    shutdown_vm "$target"
+    ;;
+  restart | reboot)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    restart_vm "$target"
+    ;;
+  delete | rm)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    delete_vm "$target"
+    ;;
+  console)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    console_vm "$target"
+    ;;
+  exec)
+    if [[ -z "$vm_id" ]]; then
+      echo "Error: VM ID required for exec command"
+      echo "Usage: $0 exec <vm-id> -- <command>"
+      exit 1
+    fi
+    check_vm "$vm_id"
+    shift
+    exec_vm "$vm_id" "$@"
+    ;;
+  show-ip)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    show_ip_vm "$target"
+    ;;
+  ssh)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    ssh_vm "$target"
+    ;;
+  snapshot)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    snapshot_vm "$target" "${3:-}"
+    ;;
+  rollback)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    if [[ -z "${3:-}" ]]; then
+      echo "Error: Snapshot name required for rollback"
+      echo "Usage: $0 rollback <vm-id> <snapshot-name>"
+      exit 1
+    fi
+    rollback_vm "$target" "$3"
+    ;;
+  clone)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    if [[ -z "${3:-}" ]]; then
+      echo "Error: New VM ID required for clone"
+      echo "Usage: $0 clone <vm-id> <new-vm-id>"
+      exit 1
+    fi
+    clone_vm "$target" "$3"
+    ;;
+  resize)
+    {
+      target=$(resolve_vm_id "$vm_id")
+    } || exit 1
+    if [[ -z "${3:-}" ]]; then
+      echo "Error: Size required for resize"
+      echo "Usage: $0 resize <vm-id> <size>"
+      exit 1
+    fi
+    resize_vm "$target" "$3"
+    ;;
+  templates)
+    templates_vm
+    ;;
+  --help | -h | help)
+    usage
+    ;;
+  *)
+    echo "Error: Unknown command: $command"
+    usage
+    ;;
+  esac
+}
+
+main "$@"

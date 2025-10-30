@@ -1,7 +1,10 @@
 #! /usr/bin/env bash
 
+set -euo pipefail
+
+DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
 # shellcheck disable=SC1091
-source "$(dirname "$0")/../share/utils"
+source "$DOT_DIR/share/utils"
 
 container_exists() {
   pct status "$1" &>/dev/null
@@ -125,4 +128,67 @@ monitoring_setup() {
 
 lxc_update() {
   bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/update-lxcs.sh)"
+}
+
+vm_exists() {
+  qm status "$1" &>/dev/null
+}
+
+check_vm() {
+  if ! vm_exists "$1"; then
+    fail "VM '$1' does not exist"
+    return 1
+  fi
+}
+
+vm_is_template() {
+  grep -q '^template: 1' "/etc/pve/qemu-server/$1.conf"
+}
+
+vm_create() {
+  local template_id="$1"
+  local vm_name="${2:-}"
+  local vm_id="${3:-}"
+
+  if [[ -z "$template_id" ]]; then
+    fail "Template ID is required"
+    return 1
+  fi
+
+  check_vm "$template_id" || return 1
+
+  if ! vm_is_template "$template_id"; then
+    fail "VM '$template_id' is not a template"
+    return 1
+  fi
+
+  # Auto-generate VM ID if not provided
+  if [[ -z "$vm_id" ]]; then
+    vm_id=$(qm list | awk 'NR>1 && $2 !~ /template/ {print $1}' | sort -n | tail -n 1)
+    vm_id=${vm_id:-99}
+    vm_id=$((vm_id + 1))
+  fi
+
+  # Auto-generate VM name if not provided
+  if [[ -z "$vm_name" ]]; then
+    vm_name="vm-$vm_id"
+  fi
+
+  echo "Cloning VM from template $template_id to new VM $vm_id ($vm_name)..."
+
+  qm clone "$template_id" "$vm_id" --name "$vm_name" --full
+
+  echo "Waiting for VM clone to complete..."
+  sleep 2
+
+  echo "✅ VM $vm_id ($vm_name) created successfully from template $template_id"
+}
+
+vm_templates() {
+  echo "Available VM templates:"
+  qm list | awk 'NR>1 && $2 ~ /template/ {print $1 " " $2}'
+}
+
+vm_update() {
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/update-vms.sh)"
 }
