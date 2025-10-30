@@ -1,49 +1,272 @@
 #!/usr/bin/env bash
+# VFIO Configuration Script for Proxmox VE
+#
+# This script configures VFIO (Virtual Function I/O) device passthrough
+# by selecting PCI devices and configuring them for passthrough to VMs.
+#
+# Prerequisites:
+# - IOMMU must be enabled in BIOS/UEFI
+# - Kernel parameters: intel_iommu=on iommu=pt (Intel) or amd_iommu=on iommu=pt (AMD)
+# - Root privileges
+#
+# Usage: $0 [--dry-run] [--help]
+
 set -euo pipefail
+IFS=$'\n\t'
 
-### ⚙️ Configurable Parameters ###
-GRUB_FILE="/etc/default/grub"
-BACKUP_FILE="/etc/default/grub.bak.$(date +%Y%m%d_%H%M%S)"
-GRUB_LINE_KEY="GRUB_CMDLINE_LINUX_DEFAULT"
+# Configuration paths
+VFIO_CONF="/etc/modprobe.d/vfio.conf"
+MODULES_FILE="/etc/modules"
+INITRD_HOOK="/etc/initramfs-tools/modules"
+TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+BACKUP_DIR="/etc/modprobe.d/vfio-backups"
+DRY_RUN=false
 
-# Add your desired kernel parameters here
-GRUB_PARAMS=(
-  "pcie_aspm=force"
-  "intel_iommu=on"
-  "iommu=pt"
-  "video=efifb:off"
-  "video=vesafb:off"
-  "video=simplefb:off"
-)
+#--- Functions ------------------------------------------------------------
 
-echo "📦 Backing up GRUB config to $BACKUP_FILE"
-cp "$GRUB_FILE" "$BACKUP_FILE"
+usage() {
+  cat <<EOF
+VFIO Configuration Script for Proxmox VE
 
-### 🔍 Extract existing GRUB_CMDLINE_LINUX_DEFAULT
-if grep -q "^$GRUB_LINE_KEY=" "$GRUB_FILE"; then
-  CURRENT=$(grep "^$GRUB_LINE_KEY=" "$GRUB_FILE" | cut -d'"' -f2)
-else
-  CURRENT=""
-  echo "$GRUB_LINE_KEY=\"\"" >>"$GRUB_FILE"
-fi
+This script configures VFIO device passthrough by selecting PCI devices and
+configuring them for passthrough to virtual machines.
 
-### 🛠 Add missing parameters
-UPDATED="$CURRENT"
-for param in "${GRUB_PARAMS[@]}"; do
-  if [[ ! "$UPDATED" =~ (^|[[:space:]])$param($|[[:space:]]) ]]; then
-    UPDATED+=" $param"
+Prerequisites:
+- IOMMU must be enabled in BIOS/UEFI
+- Kernel parameters: intel_iommu=on iommu=pt (Intel) or amd_iommu=on iommu=pt (AMD)
+- Root privileges
+
+Usage: $0 [OPTIONS]
+
+Options:
+  --dry-run    Show what would be done without making changes
+  --help       Show this help message
+
+Example:
+  $0 --dry-run    # Preview changes without applying them
+  $0              # Apply VFIO configuration
+
+EOF
+  exit 0
+}
+
+require_cmd() {
+  local cmd="$1"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "❌ Missing dependency: $cmd"
+    echo "Please install the package providing '$cmd' and try again."
+    exit 1
   fi
+}
+
+check_root() {
+  if ! "$DRY_RUN" && [[ $EUID -ne 0 ]]; then
+    echo "❌ This script must be run as root."
+    echo "Try: sudo $0 $*"
+    exit 1
+  elif "$DRY_RUN" && [[ $EUID -ne 0 ]]; then
+    echo "⚠️  Dry-run mode: Not checking for root privileges."
+  fi
+}
+
+check_iommu() {
+  echo "🔍 Checking IOMMU support..."
+
+  # Check if IOMMU is enabled in kernel
+  if [[ -d /sys/kernel/iommu_groups ]]; then
+    local iommu_groups
+    iommu_groups=$(find /sys/kernel/iommu_groups -maxdepth 1 -type d | wc -l)
+    if [[ "$iommu_groups" -gt 1 ]]; then
+      echo "✅ IOMMU detected with $((iommu_groups - 1)) IOMMU groups"
+    else
+      echo "⚠️  IOMMU groups found but may not be properly configured"
+    fi
+  else
+    echo "❌ IOMMU not detected. Please ensure:"
+    echo "   1. IOMMU is enabled in BIOS/UEFI"
+    echo "   2. Kernel parameters are set: intel_iommu=on iommu=pt (Intel) or amd_iommu=on iommu=pt (AMD)"
+    echo "   3. System has been rebooted after adding kernel parameters"
+    if ! "$DRY_RUN"; then
+      exit 1
+    fi
+  fi
+
+  # Check for VFIO modules
+  local missing_modules=()
+  for mod in vfio vfio_pci vfio_iommu_type1 vfio_virqfd; do
+    if ! lsmod | grep -q "^$mod "; then
+      missing_modules+=("$mod")
+    fi
+  done
+
+  if [[ ${#missing_modules[@]} -gt 0 ]]; then
+    echo "⚠️  VFIO modules not currently loaded: ${missing_modules[*]}"
+    echo "   This is normal if VFIO hasn't been configured yet."
+  fi
+}
+
+confirm() {
+  read -r -p "🚨 This may affect boot. Continue? [y/N] " ans
+  [[ "$ans" =~ ^[Yy]$ ]] || {
+    echo "❌ Aborted."
+    exit 1
+  }
+}
+
+ensure_dir() {
+  local dir="$1"
+  [[ -d "$dir" ]] || {
+    if "$DRY_RUN"; then
+      echo "Would create directory: $dir"
+    else
+      mkdir -p "$dir"
+    fi
+  }
+}
+
+backup_if_exists() {
+  local file="$1"
+  if [[ -f "$file" ]]; then
+    ensure_dir "$BACKUP_DIR"
+    # Create a unique backup filename for each file
+    local backup_file
+    backup_file="$BACKUP_DIR/$(basename "$file").$TIMESTAMP.bak"
+    if "$DRY_RUN"; then
+      echo "Would back up $file → $backup_file"
+    else
+      cp "$file" "$backup_file"
+      echo "💾 Backup created: $backup_file"
+    fi
+  fi
+}
+
+ensure_module() {
+  local mod="$1" file="$2"
+  if ! grep -q -E "^\s*${mod}\b" "$file" 2>/dev/null; then
+    if "$DRY_RUN"; then
+      echo "Would add module '$mod' to $file"
+    else
+      echo "$mod" >>"$file"
+      echo "🧩 Added $mod to $file"
+    fi
+  fi
+}
+
+select_pci_ids() {
+  echo "🔍 Scanning PCI devices..."
+  echo "💡 Use TAB to select multiple devices, ENTER to confirm"
+  local selection
+  if ! selection="$(lspci -nn | fzf --multi --prompt='Select devices to bind via VFIO > ' --header='Use TAB to mark multiple devices, ENTER to confirm')" || [[ -z "$selection" ]]; then
+    echo "❌ No selection made."
+    exit 1
+  fi
+
+  # Extract PCI IDs with better error handling
+  local pci_ids
+  if ! pci_ids="$(echo "$selection" | grep -Eo '\[[0-9a-f]{4}:[0-9a-f]{4}\]' | tr -d '[]' | sort -u)"; then
+    echo "❌ Failed to extract PCI IDs from selection."
+    exit 1
+  fi
+
+  if [[ -z "$pci_ids" ]]; then
+    echo "❌ No valid PCI IDs found in selection."
+    exit 1
+  fi
+
+  echo "$pci_ids"
+}
+
+#--- Parse arguments ------------------------------------------------------
+
+# Parse all arguments properly
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  --dry-run)
+    DRY_RUN=true
+    shift
+    ;;
+  --help)
+    usage
+    ;;
+  *)
+    echo "❌ Unknown option: $1"
+    echo "Use --help for usage information."
+    exit 1
+    ;;
+  esac
 done
 
-# Clean leading/trailing spaces
-UPDATED=$(echo "$UPDATED" | xargs)
+#--- Checks ---------------------------------------------------------------
 
-# Apply updated value
-sed -i "s|^$GRUB_LINE_KEY=.*|$GRUB_LINE_KEY=\"$UPDATED\"|" "$GRUB_FILE"
+# Check for root privileges
+check_root "$@"
 
-### 🔁 Regenerate GRUB config
-echo "🔁 Regenerating GRUB config..."
-update-grub
+# Check for required commands
+require_cmd fzf
+require_cmd lspci
+require_cmd update-grub
+require_cmd update-initramfs
 
-echo "✅ Done. GRUB kernel parameters updated:"
-echo "  $GRUB_LINE_KEY=\"$UPDATED\""
+# Check IOMMU support
+check_iommu
+
+confirm
+
+mapfile -t PCI_IDS < <(select_pci_ids)
+if [[ "${#PCI_IDS[@]}" -eq 0 ]]; then
+  echo "❌ No valid PCI IDs selected."
+  exit 1
+fi
+
+#--- Core logic -----------------------------------------------------------
+
+echo "🧩 Ensuring VFIO modules load on boot..."
+for mod in vfio vfio_pci vfio_iommu_type1 vfio_virqfd; do
+  ensure_module "$mod" "$MODULES_FILE"
+  ensure_module "$mod" "$INITRD_HOOK"
+done
+
+echo "🎯 Configuring VFIO device bindings..."
+backup_if_exists "$VFIO_CONF"
+
+NEW_IDS="$(
+  IFS=,
+  echo "${PCI_IDS[*]}"
+)"
+
+# Extract current IDs with better error handling
+CURRENT_IDS=""
+if [[ -f "$VFIO_CONF" ]]; then
+  if grep -q '^options vfio-pci ids=' "$VFIO_CONF" 2>/dev/null; then
+    CURRENT_IDS="$(grep -E '^options vfio-pci ids=' "$VFIO_CONF" | awk -F= '{print $2}' || true)"
+  fi
+fi
+
+if [[ "$NEW_IDS" == "$CURRENT_IDS" ]]; then
+  echo "✅ VFIO configuration already up to date."
+else
+  if "$DRY_RUN"; then
+    echo "Would write: options vfio-pci ids=$NEW_IDS → $VFIO_CONF"
+  else
+    echo "options vfio-pci ids=$NEW_IDS" >"$VFIO_CONF"
+    echo "⚙️  Updated $VFIO_CONF with: $NEW_IDS"
+  fi
+fi
+
+if "$DRY_RUN"; then
+  echo "Would update initramfs and grub"
+else
+  echo "🔄 Updating initramfs and grub..."
+  update-initramfs -u || echo "⚠️ Warning: initramfs update failed"
+  update-grub || echo "⚠️ Warning: grub update failed"
+fi
+
+echo "🔍 Current VFIO device binding status:"
+if lspci -nnk 2>/dev/null | grep -q 'Kernel driver in use'; then
+  lspci -nnk | grep -A2 'Kernel driver in use' | grep -E 'vfio-pci|NVIDIA' || echo "   No VFIO or NVIDIA drivers currently in use"
+else
+  echo "   No kernel driver information available"
+fi
+
+echo "✅ VFIO setup complete."
+echo "ℹ️ Reboot required. Ensure GRUB has 'intel_iommu=on iommu=pt' or 'amd_iommu=on iommu=pt'."

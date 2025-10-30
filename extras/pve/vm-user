@@ -3,8 +3,8 @@
 set -euo pipefail
 
 # Default configuration
-DEFAULT_GROUP="admins"
-DEFAULT_LOGFILE="/var/log/create-proxmox-user.log"
+DEFAULT_POOL="vmusers"
+DEFAULT_LOGFILE="/var/log/setup-proxmox-vm-manager.log"
 DEFAULT_SSH_CONFIG="/etc/ssh/sshd_config"
 DRY_RUN=false
 ROLLBACK_FILE=""
@@ -14,10 +14,10 @@ ROLLBACK_ACTIONS=()
 
 # Initialize LOGFILE later after parsing arguments
 
-log() { echo "[$(date '+%F %T')] [INFO] ℹ️  $*"; }
-warn() { echo "[$(date '+%F %T')] [WARN] ⚠️  $*" >&2; }
+log() { echo "🟩 [$(date '+%F %T')] $*"; }
+warn() { echo "🟨 [$(date '+%F %T')] $*" >&2; }
 error() {
-  echo "[$(date '+%F %T')] [ERROR] ❌ $*" >&2
+  echo "🟥 [$(date '+%F %T')] $*" >&2
   if [[ -n "$ROLLBACK_FILE" ]]; then
     rollback_changes
   fi
@@ -26,7 +26,7 @@ error() {
 
 dry_run_log() {
   if "$DRY_RUN"; then
-    echo "[$(date '+%F %T')] [DRY-RUN] 🔍 $*"
+    echo "🔍 [$(date '+%F %T')] DRY-RUN: $*"
   fi
 }
 
@@ -55,9 +55,10 @@ Required:
   username        Username for the new user
 
 Options:
-  --admin         Grant full Administrator privileges
-  --auditor       Grant Auditor (read-only) privileges (default)
-  --group NAME    Set group name (default: $DEFAULT_GROUP)
+  --admin         Give user near-root permissions (Administrator role)
+  --vm-manager    Give VM management permissions (default)
+  --auditor       Give read-only Auditor permissions
+  --pool NAME     Set pool name (default: $DEFAULT_POOL)
   --ssh-key FILE  Add SSH key from file (disables password auth for user)
   --password-auth Enable password authentication (default: yes)
   --no-ssh-config Skip SSH configuration changes
@@ -67,13 +68,13 @@ Options:
 
 Privilege levels:
   --admin         Full Administrator access
+  --vm-manager    VM/Container management with datastore access
   --auditor       Read-only Auditor access
-  --user          Basic user access (no special privileges)
 
 Examples:
   $0 myuser --admin
-  $0 myuser --auditor --ssh-key ~/.ssh/id_rsa.pub
-  $0 myuser --group developers --no-ssh-config
+  $0 myuser --vm-manager --ssh-key ~/.ssh/id_rsa.pub
+  $0 myuser --pool developers --no-ssh-config
 EOF
   exit 1
 }
@@ -118,26 +119,13 @@ check_root() {
   fi
 }
 
-ensure_group() {
-  local group="$1"
-  if ! pveum group list | awk '{print $1}' | grep -qx "$group"; then
-    dry_run_log "Creating Proxmox group '$group'. 👥"
-    if ! "$DRY_RUN"; then
-      pveum groupadd "$group" -comment "Administrative users"
-      add_rollback_action "pveum groupdel $group 2>/dev/null || true"
-    fi
-  else
-    log "Group '$group' already exists. ✅"
-  fi
-}
-
-create_system_user() {
+create_user() {
   local user="$1"
   local ssh_key_file="$2"
   local password_auth="$3"
 
   if ! id "$user" &>/dev/null; then
-    dry_run_log "Creating system user '$user'. 👤"
+    dry_run_log "Creating system user '$user'."
     if ! "$DRY_RUN"; then
       useradd -m -s /bin/bash "$user"
       add_rollback_action "userdel -r $user 2>/dev/null || true"
@@ -166,58 +154,87 @@ create_system_user() {
       fi
     fi
   else
-    log "System user '$user' already exists. ✅"
+    log "✅ System user '$user' already exists."
   fi
-}
-
-create_proxmox_user() {
-  local user="$1"
-  local group="$2"
 
   if ! pveum user list | awk '{print $1}' | grep -qx "${user}@pam"; then
-    dry_run_log "Creating Proxmox user '${user}@pam'. 🔐"
+    dry_run_log "Creating Proxmox user '${user}@pam'."
     if ! "$DRY_RUN"; then
-      pveum useradd "${user}@pam" -comment "PAM user for Proxmox"
+      pveum useradd "${user}@pam" -comment "VM manager account"
       add_rollback_action "pveum userdel ${user}@pam 2>/dev/null || true"
     fi
   else
-    log "Proxmox user '${user}@pam' already exists. ✅"
-  fi
-
-  # Add user to group
-  dry_run_log "Adding '${user}@pam' to group '$group'."
-  if ! "$DRY_RUN"; then
-    pveum usermod "${user}@pam" -group "$group"
+    log "✅ Proxmox user '${user}@pam' already exists."
   fi
 }
 
-assign_privileges() {
-  local user="$1"
-  local privilege="$2"
+ensure_pool() {
+  local pool="$1"
+  if ! pveum pool list | awk '{print $1}' | grep -qx "$pool"; then
+    dry_run_log "Creating pool '$pool'."
+    if ! "$DRY_RUN"; then
+      pveum pooladd "$pool" -comment "VM management pool"
+      add_rollback_action "pveum pooldel $pool 2>/dev/null || true"
+    fi
+  else
+    log "✅ Pool '$pool' already exists."
+  fi
+}
 
-  case "$privilege" in
-  "admin")
-    dry_run_log "Assigning Administrator privileges. 👑"
+assign_vm_permissions() {
+  local user="$1"
+  local pool="$2"
+  dry_run_log "Assigning VM management roles to '${user}@pam'."
+
+  if ! "$DRY_RUN"; then
+    pveum usermod "${user}@pam" -append -pool "$pool" || true
+  fi
+
+  declare -a ROLES=(
+    "PVEDatastoreAdmin:/"
+    "PVEVMAdmin:/"
+    "PVEPoolAdmin:/pool/${pool}"
+  )
+
+  for entry in "${ROLES[@]}"; do
+    local role=${entry%%:*}
+    local path=${entry##*:}
+    if ! pveum acl list | grep -q "${user}@pam" | grep -q "$path" | grep -q "$role"; then
+      dry_run_log "Adding ACL: role=$role path=$path"
+      if ! "$DRY_RUN"; then
+        pveum aclmod "$path" -user "${user}@pam" -role "$role"
+        add_rollback_action "pveum aclmod $path -user ${user}@pam -role None 2>/dev/null || true"
+      fi
+    else
+      log "✅ ACL $role on $path already present."
+    fi
+  done
+}
+
+assign_admin_permissions() {
+  local user="$1"
+  dry_run_log "Assigning Administrator role to '${user}@pam'."
+  if ! pveum acl list | grep -q "${user}@pam" | grep -q "/" | grep -q "Administrator"; then
     if ! "$DRY_RUN"; then
       pveum aclmod / -user "${user}@pam" -role Administrator
+      add_rollback_action "pveum aclmod / -user ${user}@pam -role None 2>/dev/null || true"
     fi
-    ;;
-  "auditor")
-    dry_run_log "Assigning Auditor (read-only) privileges. 👁️"
+  else
+    log "✅ Administrator privileges already set."
+  fi
+}
+
+assign_auditor_permissions() {
+  local user="$1"
+  dry_run_log "Assigning Auditor role to '${user}@pam'."
+  if ! pveum acl list | grep -q "${user}@pam" | grep -q "/" | grep -q "PVEAuditor"; then
     if ! "$DRY_RUN"; then
       pveum aclmod / -user "${user}@pam" -role PVEAuditor
+      add_rollback_action "pveum aclmod / -user ${user}@pam -role None 2>/dev/null || true"
     fi
-    ;;
-  "user")
-    dry_run_log "Assigning basic user privileges. 👤"
-    if ! "$DRY_RUN"; then
-      pveum aclmod / -user "${user}@pam" -role PVEUser
-    fi
-    ;;
-  *)
-    error "Unknown privilege level: $privilege"
-    ;;
-  esac
+  else
+    log "✅ Auditor privileges already set."
+  fi
 }
 
 configure_ssh() {
@@ -228,13 +245,13 @@ configure_ssh() {
   local backup
   backup="${conf}.backup.$(date +%Y%m%d_%H%M%S)"
 
-  dry_run_log "Creating backup of SSH config at $backup 💾"
+  dry_run_log "Creating backup of SSH config at $backup"
   if ! "$DRY_RUN"; then
     cp "$conf" "$backup"
     add_rollback_action "mv $backup $conf 2>/dev/null || true"
   fi
 
-  dry_run_log "Hardening SSH configuration. 🔒"
+  dry_run_log "Hardening SSH configuration."
   if ! "$DRY_RUN"; then
     # Disable root login
     sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' "$conf"
@@ -256,19 +273,19 @@ configure_ssh() {
     fi
 
     # Restart SSH service
-    if systemctl reload ssh 2>/dev/null; then
-      log "Reloaded SSH service. 🔄"
+    if systemctl reload sshd 2>/dev/null; then
+      log "✅ SSH configuration updated and reloaded."
     else
-      systemctl restart ssh
-      log "Restarted SSH service. 🔄"
+      systemctl restart sshd
+      log "✅ SSH configuration updated and restarted."
     fi
   fi
 }
 
 main() {
   # Default values
-  local privilege="auditor"
-  local group="$DEFAULT_GROUP"
+  local privilege="vm-manager"
+  local pool="$DEFAULT_POOL"
   local ssh_key_file=""
   local password_auth=true
   local configure_ssh_setting=true
@@ -280,16 +297,16 @@ main() {
       privilege="admin"
       shift
       ;;
+    --vm-manager)
+      privilege="vm-manager"
+      shift
+      ;;
     --auditor)
       privilege="auditor"
       shift
       ;;
-    --user)
-      privilege="user"
-      shift
-      ;;
-    --group)
-      group="$2"
+    --pool)
+      pool="$2"
       shift 2
       ;;
     --ssh-key)
@@ -347,7 +364,7 @@ main() {
 
   # Setup rollback file
   if ! "$DRY_RUN"; then
-    ROLLBACK_FILE="/tmp/proxmox-user-rollback-$(date +%Y%m%d_%H%M%S).sh"
+    ROLLBACK_FILE="/tmp/proxmox-vm-user-rollback-$(date +%Y%m%d_%H%M%S).sh"
     echo "#!/bin/bash" >"$ROLLBACK_FILE"
     chmod +x "$ROLLBACK_FILE"
     log "Rollback file created: $ROLLBACK_FILE"
@@ -355,12 +372,25 @@ main() {
 
   check_root
   validate_username "$username"
-  log "Starting user setup for '$username' (privilege=$privilege, group=$group). 🚀"
+  log "Starting setup for user '$username' (privilege=$privilege, pool=$pool)."
 
-  ensure_group "$group"
-  create_system_user "$username" "$ssh_key_file" "$password_auth"
-  create_proxmox_user "$username" "$group"
-  assign_privileges "$username" "$privilege"
+  ensure_pool "$pool"
+  create_user "$username" "$ssh_key_file" "$password_auth"
+
+  case "$privilege" in
+  "admin")
+    assign_admin_permissions "$username"
+    ;;
+  "vm-manager")
+    assign_vm_permissions "$username" "$pool"
+    ;;
+  "auditor")
+    assign_auditor_permissions "$username"
+    ;;
+  *)
+    error "Unknown privilege level: $privilege"
+    ;;
+  esac
 
   if "$configure_ssh_setting"; then
     configure_ssh "$username" "$ssh_key_file" "$password_auth"
@@ -371,22 +401,22 @@ main() {
     rm -f "$ROLLBACK_FILE"
   fi
 
-  log "User '$username' created successfully. 🎉"
+  log "✅ User '$username' setup complete."
   case "$privilege" in
   "admin")
-    log "Privileges: Full Administrator 👑"
+    log "Privileges: Administrator (full control)."
+    ;;
+  "vm-manager")
+    log "Privileges: VM/CT management only."
     ;;
   "auditor")
-    log "Privileges: Auditor (read-only) 👁️"
-    ;;
-  "user")
-    log "Privileges: Basic User 👤"
+    log "Privileges: Auditor (read-only)."
     ;;
   esac
-  log "Login via SSH or Web UI as '${username}@pam'. 🔑"
   if "$configure_ssh_setting"; then
-    log "Root SSH login disabled. See $LOGFILE for details. 📝"
+    log "SSH hardened. Root SSH disabled."
   fi
+  log "All actions logged to $LOGFILE"
 }
 
 main "$@"
