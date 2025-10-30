@@ -1,55 +1,335 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Creates groups: backup, vm-admin, vm-user with default users
-# Creates admin user with sudo privileges
+# Source utility functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../../share/utils"
 
-# Ensure script runs as root
-if [ "$(id -u)" -ne 0 ]; then
-  echo "Script must be run as root. Use sudo." >&2
-  exit 1
-fi
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+readonly LOG_FILE="/tmp/${SCRIPT_NAME%.*}.log"
 
-# Create groups
-declare -a groups=("backup" "vm-admin" "vm-user")
-for group in "${groups[@]}"; do
-  if ! getent group "$group" >/dev/null; then
-    groupadd "$group"
-    echo "Created group: $group"
-  else
-    echo "Group $group already exists. Skipping."
-  fi
-done
+readonly LOG_ERROR=1
+readonly LOG_WARN=2
+readonly LOG_INFO=3
+readonly LOG_DEBUG=4
 
-# Create default users for each group
-declare -A users=(
+LOG_LEVEL=${LOG_LEVEL:-$LOG_INFO}
+
+# Default groups and users
+declare -a DEFAULT_GROUPS=("backup" "vm-admin" "vm-user")
+declare -A DEFAULT_USERS=(
   ["backup"]="pve-backup"
   ["vm-admin"]="pve-vm-admin"
   ["vm-user"]="pve-vm"
 )
+readonly ADMIN_USER="pve-admin"
 
-for group in "${!users[@]}"; do
-  username="${users[$group]}"
-  if ! id "$username" &>/dev/null; then
-    useradd -m -s /bin/bash -G "$group" "$username"
-    password=$(openssl rand -base64 12 | tr -d '/+=\n')
-    echo "$username:$password" | chpasswd
-    echo "Created $username (Group:$group) | Password: $password"
-  else
-    echo "User $username already exists. Skipping."
+log_message() {
+  local level
+  local message
+  local timestamp
+  level=$1
+  message=$2
+  timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+
+  if [ "$level" -le "$LOG_LEVEL" ]; then
+    echo "[$timestamp] $message" | tee -a "$LOG_FILE" >&2
   fi
-done
+}
 
-# Create admin user with sudo privileges
-admin_user="pve-admin"
-if ! id "$admin_user" &>/dev/null; then
-  useradd -m -s /bin/bash "$admin_user"
-  usermod -aG sudo "$admin_user"
-  admin_pass=$(openssl rand -base64 12 | tr -d '/+=\n')
-  echo "$admin_user:$admin_pass" | chpasswd
-  echo "Created admin user: $admin_user | Password: $admin_pass"
-  echo "Sudo privileges granted to $admin_user via 'sudo' group"
-else
-  echo "Admin user $admin_user already exists. Skipping."
-fi
+log_error() {
+  log_message "$LOG_ERROR" "❌ $1"
+}
 
-echo "Setup complete. Note: Proxmox-specific permissions must be configured separately via web interface."
+die() {
+  log_error "$1"
+  exit 1
+}
+
+log_warn() {
+  log_message "$LOG_WARN" "⚠️ $1"
+}
+
+log_info() {
+  log_message "$LOG_INFO" "ℹ️ $1"
+}
+
+log_debug() {
+  log_message "$LOG_DEBUG" "🔍 $1"
+}
+
+usage() {
+  cat <<EOF
+Usage: $SCRIPT_NAME [OPTIONS]
+
+Create Proxmox user groups and users with appropriate permissions.
+
+OPTIONS:
+    -h, --help          Show this help message and exit
+    -v, --verbose       Enable verbose logging
+    -q, --quiet         Suppress non-error output
+    -l, --log-level     Set logging level (1=ERROR, 2=WARN, 3=INFO, 4=DEBUG)
+    -g, --groups        Comma-separated list of groups to create (default: backup,vm-admin,vm-user)
+    -u, --users         Comma-separated list of users to create (default: pve-backup,pve-vm-admin,pve-vm)
+    -a, --admin         Admin username (default: pve-admin)
+    --skip-admin        Skip creating admin user
+    --dry-run           Show what would be done without making changes
+
+EXAMPLES:
+    $SCRIPT_NAME
+    $SCRIPT_NAME -v --groups "backup,vm-admin" --users "pve-backup,pve-admin"
+    $SCRIPT_NAME --admin myadmin --skip-admin
+
+EOF
+  exit 0
+}
+
+validate_arguments() {
+  # Validate log level if provided
+  if [[ -n "$LOG_LEVEL" && ! "$LOG_LEVEL" =~ ^[1-4]$ ]]; then
+    die "Invalid log level. Must be 1 (ERROR), 2 (WARN), 3 (INFO), or 4 (DEBUG)."
+  fi
+
+  # Validate groups format
+  if [[ -n "$CUSTOM_GROUPS" ]]; then
+    if [[ ! "$CUSTOM_GROUPS" =~ ^[a-zA-Z0-9_-]+(,[a-zA-Z0-9_-]+)*$ ]]; then
+      die "Invalid groups format. Use comma-separated alphanumeric values."
+    fi
+  fi
+
+  # Validate users format
+  if [[ -n "$CUSTOM_USERS" ]]; then
+    if [[ ! "$CUSTOM_USERS" =~ ^[a-zA-Z0-9_-]+(,[a-zA-Z0-9_-]+)*$ ]]; then
+      die "Invalid users format. Use comma-separated alphanumeric values."
+    fi
+  fi
+
+  # Validate admin username
+  if [[ -n "$ADMIN_USER" && ! "$ADMIN_USER" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    die "Invalid admin username. Use alphanumeric values only."
+  fi
+}
+
+check_root_privileges() {
+  if [[ $EUID -ne 0 ]]; then
+    die "This script must be run as root"
+  fi
+}
+
+generate_password() {
+  openssl rand -base64 12 | tr -d '/+=\n'
+}
+
+create_group() {
+  local group=$1
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log_info "DRY RUN: Would create group: $group"
+    return 0
+  fi
+
+  if ! getent group "$group" >/dev/null; then
+    groupadd "$group" || die "Failed to create group '$group'"
+    log_info "✅ Created group: $group"
+  else
+    log_info "Group $group already exists. Skipping."
+  fi
+}
+
+create_user() {
+  local username=$1
+  local group=$2
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log_info "DRY RUN: Would create user: $username (Group: $group)"
+    return 0
+  fi
+
+  if ! id "$username" &>/dev/null; then
+    useradd -m -s /bin/bash -G "$group" "$username" || die "Failed to create user '$username'"
+
+    local password
+    password=$(generate_password)
+    echo "$username:$password" | chpasswd || die "Failed to set password for user '$username'"
+
+    log_info "✅ Created $username (Group:$group) | Password: $password"
+  else
+    log_info "User $username already exists. Skipping."
+  fi
+}
+
+create_admin_user() {
+  local admin_user=$1
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log_info "DRY RUN: Would create admin user: $admin_user with sudo privileges"
+    return 0
+  fi
+
+  if ! id "$admin_user" &>/dev/null; then
+    useradd -m -s /bin/bash "$admin_user" || die "Failed to create admin user '$admin_user'"
+
+    # Determine sudo group based on distribution
+    local sudo_group="sudo"
+    if is_rh || is_tw || is_arch; then
+      sudo_group="wheel"
+    fi
+
+    # Ensure sudo group exists
+    if ! getent group "$sudo_group" >/dev/null; then
+      groupadd "$sudo_group" || die "Failed to create group '$sudo_group'"
+    fi
+
+    usermod -aG "$sudo_group" "$admin_user" || die "Failed to add user '$admin_user' to group '$sudo_group'"
+
+    local admin_pass
+    admin_pass=$(generate_password)
+    echo "$admin_user:$admin_pass" | chpasswd || die "Failed to set password for admin user '$admin_user'"
+
+    log_info "✅ Created admin user: $admin_user | Password: $admin_pass"
+    log_info "✅ Sudo privileges granted to $admin_user via '$sudo_group' group"
+  else
+    log_info "Admin user $admin_user already exists. Skipping."
+  fi
+}
+
+create_groups() {
+  local groups_array=("$@")
+
+  log_info "Creating groups..."
+  for group in "${groups_array[@]}"; do
+    create_group "$group"
+  done
+}
+
+create_users() {
+  local -A users_map
+  for i in "$@"; do
+    if [[ "$i" =~ ^([^=]+)=(.*)$ ]]; then
+      users_map["${BASH_REMATCH[1]}"]="${BASH_REMATCH[2]}"
+    fi
+  done
+
+  log_info "Creating users..."
+  for group in "${!users_map[@]}"; do
+    local username="${users_map[$group]}"
+    create_user "$username" "$group"
+  done
+}
+
+main() {
+  local skip_admin=false
+  local dry_run=false
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    -h | --help)
+      usage
+      ;;
+    -v | --verbose)
+      LOG_LEVEL=$LOG_DEBUG
+      shift
+      ;;
+    -q | --quiet)
+      LOG_LEVEL=$LOG_ERROR
+      shift
+      ;;
+    -l | --log-level)
+      if [[ -n "$2" && "$2" =~ ^[1-4]$ ]]; then
+        LOG_LEVEL="$2"
+        shift 2
+      else
+        die "Invalid log level. Must be 1 (ERROR), 2 (WARN), 3 (INFO), or 4 (DEBUG)."
+      fi
+      ;;
+    -g | --groups)
+      if [[ -n "$2" ]]; then
+        IFS=',' read -ra CUSTOM_GROUPS <<<"$2"
+        shift 2
+      else
+        die "Groups option requires a value."
+      fi
+      ;;
+    -u | --users)
+      if [[ -n "$2" ]]; then
+        IFS=',' read -ra CUSTOM_USERS <<<"$2"
+        shift 2
+      else
+        die "Users option requires a value."
+      fi
+      ;;
+    -a | --admin)
+      if [[ -n "$2" ]]; then
+        ADMIN_USER="$2"
+        shift 2
+      else
+        die "Admin option requires a value."
+      fi
+      ;;
+    --skip-admin)
+      skip_admin=true
+      shift
+      ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    -*)
+      log_error "Unknown option: $1"
+      usage
+      ;;
+    *)
+      log_error "Unexpected argument: $1"
+      usage
+      ;;
+    esac
+  done
+
+  # Set global variables for use in functions
+  DRY_RUN="$dry_run"
+
+  check_root_privileges
+  validate_arguments
+
+  log_info "Starting Proxmox user creation process..."
+
+  # Use custom groups if provided, otherwise use defaults
+  if [[ -n "${CUSTOM_GROUPS[*]}" ]]; then
+    local groups_to_create=("${CUSTOM_GROUPS[@]}")
+  else
+    local groups_to_create=("${DEFAULT_GROUPS[@]}")
+  fi
+
+  # Create custom users map if custom users are provided
+  if [[ -n "${CUSTOM_USERS[*]}" ]]; then
+    local -A custom_users_map
+    local i=0
+    for group in "${groups_to_create[@]}"; do
+      if [[ $i -lt ${#CUSTOM_USERS[@]} ]]; then
+        custom_users_map["$group"]="${CUSTOM_USERS[$i]}"
+        ((i++))
+      else
+        custom_users_map["$group"]="pve-${group}"
+      fi
+    done
+    for group in "${!custom_users_map[@]}"; do
+      create_users "${group}=${custom_users_map[$group]}"
+    done
+  else
+    for group in "${!DEFAULT_USERS[@]}"; do
+      create_users "${group}=${DEFAULT_USERS[$group]}"
+    done
+  fi
+
+  # Create admin user unless skipped
+  if [[ "$skip_admin" != "true" ]]; then
+    create_admin_user "$ADMIN_USER"
+  else
+    log_info "Skipping admin user creation as requested."
+  fi
+
+  log_info "✅ Setup complete. Note: Proxmox-specific permissions must be configured separately via web interface."
+}
+
+main "$@"

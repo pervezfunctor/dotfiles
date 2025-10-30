@@ -1,57 +1,183 @@
 #!/usr/bin/env bash
 
-if command -v curl >/dev/null; then
-  # shellcheck disable=SC1090
-  source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
-elif command -v wget >/dev/null; then
-  # shellcheck disable=SC1090
-  source <(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
-else
-  echo "curl or wget not found. Please install curl or wget and try again."
+readonly SCRIPT_NAME
+SCRIPT_NAME="$(basename "$0")"
+readonly LOG_FILE="/tmp/${SCRIPT_NAME%.*}.log"
+
+readonly LOG_ERROR=1
+readonly LOG_WARN=2
+readonly LOG_INFO=3
+readonly LOG_DEBUG=4
+
+LOG_LEVEL=${LOG_LEVEL:-$LOG_INFO}
+
+log_message() {
+  local level
+  local message
+  local timestamp
+  level=$1
+  message=$2
+  timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+
+  if [ "$level" -le "$LOG_LEVEL" ]; then
+    echo "[$timestamp] $message" | tee -a "$LOG_FILE" >&2
+  fi
+}
+
+log_error() {
+  log_message "$LOG_ERROR" "❌ $1"
+}
+
+die() {
+  log_error "$1"
   exit 1
-fi
+}
 
-# Check if the script is run as root
-[[ $EUID -ne 0 ]] && die "This script must be run as root" 1>&2
+log_warn() {
+  log_message "$LOG_WARN" "⚠️ $1"
+}
 
-# Check if username is provided
-[[ "$#" -ne 1 ]] && die "Usage: $0 username" 1>&2
+log_info() {
+  log_message "$LOG_INFO" "ℹ️ $1"
+}
 
-USERNAME=$1
+log_debug() {
+  log_message "$LOG_DEBUG" "🔍 $1"
+}
 
-if id "$USERNAME" &>/dev/null; then
-  echo "User '$USERNAME' already exists." >&2
-  echo "Setting password for existing user..."
-  passwd "$USERNAME" || die "Failed to set password"
-elif useradd -m "$USERNAME"; then
-  slog "User created successfully"
-else
-  die "Failed to create user"
-fi
+usage() {
+  cat <<EOF
+Usage: $SCRIPT_NAME [OPTIONS] USERNAME
 
-# Determine the sudo group based on the system
-if is_apt; then
-  apt-get update && apt-get install -y sudo
-  SUDO_GROUP="sudo"
-elif is_rh; then
-  dnf install -y sudo
-  SUDO_GROUP="wheel"
-elif is_tw; then
-  zypper install -y sudo
-  SUDO_GROUP="wheel"
-elif is_arch; then
-  pacman -Sy --noconfirm sudo
-  SUDO_GROUP="wheel"
-else
-  die "Unsupported system"
-fi
+Create a new user with sudo privileges or add sudo privileges to an existing user.
 
-if ! getent group "$SUDO_GROUP" >/dev/null; then
-  echo "Creating group '$SUDO_GROUP'..."
-  groupadd "$SUDO_GROUP"
-fi
+OPTIONS:
+    -h, --help          Show this help message and exit
+    -v, --verbose       Enable verbose logging
+    -q, --quiet         Suppress non-error output
+    -l, --log-level     Set logging level (1=ERROR, 2=WARN, 3=INFO, 4=DEBUG)
 
-# Add the user to the sudo group
-usermod -aG "$SUDO_GROUP" "$USERNAME"
+EXAMPLES:
+    $SCRIPT_NAME newuser
+    $SCRIPT_NAME -v existinguser
 
-slog "$USERNAME now has sudo privileges"
+EOF
+  exit 1
+}
+
+validate_arguments() {
+  local username=$1
+
+  if [[ -z "$username" ]]; then
+    log_error "Username not provided."
+    usage
+  fi
+}
+
+check_root_privileges() {
+  if [[ $EUID -ne 0 ]]; then
+    die "This script must be run as root"
+  fi
+}
+
+manage_user() {
+  local username=$1
+
+  if id "$username" &>/dev/null; then
+    log_info "User '$username' already exists. Setting password..."
+    passwd "$username" || die "Failed to set password for user '$username'"
+  else
+    log_info "Creating new user '$username'..."
+    useradd -m "$username" || die "Failed to create user '$username'"
+  fi
+}
+
+install_sudo() {
+  if is_apt; then
+    if ! apt-get update && apt-get install -y sudo; then
+      die "Failed to install sudo"
+    fi
+    echo "sudo"
+  elif is_rh; then
+    dnf install -y sudo || die "Failed to install sudo"
+    echo "wheel"
+  elif is_tw; then
+    zypper install -y sudo || die "Failed to install sudo"
+    echo "wheel"
+  elif is_arch; then
+    pacman -Sy --noconfirm sudo || die "Failed to install sudo"
+    echo "wheel"
+  else
+    die "Unsupported system. Cannot determine package manager."
+  fi
+}
+
+ensure_sudo_group() {
+  local sudo_group=$1
+
+  if ! getent group "$sudo_group" >/dev/null; then
+    groupadd "$sudo_group" || die "Failed to create group '$sudo_group'"
+  fi
+}
+
+add_user_to_sudo_group() {
+  local username=$1
+  local sudo_group=$2
+
+  usermod -aG "$sudo_group" "$username" || die "Failed to add user '$username' to group '$sudo_group'"
+}
+
+main() {
+  local username=""
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    -h | --help)
+      usage
+      ;;
+    -v | --verbose)
+      LOG_LEVEL=$LOG_DEBUG
+      shift
+      ;;
+    -q | --quiet)
+      LOG_LEVEL=$LOG_ERROR
+      shift
+      ;;
+    -l | --log-level)
+      if [[ -n "$2" && "$2" =~ ^[1-4]$ ]]; then
+        LOG_LEVEL="$2"
+        shift 2
+      else
+        die "Invalid log level. Must be 1 (ERROR), 2 (WARN), 3 (INFO), or 4 (DEBUG)."
+      fi
+      ;;
+    -*)
+      log_error "Unknown option: $1"
+      usage
+      ;;
+    *)
+      if [[ -z "$username" ]]; then
+        username="$1"
+      else
+        log_error "Multiple usernames provided. Only one username is allowed."
+        usage
+      fi
+      shift
+      ;;
+    esac
+  done
+
+  check_root_privileges
+  validate_arguments "$username"
+
+  manage_user "$username"
+
+  local sudo_group
+  sudo_group=$(install_sudo)
+  ensure_sudo_group "$sudo_group"
+  add_user_to_sudo_group "$username" "$sudo_group"
+
+  log_info "✅ $username now has sudo privileges"
+}
+
+main "$@"
