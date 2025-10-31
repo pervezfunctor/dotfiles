@@ -1503,10 +1503,6 @@ function Initialize-Debloat {
         Write-Host "Failed to execute debloat script: $_" -ForegroundColor Red
         Write-Host "Please check your internet connection and try again." -ForegroundColor Yellow
     }
-    catch {
-        Write-Host "Failed to execute debloat script: $_" -ForegroundColor Red
-        Write-Host "Please check your internet connection and try again." -ForegroundColor Yellow
-    }
 }
 
 function Show-Menu {
