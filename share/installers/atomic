@@ -730,6 +730,7 @@ sway_confstall() {
   foot_confstall
   kitty_confstall
   rofi_confstall
+  wofi_confstall
   wlogout_confstall
 }
 

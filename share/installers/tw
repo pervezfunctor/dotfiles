@@ -236,7 +236,7 @@ distrobox_install() {
     slog "distrobox installation done!"
 }
 
-sway_install() {
+sway_binstall() {
     slog "Installing sway"
 
     sudo zypper install -y -t pattern openSuseway
@@ -250,6 +250,7 @@ sway_install() {
         SwayNotificationCenter-zsh-completion qt6ct sway-marker
 
     jetbrains-mono_install
+    font-awesome_install
 
     cmd_check sway swaylock swaybg swayidle swaymsg sway-marker
     cmd_check swaynag pactl waybar grim clipman imv mpv

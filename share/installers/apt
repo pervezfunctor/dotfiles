@@ -375,18 +375,19 @@ distrobox_install() {
   slog "distrobox installation done!"
 }
 
-sway_install() {
+sway_binstall() {
   slog "Installing sway..."
 
-  si sway swaylock swayidle wlogout rofi dunst firefox-esr foot mpv gvfs \
-    wl-clipboard swaybg polkit-kde-agent-1 gnome-keyring libsecret-tools \
-    grim imagemagick pavucontrol sway-notification-center thunar udiskie \
-    thunar-archive-plugin xdg-desktop-portal-gtk fonts-font-awesome waybar \
-    fonts-noto fonts-noto-mono fonts-noto-color-emoji
+  si sway swaylock swayidle wlogout wofi dunst firefox-esr foot kitty waybar \
+    wl-clipboard swaybg polkit-kde-agent-1 gnome-keyring libsecret-tools gvfs \
+    grim imagemagick pavucontrol sway-notification-center thunar udiskie mpv \
+    thunar-archive-plugin xdg-desktop-portal-gtk fonts-noto fonts-noto-mono \
+    fonts-noto-color-emoji papirus-icon-theme bibata-cursor-theme
 
   jetbrains-mono_install
+  font-awesome_install
 
-    #  papirus-icon-theme bibata-cursor-theme fonts-inter fonts-jetbrains-mono nwg-bar nwg-clipman nwg-displays nwg-look nm-connection-editor swappy tumbler network-manager-applet nvtop cliphist slurp imv
+  # fonts-inter fonts-jetbrains-mono nwg-bar nwg-clipman nwg-displays nwg-look nm-connection-editor swappy tumbler network-manager-applet nvtop cliphist slurp imv
 
   slog "sway installation done!"
 }

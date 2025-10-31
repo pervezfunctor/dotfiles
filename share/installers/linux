@@ -237,6 +237,11 @@ sway_install() {
   slog "Installing sway done!"
 }
 
+sway_groupstall() {
+  sway_install
+  sway_confstall
+}
+
 hyprland_install() {
   slog "Installing hyprland..."
 

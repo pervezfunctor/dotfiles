@@ -254,6 +254,10 @@ desktop_essential_install() {
         network-manager-applet otf-font-awesome noto-fonts noto-fonts-emoji \
         ttf-font-awesome ttf-roboto tumbler firefox kvantum swappy sddm gvfs \
         papirus-icon-theme bibata-cursor-theme nwg-look reflector
+
+    jetbrains-mono_install
+    font-awesome_install
+
     # xorg-server-xwayland
     # mesa vulkan-intel vulkan-radeon vulkan-mesa-layer
 }
@@ -270,7 +274,7 @@ hyprland_install() {
     slog "hyprland installation done!"
 }
 
-sway_install() {
+sway_binstall() {
     slog "Installing sway packages"
 
     desktop_essential_install
