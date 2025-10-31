@@ -629,6 +629,18 @@ jetbrains_nerd_font_install() {
   slog "JetBrains Mono Nerd Font installation done!"
 }
 
+font-awesome_install() {
+  file_exists "$HOME/.local/share/fonts/Font Awesome 7 Brands-Regular-400.otf" && return 0
+
+  smd ~/.local/share/fonts
+  frm /tmp/font-awesome /tmp/font-awesome.zip
+  wget -nv https://use.fontawesome.com/releases/v7.1.0/fontawesome-free-7.1.0-desktop.zip -O /tmp/font-awesome.zip
+  unzip -qq -d /tmp/font-awesome -o /tmp/font-awesome.zip
+  cp /tmp/monaspace/*.otf ~/.local/share/fonts
+  frm /tmp/font-awesome /tmp/font-awesome.zip
+
+}
+
 maple_font_install() {
   file_exists ~/.local/share/fonts/MapleMono-NF-Regular.ttf && return 0
 
