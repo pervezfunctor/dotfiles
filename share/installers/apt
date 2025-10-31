@@ -382,7 +382,8 @@ sway_binstall() {
     wl-clipboard swaybg polkit-kde-agent-1 gnome-keyring libsecret-tools gvfs \
     grim imagemagick pavucontrol sway-notification-center thunar udiskie mpv \
     thunar-archive-plugin xdg-desktop-portal-gtk fonts-noto fonts-noto-mono \
-    fonts-noto-color-emoji papirus-icon-theme bibata-cursor-theme
+    fonts-noto-color-emoji papirus-icon-theme bibata-cursor-theme udisks2programprogram
+  program
 
   jetbrains-mono_install
   font-awesome_install
@@ -390,6 +391,16 @@ sway_binstall() {
   # fonts-inter fonts-jetbrains-mono nwg-bar nwg-clipman nwg-displays nwg-look nm-connection-editor swappy tumbler network-manager-applet nvtop cliphist slurp imv
 
   slog "sway installation done!"
+}
+
+kde_binstall() {
+  slog "Installing minimal kde plasma..."
+
+  is_ubuntu && warn "This might not work on Ubuntu"
+
+  sudo apt install --no-install-recommends -y -qq kde-plasma-desktop plasma-discover systemsettings kscreen kio-extras udisks2
+
+  slog "kde plasma installation done!"
 }
 
 # sudo apt-get -qq -y install \

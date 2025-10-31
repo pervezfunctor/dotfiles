@@ -302,3 +302,7 @@ pm_install() {
     si net-tools iproute2 nmap lm_sensors stress-ng taliscale wireguard-tools \
         smartmontools memtest86+ glmark2
 }
+
+kde_binstall() {
+    sudo zypper install -y --no-recommends plasma5-desktop plasma5-discover systemsettings kscreen kio-extras udisks2
+}

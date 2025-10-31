@@ -292,3 +292,7 @@ pm_install() {
     si nmap net-tools iproute2 lm_sensors stress-ng taliscale wireguard-tools \
         smartmontools memtest86+ glmark2
 }
+
+kde_binstall() {
+    sudo pacman -S --needed plasma-desktop plasma-discover systemsettings kscreen kio-extras udisks2
+}
