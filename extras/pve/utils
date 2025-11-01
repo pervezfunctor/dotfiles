@@ -46,56 +46,25 @@ choose_from_list() {
   done
 }
 
-lxc_create() {
-  local tmpl=$1
-
-  local VMID
-  VMID=$(pct list | awk 'NR>1 {print $1}' | sort -n | tail -n 1)
-  VMID=${VMID:-99}
-  VMID=$((VMID + 1))
-
-  local HOSTNAME
-  HOSTNAME=$(basename "$tmpl" | sed -E 's/\.tar\..*//')
-
-  local PASSWORD="program"
-  local ROOTFS_STORAGE="local-lvm"
-  local DISK_SIZE="8G"
-  local MEMORY="2048"
-  local CPUS="2"
-  local NET_BRIDGE="vmbr0"
-
-  local TEMPLATE_PATH="/var/lib/vz/template/cache/$tmpl"
-  if [[ ! -f $TEMPLATE_PATH ]]; then
-    echo "Template $TEMPLATE_PATH not found!"
-    return 1
-  fi
-
-  echo "Creating container $VMID from $tmpl..."
-
-  pct create "$VMID" "$TEMPLATE_PATH" \
-    --hostname "$HOSTNAME" \
-    --password "$PASSWORD" \
-    --storage "$ROOTFS_STORAGE" \
-    --rootfs "${ROOTFS_STORAGE}:${DISK_SIZE}" \
-    --memory "$MEMORY" \
-    --cores "$CPUS" \
-    --net0 name=eth0,bridge="$NET_BRIDGE",ip=dhcp \
-    --start 1
-
-  echo "Waiting for container to start..."
-  wait_for "UP" 30 2 pct status "$VMID"
-
-  local IP
-  IP=$(pct exec "$VMID" -- hostname -I | awk '{print $1}')
-
-  echo "✅ Container $VMID ($HOSTNAME) created successfully with IP: $IP"
-}
-
 lxc_templates() {
   pveam available
 }
 
-# Let's provide options for all lxc templates to pick from
+supported_lxc_distros() {
+  local distros=(
+    "ubuntu"
+    "debian"
+    "fedora"
+    # "archlinux"
+    # "alpine"
+    # "centos"
+    # "rockylinux"
+    # "opensuse"
+  )
+
+  echo "${distros[@]}"
+}
+
 read_template() {
   local templates
   templates=$(pveam available)
@@ -193,7 +162,7 @@ vm_update() {
   bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/update-vms.sh)"
 }
 
-find_template_by_distro() {
+template_for_distro() {
   local distro="$1"
   local template_dir="/var/lib/vz/template/cache"
 
@@ -217,21 +186,13 @@ hostname_from_template() {
     return 1
   fi
 
-  # Extract just the base distro name (first part before any hyphen or underscore)
   local distro_name
   distro_name=$(echo "$template_name" | cut -d'-' -f1 | sed 's/_.*//')
 
-  # Clean up the distro name to be DNS-compliant
   distro_name=$(echo "$distro_name" | tr '[:upper:]' '[:lower:]')
 
-  # Create a valid hostname (max 63 chars, no underscores, alphanumeric and hyphens only)
   local hostname="${distro_name}-${suffix}"
   hostname=$(echo "$hostname" | sed 's/[^a-z0-9-]//g' | sed 's/--*/-/g')
-
-  # Ensure hostname doesn't exceed 63 characters
-  if [[ ${#hostname} -gt 63 ]]; then
-    hostname="${hostname:0:60}-${suffix}"
-  fi
 
   echo "$hostname"
 }
@@ -273,30 +234,26 @@ validate_ct_id() {
   return 0
 }
 
-get_template_dir() {
-  local template_dir="/var/lib/vz/template/cache"
+wait_for_ct() {
+  local CT_ID="$1"
+  local timeout="${2:-60}" # default 60s
+  local start_time status
 
-  if [[ ! -d "$template_dir" && -d "/tmp/template-cache" ]]; then
-    template_dir="/tmp/template-cache"
-  fi
+  start_time=$(date +%s)
 
-  echo "$template_dir"
-}
+  while true; do
+    status=$(pct status "$CT_ID" | awk '{print $2}')
+    if [ "$status" = "running" ]; then
+      if pct exec "$CT_ID" -- true &>/dev/null; then
+        return 0
+      fi
+    fi
 
-has_distro_templates() {
-  local distro="$1"
-  local template_dir="${2:-$(get_template_dir)}"
-
-  if ! find "$template_dir" -name "${distro}-*" -type f | grep -q "."; then
-    return 1
-  fi
-
-  return 0
-}
-
-list_available_distros() {
-  local template_dir="${1:-$(get_template_dir)}"
-  local limit="${2:-10}"
-
-  find "$template_dir" -name "*-*" -type f | sed 's/^\(.*\)-.*$/\1/' | sort -u | head -n "$limit"
+    # timeout
+    if (($(date +%s) - start_time > timeout)); then
+      echo "Timeout waiting for CT $CT_ID to become ready" >&2
+      return 1
+    fi
+    sleep 1
+  done
 }
