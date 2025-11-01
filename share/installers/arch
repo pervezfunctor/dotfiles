@@ -294,5 +294,6 @@ pm_install() {
 }
 
 kde_binstall() {
-    sudo pacman -S --needed plasma-desktop plasma-discover systemsettings kscreen kio-extras udisks2
+    sudo pacman -S --needed plasma-desktop plasma-discover systemsettings \
+        kscreen kio-extras udisks2 powerdevil power-profiles-daemon
 }

@@ -192,3 +192,111 @@ vm_templates() {
 vm_update() {
   bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/update-vms.sh)"
 }
+
+find_template_by_distro() {
+  local distro="$1"
+  local template_dir="/var/lib/vz/template/cache"
+
+  local latest_template
+  latest_template=$(find "$template_dir" -name "${distro}-*" -type f | sort -V | tail -n 1 2>/dev/null)
+
+  if [[ -z "$latest_template" ]]; then
+    echo "Error: No template found for distro '$distro' in $template_dir" >&2
+    return 1
+  fi
+
+  basename "$latest_template"
+}
+
+hostname_from_template() {
+  local template_name="$1"
+  local suffix="${2:-ct}"
+
+  if [[ -z "$template_name" ]]; then
+    fail "Template name is required for hostname generation"
+    return 1
+  fi
+
+  # Extract just the base distro name (first part before any hyphen or underscore)
+  local distro_name
+  distro_name=$(echo "$template_name" | cut -d'-' -f1 | sed 's/_.*//')
+
+  # Clean up the distro name to be DNS-compliant
+  distro_name=$(echo "$distro_name" | tr '[:upper:]' '[:lower:]')
+
+  # Create a valid hostname (max 63 chars, no underscores, alphanumeric and hyphens only)
+  local hostname="${distro_name}-${suffix}"
+  hostname=$(echo "$hostname" | sed 's/[^a-z0-9-]//g' | sed 's/--*/-/g')
+
+  # Ensure hostname doesn't exceed 63 characters
+  if [[ ${#hostname} -gt 63 ]]; then
+    hostname="${hostname:0:60}-${suffix}"
+  fi
+
+  echo "$hostname"
+}
+
+validate_positive_integer() {
+  local value="$1"
+  local error_message="${2:-Value must be a positive integer}"
+
+  if [[ ! "$value" =~ ^[0-9]+$ ]]; then
+    echo "Error: $error_message" >&2
+    return 1
+  fi
+
+  if [[ "$value" -lt 0 ]]; then
+    echo "Error: $error_message" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+validate_ct_id() {
+  local ct_id="$1"
+
+  if ! validate_positive_integer "$ct_id" "Container ID must be a positive integer"; then
+    return 1
+  fi
+
+  if [[ "$ct_id" -lt 100 || "$ct_id" -gt 255 ]]; then
+    echo "Error: Container ID must be between 100 and 255" >&2
+    return 1
+  fi
+
+  if pct status "$ct_id" &>/dev/null; then
+    echo "Error: Container with ID $ct_id already exists" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+get_template_dir() {
+  local template_dir="/var/lib/vz/template/cache"
+
+  if [[ ! -d "$template_dir" && -d "/tmp/template-cache" ]]; then
+    template_dir="/tmp/template-cache"
+  fi
+
+  echo "$template_dir"
+}
+
+has_distro_templates() {
+  local distro="$1"
+  local template_dir="${2:-$(get_template_dir)}"
+
+  if ! find "$template_dir" -name "${distro}-*" -type f | grep -q "."; then
+    return 1
+  fi
+
+  return 0
+}
+
+list_available_distros() {
+  local template_dir="${1:-$(get_template_dir)}"
+  local limit="${2:-10}"
+
+  find "$template_dir" -name "*-*" -type f | sed 's/^\(.*\)-.*$/\1/' | sort -u | head -n "$limit"
+}

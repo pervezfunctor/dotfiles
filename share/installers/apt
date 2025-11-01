@@ -398,7 +398,7 @@ kde_binstall() {
 
   is_ubuntu && warn "This might not work on Ubuntu"
 
-  sudo apt install --no-install-recommends -y -qq kde-plasma-desktop plasma-discover systemsettings kscreen kio-extras udisks2
+  sudo apt install --no-install-recommends -y -qq kde-plasma-desktop plasma-discover systemsettings kscreen kio-extras udisks2 powerdevil power-profiles-daemon
 
   slog "kde plasma installation done!"
 }
