@@ -134,16 +134,6 @@ gum_install() {
   cmd_check gum
 }
 
-select_one() {
-  local PS3="Please enter your choice: "
-  select result in "$@"; do
-    if [[ -n "$result" ]]; then
-      break
-    fi
-  done
-  echo "$result"
-}
-
 press_enter() {
   echo "Press Enter to continue..."
   read -r
@@ -1673,4 +1663,52 @@ fedora_version() {
   [[ -n "${VERSION_ID}" ]] || return 1
 
   echo "${VERSION_ID%%.*}"
+}
+
+fzf-select() {
+  local prompt="$1"
+  local items=("${@:2}")
+
+  if has_cmd fzf; then
+    printf '%s\n' "${items[@]}" | fzf --prompt="$prompt" --height=10 --layout=reverse
+  elif has_cmd gum; then
+    printf '%s\n' "${items[@]}" | gum choose --header="$prompt"
+  else
+    local PS3="$prompt"
+    select item in "${items[@]}"; do
+      if [[ -n "$item" ]]; then
+        echo "$item"
+        break
+      fi
+    done
+  fi
+}
+
+fzf-select-multi() {
+  local prompt="$1"
+  local items=("${@:2}")
+
+  if has_cmd fzf; then
+    printf '%s\n' "${items[@]}" | fzf --prompt="$prompt" --height=10 --layout=reverse --multi
+  elif has_cmd gum; then
+    printf '%s\n' "${items[@]}" | gum choose --header="$prompt" --no-limit
+  else
+    local PS3="$prompt"
+    local selected_items=()
+    local item
+
+    # Basic multi-select menu using bash select
+    echo "Select items (enter 'done' when finished):"
+    select item in "${items[@]}" "done"; do
+      if [[ "$item" == "done" ]]; then
+        break
+      elif [[ -n "$item" ]]; then
+        selected_items+=("$item")
+        echo "Selected: $item"
+      fi
+    done
+
+    # Print selected items, one per line
+    printf '%s\n' "${selected_items[@]}"
+  fi
 }

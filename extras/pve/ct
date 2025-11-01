@@ -16,8 +16,25 @@ check_prerequisites() {
   fi
 }
 
-ct-all_install() {
-  local storage="$1"
+ct_all_install() {
+  local storage=""
+  local password=""
+
+  # Parse arguments
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --password)
+      password="$2"
+      shift 2
+      ;;
+    *)
+      if [[ -z "$storage" ]]; then
+        storage="$1"
+      fi
+      shift
+      ;;
+    esac
+  done
 
   if [[ -n "$storage" ]]; then
     if ! pvesm status | grep -q "$storage"; then
@@ -33,7 +50,7 @@ ct-all_install() {
     return 1
   fi
 
-  echo "Creating containers from all templates..."
+  echo "🚀 Creating containers from all templates..."
   local template_dir="/var/lib/vz/template/cache"
   local ct_id=150
 
@@ -46,7 +63,7 @@ ct-all_install() {
     if file_exists "$template"; then
       local template_name
       template_name=$(basename "$template")
-      echo "Creating LXC from template: $template_name"
+      echo "📦 Creating LXC from template: $template_name"
 
       local distro=""
       case "$template_name" in
@@ -61,33 +78,38 @@ ct-all_install() {
       opensuse*) distro="opensuse" ;;
       *)
         distro=$(echo "$template_name" | cut -d'-' -f1)
-        echo "Warning: Unknown distro '$distro', using as-is"
+        echo "⚠️ Warning: Unknown distro '$distro', using as-is"
         ;;
       esac
 
       if pct status "$ct_id" &>/dev/null; then
-        echo "Container ID $ct_id already exists, skipping..."
+        echo "⏭️ Container ID $ct_id already exists, skipping..."
         ((ct_id++))
         continue
       fi
 
-      if "$(dirname "$0")/ct-create" --distro "$distro" --id "$ct_id" --storage "$storage"; then
-        echo "Successfully created container with ID $ct_id"
+      local ct_create_args=("--distro" "$distro" "--id" "$ct_id" "--storage" "$storage")
+      if [[ -n "$password" ]]; then
+        ct_create_args+=(--password "$password")
+      fi
+
+      if "$(dirname "$0")/ct-create" "${ct_create_args[@]}"; then
+        echo "✅ Successfully created container with ID $ct_id"
       else
-        echo "Failed to create container with ID $ct_id from template $template_name"
+        echo "❌ Failed to create container with ID $ct_id from template $template_name"
       fi
       ((ct_id++))
     fi
   done
 
-  echo "Creating containers from all templates done!"
+  echo "🎉 Creating containers from all templates done!"
 }
 
 ct_templates_download() {
-  echo "Installing container templates..."
+  echo "📥 Installing container templates..."
 
   if ! has_cmd pveam; then
-    echo "pveam command not found. Is Proxmox VE installed?"
+    echo "❌ pveam command not found. Is Proxmox VE installed?"
     return 1
   fi
 
@@ -99,7 +121,7 @@ ct_templates_download() {
 
   local available_templates
   if ! available_templates=$(pveam available 2>&1); then
-    echo "Failed to retrieve available templates: $available_templates"
+    echo "❌ Failed to retrieve available templates: $available_templates"
     return 1
   fi
 
@@ -108,77 +130,85 @@ ct_templates_download() {
 
   for pattern in "${templates[@]}"; do
     local template
-    echo "looking for template matching pattern: $pattern"
+    echo "🔍 Looking for template matching pattern: $pattern"
 
     template=$(echo "$available_templates" |
       awk '{print $2}' |
       grep -E "${pattern}" |
       sort -V |
       tail -n 1)
-    echo "got template: $template"
+    echo "📋 Found template: $template"
 
     if [[ -n "$template" ]]; then
       if pveam list local 2>/dev/null | grep -q "$template"; then
-        echo "Template already exists: $template"
+        echo "✅ Template already exists: $template"
         ((++downloaded))
       elif pveam download local "$template"; then
-        echo "Downloaded template: $template"
+        echo "✅ Downloaded template: $template"
         ((++downloaded))
       else
-        echo "Failed to download $template"
+        echo "❌ Failed to download $template"
         ((++failed))
       fi
     else
-      echo "No template found for pattern: $pattern"
+      echo "❌ No template found for pattern: $pattern"
       ((++failed))
     fi
   done
 
-  echo "Container templates installation done: $downloaded succeeded, $failed failed"
+  echo "🎉 Container templates installation done: $downloaded succeeded, $failed failed"
   return 0
 }
 
 usage() {
   cat <<EOF
-Usage: $0 <command> [ct-id]
+Usage: $0 <command> [ct-id...]
 
 Manage LXC containers on Proxmox. These are lightweight containers using the pct command.
 
 COMMANDS:
-    list                List all containers
-    create  ARGS        Create a new container (same arguments as ct-create)
-    create-all          Create containers from all available templates
-    start <ct-id>       Start a container
-    stop <ct-id>        Stop a container
-    restart <ct-id>     Restart a container
-    shutdown <ct-id>    Gracefully stop a container
-    delete <ct-id>      Delete a container completely
-    console <ct-id>     Connect to container console
-    exec <ct-id> CMD    Execute command in container
-    ssh <ct-id>         SSH into container (requires SSH setup)
-    show-ip <ct-id>     Show container IP address
-    info <ct-id>        Show container status and information
-    status <ct-id>      Show container status
-    enter <ct-id>       Enter container namespace
-    snapshot <ct-id> [name] Create snapshot of container
-    rollback <ct-id> <name> Rollback to snapshot
-    templates           List available templates
-    templates sync      Sync/download common container templates
-    help                Show this help message
+    list                      List all containers
+    create  ARGS              Create a new container (same arguments as ct-create)
+    create-all <storage>      Create containers from all available templates
+    create-all --password <password> <storage>  Create containers with password
+    start <ct-id...>          Start one or more containers
+    stop <ct-id...>           Stop one or more containers
+    restart <ct-id...>        Restart one or more containers
+    shutdown <ct-id...>       Gracefully stop one or more containers
+    delete <ct-id...>         Delete one or more containers completely
+    console <ct-id>           Connect to container console
+    exec <ct-id> CMD          Execute command in container
+    ssh <ct-id> [user]        SSH into container (requires SSH setup)
+    show-ip <ct-id>           Show container IP address
+    info <ct-id>              Show container status and information
+    status <ct-id>            Show container status
+    enter <ct-id>             Enter container namespace
+    snapshot <ct-id> [name]   Create snapshot of container
+    rollback <ct-id> <name>  Rollback to snapshot
+    templates                 List available templates
+    templates sync            Sync/download common container templates
+    help                      Show this help message
 
 EXAMPLES:
     $0 list                    # List all containers
     $0 show-ip 100             # Show IP address of container 100
     $0 status 100              # Show status of container 100
     $0 start 100               # Start container 100
+    $0 start 100 101 102       # Start containers 100, 101, and 102
     $0 stop 100                # Stop container 100
+    $0 stop 100 101 102        # Stop containers 100, 101, and 102
     $0 delete 100              # Delete container 100
+    $0 delete 100 101 102      # Delete containers 100, 101, and 102
     $0 console 100             # Connect to container console
     $0 exec 100 -- apt update  # Run command in container
-    $0 ssh 100                 # SSH into container 100
+    $0 ssh 100                 # SSH into container 100 as root
+    $0 ssh 100 username        # SSH into container 100 as username
     $0 templates sync          # Sync/download common templates
-    $0 create-all              # Create containers from all available templates
+    $0 create-all              # Create containers from all available templates (local-lvm/local-zfs)
+    $0 create-all local-zfs    # Create containers using specific storage
+    $0 create-all --password mypass local-zfs  # Create containers with password
     $0 create --template ubuntu-22.04-standard_22.04-1_amd64.tar.zst --id 100
+    $0 create --distro ubuntu --id 100 --password mysecretpassword
 EOF
 }
 
@@ -197,36 +227,50 @@ info_ct() {
 }
 
 start_ct() {
-  check_container "$1"
-  pct start "$1"
+  for ct_id in "$@"; do
+    check_container "$ct_id"
+    echo "🚀 Starting container $ct_id..."
+    pct start "$ct_id"
+  done
 }
 
 stop_ct() {
-  check_container "$1"
-  pct stop "$1"
+  for ct_id in "$@"; do
+    check_container "$ct_id"
+    echo "⏹️ Stopping container $ct_id..."
+    pct stop "$ct_id"
+  done
 }
 
 shutdown_ct() {
-  check_container "$1"
-  pct shutdown "$1"
+  for ct_id in "$@"; do
+    check_container "$ct_id"
+    echo "🔄 Shutting down container $ct_id..."
+    pct shutdown "$ct_id"
+  done
 }
 
 restart_ct() {
-  check_container "$1"
-  pct reboot "$1"
+  for ct_id in "$@"; do
+    check_container "$ct_id"
+    echo "🔄 Restarting container $ct_id..."
+    pct reboot "$ct_id"
+  done
 }
 
 delete_ct() {
-  check_container "$1"
+  for ct_id in "$@"; do
+    check_container "$ct_id"
 
-  # Stop container if running
-  if pct status "$1" | grep -q "status: running"; then
-    echo "Stopping container $1..."
-    pct stop "$1"
-  fi
+    # Stop container if running
+    if pct status "$ct_id" | grep -q "status: running"; then
+      echo "⏹️ Stopping container $ct_id..."
+      pct stop "$ct_id"
+    fi
 
-  echo "Deleting container $1..."
-  pct destroy "$1"
+    echo "🗑️ Deleting container $ct_id..."
+    pct destroy "$ct_id"
+  done
 }
 
 console_ct() {
@@ -262,30 +306,31 @@ show_ip_ct() {
   fi
 
   if [[ -n "$ip" && "$ip" != "dhcp" ]]; then
-    echo "Container $1 IP: $ip"
+    echo "🌐 Container $1 IP: $ip"
   else
-    echo "Could not determine IP for container $1"
-    echo "Container may not be running or may be using DHCP"
+    echo "❌ Could not determine IP for container $1"
+    echo "💡 Container may not be running or may be using DHCP"
   fi
 }
 
 ssh_ct() {
   local ctid="$1"
+  local username="${2:-root}" # Default to root if no username provided
   check_container "$ctid"
 
   local ip
   ip=$(pct exec "$ctid" -- hostname -I 2>/dev/null | awk '{print $1}' || true)
 
   if [[ -z "$ip" ]]; then
-    echo "Error: could not determine IP for container '$ctid'"
-    echo "- Ensure the container is running"
-    echo "- Ensure SSH server is installed in the container"
-    echo "- Try: $0 start $ctid; then wait a few seconds."
+    echo "❌ Error: could not determine IP for container '$ctid'"
+    echo "💡 - Ensure the container is running"
+    echo "💡 - Ensure SSH server is installed in the container"
+    echo "💡 - Try: $0 start $ctid; then wait a few seconds."
     exit 1
   fi
 
-  echo "Connecting: ssh root@$ip"
-  exec ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@$ip"
+  echo "🔐 Connecting: ssh $username@$ip"
+  exec ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$username@$ip"
 }
 
 snapshot_ct() {
@@ -293,7 +338,7 @@ snapshot_ct() {
   local snapname="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
 
   check_container "$ctid"
-  echo "Creating snapshot '$snapname' for container $ctid..."
+  echo "📸 Creating snapshot '$snapname' for container $ctid..."
   pct snapshot "$ctid" "$snapname"
 }
 
@@ -302,7 +347,7 @@ rollback_ct() {
   local snapname="$2"
 
   check_container "$ctid"
-  echo "Rolling back container $ctid to snapshot '$snapname'..."
+  echo "⏪ Rolling back container $ctid to snapshot '$snapname'..."
   pct rollback "$ctid" "$snapname"
 }
 
@@ -315,12 +360,12 @@ resolve_ct_id() {
 
   local containers selected rc
   if ! containers=$(pct list 2>/dev/null | awk 'NR>1 && $0 !~ /^[-[:space:]]*$/ {print $1}'); then
-    echo "Error: failed to list containers" >&2
+    echo "❌ Error: failed to list containers" >&2
     return 1
   fi
 
   if [[ -z "$containers" ]]; then
-    echo "Error: no containers found" >&2
+    echo "❌ Error: no containers found" >&2
     return 1
   fi
 
@@ -328,14 +373,63 @@ resolve_ct_id() {
   rc=$?
   if [[ $rc -ne 0 || -z "$selected" ]]; then
     if [[ $rc -eq 127 ]]; then
-      echo "Error: fzf is not installed or not in PATH" >&2
+      echo "❌ Error: fzf is not installed or not in PATH" >&2
     else
-      echo "Cancelled" >&2
+      echo "⏹️ Cancelled" >&2
     fi
     return 1
   fi
 
   printf '%s\n' "$selected"
+}
+
+resolve_multiple_ct_ids() {
+  local ids=("$@")
+  local resolved_ids=()
+
+  # If no IDs provided, use fzf to select containers
+  if [[ ${#ids[@]} -eq 0 ]]; then
+    local containers selected rc
+    if ! containers=$(pct list 2>/dev/null | awk 'NR>1 && $0 !~ /^[-[:space:]]*$/ {print $1}'); then
+      echo "❌ Error: failed to list containers" >&2
+      return 1
+    fi
+
+    if [[ -z "$containers" ]]; then
+      echo "❌ Error: no containers found" >&2
+      return 1
+    fi
+
+    # Convert containers string to array for fzf-select-multi
+    readarray -t container_array <<<"$containers"
+
+    # Use fzf-select-multi function for multi-selection
+    selected=$(fzf-select-multi 'Select containers (TAB to multi-select) > ' "${container_array[@]}")
+    rc=$?
+    if [[ $rc -ne 0 || -z "$selected" ]]; then
+      if [[ $rc -eq 127 ]]; then
+        echo "❌ Error: fzf is not installed or not in PATH" >&2
+      else
+        echo "⏹️ Cancelled" >&2
+      fi
+      return 1
+    fi
+
+    # Convert selected to array
+    readarray -t resolved_ids <<<"$selected"
+  else
+    # Validate each provided ID
+    for id in "${ids[@]}"; do
+      if ! container_exists "$id"; then
+        echo "❌ Error: Container '$id' does not exist" >&2
+        return 1
+      fi
+      resolved_ids+=("$id")
+    done
+  fi
+
+  # Output the resolved IDs
+  printf '%s\n' "${resolved_ids[@]}"
 }
 
 main() {
@@ -371,37 +465,37 @@ main() {
     "$(dirname "$0")/ct-create" "${@:2}"
     ;;
   create-all)
-    ct-all_install "${@:2}"
+    ct_all_install "${@:2}"
     ;;
   start | boot)
     {
-      target=$(resolve_ct_id "$ct_id")
+      readarray -t targets < <(resolve_multiple_ct_ids "${@:2}")
     } || exit 1
-    start_ct "$target"
+    start_ct "${targets[@]}"
     ;;
   stop)
     {
-      target=$(resolve_ct_id "$ct_id")
+      readarray -t targets < <(resolve_multiple_ct_ids "${@:2}")
     } || exit 1
-    stop_ct "$target"
+    stop_ct "${targets[@]}"
     ;;
   shutdown)
     {
-      target=$(resolve_ct_id "$ct_id")
+      readarray -t targets < <(resolve_multiple_ct_ids "${@:2}")
     } || exit 1
-    shutdown_ct "$target"
+    shutdown_ct "${targets[@]}"
     ;;
   restart | reboot)
     {
-      target=$(resolve_ct_id "$ct_id")
+      readarray -t targets < <(resolve_multiple_ct_ids "${@:2}")
     } || exit 1
-    restart_ct "$target"
+    restart_ct "${targets[@]}"
     ;;
   delete | rm)
     {
-      target=$(resolve_ct_id "$ct_id")
+      readarray -t targets < <(resolve_multiple_ct_ids "${@:2}")
     } || exit 1
-    delete_ct "$target"
+    delete_ct "${targets[@]}"
     ;;
   console)
     {
@@ -411,8 +505,8 @@ main() {
     ;;
   exec)
     if [[ -z "$ct_id" ]]; then
-      echo "Error: Container ID required for exec command"
-      echo "Usage: $0 exec <ct-id> -- <command>"
+      echo "❌ Error: Container ID required for exec command"
+      echo "💡 Usage: $0 exec <ct-id> -- <command>"
       exit 1
     fi
     check_container "$ct_id"
@@ -435,7 +529,7 @@ main() {
     {
       target=$(resolve_ct_id "$ct_id")
     } || exit 1
-    ssh_ct "$target"
+    ssh_ct "$target" "${3:-}"
     ;;
   snapshot)
     {
@@ -448,8 +542,8 @@ main() {
       target=$(resolve_ct_id "$ct_id")
     } || exit 1
     if [[ -z "${3:-}" ]]; then
-      echo "Error: Snapshot name required for rollback"
-      echo "Usage: $0 rollback <ct-id> <snapshot-name>"
+      echo "❌ Error: Snapshot name required for rollback"
+      echo "💡 Usage: $0 rollback <ct-id> <snapshot-name>"
       exit 1
     fi
     rollback_ct "$target" "$3"
@@ -465,7 +559,7 @@ main() {
     usage
     ;;
   *)
-    echo "Error: Unknown command: $command"
+    echo "❌ Error: Unknown command: $command"
     usage
     ;;
   esac

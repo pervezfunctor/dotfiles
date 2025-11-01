@@ -14,8 +14,12 @@ CT_ID=""
 HOSTNAME=""
 MEMORY="4096"
 CPU="2"
-STORAGE="local-lvm"
+STORAGE=""
 DISK_SIZE="8"
+TEMPLATE_DIR="/var/lib/vz/template/cache"
+BRIDGE="vmbr0"
+TEMPLATE=""
+PASSWORD="program"
 
 parse_args() {
   while [[ $# -gt 0 ]]; do
@@ -48,15 +52,27 @@ parse_args() {
       DISK_SIZE="$2"
       shift 2
       ;;
+    --template-dir)
+      TEMPLATE_DIR="$2"
+      shift 2
+      ;;
+    --bridge)
+      BRIDGE="$2"
+      shift 2
+      ;;
+    --password)
+      PASSWORD="$2"
+      shift 2
+      ;;
     *)
-      echo "❌ Error: Unknown option $1" >&2
+      echo "Error: Unknown option $1" >&2
       return 1
       ;;
     esac
   done
 
   if [[ -z "$DISTRO" || -z "$CT_ID" ]]; then
-    echo "❌ Error: Both --distro and --id are required" >&2
+    echo "Error: Both --distro and --id are required" >&2
     return 1
   fi
 
@@ -68,13 +84,40 @@ parse_args() {
   return 0
 }
 
+detect_storage() {
+  local storage=""
+
+  if [[ -n "${STORAGE:-}" ]]; then
+    if ! pvesm status | grep -q "^$STORAGE "; then
+      fail "Storage '$STORAGE' not found or not accessible"
+      return 1
+    fi
+    storage="$STORAGE"
+  elif pvesm status | grep -q "local-zfs"; then
+    storage="local-zfs"
+  elif pvesm status | grep -q "local-lvm"; then
+    storage="local-lvm"
+  else
+    fail "No suitable storage found (local-lvm or local-zfs)"
+    return 1
+  fi
+
+  echo "$storage"
+}
+
 validate_args() {
   if [[ -z "$DISTRO" ]]; then
-    echo "❌ Error: Distribution is required" >&2
+    echo "Error: Distribution is required" >&2
     return 1
   fi
 
   if ! validate_ct_id "$CT_ID"; then
+    return 1
+  fi
+
+  # Check if VM with same ID exists
+  if qm status "$CT_ID" &>/dev/null; then
+    echo "Error: VM with ID $CT_ID already exists" >&2
     return 1
   fi
 
@@ -86,17 +129,30 @@ validate_args() {
     return 1
   fi
 
-  if ! pvesm status | grep -q "^$STORAGE "; then
-    fail "Storage '$STORAGE' not found or not accessible"
+  # Auto-detect storage if not provided
+  if [[ -z "$STORAGE" ]]; then
+    if ! STORAGE=$(detect_storage); then
+      return 1
+    fi
+    echo "Auto-detected storage: $STORAGE 💾"
+  else
+    if ! pvesm status | grep -q "^$STORAGE "; then
+      fail "Storage '$STORAGE' not found or not accessible"
+      return 1
+    fi
+  fi
+
+  if ! brctl show | grep -q "^${BRIDGE}[[:space:]]"; then
+    fail "Network bridge '$BRIDGE' not found or not accessible"
     return 1
   fi
 
-  if validate_positive_integer "$DISK_SIZE" "Disk size must be a positive integer"; then
+  if ! validate_positive_integer "$DISK_SIZE" "Disk size must be a positive integer"; then
     return 1
   fi
 
-  if ! find "/var/lib/vz/template/cache" -name "${DISTRO}-*" -type f | grep -q "."; then
-    echo "❌ Error: No templates found for distro '$DISTRO'" >&2
+  if ! find "$TEMPLATE_DIR" -name "${DISTRO}-*" -type f | grep -q "."; then
+    echo "Error: No templates found for distro '$DISTRO' in $TEMPLATE_DIR" >&2
     return 1
   fi
 
@@ -121,43 +177,25 @@ Optional Options:
   --hostname       Container hostname (auto-generated if not provided)
   --memory         Memory in MB (default: 4096)
   --cpu            Number of CPU cores (default: 2)
-  --storage        Storage location (default: local-lvm)
-  --disk-size      Disk size (default: 8G)
+  --storage        Storage location (auto-detects local-zfs or local-lvm if not provided)
+  --disk-size      Disk size (default: 8 gigabytes)
+  --template-dir   Template directory path (default: /var/lib/vz/template/cache)
+  --bridge         Network bridge (default: vmbr0)
+  --password       Root password for the container (default: empty)
 
 Examples:
   $(basename "$0") --distro ubuntu --id 100
   $(basename "$0") -d debian --id 101 --hostname my-container
   $(basename "$0") -d ubuntu --id 102 --memory 8192 --cpu 4
   $(basename "$0") -d fedora --id 103 --disk-size 16G --storage local-zfs
+  $(basename "$0") -d debian --id 104 --template-dir /custom/template/path --bridge vmbr1
+  $(basename "$0") -d ubuntu --id 105 --password mysecretpassword
 
 EOF
 }
 
-wait_for_ct() {
-  local CT_ID="$1"
-  local timeout="${2:-60}"
-  local start_time status
-
-  start_time=$(date +%s)
-
-  while true; do
-    status=$(pct status "$CT_ID" | awk '{print $2}')
-    if [ "$status" = "running" ]; then
-      if pct exec "$CT_ID" -- true &>/dev/null; then
-        return 0
-      fi
-    fi
-
-    if (($(date +%s) - start_time > timeout)); then
-      echo "Timeout waiting for CT $CT_ID to become ready" >&2
-      return 1
-    fi
-    sleep 1
-  done
-}
-
 main() {
-  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+  if [[ $# -gt 0 && ("$1" == "--help" || "$1" == "-h") ]]; then
     usage
     exit 0
   fi
@@ -176,28 +214,61 @@ main() {
   local rootfs_param
   rootfs_param="${STORAGE}:${DISK_SIZE}"
 
-  if [[ ! -f "/var/lib/vz/template/cache/$TEMPLATE" ]]; then
-    fail "Template file not found: /var/lib/vz/template/cache/$TEMPLATE"
+  if [[ ! -f "$TEMPLATE_DIR/$TEMPLATE" ]]; then
+    fail "Template file not found: $TEMPLATE_DIR/$TEMPLATE"
     return 1
   fi
 
-  if ! pct create "$CT_ID" /var/lib/vz/template/cache/"$TEMPLATE" \
-    --hostname "$HOSTNAME" \
-    --memory "$MEMORY" \
-    --cores "$CPU" \
-    --rootfs "$rootfs_param" \
-    --net0 name=eth0,bridge=vmbr0,ip=dhcp \
-    --console 1 \
-    --unprivileged 1; then
+  local pct_create_args=(
+    "$CT_ID"
+    "$TEMPLATE_DIR/$TEMPLATE"
+    --hostname "$HOSTNAME"
+    --memory "$MEMORY"
+    --cores "$CPU"
+    --rootfs "$rootfs_param"
+    --net0 "name=eth0,bridge=$BRIDGE,ip=dhcp,firewall=1"
+    --console 1
+    --unprivileged 1
+    --features nesting=1
+  )
+
+  # Add password if provided
+  if [[ -n "$PASSWORD" ]]; then
+    pct_create_args+=(--password "$PASSWORD")
+    echo "🔐 Setting root password for container"
+  fi
+
+  if ! pct create "${pct_create_args[@]}"; then
     fail "Failed to create LXC from $TEMPLATE"
     return 1
   fi
 
   pct start "$CT_ID"
 
-  wait_for_ct "$CT_ID"
-  pct exec "$CT_ID" -- systemctl enable getty@tty1.service
-  pct exec "$CT_ID" -- systemctl start getty@tty1.service
+  # Wait for container to be fully ready
+  echo "⏳ Waiting for container to initialize..."
+  if wait_for_ct "$CT_ID" 60; then
+    echo "✅ Container is ready!"
+  else
+    echo "⚠️  Container started but may not be fully ready"
+  fi
+
+  # # Additional setup for better systemd support
+  # echo "🔧 Configuring systemd services..."
+
+  # # Create necessary directories that systemd services need
+  # pct exec "$CT_ID" -- mkdir -p /run/lock /var/log/journal /dev/mqueue || true
+
+  # # Setup journal persistence
+  # pct exec "$CT_ID" -- systemd-tmpfiles --create --prefix /var/log/journal || true
+
+  # # Restart systemd services to ensure proper initialization
+  # pct exec "$CT_ID" -- systemctl daemon-reload || true
+  # pct exec "$CT_ID" -- systemctl restart systemd-journald || true
+
+  # # Enable console services
+  # pct exec "$CT_ID" -- systemctl enable getty@tty1.service || true
+  # pct exec "$CT_ID" -- systemctl start getty@tty1.service || true
 
   echo "✅ LXC creation from template $TEMPLATE with ID $CT_ID done!"
   return 0
