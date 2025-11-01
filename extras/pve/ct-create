@@ -193,7 +193,7 @@ main() {
     --memory "$MEMORY" \
     --cores "$CPU" \
     --rootfs "$rootfs_param" \
-    --net0 name=eth0,bridge=vmbr0,ip=dhcp,ip6=none \
+    --net0 name=eth0,bridge=vmbr0,ip=dhcp \
     --console 1 \
     --unprivileged 1; then
     fail "Failed to create LXC from $TEMPLATE"
