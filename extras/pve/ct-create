@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091
+
+set -euo pipefail -o errtrace
+
+export DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
+
+source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/utils"
+
+DISTRO=""
+CT_ID=""
+HOSTNAME=""
+MEMORY="4096"
+CPU="2"
+STORAGE="local-lvm"
+DISK_SIZE="8G"
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --distro | -d)
+      DISTRO="$2"
+      shift 2
+      ;;
+    --id)
+      CT_ID="$2"
+      shift 2
+      ;;
+    --hostname)
+      HOSTNAME="$2"
+      shift 2
+      ;;
+    --memory)
+      MEMORY="$2"
+      shift 2
+      ;;
+    --cpu)
+      CPU="$2"
+      shift 2
+      ;;
+    --storage)
+      STORAGE="$2"
+      shift 2
+      ;;
+    --disk-size)
+      DISK_SIZE="$2"
+      shift 2
+      ;;
+    *)
+      echo "❌ Error: Unknown option $1" >&2
+      return 1
+      ;;
+    esac
+  done
+
+  if [[ -z "$DISTRO" || -z "$CT_ID" ]]; then
+    echo "❌ Error: Both --distro and --id are required" >&2
+    return 1
+  fi
+
+  if ! TEMPLATE=$(find_template_by_distro "$DISTRO"); then
+    fail "Failed to find template for distro $DISTRO"
+    return 1
+  fi
+
+  return 0
+}
+
+validate_storage() {
+  if ! pvesm status | grep -q "^$STORAGE "; then
+    fail "Storage '$STORAGE' not found or not accessible"
+    return 1
+  fi
+  return 0
+}
+
+validate_args() {
+  if [[ -z "$DISTRO" ]]; then
+    echo "❌ Error: Distribution is required" >&2
+    return 1
+  fi
+
+  if ! validate_ct_id "$CT_ID"; then
+    return 1
+  fi
+
+  if ! validate_positive_integer "$MEMORY" "Memory must be a positive integer"; then
+    return 1
+  fi
+
+  if ! validate_positive_integer "$CPU" "CPU must be a positive integer"; then
+    return 1
+  fi
+
+  if ! validate_storage "$STORAGE"; then
+    return 1
+  fi
+
+  # Validate DISK_SIZE format (e.g., "8G", "1024M")
+  if [[ ! "$DISK_SIZE" =~ ^[0-9]+[GM]$ ]]; then
+    echo "❌ Error: Disk size must be in format like '8G' or '1024M': $DISK_SIZE" >&2
+    return 1
+  fi
+
+  if ! has_distro_templates "$DISTRO"; then
+    local template_dir
+    template_dir=$(get_template_dir)
+    echo "❌ Error: No templates found for distro '$DISTRO' in $template_dir" >&2
+    echo "📋 Available distros with templates:"
+    list_available_distros "$template_dir"
+    return 1
+  fi
+
+  if [[ -z "$HOSTNAME" ]]; then
+    HOSTNAME=$(hostname_from_template "$TEMPLATE" "ct")
+    if pct status "$HOSTNAME" &>/dev/null; then
+      fail "a unique hostname is required"
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") --distro|-d <distro> --id <ct_id> [OPTIONS]
+
+Create a Proxmox LXC container from a template.
+
+Required Options:
+  --distro, -d    Distribution name (e.g., ubuntu, debian, fedora)
+  --id             Container ID (must be a number between 100-255)
+
+Optional Options:
+  --hostname       Container hostname (auto-generated if not provided)
+  --memory         Memory in MB (default: 4096)
+  --cpu            Number of CPU cores (default: 2)
+  --storage        Storage location (default: local-lvm)
+  --disk-size      Disk size (default: 8G)
+
+Examples:
+  $(basename "$0") --distro ubuntu --id 100
+  $(basename "$0") -d debian --id 101 --hostname my-container
+  $(basename "$0") -d ubuntu --id 102 --memory 8192 --cpu 4
+  $(basename "$0") -d fedora --id 103 --disk-size 16G --storage local-zfs
+
+EOF
+}
+
+wait_for_ct() {
+  local CT_ID="$1"
+  local status
+
+  for _ in {1..30}; do
+    status=$(pct status "$CT_ID" | awk '{print $2}')
+    if [ "$status" = "running" ]; then
+      break
+    fi
+    sleep 1
+  done
+}
+
+main() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    usage
+    exit 0
+  fi
+
+  if ! parse_args "$@" || ! validate_args; then
+    echo
+    usage
+    exit 1
+  fi
+
+  echo "🚀 Creating LXC from template: $TEMPLATE with ID: $CT_ID"
+
+  echo "🏷️ Using hostname: $HOSTNAME for template: $TEMPLATE"
+  echo "💾 Memory: ${MEMORY}MB, CPU: $CPU, Storage: $STORAGE"
+  sleep 2
+
+  local rootfs_param="${STORAGE}:${DISK_SIZE}"
+
+  if ! pct create "$CT_ID" /var/lib/vz/template/cache/"$TEMPLATE" \
+    --hostname "$HOSTNAME" \
+    --memory "$MEMORY" \
+    --cores "$CPU" \
+    --rootfs "$rootfs_param" \
+    --net0 name=eth0,bridge=vmbr0,ip=dhcp,ip6=none \
+    --console 1 \
+    --unprivileged 1; then
+    fail "Failed to create LXC from $TEMPLATE"
+    return 1
+  fi
+
+  wait_for_ct "$CT_ID"
+  pct start "$CT_ID"
+
+  pct exec "$CT_ID" -- systemctl enable getty@tty1.service
+  pct exec "$CT_ID" -- systemctl start getty@tty1.service
+
+  echo "✅ LXC creation from template $TEMPLATE with ID $CT_ID done!"
+  return 0
+}
+
+main "$@"

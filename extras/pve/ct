@@ -2,20 +2,116 @@
 
 # shellcheck disable=SC1091
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 export DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
 source "$DOT_DIR/share/utils"
 source "$(dirname "$0")/utils"
 
-trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
-
 check_prerequisites() {
-  if ! command -v pct >/dev/null 2>&1; then
+  if ! has_cmd pct; then
     echo "❌  Required command 'pct' is not available."
     echo "This script must be run on a Proxmox host."
     exit 1
   fi
+}
+
+ct-all_install() {
+  echo "Creating containers from all templates..."
+  local template_dir="/var/lib/vz/template/cache"
+  local ct_id=150
+
+  if ! dir_exists "$template_dir"; then
+    fail "Template directory not found: $template_dir"
+    return 1
+  fi
+
+  for template in "$template_dir"/*; do
+    if file_exists "$template"; then
+      local template_name
+      template_name=$(basename "$template")
+      echo "Creating LXC from template: $template_name"
+
+      # Extract distro from template name
+      local distro=""
+      case "$template_name" in
+      ubuntu*) distro="ubuntu" ;;
+      archlinux*) distro="archlinux" ;;
+      debian*) distro="debian" ;;
+      fedora*) distro="fedora" ;;
+      almalinux*) distro="almalinux" ;;
+      alpine*) distro="alpine" ;;
+      centos*) distro="centos" ;;
+      rockylinux*) distro="rockylinux" ;;
+      opensuse*) distro="opensuse" ;;
+      *)
+        # Try to extract from first part of name
+        distro=$(echo "$template_name" | cut -d'-' -f1)
+        echo "Warning: Unknown distro '$distro', using as-is"
+        ;;
+      esac
+
+      "$(dirname "$0")/ct-create" --distro "$distro" --id "$ct_id" --storage local-zfs --disk-size 4G
+      ((ct_id++))
+    fi
+  done
+
+  echo "Creating containers from all templates done!"
+}
+
+ct_templates_download() {
+  echo "Installing container templates..."
+
+  if ! has_cmd pveam; then
+    echo "pveam command not found. Is Proxmox VE installed?"
+    return 1
+  fi
+
+  local templates=(
+    "ubuntu.*standard"
+    "debian.*standard"
+    "fedora.*default"
+  )
+
+  local available_templates
+  if ! available_templates=$(pveam available 2>&1); then
+    echo "Failed to retrieve available templates: $available_templates"
+    return 1
+  fi
+
+  local downloaded=0
+  local failed=0
+
+  for pattern in "${templates[@]}"; do
+    local template
+    echo "looking for template matching pattern: $pattern"
+
+    template=$(echo "$available_templates" |
+      awk '{print $2}' |
+      grep -E "${pattern}" |
+      sort -V |
+      tail -n 1)
+    echo "got template: $template"
+
+    if [[ -n "$template" ]]; then
+      if pveam list local 2>/dev/null | grep -q "$template"; then
+        echo "Template already exists: $template"
+        ((++downloaded))
+      elif pveam download local "$template"; then
+        echo "Downloaded template: $template"
+        ((++downloaded))
+      else
+        echo "Failed to download $template"
+        ((++failed))
+      fi
+    else
+      echo "No template found for pattern: $pattern"
+      ((++failed))
+    fi
+  done
+
+  echo "Container templates installation done: $downloaded succeeded, $failed failed"
+  return 0
 }
 
 usage() {
@@ -26,7 +122,8 @@ Manage LXC containers on Proxmox. These are lightweight containers using the pct
 
 COMMANDS:
     list                List all containers
-    create  ARGS        Create a new container (same arguments as lxc-create)
+    create  ARGS        Create a new container (same arguments as ct-create)
+    create-all          Create containers from all available templates
     start <ct-id>       Start a container
     stop <ct-id>        Stop a container
     restart <ct-id>     Restart a container
@@ -42,6 +139,7 @@ COMMANDS:
     snapshot <ct-id> [name] Create snapshot of container
     rollback <ct-id> <name> Rollback to snapshot
     templates           List available templates
+    templates sync      Sync/download common container templates
     help                Show this help message
 
 EXAMPLES:
@@ -54,6 +152,9 @@ EXAMPLES:
     $0 console 100             # Connect to container console
     $0 exec 100 -- apt update  # Run command in container
     $0 ssh 100                 # SSH into container 100
+    $0 templates sync          # Sync/download common templates
+    $0 create-all              # Create containers from all available templates
+    $0 create --template ubuntu-22.04-standard_22.04-1_amd64.tar.zst --id 100
 EOF
 }
 
@@ -187,6 +288,11 @@ templates_ct() {
   pveam available
 }
 
+templates_sync_ct() {
+  echo "Syncing container templates..."
+  ct_templates_download
+}
+
 resolve_ct_id() {
   local id="$1"
   if [[ -n "$id" ]]; then
@@ -248,8 +354,11 @@ main() {
     info_ct "$target"
     ;;
   create | new)
-    # Forward to lxc-create script
-    "$(dirname "$0")/lxc-create" "${@:2}"
+    # Forward to ct-create script
+    "$(dirname "$0")/ct-create" "${@:2}"
+    ;;
+  create-all)
+    ct-all_install
     ;;
   start | boot)
     {
@@ -333,7 +442,11 @@ main() {
     rollback_ct "$target" "$3"
     ;;
   templates)
-    templates_ct
+    if [[ "$ct_id" == "sync" ]]; then
+      templates_sync_ct
+    else
+      templates_ct
+    fi
     ;;
   --help | -h | help)
     usage
