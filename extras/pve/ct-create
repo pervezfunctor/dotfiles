@@ -84,27 +84,6 @@ parse_args() {
   return 0
 }
 
-detect_storage() {
-  local storage=""
-
-  if [[ -n "${STORAGE:-}" ]]; then
-    if ! pvesm status | grep -q "^$STORAGE "; then
-      fail "Storage '$STORAGE' not found or not accessible"
-      return 1
-    fi
-    storage="$STORAGE"
-  elif pvesm status | grep -q "local-zfs"; then
-    storage="local-zfs"
-  elif pvesm status | grep -q "local-lvm"; then
-    storage="local-lvm"
-  else
-    fail "No suitable storage found (local-lvm or local-zfs)"
-    return 1
-  fi
-
-  echo "$storage"
-}
-
 validate_args() {
   if [[ -z "$DISTRO" ]]; then
     echo "Error: Distribution is required" >&2
@@ -230,13 +209,8 @@ main() {
     --console 1
     --unprivileged 1
     --features nesting=1
+    --password "$PASSWORD"
   )
-
-  # Add password if provided
-  if [[ -n "$PASSWORD" ]]; then
-    pct_create_args+=(--password "$PASSWORD")
-    echo "🔐 Setting root password for container"
-  fi
 
   if ! pct create "${pct_create_args[@]}"; then
     fail "Failed to create LXC from $TEMPLATE"

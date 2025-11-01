@@ -8,6 +8,11 @@ readonly SCRIPT_NAME
 # Array of supported distributions
 readonly SUPPORTED_DISTRIBUTIONS=("debian" "fedora" "ubuntu" "alpine" "centos" "tumbleweed" "arch")
 
+# Source utils for detect_storage function
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/utils"
+
 # Logging functions
 log_info() {
   echo "ℹ️  [INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1"
@@ -74,12 +79,12 @@ display_usage() {
   Supported distributions: debian, fedora, ubuntu, alpine, centos, tumbleweed, arch
 
 📋 Options:
-  -s, --storage STORAGE            💾 Proxmox storage target (default: local-lvm)
+  -s, --storage STORAGE            💾 Proxmox storage target (default: auto-detect)
   -d, --disk-size DISK_SIZE        💿 Size of the VM disks (default: 32G)
   -m, --memory MEMORY               🧠 VM memory in MB (default: 8192)
   -c, --cores CORES                 ⚙️  Number of CPU cores (default: 4)
   -u, --username USERNAME           👤 Username for cloud-init (default: distro-specific)
-  -p, --password PASSWORD           🔐 Password for cloud-init (default: empty, use CLOUD_INIT_PASSWORD)
+  -p, --password PASSWORD           🔐 Password for cloud-init (default: program, use CLOUD_INIT_PASSWORD to override)
   -k, --ssh-key SSH_KEY             🔑 Path to SSH public key file (default: empty, use SSH_KEY_PATH)
   -f, --failed-only                 🚨 Only create templates for distributions that failed previously
   -l, --list                        📋 List supported distributions and their default VM IDs
@@ -93,6 +98,7 @@ display_usage() {
   $SCRIPT_NAME -k ~/.ssh/id_rsa.pub               # Use SSH key authentication
   $SCRIPT_NAME -f                                 # Only retry failed distributions
   $SCRIPT_NAME --dry-run                          # Preview what would be done
+  $SCRIPT_NAME -s custom-storage                  # Use specific storage
 
 EOF
 }
@@ -104,12 +110,12 @@ parse_arguments() {
   VM_TEMPLATE_SCRIPT="$script_dir/vm-template"
 
   # Default values
-  PROXMOX_STORAGE="local-lvm"
+  PROXMOX_STORAGE=""
   DISK_SIZE="32G"
   MEMORY="8192"
   CORES="4"
   USERNAME=""
-  PASSWORD=""
+  PASSWORD="program"
   SSH_KEY=""
   FAILED_ONLY=false
   LIST_ONLY=false

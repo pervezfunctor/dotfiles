@@ -7,17 +7,22 @@ readonly SCRIPT_NAME
 
 readonly TEMP_DIR="/tmp"
 
+# Source utils for detect_storage function
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/utils"
+
 # Default values with environment variable support
-DEFAULT_PROXMOX_STORAGE="local-lvm"
+DEFAULT_PROXMOX_STORAGE=""
 DEFAULT_DISK_SIZE="32G"
 DEFAULT_MEMORY="8192"
 DEFAULT_CORES="4"
 DEFAULT_USERNAME="${CLOUD_INIT_USER:-}"
-DEFAULT_PASSWORD="${CLOUD_INIT_PASSWORD:-}"
+DEFAULT_PASSWORD="${CLOUD_INIT_PASSWORD:-program}"
 DEFAULT_SSH_KEY="${SSH_KEY_PATH:-}"
 
 # Initialize variables with defaults
-PROXMOX_STORAGE="$DEFAULT_PROXMOX_STORAGE"
+PROXMOX_STORAGE="${DEFAULT_PROXMOX_STORAGE:-}"
 VM_ID=""
 VM_NAME=""
 IMAGE_URL=""
@@ -126,13 +131,23 @@ validate_url() {
 validate_storage() {
   local storage="$1"
   log_debug "Validating storage: $storage"
-  log_debug "Running command: pvesm status | grep -q \"^$storage \""
 
-  # Check if storage exists in the output of pvesm status
-  if ! pvesm status | grep -q "^$storage "; then
-    log_error "Storage '$storage' not found or not accessible"
-    log_debug "Available storages: $(pvesm status)"
-    return 1
+  # If storage is not specified, use detect_storage to find suitable storage
+  if [[ -z "$storage" ]]; then
+    log_info "No storage specified, detecting suitable storage..."
+    if ! storage=$(detect_storage); then
+      log_error "Failed to detect suitable storage"
+      return 1
+    fi
+    PROXMOX_STORAGE="$storage"
+    log_info "Auto-detected storage: $storage"
+  else
+    # Check if specified storage exists
+    if ! pvesm status | grep -q "^$storage "; then
+      log_error "Storage '$storage' not found or not accessible"
+      log_debug "Available storages: $(pvesm status)"
+      return 1
+    fi
   fi
 
   log_debug "Storage validation passed for: $storage"
@@ -263,14 +278,14 @@ display_usage() {
   -D, --distro DISTRO              🐧 Distribution: debian, fedora, ubuntu, alpine, centos, tumbleweed, or arch
 
 📋 Options:
-  -s, --storage STORAGE            💾 Proxmox storage target (default: local-lvm)
+  -s, --storage STORAGE            💾 Proxmox storage target (default: auto-detect)
   -i, --vm-id VM_ID                🔢 Unique ID for the new VM (default: auto-assigned)
   -n, --vm-name VM_NAME            🏷️  Name for the VM (default: auto-assigned)
   -d, --disk-size DISK_SIZE        💿 Size of the VM disk (default: 32G)
   -m, --memory MEMORY               🧠 VM memory in MB (default: 8192)
   -c, --cores CORES                 ⚙️  Number of CPU cores (default: 4)
   -u, --username USERNAME           👤 Username for cloud-init (default: distro-specific)
-  -p, --password PASSWORD           🔐 Password for cloud-init (default: empty, use CLOUD_INIT_PASSWORD)
+  -p, --password PASSWORD           🔐 Password for cloud-init (default: program, use CLOUD_INIT_PASSWORD to override)
   -k, --ssh-key SSH_KEY             🔑 Path to SSH public key file (default: empty, use SSH_KEY_PATH)
   -U, --image-url IMAGE_URL         🌐 URL of the cloud image (default: latest for distro)
   -C, --checksum CHECKSUM           🔐 Expected SHA256 checksum of the image
@@ -281,6 +296,7 @@ display_usage() {
   $SCRIPT_NAME -D debian
   $SCRIPT_NAME -D ubuntu -k ~/.ssh/id_rsa.pub -m 4096 -c 2
   $SCRIPT_NAME -D fedora -i 1001 -n my-fedora-template -C "sha256:abcdef..."
+  $SCRIPT_NAME -D centos -s custom-storage  # Use specific storage
 EOF
 }
 

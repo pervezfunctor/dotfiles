@@ -260,3 +260,22 @@ wait_for_ct() {
     sleep 1
   done
 }
+
+detect_storage() {
+  if [[ -n "${STORAGE:-}" ]]; then
+    if ! pvesm status | grep -q "^$STORAGE "; then
+      fail "Storage '$STORAGE' not found or not accessible"
+      return 1
+    fi
+    storage="$STORAGE"
+  elif pvesm status | grep -q "local-zfs"; then
+    storage="local-zfs"
+  elif pvesm status | grep -q "local-lvm"; then
+    storage="local-lvm"
+  else
+    fail "No suitable storage found (local-lvm or local-zfs)"
+    return 1
+  fi
+
+  echo "$storage"
+}

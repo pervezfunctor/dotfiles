@@ -8,6 +8,8 @@ export DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
 source "$DOT_DIR/share/utils"
 source "$(dirname "$0")/utils"
 
+readonly DEFAULT_PASSWORD="program"
+
 check_prerequisites() {
   if ! has_cmd pct; then
     echo "❌  Required command 'pct' is not available."
@@ -18,7 +20,7 @@ check_prerequisites() {
 
 ct_all_install() {
   local storage=""
-  local password=""
+  local password="$DEFAULT_PASSWORD"
 
   # Parse arguments
   while [[ $# -gt 0 ]]; do
@@ -88,12 +90,8 @@ ct_all_install() {
         continue
       fi
 
-      local ct_create_args=("--distro" "$distro" "--id" "$ct_id" "--storage" "$storage")
-      if [[ -n "$password" ]]; then
-        ct_create_args+=(--password "$password")
-      fi
-
-      if "$(dirname "$0")/ct-create" "${ct_create_args[@]}"; then
+      if "$(dirname "$0")/ct-create" --distro "$distro" --id "$ct_id" \
+        --storage "$storage" --password "$password"; then
         echo "✅ Successfully created container with ID $ct_id"
       else
         echo "❌ Failed to create container with ID $ct_id from template $template_name"

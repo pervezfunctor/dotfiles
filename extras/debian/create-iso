@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# === Config ===
+DEBIAN_VERSION="${1:-bookworm}"   # can override with argument
+ARCH="${2:-amd64}"
+ISO_URL="https://cdimage.debian.org/debian-cd/current/${ARCH}/iso-cd/debian-${DEBIAN_VERSION}-${ARCH}-netinst.iso"
+ISO_NAME="debian-${DEBIAN_VERSION}-${ARCH}-netinst.iso"
+WORKDIR="$(pwd)/iso-work"
+NEW_ISO="debian-${DEBIAN_VERSION}-${ARCH}-auto.iso"
+PRESEED_FILE="./preseed.cfg"
+
+# === Functions ===
+err() { echo "Error: $*" >&2; exit 1; }
+
+require() {
+  command -v "$1" >/dev/null 2>&1 || err "$1 not found. Install it."
+}
+
+cleanup() {
+  sudo umount "$WORKDIR/iso" 2>/dev/null || true
+  rm -rf "$WORKDIR"
+}
+trap cleanup EXIT
+
+# === Checks ===
+require wget
+require 7z
+require xorriso
+require sudo
+
+[[ -f "$PRESEED_FILE" ]] || err "preseed.cfg not found in current directory."
+
+# === Download ISO ===
+if [[ ! -f "$ISO_NAME" ]]; then
+  echo "Downloading Debian netinst ISO..."
+  wget -q --show-progress "$ISO_URL" -O "$ISO_NAME"
+fi
+
+# === Extract ISO ===
+echo "Extracting ISO..."
+mkdir -p "$WORKDIR"/{iso,edit}
+7z x "$ISO_NAME" -o"$WORKDIR/iso" >/dev/null
+
+# === Add preseed.cfg ===
+echo "Adding preseed.cfg..."
+sudo cp "$PRESEED_FILE" "$WORKDIR/iso/preseed.cfg"
+
+# === Modify boot entries (BIOS + UEFI) ===
+echo "Patching boot menu..."
+# For BIOS (isolinux)
+ISOLINUX_CFG="$WORKDIR/iso/isolinux/txt.cfg"
+if [[ -f "$ISOLINUX_CFG" ]]; then
+  sudo sed -i '/append / s/$/ auto=true priority=critical file=\/cdrom\/preseed.cfg/' "$ISOLINUX_CFG"
+fi
+
+# For UEFI (grub)
+GRUB_CFG="$WORKDIR/iso/boot/grub/grub.cfg"
+if [[ -f "$GRUB_CFG" ]]; then
+  sudo sed -i '/linux / s/$/ auto=true priority=critical file=\/cdrom\/preseed.cfg/' "$GRUB_CFG"
+fi
+
+# === Rebuild ISO ===
+echo "Building new ISO..."
+sudo xorriso -as mkisofs \
+  -r -V "DEBIAN_AUTO" \
+  -o "$NEW_ISO" \
+  -isohybrid-mbr "$WORKDIR/iso/isolinux/isohdpfx.bin" \
+  -partition_offset 16 \
+  -J -l -cache-inodes -b isolinux/isolinux.bin \
+  -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
+  -boot-info-table \
+  -eltorito-alt-boot -e boot/grub/efi.img \
+  -no-emul-boot -isohybrid-gpt-basdat \
+  "$WORKDIR/iso" >/dev/null
+
+echo "✅ New ISO created: $NEW_ISO"
