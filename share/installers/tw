@@ -67,7 +67,7 @@ core_install() {
 
     slog "Installing core packages"
 
-    si curl wget git tar tree unzip stow file trash-cli
+    si curl wget git tar tree unzip stow file trash-cli which
 
     slog "Core packages installation done!"
 }
@@ -222,7 +222,7 @@ incus_install() {
 
     slog "Installing incus"
 
-    si incus qemu-kvm qemu-tools bridge-utils
+    si incus qemu-kvm qemu-tools bridge-utils openssl
     incus_confstall
 
     slog "incus installation done!"
@@ -305,5 +305,5 @@ pm_install() {
 
 kde_binstall() {
     sudo zypper install -y --no-recommends plasma6-desktop \
-        systemsettings kscreen kio-extras udisks2 powerdevil power-profiles-daemon
+        systemsettings6 kscreen6 kio-extras udisks2 powerdevil6 power-profiles-daemon
 }

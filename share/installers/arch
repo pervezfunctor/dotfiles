@@ -232,7 +232,7 @@ incus_install() {
 
     slog "Installing incus"
 
-    si incus qemu-desktop bridge-utils
+    si incus qemu-desktop bridge-utils openssl
     incus_confstall
 
     slog "incus installation done!"
@@ -294,6 +294,7 @@ pm_install() {
 }
 
 kde_binstall() {
-    sudo pacman -S --needed plasma-desktop plasma-discover systemsettings \
-        kscreen kio-extras udisks2 powerdevil power-profiles-daemon
+    sudo pacman -S --quiet --noconfirm --needed discover plasma-desktop \
+    pipewire-jack systemsettings kscreen kio-extras udisks2 powerdevil \
+    power-profiles-daemon qt6-multimedia-gstreamer noto-fonts
 }

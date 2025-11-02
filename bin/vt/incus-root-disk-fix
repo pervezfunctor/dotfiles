@@ -1,0 +1,1 @@
+incus profile device add default root disk pool=default path=/

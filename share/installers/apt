@@ -335,7 +335,7 @@ incus_install() {
 
   slog "Installing incus..."
 
-  si qemu-system-x86 qemu-utils incus bridge-utils
+  si qemu-system-x86 qemu-utils incus bridge-utils openssl
 
   incus_confstall
 

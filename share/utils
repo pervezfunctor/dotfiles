@@ -1059,7 +1059,7 @@ is_wayland() {
 }
 
 is_desktop() {
-  [[ -n "$XDG_CURRENT_DESKTOP" ]] || [[ -n "$DESKTOP_SESSION" ]] || [[ -n "$XDG_SESSION_TYPE" ]]
+  [[ -n "$XDG_CURRENT_DESKTOP" ]] || [[ -n "$DESKTOP_SESSION" ]] || [[ "$XDG_SESSION_TYPE" == "wayland" ]]
 }
 
 fn_exists() {
