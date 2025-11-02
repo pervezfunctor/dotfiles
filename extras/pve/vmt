@@ -1,0 +1,315 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091
+
+set -euo pipefail
+
+SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+readonly SCRIPT_NAME
+
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+source "$SCRIPT_DIR/utils"
+
+log_info() {
+  echo "ℹ️  [INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+log_warn() {
+  echo "⚠️  [WARN] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+log_error() {
+  echo "❌ [ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+die() {
+  log_error "$1"
+  exit 1
+}
+
+log_debug() {
+  if [[ "${DEBUG:-0}" == "1" ]]; then
+    echo "🐛 [DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+  fi
+}
+
+log_success() {
+  echo "✅ [SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+usage() {
+  echo
+  sleep 1
+
+  cat <<EOF
+🚀 Usage: $SCRIPT_NAME COMMAND [OPTIONS]
+
+📋 Commands:
+  create DISTRO                    🐧 Create a single VM template for the specified distribution
+  create-all                       🔄 Create all VM templates
+  list                             📋 List all VM templates
+  delete VM_ID                     🗑️  Delete a specific VM template
+  delete-all                       🗑️  Delete all VM templates
+
+📋 Options for 'create':
+  All options are passed directly to vm-template script
+
+📋 Options for 'create-all':
+  All options are passed directly to vm-templates-all script
+
+📋 Global Options:
+  -h, --help                        ❓ Display this help message
+  --debug                           🐛 Enable debug logging
+
+📝 Examples:
+  $SCRIPT_NAME create debian                    # Create debian template
+  $SCRIPT_NAME create debian -s custom-storage  # Create debian template with custom storage
+  $SCRIPT_NAME create-all                       # Create all templates
+  $SCRIPT_NAME create-all -s custom-storage     # Create all templates with custom storage
+  $SCRIPT_NAME list                             # List all templates
+  $SCRIPT_NAME delete 201                       # Delete template with ID 201
+  $SCRIPT_NAME delete-all                       # Delete all templates
+EOF
+}
+
+parse_args() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  COMMAND="$1"
+  shift
+
+  case "$COMMAND" in
+  create)
+    if [[ $# -eq 0 ]]; then
+      log_error "Distribution is required for 'create' command"
+      usage
+      exit 1
+    fi
+    DISTRO="$1"
+    shift
+    CREATE_ARGS=("$@")
+    ;;
+  create-all)
+    CREATE_ALL_ARGS=("$@")
+    ;;
+  list)
+    # No additional arguments for list
+    ;;
+  delete)
+    if [[ $# -eq 0 ]]; then
+      log_error "VM ID is required for 'delete' command"
+      usage
+      exit 1
+    fi
+    VM_ID="$1"
+    shift
+    if [[ $# -gt 0 ]]; then
+      log_error "Too many arguments for 'delete' command"
+      usage
+      exit 1
+    fi
+    ;;
+  delete-all)
+    # No additional arguments for delete-all
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    log_error "Unknown command: $COMMAND"
+    usage
+    exit 1
+    ;;
+  esac
+}
+
+check_prerequisites() {
+  check_root_user
+
+  if ! has_cmd qm; then
+    die "The 'qm' command is required. This script must be run on a Proxmox host."
+  fi
+
+  if [[ ! -f "$SCRIPT_DIR/vm-template" ]]; then
+    die "Required script 'vm-template' not found in $SCRIPT_DIR"
+  fi
+
+  if [[ ! -f "$SCRIPT_DIR/vm-templates-all" ]]; then
+    die "Required script 'vm-templates-all' not found in $SCRIPT_DIR"
+  fi
+}
+
+template_exists() {
+  local vm_id="$1"
+  if qm status "$vm_id" &>/dev/null; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+is_template() {
+  local vm_id="$1"
+  if template_exists "$vm_id" && vm_is_template "$vm_id"; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+create_template() {
+  local distro="$1"
+  local template_args=("-D" "$distro" "${CREATE_ARGS[@]}")
+
+  log_info "Creating template for $distro..."
+  log_debug "Running: $SCRIPT_DIR/vm-template ${template_args[*]}"
+
+  if "$SCRIPT_DIR/vm-template" "${template_args[@]}"; then
+    log_success "Successfully created $distro template"
+    return 0
+  else
+    log_error "Failed to create $distro template"
+    return 1
+  fi
+}
+
+create_all_templates() {
+  log_info "Creating all templates..."
+  log_debug "Running: $SCRIPT_DIR/vm-templates-all ${CREATE_ALL_ARGS[*]}"
+
+  if "$SCRIPT_DIR/vm-templates-all" "${CREATE_ALL_ARGS[@]}"; then
+    log_success "Successfully created all templates"
+    return 0
+  else
+    log_error "Failed to create all templates"
+    return 1
+  fi
+}
+
+list_templates() {
+  log_info "Listing VM templates..."
+
+  local templates
+  templates=$(qm list | awk 'NR>1 && $2 ~ /template/ {print $1 "\t" $2 "\t" $3}')
+
+  if [[ -z "$templates" ]]; then
+    log_warn "No VM templates found"
+    return 0
+  fi
+
+  echo
+  printf "%-8s %-20s %-15s\n" "VM ID" "Name" "Status"
+  printf "%-8s %-20s %-15s\n" "------" "----" "------"
+  echo "$templates" | while IFS=$'\t' read -r vm_id name status; do
+    printf "%-8s %-20s %-15s\n" "$vm_id" "$name" "$status"
+  done
+  echo
+
+  log_success "Template listing completed"
+}
+
+delete_template() {
+  local vm_id="$1"
+
+  if ! validate_positive_integer "$vm_id"; then
+    die "VM ID must be a positive integer"
+  fi
+
+  if ! template_exists "$vm_id"; then
+    die "VM with ID $vm_id does not exist"
+  fi
+
+  if ! is_template "$vm_id"; then
+    die "VM with ID $vm_id is not a template"
+  fi
+
+  local vm_name
+  vm_name=$(qm config "$vm_id" | grep '^name:' | cut -d' ' -f2)
+
+  log_warn "Deleting template '$vm_name' (ID: $vm_id)..."
+
+  if qm destroy "$vm_id" --destroy-unreferenced-disks 1; then
+    log_success "Successfully deleted template '$vm_name' (ID: $vm_id)"
+    return 0
+  else
+    log_error "Failed to delete template with ID $vm_id"
+    return 1
+  fi
+}
+
+delete_all_templates() {
+  log_warn "Deleting all VM templates..."
+
+  local template_ids
+  template_ids=$(qm list | awk 'NR>1 && $2 ~ /template/ {print $1}')
+
+  if [[ -z "$template_ids" ]]; then
+    log_warn "No VM templates found to delete"
+    return 0
+  fi
+
+  local failed_count=0
+  local success_count=0
+  local total_count
+
+  total_count=$(echo "$template_ids" | wc -l)
+
+  log_info "Found $total_count template(s) to delete"
+
+  for vm_id in $template_ids; do
+    if delete_template "$vm_id"; then
+      ((++success_count))
+    else
+      ((++failed_count))
+    fi
+  done
+
+  log_info "Template deletion process completed"
+  log_info "Successfully deleted: $success_count/$total_count templates"
+
+  if [[ $failed_count -gt 0 ]]; then
+    log_error "Failed to delete: $failed_count templates"
+    return 1
+  else
+    log_success "All templates deleted successfully!"
+    return 0
+  fi
+}
+
+main() {
+  echo "🚀 Starting VM Template Manager"
+
+  parse_args "$@"
+  check_prerequisites
+
+  case "$COMMAND" in
+  create)
+    create_template "$DISTRO"
+    ;;
+  create-all)
+    create_all_templates
+    ;;
+  list)
+    list_templates
+    ;;
+  delete)
+    delete_template "$VM_ID"
+    ;;
+  delete-all)
+    delete_all_templates
+    ;;
+  *)
+    log_error "Unknown command: $COMMAND"
+    usage
+    exit 1
+    ;;
+  esac
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

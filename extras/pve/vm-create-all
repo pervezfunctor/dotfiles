@@ -5,24 +5,10 @@ set -euo pipefail
 SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 readonly SCRIPT_NAME
 
-# Source utils for detect_storage function
+# Source utils for shared functions
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/utils"
-
-# Array of supported distributions
-readonly SUPPORTED_DISTRIBUTIONS=("debian" "fedora" "ubuntu" "alpine" "centos" "tumbleweed" "arch")
-
-# Template ID mapping (VM IDs will be assigned incrementally starting from START_VM_ID)
-declare -A TEMPLATE_MAPPING=(
-  ["debian"]="201"
-  ["fedora"]="202"
-  ["ubuntu"]="203"
-  ["alpine"]="204"
-  ["centos"]="205"
-  ["tumbleweed"]="206"
-  ["arch"]="207"
-)
 
 # Logging functions
 log_info() {
@@ -41,41 +27,20 @@ log_success() {
   echo "✅ [SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
-log_debug() {
-  if [[ "${DEBUG:-0}" == "1" ]]; then
-    echo "🐛 [DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
-  fi
-}
+# Template ID mapping
+declare -A TEMPLATE_MAPPING=(
+  ["debian"]="201"
+  ["fedora"]="202"
+  ["ubuntu"]="203"
+  ["alpine"]="204"
+  ["centos"]="205"
+  ["tumbleweed"]="206"
+  ["arch"]="207"
+)
 
-# Get the directory where this script is located
-get_script_dir() {
-  local script_dir
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  echo "$script_dir"
-}
-
-# Check if qm command is available (Proxmox) - skip in dry-run mode
-check_prerequisites() {
-  # Check if qm command is available (Proxmox) - skip in dry-run mode
-  if [[ "$DRY_RUN" != "true" ]] && ! command -v qm >/dev/null 2>&1; then
-    log_error "The 'qm' command is required. This script must be run on a Proxmox host."
-    return 1
-  fi
-
-  # Detect storage if not specified
-  if [[ -z "$PROXMOX_STORAGE" ]]; then
-    log_info "No storage specified, detecting suitable storage..."
-    if ! storage=$(detect_storage); then
-      log_error "Failed to detect suitable storage"
-      return 1
-    fi
-    PROXMOX_STORAGE="$storage"
-    log_info "Auto-detected storage: $storage"
-  fi
-
-  log_debug "Prerequisites check passed"
-  return 0
-}
+# Default values
+DEFAULT_START_VM_ID=111
+DEFAULT_VM_NAME="{distro}-vm"
 
 # Display usage information
 display_usage() {
@@ -87,31 +52,26 @@ display_usage() {
   Supported distributions: debian, fedora, ubuntu, alpine, centos, tumbleweed, arch
 
 📋 Options:
-  -s, --storage STORAGE            💾 Proxmox storage target for cloned VMs (default: local-lvm)
-  -i, --start-vm-id START_VM_ID    🔢 Starting VM ID for incremental assignment (default: 111)
+  -s, --storage STORAGE            💾 Proxmox storage target for cloned VMs
+  -i, --start-vm-id START_VM_ID    🔢 Starting VM ID (default: $DEFAULT_START_VM_ID)
   -f, --failed-only                 🚨 Only create VMs for distributions that failed previously
   -l, --list                        📋 List supported distributions and their template/VM ID mappings
-  -n, --name NAME                   🏷️  Custom name pattern for VMs (default: {distro}-vm)
-  -c, --cpu CORES                  🔧 Number of CPU cores (default: template value)
-  -m, --memory MEMORY              💾 Memory size in MB (default: template value)
-  -d, --disk-size SIZE             💿 Disk size in GB (default: template value)
-  -u, --username USERNAME          👤 Cloud-init username (default: template value)
-  -p, --password PASSWORD          🔐 Cloud-init password (default: template value)
-  -k, --ssh-key SSH_KEY            🔑 SSH public key for cloud-init (default: template value)
+  -n, --name NAME                   🏷️  Custom name pattern for VMs (default: $DEFAULT_VM_NAME)
+  -c, --cpu CORES                  🔧 Number of CPU cores
+  -m, --memory MEMORY              💾 Memory size in MB
+  -d, --disk-size SIZE             💿 Disk size in GB
+  -u, --username USERNAME          👤 Cloud-init username
+  -p, --password PASSWORD          🔐 Cloud-init password
+  -k, --ssh-key SSH_KEY            🔑 SSH public key for cloud-init
   -h, --help                        ❓ Display this help message
-  --debug                           🐛 Enable debug logging
-  --dry-run                         🔍 Show what would be done without executing
 
 📝 Examples:
-  $SCRIPT_NAME                                    # Create all VMs with defaults (starting from VM ID 111)
+  $SCRIPT_NAME                                    # Create all VMs with defaults
   $SCRIPT_NAME -i 121                             # Create all VMs starting from VM ID 121
   $SCRIPT_NAME -s local-zfs -i 151                # Use custom storage and start from VM ID 151
   $SCRIPT_NAME -f                                 # Only retry failed distributions
   $SCRIPT_NAME -n "my-{distro}-vm"                # Create all VMs with custom name pattern
   $SCRIPT_NAME -c 4 -m 4096 -d 32               # Create all VMs with 4 cores, 4GB RAM, 32GB disk
-  $SCRIPT_NAME -u myuser -p mypass               # Create all VMs with custom credentials
-  $SCRIPT_NAME -k ~/.ssh/id_rsa.pub                # Create all VMs with SSH key
-  $SCRIPT_NAME --dry-run                          # Preview what would be done
   $SCRIPT_NAME --list                             # List template/VM ID mappings
 
 EOF
@@ -119,12 +79,10 @@ EOF
 
 # Parse command line arguments
 parse_arguments() {
-  # Default values
   PROXMOX_STORAGE=""
-  START_VM_ID=111
+  START_VM_ID="$DEFAULT_START_VM_ID"
   FAILED_ONLY=false
   LIST_ONLY=false
-  DRY_RUN=false
   CPU_CORES=""
   MEMORY_SIZE=""
   DISK_SIZE=""
@@ -132,8 +90,6 @@ parse_arguments() {
   PASSWORD=""
   SSH_KEY=""
   VM_NAME=""
-
-  log_debug "vm-create-all missing VM_NAME parameter support (-n, --name)"
 
   while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -185,14 +141,6 @@ parse_arguments() {
       display_usage
       exit 0
       ;;
-    --debug)
-      export DEBUG=1
-      shift
-      ;;
-    --dry-run)
-      DRY_RUN=true
-      shift
-      ;;
     *)
       log_error "Unknown parameter: $1"
       display_usage
@@ -210,7 +158,7 @@ list_distributions() {
   echo ""
 
   local vm_id=$START_VM_ID
-  for distro in "${SUPPORTED_DISTRIBUTIONS[@]}"; do
+  for distro in "${!TEMPLATE_MAPPING[@]}"; do
     local template_id="${TEMPLATE_MAPPING[$distro]}"
     echo "  🐧 $distro (Template ID: $template_id → VM ID: $vm_id)"
     ((vm_id++))
@@ -223,32 +171,10 @@ template_exists() {
   local distro="$1"
   local template_id="${TEMPLATE_MAPPING[$distro]}"
 
-  # In dry-run mode, assume templates exist
-  if [[ "${DRY_RUN:-false}" == "true" ]]; then
-    return 0
-  fi
-
   if qm list 2>/dev/null | awk -v id="$template_id" '$1 == id { found=1 } END { exit !found }'; then
-    return 0 # Template exists
+    return 0
   else
-    return 1 # Template doesn't exist
-  fi
-}
-
-# Check if a VM already exists
-vm_exists() {
-  local distro="$1"
-  local vm_id="$2"
-
-  # In dry-run mode, assume VMs don't exist
-  if [[ "${DRY_RUN:-false}" == "true" ]]; then
     return 1
-  fi
-
-  if qm list 2>/dev/null | awk -v id="$vm_id" '$1 == id { found=1 } END { exit !found }'; then
-    return 0 # VM exists
-  else
-    return 1 # VM doesn't exist
   fi
 }
 
@@ -259,15 +185,15 @@ get_distributions_to_process() {
 
   if [[ "$FAILED_ONLY" == "true" ]]; then
     # Only include distributions that don't have VMs yet but have templates
-    for distro in "${SUPPORTED_DISTRIBUTIONS[@]}"; do
-      if template_exists "$distro" && ! vm_exists "$distro" "$vm_id"; then
+    for distro in "${!TEMPLATE_MAPPING[@]}"; do
+      if template_exists "$distro" && ! vm_exists "$vm_id"; then
         distributions_to_process+=("$distro")
       fi
       ((vm_id++))
     done
   else
     # Include all supported distributions that have templates
-    for distro in "${SUPPORTED_DISTRIBUTIONS[@]}"; do
+    for distro in "${!TEMPLATE_MAPPING[@]}"; do
       if template_exists "$distro"; then
         distributions_to_process+=("$distro")
       fi
@@ -283,68 +209,27 @@ create_vm() {
   local distro="$1"
   local vm_id="$2"
   local template_id="${TEMPLATE_MAPPING[$distro]}"
-
-  # Get the directory where this script is located to find vm-create
-  local script_dir
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local vm_create_script="$script_dir/vm-create"
+  local vm_create_script="$SCRIPT_DIR/vm-create"
 
   # Prepare VM name with placeholder replacement
-  local vm_name="${VM_NAME:-${distro}-vm}"
-  if [[ -n "$VM_NAME" ]]; then
-    vm_name="${VM_NAME//\{distro\}/$distro}"
-    vm_name="${vm_name//\{vm_id\}/$vm_id}"
-  fi
+  local vm_name="${VM_NAME:-$DEFAULT_VM_NAME}"
+  vm_name="${vm_name//\{distro\}/$distro}"
+  vm_name="${vm_name//\{vm_id\}/$vm_id}"
 
-  log_info "Creating VM for $distro from template $template_id by delegating to vm-create..."
-  log_debug "Now delegating to vm-create script instead of reimplementing functionality"
-  log_debug "VM name after placeholder replacement: $vm_name"
+  log_info "Creating VM for $distro from template $template_id..."
 
   # Build the vm-create command with all appropriate parameters
-  local vm_create_cmd=("$vm_create_script" "$template_id" "$vm_id")
+  local vm_create_cmd=("$vm_create_script" "--template-id" "$template_id" "--vm-id" "$vm_id")
 
   # Add optional parameters if they are set
-  if [[ -n "$PROXMOX_STORAGE" ]]; then
-    vm_create_cmd+=(-s "$PROXMOX_STORAGE")
-  fi
-
-  if [[ -n "$vm_name" ]]; then
-    vm_create_cmd+=(-n "$vm_name")
-  fi
-
-  if [[ -n "$CPU_CORES" ]]; then
-    vm_create_cmd+=(-c "$CPU_CORES")
-  fi
-
-  if [[ -n "$MEMORY_SIZE" ]]; then
-    vm_create_cmd+=(-m "$MEMORY_SIZE")
-  fi
-
-  if [[ -n "$DISK_SIZE" ]]; then
-    vm_create_cmd+=(-d "$DISK_SIZE")
-  fi
-
-  if [[ -n "$USERNAME" ]]; then
-    vm_create_cmd+=(-u "$USERNAME")
-  fi
-
-  if [[ -n "$PASSWORD" ]]; then
-    vm_create_cmd+=(-p "$PASSWORD")
-  fi
-
-  if [[ -n "$SSH_KEY" ]]; then
-    vm_create_cmd+=(-k "$SSH_KEY")
-  fi
-
-  if [[ "$DRY_RUN" == "true" ]]; then
-    vm_create_cmd+=(--dry-run)
-  fi
-
-  if [[ "${DEBUG:-0}" == "1" ]]; then
-    vm_create_cmd+=(--debug)
-  fi
-
-  log_debug "Executing: ${vm_create_cmd[*]}"
+  [[ -n "$PROXMOX_STORAGE" ]] && vm_create_cmd+=(-s "$PROXMOX_STORAGE")
+  [[ -n "$vm_name" ]] && vm_create_cmd+=(-n "$vm_name")
+  [[ -n "$CPU_CORES" ]] && vm_create_cmd+=(-c "$CPU_CORES")
+  [[ -n "$MEMORY_SIZE" ]] && vm_create_cmd+=(-m "$MEMORY_SIZE")
+  [[ -n "$DISK_SIZE" ]] && vm_create_cmd+=(-d "$DISK_SIZE")
+  [[ -n "$USERNAME" ]] && vm_create_cmd+=(-u "$USERNAME")
+  [[ -n "$PASSWORD" ]] && vm_create_cmd+=(-p "$PASSWORD")
+  [[ -n "$SSH_KEY" ]] && vm_create_cmd+=(-k "$SSH_KEY")
 
   # Execute the vm-create script with all parameters
   if "${vm_create_cmd[@]}"; then
@@ -367,7 +252,22 @@ main() {
     exit 0
   fi
 
-  check_prerequisites || exit 1
+  # Check prerequisites
+  if ! command -v qm >/dev/null 2>&1; then
+    log_error "The 'qm' command is required. This script must be run on a Proxmox host."
+    exit 1
+  fi
+
+  # Detect storage if not specified
+  if [[ -z "$PROXMOX_STORAGE" ]]; then
+    log_info "No storage specified, detecting suitable storage..."
+    if ! storage=$(detect_storage); then
+      log_error "Failed to detect suitable storage"
+      exit 1
+    fi
+    PROXMOX_STORAGE="$storage"
+    log_info "Auto-detected storage: $storage"
+  fi
 
   local distributions_to_process
   read -ra distributions_to_process <<<"$(get_distributions_to_process)"
@@ -384,7 +284,6 @@ main() {
 
   local failed_distributions=()
   local successful_distributions=()
-
   local vm_id=$START_VM_ID
 
   for distro in "${distributions_to_process[@]}"; do
@@ -394,7 +293,7 @@ main() {
       continue
     fi
 
-    if vm_exists "$distro" "$vm_id"; then
+    if vm_exists "$vm_id"; then
       log_warn "$distro VM already exists (ID: $vm_id), skipping..."
       ((vm_id++))
       continue

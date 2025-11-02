@@ -1,0 +1,247 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091
+
+set -euo pipefail
+
+SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+readonly SCRIPT_NAME
+
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+source "$SCRIPT_DIR/utils"
+
+log_info() {
+  echo "ℹ️  [INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+log_warn() {
+  echo "⚠️  [WARN] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+log_error() {
+  echo "❌ [ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+die() {
+  log_error "$1"
+  exit 1
+}
+
+log_debug() {
+  if [[ "${DEBUG:-0}" == "1" ]]; then
+    echo "🐛 [DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+  fi
+}
+
+log_success() {
+  echo "✅ [SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+usage() {
+  echo
+  sleep 1
+
+  cat <<EOF
+🚀 Usage: $SCRIPT_NAME [OPTIONS]
+
+📋 Options:
+  -s, --storage STORAGE            💾 Proxmox storage target (default: auto-detect)
+  -d, --disk-size DISK_SIZE        💿 Size of the VM disk (default: 32G)
+  -m, --memory MEMORY               🧠 VM memory in MB (default: 8192)
+  -c, --cpu CORES                   ⚙️  Number of CPU cores (default: 4)
+  -u, --username USERNAME           👤 Username for cloud-init (default: distro-specific)
+  -p, --password PASSWORD           🔐 Password for cloud-init (default: distro-specific)
+  -h, --help                        ❓ Display this help message
+  --debug                           🐛 Enable debug logging
+
+📝 Examples:
+  $SCRIPT_NAME                                    # Create all templates with defaults
+  $SCRIPT_NAME -s custom-storage                  # Use specific storage
+EOF
+}
+
+parse_args() {
+  if [[ $# -gt 0 ]]; then
+    while [[ "$#" -gt 0 ]]; do
+      case $1 in
+      -s | --storage)
+        PROXMOX_STORAGE="$2"
+        shift 2
+        ;;
+      -d | --disk-size)
+        DISK_SIZE="$2"
+        shift 2
+        ;;
+      -m | --memory)
+        MEMORY="$2"
+        shift 2
+        ;;
+      -c | --cpu)
+        CORES="$2"
+        shift 2
+        ;;
+      -u | --username)
+        USERNAME="$2"
+        shift 2
+        ;;
+      -p | --password)
+        PASSWORD="$2"
+        shift 2
+        ;;
+      -h | --help)
+        usage
+        exit 0
+        ;;
+      --debug)
+        export DEBUG=1
+        shift
+        ;;
+      *)
+        log_error "Unknown parameter: $1"
+        usage
+        exit 1
+        ;;
+      esac
+    done
+  fi
+}
+
+check_prerequisites() {
+  check_root_user
+
+  if ! has_cmd qm; then
+    log_error "The 'qm' command is required. This script must be run on a Proxmox host."
+    exit 1
+  fi
+
+  if [[ ! -f "$SCRIPT_DIR/vm-template" ]]; then
+    log_error "Required script 'vm-template' not found in $SCRIPT_DIR"
+    exit 1
+  fi
+}
+
+template_exists() {
+  local vm_id="$1"
+  if qm status "$vm_id" &>/dev/null; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+create_template() {
+  local distro="$1"
+  local vm_id
+  local template_args=("-D" "$distro")
+
+  # Get the default VM ID for this distro
+  case "$distro" in
+  debian)
+    vm_id=201
+    ;;
+  fedora)
+    vm_id=202
+    ;;
+  ubuntu)
+    vm_id=203
+    ;;
+  alpine)
+    vm_id=204
+    ;;
+  centos)
+    vm_id=205
+    ;;
+  tumbleweed | tw)
+    vm_id=206
+    ;;
+  arch)
+    vm_id=207
+    ;;
+  *)
+    log_error "Unsupported distribution: '$distro'"
+    return 1
+    ;;
+  esac
+
+  # Check if template already exists
+  if template_exists "$vm_id"; then
+    log_info "Template for $distro (ID: $vm_id) already exists, skipping"
+    return 0
+  fi
+
+  # Add optional arguments if provided
+  if [[ -n "${PROXMOX_STORAGE:-}" ]]; then
+    template_args+=("-s" "$PROXMOX_STORAGE")
+  fi
+
+  if [[ -n "${DISK_SIZE:-}" ]]; then
+    template_args+=("-d" "$DISK_SIZE")
+  fi
+
+  if [[ -n "${MEMORY:-}" ]]; then
+    template_args+=("-m" "$MEMORY")
+  fi
+
+  if [[ -n "${CORES:-}" ]]; then
+    template_args+=("-c" "$CORES")
+  fi
+
+  if [[ -n "${USERNAME:-}" ]]; then
+    template_args+=("-u" "$USERNAME")
+  fi
+
+  if [[ -n "${PASSWORD:-}" ]]; then
+    template_args+=("-p" "$PASSWORD")
+  fi
+
+  log_info "Creating template for $distro..."
+  log_debug "Running: $SCRIPT_DIR/vm-template ${template_args[*]}"
+
+  if "$SCRIPT_DIR/vm-template" "${template_args[@]}"; then
+    log_success "Successfully created $distro template"
+    return 0
+  else
+    log_error "Failed to create $distro template"
+    return 1
+  fi
+}
+
+main() {
+  echo "🚀 Starting Proxmox VM templates creation process"
+
+  parse_args "$@"
+  check_prerequisites
+
+  # Define all supported distributions
+  local distros=("debian" "fedora" "ubuntu" "alpine" "centos" "tumbleweed" "arch")
+
+  log_info "Will create templates for: ${distros[*]}"
+
+  local failed_distros=()
+  local success_count=0
+
+  for distro in "${distros[@]}"; do
+    echo
+    log_info "Processing $distro template..."
+    if create_template "$distro"; then
+      ((++success_count))
+    else
+      failed_distros+=("$distro")
+    fi
+  done
+
+  echo
+  log_info "Template creation process completed"
+  log_info "Successfully created: $success_count/${#distros[@]} templates"
+
+  if [[ ${#failed_distros[@]} -gt 0 ]]; then
+    log_error "Failed to create templates for: ${failed_distros[*]}"
+    exit 1
+  else
+    log_success "All templates created successfully!"
+  fi
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

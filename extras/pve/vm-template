@@ -1,39 +1,20 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
 SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 readonly SCRIPT_NAME
 
-readonly TEMP_DIR="/tmp"
+readonly IMAGES_DIR="/var/lib/vz/template/cache"
 
-# Source utils for detect_storage function
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
-# shellcheck disable=SC1091
 source "$SCRIPT_DIR/utils"
 
-# Default values with environment variable support
-DEFAULT_PROXMOX_STORAGE=""
-DEFAULT_DISK_SIZE="32G"
-DEFAULT_MEMORY="8192"
-DEFAULT_CORES="4"
-DEFAULT_USERNAME="${CLOUD_INIT_USER:-}"
-DEFAULT_PASSWORD="${CLOUD_INIT_PASSWORD:-program}"
-DEFAULT_SSH_KEY="${SSH_KEY_PATH:-}"
-
-# Initialize variables with defaults
-PROXMOX_STORAGE="${DEFAULT_PROXMOX_STORAGE:-}"
-VM_ID=""
-VM_NAME=""
-IMAGE_URL=""
-DISK_SIZE="$DEFAULT_DISK_SIZE"
-MEMORY="$DEFAULT_MEMORY"
-CORES="$DEFAULT_CORES"
-USERNAME="$DEFAULT_USERNAME"
-PASSWORD="$DEFAULT_PASSWORD"
-DISTRO=""
-SSH_KEY="$DEFAULT_SSH_KEY"
-EXPECTED_CHECKSUM=""
+DISK_SIZE="32G"
+MEMORY="8192"
+CORES="4"
 
 log_info() {
   echo "ℹ️  [INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1"
@@ -45,6 +26,11 @@ log_warn() {
 
 log_error() {
   echo "❌ [ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+die() {
+  log_error "$1"
+  exit 1
 }
 
 log_debug() {
@@ -65,11 +51,6 @@ cleanup_on_error() {
     if [[ -n "${VM_ID:-}" ]] && qm status "$VM_ID" &>/dev/null; then
       log_warn "Cleaning up partially created VM $VM_ID"
       qm destroy "$VM_ID" --destroy-unreferenced-disks 1 &>/dev/null || true
-    fi
-
-    if [[ -n "${TEMP_IMAGE_PATH:-}" && -f "$TEMP_IMAGE_PATH" ]]; then
-      log_debug "Cleaning up downloaded image"
-      rm -f "$TEMP_IMAGE_PATH" || true
     fi
   fi
   exit $exit_code
@@ -119,20 +100,10 @@ validate_cores() {
   return 0
 }
 
-validate_url() {
-  local url="$1"
-  if ! [[ "$url" =~ ^https?:// ]]; then
-    log_error "Invalid URL format: $url"
-    return 1
-  fi
-  return 0
-}
-
 validate_storage() {
-  local storage="$1"
+  local storage=${PROXMOX_STORAGE:-}
   log_debug "Validating storage: $storage"
 
-  # If storage is not specified, use detect_storage to find suitable storage
   if [[ -z "$storage" ]]; then
     log_info "No storage specified, detecting suitable storage..."
     if ! storage=$(detect_storage); then
@@ -141,13 +112,10 @@ validate_storage() {
     fi
     PROXMOX_STORAGE="$storage"
     log_info "Auto-detected storage: $storage"
-  else
-    # Check if specified storage exists
-    if ! pvesm status | grep -q "^$storage "; then
-      log_error "Storage '$storage' not found or not accessible"
-      log_debug "Available storages: $(pvesm status)"
-      return 1
-    fi
+  elif ! pvesm status | grep -q "^$storage "; then
+    log_error "Storage '$storage' not found or not accessible"
+    log_debug "Available storages: $(pvesm status)"
+    return 1
   fi
 
   log_debug "Storage validation passed for: $storage"
@@ -160,117 +128,46 @@ validate_credentials() {
     return 1
   fi
 
-  if [[ -z "$SSH_KEY" && -z "$PASSWORD" ]]; then
-    log_warn "No SSH key or password provided. You will need to set one manually."
-    log_warn "Set CLOUD_INIT_PASSWORD or SSH_KEY_PATH environment variables to provide credentials."
+  if [[ -z "$PASSWORD" ]]; then
+    log_warn "No  password provided. You will need to set one manually."
   fi
 
   return 0
 }
 
-validate_ssh_key() {
-  local ssh_key="$1"
-  if [[ -n "$ssh_key" ]]; then
-    if [[ ! -f "$ssh_key" ]]; then
-      log_error "SSH key file not found at '$ssh_key'"
-      return 1
-    fi
-    if [[ ! -r "$ssh_key" ]]; then
-      log_error "SSH key file '$ssh_key' is not readable"
-      return 1
-    fi
-  fi
-  return 0
-}
-
-verify_image_checksum() {
-  local image_path="$1"
-  local expected_checksum="${EXPECTED_CHECKSUM:-}"
-
-  if [[ -z "$expected_checksum" ]]; then
-    log_warn "No checksum provided. Skipping verification."
-    return 0
-  fi
-
-  log_info "Verifying image checksum..."
-  local actual_checksum
-  actual_checksum=$(sha256sum "$image_path" | cut -d' ' -f1)
-
-  if [[ "$actual_checksum" == "$expected_checksum" ]]; then
-    log_success "Checksum verification passed"
-    return 0
-  else
-    log_error "Checksum verification failed"
-    log_error "Expected: $expected_checksum"
-    log_error "Actual:   $actual_checksum"
+validate_vm_name() {
+  if qm list 2>/dev/null | awk -v name="$VM_NAME" '$2 == name { found=1 } END { exit !found }'; then
+    log_error "VM name '$VM_NAME' is already in use. Please specify a different name with -n"
     return 1
   fi
+  return 0
+}
+
+validate_distro() {
+  if [[ -z "${DISTRO:=}" ]]; then
+    log_error "The --distro argument is required. Use -h for help."
+    return 1
+  fi
+  return 0
 }
 
 validate_all_parameters() {
-  log_info "Validating parameters..."
-
-  if [[ -n "$VM_ID" ]]; then
-    validate_vm_id "$VM_ID" || return 1
-  fi
-
+  validate_distro || return 1
+  validate_vm_id "$VM_ID" || return 1
+  validate_vm_name || return 1
   validate_disk_size "$DISK_SIZE" || return 1
   validate_memory "$MEMORY" || return 1
   validate_cores "$CORES" || return 1
-  validate_storage "$PROXMOX_STORAGE" || return 1
+  validate_storage || return 1
   validate_credentials || return 1
-  validate_ssh_key "$SSH_KEY" || return 1
 
-  log_info "All parameters validated successfully"
   return 0
 }
 
-load_options_file() {
-  local cur_dir
-  cur_dir=$(dirname "$0")
-  local options_file="$cur_dir/options"
+usage() {
+  echo
+  sleep 1
 
-  if [[ -f "$options_file" ]]; then
-    log_info "Loading options from $options_file"
-
-    # Validate options file syntax before sourcing
-    if ! bash -n "$options_file"; then
-      log_error "Options file has syntax errors: $options_file"
-      return 1
-    fi
-
-    # Create a temporary subshell to safely load the options
-    (
-      # Export current environment to allow variable expansion
-      export PROXMOX_STORAGE VM_ID VM_NAME IMAGE_URL DISK_SIZE MEMORY CORES USERNAME PASSWORD SSH_KEY EXPECTED_CHECKSUM
-
-      # shellcheck disable=SC1090
-      source "$options_file"
-
-      # Output the variables to be captured by the parent
-      echo "PROXMOX_STORAGE='${PROXMOX_STORAGE:-$DEFAULT_PROXMOX_STORAGE}'"
-      echo "VM_ID='${VM_ID:-}'"
-      echo "VM_NAME='${VM_NAME:-}'"
-      echo "IMAGE_URL='${IMAGE_URL:-}'"
-      echo "DISK_SIZE='${DISK_SIZE:-$DEFAULT_DISK_SIZE}'"
-      echo "MEMORY='${MEMORY:-$DEFAULT_MEMORY}'"
-      echo "CORES='${CORES:-$DEFAULT_CORES}'"
-      echo "USERNAME='${USERNAME:-$DEFAULT_USERNAME}'"
-      echo "PASSWORD='${PASSWORD:-$DEFAULT_PASSWORD}'"
-      echo "SSH_KEY='${SSH_KEY:-$DEFAULT_SSH_KEY}'"
-      echo "EXPECTED_CHECKSUM='${EXPECTED_CHECKSUM:-}'"
-    ) | while IFS='=' read -r key value; do
-      # Evaluate the value to allow variable expansion
-      eval "$key=$value"
-    done
-
-    log_success "Options loaded successfully"
-  else
-    log_debug "No options file found at $options_file, using defaults"
-  fi
-}
-
-display_usage() {
   cat <<EOF
 🚀 Usage: $SCRIPT_NAME -D DISTRO [OPTIONS]
 
@@ -283,26 +180,21 @@ display_usage() {
   -n, --vm-name VM_NAME            🏷️  Name for the VM (default: auto-assigned)
   -d, --disk-size DISK_SIZE        💿 Size of the VM disk (default: 32G)
   -m, --memory MEMORY               🧠 VM memory in MB (default: 8192)
-  -c, --cores CORES                 ⚙️  Number of CPU cores (default: 4)
+  -c, --cpu CORES                   ⚙️  Number of CPU cores (default: 4)
   -u, --username USERNAME           👤 Username for cloud-init (default: distro-specific)
   -p, --password PASSWORD           🔐 Password for cloud-init (default: program, use CLOUD_INIT_PASSWORD to override)
-  -k, --ssh-key SSH_KEY             🔑 Path to SSH public key file (default: empty, use SSH_KEY_PATH)
-  -U, --image-url IMAGE_URL         🌐 URL of the cloud image (default: latest for distro)
-  -C, --checksum CHECKSUM           🔐 Expected SHA256 checksum of the image
   -h, --help                        ❓ Display this help message
   --debug                           🐛 Enable debug logging
 
 📝 Examples:
   $SCRIPT_NAME -D debian
-  $SCRIPT_NAME -D ubuntu -k ~/.ssh/id_rsa.pub -m 4096 -c 2
-  $SCRIPT_NAME -D fedora -i 1001 -n my-fedora-template -C "sha256:abcdef..."
   $SCRIPT_NAME -D centos -s custom-storage  # Use specific storage
 EOF
 }
 
-parse_arguments() {
+parse_args() {
   if [[ $# -eq 0 ]]; then
-    display_usage
+    usage
     exit 1
   fi
 
@@ -332,7 +224,7 @@ parse_arguments() {
       MEMORY="$2"
       shift 2
       ;;
-    -c | --cores)
+    -c | --cpu)
       CORES="$2"
       shift 2
       ;;
@@ -344,20 +236,8 @@ parse_arguments() {
       PASSWORD="$2"
       shift 2
       ;;
-    -k | --ssh-key)
-      SSH_KEY="$2"
-      shift 2
-      ;;
-    -U | --image-url)
-      IMAGE_URL="$2"
-      shift 2
-      ;;
-    -C | --checksum)
-      EXPECTED_CHECKSUM="$2"
-      shift 2
-      ;;
     -h | --help)
-      display_usage
+      usage
       exit 0
       ;;
     --debug)
@@ -366,34 +246,31 @@ parse_arguments() {
       ;;
     *)
       log_error "Unknown parameter: $1"
-      display_usage
+      usage
       ;;
     esac
   done
 }
 
 check_prerequisites() {
-  if ! command -v qm >/dev/null 2>&1; then
+  check_root_user
+
+  if ! has_cmd qm; then
     log_error "The 'qm' command is required. This script must be run on a Proxmox host."
+    exit 1
   fi
 
-  if [[ $EUID -ne 0 ]] && ! groups | grep -q '\bwww-data\b'; then
-    log_warn "This script typically needs to run as root or with Proxmox privileges"
-  fi
-
-  if [[ -z "$DISTRO" ]]; then
-    log_error "The --distro argument is required. Use -h for help."
-  fi
-
-  local required_tools=("wget" "awk" "sha256sum")
+  local required_tools=("wget" "awk")
   for tool in "${required_tools[@]}"; do
-    if ! command -v "$tool" >/dev/null 2>&1; then
+    if ! has_cmd "$tool"; then
       log_error "Required tool '$tool' not found"
     fi
   done
 }
 
 configure_distribution() {
+  slog "Configuring distribution: $DISTRO"
+
   case "$DISTRO" in
   debian)
     VM_ID=${VM_ID:-201}
@@ -441,62 +318,27 @@ configure_distribution() {
     log_error "Unsupported distribution: '$DISTRO'. Supported: debian, fedora, ubuntu, alpine, centos, tumbleweed, arch"
     ;;
   esac
-
-  # Validate VM ID and name after setting defaults
-  validate_vm_id "$VM_ID" || return 1
-
-  if qm list 2>/dev/null | awk -v name="$VM_NAME" '$2 == name { found=1 } END { exit !found }'; then
-    log_error "VM name '$VM_NAME' is already in use. Please specify a different name with -n"
-    return 1
-  fi
-}
-
-download_with_retry() {
-  local url="$1"
-  local output="$2"
-  local max_attempts="${DOWNLOAD_RETRY_ATTEMPTS:-3}"
-  local attempt=1
-
-  while [[ $attempt -le $max_attempts ]]; do
-    log_info "Download attempt $attempt of $max_attempts..."
-
-    if wget --progress=bar:force --timeout=30 --tries=1 -O "$output" "$url" 2>&1 |
-      stdbuf -oL tr '\r' '\n' | grep --line-buffered -oE '[0-9]+%' |
-      while read -r percent; do
-        log_debug "Download progress: $percent"
-      done; then
-      return 0
-    fi
-
-    if [[ $attempt -lt $max_attempts ]]; then
-      log_warn "Download attempt $attempt failed, retrying in 5 seconds..."
-      sleep 5
-      rm -f "$output" # Clean up partial download
-    fi
-
-    ((attempt++))
-  done
-
-  log_error "Failed to download after $max_attempts attempts"
-  return 1
+  PASSWORD=${PASSWORD:-$USERNAME}
 }
 
 download_image() {
-  local temp_image_path="$TEMP_DIR/${DISTRO}-cloud-${VM_ID}.qcow2"
+  local filename
+  filename=$(basename "$IMAGE_URL")
+  local temp_image_path="$IMAGES_DIR/$filename"
   TEMP_IMAGE_PATH="$temp_image_path"
 
   echo "📥 Downloading $DISTRO image from $IMAGE_URL..."
 
   if [[ -f "$temp_image_path" ]]; then
     log_success "Image already exists at $temp_image_path"
-    verify_image_checksum "$temp_image_path" || return 1
     return 0
   fi
 
-  mkdir -p "$TEMP_DIR"
+  mkdir -p "$IMAGES_DIR"
 
-  # Download with retry logic
-  if ! download_with_retry "$IMAGE_URL" "$temp_image_path"; then
+  log_info "Downloading image from $IMAGE_URL..."
+
+  if ! wget -O "$temp_image_path" "$IMAGE_URL"; then
     log_error "Failed to download $DISTRO image from $IMAGE_URL"
     return 1
   fi
@@ -506,10 +348,46 @@ download_image() {
     return 1
   fi
 
-  # Verify checksum if provided
-  verify_image_checksum "$temp_image_path" || return 1
-
   log_success "Successfully downloaded image to $temp_image_path"
+  return 0
+}
+
+resize_disk() {
+  echo "📏 Resizing disk to $DISK_SIZE..."
+
+  if ! qm resize "$VM_ID" "scsi0" "$DISK_SIZE"; then
+    log_error "Failed to resize disk"
+    return 1
+  fi
+
+  log_success "Disk resized successfully"
+  return 0
+}
+
+configure_cloud_init() {
+  echo "☁️  Adding cloud-init drive..."
+
+  local cloud_init_args=(
+    "$VM_ID"
+    --serial0 socket
+    --vga serial0
+    --ipconfig0 ip=dhcp
+    --ciuser "$USERNAME"
+  )
+
+  if [[ -n "$PASSWORD" ]]; then
+    cloud_init_args+=(--cipassword "$PASSWORD")
+    log_info "Password authentication configured"
+  else
+    log_warn "No password provided - you'll need to set one manually"
+  fi
+
+  if ! qm set "${cloud_init_args[@]}"; then
+    log_error "Failed to configure cloud-init"
+    return 1
+  fi
+
+  log_success "Cloud-init configuration completed"
   return 0
 }
 
@@ -521,145 +399,45 @@ create_vm() {
     --name "$VM_NAME"
     --memory "$MEMORY"
     --cores "$CORES"
-    --ostype l26
     --machine q35
-    --agent 1
     --cpu host
+    --agent enabled=1
     --net0 "virtio,bridge=vmbr0"
-    --tags "template,${DISTRO}"
+    --scsihw virtio-scsi-pci
+    --bios ovmf
   )
-
-  # Ubuntu and Tumbleweed need UEFI boot
-  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "tumbleweed" ]]; then
-    qm_create_args+=(--bios ovmf --efidisk0 "$PROXMOX_STORAGE:0,pre-enrolled-keys=0")
-  fi
 
   if ! qm create "${qm_create_args[@]}"; then
     log_error "Failed to create VM"
     return 1
   fi
 
-  log_success "VM created successfully"
-  return 0
-}
-
-import_disk() {
-  echo "💾 Importing disk to Proxmox storage '$PROXMOX_STORAGE'..."
-
+  log_info "Importing disk image..."
   if ! qm importdisk "$VM_ID" "$TEMP_IMAGE_PATH" "$PROXMOX_STORAGE"; then
     log_error "Failed to import disk"
+    qm destroy "$VM_ID" 2>/dev/null
     return 1
   fi
 
-  log_success "Disk imported successfully"
-  return 0
-}
-
-attach_disk() {
-  echo "🔌 Attaching disk to VM..."
-
-  local disk_target
-  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "tumbleweed" ]]; then
-    disk_target="virtio0"
-    if ! qm set "$VM_ID" --scsihw virtio-scsi-pci \
-      --virtio0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on"; then
-      log_error "Failed to attach disk to $DISTRO VM"
-      return 1
-    fi
-  else
-    disk_target="scsi0"
-    if ! qm set "$VM_ID" --scsihw virtio-scsi-pci \
-      --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1"; then
-      log_error "Failed to attach disk to VM"
-      return 1
-    fi
-  fi
-
-  log_success "Disk attached successfully"
-  return 0
-}
-
-resize_disk() {
-  echo "📏 Resizing disk to $DISK_SIZE..."
-
-  local disk_target
-  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "tumbleweed" ]]; then
-    disk_target="virtio0"
-  else
-    disk_target="scsi0"
-  fi
-
-  if ! qm resize "$VM_ID" "$disk_target" "$DISK_SIZE"; then
-    log_error "Failed to resize disk"
-    return 1
-  fi
-
-  log_success "Disk resized successfully"
-  return 0
-}
-
-configure_boot() {
-  echo "🔧 Configuring boot options..."
-
-  local disk_target
-  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "tumbleweed" ]]; then
-    disk_target="virtio0"
-  else
-    disk_target="scsi0"
-  fi
-
-  if ! qm set "$VM_ID" --boot c --bootdisk "$disk_target"; then
-    log_error "Failed to configure boot options"
-    return 1
-  fi
-
-  log_success "Boot options configured successfully"
-  return 0
-}
-
-import_and_configure_disk() {
-  import_disk || exit 1
-  attach_disk || exit 1
-  resize_disk || exit 1
-  configure_boot || exit 1
-
-  log_success "Disk configuration completed"
-}
-
-configure_cloud_init() {
-  echo "☁️  Adding cloud-init drive..."
-
-  if ! qm set "$VM_ID" --ide2 "$PROXMOX_STORAGE:cloudinit"; then
-    log_error "Failed to add cloud-init drive"
-    return 1
-  fi
-
-  echo "⚙️  Configuring cloud-init settings..."
-
-  local cloud_init_args=(
+  log_info "Configuring disks and boot order..."
+  local qm_set_args=(
     "$VM_ID"
+    --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1"
+    --efidisk0 "$PROXMOX_STORAGE:1,efitype=4m,pre-enrolled-keys=1"
+    --ide2 "$PROXMOX_STORAGE:cloudinit"
+    --boot order=scsi0
     --serial0 socket
     --vga serial0
-    --ipconfig0 ip=dhcp
-    --ciuser "$USERNAME"
+    --tags "template,${DISTRO}"
   )
 
-  if [[ -n "$SSH_KEY" ]]; then
-    cloud_init_args+=(--sshkeys "$SSH_KEY")
-    log_info "SSH key authentication configured"
-  elif [[ -n "$PASSWORD" ]]; then
-    cloud_init_args+=(--cipassword "$PASSWORD")
-    log_info "Password authentication configured"
-  else
-    log_warn "No SSH key or password provided - you'll need to set one manually"
-  fi
-
-  if ! qm set "${cloud_init_args[@]}"; then
-    log_error "Failed to configure cloud-init"
+  if ! qm set "${qm_set_args[@]}"; then
+    log_error "Failed to configure VM disks"
+    qm destroy "$VM_ID" 2>/dev/null
     return 1
   fi
 
-  log_success "Cloud-init configuration completed"
+  resize_disk && configure_cloud_init && log_info "VM $VM_ID created successfully"
   return 0
 }
 
@@ -686,32 +464,25 @@ display_configuration() {
   echo "  ⚙️  CPU Cores: $CORES"
   echo "  👤 Username: $USERNAME"
   echo "  🔐 Password: ${PASSWORD:+[SET]}${PASSWORD:-[NOT SET]}"
-  echo "  🔑 SSH Key: ${SSH_KEY:+[SET]}${SSH_KEY:-[NOT SET]}"
   echo "  🌐 Image URL: $IMAGE_URL"
-  if [[ -n "${EXPECTED_CHECKSUM:-}" ]]; then
-    echo "  🔐 Checksum: ${EXPECTED_CHECKSUM:0:16}..."
-  fi
 }
 
 main() {
   echo "🚀 Starting Proxmox VM template creation process"
 
-  load_options_file
-
-  parse_arguments "$@"
+  parse_args "$@"
 
   check_prerequisites || exit 1
   configure_distribution || exit 1
-  validate_all_parameters || exit 1
 
+  validate_all_parameters || exit 1
   display_configuration
 
   download_image || exit 1
   create_vm || exit 1
-  import_and_configure_disk || exit 1
-  configure_cloud_init || exit 1
   convert_to_template || exit 1
 
+  display_configuration
   log_success "$DISTRO template '$VM_NAME' (ID: $VM_ID) created successfully!"
   log_info "You can now clone this template to create new VMs"
 }
