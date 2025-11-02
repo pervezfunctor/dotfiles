@@ -1,0 +1,404 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+readonly SCRIPT_NAME
+
+# Source utils for detect_storage function
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/utils"
+
+# Logging functions
+log_info() {
+  echo "ℹ️  [INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+log_warn() {
+  echo "⚠️  [WARN] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+log_error() {
+  echo "❌ [ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+log_success() {
+  echo "✅ [SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+log_debug() {
+  if [[ "${DEBUG:-0}" == "1" ]]; then
+    echo "🐛 [DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+  fi
+}
+
+# Get the directory where this script is located
+get_script_dir() {
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  echo "$script_dir"
+}
+
+# Check if qm command is available (Proxmox) - skip in dry-run mode
+check_prerequisites() {
+  # Check if qm command is available (Proxmox) - skip in dry-run mode
+  if [[ "$DRY_RUN" != "true" ]] && ! command -v qm >/dev/null 2>&1; then
+    log_error "The 'qm' command is required. This script must be run on a Proxmox host."
+    return 1
+  fi
+
+  # Detect storage if not specified
+  if [[ -z "$PROXMOX_STORAGE" ]]; then
+    log_info "No storage specified, detecting suitable storage..."
+    if ! storage=$(detect_storage); then
+      log_error "Failed to detect suitable storage"
+      return 1
+    fi
+    PROXMOX_STORAGE="$storage"
+    log_info "Auto-detected storage: $storage"
+  fi
+
+  log_debug "Prerequisites check passed"
+  return 0
+}
+
+# Display usage information
+display_usage() {
+  cat <<EOF
+🚀 Usage: $SCRIPT_NAME [OPTIONS] TEMPLATE_ID [VM_ID]
+
+📋 Description:
+  Creates a VM from a specified template ID using the qm clone command.
+
+📋 Arguments:
+  TEMPLATE_ID                      🔢 Template ID to clone from (required)
+  VM_ID                           🔢 VM ID for the new VM (optional, auto-assigned if not provided)
+
+📋 Options:
+  -s, --storage STORAGE            💾 Proxmox storage target for cloned VM (default: local-lvm)
+  -n, --name NAME                  🏷️  Custom name for the VM (default: vm-{vm_id})
+  -c, --cpu CORES                  🔧 Number of CPU cores (default: template value)
+  -m, --memory MEMORY              💾 Memory size in MB (default: template value)
+  -d, --disk-size SIZE             💿 Disk size in GB (default: template value)
+  -u, --username USERNAME          👤 Cloud-init username (default: template value)
+  -p, --password PASSWORD          🔐 Cloud-init password (default: template value)
+  -k, --ssh-key SSH_KEY            🔑 SSH public key for cloud-init (default: template value)
+  -h, --help                        ❓ Display this help message
+  --debug                           🐛 Enable debug logging
+  --dry-run                         🔍 Show what would be done without executing
+
+📝 Examples:
+  $SCRIPT_NAME 201                          # Create VM from template 201 with auto-assigned ID
+  $SCRIPT_NAME 202 150                      # Create VM from template 202 with specific ID 150
+  $SCRIPT_NAME 203 -s local-zfs -n my-vm    # Create VM from template 203 with custom storage and name
+  $SCRIPT_NAME 204 -c 4 -m 4096 -d 32       # Create VM from template 204 with 4 cores, 4GB RAM, 32GB disk
+  $SCRIPT_NAME 205 -u myuser -p mypass       # Create VM from template 205 with custom credentials
+  $SCRIPT_NAME 206 -k ~/.ssh/id_rsa.pub      # Create VM from template 206 with SSH key
+  $SCRIPT_NAME 207 --dry-run                # Preview what would be done for template 207
+
+EOF
+}
+
+# Parse command line arguments
+parse_arguments() {
+  # Default values
+  PROXMOX_STORAGE=""
+  VM_NAME=""
+  DRY_RUN=false
+  TEMPLATE_ID=""
+  VM_ID=""
+  CPU_CORES=""
+  MEMORY_SIZE=""
+  DISK_SIZE=""
+  USERNAME=""
+  PASSWORD=""
+  SSH_KEY=""
+
+  while [[ "$#" -gt 0 ]]; do
+    case $1 in
+    -s | --storage)
+      PROXMOX_STORAGE="$2"
+      shift 2
+      ;;
+    -n | --name)
+      VM_NAME="$2"
+      shift 2
+      ;;
+    -c | --cpu)
+      CPU_CORES="$2"
+      shift 2
+      ;;
+    -m | --memory)
+      MEMORY_SIZE="$2"
+      shift 2
+      ;;
+    -d | --disk-size)
+      DISK_SIZE="$2"
+      shift 2
+      ;;
+    -u | --username)
+      USERNAME="$2"
+      shift 2
+      ;;
+    -p | --password)
+      PASSWORD="$2"
+      shift 2
+      ;;
+    -k | --ssh-key)
+      SSH_KEY="$2"
+      shift 2
+      ;;
+    -h | --help)
+      display_usage
+      exit 0
+      ;;
+    --debug)
+      export DEBUG=1
+      shift
+      ;;
+    --dry-run)
+      DRY_RUN=true
+      shift
+      ;;
+    *)
+      if [[ -z "$TEMPLATE_ID" ]] && [[ "$1" =~ ^[0-9]+$ ]]; then
+        TEMPLATE_ID="$1"
+        shift
+      elif [[ -z "$VM_ID" ]] && [[ "$1" =~ ^[0-9]+$ ]]; then
+        VM_ID="$1"
+        shift
+      else
+        log_error "Unknown parameter or invalid ID: $1"
+        display_usage
+        exit 1
+      fi
+      ;;
+    esac
+  done
+}
+
+# Check if a VM template exists
+template_exists() {
+  local template_id="$1"
+
+  # In dry-run mode, assume templates exist
+  if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    return 0
+  fi
+
+  if qm list 2>/dev/null | awk -v id="$template_id" '$1 == id { found=1 } END { exit !found }'; then
+    return 0 # Template exists
+  else
+    return 1 # Template doesn't exist
+  fi
+}
+
+# Check if a VM already exists
+vm_exists() {
+  local vm_id="$1"
+
+  # In dry-run mode, assume VMs don't exist
+  if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    return 1
+  fi
+
+  if qm list 2>/dev/null | awk -v id="$vm_id" '$1 == id { found=1 } END { exit !found }'; then
+    return 0 # VM exists
+  else
+    return 1 # VM doesn't exist
+  fi
+}
+
+# Find the next available VM ID
+find_next_vm_id() {
+  local next_id=100
+  local max_id=999
+
+  while [[ "$next_id" -le "$max_id" ]]; do
+    if ! vm_exists "$next_id"; then
+      echo "$next_id"
+      return 0
+    fi
+    ((next_id++))
+  done
+
+  log_error "No available VM IDs found in range 100-999"
+  return 1
+}
+
+# Create VM from a template
+create_vm() {
+  local template_id="$1"
+  local vm_id="$2"
+  local vm_name="${VM_NAME:-vm-${vm_id}}"
+
+  # Build the qm clone command with optional parameters
+  local clone_cmd="qm clone \"$template_id\" \"$vm_id\" --name \"$vm_name\" --storage \"$PROXMOX_STORAGE\" --full"
+
+  log_info "Creating VM from template $template_id..."
+  log_debug "Base command: $clone_cmd"
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log_info "[DRY RUN] Would execute: $clone_cmd"
+
+    # Show additional configuration if provided
+    if [[ -n "$CPU_CORES" ]]; then
+      log_info "[DRY RUN] Would set CPU cores to: $CPU_CORES"
+    fi
+    if [[ -n "$MEMORY_SIZE" ]]; then
+      log_info "[DRY RUN] Would set memory to: ${MEMORY_SIZE}MB"
+    fi
+    if [[ -n "$DISK_SIZE" ]]; then
+      log_info "[DRY RUN] Would set disk size to: ${DISK_SIZE}GB"
+    fi
+    if [[ -n "$USERNAME" ]]; then
+      log_info "[DRY RUN] Would set cloud-init username to: $USERNAME"
+    fi
+    if [[ -n "$PASSWORD" ]]; then
+      log_info "[DRY RUN] Would set cloud-init password"
+    fi
+    if [[ -n "$SSH_KEY" ]]; then
+      log_info "[DRY RUN] Would set cloud-init SSH key"
+    fi
+
+    return 0
+  fi
+
+  # Execute the qm clone command
+  if qm clone "$template_id" "$vm_id" --name "$vm_name" --storage "$PROXMOX_STORAGE" --full; then
+    log_success "VM cloned successfully (ID: $vm_id, Name: $vm_name, Template: $template_id)"
+
+    # Apply additional configuration if provided
+    if [[ -n "$CPU_CORES" ]]; then
+      log_info "Setting CPU cores to: $CPU_CORES"
+      if qm set "$vm_id" --cores "$CPU_CORES"; then
+        log_success "CPU cores set to $CPU_CORES"
+      else
+        log_error "Failed to set CPU cores"
+        return 1
+      fi
+    fi
+
+    if [[ -n "$MEMORY_SIZE" ]]; then
+      log_info "Setting memory to: ${MEMORY_SIZE}MB"
+      if qm set "$vm_id" --memory "$MEMORY_SIZE"; then
+        log_success "Memory set to ${MEMORY_SIZE}MB"
+      else
+        log_error "Failed to set memory"
+        return 1
+      fi
+    fi
+
+    if [[ -n "$DISK_SIZE" ]]; then
+      log_info "Setting disk size to: ${DISK_SIZE}GB"
+      # Get current disk size to check if we need to expand or shrink
+      local current_size
+      current_size=$(qm config "$vm_id" | grep "^scsi0:" | sed 's/.*size=\([0-9]*\).*/\1/' || echo "0")
+
+      if [[ "$DISK_SIZE" -lt "$current_size" ]]; then
+        log_warn "Disk shrinking is not supported (current: ${current_size}G, requested: ${DISK_SIZE}G)"
+        log_info "Keeping current disk size of ${current_size}G"
+      else
+        if qm resize "$vm_id" scsi0 "${DISK_SIZE}G"; then
+          log_success "Disk resized to ${DISK_SIZE}GB"
+        else
+          log_error "Failed to resize disk"
+          return 1
+        fi
+      fi
+    fi
+
+    # Apply cloud-init configuration if provided
+    local cloud_init_args=("$vm_id")
+
+    if [[ -n "$USERNAME" ]]; then
+      cloud_init_args+=(--ciuser "$USERNAME")
+      log_info "Setting cloud-init username to: $USERNAME"
+    fi
+
+    if [[ -n "$PASSWORD" ]]; then
+      cloud_init_args+=(--cipassword "$PASSWORD")
+      log_info "Setting cloud-init password"
+    fi
+
+    if [[ -n "$SSH_KEY" ]]; then
+      # Read SSH key from file if it's a path, otherwise treat as direct key content
+      if [[ -f "$SSH_KEY" ]]; then
+        # Use the file directly for qm set
+        cloud_init_args+=(--sshkeys "$SSH_KEY")
+        log_info "Setting cloud-init SSH key from file: $SSH_KEY"
+      else
+        # Create a temporary file for the SSH key content
+        local temp_ssh_key="/tmp/vm-create-ssh-key-$$"
+        printf '%s' "$SSH_KEY" > "$temp_ssh_key"
+        cloud_init_args+=(--sshkeys "$temp_ssh_key")
+        log_info "Setting cloud-init SSH key from parameter (using temp file: $temp_ssh_key)"
+
+        # Clean up temp file after cloud-init config
+        trap 'rm -f "$temp_ssh_key"' RETURN
+      fi
+    fi
+
+    # Apply cloud-init settings if any were provided
+    if [[ ${#cloud_init_args[@]} -gt 1 ]]; then
+      if qm set "${cloud_init_args[@]}"; then
+        log_success "Cloud-init configuration applied successfully"
+      else
+        log_error "Failed to apply cloud-init configuration"
+        return 1
+      fi
+    fi
+
+    log_success "VM configuration completed successfully!"
+    return 0
+  else
+    log_error "Failed to create VM from template $template_id"
+    return 1
+  fi
+}
+
+# Main function
+main() {
+  echo "🚀 Starting VM creation from template"
+
+  parse_arguments "$@"
+
+  if [[ -z "$TEMPLATE_ID" ]]; then
+    log_error "Template ID is required"
+    display_usage
+    exit 1
+  fi
+
+  check_prerequisites || exit 1
+
+  # Find or validate VM ID
+  if [[ -z "$VM_ID" ]]; then
+    VM_ID=$(find_next_vm_id)
+    log_info "Auto-assigned VM ID: $VM_ID"
+  else
+    if vm_exists "$VM_ID"; then
+      log_error "VM with ID $VM_ID already exists"
+      exit 1
+    fi
+  fi
+
+  # Check if template exists
+  if ! template_exists "$TEMPLATE_ID"; then
+    log_error "Template with ID $TEMPLATE_ID does not exist"
+    exit 1
+  fi
+
+  # Create the VM
+  if create_vm "$TEMPLATE_ID" "$VM_ID"; then
+    log_success "VM creation completed successfully!"
+  else
+    log_error "VM creation failed"
+    exit 1
+  fi
+}
+
+# Execute main function if script is run directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
