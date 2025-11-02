@@ -206,7 +206,8 @@ pyenv_install() {
 tailscale_install() {
   has_cmd tailscale && return 0
 
-  fn_exists si && si tailscale && return 0
+  fn_exists si && si tailscale && has_cmd tailscale && return 0
+
   if has_cmd pixi; then
     pis tailscale
     return 0
