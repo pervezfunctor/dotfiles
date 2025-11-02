@@ -145,9 +145,6 @@ create_template() {
   ubuntu)
     vm_id=203
     ;;
-  alpine)
-    vm_id=204
-    ;;
   centos)
     vm_id=205
     ;;
@@ -213,7 +210,7 @@ main() {
   check_prerequisites
 
   # Define all supported distributions
-  local distros=("debian" "fedora" "ubuntu" "alpine" "centos" "tumbleweed" "arch")
+  local distros=("debian" "fedora" "ubuntu" "centos" "tumbleweed" "arch")
 
   log_info "Will create templates for: ${distros[*]}"
 

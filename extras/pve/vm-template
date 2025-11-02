@@ -315,7 +315,7 @@ configure_distribution() {
     USERNAME=${USERNAME:-arch}
     ;;
   *)
-    log_error "Unsupported distribution: '$DISTRO'. Supported: debian, fedora, ubuntu, alpine, centos, tumbleweed, arch"
+    log_error "Unsupported distribution: '$DISTRO'. Supported: debian, fedora, ubuntu, centos, tumbleweed, arch"
     ;;
   esac
   PASSWORD=${PASSWORD:-$USERNAME}
@@ -394,6 +394,11 @@ configure_cloud_init() {
 create_vm() {
   echo "🖥️  Creating VM '$VM_NAME' with ID $VM_ID..."
 
+  local bios_type="ovmf"
+  if [[ "$DISTRO" == "arch" || "$DISTRO" == "centos" ]]; then
+    bios_type="seabios"
+  fi
+
   local qm_create_args=(
     "$VM_ID"
     --name "$VM_NAME"
@@ -404,7 +409,7 @@ create_vm() {
     --agent enabled=1
     --net0 "virtio,bridge=vmbr0"
     --scsihw virtio-scsi-pci
-    --bios ovmf
+    --bios "$bios_type"
   )
 
   if ! qm create "${qm_create_args[@]}"; then
@@ -423,13 +428,16 @@ create_vm() {
   local qm_set_args=(
     "$VM_ID"
     --scsi0 "$PROXMOX_STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1"
-    --efidisk0 "$PROXMOX_STORAGE:1,efitype=4m,pre-enrolled-keys=1"
     --ide2 "$PROXMOX_STORAGE:cloudinit"
     --boot order=scsi0
     --serial0 socket
     --vga serial0
     --tags "template,${DISTRO}"
   )
+
+  if [[ "$DISTRO" != "arch" && "$DISTRO" != "centos" ]]; then
+    qm_set_args+=(--efidisk0 "$PROXMOX_STORAGE:1,efitype=4m,pre-enrolled-keys=1")
+  fi
 
   if ! qm set "${qm_set_args[@]}"; then
     log_error "Failed to configure VM disks"

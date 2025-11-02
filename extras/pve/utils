@@ -56,7 +56,6 @@ supported_lxc_distros() {
     "debian"
     "fedora"
     "archlinux"
-    "alpine"
     "centos"
     "rockylinux"
     "opensuse"

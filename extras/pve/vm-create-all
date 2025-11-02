@@ -32,7 +32,6 @@ declare -A TEMPLATE_MAPPING=(
   ["debian"]="201"
   ["fedora"]="202"
   ["ubuntu"]="203"
-  ["alpine"]="204"
   ["centos"]="205"
   ["tumbleweed"]="206"
   ["arch"]="207"
