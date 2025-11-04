@@ -293,8 +293,14 @@ pm_install() {
         smartmontools memtest86+ glmark2
 }
 
-kde_binstall() {
-    sudo pacman -S --quiet --noconfirm --needed discover plasma-desktop \
+kde-slim_binstall() {
+    sudo pacman -S --quiet --noconfirm --needed plasma-desktop  noto-fonts \
     pipewire-jack systemsettings kscreen kio-extras udisks2 powerdevil \
-    power-profiles-daemon qt6-multimedia-gstreamer noto-fonts
+    power-profiles-daemon qt6-multimedia-gstreamer
+
+    sudo pacman -S --quiet --noconfirm --needed mesa
+}
+
+kde_binstall() {
+  sudo pacman -S --quiet --noconfirm --needed discover mesa-utils
 }

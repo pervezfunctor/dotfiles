@@ -455,5 +455,6 @@ gpgkey=https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/yum/RPM-GPG-KEY-
 kde_binstall() {
     sudo dnf install -y --setopt=install_weak_deps=False plasma-desktop \
         plasma-discover systemsettings kscreen kio-extras udisks2 powerdevil \
-        power-profiles-daemon
+        power-profiles-daemon mesa-libGLES si flatpak \
+        plasma-discover-flatpak plasma-discover-packagekit
 }

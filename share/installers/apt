@@ -400,6 +400,8 @@ kde_binstall() {
 
   sudo apt install --no-install-recommends -y -qq kde-plasma-desktop plasma-discover systemsettings kscreen kio-extras udisks2 powerdevil power-profiles-daemon
 
+  sudo apt install --no-install-recommends -y -qq libgles2-mesa
+
   slog "kde plasma installation done!"
 }
 

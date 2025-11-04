@@ -412,14 +412,20 @@ nixos-wsl_mainstall() {
   slog "Commit and push your configuration to keep it safe."
 }
 
-kde-settings_install() {
+kde_confstall() {
+  sudo systemctl enable power-profiles-daemon
+  sudo systemctl start power-profiles-daemon
+
   kwriteconfig6 --file ~/.kxkbrc --group=Layout --key=Options caps:ctrlmodifier
 }
 
 kde_groupstall() {
   kde_binstall
   terminal_groupstall
-  kde-settings_install
+
+  flathub_install
+  kde_confstall
+
 }
 
 # kwin_script_install() {
