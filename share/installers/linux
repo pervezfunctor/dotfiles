@@ -412,6 +412,16 @@ nixos-wsl_mainstall() {
   slog "Commit and push your configuration to keep it safe."
 }
 
+kde-settings_install() {
+  kwriteconfig6 --file ~/.kxkbrc --group=Layout --key=Options caps:ctrlmodifier
+}
+
+kde_groupstall() {
+  kde_binstall
+  terminal_groupstall
+  kde-settings_install
+}
+
 # kwin_script_install() {
 #   local SCRIPT="$1"
 
