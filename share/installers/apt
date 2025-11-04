@@ -393,16 +393,19 @@ sway_binstall() {
   slog "sway installation done!"
 }
 
-kde_binstall() {
+kde-slim_binstall() {
   slog "Installing minimal kde plasma..."
 
-  is_ubuntu && warn "This might not work on Ubuntu"
-
-  sudo apt install --no-install-recommends -y -qq kde-plasma-desktop plasma-discover systemsettings kscreen kio-extras udisks2 powerdevil power-profiles-daemon
+  sudo apt install --no-install-recommends -y -qq kde-plasma-desktop systemsettings kscreen kio-extras udisks2 powerdevil power-profiles-daemon
 
   sudo apt install --no-install-recommends -y -qq libgles2-mesa
 
   slog "kde plasma installation done!"
+}
+
+kde_binstall() {
+  sudo apt install --no-install-recommends -y -qq plasma-discover \
+    plasma-discover-backend-flatpak plasma-discover-backend-fwupd
 }
 
 # sudo apt-get -qq -y install \

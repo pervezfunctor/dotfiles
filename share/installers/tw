@@ -310,6 +310,7 @@ kde-slim_binstall() {
 
 kde_binstall() {
   kde-slim_binstall
+
   sudo zypper install -y --no-recommends  discover6 discover6-backend-flatpak \
     discover6-backend-packagekit
 }
