@@ -1,0 +1,21 @@
+#!/bin/sh
+
+script_dir=$(dirname "$0")
+
+# shellcheck disable=SC1091
+. "$script_dir"/env.sh
+
+# case $(systemd-detect-virt --vm) in
+# "none" | "") ;;
+# "kvm")
+#   # WLR_NO_HARDWARE_CURSORS=1 is not needed with legacy DRM interface
+#   export WLR_RENDERER=pixman
+#   export WLR_DRM_NO_ATOMIC=1
+#   ;;
+# *)
+#   # https://github.com/swaywm/sway/issues/6581
+#   export WLR_NO_HARDWARE_CURSORS=1
+#   ;;
+# esac
+
+exec /usr/bin/sway "$@"

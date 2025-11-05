@@ -21,12 +21,15 @@ set $down j
 set $up k
 set $right l
 
-set $term foot
+set $term kitty
 
-set $rofi_cmd rofi -terminal '$term'
+# set $rofi_cmd rofi -terminal '$term'
+set $rofi_cmd wofi
 
 # set $menu $rofi_cmd -show combi -combi-modes drun#run -modes combi
-set $menu $rofi_cmd -show drun
+# set $menu $rofi_cmd -show drun
+set $menu $rofi_cmd
+
 set $screenlock 'swaylock --config ~/.ilm/suseway/dot-config/swaylock.conf'
 set $menu_window $rofi_cmd -show window
 set $wob wob --config /etc/sway/wob/wob.ini
@@ -366,5 +369,7 @@ for_window [app_id="lxqt-policykit-agent"] {
 }
 
 exec ~/.config/sway/fedora.sh
+
+include /etc/sway/config.d/*
 
 # include '$(/usr/libexec/sway/layered-include "/usr/share/sway/config.d/*.conf" "/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf")'

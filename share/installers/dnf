@@ -1,445 +1,446 @@
 #!/usr/bin/env bash
 
 docker_fedora_repo() {
-    has_cmd docker && return 0
+  has_cmd docker && return 0
 
-    si dnf-plugins-core
+  si dnf-plugins-core
 
-    is_rocky && sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    is_fedora && sudo dnf-3 config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+  is_rocky && sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+  is_fedora && sudo dnf-3 config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
 }
 
 vscode_fedora_repo() {
-    has_cmd code && return 1
+  has_cmd code && return 1
 
-    [ -f /etc/yum.repos.d/vscode.repo ] && return 1
+  [ -f /etc/yum.repos.d/vscode.repo ] && return 1
 
-    slog "Adding vscode repo"
+  slog "Adding vscode repo"
 
-    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-    sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+  sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+  sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
 
-    slog "vscode repo added!"
+  slog "vscode repo added!"
 }
 
 si() {
-    if has_cmd dnf5; then
-        sudo dnf5 -y \
-            --setopt=install_weak_deps=False \
-            --setopt=fastestmirror=True \
-            --setopt=keepcache=False \
-            --setopt=defaultyes=True \
-            --setopt=max_parallel_downloads=10 \
-            --setopt=metadata_timer_sync=0 \
-            --setopt=keepcache=False \
-            --setopt=defaultyes=True \
-            install --skip-unavailable --skip-broken "$@"
-    else
-        slog "Installing packages..."
-        for p in "$@"; do
-            sudo dnf -y install "$p"
-        done
-        slog "Packages installation done!"
-    fi
+  if has_cmd dnf5; then
+    sudo dnf5 -y \
+      --setopt=install_weak_deps=False \
+      --setopt=fastestmirror=True \
+      --setopt=keepcache=False \
+      --setopt=defaultyes=True \
+      --setopt=max_parallel_downloads=10 \
+      --setopt=metadata_timer_sync=0 \
+      --setopt=keepcache=False \
+      --setopt=defaultyes=True \
+      install --skip-unavailable --skip-broken "$@"
+  else
+    slog "Installing packages..."
+    for p in "$@"; do
+      sudo dnf -y install "$p"
+    done
+    slog "Packages installation done!"
+  fi
 }
 
 enable_epel() {
-    slog "Enabling EPEL"
-    if is_rocky || is_centos; then
-        sudo dnf config-manager --set-enabled crb
-    fi
+  slog "Enabling EPEL"
+  if is_rocky || is_centos; then
+    sudo dnf config-manager --set-enabled crb
+  fi
 
-    is_fedora && sudo dnf-3 config-manager --set-enabled crb
-    si epel-release
+  is_fedora && sudo dnf-3 config-manager --set-enabled crb
+  si epel-release
 }
 
 update_packages() {
-    slog "Updating fedora"
-    if ! { sudo dnf update -y && sudo dnf upgrade -y; }; then
-        die "dnf update/upgrade failed, quitting"
-    fi
+  slog "Updating..."
+  if ! { sudo dnf update -y && sudo dnf upgrade -y; }; then
+    die "dnf update/upgrade failed, quitting"
+  fi
+  slog "Update done!"
 }
 
 fedora_packages() {
-    update_packages
+  update_packages
 
-    slog "Installing packages"
+  slog "Installing packages"
 
-    si git-core gh git-delta unzip wget curl trash-cli tar stow gcc make file \
-        gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate \
-        cheat libsecret net-tools iproute nmap dialog newt jq procs direnv yq \
-        python3 pipx python3-pip
+  si git-core gh git-delta unzip wget curl trash-cli tar stow gcc make file \
+    gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate \
+    cheat libsecret net-tools iproute nmap dialog newt jq procs direnv yq \
+    python3 pipx python3-pip
 
-    has_cmd tldr && tldr --update
+  has_cmd tldr && tldr --update
 
-    slog "Installing packages done!"
+  slog "Installing packages done!"
 }
 
 centos_packages() {
-    update_packages
+  update_packages
 
-    slog "Installing packages"
+  slog "Installing packages"
 
-    si git unzip wget curl tar gcc make gum tree bat ripgrep \
-        htop bat plocate file just emacs-nox neovim tmux zsh libsecret \
-        net-tools iproute nmap
+  si git unzip wget curl tar gcc make gum tree bat ripgrep \
+    htop bat plocate file just emacs-nox neovim tmux zsh libsecret \
+    net-tools iproute nmap
 
-    slog "Installing packages done!"
+  slog "Installing packages done!"
 }
 
 base_dev_install() {
-    if dnf group list -q | grep -q "c-development"; then
-        si @c-development
-    elif dnf group list -q | grep -q "Development Tools"; then
-        sudo dnf group install --setop=install_weak_deps=False --with-optional -y "Development Tools"
-    else
-        si gcc make cmake autoconf automake binutils expect flex bison glibc-devel
-    fi
+  if dnf group list -q | grep -q "c-development"; then
+    si @c-development
+  elif dnf group list -q | grep -q "Development Tools"; then
+    sudo dnf group install --setop=install_weak_deps=False --with-optional -y "Development Tools"
+  else
+    si gcc make cmake autoconf automake binutils expect flex bison glibc-devel
+  fi
 }
 
 system-python_install() {
-    si python3 python3-virtualenv pipx python3-pip python3-setuptools python3-wheel
-    pipx install uv
-    pipx ensurepath
+  si python3 python3-virtualenv pipx python3-pip python3-setuptools python3-wheel
+  pipx install uv
+  pipx ensurepath
 }
 
 locale_setup() {
-    local LOCALE KEYMAP
-    LOCALE="en_US.UTF-8"
-    KEYMAP="us"
+  local LOCALE KEYMAP
+  LOCALE="en_US.UTF-8"
+  KEYMAP="us"
 
-    sudo localectl set-locale LANG=$LOCALE
-    sudo localectl set-keymap $KEYMAP
-    sudo localectl set-x11-keymap $KEYMAP
+  sudo localectl set-locale LANG=$LOCALE
+  sudo localectl set-keymap $KEYMAP
+  sudo localectl set-x11-keymap $KEYMAP
 }
 
 core_install() {
-    slog "Installing core packages"
+  slog "Installing core packages"
 
-    si 'dnf-command(copr)'
-    si 'dnf-command(config-manager)'
-    is_fedora || enable_epel
-    is_fedora && si dnf5-plugins
+  si 'dnf-command(copr)'
+  si 'dnf-command(config-manager)'
+  is_fedora || enable_epel
+  is_fedora && si dnf5-plugins
 
-    update_packages
+  update_packages
 
-    si curl wget git-core trash-cli tree tar unzip util-linux-user which file
+  si curl wget git-core trash-cli tree tar unzip util-linux-user which file
 
-    is_fedora && si stow
+  is_fedora && si stow
 
-    slog "Core packages installation done!"
+  slog "Core packages installation done!"
 }
 
 ui_install() {
-    is_desktop || return 1
+  is_desktop || return 1
 
-    slog "Installing ui"
+  slog "Installing ui"
 
-    si flatpak gnome-keyring wl-clipboard
-    flathub_install
+  si flatpak gnome-keyring wl-clipboard
+  flathub_install
 
-    slog "ui installation done!"
+  slog "ui installation done!"
 }
 
 essential_install() {
-    slog "Installing essential packages"
+  slog "Installing essential packages"
 
-    pkgx_install
+  pkgx_install
 
-    base_dev_install
+  base_dev_install
 
-    si zip p7zip unar gawk readline-devel sqlite-devel libffi-devel \
-        bzip2-devel xz-devel micro libsecret fuse fuse-libs zstd newt
+  si zip p7zip unar gawk readline-devel sqlite-devel libffi-devel \
+    bzip2-devel xz-devel micro libsecret fuse fuse-libs zstd newt
 
-    slog "Essential packages installation done!"
+  slog "Essential packages installation done!"
 }
 
 cli-slim_install() {
-    slog "Installing cli tools using dnf"
+  slog "Installing cli tools using dnf"
 
-    local base_pkgs=(zsh git ripgrep gh bat jq fzf)
+  local base_pkgs=(zsh git ripgrep gh bat jq fzf)
 
-    local fedora_pkgs=()
-    if is_fedora; then
-        fedora_pkgs=(zoxide)
-    fi
+  local fedora_pkgs=()
+  if is_fedora; then
+    fedora_pkgs=(zoxide)
+  fi
 
-    si "${base_pkgs[@]}" "${fedora_pkgs[@]}"
+  si "${base_pkgs[@]}" "${fedora_pkgs[@]}"
 
-    slog "cli tools installation done!"
+  slog "cli tools installation done!"
 }
 
 cli_install() {
-    slog "Installing cli tools using dnf"
+  slog "Installing cli tools using dnf"
 
-    cli-slim_install
+  cli-slim_install
 
-    local base_pkgs=(neovim ShellCheck shfmt tmux htop pkg-config urlview
-        plocate luarocks tealdeer lsd fd-find git-delta procs just dialog gum)
+  local base_pkgs=(neovim ShellCheck shfmt tmux htop pkg-config urlview
+    plocate luarocks tealdeer lsd fd-find git-delta procs just dialog gum)
 
-    local fedora_pkgs=()
-    if is_fedora; then
-        fedora_pkgs=(python3-neovim hyperfine cheat navi ugrep direnv yq)
-    fi
+  local fedora_pkgs=()
+  if is_fedora; then
+    fedora_pkgs=(python3-neovim hyperfine cheat navi ugrep direnv yq)
+  fi
 
-    si "${base_pkgs[@]}" "${fedora_pkgs[@]}"
+  si "${base_pkgs[@]}" "${fedora_pkgs[@]}"
 
-    has_cmd tldr && tldr --update
+  has_cmd tldr && tldr --update
 
-    system-python_install
+  system-python_install
 
-    slog "cli tools installation done!"
+  slog "cli tools installation done!"
 }
 
 snap_install() {
-    has_cmd snap && return 1
+  has_cmd snap && return 1
 
-    slog "Installing snapd"
-    si snapd
-    sudo systemctl enable --now snapd.socket
-    sudo systemctl enable --now snapd
-    [ -e /snap ] || sudo ln -s /var/lib/snapd/snap /snap
+  slog "Installing snapd"
+  si snapd
+  sudo systemctl enable --now snapd.socket
+  sudo systemctl enable --now snapd
+  [ -e /snap ] || sudo ln -s /var/lib/snapd/snap /snap
 
-    slog "snapd setup done!"
+  slog "snapd setup done!"
 }
 
 cpp_install() {
-    slog "Installing C++"
+  slog "Installing C++"
 
-    si gcc gcc-c++ gdb valgrind systemtap ltrace strace clang clang-devel \
-        clang-tools-extra clang-libs clang-analyzer lldb lld llvm llvm-devel \
-        graphviz ccache cppcheck pre-commit cmake
+  si gcc gcc-c++ gdb valgrind systemtap ltrace strace clang clang-devel \
+    clang-tools-extra clang-libs clang-analyzer lldb lld llvm llvm-devel \
+    graphviz ccache cppcheck pre-commit cmake
 
-    conan_install
+  conan_install
 
-    if is_rocky; then
-        si boost1.78 boost1.78-devel boost1.78-static catch-devel
-    elif is_fedora; then
-        si boost boost-devel boost-static catch-devel
-    fi
+  if is_rocky; then
+    si boost1.78 boost1.78-devel boost1.78-static catch-devel
+  elif is_fedora; then
+    si boost boost-devel boost-static catch-devel
+  fi
 
-    slog "C++ installation done!"
+  slog "C++ installation done!"
 }
 
 vscode_binstall() {
-    has_cmd code && return 1
+  has_cmd code && return 1
 
-    slog "Installing vscode"
+  slog "Installing vscode"
 
-    vscode_fedora_repo
+  vscode_fedora_repo
 
-    dnf check-update
-    si code
+  dnf check-update
+  si code
 
-    slog "vscode installation done!"
+  slog "vscode installation done!"
 
-    cmd_check code
+  cmd_check code
 }
 
 terminal_binstall() {
-    has_cmd ghostty && return 1
+  has_cmd ghostty && return 1
 
-    if is_fedora; then
-        slog "Installing ghostty"
-        sudo dnf copr -y enable pgdev/ghostty
-        si ghostty
+  if is_fedora; then
+    slog "Installing ghostty"
+    sudo dnf copr -y enable pgdev/ghostty
+    si ghostty
 
-        cmd_check ghostty
-        slog "ghostty installation done!"
-    else
-        slog "Installing kitty"
-        si kitty
-        slog "kitty installation done!"
+    cmd_check ghostty
+    slog "ghostty installation done!"
+  else
+    slog "Installing kitty"
+    si kitty
+    slog "kitty installation done!"
 
-        if ! has_cmd kitty; then
-            slog "Installing alacritty"
-            si alacritty
-            cmd_check alacritty
-            slog "alacritty installation done!"
-        fi
+    if ! has_cmd kitty; then
+      slog "Installing alacritty"
+      si alacritty
+      cmd_check alacritty
+      slog "alacritty installation done!"
     fi
+  fi
 }
 
 vm-ui_install() {
-    is_desktop || return 1
+  is_desktop || return 1
 
-    slog "Installing virt ui packages"
+  slog "Installing virt ui packages"
 
-    si gnome-boxes
-    has_cmd virt-install && si virt-manager virt-viewer
+  si gnome-boxes
+  has_cmd virt-install && si virt-manager virt-viewer
 
-    slog "virt ui packages installation done!"
+  slog "virt ui packages installation done!"
 }
 
 cockpit_install() {
-    has_cmd cockpit && return 1
+  has_cmd cockpit && return 1
 
-    slog "Installing cockpit"
-    si cockpit cockpit-machines cockpit-podman \
-        cockpit-storaged cockpit-bridge cockpit-networkmanager cockpit-selinux \
-        cockpit-system firewalld cockpit-packagekit
+  slog "Installing cockpit"
+  si cockpit cockpit-machines cockpit-podman \
+    cockpit-storaged cockpit-bridge cockpit-networkmanager cockpit-selinux \
+    cockpit-system firewalld cockpit-packagekit
 
-    sudo systemctl enable --now cockpit.socket
-    sudo systemctl enable --now firewalld
-    sudo firewall-cmd --add-service=cockpit
-    sudo firewall-cmd --add-service=cockpit --permanent
+  sudo systemctl enable --now cockpit.socket
+  sudo systemctl enable --now firewalld
+  sudo firewall-cmd --add-service=cockpit
+  sudo firewall-cmd --add-service=cockpit --permanent
 
-    slog "cockpit installation done!"
+  slog "cockpit installation done!"
 }
 
 docker_install() {
-    has_cmd docker && return 1
+  has_cmd docker && return 1
 
-    slog "Installing docker"
+  slog "Installing docker"
 
-    docker_fedora_repo
+  docker_fedora_repo
 
-    si docker-ce docker-ce-cli containerd.io docker-buildx-plugin \
-        docker-compose-plugin dive slim
+  si docker-ce docker-ce-cli containerd.io docker-buildx-plugin \
+    docker-compose-plugin dive slim
 
-    slog "docker installation done!"
+  slog "docker installation done!"
 }
 
 incus_install() {
-    if is_centos; then
-        warn "incus not available for CentOS, skipping"
-        return 1
-    fi
+  if is_centos; then
+    warn "incus not available for CentOS, skipping"
+    return 1
+  fi
 
-    slog "Installing incus"
+  slog "Installing incus"
 
-    if ! is_fedora; then
-        sudo dnf -y copr enable neil/incus
-    fi
+  if ! is_fedora; then
+    sudo dnf -y copr enable neil/incus
+  fi
 
-    si incus qemu-kvm qemu-img bridge-utils incus-agent openssl
-    incus_confstall
+  si incus qemu-kvm qemu-img bridge-utils incus-agent openssl
+  incus_confstall
 
-    slog "incus installation done!"
+  slog "incus installation done!"
 }
 
 pm_install() {
-    si net-tools iproute nmap lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ \
-        glmark2
+  si net-tools iproute nmap lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ \
+    glmark2
 }
 
 vm_install() {
-    slog "Installing libvirt"
+  slog "Installing libvirt"
 
-    si libvirt virt-install bridge-utils virglrenderer butane cloud-utils \
-        qemu qemu-kvm qemu-img qemu-ui-spice-core qemu-ui-spice-app \
-        qemu-char-spice qemu-audio-spice qemu-device-usb-redirect \
-        qemu-device-display-virtio-vga qemu-device-display-virtio-gpu \
-        qemu-user-binfmt qemu-user-static qemu-system-x86_64 jq xmlstarlet \
-        coreos-installer bootc pykickstart lorax xorriso squashfs-tools bsdtar \
-        snapper btrfs-progs grub2 grub2-tools libguestfs-tools libosinfo \
-        osinfo-db edk2-ovmf dmidecode osinfo-db-tools openssl guestfs-tools
+  si libvirt virt-install bridge-utils virglrenderer butane cloud-utils \
+    qemu qemu-kvm qemu-img qemu-ui-spice-core qemu-ui-spice-app \
+    qemu-char-spice qemu-audio-spice qemu-device-usb-redirect \
+    qemu-device-display-virtio-vga qemu-device-display-virtio-gpu \
+    qemu-user-binfmt qemu-user-static qemu-system-x86_64 jq xmlstarlet \
+    coreos-installer bootc pykickstart lorax xorriso squashfs-tools bsdtar \
+    snapper btrfs-progs grub2 grub2-tools libguestfs-tools libosinfo \
+    osinfo-db edk2-ovmf dmidecode osinfo-db-tools openssl guestfs-tools
 
-    slog "libvirt installation done!"
+  slog "libvirt installation done!"
 }
 
 distrobox_install() {
-    slog "Installing distrobox"
-    si podman podman-compose podman-tui toolbox buildah distrobox
-    slog "distrobox installation done!"
+  slog "Installing distrobox"
+  si podman podman-compose podman-tui toolbox buildah distrobox
+  slog "distrobox installation done!"
 }
 
 more_virt_install() {
-    si samba-dcerpc samba-ldb-ldap-modules samba-winbind-clients
-    si samba-winbind-modules samba
-    si cockpit-bridge cockpit-selinux cockpit-storaged cockpit-system
-    si cockpit-machines cockpit-networkmanager cockpit-system cockpit-storaged
-    si cockpit-ostree cockpit-podman podman-tui podmansh powertop udica
-    si libvirt-nss podman-bootc containerd.io dbus-x11
-    si docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin
-    # si svirt incus incus-agent lxc lxd-agent lxd kcli ubuntu-family-fonts
+  si samba-dcerpc samba-ldb-ldap-modules samba-winbind-clients
+  si samba-winbind-modules samba
+  si cockpit-bridge cockpit-selinux cockpit-storaged cockpit-system
+  si cockpit-machines cockpit-networkmanager cockpit-system cockpit-storaged
+  si cockpit-ostree cockpit-podman podman-tui podmansh powertop udica
+  si libvirt-nss podman-bootc containerd.io dbus-x11
+  si docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin
+  # si svirt incus incus-agent lxc lxd-agent lxd kcli ubuntu-family-fonts
 }
 
 more_ui_install() {
-    si wireguard-tools xprop solaar stress-ng usbmuxd
-    si mesa-libGLU playerctl pulseaudio-utils
+  si wireguard-tools xprop solaar stress-ng usbmuxd
+  si mesa-libGLU playerctl pulseaudio-utils
 
-    if is_kde; then
-        si libadwaita-qt5 libadwaita-qt6 kde-runtime-docs kdeplasma-addons
-        si plasma-wallpapers-dynamic
-    elif is_gnome; then
-        si gnome-shell-extension-appindicator
-        si gnome-shell-extension-caffeine gnome-shell-extension-dash-to-dock
-        si gnome-shell-extension-gsconnect gnome-shell-extension-blur-my-shell
-        # si gnome-shell-extension-search-light gnome-shell-extension-logo-menu
-        si libgda libgda-sqlite
-        si libratbag-ratbagd nautilus-gsconnect openssh-askpass yaru-theme
-    fi
+  if is_kde; then
+    si libadwaita-qt5 libadwaita-qt6 kde-runtime-docs kdeplasma-addons
+    si plasma-wallpapers-dynamic
+  elif is_gnome; then
+    si gnome-shell-extension-appindicator
+    si gnome-shell-extension-caffeine gnome-shell-extension-dash-to-dock
+    si gnome-shell-extension-gsconnect gnome-shell-extension-blur-my-shell
+    # si gnome-shell-extension-search-light gnome-shell-extension-logo-menu
+    si libgda libgda-sqlite
+    si libratbag-ratbagd nautilus-gsconnect openssh-askpass yaru-theme
+  fi
 
 }
 
 more_fonts_install() {
-    si cascadia-code-fonts adobe-source-code-pro-fonts mozilla-fira-mono-fonts
-    si jetbrains-mono-fonts-all google-go-mono-fonts ibm-plex-mono-fonts
-    si google-droid-sans-mono-fonts powerline-fonts fira-code-fonts
+  si cascadia-code-fonts adobe-source-code-pro-fonts mozilla-fira-mono-fonts
+  si jetbrains-mono-fonts-all google-go-mono-fonts ibm-plex-mono-fonts
+  si google-droid-sans-mono-fonts powerline-fonts fira-code-fonts
 }
 
 more_essential_install() {
-    bi glow gum lm_sensors stress-ng setools-console sysprof
-    si rclone restic wl-clipboard samba tailscale wireguard-tools
-    si git-credential-libsecret jetbrains-mono-fonts-all
-    si edk2-ovmf genisoimage iotop p7zip-plugins p7zip
-    si bash-color-prompt bcache-tools evtest fastfetch firewall-config
-    si hplip ifuse input-remapper libimobiledevice libxcrypt-compat
+  bi glow gum lm_sensors stress-ng setools-console sysprof
+  si rclone restic wl-clipboard samba tailscale wireguard-tools
+  si git-credential-libsecret jetbrains-mono-fonts-all
+  si edk2-ovmf genisoimage iotop p7zip-plugins p7zip
+  si bash-color-prompt bcache-tools evtest fastfetch firewall-config
+  si hplip ifuse input-remapper libimobiledevice libxcrypt-compat
 }
 
 tiling_common_install() {
-    slog "Installing tiling common packages"
+  slog "Installing tiling common packages"
 
-    si waybar pavucontrol Thunar wl-clipboard thunar-archive-plugin
-    si network-manager-applet blueman gnome-keyring-pam gnome-keyring
-    si gnome-themes-extra kanshi sddm playerctl wlsunset rofi-wayland
-    si rofi-themes dunst swaync lxqt-policykit network-manager-applet
-    si xdg-desktop-portal-gtk pmv imv mpv wlogout qt6-qtquickcontrols2 qt6-qtsvg
-    si SwayNotificationCenter
+  si waybar pavucontrol Thunar wl-clipboard thunar-archive-plugin
+  si network-manager-applet blueman gnome-keyring-pam gnome-keyring
+  si gnome-themes-extra kanshi sddm playerctl wlsunset rofi-wayland
+  si rofi-themes dunst swaync lxqt-policykit network-manager-applet
+  si xdg-desktop-portal-gtk pmv imv mpv wlogout qt6-qtquickcontrols2 qt6-qtsvg
+  si SwayNotificationCenter
 
-    slog "Tiling common packages installation done!"
+  slog "Tiling common packages installation done!"
 }
 
 hyprland_binstall() {
-    tiling_common_install
-    slog "Installing hyprland"
+  tiling_common_install
+  slog "Installing hyprland"
 
-    si hyprland hyprland-devel hyprutils hyprutils-devel
-    si hypridle hyprpaper hyprpicker hyprlock kitty hyprcursor
+  si hyprland hyprland-devel hyprutils hyprutils-devel
+  si hypridle hyprpaper hyprpicker hyprlock kitty hyprcursor
 
-    slog "hyprland installation done!"
+  slog "hyprland installation done!"
 }
 
 sway_binstall() {
-    tiling_common_install
+  tiling_common_install
 
-    slog "Installing sway"
+  slog "Installing sway"
 
-    si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway
-    si sway-config-fedora wlogout
-    terminal_binstall
+  si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway
+  si sway-config-fedora wlogout
+  terminal_binstall
 
-    slog "sway installation done!"
+  slog "sway installation done!"
 }
 
 system-docker_install() {
-    has_cmd docker && return 1
+  has_cmd docker && return 1
 
-    slog "Installing docker using os packages..."
+  slog "Installing docker using os packages..."
 
-    si docker docker-cli docker-compose
+  si docker docker-cli docker-compose
 
-    slog "docker installation done!"
+  slog "docker installation done!"
 }
 
 windsurf_install() {
-    has_cmd windsurf && return 0
+  has_cmd windsurf && return 0
 
-    slog "Installing windsurf"
-    sudo rpm --import https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/yum/RPM-GPG-KEY-windsurf
+  slog "Installing windsurf"
+  sudo rpm --import https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/yum/RPM-GPG-KEY-windsurf
 
-    echo -e "[windsurf]
+  echo -e "[windsurf]
 name=Windsurf Repository
 baseurl=https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/yum/repo/
 enabled=1
@@ -447,20 +448,24 @@ autorefresh=1
 gpgcheck=1
 gpgkey=https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/yum/RPM-GPG-KEY-windsurf" | sudo tee /etc/yum.repos.d/windsurf.repo >/dev/null
 
-    sudo dnf check-update
-    si windsurf
-    slog "windsurf installation done!"
+  sudo dnf check-update
+  si windsurf
+  slog "windsurf installation done!"
 }
 
 kde-slim_binstall() {
-    sudo dnf install -y --setopt=install_weak_deps=False plasma-desktop \
-        plasma-discover systemsettings kscreen kio-extras udisks2 powerdevil \
-        power-profiles-daemon mesa-libGLES
+  is_fedora || warn "KDE slim install only tested on fedora"
+
+  slog "Installing minimal kde plasma..."
+  sudo dnf install -y --setopt=install_weak_deps=False plasma-desktop \
+    plasma-discover systemsettings kscreen kio-extras udisks2 powerdevil \
+    power-profiles-daemon mesa-libGLES
+  slog "kde plasma installation done!"
 }
 
 kde_binstall() {
-    kde-slim_binstall
+  kde-slim_binstall
 
-    sudo dnf install -y --setopt=install_weak_deps=False flatpak \
-        plasma-discover-flatpak plasma-discover-packagekit
+  sudo dnf install -y --setopt=install_weak_deps=False flatpak \
+    plasma-discover-flatpak plasma-discover-packagekit
 }

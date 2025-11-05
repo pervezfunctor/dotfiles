@@ -1,304 +1,306 @@
 #!/usr/bin/env bash
 
 si() {
-    sudo pacman -S --quiet --noconfirm "$@"
+  sudo pacman -S --quiet --noconfirm "$@"
 
-    # for p in "$@"; do
-    #     slog "Installing package $p"
-    #     sudo pacman -S --needed --quiet --noconfirm "$p"
-    # done
+  # for p in "$@"; do
+  #     slog "Installing package $p"
+  #     sudo pacman -S --needed --quiet --noconfirm "$p"
+  # done
 }
 
 update_packages() {
-    slog "Updating Arch"
+  slog "Updating Arch"
 
-    if ! sudo pacman -Syu --noconfirm --quiet; then
-        die "pacman update/upgrade failed, quitting"
-    fi
+  if ! sudo pacman -Syu --noconfirm --quiet; then
+    die "pacman update/upgrade failed, quitting"
+  fi
 }
 
 aur() {
-    if has_cmd paru; then
-        paru -S --noconfirm "$@"
-    elif has_cmd yay; then
-        yay -S --noconfirm "$@"
-    else
-        die "paru or yay not installed, cannot install $1"
-    fi
+  if has_cmd paru; then
+    paru -S --noconfirm "$@"
+  elif has_cmd yay; then
+    yay -S --noconfirm "$@"
+  else
+    die "paru or yay not installed, cannot install $1"
+  fi
 }
 
 arch_packages() {
-    update_packages
+  update_packages
 
-    slog "Installing packages"
+  slog "Installing packages"
 
-    si git-core github-cli git-delta unzip wget curl trash-cli tar stow \
-        gcc make file starship gum wl-clipboard tree bat eza fzf ripgrep \
-        zoxide fd htop sd yazi bat tealdeer lazygit libsecret net-tools \
-        iproute2 nmap dialog newt python python-pipx python-pip
+  si git-core github-cli git-delta unzip wget curl trash-cli tar stow \
+    gcc make file starship gum wl-clipboard tree bat eza fzf ripgrep \
+    zoxide fd htop sd yazi bat tealdeer lazygit libsecret net-tools \
+    iproute2 nmap dialog newt python python-pipx python-pip
 
-    has_cmd tldr && tldr --update
+  has_cmd tldr && tldr --update
 
-    slog "Installing packages done!"
+  slog "Installing packages done!"
 }
 
 locale_setup() {
-    local LOCALE KEYMAP
-    LOCALE="en_US.UTF-8"
-    KEYMAP="us"
+  local LOCALE KEYMAP
+  LOCALE="en_US.UTF-8"
+  KEYMAP="us"
 
-    slog "Configuring locale and keyboard for Arch Linux..."
+  slog "Configuring locale and keyboard for Arch Linux..."
 
-    sudo sed -i "s/^# *$LOCALE/$LOCALE/" /etc/locale.gen
-    sudo locale-gen
-    echo "LANG=$LOCALE" | sudo tee /etc/locale.conf
+  sudo sed -i "s/^# *$LOCALE/$LOCALE/" /etc/locale.gen
+  sudo locale-gen
+  echo "LANG=$LOCALE" | sudo tee /etc/locale.conf
 
-    echo "KEYMAP=$KEYMAP" | sudo tee /etc/vconsole.conf
-    sudo loadkeys "$KEYMAP"
+  echo "KEYMAP=$KEYMAP" | sudo tee /etc/vconsole.conf
+  sudo loadkeys "$KEYMAP"
 
 }
 
 core_install() {
-    update_packages
+  update_packages
 
-    slog "Installing core packages"
+  slog "Installing core packages"
 
-    si curl wget git trash-cli tree tar unzip stow zstd file
+  si curl wget git trash-cli tree tar unzip stow zstd file
 
-    slog "Core packages installation done!"
+  slog "Core packages installation done!"
 }
 
 system-python_install() {
-    slog "Installing python"
+  slog "Installing python"
 
-    si python python-pipx python-pip python-setuptools python-wheel \
-        python-virtualenv
-    pipx install uv
+  si python python-pipx python-pip python-setuptools python-wheel \
+    python-virtualenv
+  pipx install uv
 
-    slog "Python installation done!"
+  slog "Python installation done!"
 }
 
 paru_install() {
-    has_cmd paru && return 0
-    has_cmd yay && return 0
+  has_cmd paru && return 0
+  has_cmd yay && return 0
 
-    slog "Installing paru"
+  slog "Installing paru"
 
-    frm /tmp/paru
-    git clone https://aur.archlinux.org/paru.git /tmp/paru && cd /tmp/paru && makepkg --syncdeps --noconfirm --install && cd - && frm /tmp/paru
+  frm /tmp/paru
+  git clone https://aur.archlinux.org/paru.git /tmp/paru && cd /tmp/paru && makepkg --syncdeps --noconfirm --install && cd - && frm /tmp/paru
 
-    slog "paru installation done!"
+  slog "paru installation done!"
 }
 
 snap_install() {
-    aur snapd
-    sudo systemctl enable --now snapd
+  aur snapd
+  sudo systemctl enable --now snapd
 }
 
 ui_install() {
-    is_desktop || return 1
+  is_desktop || return 1
 
-    slog "Installing ui"
+  slog "Installing ui"
 
-    si gnome-keyring wl-clipboard flatpak
-    flathub_install
+  si gnome-keyring wl-clipboard flatpak
+  flathub_install
 
-    slog "ui installation done!"
+  slog "ui installation done!"
 }
 
 essential_install() {
-    slog "Installing essential packages"
+  slog "Installing essential packages"
 
-    pkgx_install
+  pkgx_install
 
-    si unarchiver zip tmux pkg-config fuse2 p7zip xz readline micro libnewt \
-        sqlite libffi zlib pkgfile libxcrypt-compat libsecret gawk base-devel
+  si unarchiver zip tmux pkg-config fuse2 p7zip xz readline micro libnewt \
+    sqlite libffi zlib pkgfile libxcrypt-compat libsecret gawk base-devel
 
-    sudo pkgfile --update
-    sudo pacman -Fy
+  sudo pkgfile --update
+  sudo pacman -Fy
 
-    slog "Essential packages installation done!"
+  slog "Essential packages installation done!"
 }
 
 cli-slim_install() {
-    slog "Installing cli tools using pacman"
+  slog "Installing cli tools using pacman"
 
-    si zsh github-cli fzf ripgrep zoxide eza starship
+  si zsh github-cli fzf ripgrep zoxide eza starship
 
-    slog "cli tools installation done!"
+  slog "cli tools installation done!"
 }
 
 cli_install() {
-    slog "Installing cli tools using pacman"
+  slog "Installing cli tools using pacman"
 
-    cli-slim_install
+  cli-slim_install
 
-    si neovim tmux shellcheck shfmt python-pynvim zsh-completions bat jq yq \
-        luarocks duf lazygit ugrep git-delta navi sd gdu hyperfine fd lsd xh \
-        htop nushell bottom plocate tealdeer television dysk yazi pixi procs \
-        dust direnv atuin broot glances curlie superfile choose just dialog \
-        gum lazydocker
+  si neovim tmux shellcheck shfmt python-pynvim zsh-completions bat jq yq \
+    luarocks duf lazygit ugrep git-delta navi sd gdu hyperfine fd lsd xh \
+    htop nushell bottom plocate tealdeer television dysk yazi pixi procs \
+    dust direnv atuin broot glances curlie superfile choose just dialog \
+    gum lazydocker
 
-    has_cmd tldr && tldr --update
+  has_cmd tldr && tldr --update
 
-    system-python_install
+  system-python_install
 
-    slog "cli tools installation done!"
+  slog "cli tools installation done!"
 }
 
 cpp_install() {
-    slog "Installing C++"
+  slog "Installing C++"
 
-    si gcc gdb boost boost-libs catch2 libc++ clang llvm \
-        doxygen graphviz ccache cppcheck pre-commit \
-        valgrind ltrace strace lldb lld cmake
+  si gcc gdb boost boost-libs catch2 libc++ clang llvm \
+    doxygen graphviz ccache cppcheck pre-commit \
+    valgrind ltrace strace lldb lld cmake
 
-    conan_install
+  conan_install
 
-    slog "C++ installation done!"
+  slog "C++ installation done!"
 
-    cmd_check gcc gdb make cmake conan clang clang++ clang-tidy clang-format
+  cmd_check gcc gdb make cmake conan clang clang++ clang-tidy clang-format
 }
 
 vscode_binstall() {
-    slog "Installing vscode"
+  slog "Installing vscode"
 
-    aur visual-studio-code-bin
+  aur visual-studio-code-bin
 
-    slog "vscode installation done!"
+  slog "vscode installation done!"
 
-    cmd_check code
+  cmd_check code
 }
 
 terminal_binstall() {
-    slog "Installing terminal"
+  slog "Installing terminal"
 
-    si ghostty
+  si ghostty
 
-    slog "terminal installation done!"
+  slog "terminal installation done!"
 }
 
 vm-ui_install() {
-    is_desktop || return 1
+  is_desktop || return 1
 
-    slog "Installing virt ui packages"
+  slog "Installing virt ui packages"
 
-    local -a pkgs=("qemu-desktop")
-    has_cmd gnome-boxes || pkgs+=("gnome-boxes")
-    has_cmd virt-install && pkgs+=("virt-manager" "virt-viewer")
+  local -a pkgs=("qemu-desktop")
+  has_cmd gnome-boxes || pkgs+=("gnome-boxes")
+  has_cmd virt-install && pkgs+=("virt-manager" "virt-viewer")
 
-    si "${pkgs[@]}"
+  si "${pkgs[@]}"
 
-    slog "virt ui packages installation done!"
+  slog "virt ui packages installation done!"
 }
 
 cockpit_install() {
-    has_cmd cockpit && return 1
+  has_cmd cockpit && return 1
 
-    slog "Installing cockpit"
+  slog "Installing cockpit"
 
-    si cockpit cockpit-machines cockpit-packagekit cockpit-pcp cockpit-podman \
-        cockpit-storaged
-    sudo systemctl enable --now cockpit.socket
+  si cockpit cockpit-machines cockpit-packagekit cockpit-pcp cockpit-podman \
+    cockpit-storaged
+  sudo systemctl enable --now cockpit.socket
 
-    slog "cockpit installation done!"
+  slog "cockpit installation done!"
 }
 
 vm_install() {
-    slog "Installing vm"
+  slog "Installing vm"
 
-    sudo pacman -R --noconfirm iptables
+  sudo pacman -R --noconfirm iptables
 
-    si iptables-nft libvirt qemu-base virt-install bridge-utils dnsmasq jq \
-        edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs \
-        guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat \
-        xmlstarlet osinfo-db ovmf libosinfo openssl
+  si iptables-nft libvirt qemu-base virt-install bridge-utils dnsmasq jq \
+    edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs \
+    guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat \
+    xmlstarlet osinfo-db ovmf libosinfo openssl
 
-    slog "vm installation done!"
+  slog "vm installation done!"
 }
 
 docker_install() {
-    has_cmd docker && return 1
+  has_cmd docker && return 1
 
-    slog "Installing docker"
+  slog "Installing docker"
 
-    si docker docker-compose dive slim
+  si docker docker-compose dive slim
 
-    slog "docker installation done!"
+  slog "docker installation done!"
 }
 
 incus_install() {
-    has_cmd incus && return 1
+  has_cmd incus && return 1
 
-    slog "Installing incus"
+  slog "Installing incus"
 
-    si incus qemu-desktop bridge-utils openssl
-    incus_confstall
+  si incus qemu-desktop bridge-utils openssl
+  incus_confstall
 
-    slog "incus installation done!"
+  slog "incus installation done!"
 }
 
 distrobox_install() {
-    has_cmd distrobox && return 1
+  has_cmd distrobox && return 1
 
-    slog "Installing distrobox"
-    si buildah distrobox podman podman-compose
-    slog "distrobox installation done!"
+  slog "Installing distrobox"
+  si buildah distrobox podman podman-compose
+  slog "distrobox installation done!"
 }
 
 desktop_essential_install() {
-    si thunar thunar-archive-plugin wl-clipboard cliphist grim slurp \
-        rofi-wayland waybar dunst nwg-displays nwg-panel xdg-desktop-portal \
-        nwg-bar dolphin swaync ghostty lxappearance qt5ct qt6ct polkit \
-        polkit-kde-agent pavucontrol nm-connection-editor mpv imv nvtop \
-        network-manager-applet otf-font-awesome noto-fonts noto-fonts-emoji \
-        ttf-font-awesome ttf-roboto tumbler firefox kvantum swappy sddm gvfs \
-        papirus-icon-theme bibata-cursor-theme nwg-look reflector
+  si thunar thunar-archive-plugin wl-clipboard cliphist grim slurp \
+    rofi-wayland waybar dunst nwg-displays nwg-panel xdg-desktop-portal \
+    nwg-bar dolphin swaync ghostty lxappearance qt5ct qt6ct polkit \
+    polkit-kde-agent pavucontrol nm-connection-editor mpv imv nvtop \
+    network-manager-applet otf-font-awesome noto-fonts noto-fonts-emoji \
+    ttf-font-awesome ttf-roboto tumbler firefox kvantum swappy sddm gvfs \
+    papirus-icon-theme bibata-cursor-theme nwg-look reflector
 
-    jetbrains-mono_install
-    font-awesome_install
+  jetbrains-mono_install
+  font-awesome_install
 
-    # xorg-server-xwayland
-    # mesa vulkan-intel vulkan-radeon vulkan-mesa-layer
+  # xorg-server-xwayland
+  # mesa vulkan-intel vulkan-radeon vulkan-mesa-layer
 }
 
 hyprland_install() {
-    slog "Installing hyprland packages"
+  slog "Installing hyprland packages"
 
-    desktop_essential_install
-    si hyprcursor hyprgraphics hypridle hyprland hyprland-protocols hyprshot \
-        hyprland-qt-support hyprland-qtutils hyprlock hyprpolkitagent \
-        hyprsunset hyprutils hyprwayland-scanner nwg-dock-hyprland hyprpaper \
-        xdg-desktop-portal-hyprland udisks2 udiskie
+  desktop_essential_install
+  si hyprcursor hyprgraphics hypridle hyprland hyprland-protocols hyprshot \
+    hyprland-qt-support hyprland-qtutils hyprlock hyprpolkitagent \
+    hyprsunset hyprutils hyprwayland-scanner nwg-dock-hyprland hyprpaper \
+    xdg-desktop-portal-hyprland udisks2 udiskie
 
-    slog "hyprland installation done!"
+  slog "hyprland installation done!"
 }
 
 sway_binstall() {
-    slog "Installing sway packages"
+  slog "Installing sway packages"
 
-    desktop_essential_install
-    si sway swaybg swayidle swaylock
+  desktop_essential_install
+  si sway swaybg swayidle swaylock
 
-    slog "sway installation done!"
+  slog "sway installation done!"
 }
 
 firewall_setup() {
-    si nftables firewalld
-    sudo systemctl enable --now firewalld
+  si nftables firewalld
+  sudo systemctl enable --now firewalld
 }
 
 pm_install() {
-    si nmap net-tools iproute2 lm_sensors stress-ng taliscale wireguard-tools \
-        smartmontools memtest86+ glmark2
+  si nmap net-tools iproute2 lm_sensors stress-ng taliscale wireguard-tools \
+    smartmontools memtest86+ glmark2
 }
 
 kde-slim_binstall() {
-    sudo pacman -S --quiet --noconfirm --needed plasma-desktop  noto-fonts \
+  slog "Installing minimal kde plasma..."
+  sudo pacman -S --quiet --noconfirm --needed plasma-desktop noto-fonts \
     pipewire-jack systemsettings kscreen kio-extras udisks2 powerdevil \
     power-profiles-daemon qt6-multimedia-gstreamer
 
-    sudo pacman -S --quiet --noconfirm --needed mesa
+  sudo pacman -S --quiet --noconfirm --needed mesa
+  slog "kde plasma installation done!"
 }
 
 kde_binstall() {

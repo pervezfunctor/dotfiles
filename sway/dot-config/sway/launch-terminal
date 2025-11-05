@@ -1,0 +1,17 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+
+if command -v ghosty >/dev/null; then
+  exec ghostty
+elif command -v alacritty >/dev/null; then
+  exec alacritty
+elif command -v kitty >/dev/null; then
+  exec kitty
+elif command -v foot >/dev/null; then
+  exec foot
+elif command -v ptyxis >/dev/null; then
+  exec ptyxis
+elif command -v wezterm >/dev/null; then
+  exec wezterm
+fi

@@ -206,7 +206,7 @@ adguard-lxc_install() {
 
 pihole-lxc_install() {
   execute_remote_script "${COMMUNITY_SCRIPTS_BASE}/ct/pihole.sh"
-  slog "Use 'pihole setpassword' to set password for Pi-hole"
+  log_info "Use 'pihole setpassword' to set password for Pi-hole"
 }
 
 authelia-lxc_install() {
@@ -227,7 +227,7 @@ qbittorrent_install() {
 
 rclone-lxc_install() {
   execute_remote_script "${COMMUNITY_SCRIPTS_BASE}/ct/rclone.sh"
-  slog "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
+  log_info "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
 }
 
 syncthing-lxc_install() {

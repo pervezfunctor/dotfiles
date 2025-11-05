@@ -1,6 +1,5 @@
 #! /usr/bin/env sh
 
-
 has_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
@@ -18,7 +17,7 @@ source_if_exists() {
   fi
 }
 
-has_cmd nvim && export MANPAGER="nvim +Man!"
+# has_cmd nvim && export MANPAGER="nvim +Man!"
 
 export LANG=en_US.UTF-8
 
@@ -82,4 +81,3 @@ fi
 #     --color=marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8 \
 #     --color=selected-bg:#45475A \
 #     --color=border:#6C7086,label:#CDD6F4"
-

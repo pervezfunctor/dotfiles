@@ -1,2 +1,7 @@
+#! /usr/bin/env bash
+
+# sudo rm -rf /etc/pacman.d/gnupg
 sudo pacman-key --init
 sudo pacman-key --populate archlinux
+sudo pacman-key --init
+# sudo pacman-key --refresh-keys   # may take a while; needs network/dirmngr

@@ -1,0 +1,9 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+
+if command -v wofi >/dev/null; then
+  exec wofi
+elif command -v rofi >/dev/null; then
+  exec rofi -show drun
+fi
