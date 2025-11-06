@@ -332,30 +332,41 @@ dbox-dev-atomic_mainstall() {
 }
 
 nixos_mainstall() {
+  has_cmd nixos-rebuild || die "Only nixos(linux) supported. Quitting."
+  has_cmd nix || die "nix not found, Qutting."
+
+  slog "This should only be executed on a freshly installed nixos."
+  sleep 3
+
+  dotfiles_install
+
+  has_cmd "$DOT_DIR" || die "Cloning to $DOT_DIR failed. Quitting."
+
   local cfg_dir=~/nix-config
-
-  dir_exists "$cfg_dir" && die "$cfg_dir already exists, skipping nixos installation"
-
-  local flake_url="${ILM_BASE_URL}/extras/nixos/vm/flake.nix"
-  local dev_url="${ILM_BASE_URL}/extras/nixos/vm/dev.nix"
-
-  if [ -d "$cfg_dir" ]; then
-    die "nix-config already exists, skipping nixos installation"
-  fi
+  dir_exists "$cfg_dir" && die "$cfg_dir already exists. Quitting."
 
   slog "Copying /etc/nixos to $cfg_dir..."
   if ! cp -r /etc/nixos "$cfg_dir"; then
     die "Failed to copy /etc/nixos"
   fi
 
-  slog "Fetching flake.nix..."
-  if ! curl -fsSL "$flake_url" -o "$cfg_dir/flake.nix"; then
+  local cfg_base="${DOT_DIR}/extras/nixos/vm"
+
+  slog "Copying config to $cfg_dir..."
+  if ! cp "${cfg_base}/" -o "$cfg_dir/flake.nix"; then
     die "Failed to download flake.nix"
   fi
 
-  slog "Fetching dev.nix..."
-  if ! curl -fsSL "$dev_url" -o "$cfg_dir/dev.nix"; then
-    die "Failed to download dev.nix"
+  if ! grep -q "<YOUR USER NAME>" "$cfg_dir/flake.nix"; then
+    die "flake.nix doesn't contain expected <YOUR USER NAME> placeholder"
+  fi
+
+  if ! grep -q "<YOUR USER NAME>" "$cfg_dir/home.nix"; then
+    die "home.nix doesn't contain expected <YOUR USER NAME> placeholder"
+  fi
+
+  if ! grep -q "<YOUR HOME DIRECTORY>" "$cfg_dir/home.nix"; then
+    die "home.nix doesn't contain expected <YOUR HOME DIRECTORY> placeholder"
   fi
 
   slog "Ensuring dev.nix is imported..."
@@ -363,21 +374,45 @@ nixos_mainstall() {
     die "configuration.nix not found"
   fi
   if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
-    sed -i '/^[[:space:]]*\.\/hardware-configuration\.nix/ a\    ./dev.nix' "$cfg_dir/configuration.nix"
+    if ! sed -i '/^[[:space:]]*\.\/hardware-configuration\.nix/ a\    ./dev.nix' "$cfg_dir/configuration.nix"; then
+      die "Failed to add dev.nix import to configuration.nix"
+    fi
   fi
 
   if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
     die "Failed to add dev.nix to configuration.nix"
   fi
 
+  slog "Replacing placeholders in flake.nix..."
+  if ! sed -i "s/<YOUR USER NAME>/$(whoami)/g" "$cfg_dir/flake.nix"; then
+    die "Failed to replace <YOUR USER NAME> in flake.nix"
+  fi
+
+  slog "Replacing placeholders in home.nix..."
+  if ! sed -i "s/<YOUR USER NAME>/$(whoami)/g" "$cfg_dir/home.nix"; then
+    die "Failed to replace <YOUR USER NAME> in home.nix"
+  fi
+
+  if ! sed -i "s|<YOUR HOME DIRECTORY>|$HOME|g" "$cfg_dir/home.nix"; then
+    die "Failed to replace <YOUR HOME DIRECTORY> in home.nix"
+  fi
+
+  local hostname
+  hostname=$(hostname)
+  if ! grep -q "\"$hostname\"" "$cfg_dir/flake.nix"; then
+    die "Hostname '$hostname' not found in flake.nix. Please add it to the nixosConfigurations."
+  fi
+
   slog "Rebuilding system with flake..."
-  if ! sudo nixos-rebuild switch --flake "$cfg_dir#$(hostname)"; then
+  if ! sudo nixos-rebuild switch --flake "$cfg_dir#$hostname"; then
     die "nixos-rebuild failed"
   fi
 
-  dotfiles_install
   vscode_confstall
   touch ~/.zshrc
+
+  cmd_check nixfmt nixd git zsh devbox devenv docker distrobox nvim shellcheck \
+    shfmt stow trash tmux eza gcc make gh ghostty rg tldr code
 }
 
 nixos-wsl_mainstall() {

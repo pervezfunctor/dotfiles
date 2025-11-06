@@ -85,9 +85,7 @@
 
       shellInit = ''
         if [[ -d "$HOME/.ilm" ]]; then
-          source "$HOME/.ilm/share/utils"
-          source "$HOME/.ilm/share/fns"
-          source "$HOME/.ilm/share/aliases"
+          source "$HOME/.ilm/share/shellrc"
         fi
       '';
     };

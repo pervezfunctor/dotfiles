@@ -257,7 +257,7 @@ gnome-settings_install() {
   gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
   gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
   gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
-  gsettings set org.gnome.desktop.interface accent-color 'purple'
+  gsettings set org.gnome.desktop.interface accent-color 'teal'
 
   # Use 4 fixed workspaces instead of dynamic mode
   gsettings set org.gnome.mutter dynamic-workspaces false
