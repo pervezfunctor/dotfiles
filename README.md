@@ -227,7 +227,7 @@ Your nixos configuration will be stored in `~/nix-config`. Add to git and push t
 You should be able to use the following command to update your system after you make changes to your configuration.
 
 ```bash
-sudo nixos-rebuild switch --flake ~/nix-config\#$(hostname)
+sudo nixos-rebuild switch --flake ~/nix-config\#$(hostname) # Or use alias 'update-os' in zsh
 ```
 
 </details>
