@@ -39,6 +39,6 @@
   catppuccin = {
     enable = true;
     flavor = "mocha";
-    accent = "rosewater";
+    accent = "teal";
   };
 }
