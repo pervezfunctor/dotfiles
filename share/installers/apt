@@ -278,6 +278,7 @@ windsurf_install() {
 
 terminal_binstall() {
   has_cmd ghostty && return 0
+  has_cmd kitty && return 0
 
   slog "Installing terminal..."
   if has_cmd snap; then
@@ -287,9 +288,10 @@ terminal_binstall() {
   if has_cmd ghostty; then
     slog "ghostty installed"
   else
-    si alacritty
-    cmd_check alacritty || si kitty
+    si kitty
+    has_cmd kitty || si alacritty
   fi
+  has_cmd kitty || has_cmd alacritty || warn "No terminal installed"
 
   slog "terminal installation done!"
 }

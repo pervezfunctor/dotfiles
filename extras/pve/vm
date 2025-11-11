@@ -259,7 +259,7 @@ resolve_vm_id() {
     return 1
   fi
 
-  selected=$(printf '%s\n' "$vms" | fzf-select 'VM > ')
+  select-one 'VM > ' "$vms"
   rc=$?
   if [[ $rc -ne 0 || -z "$selected" ]]; then
     if [[ $rc -eq 127 ]]; then

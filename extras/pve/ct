@@ -367,7 +367,7 @@ resolve_ct_id() {
     return 1
   fi
 
-  selected=$(printf '%s\n' "$containers" | fzf-select 'Container > ')
+  selected=$(printf '%s\n' "$containers" | select-one 'Container > ')
   rc=$?
   if [[ $rc -ne 0 || -z "$selected" ]]; then
     if [[ $rc -eq 127 ]]; then
@@ -398,11 +398,11 @@ resolve_multiple_ct_ids() {
       return 1
     fi
 
-    # Convert containers string to array for fzf-select-multi
+    # Convert containers string to array for select-multi
     readarray -t container_array <<<"$containers"
 
-    # Use fzf-select-multi function for multi-selection
-    selected=$(fzf-select-multi 'Select containers (TAB to multi-select) > ' "${container_array[@]}")
+    # Use select-multi function for multi-selection
+    selected=$(select-multi 'Select containers (TAB to multi-select) > ' "${container_array[@]}")
     rc=$?
     if [[ $rc -ne 0 || -z "$selected" ]]; then
       if [[ $rc -eq 127 ]]; then

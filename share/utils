@@ -1665,7 +1665,7 @@ fedora_version() {
   echo "${VERSION_ID%%.*}"
 }
 
-fzf-select() {
+select-one() {
   local prompt="$1"
   local items=("${@:2}")
 
@@ -1684,14 +1684,14 @@ fzf-select() {
   fi
 }
 
-fzf-select-multi() {
+select-multi() {
   local prompt="$1"
   local items=("${@:2}")
 
   if has_cmd fzf; then
     printf '%s\n' "${items[@]}" | fzf --prompt="$prompt" --height=10 --layout=reverse --multi
   elif has_cmd gum; then
-    printf '%s\n' "${items[@]}" | gum choose --header="$prompt" --no-limit
+    gum choose --no-limit --header="$prompt" "${items[@]}"
   else
     local PS3="$prompt"
     local selected_items=()

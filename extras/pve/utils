@@ -70,7 +70,7 @@ supported_lxc_distros() {
 read_template() {
   local templates
   templates=$(pveam available)
-  echo "$templates" | gum choose --header="Select LXC Template"
+  select-one "Select LXC Template" "$templates"
 }
 
 scaling_governor_setup() {

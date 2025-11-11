@@ -1,0 +1,416 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+readonly SCRIPT_NAME
+
+# Source utils for shared functions
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/utils"
+
+# Logging functions
+log_info() {
+  echo "ℹ️  [INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+log_warn() {
+  echo "⚠️  [WARN] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+log_error() {
+  echo "❌ [ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+log_success() {
+  echo "✅ [SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+# Display usage information
+display_usage() {
+  cat <<EOF
+🚀 Usage: $SCRIPT_NAME <command> [vm-ids...]
+
+📋 Description:
+  Perform operations on multiple virtual machines simultaneously.
+  VM IDs can be provided as arguments or selected interactively.
+
+📋 Commands:
+  start [vm-ids...]       🚀 Start multiple VMs
+  stop [vm-ids...]        🛑 Stop multiple VMs
+  restart [vm-ids...]     🔄 Restart multiple VMs
+  destroy [vm-ids...]     💥 Destroy multiple VMs (DANGEROUS!)
+  ip [vm-ids...]          🌐 Show IP addresses of multiple VMs
+  tmux [vm-ids...]        🖥️  Create tmux session with SSH to each VM
+  list                    📋 List all available VMs
+  help                    ❓ Display this help message
+
+📝 Examples:
+  $SCRIPT_NAME start 100 101 102              # Start VMs 100, 101, 102
+  $SCRIPT_NAME stop                           # Select VMs interactively and stop them
+  $SCRIPT_NAME ip 100 101                     # Show IPs for VMs 100 and 101
+  $SCRIPT_NAME tmux 100 101 102               # Create tmux session with SSH to VMs 100, 101, 102
+  $SCRIPT_NAME restart                        # Select VMs interactively and restart them
+
+📝 Notes:
+  - If no VM IDs are provided, you'll be prompted to select VMs interactively
+  - The 'destroy' command is irreversible - use with caution!
+  - The 'tmux' command requires SSH access to the VMs
+  - VMs must be running to get IP addresses or establish SSH connections
+
+EOF
+}
+
+# Get list of all VM IDs
+get_all_vm_ids() {
+  qm list 2>/dev/null | awk 'NR>1 && $0 !~ /^[-[:space:]]*$/ {print $1}' || true
+}
+
+# Get VM name by ID
+get_vm_name() {
+  local vm_id="$1"
+  qm config "$vm_id" 2>/dev/null | grep '^name:' | cut -d':' -f2 | tr -d ' ' || echo "vm-$vm_id"
+}
+
+select_vms_interactive() {
+  local vm_ids vm_info selected_vms
+
+  if ! vm_ids=$(get_all_vm_ids); then
+    log_error "Failed to list VMs"
+    return 1
+  fi
+
+  if [[ -z "$vm_ids" ]]; then
+    log_error "No VMs found"
+    return 1
+  fi
+
+  # Create VM info with ID and name for better selection
+  vm_info=""
+  while IFS= read -r vm_id; do
+    if [[ -n "$vm_id" ]]; then
+      local vm_name
+      vm_name=$(get_vm_name "$vm_id")
+      vm_info="${vm_info}${vm_id} - ${vm_name}\n"
+    fi
+  done <<<"$vm_ids"
+
+  selected_vms=$(echo -e "$vm_info" | select-multi 'Select VMs > ' | cut -d' ' -f1 | tr '\n' ' ' | sed 's/ $//')
+
+  if [[ -z "$selected_vms" ]]; then
+    log_error "No VMs selected"
+    return 1
+  fi
+
+  echo "$selected_vms"
+}
+
+# Resolve VM IDs from arguments or interactive selection
+resolve_vm_ids() {
+  local vm_ids=("$@")
+
+  if [[ ${#vm_ids[@]} -eq 0 ]]; then
+    local selected
+    if ! selected=$(select_vms_interactive); then
+      return 1
+    fi
+    echo "$selected"
+  else
+    echo "${vm_ids[*]}"
+  fi
+}
+
+# Execute command on multiple VMs
+execute_on_vms() {
+  local command="$1"
+  shift
+  local vm_ids=("$@")
+
+  log_info "Executing '$command' on VMs: ${vm_ids[*]}"
+
+  local failed_vms=()
+  local successful_vms=()
+
+  for vm_id in "${vm_ids[@]}"; do
+    if ! vm_exists "$vm_id"; then
+      log_error "VM $vm_id does not exist"
+      failed_vms+=("$vm_id")
+      continue
+    fi
+
+    case "$command" in
+    start)
+      if qm start "$vm_id"; then
+        log_success "VM $vm_id started successfully"
+        successful_vms+=("$vm_id")
+      else
+        log_error "Failed to start VM $vm_id"
+        failed_vms+=("$vm_id")
+      fi
+      ;;
+    stop)
+      if qm stop "$vm_id"; then
+        log_success "VM $vm_id stopped successfully"
+        successful_vms+=("$vm_id")
+      else
+        log_error "Failed to stop VM $vm_id"
+        failed_vms+=("$vm_id")
+      fi
+      ;;
+    restart)
+      if qm reboot "$vm_id"; then
+        log_success "VM $vm_id restarted successfully"
+        successful_vms+=("$vm_id")
+      else
+        log_error "Failed to restart VM $vm_id"
+        failed_vms+=("$vm_id")
+      fi
+      ;;
+    destroy)
+      # Stop VM if running first
+      if qm status "$vm_id" | grep -q "status: running"; then
+        log_info "Stopping VM $vm_id before destruction..."
+        qm stop "$vm_id" || log_warn "Failed to stop VM $vm_id, continuing with destruction"
+      fi
+
+      if qm destroy "$vm_id"; then
+        log_success "VM $vm_id destroyed successfully"
+        successful_vms+=("$vm_id")
+      else
+        log_error "Failed to destroy VM $vm_id"
+        failed_vms+=("$vm_id")
+      fi
+      ;;
+    esac
+  done
+
+  # Summary
+  if [[ ${#successful_vms[@]} -gt 0 ]]; then
+    log_success "Successfully executed '$command' on VMs: ${successful_vms[*]}"
+  fi
+
+  if [[ ${#failed_vms[@]} -gt 0 ]]; then
+    log_error "Failed to execute '$command' on VMs: ${failed_vms[*]}"
+    return 1
+  fi
+}
+
+# Show IP addresses for multiple VMs
+show_ips() {
+  local vm_ids=("$@")
+
+  log_info "Getting IP addresses for VMs: ${vm_ids[*]}"
+
+  for vm_id in "${vm_ids[@]}"; do
+    if ! vm_exists "$vm_id"; then
+      log_error "VM $vm_id does not exist"
+      continue
+    fi
+
+    local vm_name
+    vm_name=$(get_vm_name "$vm_id")
+
+    # Try to get IP from QEMU agent
+    local ip=""
+
+    if qm status "$vm_id" | grep -q "status: running"; then
+      # Method 1: Try QEMU agent
+      ip=$(qm guest cmd "$vm_id" network-get-interfaces 2>/dev/null |
+        jq -r '.[] | select(.["ip-addresses"] != null) | .["ip-addresses"][] | select(.["ip-address-type"] == "ipv4") | .["ip-address"]' 2>/dev/null |
+        grep -v '^127\.' | head -n1 || true)
+    fi
+
+    # Method 2: Try to get from Proxmox network info
+    if [[ -z "$ip" ]]; then
+      ip=$(qm config "$vm_id" | grep -E "ipconfig[0-9]*=" | head -n1 | cut -d'=' -f2 | cut -d',' -f1 | cut -d'=' -f2 | tr -d '"' || true)
+    fi
+
+    if [[ -n "$ip" && "$ip" != "dhcp" ]]; then
+      echo "🌐 VM $vm_id ($vm_name): $ip"
+    else
+      echo "❌ VM $vm_id ($vm_name): Could not determine IP"
+      echo "   - VM may not be running or may be using DHCP"
+      echo "   - Ensure QEMU agent is installed and running in the VM"
+    fi
+  done
+}
+
+# Create tmux session with SSH to multiple VMs
+create_tmux_session() {
+  local vm_ids=("$@")
+  local session_name
+  session_name="vm-ssh-$(date +%s)"
+
+  log_info "Creating tmux session '$session_name' with SSH to VMs: ${vm_ids[*]}"
+
+  # Check if tmux is available
+  if ! command -v tmux >/dev/null 2>&1; then
+    log_error "tmux is not installed or not in PATH"
+    return 1
+  fi
+
+  # Check if session already exists
+  if tmux has-session -t "$session_name" 2>/dev/null; then
+    log_error "tmux session '$session_name' already exists"
+    return 1
+  fi
+
+  # Create the session
+  tmux new-session -d -s "$session_name"
+
+  local first_vm=true
+  local failed_vms=()
+
+  for vm_id in "${vm_ids[@]}"; do
+    if ! vm_exists "$vm_id"; then
+      log_error "VM $vm_id does not exist"
+      failed_vms+=("$vm_id")
+      continue
+    fi
+
+    # Get VM IP
+    local ip=""
+
+    if qm status "$vm_id" | grep -q "status: running"; then
+      ip=$(qm guest cmd "$vm_id" network-get-interfaces 2>/dev/null |
+        jq -r '.[] | select(.["ip-addresses"] != null) | .["ip-addresses"][] | select(.["ip-address-type"] == "ipv4") | .["ip-address"]' 2>/dev/null |
+        grep -v '^127\.' | head -n1 || true)
+    fi
+
+    if [[ -z "$ip" || "$ip" == "dhcp" ]]; then
+      log_error "Could not determine IP for VM $vm_id"
+      failed_vms+=("$vm_id")
+      continue
+    fi
+
+    local vm_name
+    vm_name=$(get_vm_name "$vm_id")
+
+    if [[ "$first_vm" == "true" ]]; then
+      # First VM - use the initial window
+      tmux rename-window -t "$session_name:0" "VM-$vm_id"
+      tmux send-keys -t "$session_name:0" "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$ip" Enter
+      first_vm=false
+    else
+      # Additional VMs - create new windows
+      tmux new-window -t "$session_name" -n "VM-$vm_id"
+      tmux send-keys -t "$session_name" "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$ip" Enter
+    fi
+
+    log_success "Added SSH connection to VM $vm_id ($vm_name) at $ip"
+  done
+
+  if [[ ${#failed_vms[@]} -gt 0 ]]; then
+    log_error "Failed to connect to VMs: ${failed_vms[*]}"
+  fi
+
+  # Attach to the session
+  log_info "Attaching to tmux session '$session_name'"
+  log_info "Use Ctrl+B D to detach from the session"
+  exec tmux attach-session -t "$session_name"
+}
+
+# List all VMs
+list_vms() {
+  echo "📋 Available Virtual Machines:"
+  echo ""
+
+  if ! qm list 2>/dev/null; then
+    log_error "Failed to list VMs"
+    return 1
+  fi
+}
+
+# Main function
+main() {
+  if [[ $# -eq 0 ]]; then
+    display_usage
+    exit 1
+  fi
+
+  local command="$1"
+  shift
+
+  # Handle help command before checking prerequisites
+  case "$command" in
+  --help | -h | help)
+    display_usage
+    exit 0
+    ;;
+  esac
+
+  # Check prerequisites for other commands
+  if ! command -v qm >/dev/null 2>&1; then
+    log_error "The 'qm' command is required. This script must be run on a Proxmox host."
+    exit 1
+  fi
+
+  case "$command" in
+  start)
+    {
+      vm_ids_str=$(resolve_vm_ids "$@")
+    } || exit 1
+    read -ra vm_ids <<<"$vm_ids_str"
+    execute_on_vms "start" "${vm_ids[@]}"
+    ;;
+  stop)
+    {
+      vm_ids_str=$(resolve_vm_ids "$@")
+    } || exit 1
+    read -ra vm_ids <<<"$vm_ids_str"
+    execute_on_vms "stop" "${vm_ids[@]}"
+    ;;
+  restart)
+    {
+      vm_ids_str=$(resolve_vm_ids "$@")
+    } || exit 1
+    read -ra vm_ids <<<"$vm_ids_str"
+    execute_on_vms "restart" "${vm_ids[@]}"
+    ;;
+  destroy)
+    echo "⚠️  WARNING: This will permanently destroy the selected VMs!"
+    echo "   This action cannot be undone."
+    echo ""
+    read -p "Are you sure you want to continue? (yes/no): " confirm
+    if [[ "$confirm" != "yes" ]]; then
+      echo "Operation cancelled."
+      exit 0
+    fi
+
+    {
+      vm_ids_str=$(resolve_vm_ids "$@")
+    } || exit 1
+    read -ra vm_ids <<<"$vm_ids_str"
+    execute_on_vms "destroy" "${vm_ids[@]}"
+    ;;
+  ip)
+    {
+      vm_ids_str=$(resolve_vm_ids "$@")
+    } || exit 1
+    read -ra vm_ids <<<"$vm_ids_str"
+    show_ips "${vm_ids[@]}"
+    ;;
+  tmux)
+    {
+      vm_ids_str=$(resolve_vm_ids "$@")
+    } || exit 1
+    read -ra vm_ids <<<"$vm_ids_str"
+    create_tmux_session "${vm_ids[@]}"
+    ;;
+  list | ls)
+    list_vms
+    ;;
+  *)
+    log_error "Unknown command: $command"
+    echo ""
+    display_usage
+    exit 1
+    ;;
+  esac
+}
+
+# Execute main function if script is run directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
