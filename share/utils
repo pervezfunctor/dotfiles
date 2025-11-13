@@ -1240,9 +1240,10 @@ check_sudo_askpass() {
 }
 
 nix_dotfiles_install() {
+  has_cmd git && dotfiles_install && return 0
   dir_exists "$DOT_DIR" && return 0
 
-  nix run nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
+  nix run --experimental-features 'nix-command flakes' nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
 }
 
 pkgx_install() {
@@ -1299,7 +1300,7 @@ stow_core() {
   # elif has_cmd pkgx; then
   #     pkgx stow "$@"
   elif has_cmd nix; then
-    nix run nkxpkgs#stow "$@"
+    nix run --experimental-features 'nix-command flakes' nkxpkgs#stow "$@"
   else
     warn "stow or pkgx must be installed"
   fi

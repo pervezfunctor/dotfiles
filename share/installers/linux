@@ -434,16 +434,16 @@ nixos-wsl_mainstall() {
   fi
 
   slog "Rebuilding system with flake..."
-  if ! sudo nixos-rebuild switch --flake "$cfg_dir\#$(hostname)"; then
+  if ! sudo nixos-rebuild switch --flake "$cfg_dir#$(hostname)"; then
     die "nixos-rebuild failed"
   fi
 
   slog "nixos-wsl installation done!"
-  slog "If something goes wrong you could rollback with:"
+  slog "If anything goes wrong, rollback with:"
   slog "sudo nixos-rebuild switch --rollback"
   slog "Your configuration is at $cfg_dir"
   slog "Update your configuration, and run:"
-  slog "sudo nixos-rebuild switch --flake $cfg_dir\#$(hostname)"
+  slog "sudo nixos-rebuild switch --flake $cfg_dir#$(hostname)"
   slog "Commit and push your configuration to keep it safe."
 }
 
