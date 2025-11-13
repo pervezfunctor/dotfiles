@@ -11,6 +11,10 @@ readonly LOG_DEBUG=4
 
 LOG_LEVEL=${LOG_LEVEL:-$LOG_INFO}
 
+DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
 log_message() {
   local level
   local message
@@ -65,33 +69,6 @@ EOF
   exit 1
 }
 
-validate_arguments() {
-  local username=$1
-
-  if [[ -z "$username" ]]; then
-    log_error "Username not provided."
-    usage
-  fi
-}
-
-check_root_privileges() {
-  if [[ $EUID -ne 0 ]]; then
-    die "This script must be run as root"
-  fi
-}
-
-manage_user() {
-  local username=$1
-
-  if id "$username" &>/dev/null; then
-    log_info "User '$username' already exists. Setting password..."
-    passwd "$username" || die "Failed to set password for user '$username'"
-  else
-    log_info "Creating new user '$username'..."
-    useradd -m "$username" || die "Failed to create user '$username'"
-  fi
-}
-
 install_sudo() {
   if is_apt; then
     if ! apt-get update && apt-get install -y sudo; then
@@ -127,7 +104,7 @@ add_user_to_sudo_group() {
   usermod -aG "$sudo_group" "$username" || die "Failed to add user '$username' to group '$sudo_group'"
 }
 
-main() {
+parse_args() {
   local username=""
 
   while [[ $# -gt 0 ]]; do
@@ -166,14 +143,30 @@ main() {
       ;;
     esac
   done
+}
 
-  check_root_privileges
-  validate_arguments "$username"
+main() {
+  check_root_user
 
-  manage_user "$username"
+  parse_args "$@"
+
+  local username=$1
+  if [[ -z "$username" ]]; then
+    log_error "Username not provided."
+    usage
+  fi
 
   local sudo_group
   sudo_group=$(install_sudo)
+
+  if id "$username" &>/dev/null; then
+    log_info "User '$username' already exists. Setting password..."
+    passwd "$username" || die "Failed to set password for user '$username'"
+  else
+    log_info "Creating new user '$username'..."
+    useradd -m "$username" || die "Failed to create user '$username'"
+  fi
+
   ensure_sudo_group "$sudo_group"
   add_user_to_sudo_group "$username" "$sudo_group"
 
