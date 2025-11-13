@@ -74,6 +74,53 @@ ubuntu_packages() {
   slog "Installing ubuntu packages done!"
 }
 
+proxmox_packages() {
+  slog "Installing packages..."
+
+  apt-get -qq -y --no-install-recommends install git-core micro zsh curl wget \
+    zsh-theme-powerlevel9k htop pciutils ripgrep rclone stow stress jq yq sudo \
+    smartmontools zfsutils-linux rsync whiptail dialog numactl fio dysk duf \
+    usbutils restic ethtool nvme-cli lsof lm-sensors udisks2 guestfs-tools \
+    proxmox-backup-client libguestfs-tools
+}
+
+proxmox_mainstall() {
+  is_proxmox || die "System not proxmox. Quitting."
+  is_root_user || die "This should be run as root. sudo not allowed"
+
+  slog "Starting proxmox installation..."
+
+  proxmox_packages
+  readonly COMMUNITY_SCRIPTS_BASE="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main"
+
+  slog "Installing CPU governor scaling..."
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/scaling-governor.sh)" &&
+    slog "CPU governor scaling installation done!"
+
+  slog "Running post PVE installation script..."
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pve-install.sh)" &&
+    slog "Post PVE installation script done!"
+
+  if ! dir_exists "$DOT_DIR"; then
+    slog "Cloning dotfiles..."
+    git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR" || {
+      fail "Failed to clone dotfiles"
+      return 1
+    }
+    slog "Dotfiles cloned successfully!"
+  fi
+
+  if ! grep -q "source ~/.ilm/share/bashrc" ~/.bashrc; then
+    echo "source ~/.ilm/share/bashrc" >>~/.bashrc
+  fi
+
+  backup_file ~/.zshrc
+  ln -sf "$DOT_DIR/share/dot-zshrc" ~/.zshrc
+
+  slog "proxmox installation completed!"
+  return 0
+}
+
 # shellcheck disable=SC2120
 debian_locale_install() {
   LOCALE_TO_USE=${1:-en_US.UTF-8}

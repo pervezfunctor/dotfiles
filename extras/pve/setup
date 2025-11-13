@@ -2,94 +2,93 @@
 
 # shellcheck disable=SC1091
 
-set -euo pipefail -o errtrace
-
-readonly DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-source "$DOT_DIR/share/utils"
+if command -v curl &>/dev/null; then
+  # shellcheck disable=SC1090
+  source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
+elif command -v wget &>/dev/null; then
+  # shellcheck disable=SC1090
+  source <(wget -qO- https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
+else
+  echo "curl or wget is not installed"
+  exit 1
+fi
 
 readonly COMMUNITY_SCRIPTS_BASE="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main"
 
 cpu-governor_install() {
-    slog "Installing CPU governor scaling..."
-    bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/scaling-governor.sh)"
-    slog "CPU governor scaling installation done!"
+  slog "Installing CPU governor scaling..."
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/scaling-governor.sh)"
+  slog "CPU governor scaling installation done!"
 }
 
 post-install_install() {
-    slog "Running post PVE installation script..."
-    bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pve-install.sh)"
-    slog "Post PVE installation script done!"
+  slog "Running post PVE installation script..."
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pve-install.sh)"
+  slog "Post PVE installation script done!"
 }
 
 tailscale_install() {
-    slog "Installing Tailscale..."
-    has_cmd tailscale && {
-        slog "Tailscale already installed!"
-        return 0
-    }
+  slog "Installing Tailscale..."
+  has_cmd tailscale && {
+    slog "Tailscale already installed!"
+    return 0
+  }
 
-    sudo mkdir -p --mode=0755 /usr/share/keyrings
+  sudo mkdir -p --mode=0755 /usr/share/keyrings
 
-    if ! file_exists /usr/share/keyrings/tailscale-archive-keyring.gpg; then
-        curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
-    fi
+  if ! file_exists /usr/share/keyrings/tailscale-archive-keyring.gpg; then
+    curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+  fi
 
-    if ! file_exists /etc/apt/sources.list.d/tailscale.list; then
-        curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list
-    fi
+  if ! file_exists /etc/apt/sources.list.d/tailscale.list; then
+    curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list
+  fi
 
-    sudo apt-get update && sudo apt-get install tailscale
+  sudo apt-get update && sudo apt-get install tailscale
 
-    sudo tailscale up
-    slog "Tailscale installation and setup done!"
+  sudo tailscale up
+  slog "Tailscale installation and setup done!"
 }
 
 si() {
-    slog "Installing packages: $*"
-    local packages=("$@")
-    for package in "${packages[@]}"; do
-        if ! has_cmd "$package"; then
-            slog "Installing $package..."
-            apt-get -qq -y --no-install-recommends install "$package" || warn "Failed to install $package"
-        fi
-    done
-    slog "Package installation done!"
+  slog "Installing packages: $*"
+  local packages=("$@")
+  for package in "${packages[@]}"; do
+    if ! has_cmd "$package"; then
+      slog "Installing $package..."
+      "$package" || warn "Failed to install $package"
+    fi
+  done
+  slog "Package installation done!"
 }
 
 core_install() {
-    slog "Starting core installation..."
-    post-install_install
-    cpu-governor_install
+  slog "Starting core installation..."
+  post-install_install
+  cpu-governor_install
 
-    slog "Installing packages..."
-    si git-core micro zsh-theme-powerlevel9k zsh curl wget htop pciutils jq \
-        smartmontools zfsutils-linux rsync whiptail dialog numactl fio stress \
-        usbutils restic ethtool nvme-cli lsof lm-sensors udisks2 dysk just duf \
-        proxmox-backup-client libguestfs-tools guestfs-tools rclone stow \
-        ripgrep jq yq gum fzf
+  if ! dir_exists "$DOT_DIR"; then
+    slog "Cloning dotfiles..."
+    git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR" || {
+      fail "Failed to clone dotfiles"
+      return 1
+    }
+    slog "Dotfiles cloned successfully!"
+  fi
 
-    if ! dir_exists "$DOT_DIR"; then
-        slog "Cloning dotfiles..."
-        git clone https://github.com/pervezfunctor/dotfiles.git "$DOT_DIR" || {
-            fail "Failed to clone dotfiles"
-            return 1
-        }
-        slog "Dotfiles cloned successfully!"
-    fi
+  if ! grep -q "source ~/.ilm/share/bashrc" ~/.bashrc; then
+    echo "source ~/.ilm/share/bashrc" >>~/.bashrc
+  fi
 
-    if ! grep -q "source ~/.ilm/share/bashrc" ~/.bashrc; then
-        echo "source ~/.ilm/share/bashrc" >>~/.bashrc
-    fi
+  backup_file ~/.zshrc
+  ln -sf "$DOT_DIR/share/dot-zshrc" ~/.zshrc
 
-    backup_file ~/.zshrc
-    ln -sf "$DOT_DIR/share/dot-zshrc" ~/.zshrc
-
-    slog "Core installation completed!"
-    return 0
+  slog "Core installation completed!"
+  return 0
 }
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 [OPTIONS] [SERVICES...]
 
 Proxmox VE Installation and Configuration Script
@@ -100,9 +99,9 @@ EOF
 }
 
 main() {
-    is_proxmox || die "This script is designed to run on Proxmox VE"
-    check_root_user
-    core_install
+  is_proxmox || die "This script is designed to run on Proxmox VE"
+  check_root_user
+  core_install
 }
 
 main "$@"

@@ -43,10 +43,10 @@ main() {
 if [[ "$1" == "generic" ]] ||
   [[ "$1" == "generic-ct" ]] ||
   [[ "$1" == "fedora-atomic" ]] ||
+  is_proxmox ||
   is_ublue ||
   is_multipass ||
   is_distrobox; then
-
   export NOSUDO=1
 fi
 
