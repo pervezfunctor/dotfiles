@@ -90,16 +90,14 @@ proxmox_mainstall() {
 
   slog "Starting proxmox installation..."
 
-  proxmox_packages
   readonly COMMUNITY_SCRIPTS_BASE="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main"
 
-  slog "Installing CPU governor scaling..."
-  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/scaling-governor.sh)" &&
-    slog "CPU governor scaling installation done!"
-
   slog "Running post PVE installation script..."
-  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pve-install.sh)" &&
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/post-pve-install.sh)" && {
     slog "Post PVE installation script done!"
+  }
+
+  proxmox_packages
 
   if ! dir_exists "$DOT_DIR"; then
     slog "Cloning dotfiles..."
@@ -116,6 +114,11 @@ proxmox_mainstall() {
 
   backup_file ~/.zshrc
   ln -sf "$DOT_DIR/share/dot-zshrc" ~/.zshrc
+
+  slog "Installing CPU governor scaling..."
+  bash -c "$(curl -fsSL ${COMMUNITY_SCRIPTS_BASE}/tools/pve/scaling-governor.sh)" && {
+    slog "CPU governor scaling installation done!"
+  }
 
   slog "proxmox installation completed!"
   return 0
