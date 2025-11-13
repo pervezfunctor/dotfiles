@@ -63,6 +63,7 @@ parse_args() {
     case $1 in
     -h | --help)
       usage
+      exit 0
       ;;
     -*)
       fail "Unknown option: $1"
@@ -75,6 +76,7 @@ parse_args() {
       else
         fail "Multiple usernames provided. Only one username is allowed."
         usage
+        exit 0
       fi
       shift
       ;;
@@ -89,7 +91,7 @@ main() {
 
   if [[ -z "$username" ]]; then
     fail "Username not provided."
-    usage
+    exit 1
   fi
 
   local sudo_group
