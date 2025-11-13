@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-readonly SCRIPT_NAME
 SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
 readonly LOG_FILE="/tmp/${SCRIPT_NAME%.*}.log"
 
 readonly LOG_ERROR=1
