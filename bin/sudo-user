@@ -2,52 +2,10 @@
 
 SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_NAME
-readonly LOG_FILE="/tmp/${SCRIPT_NAME%.*}.log"
-
-readonly LOG_ERROR=1
-readonly LOG_WARN=2
-readonly LOG_INFO=3
-readonly LOG_DEBUG=4
-
-LOG_LEVEL=${LOG_LEVEL:-$LOG_INFO}
 
 DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
 # shellcheck disable=SC1091
 source "$DOT_DIR/share/utils"
-
-log_message() {
-  local level
-  local message
-  local timestamp
-  level=$1
-  message=$2
-  timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-
-  if [ "$level" -le "$LOG_LEVEL" ]; then
-    echo "[$timestamp] $message" | tee -a "$LOG_FILE" >&2
-  fi
-}
-
-log_error() {
-  log_message "$LOG_ERROR" "❌ $1"
-}
-
-die() {
-  log_error "$1"
-  exit 1
-}
-
-log_warn() {
-  log_message "$LOG_WARN" "⚠️ $1"
-}
-
-log_info() {
-  log_message "$LOG_INFO" "ℹ️ $1"
-}
-
-log_debug() {
-  log_message "$LOG_DEBUG" "🔍 $1"
-}
 
 usage() {
   cat <<EOF
@@ -57,32 +15,26 @@ Create a new user with sudo privileges or add sudo privileges to an existing use
 
 OPTIONS:
     -h, --help          Show this help message and exit
-    -v, --verbose       Enable verbose logging
-    -q, --quiet         Suppress non-error output
-    -l, --log-level     Set logging level (1=ERROR, 2=WARN, 3=INFO, 4=DEBUG)
 
 EXAMPLES:
     $SCRIPT_NAME newuser
-    $SCRIPT_NAME -v existinguser
+    $SCRIPT_NAME existinguser
 
 EOF
-  exit 1
 }
 
 install_sudo() {
   if is_apt; then
-    if ! apt-get update && apt-get install -y sudo; then
-      die "Failed to install sudo"
-    fi
+    apt-get update && apt-get install -y sudo
     echo "sudo"
   elif is_rh; then
-    dnf install -y sudo || die "Failed to install sudo"
+    dnf install -y sudo
     echo "wheel"
   elif is_tw; then
-    zypper install -y sudo || die "Failed to install sudo"
+    zypper install -y sudo
     echo "wheel"
   elif is_arch; then
-    pacman -Sy --noconfirm sudo || die "Failed to install sudo"
+    pacman -Sy --noconfirm sudo
     echo "wheel"
   else
     die "Unsupported system. Cannot determine package manager."
@@ -91,9 +43,9 @@ install_sudo() {
 
 ensure_sudo_group() {
   local sudo_group=$1
-
   if ! getent group "$sudo_group" >/dev/null; then
-    groupadd "$sudo_group" || die "Failed to create group '$sudo_group'"
+    slog "Creating group $sudo_group"
+    groupadd "$sudo_group" && slog "Group $sudo_group created!"
   fi
 }
 
@@ -112,31 +64,16 @@ parse_args() {
     -h | --help)
       usage
       ;;
-    -v | --verbose)
-      LOG_LEVEL=$LOG_DEBUG
-      shift
-      ;;
-    -q | --quiet)
-      LOG_LEVEL=$LOG_ERROR
-      shift
-      ;;
-    -l | --log-level)
-      if [[ -n "$2" && "$2" =~ ^[1-4]$ ]]; then
-        LOG_LEVEL="$2"
-        shift 2
-      else
-        die "Invalid log level. Must be 1 (ERROR), 2 (WARN), 3 (INFO), or 4 (DEBUG)."
-      fi
-      ;;
     -*)
-      log_error "Unknown option: $1"
+      fail "Unknown option: $1"
       usage
+      exit 1
       ;;
     *)
       if [[ -z "$username" ]]; then
         username="$1"
       else
-        log_error "Multiple usernames provided. Only one username is allowed."
+        fail "Multiple usernames provided. Only one username is allowed."
         usage
       fi
       shift
@@ -150,9 +87,8 @@ main() {
 
   parse_args "$@"
 
-  local username=$1
   if [[ -z "$username" ]]; then
-    log_error "Username not provided."
+    fail "Username not provided."
     usage
   fi
 
@@ -160,17 +96,17 @@ main() {
   sudo_group=$(install_sudo)
 
   if id "$username" &>/dev/null; then
-    log_info "User '$username' already exists. Setting password..."
+    slog "User '$username' already exists. Setting password..."
     passwd "$username" || die "Failed to set password for user '$username'"
   else
-    log_info "Creating new user '$username'..."
+    slog "Creating new user '$username'..."
     useradd -m "$username" || die "Failed to create user '$username'"
   fi
 
   ensure_sudo_group "$sudo_group"
   add_user_to_sudo_group "$username" "$sudo_group"
 
-  log_info "✅ $username now has sudo privileges"
+  slog "✅ $username now has sudo privileges"
 }
 
 main "$@"
