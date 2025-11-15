@@ -904,50 +904,47 @@ fedora-atomic-dbox_mainstall() {
   fi
 }
 
-rpm-ostree-libvirt_groups_setup() {
-  local NEEDED_GROUPS=(libvirt kvm qemu)
-
-  slog "[*] Syncing /usr/lib/group → /etc/group if missing..."
+rpm-ostree_groups_setup() {
+  local -a NEEDED_GROUPS=("$@")
+  local user="$USER"
 
   for grp in "${NEEDED_GROUPS[@]}"; do
-    if grep -qE "^${grp}:" /etc/group; then
-      slog "[+] Group '$grp' already in /etc/group"
-    else
-      if grep -qE "^${grp}:" /usr/lib/group; then
-        slog "[*] Copying '$grp' from /usr/lib/group to /etc/group"
-        grep -E "^${grp}:" /usr/lib/group | sudo tee -a /etc/group >/dev/null
-      else
-        slog "[!] Group '$grp' not found in /usr/lib/group, creating new system group"
-        sudo groupadd -r "$grp"
-      fi
-    fi
-
-    # could use group_exists and add_user_to_group
-    if id -nG "$USER" | grep -qw "$grp"; then
-      slog "[+] User '$USER' already in group '$grp'"
-    else
-      slog "[*] Adding user '$USER' to group '$grp'"
-      sudo usermod -aG "$grp" "$USER"
-    fi
+    fix_group_for_atomic "$grp"
+    add_user_to_group "$user" "$grp"
   done
 
-  echo
-  slog "[✔] Done. Please log out/in for group membership to apply."
+  return 0
+}
 
-  sudo systemctl enable --now libvirtd
+rpm-ostree-incus_groups_setup() {
+  rpm-ostree_groups_setup incus incus-admin kvm qemu
+}
+
+rpm-ostree-libvirt_groups_setup() {
+  rpm-ostree_groups_setup libvirt kvm qemu
 }
 
 rpm_installed() {
   rpm -q "$1" &>/dev/null
 }
 
-rpm-ostree_install() {
-  has_cmd rpm-ostree || die "This script is only for rpm-ostree based systems"
+filter_packages() {
+  local -a PKGS=()
+  for pkg in "$@"; do
+    if ! rpm_installed "$pkg"; then
+      PKGS+=("$pkg")
+    fi
+  done
 
-  slog "Installing packages"
+  printf "%s\n" "${PKGS[@]}"
+}
 
-  local PKGS=()
+core_layered() {
+  filter_packages stow zsh git tmux gcc make bootc coreos-installer openssl \
+    gnome-keyring wl-clipboard
+}
 
+vscode_layered() {
   if ! has_cmd code && ! file_exists /etc/yum.repos.d/vscode.repo; then
     cat <<EOF | sudo tee /etc/yum.repos.d/vscode.repo
 [code]
@@ -959,27 +956,31 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 EOF
   fi
 
-  sudo rpm --import https://packages.microsoft.com/config/fedora/42/prod.repo
-  PKGS+=(
-    # "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
-    "code"
-  )
+  # "https://packages.microsoft.com/config/fedora/42/packages-microsoft-prod.rpm"
 
-  has_cmd virt-manager || PKGS+=("virt-manager")
-  has_cmd stow || PKGS+=("stow")
-  has_cmd zsh || PKGS+=("zsh")
-  has_cmd git || PKGS+=("git")
-  has_cmd tmux || PKGS+=("tmux")
-  has_cmd gcc || PKGS+=("gcc")
-  has_cmd make || PKGS+=("make")
-  has_cmd openssl || PKGS+=("openssl")
-  has_cmd wl-copy || PKGS+=("wl-clipboard")
-  has_cmd virsh || PKGS+=("libvirt libvirt-nss")
-  has_cmd virt-install || PKGS+=("virt-install")
-  has_cmd virt-cat || PKGS+=("libguestfs-tools" "guestfs-tools")
-  has_cmd bootc || PKGS+=("bootc")
-  has_cmd core-os-installer || PKGS+=("coreos-installer")
-  has_cmd gnome-keyring || PKGS+=("gnome-keyring")
+  filter_packages code
+}
+
+libvirt_layered() {
+  filter_packages libvirt libvirt-nss virt-manager virt-install libguestfs-tools \
+    guestfs-tools
+}
+
+incus_layered() {
+  filter_packages qemu-kvm incus incus-agent incus-selinux incus-tools
+}
+
+rpm-ostree_install() {
+  has_cmd rpm-ostree || die "This script is only for rpm-ostree based systems"
+
+  slog "Installing packages"
+
+  mapfile -t PKGS < <(
+    libvirt_layered
+    vscode_layered
+    core_layered
+    incus_layered
+  )
 
   if [[ ${#PKGS[@]} -eq 0 ]]; then
     slog "No packages to install"
@@ -1002,7 +1003,11 @@ EOF
 rpm-ostree-post_install() {
   vscode_confstall
   python_install
-  rpm-ostree-libvirt_groups_setup
+
+  if has_cmd virt-install; then
+    rpm-ostree-libvirt_groups_setup
+    sudo systemctl enable --now libvirtd
+  fi
 }
 
 rpm-ostree_mainstall() {

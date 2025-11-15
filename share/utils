@@ -7,71 +7,113 @@ export ILM_SETUP_URL="${ILM_BASE_URL}/share/installers/setup"
 
 export BOXES_DIR=${USE_BOXES_DIR:-$HOME/.boxes}
 
+marker_file_create() {
+  local MARKER=${1:-"$HOME/.ilm/.markers/$(basename "${BASH_SOURCE[1]}").marker"}
+
+  if [[ -f "$MARKER" ]]; then
+    warn "This script was already run"
+  else
+    sudo mkdir -p "$(dirname "$MARKER")"
+    sudo touch "$MARKER"
+  fi
+}
 group_exists() {
   getent group "$1" >/dev/null 2>&1
 }
 
-current_user_in_group() {
-  groups | grep -qw "$1"
+group_exists_atomic() {
+  local grp="$1"
+  grep -qE "^${grp}:" /usr/lib/group
 }
 
-atomic_group_exists() {
-  grep -q "^$1:" /etc/group
-}
-
-atomic_add_user_to_group() {
-  local group="$1"
-  local user="${2:-$USER}"
-
-  if ! atomic_group_exists "$group"; then
-    warn "Group $group does not exist, skipping adding user to group $group..."
-    return 1
-  fi
-  grep "^$group:" /usr/lib/group | sudo tee -a /etc/group >/dev/null
-}
-
-atomic_add_user_to_groups() {
+user_in_group() {
   local user="$1"
-  local groups="${*:2}"
+  local group="$2"
 
-  for group in $groups; do
-    atomic_add_user_to_group "$group" "$user"
-  done
+  local groups
+  groups=$(id -nG "$user" 2>/dev/null) || return 1
+
+  grep -qw "$group" <<<"$groups"
 }
 
-create_group() {
+fix_group_for_atomic() {
   local group="$1"
 
   if group_exists "$group"; then
-    slog "Group $group already exists, skipping creation..."
+    warn "Group $group already exists in /etc, skipping atomic fix..."
+    return 0
+  fi
+
+  if ! group_exists_atomic "$group"; then
+    warn "Group $group not found in /usr/lib/group"
     return 1
   fi
 
-  sudo groupadd "$group" || slog "adding group $group failed"
+  if ! grep -E "^${group}:" /usr/lib/group | sudo tee -a /etc/group >/dev/null; then
+    warn "Failed to append group $group to /etc/group"
+    return 1
+  fi
+
+  return 0
+}
+
+fix_groups_for_atomic() {
+  for group in "$@"; do
+    fix_group_for_atomic "$group" || return 1
+  done
+}
+
+group_create() {
+  local group="$1"
+
+  if group_exists "$group"; then
+    slog "Group $group already exists"
+    return 0
+  fi
+
+  # Propagate the exit code from groupadd
+  if ! sudo groupadd -r "$group"; then
+    slog "Adding group $group failed"
+    return 1
+  fi
+
+  return 0
 }
 
 add_user_to_group() {
   local user="$1"
   local group="$2"
 
-  if ! group_exists "$group"; then
-    warn "Group $group does not exist, skipping adding user to group $group..."
+  if [[ "$#" -ne 2 ]]; then
+    fail "add_user_to_group requires exactly 2 arguments: user and group"
     return 1
   fi
 
-  if id -nG "$user" | grep -qw "$group"; then
-    slog "User $user is already a member of group $group"
+  if ! group_exists "$group"; then
+    warn "Group $group does not exist, skipping"
+    return 1
+  fi
+
+  if user_in_group "$user" "$group"; then
+    slog "User $user already in group $group"
     return 0
   fi
 
-  sudo usermod -aG "$group" "$user" || fail "$user couldn't be added to group $group"
+  if ! sudo usermod -aG "$group" "$user"; then
+    warn "Adding user $user to group $group failed"
+    return 1
+  fi
+
+  slog "Adding user $user to group $group done!"
+  return 0
 }
 
 add_user_to_groups() {
   local user="$1"
   shift
+
   for group in "$@"; do
-    add_user_to_group "$user" "$group"
+    add_user_to_group "$user" "$group" || return 1
   done
 }
 
