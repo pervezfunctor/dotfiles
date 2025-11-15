@@ -327,7 +327,12 @@ vscode-flatpak_confstall() {
 
   vscode-extensions_install
 
-  flatpak override --user --nosocket=x11 --socket=wayland --device=dri --talk-name=org.freedesktop.secrets com.visualstudio.code
+  flatpak override --user \
+    --socket=wayland --nosocket=x11 \
+    --device=dri \
+    --filesystem=host-os \
+    --talk-name=org.freedesktop.secrets \
+    com.visualstudio.code
 
   slog "vscode flatpak config done!"
 }
