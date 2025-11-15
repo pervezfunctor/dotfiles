@@ -1060,6 +1060,7 @@ rpm-ostree-post_install() {
 rpm-ostree_mainstall() {
   rpm-ostree_install
   generic_mainstall
+  has_cmd homebrew-atomic && homebrew-atomic
 }
 
 fedora-atomic-tbox_mainstall() {

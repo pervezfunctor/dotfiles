@@ -122,4 +122,5 @@ main() {
   slog "Logout/login or source your shell to activate brew."
 }
 
+is_std_atomic || die "Not an atomic system. Exiting."
 main "$@"
