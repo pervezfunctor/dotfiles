@@ -975,16 +975,58 @@ incus_layered() {
   filter_packages qemu-kvm incus incus-agent incus-selinux incus-tools
 }
 
+layered_install() {
+  local -a layers=("$@")
+  local -a fns=()
+  local -a PKGS=()
+
+  for layer in "${layers[@]}"; do
+    local fn="${layer}_layered"
+    if fn_exists "$fn"; then
+      fns+=("$fn")
+    else
+      warn "Layer function $fn does not exist, skipping"
+    fi
+  done
+
+  while IFS= read -r pkg; do
+    [[ -n "$pkg" ]] && PKGS+=("$pkg")
+  done < <(
+    for fn in "${fns[@]}"; do
+      if ! "$fn"; then
+        warn "Layer function $fn returned an error"
+      fi
+    done
+  )
+
+  if [[ ${#PKGS[@]} -eq 0 ]]; then
+    slog "No packages to install"
+    sleep 3
+    return 0
+  fi
+
+  slog "Installing packages: ${PKGS[*]}"
+
+  if ! sudo rpm-ostree install -y "${PKGS[@]}"; then
+    fail "rpm-ostree install failed"
+    return 1
+  fi
+
+  warn "Installing packages done! Note that you need to reboot for the changes to take effect."
+
+  return 0
+}
+
 rpm-ostree_install() {
   has_cmd rpm-ostree || die "This script is only for rpm-ostree based systems"
 
   slog "Installing packages"
 
   mapfile -t PKGS < <(
-    libvirt_layered
-    vscode_layered
     core_layered
-    incus_layered
+    vscode_layered
+    libvirt_layered
+    # incus_layered
   )
 
   if [[ ${#PKGS[@]} -eq 0 ]]; then
