@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+set -eou pipefail
+
+DOT_DIR="${DOT_DIR:-$HOME/.ilm}"
+# shellcheck disable=SC1091
+source "$DOT_DIR/share/utils"
+
+main() {
+  REPO_URL="https://github.com/catppuccin/kde"
+  REPO_DIR="$(mktemp -d -t catppuccin-kde-XXXXXX)"
+
+  check_cmds git bash
+
+  slog "Cloning repository into: $REPO_DIR"
+  git clone --depth=1 "$REPO_URL" "$REPO_DIR" || die "Clone failed"
+
+  cd "$REPO_DIR" || die "Directory missing"
+
+  INSTALL="$REPO_DIR/install.sh"
+  [ -f "$INSTALL" ] || die "install.sh not found in repo"
+
+  slog "Making installer executable"
+  chmod +x "$INSTALL"
+
+  slog "Running installer"
+  "$INSTALL" || die "Installer failed"
+
+  slog "Cleaning up"
+  frm "$REPO_DIR"
+
+  success "Done"
+}
+
+main "$@"

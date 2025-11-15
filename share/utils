@@ -421,6 +421,16 @@ has_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
+check_cmd() {
+  has_cmd "$1" || die "Missing dependency: $1"
+}
+
+check_cmds() {
+  for cmd in "$@"; do
+    check_cmd "$cmd"
+  done
+}
+
 sclone() {
   if [ $# -lt 2 ]; then
     fail "sclone requires at least 2 arguments"
