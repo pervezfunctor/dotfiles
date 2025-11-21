@@ -1,5 +1,6 @@
 {
-  username = "pervez";
-  homeDirectory = "/home/pervez";
-  hostname = "nixos";
+  # username = "<username>";
+  # homeDirectory = "/home/pervez"; # for linux
+  homeDirectory = "/Users/pervez"; # for mac
+  # hostname = "<hostname>";
 }
