@@ -574,3 +574,5 @@ flatpak-aliases-create() {
 }
 
 flatpak-aliases-create --quiet
+
+alias spw="start-plasma-wayland"
