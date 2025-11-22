@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
+error_handler() {
+  local exit_code=$?
+  local line_number=$1
+  echo "Error: Command failed with exit code $exit_code at line $line_number" >&2
+  echo "Command: ${BASH_COMMAND}" >&2
+  exit $exit_code
+}
+
+trap 'error_handler $LINENO' ERR
+
 SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_NAME
 
@@ -17,15 +29,15 @@ OPTIONS:
     -h, --help          Show this help message and exit
 
 EXAMPLES:
-    $SCRIPT_NAME newuser
-    $SCRIPT_NAME existinguser
+    $SCRIPT_NAME newuser/existinguser
 
 EOF
 }
 
 install_sudo() {
   if is_apt; then
-    apt-get update && apt-get install -y sudo
+    apt-get update
+    apt-get install -y sudo
     echo "sudo"
   elif is_rh; then
     dnf install -y sudo
@@ -37,7 +49,8 @@ install_sudo() {
     pacman -Sy --noconfirm sudo
     echo "wheel"
   else
-    die "Unsupported system. Cannot determine package manager."
+    echo "Unsupported system. Cannot determine package manager." >&2
+    exit 1
   fi
 }
 
@@ -50,14 +63,20 @@ ensure_sudo_group() {
 }
 
 add_user_to_sudo_group() {
-  local username=$1
-  local sudo_group=$2
+  local sudo_group=$1
 
-  usermod -aG "$sudo_group" "$username" || die "Failed to add user '$username' to group '$sudo_group'"
+  usermod -aG "$sudo_group" "$USERNAME"
+
+  if ! getent group "$sudo_group" | grep -q "\b${USERNAME}\b"; then
+    echo "Verification failed: User '$USERNAME' was not added to group '$sudo_group'" >&2
+    exit 1
+  fi
+
+  slog "User '$USERNAME' successfully added to group '$sudo_group'"
 }
 
+USERNAME=""
 parse_args() {
-  local username=""
 
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -71,16 +90,16 @@ parse_args() {
       exit 1
       ;;
     *)
-      if [[ -z "$username" ]]; then
-        username="$1"
+      if [[ -z "$USERNAME" ]]; then
+        USERNAME="$1"
       else
         fail "Multiple usernames provided. Only one username is allowed."
         usage
-        exit 0
+        exit 1
       fi
-      shift
       ;;
     esac
+    shift
   done
 }
 
@@ -89,7 +108,7 @@ main() {
 
   parse_args "$@"
 
-  if [[ -z "$username" ]]; then
+  if [[ -z "$USERNAME" ]]; then
     fail "Username not provided."
     exit 1
   fi
@@ -97,18 +116,19 @@ main() {
   local sudo_group
   sudo_group=$(install_sudo)
 
-  if id "$username" &>/dev/null; then
-    slog "User '$username' already exists. Setting password..."
-    passwd "$username" || die "Failed to set password for user '$username'"
+  if id "$USERNAME" &>/dev/null; then
+    slog "User '$USERNAME' already exists."
   else
-    slog "Creating new user '$username'..."
-    useradd -m "$username" || die "Failed to create user '$username'"
+    slog "Creating new user '$USERNAME'..."
+    useradd -m "$USERNAME"
   fi
 
-  ensure_sudo_group "$sudo_group"
-  add_user_to_sudo_group "$username" "$sudo_group"
+  passwd "$USERNAME"
 
-  slog "✅ $username now has sudo privileges"
+  ensure_sudo_group "$sudo_group"
+  add_user_to_sudo_group "$sudo_group"
+
+  slog "✅ $USERNAME now has sudo privileges"
 }
 
 main "$@"
