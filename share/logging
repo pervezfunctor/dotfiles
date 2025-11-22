@@ -1,0 +1,311 @@
+#!/usr/bin/env bash
+
+# logging
+# Modular logging library for dotfiles scripts
+# - Unified log dir: ${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/logs
+# - TTY output: emoji + [CALLER] prefix, NO timestamps
+# - File logs: include timestamps (per line) and are multiline-safe
+# - Graceful cleanup of background workers (splitters)
+# - Multiline messages handled line-by-line
+#
+# Usage: source this file:
+#   . "$HOME/.ilm/share/logging"
+#
+# Exposes functions:
+#   slog, info, warn, fail, success
+# Also exposes: dotfiles_log_init and dotfiles_log_close (internals handled automatically).
+
+set -euo pipefail
+
+# ------------------------------------------------------------------
+# Configuration
+# ------------------------------------------------------------------
+: "${DOTFILES_LOG_DIR:=${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/logs}"
+mkdir -p -- "$DOTFILES_LOG_DIR"
+
+OUT_FIFO="${DOTFILES_LOG_DIR}/.dotfiles_out.fifo"
+ERR_FIFO="${DOTFILES_LOG_DIR}/.dotfiles_err.fifo"
+
+OUT_LOG="${DOTFILES_LOG_DIR}/output.log"
+ERR_LOG="${DOTFILES_LOG_DIR}/error.log"
+
+# Per-severity log files
+SLOG_LOG="${DOTFILES_LOG_DIR}/dotfiles-slog.log"
+INFO_LOG="${DOTFILES_LOG_DIR}/dotfiles-info.log"
+WARN_LOG="${DOTFILES_LOG_DIR}/dotfiles-warn.log"
+FAIL_LOG="${DOTFILES_LOG_DIR}/dotfiles-fail.log"
+OK_LOG="${DOTFILES_LOG_DIR}/dotfiles-success.log"
+
+# Emojis (as requested)
+EMOJI_SLOG="📝"
+EMOJI_INFO="ℹ️"
+EMOJI_WARN="⚠️"
+EMOJI_FAIL="❌"
+EMOJI_OK="✅"
+
+# Internal PIDs for background processes
+_dotfiles_pid_out=""
+_dotfiles_pid_err=""
+
+# Ensure we don't re-init
+_dotfiles_logging_inited=0
+
+# Helper: timestamp for file logs
+_dot_ts() {
+  # ISO-like timestamp with timezone offset
+  date '+%Y-%m-%d %H:%M:%S%z'
+}
+
+# Helper: safe read loop that preserves blank lines and handles final line without newline
+# Called by the background splitter (not exported)
+_dot_reader_loop() {
+  # args: $1 = path-to-filelog, $2 = "stdout"|"stderr"
+  local filelog="$1"
+  local dest="$2"
+
+  # Read from stdin (connected to FIFO)
+  # The loop ensures blank lines are preserved and the final partial line is processed.
+  while IFS= read -r line || [ -n "$line" ]; do
+    # Print raw line to the appropriate terminal stream
+    if [ "$dest" = "stdout" ]; then
+      printf '%s\n' "$line"
+    else
+      # stderr
+      printf '%s\n' "$line" >&2
+    fi
+
+    # Append timestamped line to the aggregated log
+    printf '%s %s\n' "$(_dot_ts)" "$line" >>"$filelog"
+  done
+}
+
+# Initialize logging: create FIFOs and start background splitters
+dotfiles_log_init() {
+  if [ "$_dotfiles_logging_inited" -eq 1 ]; then
+    return 0
+  fi
+
+  # create/open FIFOs
+  rm -f -- "$OUT_FIFO" "$ERR_FIFO"
+  mkfifo --mode=600 "$OUT_FIFO"
+  mkfifo --mode=600 "$ERR_FIFO"
+
+  # Start reader processes (they read from FIFO and both print to terminal and append timestamps)
+  # stdout splitter
+  (_dot_reader_loop "$OUT_LOG" stdout <"$OUT_FIFO") &
+  _dotfiles_pid_out=$!
+
+  # stderr splitter (writes to stderr and error log)
+  (_dot_reader_loop "$ERR_LOG" stderr <"$ERR_FIFO") &
+  _dotfiles_pid_err=$!
+
+  # Open file descriptors 3 and 4 for the script to write into the FIFOs.
+  # Using exec to keep these FDs stable for main; main can be run with 1>&3 2>&4
+  exec 3>"$OUT_FIFO"
+  exec 4>"$ERR_FIFO"
+
+  # mark init
+  _dotfiles_logging_inited=1
+
+  # Ensure cleanup on exit / signals
+  trap 'dotfiles_log_close' EXIT INT TERM
+}
+
+# Graceful cleanup: close FDs, kill background readers, remove FIFOs
+dotfiles_log_close() {
+  # prevent double-run
+  if [ "$_dotfiles_logging_inited" -eq 0 ]; then
+    return 0
+  fi
+  _dotfiles_logging_inited=0
+
+  # Close FDs if open (ignore errors)
+  { exec 3>&- || true; } 2>/dev/null || true
+  { exec 4>&- || true; } 2>/dev/null || true
+
+  # Give the reader procs a moment to drain
+  sleep 0.05
+
+  # Kill background splitter processes if still running
+  if [ -n "$_dotfiles_pid_out" ] && kill -0 "$_dotfiles_pid_out" 2>/dev/null; then
+    kill -- "$_dotfiles_pid_out" 2>/dev/null || true
+    wait "$_dotfiles_pid_out" 2>/dev/null || true
+  fi
+  if [ -n "$_dotfiles_pid_err" ] && kill -0 "$_dotfiles_pid_err" 2>/dev/null; then
+    kill -- "$_dotfiles_pid_err" 2>/dev/null || true
+    wait "$_dotfiles_pid_err" 2>/dev/null || true
+  fi
+
+  # Remove FIFOs
+  rm -f -- "$OUT_FIFO" "$ERR_FIFO"
+}
+
+# Internal helper to get caller name for prefix:
+# If called from inside another function, FUNCNAME[1] is the caller.
+# When called from global scope, use "MAIN".
+_dot_caller() {
+  local caller="${FUNCNAME[2]:-${FUNCNAME[1]:-MAIN}}"
+  # If caller is empty, fallback
+  [ -n "$caller" ] || caller="MAIN"
+  printf '%s' "$caller"
+}
+
+# Emit a line to the "tty stream" (writes into FD 3 or 4)
+# This writes the raw line (no timestamp) into the FIFO so the splitters will print it to TTY.
+_dot_emit_tty() {
+  # args: fd (3 or 4), string
+  local fd="$1"
+  shift
+  local msg="$*"
+  # write raw message followed by newline; ensure it's atomic-ish
+  if [ "$fd" -eq 3 ]; then
+    printf '%s\n' "$msg" >&3 || true
+  else
+    printf '%s\n' "$msg" >&4 || true
+  fi
+}
+
+# Append to severity file(s) with timestamp. Handles multi-line messages.
+# args: logfile, emoji, level, caller, message
+_dot_append_file() {
+  local logfile="$1"
+  shift
+  local emoji="$1"
+  shift
+  local level="$1"
+  shift
+  local caller="$1"
+  shift
+  local msg="$*"
+
+  # If message contains multiple lines, iterate line-by-line
+  # Use a while-read on a here-string that preserves trailing empty lines
+  # Use printf to avoid interpretation
+  while IFS= read -r line || [ -n "$line" ]; do
+    printf '%s %s [%s] %s %s\n' "$(_dot_ts)" "$emoji" "$caller" "$level" "$line" >>"$logfile"
+  done <<EOF
+$msg
+EOF
+}
+
+# Public logging functions
+slog() {
+  dotfiles_log_init
+  local caller level emoji msg
+  caller="$(_dot_caller)"
+  level="SLOG"
+  emoji="$EMOJI_SLOG"
+  msg="$*"
+
+  # Emit raw (TTY) and append to per-severity file
+  _dot_emit_tty 3 "${emoji} [${caller}] ${level} ${msg}"
+  _dot_append_file "$SLOG_LOG" "$emoji" "$level" "$caller" "$msg"
+}
+
+info() {
+  dotfiles_log_init
+  local caller level emoji msg
+  caller="$(_dot_caller)"
+  level="INFO"
+  emoji="$EMOJI_INFO"
+  msg="$*"
+
+  _dot_emit_tty 3 "${emoji} [${caller}] ${level} ${msg}"
+  _dot_append_file "$INFO_LOG" "$emoji" "$level" "$caller" "$msg"
+}
+
+warn() {
+  dotfiles_log_init
+  local caller level emoji msg
+  caller="$(_dot_caller)"
+  level="WARN"
+  emoji="$EMOJI_WARN"
+  msg="$*"
+
+  # Warns should appear on stderr in TTY
+  _dot_emit_tty 4 "${emoji} [${caller}] ${level} ${msg}"
+  _dot_append_file "$WARN_LOG" "$emoji" "$level" "$caller" "$msg"
+}
+
+fail() {
+  dotfiles_log_init
+  local caller level emoji msg
+  caller="$(_dot_caller)"
+  level="FAIL"
+  emoji="$EMOJI_FAIL"
+  msg="$*"
+
+  _dot_emit_tty 4 "${emoji} [${caller}] ${level} ${msg}"
+  _dot_append_file "$FAIL_LOG" "$emoji" "$level" "$caller" "$msg"
+}
+
+success() {
+  dotfiles_log_init
+  local caller level emoji msg
+  caller="$(_dot_caller)"
+  level="OK"
+  emoji="$EMOJI_OK"
+  msg="$*"
+
+  _dot_emit_tty 3 "${emoji} [${caller}] ${level} ${msg}"
+  _dot_append_file "$OK_LOG" "$emoji" "$level" "$caller" "$msg"
+}
+
+# ------------------------------------------------------------
+# Log rotation
+# ------------------------------------------------------------
+
+# Number of rotated generations to keep
+: "${DOTFILES_LOG_ROTATE_KEEP:=7}"
+
+dotfiles_log_rotate() {
+  # Prevent recursion: disable logging temporarily
+  local _old_inited="$_dotfiles_logging_inited"
+  _dotfiles_logging_inited=0 # disable logging during rotation
+
+  mkdir -p -- "$DOTFILES_LOG_DIR"
+
+  # Exclude FIFOs, hidden temp files, and anything not a regular log file
+  local logfile
+  while IFS= read -r -d '' logfile; do
+    dotfiles__rotate_single "$logfile"
+  done < <(
+    find "$DOTFILES_LOG_DIR" \
+      -maxdepth 1 \
+      -type f \
+      -not -name '.*' \
+      -print0
+  )
+
+  # Re-enable logging
+  _dotfiles_logging_inited="$_old_inited"
+
+  # Log rotation completed (safe: only if logging was previously active)
+  if [ "$_dotfiles_logging_inited" -eq 1 ]; then
+    slog "Log rotation complete; kept last ${DOTFILES_LOG_ROTATE_KEEP} generations."
+  fi
+}
+
+# Rotate a single file:
+# file.log → file.log.1 → file.log.2 → … → file.log.N
+dotfiles__rotate_single() {
+  local file="$1"
+
+  # If file is empty or non-existent, skip it
+  [ -s "$file" ] || return 0
+
+  # Rotate backwards: N→N+1, etc.
+  local i
+  for ((i = DOTFILES_LOG_ROTATE_KEEP; i >= 1; i--)); do
+    if [ -f "${file}.${i}" ]; then
+      local nxt=$((i + 1))
+      mv -f -- "${file}.${i}" "${file}.${nxt}"
+    fi
+  done
+
+  # Move current log to .1
+  mv -f -- "$file" "${file}.1"
+
+  # Create new empty file to avoid descriptor errors
+  : >"$file"
+}

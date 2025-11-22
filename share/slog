@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# Logging library: timestamped log sets, symlinks, auto-cleanup.
+
+set -euo pipefail
+
+# ------------------------------------------------------------
+# Directory + retention setup
+# ------------------------------------------------------------
+: "${DOTFILES_LOG_DIR:=${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/logs}"
+mkdir -p -- "$DOTFILES_LOG_DIR"
+
+# Cleanup threshold in days
+: "${DOTFILES_LOG_RETENTION_DAYS:=2}"
+
+# Timestamp for this run
+DOTFILES_RUN_TS="$(date '+%Y-%m-%d_%H-%M-%S')"
+
+OUT_LOG="${DOTFILES_LOG_DIR}/${DOTFILES_RUN_TS}_output.log"
+ERR_LOG="${DOTFILES_LOG_DIR}/${DOTFILES_RUN_TS}_error.log"
+SLOG_LOG="${DOTFILES_LOG_DIR}/${DOTFILES_RUN_TS}_slog.log"
+INFO_LOG="${DOTFILES_LOG_DIR}/${DOTFILES_RUN_TS}_info.log"
+WARN_LOG="${DOTFILES_LOG_DIR}/${DOTFILES_RUN_TS}_warn.log"
+FAIL_LOG="${DOTFILES_LOG_DIR}/${DOTFILES_RUN_TS}_fail.log"
+OK_LOG="${DOTFILES_LOG_DIR}/${DOTFILES_RUN_TS}_success.log"
+
+touch "$OUT_LOG" "$ERR_LOG" "$SLOG_LOG" "$INFO_LOG" "$WARN_LOG" "$FAIL_LOG" "$OK_LOG"
+
+# ------------------------------------------------------------
+# Create/update symlinks to the latest logs
+# ------------------------------------------------------------
+ln -sfn "$OUT_LOG" "${DOTFILES_LOG_DIR}/latest_output.log"
+ln -sfn "$ERR_LOG" "${DOTFILES_LOG_DIR}/latest_error.log"
+ln -sfn "$SLOG_LOG" "${DOTFILES_LOG_DIR}/latest_slog.log"
+ln -sfn "$INFO_LOG" "${DOTFILES_LOG_DIR}/latest_info.log"
+ln -sfn "$WARN_LOG" "${DOTFILES_LOG_DIR}/latest_warn.log"
+ln -sfn "$FAIL_LOG" "${DOTFILES_LOG_DIR}/latest_fail.log"
+ln -sfn "$OK_LOG" "${DOTFILES_LOG_DIR}/latest_success.log"
+
+# ------------------------------------------------------------
+# Automatic cleanup: remove logs older than N days
+# ------------------------------------------------------------
+find "$DOTFILES_LOG_DIR" -type f -mtime "+$DOTFILES_LOG_RETENTION_DAYS" -delete 2>/dev/null || true
+
+# ------------------------------------------------------------
+# Emojis only (no colors)
+# ------------------------------------------------------------
+EMOJI_SLOG="📝"
+EMOJI_INFO="ℹ️"
+EMOJI_WARN="⚠️"
+EMOJI_FAIL="❌"
+EMOJI_OK="✅"
+
+# ------------------------------------------------------------
+# Internal helpers
+# ------------------------------------------------------------
+_dot_ts() { date '+%Y-%m-%d %H:%M:%S%z'; }
+
+_dot_caller() {
+  local c="${FUNCNAME[2]:-${FUNCNAME[1]:-MAIN}}"
+  [ -n "$c" ] || c="MAIN"
+  printf '%s' "$c"
+}
+
+_dotfiles_logging_inited=0
+
+# ------------------------------------------------------------
+# Init / Close
+# ------------------------------------------------------------
+dotfiles_log_init() {
+  [ "$_dotfiles_logging_inited" -eq 1 ] && return 0
+
+  exec 3> >(tee -a "$OUT_LOG")
+  exec 4> >(tee -a "$ERR_LOG" >&2)
+
+  _dotfiles_logging_inited=1
+  trap 'dotfiles_log_close' EXIT INT TERM
+}
+
+dotfiles_log_close() {
+  [ "$_dotfiles_logging_inited" -eq 1 ] || return 0
+  _dotfiles_logging_inited=0
+
+  { exec 3>&- || true; } 2>/dev/null || true
+  { exec 4>&- || true; } 2>/dev/null || true
+
+  sleep 0.05
+  wait 2>/dev/null || true
+}
+
+# ------------------------------------------------------------
+# Append message to file (timestamped)
+# ------------------------------------------------------------
+_dot_append_file() {
+  local logfile="$1" emoji="$2" level="$3" caller="$4" msg="$5"
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    printf '%s %s [%s] %s %s\n' \
+      "$(_dot_ts)" "$emoji" "$caller" "$level" "$line" >>"$logfile"
+  done <<EOF
+$msg
+EOF
+}
+
+# ------------------------------------------------------------
+# Logging functions
+# ------------------------------------------------------------
+slog() {
+  dotfiles_log_init
+  local c
+  c="$(_dot_caller)" m="$*" emoji="$EMOJI_SLOG" lvl="SLOG"
+  printf '%s [%s] %s %s\n' "$emoji" "$c" "$lvl" "$m"
+  _dot_append_file "$SLOG_LOG" "$emoji" "$lvl" "$c" "$m"
+}
+
+info() {
+  dotfiles_log_init
+  local c
+  c="$(_dot_caller)" m="$*" emoji="$EMOJI_INFO" lvl="INFO"
+  printf '%s [%s] %s %s\n' "$emoji" "$c" "$lvl" "$m"
+  _dot_append_file "$INFO_LOG" "$emoji" "$lvl" "$c" "$m"
+}
+
+warn() {
+  dotfiles_log_init
+  local c
+  c="$(_dot_caller)" m="$*" emoji="$EMOJI_WARN" lvl="WARN"
+  printf '%s [%s] %s %s\n' "$emoji" "$c" "$lvl" "$m" >&2
+  _dot_append_file "$WARN_LOG" "$emoji" "$lvl" "$c" "$m"
+}
+
+fail() {
+  dotfiles_log_init
+  local c
+  c="$(_dot_caller)" m="$*" emoji="$EMOJI_FAIL" lvl="FAIL"
+  printf '%s [%s] %s %s\n' "$emoji" "$c" "$lvl" "$m" >&2
+  _dot_append_file "$FAIL_LOG" "$emoji" "$lvl" "$c" "$m"
+}
+
+success() {
+  dotfiles_log_init
+  local c
+  c="$(_dot_caller)" m="$*" emoji="$EMOJI_OK" lvl="OK"
+  printf '%s [%s] %s %s\n' "$emoji" "$c" "$lvl" "$m"
+  _dot_append_file "$OK_LOG" "$emoji" "$lvl" "$c" "$m"
+}

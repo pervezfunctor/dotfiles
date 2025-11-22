@@ -336,6 +336,7 @@ warn() {
 
 success() {
   printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*" >>"$HOME/.dotfiles-success"
+  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*"
 }
 
 info() {
@@ -1231,7 +1232,7 @@ ssh_password_auth_enable() {
 
 keep_sudo_running() {
   if ! has_cmd sudo; then
-    slog "Error: sudo command not found." >&2
+    slog "Error: sudo command not found."
     return 1
   fi
 
@@ -1241,6 +1242,7 @@ keep_sudo_running() {
   fi
 
   slog "Sudo credentials active."
+
   (
     while true; do
       sudo -n true 2>/dev/null
@@ -1251,9 +1253,7 @@ keep_sudo_running() {
   SUDO_KEEPALIVE_PID=$!
   slog "Sudo keep-alive background process started (PID: $SUDO_KEEPALIVE_PID)."
 
-  trap _stop_sudo_keepalive EXIT INT TERM HUP
-
-  return 0
+  trap '_stop_sudo_keepalive; dotfiles_log_close' EXIT INT TERM HUP
 }
 
 download_to() {
@@ -1636,6 +1636,7 @@ source_installers() {
   fi
 
   # Linux-specific installers
+
   source_curl "$INSTALLERS/box" # some box fns are useful in atomic too!
   source_curl "$INSTALLERS/atomic"
 
@@ -1655,6 +1656,10 @@ source_installers() {
     source_curl "$INSTALLERS/arch"
   elif is_alpine; then
     source_curl "$INSTALLERS/alpine"
+  elif is_atomic; then
+    source_curl "$INSTALLERS/layered"
+  else
+    warn "Unknown operating system, skipping package manager specific installers"
   fi
 }
 
@@ -1677,6 +1682,7 @@ bootstrap() {
   [ -n "$NOSUDO" ] || keep_sudo_running
 
   source_installers
+
   slog "Installing ${*} ..."
   main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee ~/.dotfiles-error.log >&2)
   slog "Installation done! Look at ~/.dotfiles-error.log for any errors."
