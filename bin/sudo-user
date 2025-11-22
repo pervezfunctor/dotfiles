@@ -34,20 +34,30 @@ EXAMPLES:
 EOF
 }
 
-install_sudo() {
+get_sudo_group() {
   if has_cmd apt-get; then
-    apt-get update
-    apt-get install -y sudo
     echo "sudo"
   elif has_cmd dnf; then
-    dnf install -y sudo
     echo "wheel"
   elif has_cmd zypper; then
-    zypper install -y sudo
     echo "wheel"
   elif has_cmd pacman; then
-    pacman -Sy --noconfirm sudo
     echo "wheel"
+  else
+    die "Unsupported system. Cannot determine package manager."
+  fi
+}
+
+install_sudo() {
+  if has_cmd apt-get; then
+    apt-get update >/dev/null
+    apt-get install -y sudo >/dev/null
+  elif has_cmd dnf; then
+    dnf install -y sudo >/dev/null
+  elif has_cmd zypper; then
+    zypper install -y sudo >/dev/null
+  elif has_cmd pacman; then
+    pacman -Sy --noconfirm sudo >/dev/null
   else
     die "Unsupported system. Cannot determine package manager."
   fi
@@ -55,6 +65,12 @@ install_sudo() {
 
 add_user_to_sudo_group() {
   local sudo_group=$1
+
+  # Check if the sudo group exists, create it if it doesn't
+  if ! getent group "$sudo_group" >/dev/null; then
+    slog "Creating '$sudo_group' group..."
+    groupadd "$sudo_group"
+  fi
 
   usermod -aG "$sudo_group" "$USERNAME"
 
@@ -104,7 +120,9 @@ main() {
   fi
 
   local sudo_group
-  sudo_group=$(install_sudo)
+  sudo_group=$(get_sudo_group)
+
+  install_sudo
 
   if id "$USERNAME" &>/dev/null; then
     slog "User '$USERNAME' already exists."
