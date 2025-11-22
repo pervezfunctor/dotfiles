@@ -5,8 +5,8 @@ set -euo pipefail
 error_handler() {
   local exit_code=$?
   local line_number=$1
-  echo "Error: Command failed with exit code $exit_code at line $line_number" >&2
-  echo "Command: ${BASH_COMMAND}" >&2
+  fail "Command failed with exit code $exit_code at line $line_number"
+  fail "Command: ${BASH_COMMAND}"
   exit $exit_code
 }
 
@@ -35,30 +35,21 @@ EOF
 }
 
 install_sudo() {
-  if is_apt; then
+  if has_cmd apt-get; then
     apt-get update
     apt-get install -y sudo
     echo "sudo"
-  elif is_rh; then
+  elif has_cmd dnf; then
     dnf install -y sudo
     echo "wheel"
-  elif is_tw; then
+  elif has_cmd zypper; then
     zypper install -y sudo
     echo "wheel"
-  elif is_arch; then
+  elif has_cmd pacman; then
     pacman -Sy --noconfirm sudo
     echo "wheel"
   else
-    echo "Unsupported system. Cannot determine package manager." >&2
-    exit 1
-  fi
-}
-
-ensure_sudo_group() {
-  local sudo_group=$1
-  if ! getent group "$sudo_group" >/dev/null; then
-    slog "Creating group $sudo_group"
-    groupadd "$sudo_group" && slog "Group $sudo_group created!"
+    die "Unsupported system. Cannot determine package manager."
   fi
 }
 
@@ -68,11 +59,10 @@ add_user_to_sudo_group() {
   usermod -aG "$sudo_group" "$USERNAME"
 
   if ! getent group "$sudo_group" | grep -q "\b${USERNAME}\b"; then
-    echo "Verification failed: User '$USERNAME' was not added to group '$sudo_group'" >&2
-    exit 1
+    warn "Verification failed: User '$USERNAME' was not added to group '$sudo_group'"
+  else
+    slog "User '$USERNAME' successfully added to group '$sudo_group'"
   fi
-
-  slog "User '$USERNAME' successfully added to group '$sudo_group'"
 }
 
 USERNAME=""
@@ -124,8 +114,6 @@ main() {
   fi
 
   passwd "$USERNAME"
-
-  ensure_sudo_group "$sudo_group"
   add_user_to_sudo_group "$sudo_group"
 
   slog "✅ $USERNAME now has sudo privileges"
