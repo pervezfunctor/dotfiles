@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-has_cmd virsh || return 1
+has_cmd virsh || return 0
 
 virt-docker() {
   local VM_NAME=${1:-docker}

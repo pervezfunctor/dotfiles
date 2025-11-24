@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-has_cmd toolbox || return 1
+has_cmd toolbox || return 0
 
 tbox-alpine() {
 

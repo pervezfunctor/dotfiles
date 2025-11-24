@@ -354,26 +354,26 @@ create-ublue-nix-mount() {
   return 0
 }
 
-# select-one() {
-#   local prompt
-#   prompt=${1:-"Select > "}
-#   shift 2>/dev/null || true
+select-one() {
+  local prompt
+  prompt=${1:-"Select > "}
+  shift 2>/dev/null || true
 
-#   if ! command -v fzf >/dev/null 2>&1; then
-#     return 127
-#   fi
+  if ! has_cmd fzf; then
+    return 127
+  fi
 
-#   if [ -t 0 ]; then
-#     # No piped input; use provided args
-#     if [ "$#" -eq 0 ]; then
-#       return 1
-#     fi
-#     printf '%s\n' "$@" | fzf --prompt="$prompt" --height=40% --reverse
-#   else
-#     # Use piped stdin
-#     fzf --prompt="$prompt" --height=40% --reverse
-#   fi
-# }
+  if [ -t 0 ]; then
+    # No piped input; use provided args
+    if [ "$#" -eq 0 ]; then
+      return 1
+    fi
+    printf '%s\n' "$@" | fzf --prompt="$prompt" --height=40% --reverse
+  else
+    # Use piped stdin
+    fzf --prompt="$prompt" --height=40% --reverse
+  fi
+}
 
 vme-ssh() {
   if ! has_cmd vme; then
