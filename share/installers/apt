@@ -126,17 +126,20 @@ proxmox_mainstall() {
 
 # shellcheck disable=SC2120
 debian_locale_install() {
-  LOCALE_TO_USE=${1:-en_US.UTF-8}
+  local LOCALE_TO_USE="${1:-en_US.UTF-8}"
 
-  if sudo apt install -y --reinstall locales &&
-    sudo sed -i "s/^# *$LOCALE_TO_USE UTF-8/$LOCALE_TO_USE UTF-8/" /etc/locale.gen &&
-    sudo locale-gen &&
-    sudo update-locale LANG="$LOCALE_TO_USE" LC_ALL="$LOCALE_TO_USE"; then
-    slog "Locales fixed. Current system locale:" && locale
-  else
-    warn "Failed to fix locales. Please check your locale settings."
-    return 1
+  si locales
+
+  if ! grep -q "^$LOCALE_TO_USE UTF-8" /etc/locale.gen; then
+    echo "$LOCALE_TO_USE UTF-8" | sudo tee -a /etc/locale.gen >/dev/null
   fi
+
+  sudo sed -i "s/^# *$LOCALE_TO_USE UTF-8/$LOCALE_TO_USE UTF-8/" /etc/locale.gen
+
+  sudo locale-gen
+  sudo update-locale LANG="$LOCALE_TO_USE"
+
+  locale
 }
 
 # or
