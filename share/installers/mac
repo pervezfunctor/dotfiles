@@ -166,7 +166,6 @@ nix-darwin_mainstall() {
     die "nix-darwin-rebuild failed"
   fi
 
-  touch ~/.zshrc
   vscode_groupstall
   docker_install
 

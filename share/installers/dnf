@@ -456,10 +456,10 @@ gpgkey=https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/yum/RPM-GPG-KEY-
 kde-slim_binstall() {
   is_fedora || warn "KDE slim install only tested on fedora"
 
-  slog "Installing minimal kde plasma..."
+  slog "Installing kde plasma..."
   sudo dnf install -y --setopt=install_weak_deps=False plasma-desktop \
     plasma-discover systemsettings kscreen kio-extras udisks2 powerdevil \
-    power-profiles-daemon mesa-libGLES
+    power-profiles-daemon mesa-libGLES wl-clipboard
   slog "kde plasma installation done!"
 }
 

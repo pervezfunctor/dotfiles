@@ -306,7 +306,7 @@ pm_install() {
 kde-slim_binstall() {
   slog "Installing minimal kde plasma..."
   sudo zypper install -y --no-recommends plasma6-desktop systemsettings6 \
-    kscreen6 kio-extras udisks2 powerdevil6 power-profiles-daemon
+    kscreen6 kio-extras udisks2 powerdevil6 power-profiles-daemon wl-clipboard
   slog "kde plasma installation done!"
 }
 

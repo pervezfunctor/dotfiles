@@ -297,7 +297,7 @@ kde-slim_binstall() {
   slog "Installing minimal kde plasma..."
   sudo pacman -S --quiet --noconfirm --needed plasma-desktop noto-fonts \
     pipewire-jack systemsettings kscreen kio-extras udisks2 powerdevil \
-    power-profiles-daemon qt6-multimedia-gstreamer
+    power-profiles-daemon qt6-multimedia-gstreamer wl-clipboard
 
   sudo pacman -S --quiet --noconfirm --needed mesa
   slog "kde plasma installation done!"

@@ -176,14 +176,12 @@ home-manager_install() {
 
   hms
 
-  touch ~/.zshrc
   return 0
 }
 
 nix_groupstall() {
   nix_install
   home-manager_install
-  touch ~/.zshrc
 }
 
 nix_check() {

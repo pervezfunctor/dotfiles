@@ -448,7 +448,8 @@ sway_binstall() {
 kde-slim_binstall() {
   slog "Installing minimal kde plasma..."
 
-  sudo apt install --no-install-recommends -y -qq kde-plasma-desktop systemsettings kscreen kio-extras udisks2 powerdevil power-profiles-daemon
+  sudo apt install --no-install-recommends -y -qq kde-plasma-desktop kscreen \
+    systemsettings udisks2 powerdevil power-profiles-daemon wl-clipboard
 
   sudo apt install --no-install-recommends -y -qq libgles2-mesa
 

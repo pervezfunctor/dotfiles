@@ -136,7 +136,7 @@ configure_distribution() {
   esac
 
   USERNAME=${USERNAME:-$USER}
-  [[ -z "$PASSWORD" ]] && generate_password
+  [[ -z "${PASSWORD:-}" ]] && generate_password
 
   PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 }

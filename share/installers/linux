@@ -409,7 +409,6 @@ nixos_mainstall() {
   fi
 
   vscode_confstall
-  touch ~/.zshrc
 
   cmd_check nixfmt nixd git zsh devbox devenv docker distrobox nvim shellcheck \
     shfmt stow trash tmux eza gcc make gh ghostty rg tldr code
