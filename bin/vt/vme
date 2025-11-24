@@ -17,8 +17,8 @@ cmd_vme() {
 check_prerequisites() {
   for cmd in virsh vme-create trash; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-      echo "❌  Required command '$cmd' is not available."
-      exit 1
+      echo "⚠️  Warning: Required command '$cmd' is not available."
+      # exit 1
     fi
   done
   # command -v virt-cat >/dev/null 2>&1 || echo "⚠️  virt-cat not available, some commands won't work"
