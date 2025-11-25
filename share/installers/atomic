@@ -994,3 +994,13 @@ portainer_install() {
     '
   slog "Portainer installation done!"
 }
+
+apps-slim_groupstall() {
+  flathub_install
+  apps-slim_install
+}
+
+apps_groupstall() {
+  flathub_install
+  apps_install
+}
