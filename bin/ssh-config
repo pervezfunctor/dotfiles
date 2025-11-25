@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_FILE="${HOME}/.ssh/config"
+
+usage() {
+    printf "Usage:\n"
+    printf "  %s list\n" "$0"
+    printf "  %s add <host> <hostname> <user> [port]\n" "$0"
+    printf "  %s remove <host>\n" "$0"
+    printf "\n"
+    printf "Examples:\n"
+    printf "  %s list\n" "$0"
+    printf "  %s add myvm 192.168.1.10 ubuntu 22\n" "$0"
+    printf "  %s remove myvm\n" "$0"
+    exit 1
+}
+
+ensure_config_file() {
+    mkdir -p "${HOME}/.ssh"
+    touch "$CONFIG_FILE"
+}
+
+list_configs() {
+    awk '
+      /^Host[[:space:]]+/ {
+          host=$2
+          print host
+      }
+    ' "$CONFIG_FILE"
+}
+
+host_exists() {
+    grep -qE "^Host[[:space:]]+$1\$" "$CONFIG_FILE"
+}
+
+add_config() {
+    local host="$1"
+    local hostname="$2"
+    local user="$3"
+    local port="${4:-22}"
+
+    if host_exists "$host"; then
+        printf "Host '%s' already exists. Skipping (idempotent).\n" "$host"
+        return 0
+    fi
+
+    {
+      echo ""
+      echo "Host $host"
+      echo "    HostName $hostname"
+      echo "    User $user"
+      echo "    Port $port"
+      echo "    IdentitiesOnly yes"
+    } >> "$CONFIG_FILE"
+
+    printf "Added host '%s'.\n" "$host"
+}
+
+remove_config() {
+    local host="$1"
+
+    if ! host_exists "$host"; then
+        printf "Host '%s' not found. Skipping (idempotent).\n" "$host"
+        return 0
+    fi
+
+    # Remove entire Host block (Host line + indented lines following)
+    # until next Host or EOF.
+    awk -v h="$host" '
+      BEGIN {skip=0}
+      $0 ~ "^Host[[:space:]]+"h"$" { skip=1; next }
+      /^Host[[:space:]]+/ { skip=0 }
+      skip==1 { next }
+      { print }
+    ' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"
+
+    mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+
+    printf "Removed host '%s'.\n" "$host"
+}
+
+main() {
+    ensure_config_file
+
+    case "${1:-}" in
+        list)
+            list_configs
+            ;;
+        add)
+            [[ $# -lt 4 ]] && usage
+            add_config "$2" "$3" "$4" "${5:-22}"
+            ;;
+        remove)
+            [[ $# -ne 2 ]] && usage
+            remove_config "$2"
+            ;;
+        *)
+            usage
+            ;;
+    esac
+}
+
+main "$@"
