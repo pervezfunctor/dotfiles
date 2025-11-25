@@ -58,7 +58,7 @@ main() {
     return 0
   fi
 
-  if ! has_cmd gum; then
+  if ! has_cmd gum && ! has_cmd fzf; then
     help
     exit 0
   fi

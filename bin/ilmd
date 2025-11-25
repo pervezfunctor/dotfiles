@@ -44,18 +44,18 @@ main() {
     return 0
   fi
 
-  if ! has_cmd gum; then
+  if ! has_cmd gum && ! has_cmd fzf; then
     help
     exit 0
   fi
 
-  SELECTED_OPTION=$(igum choose "${OPTIONS[@]}" --header "Choose option to install" | tr '\n' ' ')
+  local SELECTED_OPTION
+  SELECTED_OPTION=$(select-one "Choose a distrobox to install" "${OPTIONS[@]}")
 
   if [[ -n "$SELECTED_OPTION" ]]; then
     echo ""
     echo "Selected: $SELECTED_OPTION"
     echo ""
-    bluefin
   else
     slog "No option selected."
     return 1

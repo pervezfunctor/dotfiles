@@ -1724,6 +1724,25 @@ fedora_version() {
   echo "${VERSION_ID%%.*}"
 }
 
+select_functions_by_suffix() {
+    local suffix="$1"
+
+    local selection
+    selection=$(
+        compgen -A function \
+        | grep "_${suffix}$" \
+        | sed "s/_${suffix}$//" \
+        | fzf --multi
+    ) || return 1
+
+    local out=()
+    while IFS= read -r base; do
+        out+=("${base}_${suffix}")
+    done <<< "$selection"
+
+    printf '%s\n' "${out[@]}"
+}
+
 select-one() {
   local prompt="$1"
   local items=("${@:2}")
