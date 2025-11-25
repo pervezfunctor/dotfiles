@@ -379,7 +379,7 @@ vm_install() {
 
   si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils libosinfo-bin \
     virgl-server qemu-utils spice-client-gtk spice-vdagent jq xmlstarlet \
-    cloud-image-utils libguestfs-tools osinfo-db edk2-ovmf dmidecode \
+    cloud-image-utils libguestfs-tools osinfo-db edk2-ovmf edk2-ovmf dmidecode \
     osinfo-db-tools openssl
 
   slog "libvirt installation done!"
