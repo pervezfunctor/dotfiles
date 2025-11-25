@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Usage: ./ssh_vms.sh <vmid1> <vmid2> ...
+
+set -euo pipefail
+
+TERMINAL="${TERMINAL:-foot}"  # fallback if not set
+
+get_vm_ip() {
+    local vmid="$1"
+    qm guest cmd "$vmid" network-get-interfaces 2>/dev/null \
+      | jq -r '.[]?."ip-addresses"[]?."ip-address"' \
+      | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' \
+      | head -n1 || true
+}
+
+for vmid in "$@"; do
+    ip=$(get_vm_ip "$vmid")
+    if [[ -z "$ip" ]]; then
+        echo "Failed to get IP for VM $vmid" >&2
+        continue
+    fi
+
+    swaymsg splitv
+    swaymsg exec "$TERMINAL -e bash -c 'ssh pervez@$ip || read -p \"Press Enter to close...\"'"
+done
