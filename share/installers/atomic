@@ -789,10 +789,7 @@ ublue_common_install() {
   apps-slim_install
 
   vscode_confstall
-  jetbrains-mono_install
   is_gnome && gnome-settings_install
-  ujust install-system-flatpaks
-  ujust update
 }
 
 ublue_mainstall() {

@@ -36,6 +36,10 @@ user_in_group() {
   grep -qw "$group" <<<"$groups"
 }
 
+current_user_in_group() {
+  user_in_group "$USER" "$1"
+}
+
 fix_group_for_atomic() {
   local group="$1"
 
