@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+USER_HOME="$(getent passwd "$USER" | cut -d: -f6)"
+SSH_DIR="$USER_HOME/.ssh"
+
+# Create directory if missing
+mkdir -p "$SSH_DIR"
+
+# Correct ownership
+chown "$USER":"$USER" "$SSH_DIR"
+
+# Directory permissions
+chmod 700 "$SSH_DIR"
+
+# Private keys (id_rsa, id_ed25519, etc.)
+find "$SSH_DIR" -maxdepth 1 -type f \
+    \( -name "id_*" -o -name "*_key" \) \
+    ! -name "*.pub" \
+    -exec chown "$USER":"$USER" {} \; \
+    -exec chmod 600 {} \;
+
+# Public keys
+find "$SSH_DIR" -maxdepth 1 -type f -name "*.pub" \
+    -exec chown "$USER":"$USER" {} \; \
+    -exec chmod 644 {} \;
+
+# authorized_keys, config
+for f in authorized_keys config; do
+    if [[ -f "$SSH_DIR/$f" ]]; then
+        chown "$USER":"$USER" "$SSH_DIR/$f"
+        chmod 600 "$SSH_DIR/$f"
+    fi
+done
+
+# known_hosts
+if [[ -f "$SSH_DIR/known_hosts" ]]; then
+    chown "$USER":"$USER" "$SSH_DIR/known_hosts"
+    chmod 644 "$SSH_DIR/known_hosts"
+fi
