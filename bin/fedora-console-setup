@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Set keyboard layout (example: US)
+# Change "us" if needed
+sudo localectl set-keymap us
+
+# Set console font (similar to "Fixed 16" on Debian)
+# Fedora fonts live in /usr/lib/kbd/consolefonts/
+FONT="lat4-16.psfu.gz"
+
+if [ ! -f "/usr/lib/kbd/consolefonts/$FONT" ]; then
+    echo "Console font $FONT not found. Available fonts:"
+    ls /usr/lib/kbd/consolefonts/
+    exit 1
+fi
+
+# Apply immediately
+sudo setfont "$FONT"
+
+# Persist in /etc/vconsole.conf
+sudo bash -c "cat > /etc/vconsole.conf" <<EOF
+KEYMAP=us
+FONT=lat4-16
+FONT_MAP=
+EOF
