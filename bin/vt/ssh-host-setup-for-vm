@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 <vmid> [-u username] [-p port]"
+  echo "Default username=root, port=22"
+  exit 1
+}
+
+[[ $# -ge 1 ]] || usage
+
+VMID="$1"
+shift
+
+USER="root"
+PORT="22"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -u|--user)
+      USER="$2"
+      shift 2
+      ;;
+    -p|--port)
+      PORT="$2"
+      shift 2
+      ;;
+    *)
+      usage
+      ;;
+  esac
+done
+
+# ---------------------------------------------------------
+# Generate host SSH keys if missing
+# ---------------------------------------------------------
+ensure_host_keys() {
+  local dir="/root/.ssh"
+  sudo mkdir -p "$dir"
+  sudo chmod 700 "$dir"
+
+  if [[ ! -f "$dir/id_ed25519" ]]; then
+    sudo ssh-keygen -t ed25519 -f "$dir/id_ed25519" -N ""
+  fi
+
+  if [[ ! -f "$dir/id_rsa" ]]; then
+    sudo ssh-keygen -t rsa -b 4096 -f "$dir/id_rsa" -N ""
+  fi
+
+  sudo chmod 600 "$dir"/id_*
+}
+
+# ---------------------------------------------------------
+# Add host public keys into VM using qm set
+# ---------------------------------------------------------
+push_keys_to_vm() {
+  local pub_ed="/root/.ssh/id_ed25519.pub"
+  local pub_rsa="/root/.ssh/id_rsa.pub"
+
+  AUTH_KEYS="$(cat "$pub_ed"; echo; cat "$pub_rsa")"
+
+  # qm set expects a single-line string for sshkeys
+  qm set "$VMID" --sshkeys <(printf "%s\n" "$AUTH_KEYS")
+}
+
+# ---------------------------------------------------------
+# Retrieve VM IP using Guest Agent
+# ---------------------------------------------------------
+get_vm_ip() {
+  local ip
+  ip=$(qm guest exec "$VMID" ip -4 addr show | awk '/inet / {print $2}' | cut -d/ -f1 | head -n1 || true)
+
+  if [[ -z "$ip" ]]; then
+    # alternative via guest info
+    ip=$(qm guest info "$VMID" | awk '/ip-addresses/ {flag=1} flag && /"ip-address":/ {gsub("[\",]",""); print $2; exit}')
+  fi
+
+  echo "$ip"
+}
+
+# ---------------------------------------------------------
+# Test SSH connection
+# ---------------------------------------------------------
+test_ssh() {
+  local ip="$1"
+
+  ssh -o ConnectTimeout=5 \
+      -o StrictHostKeyChecking=no \
+      -o UserKnownHostsFile=/dev/null \
+      -p "$PORT" "$USER@$ip" "echo ok" 2>/dev/null
+}
+
+# ---------------------------------------------------------
+# Main
+# ---------------------------------------------------------
+ensure_host_keys
+push_keys_to_vm
+
+echo "Waiting for VM network..."
+sleep 2
+
+IP=$(get_vm_ip || true)
+
+if [[ -z "$IP" ]]; then
+  echo "Could not determine VM IP. Check Guest Agent."
+  exit 1
+fi
+
+echo "Detected VM IP: $IP"
+echo "Testing SSH access..."
+
+if test_ssh "$IP" | grep -q ok; then
+  echo "SSH connectivity confirmed."
+else
+  echo "SSH test failed. Verify SSH service inside the VM."
+  exit 1
+fi

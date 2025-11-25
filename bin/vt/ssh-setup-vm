@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shellcheck disable=SC1091
+source /etc/os-release
+
+install_packages() {
+    case "$ID" in
+        arch)
+            pacman -Sy --noconfirm openssh qemu-guest-agent
+            ;;
+        tumbleweed|opensuse*)
+            zypper install -y openssh qemu-guest-agent
+            ;;
+        ubuntu|debian)
+            apt-get update
+            apt-get install -y openssh-server qemu-guest-agent
+            ;;
+        fedora)
+            dnf install -y openssh-server qemu-guest-agent
+            ;;
+        centos|rhel)
+            yum install -y openssh-server qemu-guest-agent
+            ;;
+        *)
+            echo "Unsupported distribution: $ID"
+            exit 1
+            ;;
+    esac
+}
+
+ensure_ssh_host_keys() {
+    if ! ls /etc/ssh/ssh_host_*key >/dev/null 2>&1; then
+        echo "Generating SSH host keys..."
+        ssh-keygen -A
+    fi
+}
+
+enable_password_auth() {
+    mkdir -p /etc/ssh/sshd_config.d
+
+    local file="/etc/ssh/sshd_config.d/99-password.conf"
+    local tmp
+    tmp="$(mktemp)"
+
+    cat >"$tmp" <<EOF
+PasswordAuthentication yes
+PubkeyAuthentication yes
+EOF
+
+    if ! cmp -s "$tmp" "$file"; then
+        cp -f "$tmp" "$file"
+    fi
+
+    rm -f "$tmp"
+}
+
+main() {
+    install_packages
+    enable_password_auth
+    ensure_ssh_host_keys
+
+    systemctl enable --now sshd || systemctl enable --now ssh || true
+    systemctl enable --now qemu-guest-agent
+
+    systemctl restart sshd || systemctl restart ssh || true
+
+    echo "Setup complete."
+}
+
+main
