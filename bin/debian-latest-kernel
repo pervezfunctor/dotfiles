@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BACKPORTS_LINE="deb http://deb.debian.org/debian trixie-backports main contrib non-free non-free-firmware"
+SOURCES_FILE="/etc/apt/sources.list.d/backports.list"
+
+log() { printf "\033[1;32m[+] %s\033[0m\n" "$*"; }
+
+# Require root
+if [[ $EUID -ne 0 ]]; then
+  echo "Please run as root (sudo $0)"
+  exit 1
+fi
+
+# Step 1: Add backports repo if missing
+if ! grep -q "^deb .*trixie-backports" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
+  log "Adding Debian Trixie backports repository"
+  echo "$BACKPORTS_LINE" > "$SOURCES_FILE"
+else
+  log "Backports repository already present"
+fi
+
+# Step 2: Update package lists
+log "Updating package index..."
+apt update -y
+
+# Step 3: Install latest backports kernel + headers
+log "Installing latest kernel from backports..."
+apt install -y -t trixie-backports linux-image-amd64 linux-headers-amd64
+
+# Step 4: Clean up
+log "Cleaning up..."
+apt autoremove -y
+apt clean
+
+# Step 5: Verify kernel version
+CURRENT_KERNEL=$(uname -r)
+log "Current running kernel: $CURRENT_KERNEL"
+log "Reboot required to activate the new kernel."
