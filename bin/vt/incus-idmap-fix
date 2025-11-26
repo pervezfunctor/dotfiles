@@ -24,10 +24,10 @@ error() {
   echo -e "${RED}[ERROR]${NC} $1" >&2
 }
 
-if [[ "$(id -u)" -ne 0 ]]; then
-  error "This script modifies system files and restarts services."
-  error "Please run it with sudo: sudo ./check_incus_idmap.sh"
-  exit 1
+# Check if we can use sudo
+if ! sudo -n true 2>/dev/null; then
+  warn "This script modifies system files and restarts services."
+  warn "You may be prompted for your sudo password."
 fi
 
 info "Checking idmap configuration for user '${TARGET_USER}'..."
@@ -45,7 +45,7 @@ SUBID_END=$((SUBID_START + SUBID_COUNT - 1))
 SUBID_RANGE="${SUBID_START}-${SUBID_END}"
 
 info "Adding subordinate ID range ${SUBID_RANGE} for user '${TARGET_USER}'..."
-if usermod --add-subuids "${SUBID_RANGE}" --add-subgids "${SUBID_RANGE}" "${TARGET_USER}"; then
+if sudo usermod --add-subuids "${SUBID_RANGE}" --add-subgids "${SUBID_RANGE}" "${TARGET_USER}"; then
   info "Successfully added subordinate ID entries."
 else
   error "Failed to run usermod. Please check for errors above."
@@ -53,16 +53,16 @@ else
 fi
 
 info "Restarting the '${DAEMON_NAME}' daemon to apply changes..."
-if systemctl restart "${DAEMON_NAME}"; then
+if sudo systemctl restart "${DAEMON_NAME}"; then
   info "Daemon '${DAEMON_NAME}' restarted successfully."
 else
   error "Failed to restart the '${DAEMON_NAME}' daemon. Check its status with:"
-  error "  systemctl status ${DAEMON_NAME}"
-  error "  journalctl -u ${DAEMON_NAME} -n 100"
+  error "  sudo systemctl status ${DAEMON_NAME}"
+  error "  sudo journalctl -u ${DAEMON_NAME} -n 100"
   exit 1
 fi
 
-if systemctl is-active --quiet "${DAEMON_NAME}"; then
+if sudo systemctl is-active --quiet "${DAEMON_NAME}"; then
   echo
   info "${GREEN}Success! The idmap has been configured and the Incus daemon is running.${NC}"
   info "You should now be able to launch containers."
