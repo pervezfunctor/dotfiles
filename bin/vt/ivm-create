@@ -230,16 +230,55 @@ create_vm() {
 }
 
 show_completion_info() {
-    success "VM '$VM_NAME' will be ready in a few minutes!"
-
     echo
-    slog "VM Management:"
-    slog "  Status: ivm status $VM_NAME"
-    slog "  Stop: ivm stop $VM_NAME"
-    slog "  Start: ivm start $VM_NAME"
-    slog "  Delete: ivm delete $VM_NAME"
+    printf '\033[1;32m╭─────────────────────────────────────────────────────────────╮\033[0m\n'
+    printf '\033[1;32m│\033[1;37m                     VM CREATED SUCCESSFULLY!                \033[1;32m│\033[0m\n'
+    printf '\033[1;32m╰─────────────────────────────────────────────────────────────╯\033[0m\n'
+    echo
 
-    slog "Use username: $USER_NAME and password: $PASSWORD to login if needed."
+    printf '\033[1;36m📋 VM INFORMATION:\033[0m\n'
+    printf '\033[0;36m─────────────────\033[0m\n'
+    printf '\033[1mVM Name:\033[0m    \033[0;33m%s\033[0m\n' "$VM_NAME"
+    printf '\033[1mUsername:\033[0m   \033[0;33m%s\033[0m\n' "$USER_NAME"
+    printf '\033[1mPassword:\033[0m   \033[0;33m%s\033[0m\n' "$PASSWORD"
+    echo
+
+    printf '\033[1;36m🔍 STATUS CHECK:\033[0m\n'
+    printf '\033[0;36m─────────────────\033[0m\n'
+    info 'Check if the VM is running with:'
+    info '  ivm status %s' "$VM_NAME"
+    echo
+
+    printf '\033[1;36m🌐 NETWORK ACCESS:\033[0m\n'
+    printf '\033[0;36m─────────────────\033[0m\n'
+    info 'Once the VM is up, get its IP address with:'
+    info '  ivm info %s' "$VM_NAME"
+    echo
+    info 'Then connect to it using SSH:'
+    info '  ssh %s@<IP_ADDRESS>' "$USER_NAME"
+    echo
+
+    printf '\033[1;36m🔧 VM MANAGEMENT:\033[0m\n'
+    printf '\033[0;36m─────────────────\033[0m\n'
+    info 'Stop the VM:'
+    info '  ivm stop %s' "$VM_NAME"
+    echo
+    info 'Start the VM:'
+    info '  ivm start %s' "$VM_NAME"
+    echo
+    info 'Delete the VM:'
+    info '  ivm delete %s' "$VM_NAME"
+    echo
+
+    printf '\033[1;36m🔧 TROUBLESHOOTING:\033[0m\n'
+    printf '\033[0;36m─────────────────\033[0m\n'
+    info 'If you need to access the console:'
+    info '  ivm console %s' "$VM_NAME"
+    printf '  \033[0;90m(Exit with Ctrl+A then Q)\033[0m\n'
+    echo
+
+    success "VM '$VM_NAME' creation process completed successfully!"
+    echo
 }
 
 parse_args() {
