@@ -304,7 +304,7 @@ dbox-docker-dev_mainstall() {
   base_mainstall
   sudo apt purge -y fzf
   si openssh-server micro
-  ssh_password_auth_enable
+  ssh_enable
   docker_confstall
 }
 

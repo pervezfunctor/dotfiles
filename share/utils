@@ -1226,13 +1226,22 @@ _stop_sudo_keepalive() {
   SUDO_KEEPALIVE_PID=""
 }
 
-ssh_password_auth_enable() {
+ssh_enable() {
+  local port="$1"
+
   if ! sudo sed -i -E 's/^#?PasswordAuthentication[[:space:]]+(no|yes)/PasswordAuthentication yes/' /etc/ssh/sshd_config; then
     echo 'PasswordAuthentication yes' | sudo tee -a /etc/ssh/sshd_config >/dev/null
   fi
 
+  if [[ -n "$port" ]]; then
+    if ! sudo sed -i -E "s/^#?Port[[:space:]]+[0-9]+/Port ${port}/" /etc/ssh/sshd_config; then
+      echo "Port ${port}" | sudo tee -a /etc/ssh/sshd_config >/dev/null
+    fi
+  fi
+
   sudo systemctl restart ssh || sudo systemctl restart sshd
 }
+
 
 keep_sudo_running() {
   if ! has_cmd sudo; then
