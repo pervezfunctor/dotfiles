@@ -1257,7 +1257,8 @@ keep_sudo_running() {
   SUDO_KEEPALIVE_PID=$!
   slog "Sudo keep-alive background process started (PID: $SUDO_KEEPALIVE_PID)."
 
-  trap '_stop_sudo_keepalive; dotfiles_log_close' EXIT INT TERM HUP
+  trap '_stop_sudo_keepalive' EXIT INT TERM HUP
+  # trap '_stop_sudo_keepalive; dotfiles_log_close' EXIT INT TERM HUP
 }
 
 download_to() {
