@@ -476,6 +476,8 @@ libvirt_confstall() {
         echo "Failed to create default network" >&2
     fi
     '
+
+  sudo osinfo-db-import --local --latest
 }
 
 atomic_nvim_binstall() {

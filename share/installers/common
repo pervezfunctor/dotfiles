@@ -45,6 +45,8 @@ brew-shell-slim_install() {
     return 1
   fi
 
+  is_linux && brew tap ublue-os/tap
+
   bis gh stow tmux fzf zoxide starship eza
 
   bi bash-preexec

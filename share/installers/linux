@@ -459,7 +459,7 @@ kde_groupstall() {
 
   flathub_install
   kde_confstall
-
+  has_cmd brew && brew install --cask bluefin-wallpapers-plasma-dynamic
 }
 
 # kwin_script_install() {
