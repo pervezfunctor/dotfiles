@@ -384,10 +384,10 @@ status)
     dt_state "$container_name"
     ;;
 create)
-    create_container "${2:-}"
+    create_container "${@:2}"
     ;;
 start)
-    start_container "${2:-}"
+    start_container "$container_name"
     ;;
 stop)
     stop_container "$container_name"
