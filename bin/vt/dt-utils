@@ -3,7 +3,6 @@
 # shellcheck disable=SC1091
 
 source "$DOT_DIR/share/utils"
-source "$(dirname "$0")/vt-utils"
 
 if [[ -z ${DT_ROOT_ARGS+x} ]]; then
   DT_ROOT_ARGS=()
@@ -27,7 +26,7 @@ dt_disable_root_mode() {
 
 dt_exists() {
   local container_name="$1"
-  dt_distrobox list | grep -q "\b${container_name}\b" || return 1
+  dt_distrobox list --no-color | awk -F'|' 'NR>1 {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2}' | grep -q "^${container_name}$" || return 1
 }
 
 dt_check_exists() {
@@ -41,19 +40,19 @@ dt_list() {
   echo
   dt_distrobox list
 
-  if has_cmd podman; then
-    echo
-    echo
-    echo
-    slog "Podman container details:"
-    podman ps -a --filter "label=manager=distrobox" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedHuman}}" 2>/dev/null || true
-  elif has_cmd docker; then
-    echo
-    echo
-    echo
-    slog "Docker container details:"
-    docker ps -a --filter "label=manager=distrobox" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}" 2>/dev/null || true
-  fi
+  # if has_cmd podman; then
+  #   echo
+  #   echo
+  #   echo
+  #   slog "Podman container details:"
+  #   podman ps -a --filter "label=manager=distrobox" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedHuman}}" 2>/dev/null || true
+  # elif has_cmd docker; then
+  #   echo
+  #   echo
+  #   echo
+  #   slog "Docker container details:"
+  #   docker ps -a --filter "label=manager=distrobox" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}" 2>/dev/null || true
+  # fi
 }
 
 dt_state() {
