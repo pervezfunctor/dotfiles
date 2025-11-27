@@ -19,7 +19,7 @@ MEMORY_MB="2048"
 PRIVILEGED="false"
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 --distro DISTRO [OPTIONS]
 
 Create Incus LXC containers with cloud-init and SSH access.
@@ -61,88 +61,88 @@ EOF
 }
 
 configure_distribution() {
-    case "$DISTRO" in
-    ubuntu)
-        RELEASE=${RELEASE:-"plucky"}
-        IMAGE="images:ubuntu/${RELEASE}/cloud"
-        ;;
-    fedora)
-        RELEASE=${RELEASE:-"42"}
-        IMAGE="images:fedora/${RELEASE}/cloud"
-        ;;
-    arch)
-        RELEASE=${RELEASE:-"current"}
-        IMAGE="images:archlinux/${RELEASE}/cloud"
-        ;;
-    debian)
-        RELEASE=${RELEASE:-"13"}
-        IMAGE="images:debian/${RELEASE}/cloud"
-        ;;
-    centos)
-        RELEASE=${RELEASE:-"9-Stream"}
-        IMAGE="images:centos/${RELEASE}/cloud"
-        ;;
-    tumbleweed | tw)
-        RELEASE=${RELEASE:-"current"}
-        IMAGE="images:opensuse/tumbleweed/cloud"
-        ;;
-    alpine)
-        RELEASE=${RELEASE:-"3.22"}
-        IMAGE="images:alpine/${RELEASE}/cloud"
-        ;;
-    *)
-        fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed, alpine"
-        exit 1
-        ;;
-    esac
+  case "$DISTRO" in
+  ubuntu)
+    RELEASE=${RELEASE:-"plucky"}
+    IMAGE="images:ubuntu/${RELEASE}/cloud"
+    ;;
+  fedora)
+    RELEASE=${RELEASE:-"42"}
+    IMAGE="images:fedora/${RELEASE}/cloud"
+    ;;
+  arch)
+    RELEASE=${RELEASE:-"current"}
+    IMAGE="images:archlinux/${RELEASE}/cloud"
+    ;;
+  debian)
+    RELEASE=${RELEASE:-"13"}
+    IMAGE="images:debian/${RELEASE}/cloud"
+    ;;
+  centos)
+    RELEASE=${RELEASE:-"9-Stream"}
+    IMAGE="images:centos/${RELEASE}/cloud"
+    ;;
+  tumbleweed | tw)
+    RELEASE=${RELEASE:-"current"}
+    IMAGE="images:opensuse/tumbleweed/cloud"
+    ;;
+  alpine)
+    RELEASE=${RELEASE:-"3.22"}
+    IMAGE="images:alpine/${RELEASE}/cloud"
+    ;;
+  *)
+    fail "Unsupported distribution: $DISTRO"
+    fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed, alpine"
+    exit 1
+    ;;
+  esac
 
-    CONTAINER_NAME=${CONTAINER_NAME:-"$DISTRO-ct"}
-    USERNAME=${USERNAME:=$(default_username "$DISTRO")}
-    PASSWORD=${PASSWORD:-"$USERNAME"}
-    PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
+  CONTAINER_NAME=${CONTAINER_NAME:-"$DISTRO-ct"}
+  USERNAME=${USERNAME:=$(default_username "$DISTRO")}
+  PASSWORD=${PASSWORD:-"$USERNAME"}
+  PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
-    slog "Configuration:"
-    slog "  Distribution: $DISTRO $RELEASE"
-    slog "  Container Name: $CONTAINER_NAME"
-    slog "  Username: $USERNAME"
-    slog "  Image: $IMAGE"
-    slog "  Resources: ${VCPUS} vCPUs, ${MEMORY_MB}MB RAM"
-    slog "  Privileged: $PRIVILEGED"
+  slog "Configuration:"
+  slog "  Distribution: $DISTRO $RELEASE"
+  slog "  Container Name: $CONTAINER_NAME"
+  slog "  Username: $USERNAME"
+  slog "  Image: $IMAGE"
+  slog "  Resources: ${VCPUS} vCPUs, ${MEMORY_MB}MB RAM"
+  slog "  Privileged: $PRIVILEGED"
 }
 
 generate_cloud_init_config() {
-    slog "Generating cloud-init configuration..."
+  slog "Generating cloud-init configuration..."
 
-    # Create temporary directory for cloud-init files
-    CLOUD_INIT_DIR=$(mktemp -d)
-    trap '[[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]] && rm -rf "$CLOUD_INIT_DIR"' EXIT
+  # Create temporary directory for cloud-init files
+  CLOUD_INIT_DIR=$(mktemp -d)
+  trap '[[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]] && rm -rf "$CLOUD_INIT_DIR"' EXIT
 
-    local pub_key
-    pub_key=$(cat "$SSH_KEY")
+  local pub_key
+  pub_key=$(cat "$SSH_KEY")
 
-    local packages_common="curl wget vim htop git unzip"
-    local openssh_pkg
+  local packages_common="curl wget vim htop git unzip"
+  local openssh_pkg
 
-    if [[ "$DISTRO" == "arch" ]]; then
-        openssh_pkg="openssh"
-    else
-        openssh_pkg="openssh-server"
-    fi
+  if [[ "$DISTRO" == "arch" ]]; then
+    openssh_pkg="openssh"
+  else
+    openssh_pkg="openssh-server"
+  fi
 
-    local runcmd_lines=(
-        "systemctl enable --now ssh || systemctl enable --now sshd || true"
+  local runcmd_lines=(
+    "systemctl enable --now ssh || systemctl enable --now sshd || true"
+  )
+
+  if [[ "$DISTRO" == "alpine" ]]; then
+    runcmd_lines=(
+      "rc-update add sshd default"
+      "service sshd start"
     )
+  fi
 
-    if [[ "$DISTRO" == "alpine" ]]; then
-        runcmd_lines=(
-            "rc-update add sshd default"
-            "service sshd start"
-        )
-    fi
-
-    # Create cloud-init user-data file using tee
-    tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
+  # Create cloud-init user-data file using tee
+  tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
 hostname: $CONTAINER_NAME
 manage_etc_hosts: true
@@ -188,159 +188,159 @@ write_files:
 final_message: "Container $CONTAINER_NAME setup complete! SSH access is ready."
 EOF
 
-    tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
+  tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
 instance-id: ${CONTAINER_NAME}-$(date +%s)
 local-hostname: $CONTAINER_NAME
 EOF
 
-    success "Cloud-init configuration files created in: $CLOUD_INIT_DIR"
+  success "Cloud-init configuration files created in: $CLOUD_INIT_DIR"
 }
 
 create_container() {
-    incus_instance_exists "$CONTAINER_NAME" && die "instance '$CONTAINER_NAME' already exists"
+  incus_instance_exists "$CONTAINER_NAME" && die "instance '$CONTAINER_NAME' already exists"
 
-    slog "Creating Incus LXC container '$CONTAINER_NAME'..."
+  slog "Creating Incus LXC container '$CONTAINER_NAME'..."
 
-    generate_cloud_init_config
+  generate_cloud_init_config
 
-    slog "Launching container with image: $IMAGE"
+  slog "Launching container with image: $IMAGE"
 
-    local launch_args=(
-        "$IMAGE" "$CONTAINER_NAME"
-        --config "limits.cpu=$VCPUS"
-        --config "limits.memory=${MEMORY_MB}MB"
-        --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
-        --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
-    )
+  local launch_args=(
+    "$IMAGE" "$CONTAINER_NAME"
+    --config "limits.cpu=$VCPUS"
+    --config "limits.memory=${MEMORY_MB}MB"
+    --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
+    --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
+  )
 
-    if [[ "$PRIVILEGED" == "true" ]]; then
-        launch_args+=(--config "security.privileged=true")
-        slog "Creating privileged container"
-    elif [[ "$DISTRO" != "ubuntu" && "$DISTRO" != "debian" ]]; then
-        launch_args+=(--config "security.nesting=true")
-    fi
+  if [[ "$PRIVILEGED" == "true" ]]; then
+    launch_args+=(--config "security.privileged=true")
+    slog "Creating privileged container"
+  elif [[ "$DISTRO" != "ubuntu" && "$DISTRO" != "debian" ]]; then
+    launch_args+=(--config "security.nesting=true")
+  fi
 
-    incus launch "${launch_args[@]}" || die "Failed to create container '$CONTAINER_NAME'"
+  incus launch "${launch_args[@]}" || die "Failed to create container '$CONTAINER_NAME'"
 
-    success "Container '$CONTAINER_NAME' created successfully"
+  success "Container '$CONTAINER_NAME' created successfully"
 
-    # Clean up temporary cloud-init directory
-    if [[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]]; then
-        rm -rf "$CLOUD_INIT_DIR"
-        slog "Cleaned up temporary cloud-init files"
-    fi
+  # Clean up temporary cloud-init directory
+  if [[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]]; then
+    rm -rf "$CLOUD_INIT_DIR"
+    slog "Cleaned up temporary cloud-init files"
+  fi
 }
 
 show_completion_info() {
-    success "Container '$CONTAINER_NAME' is ready!"
-    echo
-    slog "Container Details:"
-    incus list "$CONTAINER_NAME"
-    echo
+  success "Container '$CONTAINER_NAME' is ready!"
+  echo
+  slog "Container Details:"
+  incus list "$CONTAINER_NAME"
+  echo
 
-    local ip
-    if ip=$(ict_ip "$CONTAINER_NAME"); then
-        slog "SSH Access:"
-        slog "  IP Address: $ip"
-        slog "  Username: $USERNAME"
-        slog "  SSH Command: ssh $USERNAME@$ip"
-        echo
-        slog "You can also use Incus commands:"
-        slog "  Shell: incus exec $CONTAINER_NAME -- /bin/bash"
-        slog "  Execute: incus exec $CONTAINER_NAME -- <command>"
-    else
-        slog "Use Incus commands to access the container:"
-        slog "  Shell: incus exec $CONTAINER_NAME -- /bin/bash"
-        slog "  Execute: incus exec $CONTAINER_NAME -- <command>"
-    fi
-
+  local ip
+  if ip=$(ict_ip "$CONTAINER_NAME" 2>/dev/null); then
+    slog "SSH Access:"
+    slog "  IP Address: $ip"
+    slog "  Username: $USERNAME"
+    slog "  SSH Command: ssh $USERNAME@$ip"
     echo
-    slog "Container Management:"
-    slog "  Status: ict status $CONTAINER_NAME"
-    slog "  Stop: ict stop $CONTAINER_NAME"
-    slog "  Start: ict start $CONTAINER_NAME"
-    slog "  Delete: ict delete $CONTAINER_NAME"
+    slog "You can also use Incus commands:"
+    slog "  Shell: incus exec $CONTAINER_NAME -- /bin/bash"
+    slog "  Execute: incus exec $CONTAINER_NAME -- <command>"
+  else
+    slog "Use Incus commands to access the container:"
+    slog "  Shell: incus exec $CONTAINER_NAME -- /bin/bash"
+    slog "  Execute: incus exec $CONTAINER_NAME -- <command>"
+  fi
+
+  echo
+  slog "Container Management:"
+  slog "  Status: ict status $CONTAINER_NAME"
+  slog "  Stop: ict stop $CONTAINER_NAME"
+  slog "  Start: ict start $CONTAINER_NAME"
+  slog "  Delete: ict delete $CONTAINER_NAME"
 }
 
 parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-        --distro)
-            DISTRO="$2"
-            shift 2
-            ;;
-        --name)
-            CONTAINER_NAME="$2"
-            shift 2
-            ;;
-        --release)
-            RELEASE="$2"
-            shift 2
-            ;;
-        --username)
-            USERNAME="$2"
-            shift 2
-            ;;
-        --password)
-            PASSWORD="$2"
-            shift 2
-            ;;
-        --vcpus)
-            VCPUS="$2"
-            shift 2
-            ;;
-        --memory)
-            MEMORY_MB="$2"
-            shift 2
-            ;;
-        --ssh-key)
-            SSH_KEY="$2"
-            shift 2
-            ;;
-        --privileged)
-            PRIVILEGED="true"
-            shift
-            ;;
-        --help | -h)
-            usage
-            exit 0
-            ;;
-        *)
-            fail "Unknown option: $1"
-            usage
-            exit 1
-            ;;
-        esac
-    done
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --distro)
+      DISTRO="$2"
+      shift 2
+      ;;
+    --name)
+      CONTAINER_NAME="$2"
+      shift 2
+      ;;
+    --release)
+      RELEASE="$2"
+      shift 2
+      ;;
+    --username)
+      USERNAME="$2"
+      shift 2
+      ;;
+    --password)
+      PASSWORD="$2"
+      shift 2
+      ;;
+    --vcpus)
+      VCPUS="$2"
+      shift 2
+      ;;
+    --memory)
+      MEMORY_MB="$2"
+      shift 2
+      ;;
+    --ssh-key)
+      SSH_KEY="$2"
+      shift 2
+      ;;
+    --privileged)
+      PRIVILEGED="true"
+      shift
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    esac
+  done
 
-    if [[ -z "${DISTRO:-}" ]]; then
-        fail "Distribution is required. Use --distro option."
-        usage
-        exit 1
-    fi
+  if [[ -z "${DISTRO:-}" ]]; then
+    fail "Distribution is required. Use --distro option."
+    usage
+    exit 1
+  fi
 }
 
 main() {
-    slog "Starting Incus LXC container creation..."
+  slog "Starting Incus LXC container creation..."
 
-    incus_check
+  incus_check
 
-    parse_args "$@"
-    if [[ -z "${SSH_KEY:-}" ]]; then
-        SSH_KEY=$(ssh_key_path)
-    fi
+  parse_args "$@"
+  if [[ -z "${SSH_KEY:-}" ]]; then
+    SSH_KEY=$(ssh_key_path)
+  fi
 
-    file_exists "$SSH_KEY" || die "SSH public key not found at: $SSH_KEY"
+  file_exists "$SSH_KEY" || die "SSH public key not found at: $SSH_KEY"
 
-    configure_distribution
-    create_container
-    show_completion_info
+  configure_distribution
+  create_container
+  show_completion_info
 
-    success "All done! Your $DISTRO container '$CONTAINER_NAME' is ready to use."
-    slog "Use username: $USERNAME and password: $PASSWORD to login."
+  success "All done! Your $DISTRO container '$CONTAINER_NAME' is ready to use."
+  slog "Use username: $USERNAME and password: $PASSWORD to login."
 }
 
 # Only run main if script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
+  main "$@"
 fi

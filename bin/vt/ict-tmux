@@ -12,7 +12,7 @@ ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tumbleweed")
 SESSION_NAME="ICT_TMUX"
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $(basename "$0") [OPTION]
 
 Manage a tmux session with SSH connections to Incus LXC containers.
@@ -34,57 +34,57 @@ EOF
 }
 
 create_session() {
-    tmux_session "$SESSION_NAME" "$1"
+  tmux_session "$SESSION_NAME" "$1"
 
-    slog "Creating tmux session '$SESSION_NAME' with SSH connections to Incus containers..."
+  slog "Creating tmux session '$SESSION_NAME' with SSH connections to Incus containers..."
 
-    local ssh_cmds=()
-    create_commands ssh_cmds "ict" "${ICT_DISTRO_LIST[@]}"
+  local ssh_cmds=()
+  create_commands ssh_cmds "ict" "${ICT_DISTRO_LIST[@]}"
 
-    start_sessions "ict" "${ICT_DISTRO_LIST[@]}"
+  start_sessions "ict" "${ICT_DISTRO_LIST[@]}"
 
-    if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
-        fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to containers."
-        return 1
-    fi
+  if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
+    fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to containers."
+    return 1
+  fi
 
-    if ! tmux attach-session -t "$SESSION_NAME"; then
-        fail "Failed to attach to tmux session '$SESSION_NAME'."
-        return 1
-    fi
+  if ! tmux attach-session -t "$SESSION_NAME"; then
+    fail "Failed to attach to tmux session '$SESSION_NAME'."
+    return 1
+  fi
 }
 
 main() {
-    ict_check_prerequisites
-    check_tmux
+  ict_check_prerequisites
+  check_tmux
 
-    local command="${1:-}"
+  local command="${1:-}"
 
-    case "$command" in
-    create)
-        create_session "true"
-        ;;
-    attach)
-        attach_session "$SESSION_NAME"
-        ;;
-    detach)
-        detach_session "$SESSION_NAME"
-        ;;
-    destroy)
-        destroy_session "$SESSION_NAME"
-        ;;
-    help | --help | -h)
-        usage
-        ;;
-    "")
-        create_session "true"
-        ;;
-    *)
-        fail "Unknown option: $command"
-        usage
-        exit 1
-        ;;
-    esac
+  case "$command" in
+  create)
+    create_session "true"
+    ;;
+  attach)
+    attach_session "$SESSION_NAME"
+    ;;
+  detach)
+    detach_session "$SESSION_NAME"
+    ;;
+  destroy)
+    destroy_session "$SESSION_NAME"
+    ;;
+  help | --help | -h)
+    usage
+    ;;
+  "")
+    create_session "true"
+    ;;
+  *)
+    fail "Unknown option: $command"
+    usage
+    exit 1
+    ;;
+  esac
 }
 
 main "$@"

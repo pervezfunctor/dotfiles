@@ -7,7 +7,7 @@
 source "$(dirname "$0")/incus-utils"
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 <command> [container-name] [args...]
 
 Manage Incus LXC containers similar to other container management tools.
@@ -17,10 +17,10 @@ COMMANDS:
     list-remote-images      List all remote images available for container creation
     status <name>           Show container status and info
     create [ict-create args]  Create a new Incus container (forwards all args to ict-create)
-    start <name>            Start a container
-    stop <name>             Stop a container
-    restart <name>          Restart a container
-    delete <name>           Delete a container completely
+    start [name...]         Start container(s) - if no names provided, select from list
+    stop [name...]          Stop container(s) - if no names provided, select from list
+    restart [name...]       Restart container(s) - if no names provided, select from list
+    delete [name...]        Delete container(s) - if no names provided, select from list
     shell <name>            Enter container shell
     exec <name> <cmd>       Execute command in container
     ip <name>               Get container IP address
@@ -55,426 +55,466 @@ EXAMPLES:
     $0 usb-attach ubuntu 1234:5678  # Attach USB device to container
     $0 usb-detach ubuntu my-usb     # Detach USB device from container
 
+    # Multi-container operations:
+    $0 start ubuntu fedora          # Start multiple containers
+    $0 stop                         # Select containers to stop from menu
+    $0 restart ubuntu               # Restart single container
+    $0 delete ubuntu fedora arch     # Delete multiple containers
+
 EOF
 }
 
 container_status() {
-    local container_name="$1"
-    ict_check_exists "$container_name"
+  local container_name="$1"
+  ict_check_exists "$container_name"
 
-    slog "Status for container '$container_name':"
-    echo
-    incus list type=container "$container_name"
-    echo
+  slog "Status for container '$container_name':"
+  echo
+  incus list type=container "$container_name"
+  echo
 
-    slog "Detailed information:"
-    incus info "$container_name" | head -20
+  slog "Detailed information:"
+  incus info "$container_name" | head -20
 }
 
 create_container() {
-    ict-create "$@"
+  ict-create "$@"
 }
 
 start_container() {
-    local container_name="$1"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
 
-    ict_check_running "$container_name" && {
-        warn "Container '$container_name' is already running"
-        return 0
-    }
+  ict_check_running "$container_name" && {
+    warn "Container '$container_name' is already running"
+    return 0
+  }
 
-    slog "Starting container '$container_name'..."
-    if incus start "$container_name"; then
-        success "Container '$container_name' started"
-        sleep 1
-        incus list type=container "$container_name"
-    else
-        fail "Failed to start container '$container_name'"
-        return 1
-    fi
+  slog "Starting container '$container_name'..."
+  if incus start "$container_name"; then
+    success "Container '$container_name' started"
+    sleep 1
+    incus list type=container "$container_name"
+  else
+    fail "Failed to start container '$container_name'"
+    return 1
+  fi
 }
 
 stop_container() {
-    local container_name="$1"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
 
-    ict_check_running "$container_name" || return 0
+  ict_check_running "$container_name" || return 0
 
-    slog "Stopping container '$container_name'..."
-    if incus stop "$container_name"; then
-        success "Container '$container_name' stopped"
-    else
-        fail "Failed to stop container '$container_name'"
-        return 1
-    fi
+  slog "Stopping container '$container_name'..."
+  if incus stop "$container_name"; then
+    success "Container '$container_name' stopped"
+  else
+    fail "Failed to stop container '$container_name'"
+    return 1
+  fi
 }
 
 restart_container() {
-    local container_name="$1"
-    ict_check_exists "$container_name" || return 1
-    ict_check_running "$container_name" || return 0
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
+  ict_check_running "$container_name" || return 0
 
-    slog "Restarting container '$container_name'..."
-    if incus restart "$container_name"; then
-        success "Container '$container_name' restarted"
-        sleep 2
-        incus list type=container "$container_name"
-    else
-        fail "Failed to restart container '$container_name'"
-        return 1
-    fi
+  slog "Restarting container '$container_name'..."
+  if incus restart "$container_name"; then
+    success "Container '$container_name' restarted"
+    sleep 2
+    incus list type=container "$container_name"
+  else
+    fail "Failed to restart container '$container_name'"
+    return 1
+  fi
 }
 
 delete_container() {
-    local container_name="$1"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
 
-    warn "This will permanently delete container '$container_name' and all its data!"
-    read -p "Are you sure? (y/N): " -r
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        slog "Deletion cancelled"
-        return 0
-    fi
+  warn "This will permanently delete container '$container_name' and all its data!"
+  read -p "Are you sure? (y/N): " -r
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    slog "Deletion cancelled"
+    return 0
+  fi
 
-    if ict_running "$container_name"; then
-        slog "Stopping container first..."
-        incus stop "$container_name" --force
-    fi
+  if ict_running "$container_name"; then
+    slog "Stopping container first..."
+    incus stop "$container_name" --force
+  fi
 
-    slog "Deleting container '$container_name'..."
-    if incus delete "$container_name"; then
-        success "Container '$container_name' deleted successfully"
-    else
-        fail "Failed to delete container '$container_name'"
-        return 1
-    fi
+  slog "Deleting container '$container_name'..."
+  if incus delete "$container_name"; then
+    success "Container '$container_name' deleted successfully"
+  else
+    fail "Failed to delete container '$container_name'"
+    return 1
+  fi
 }
 
 detect_container_user() {
-    local container_name="$1"
+  local container_name="$1"
 
-    # Auto-detect username based on container name patterns
-    case "$container_name" in
-    ubuntu*) echo "ubuntu" ;;
-    fedora*) echo "fedora" ;;
-    centos*) echo "centos" ;;
-    debian*) echo "debian" ;;
-    arch*) echo "arch" ;;
-    tumbleweed* | tw*) echo "opensuse" ;;
-    *)
-        fail "Could not auto-detect username for container '$container_name'. Use 'ict shell $container_name <username>' instead."
-        return 1
-        ;;
-    esac
+  # Auto-detect username based on container name patterns
+  case "$container_name" in
+  ubuntu*) echo "ubuntu" ;;
+  fedora*) echo "fedora" ;;
+  centos*) echo "centos" ;;
+  debian*) echo "debian" ;;
+  arch*) echo "arch" ;;
+  tumbleweed* | tw*) echo "opensuse" ;;
+  *)
+    fail "Could not auto-detect username for container '$container_name'. Use 'ict shell $container_name <username>' instead."
+    return 1
+    ;;
+  esac
 }
 
 enter_shell() {
-    local container_name="$1"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
 
-    ict_check_running "$container_name" || return 1
+  ict_check_running "$container_name" || return 1
 
-    # Try to find an appropriate user for this container
-    local username
-    username=$(detect_container_user "$container_name")
+  # Try to find an appropriate user for this container
+  local username
+  username=$(detect_container_user "$container_name")
 
-    # Check if the detected user exists in the container
-    if incus exec "$container_name" -- id "$username" >/dev/null 2>&1; then
-        slog "Entering shell of container '$container_name' as user '$username'..."
-        incus exec "$container_name" -- su - "$username"
-    else
-        # Fall back to root if no suitable user found
-        slog "No suitable user found, entering shell of container '$container_name' as root..."
-        incus shell "$container_name"
-    fi
+  # Check if the detected user exists in the container
+  if incus exec "$container_name" -- id "$username" >/dev/null 2>&1; then
+    slog "Entering shell of container '$container_name' as user '$username'..."
+    incus exec "$container_name" -- su - "$username"
+  else
+    # Fall back to root if no suitable user found
+    slog "No suitable user found, entering shell of container '$container_name' as root..."
+    incus shell "$container_name"
+  fi
 }
 
 exec_in_container() {
-    local container_name="$1"
-    shift
-    local command="$*"
-    ict_check_exists "$container_name" || return 1
-    ict_check_running "$container_name" || return 1
+  local container_name="$1"
+  shift
+  local command="$*"
+  ict_check_exists "$container_name" || return 1
+  ict_check_running "$container_name" || return 1
 
-    slog "Executing command in container '$container_name': $command"
-    incus exec "$container_name" -- "$@"
+  slog "Executing command in container '$container_name': $command"
+  incus exec "$container_name" -- "$@"
 }
 
 show_container_info() {
-    local container_name="$1"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
 
-    slog "Detailed information for container '$container_name':"
-    echo
-    incus info "$container_name"
+  slog "Detailed information for container '$container_name':"
+  echo
+  incus info "$container_name"
 }
 
 show_container_config() {
-    local container_name="$1"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
 
-    slog "Configuration for container '$container_name':"
-    echo
-    incus config show "$container_name"
+  slog "Configuration for container '$container_name':"
+  echo
+  incus config show "$container_name"
 }
 
 show_logs() {
-    local container_name="$1"
-    local log_type="${2:-console}"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  local log_type="${2:-console}"
+  ict_check_exists "$container_name" || return 1
 
-    local state
-    state=$(ict_state "$container_name")
+  local state
+  state=$(ict_state "$container_name")
 
-    case "$log_type" in
-    console)
-        slog "Showing console logs for container '$container_name'..."
-        echo
-        incus console "$container_name" --show-log
-        ;;
-    instance)
-        slog "Showing instance logs for container '$container_name'..."
-        echo
-        incus info "$container_name" --show-log
-        ;;
-    system)
-        if [[ "$state" != "RUNNING" ]]; then
-            fail "Container '$container_name' is not running"
-            slog "Start it with: $0 start $container_name"
-            return 1
-        fi
+  case "$log_type" in
+  console)
+    slog "Showing console logs for container '$container_name'..."
+    echo
+    incus console "$container_name" --show-log
+    ;;
+  instance)
+    slog "Showing instance logs for container '$container_name'..."
+    echo
+    incus info "$container_name" --show-log
+    ;;
+  system)
+    if [[ "$state" != "RUNNING" ]]; then
+      fail "Container '$container_name' is not running"
+      slog "Start it with: $0 start $container_name"
+      return 1
+    fi
 
-        slog "Showing system logs for container '$container_name'..."
-        echo
+    slog "Showing system logs for container '$container_name'..."
+    echo
 
-        slog "=== Recent system messages (journalctl) ==="
-        incus exec "$container_name" -- journalctl --no-pager -n 50 2>/dev/null || {
-            slog "=== System log (/var/log/syslog) ==="
-            incus exec "$container_name" -- tail -50 /var/log/syslog 2>/dev/null || {
-                slog "=== System messages (/var/log/messages) ==="
-                incus exec "$container_name" -- tail -50 /var/log/messages 2>/dev/null || {
-                    warn "Could not read system logs - container may not have systemd or standard log files"
-                }
-            }
+    slog "=== Recent system messages (journalctl) ==="
+    incus exec "$container_name" -- journalctl --no-pager -n 50 2>/dev/null || {
+      slog "=== System log (/var/log/syslog) ==="
+      incus exec "$container_name" -- tail -50 /var/log/syslog 2>/dev/null || {
+        slog "=== System messages (/var/log/messages) ==="
+        incus exec "$container_name" -- tail -50 /var/log/messages 2>/dev/null || {
+          warn "Could not read system logs - container may not have systemd or standard log files"
         }
-        ;;
-    *)
-        fail "Unknown log type: $log_type"
-        slog "Available log types: instance, console, system"
-        return 1
-        ;;
-    esac
+      }
+    }
+    ;;
+  *)
+    fail "Unknown log type: $log_type"
+    slog "Available log types: instance, console, system"
+    return 1
+    ;;
+  esac
 }
 
 create_snapshot() {
-    local container_name="$1"
-    local snapshot_name="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  local snapshot_name="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
+  ict_check_exists "$container_name" || return 1
 
-    slog "Creating snapshot '$snapshot_name' for container '$container_name'..."
-    if incus snapshot "$container_name" "$snapshot_name"; then
-        success "Snapshot '$snapshot_name' created successfully"
-    else
-        fail "Failed to create snapshot '$snapshot_name'"
-        return 1
-    fi
+  slog "Creating snapshot '$snapshot_name' for container '$container_name'..."
+  if incus snapshot "$container_name" "$snapshot_name"; then
+    success "Snapshot '$snapshot_name' created successfully"
+  else
+    fail "Failed to create snapshot '$snapshot_name'"
+    return 1
+  fi
 }
 
 restore_snapshot() {
-    local container_name="$1"
-    local snapshot_name="$2"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  local snapshot_name="$2"
+  ict_check_exists "$container_name" || return 1
 
-    if [[ -z "$snapshot_name" ]]; then
-        fail "Snapshot name required"
-        return 1
-    fi
+  if [[ -z "$snapshot_name" ]]; then
+    fail "Snapshot name required"
+    return 1
+  fi
 
-    warn "This will restore container '$container_name' to snapshot '$snapshot_name'"
-    warn "All changes since the snapshot will be lost!"
-    read -p "Are you sure? (y/N): " -r
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        slog "Restore cancelled"
-        return 0
-    fi
+  warn "This will restore container '$container_name' to snapshot '$snapshot_name'"
+  warn "All changes since the snapshot will be lost!"
+  read -p "Are you sure? (y/N): " -r
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    slog "Restore cancelled"
+    return 0
+  fi
 
-    slog "Restoring container '$container_name' from snapshot '$snapshot_name'..."
-    if incus restore "$container_name" "$snapshot_name"; then
-        success "Container '$container_name' restored from snapshot '$snapshot_name'"
-    else
-        fail "Failed to restore container '$container_name' from snapshot '$snapshot_name'"
-        return 1
-    fi
+  slog "Restoring container '$container_name' from snapshot '$snapshot_name'..."
+  if incus restore "$container_name" "$snapshot_name"; then
+    success "Container '$container_name' restored from snapshot '$snapshot_name'"
+  else
+    fail "Failed to restore container '$container_name' from snapshot '$snapshot_name'"
+    return 1
+  fi
 }
 
 copy_container() {
-    local source_container="$1"
-    local dest_container="$2"
-    ict_check_exists "$source_container" || return 1
-    ict_check_exists "$dest_container" && {
-        fail "Destination container '$dest_container' already exists"
-        return 1
-    }
+  local source_container="$1"
+  local dest_container="$2"
+  ict_check_exists "$source_container" || return 1
+  ict_check_exists "$dest_container" && {
+    fail "Destination container '$dest_container' already exists"
+    return 1
+  }
 
-    if [[ -z "$dest_container" ]]; then
-        fail "Destination container name required"
-        return 1
-    fi
+  if [[ -z "$dest_container" ]]; then
+    fail "Destination container name required"
+    return 1
+  fi
 
-    if ! incus info "$source_container" >/dev/null 2>&1; then
-        fail "Source container '$source_container' not found"
-        return 1
-    fi
+  if ! incus info "$source_container" >/dev/null 2>&1; then
+    fail "Source container '$source_container' not found"
+    return 1
+  fi
 
-    if incus info "$dest_container" >/dev/null 2>&1; then
-        fail "Destination container '$dest_container' already exists"
-        return 1
-    fi
+  if incus info "$dest_container" >/dev/null 2>&1; then
+    fail "Destination container '$dest_container' already exists"
+    return 1
+  fi
 
-    slog "Copying container '$source_container' to '$dest_container'..."
-    if incus copy "$source_container" "$dest_container"; then
-        success "Container '$source_container' copied to '$dest_container'"
-    else
-        fail "Failed to copy container '$source_container' to '$dest_container'"
-        return 1
-    fi
+  slog "Copying container '$source_container' to '$dest_container'..."
+  if incus copy "$source_container" "$dest_container"; then
+    success "Container '$source_container' copied to '$dest_container'"
+  else
+    fail "Failed to copy container '$source_container' to '$dest_container'"
+    return 1
+  fi
 }
 
 show_container_ip() {
-    local container_name="$1"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
 
-    local ip
-    if ip=$(ict_ip "$container_name"); then
-        echo "IP: $ip"
-        return 0
-    else
-        local ret=$?
-        case $ret in
-        1)
-            fail "Container '$container_name' not found"
-            return 1
-            ;;
-        2)
-            fail "Container '$container_name' is not running"
-            slog "Start it with: $0 start $container_name"
-            return 1
-            ;;
-        3)
-            fail "Could not determine IP address for container '$container_name'"
-            slog "Container may still be starting up. Try again in a few moments."
-            return 1
-            ;;
-        *)
-            fail "Unexpected error retrieving IP for container '$container_name'"
-            return 1
-            ;;
-        esac
+  local ip
+  if ip=$(ict_ip "$container_name"); then
+    echo "IP: $ip"
+    return 0
+  else
+    local ret=$?
+    case $ret in
+    1)
+      fail "Container '$container_name' not found"
+      return 1
+      ;;
+    2)
+      fail "Container '$container_name' is not running"
+      slog "Start it with: $0 start $container_name"
+      return 1
+      ;;
+    3)
+      fail "Could not determine IP address for container '$container_name'"
+      slog "Container may still be starting up. Try again in a few moments."
+      return 1
+      ;;
+    *)
+      fail "Unexpected error retrieving IP for container '$container_name'"
+      return 1
+      ;;
+    esac
+  fi
+}
+
+handle_multi() {
+  local cmd
+  cmd="$1"
+  shift
+
+  local -a containers=("$@")
+
+  if [[ ${#containers[@]} -eq 0 ]]; then
+    local all_containers
+    all_containers=$(incus list type=container --format csv --columns n | grep -v '^$' || true)
+
+    local container_array
+    readarray -t container_array <<<"$all_containers"
+
+    if [[ ${#container_array[@]} -eq 0 ]]; then
+      fail "No containers found. Please create a container first."
+      exit 1
     fi
+
+    readarray -t containers <<<"$(select-multi "Select containers to $cmd:" "${container_array[@]}")"
+
+    if [[ -z "${containers[*]}" ]] || [[ ${#containers[@]} -eq 0 ]]; then
+      fail "No containers selected. Quitting."
+      exit 1
+    fi
+
+    echo "Selected containers: ${containers[*]}"
+  fi
+
+  for container in "${containers[@]}"; do
+    "${cmd}_container" "$container"
+  done
 }
 
 # Main command handling
 # USB device management functions
 list_host_usb_devices() {
-    slog "Available USB devices on host:"
-    echo
-    printf "%-3s %-6s %-9s %s\n" "Bus" "Device" "ID" "Description"
-    printf "%-3s %-6s %-9s %s\n" "---" "------" "---------" "-----------"
+  slog "Available USB devices on host:"
+  echo
+  printf "%-3s %-6s %-9s %s\n" "Bus" "Device" "ID" "Description"
+  printf "%-3s %-6s %-9s %s\n" "---" "------" "---------" "-----------"
 
-    while IFS= read -r line; do
-        if [[ "$line" =~ ^Bus\ ([0-9]+)\ Device\ ([0-9]+):\ ID\ ([0-9a-f]{4}):([0-9a-f]{4})\ (.*)$ ]]; then
-            local bus="${BASH_REMATCH[1]}"
-            local device="${BASH_REMATCH[2]}"
-            local vendor="${BASH_REMATCH[3]}"
-            local product="${BASH_REMATCH[4]}"
-            local description="${BASH_REMATCH[5]}"
-            printf "%-3s %-6s %s:%s %s\n" "$bus" "$device" "$vendor" "$product" "$description"
-        fi
-    done < <(lsusb)
-    echo
-    slog "Usage examples:"
-    slog "  By USB ID: $0 usb-attach CONTAINER_NAME vendor:product"
-    slog "  By Bus/Device: $0 usb-attach CONTAINER_NAME bus.device"
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^Bus\ ([0-9]+)\ Device\ ([0-9]+):\ ID\ ([0-9a-f]{4}):([0-9a-f]{4})\ (.*)$ ]]; then
+      local bus="${BASH_REMATCH[1]}"
+      local device="${BASH_REMATCH[2]}"
+      local vendor="${BASH_REMATCH[3]}"
+      local product="${BASH_REMATCH[4]}"
+      local description="${BASH_REMATCH[5]}"
+      printf "%-3s %-6s %s:%s %s\n" "$bus" "$device" "$vendor" "$product" "$description"
+    fi
+  done < <(lsusb)
+  echo
+  slog "Usage examples:"
+  slog "  By USB ID: $0 usb-attach CONTAINER_NAME vendor:product"
+  slog "  By Bus/Device: $0 usb-attach CONTAINER_NAME bus.device"
 }
 
 list_container_usb_devices() {
-    local container_name="$1"
-    ict_check_exists "$container_name" || return 1
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
 
-    slog "USB devices attached to container '$container_name':"
-    echo
-    incus config device list "$container_name" | grep -E "^usb" || {
-        slog "No USB devices attached to container '$container_name'"
-    }
+  slog "USB devices attached to container '$container_name':"
+  echo
+  incus config device list "$container_name" | grep -E "^usb" || {
+    slog "No USB devices attached to container '$container_name'"
+  }
 }
 
 attach_usb_device() {
-    local container_name="$1"
-    local device_spec="$2"
-    local device_name="${3:-usb-$(date +%s)}"
+  local container_name="$1"
+  local device_spec="$2"
+  local device_name="${3:-usb-$(date +%s)}"
 
-    ict_check_exists "$container_name" || return 1
+  ict_check_exists "$container_name" || return 1
 
-    local state
-    state=$(ict_state "$container_name")
+  local state
+  state=$(ict_state "$container_name")
 
-    if [[ "$state" != "RUNNING" ]]; then
-        fail "Container '$container_name' must be running to attach USB devices"
-        slog "Start it with: $0 start $container_name"
-        return 1
-    fi
+  if [[ "$state" != "RUNNING" ]]; then
+    fail "Container '$container_name' must be running to attach USB devices"
+    slog "Start it with: $0 start $container_name"
+    return 1
+  fi
 
-    # Parse device specification
-    local vendor_id product_id bus device
-    if [[ "$device_spec" =~ ^([0-9a-f]{4}):([0-9a-f]{4})$ ]]; then
-        vendor_id="${BASH_REMATCH[1]}"
-        product_id="${BASH_REMATCH[2]}"
-        slog "Attaching USB device $vendor_id:$product_id to container '$container_name' as '$device_name'..."
-        incus config device add "$container_name" "$device_name" usb vendorid="$vendor_id" productid="$product_id"
-    elif [[ "$device_spec" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
-        bus="${BASH_REMATCH[1]}"
-        device="${BASH_REMATCH[2]}"
-        slog "Attaching USB device bus $bus device $device to container '$container_name' as '$device_name'..."
-        incus config device add "$container_name" "$device_name" usb busnum="$bus" devnum="$device"
-    else
-        fail "Invalid device specification: $device_spec"
-        slog "Use format: vendor:product (e.g., 1234:5678) or bus.device (e.g., 1.2)"
-        return 1
-    fi
+  # Parse device specification
+  local vendor_id product_id bus device
+  if [[ "$device_spec" =~ ^([0-9a-f]{4}):([0-9a-f]{4})$ ]]; then
+    vendor_id="${BASH_REMATCH[1]}"
+    product_id="${BASH_REMATCH[2]}"
+    slog "Attaching USB device $vendor_id:$product_id to container '$container_name' as '$device_name'..."
+    incus config device add "$container_name" "$device_name" usb vendorid="$vendor_id" productid="$product_id"
+  elif [[ "$device_spec" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+    bus="${BASH_REMATCH[1]}"
+    device="${BASH_REMATCH[2]}"
+    slog "Attaching USB device bus $bus device $device to container '$container_name' as '$device_name'..."
+    incus config device add "$container_name" "$device_name" usb busnum="$bus" devnum="$device"
+  else
+    fail "Invalid device specification: $device_spec"
+    slog "Use format: vendor:product (e.g., 1234:5678) or bus.device (e.g., 1.2)"
+    return 1
+  fi
 
-    if [[ $? -eq 0 ]]; then
-        success "USB device attached successfully as '$device_name'"
-    else
-        fail "Failed to attach USB device"
-        return 1
-    fi
+  if [[ $? -eq 0 ]]; then
+    success "USB device attached successfully as '$device_name'"
+  else
+    fail "Failed to attach USB device"
+    return 1
+  fi
 }
 
 detach_usb_device() {
-    local container_name="$1"
-    local device_name="$2"
+  local container_name="$1"
+  local device_name="$2"
 
-    ict_check_exists "$container_name" || return 1
+  ict_check_exists "$container_name" || return 1
 
-    slog "Detaching USB device '$device_name' from container '$container_name'..."
-    if incus config device remove "$container_name" "$device_name"; then
-        success "USB device '$device_name' detached successfully"
-    else
-        fail "Failed to detach USB device '$device_name'"
-        return 1
-    fi
+  slog "Detaching USB device '$device_name' from container '$container_name'..."
+  if incus config device remove "$container_name" "$device_name"; then
+    success "USB device '$device_name' detached successfully"
+  else
+    fail "Failed to detach USB device '$device_name'"
+    return 1
+  fi
 }
 
 list_remote_images() {
-    slog "Listing all remote images available for container creation..."
-    echo
-    incus image list images: --format csv | grep cloud | cut -d',' -f1
+  slog "Listing all remote images available for container creation..."
+  echo
+  incus image list images: --format csv | grep cloud | cut -d',' -f1
 }
 
 if [[ $# -eq 0 ]]; then
-    usage
-    exit 1
+  usage
+  exit 1
 fi
 
 command="$1"
@@ -484,194 +524,174 @@ incus_check
 
 case "$command" in
 list)
-    ict_list
-    ;;
+  ict_list
+  ;;
 list-remote-images)
-    list_remote_images
-    ;;
+  list_remote_images
+  ;;
 status)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    container_status "$container_name"
-    ;;
-create)
-    create_container "${@:2}"
-    ;;
-start)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    start_container "$container_name"
-    ;;
-stop)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    stop_container "$container_name"
-    ;;
-restart)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    restart_container "$container_name"
-    ;;
-delete)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    delete_container "$container_name"
-    ;;
-shell)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    enter_shell "$container_name"
-    ;;
-exec)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    [[ $# -lt 3 ]] && {
-        fail "Command required"
-        usage
-        exit 1
-    }
-    exec_in_container "$container_name" "${@:3}"
-    ;;
-ip)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    show_container_ip "$container_name"
-    ;;
-ssh)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    ict_ssh "$container_name" "${3:-}"
-    ;;
-info)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    show_container_info "$container_name"
-    ;;
-config)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    show_container_config "$container_name"
-    ;;
-logs)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    show_logs "$container_name" "${3:-}"
-    ;;
-snapshot)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    create_snapshot "$container_name" "${3:-}"
-    ;;
-restore)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    [[ -z "${3:-}" ]] && {
-        fail "Snapshot name required"
-        usage
-        exit 1
-    }
-    restore_snapshot "$container_name" "$3"
-    ;;
-copy)
-    [[ -z "$container_name" ]] && {
-        fail "Source container name required"
-        usage
-        exit 1
-    }
-    [[ -z "${3:-}" ]] && {
-        fail "Destination container name required"
-        usage
-        exit 1
-    }
-    copy_container "$container_name" "$3"
-    ;;
-usb-list)
-    list_host_usb_devices
-    ;;
-usb-attached)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    list_container_usb_devices "$container_name"
-    ;;
-usb-attach)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    device_spec="${3:-}"
-    [[ -z "$device_spec" ]] && {
-        fail "Device specification required"
-        usage
-        exit 1
-    }
-    attach_usb_device "$container_name" "$device_spec" "${4:-}"
-    ;;
-usb-detach)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    device_name="${3:-}"
-    [[ -z "$device_name" ]] && {
-        fail "Device name required"
-        usage
-        exit 1
-    }
-    detach_usb_device "$container_name" "$device_name"
-    ;;
---help | -h)
-    usage
-    ;;
-*)
-    fail "Unknown command: $command"
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
     usage
     exit 1
-    ;;
+  }
+  container_status "$container_name"
+  ;;
+create)
+  create_container "${@:2}"
+  ;;
+start)
+  handle_multi start "${@:2}"
+  ;;
+stop)
+  handle_multi stop "${@:2}"
+  ;;
+restart)
+  handle_multi restart "${@:2}"
+  ;;
+delete)
+  handle_multi delete "${@:2}"
+  ;;
+shell)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  enter_shell "$container_name"
+  ;;
+exec)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  [[ $# -lt 3 ]] && {
+    fail "Command required"
+    usage
+    exit 1
+  }
+  exec_in_container "$container_name" "${@:3}"
+  ;;
+ip)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  show_container_ip "$container_name"
+  ;;
+ssh)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  ict_ssh "$container_name" "${3:-}"
+  ;;
+info)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  show_container_info "$container_name"
+  ;;
+config)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  show_container_config "$container_name"
+  ;;
+logs)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  show_logs "$container_name" "${3:-}"
+  ;;
+snapshot)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  create_snapshot "$container_name" "${3:-}"
+  ;;
+restore)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  [[ -z "${3:-}" ]] && {
+    fail "Snapshot name required"
+    usage
+    exit 1
+  }
+  restore_snapshot "$container_name" "$3"
+  ;;
+copy)
+  [[ -z "$container_name" ]] && {
+    fail "Source container name required"
+    usage
+    exit 1
+  }
+  [[ -z "${3:-}" ]] && {
+    fail "Destination container name required"
+    usage
+    exit 1
+  }
+  copy_container "$container_name" "$3"
+  ;;
+usb-list)
+  list_host_usb_devices
+  ;;
+usb-attached)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  list_container_usb_devices "$container_name"
+  ;;
+usb-attach)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  device_spec="${3:-}"
+  [[ -z "$device_spec" ]] && {
+    fail "Device specification required"
+    usage
+    exit 1
+  }
+  attach_usb_device "$container_name" "$device_spec" "${4:-}"
+  ;;
+usb-detach)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  device_name="${3:-}"
+  [[ -z "$device_name" ]] && {
+    fail "Device name required"
+    usage
+    exit 1
+  }
+  detach_usb_device "$container_name" "$device_name"
+  ;;
+--help | -h)
+  usage
+  ;;
+*)
+  fail "Unknown command: $command"
+  usage
+  exit 1
+  ;;
 esac

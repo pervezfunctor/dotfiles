@@ -10,98 +10,98 @@ source "$(dirname "$0")/all-utils"
 ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tumbleweed")
 
 all_list() {
-    slog "Listing all Incus LXC containers..."
+  slog "Listing all Incus LXC containers..."
 
-    for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ict_exists "${ct}-ict"; then
-            incus list "${ct}-ict" --format=compact --columns=ns4
-            echo
-        else
-            echo
-            slog "Container: ${ct}-ict does not exist"
-            echo
-        fi
-    done
-
-    if ! incus list type=container --format=compact --columns=ns4; then
-        fail "Failed to list containers. Ensure Incus is running."
-        exit 1
+  for ct in "${ICT_DISTRO_LIST[@]}"; do
+    if ict_exists "${ct}-ict"; then
+      incus list "${ct}-ict" --format=compact --columns=ns4
+      echo
+    else
+      echo
+      slog "Container: ${ct}-ict does not exist"
+      echo
     fi
+  done
 
-    slog "You can access them using: ict ssh <container-name>"
+  if ! incus list type=container --format=compact --columns=ns4; then
+    fail "Failed to list containers. Ensure Incus is running."
+    exit 1
+  fi
+
+  slog "You can access them using: ict ssh <container-name>"
 }
 
 ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tumbleweed")
 
 all_create() {
-    slog "Creating Incus LXC containers (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
+  slog "Creating Incus LXC containers (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
 
-    for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ! ict_exists "${ct}-ict"; then
-            slog "Creating container: ${ct}-ict"
-            ict-create --distro "$ct" --name "${ct}-ict"
-        fi
-    done
+  for ct in "${ICT_DISTRO_LIST[@]}"; do
+    if ! ict_exists "${ct}-ict"; then
+      slog "Creating container: ${ct}-ict"
+      ict-create --distro "$ct" --name "${ct}-ict"
+    fi
+  done
 
-    slog "Listing created containers:"
-    incus list type=container
+  slog "Listing created containers:"
+  incus list type=container
 
-    success "All containers created successfully!"
-    slog "You can access them using: ict ssh <container-name>"
+  success "All containers created successfully!"
+  slog "You can access them using: ict ssh <container-name>"
 }
 
 all_delete() {
-    slog "Deleting all containers..."
-    for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ict_exists "${ct}-ict"; then
-            slog "Deleting container: ${ct}-ict"
-            ict delete "${ct}-ict"
-        fi
-    done
-    success "All containers deleted successfully!"
+  slog "Deleting all containers..."
+  for ct in "${ICT_DISTRO_LIST[@]}"; do
+    if ict_exists "${ct}-ict"; then
+      slog "Deleting container: ${ct}-ict"
+      ict delete "${ct}-ict"
+    fi
+  done
+  success "All containers deleted successfully!"
 }
 
 all_start() {
-    slog "Starting all containers..."
-    for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ict_exists "${ct}-ict"; then
-            slog "Starting container: ${ct}-ict"
-            ict start "${ct}-ict"
-        fi
-    done
-    success "All containers started successfully!"
+  slog "Starting all containers..."
+  for ct in "${ICT_DISTRO_LIST[@]}"; do
+    if ict_exists "${ct}-ict"; then
+      slog "Starting container: ${ct}-ict"
+      ict start "${ct}-ict"
+    fi
+  done
+  success "All containers started successfully!"
 }
 
 all_stop() {
-    slog "Stopping all containers..."
-    for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ict_exists "${ct}-ict"; then
-            slog "Stopping container: ${ct}-ict"
-            ict stop "${ct}-ict"
-        fi
-    done
-    success "All containers stopped successfully!"
+  slog "Stopping all containers..."
+  for ct in "${ICT_DISTRO_LIST[@]}"; do
+    if ict_exists "${ct}-ict"; then
+      slog "Stopping container: ${ct}-ict"
+      ict stop "${ct}-ict"
+    fi
+  done
+  success "All containers stopped successfully!"
 }
 
 all_restart() {
-    slog "Restarting all containers..."
-    for ct in "${ICT_DISTRO_LIST[@]}"; do
-        if ict_exists "${ct}-ict"; then
-            slog "Restarting container: ${ct}-ict"
-            ict restart "${ct}-ict"
-            sleep 1
-        fi
-    done
-    success "All containers restarted successfully!"
+  slog "Restarting all containers..."
+  for ct in "${ICT_DISTRO_LIST[@]}"; do
+    if ict_exists "${ct}-ict"; then
+      slog "Restarting container: ${ct}-ict"
+      ict restart "${ct}-ict"
+      sleep 1
+    fi
+  done
+  success "All containers restarted successfully!"
 }
 
 usage() {
-    all_usage "incus" "LXC containers"
+  all_usage "incus" "LXC containers"
 }
 
 main() {
-    incus_check
-    all_parse_args "$@"
+  incus_check
+  all_parse_args "$@"
 }
 
 main "$@"
