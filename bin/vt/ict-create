@@ -43,7 +43,7 @@ EXAMPLES:
     $0 --distro fedora --name my-fedora --vcpus 4 --memory 2048
     $0 --distro debian --username admin --password mypass
     $0 --distro arch --release current --privileged
-    $0 --distro tumbleweed --name opensuse-container --vcpus 2 --memory 2048
+    $0 --distro tw --name opensuse-container --vcpus 2 --memory 2048
 
 SUPPORTED DISTRIBUTIONS:
     ubuntu      - Ubuntu (plucky/25.04) or specified release
@@ -51,7 +51,7 @@ SUPPORTED DISTRIBUTIONS:
     arch        - Arch Linux (current)
     debian      - Debian (13/trixie) or specified release
     centos      - CentOS Stream (9) or specified release
-    tumbleweed  - openSUSE Tumbleweed (rolling release)
+    tw  - openSUSE Tumbleweed (rolling release)
     alpine      - Alpine Linux (latest) or specified release
 
 NOTE: LXC containers are lightweight and share the host kernel.
@@ -82,7 +82,7 @@ configure_distribution() {
         RELEASE=${RELEASE:-"9-Stream"}
         IMAGE="images:centos/${RELEASE}/cloud"
         ;;
-    tumbleweed)
+    tumbleweed | tw)
         RELEASE=${RELEASE:-"current"}
         IMAGE="images:opensuse/tumbleweed/cloud"
         ;;

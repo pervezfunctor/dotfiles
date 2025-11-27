@@ -7,7 +7,7 @@ set -euo pipefail
 source "$(dirname "$0")/dt-utils"
 source "$(dirname "$0")/all-utils"
 
-DT_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "alpine" "tw" "nix" "centos" "rocky" "alpine")
+DT_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "alpine" "tw" "nix" "centos" "rocky")
 
 dt_exists() {
   distrobox list | grep -q "$1" >/dev/null
@@ -18,7 +18,7 @@ check_prerequisites() {
   has_cmd dt || die "dt is not in PATH."
 }
 
-create_all() {
+all_create() {
   slog "Creating Distrobox containers (Ubuntu, Fedora, Arch, Debian, Alpine, Tumbleweed, NixOS)..."
 
   for d in "${DT_DISTRO_LIST[@]}"; do
@@ -37,7 +37,7 @@ create_all() {
   slog "You can access them using: dt enter <container-name>"
 }
 
-delete_all() {
+all_delete() {
   slog "Deleting all containers..."
   for ct in "${DT_DISTRO_LIST[@]}"; do
     if dt_exists "$ct-dt"; then
@@ -48,7 +48,7 @@ delete_all() {
   success "All containers deleted successfully!"
 }
 
-start_all() {
+all_start() {
   slog "Starting all containers..."
   for ct in "${DT_DISTRO_LIST[@]}"; do
     if dt_exists "$ct-dt"; then
@@ -59,7 +59,7 @@ start_all() {
   success "All containers started successfully!"
 }
 
-stop_all() {
+all_stop() {
   slog "Stopping all containers..."
   for ct in "${DT_DISTRO_LIST[@]}"; do
     if dt_exists "$ct-dt"; then
@@ -70,7 +70,7 @@ stop_all() {
   success "All containers stopped successfully!"
 }
 
-restart_all() {
+all_restart() {
   slog "Restarting all containers..."
   for ct in "${DT_DISTRO_LIST[@]}"; do
     if dt_exists "$ct-dt"; then
