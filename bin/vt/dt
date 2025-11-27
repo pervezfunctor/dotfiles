@@ -111,6 +111,7 @@ handle_multi() {
 
 create_dt() {
   local distro="$1"
+  local dt_name="${2:-$distro}"
 
   if dt_exists "$dt_name"; then
     fail "Container '$dt_name' already exists"
@@ -343,8 +344,6 @@ if [[ "$command" != "install" ]]; then
   fi
 fi
 
-dt_name="${1:-}"
-
 case "$command" in
 install)
   install_distrobox
@@ -371,10 +370,10 @@ delete)
   handle_multi delete "$@"
   ;;
 enter)
-  enter_dt "$dt_name"
+  enter_dt "$@"
   ;;
 run)
-  run_in_dt "$dt_name" "${@:3}"
+  run_in_dt "$@"
   ;;
 export)
   [[ -z "${3:-}" ]] && {
@@ -382,19 +381,19 @@ export)
     usage
     exit 1
   }
-  export_app "$dt_name" "${@:3}"
+  export_app "$@"
   ;;
 unexport)
-  unexport_app "$dt_name"
+  unexport_app "$@"
   ;;
 upgrade)
   handle_multi upgrade "$@"
   ;;
 logs)
-  show_logs "$dt_name"
+  show_logs "$@"
   ;;
 logs-tail)
-  tail_logs "$dt_name"
+  tail_logs "$@"
   ;;
 --help | -h)
   usage

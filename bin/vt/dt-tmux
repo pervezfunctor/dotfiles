@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
 
-# shellcheck disable=SC1091
 source "$(dirname "$0")/dt-utils"
+source "$(dirname "$0")/tmux-utils"
 
-DT_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "alpine" "nix")
+DT_DISTRO_LIST=("ubuntu" "arch" "fedora" "tw" "nix" "centos" "alpine")
 
 SESSION_NAME="DT_TMUX"
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $(basename "$0") [OPTION]
 
 Manage a tmux session with connections to distrobox containers.
@@ -32,73 +34,92 @@ EOF
 }
 
 check_distrobox() {
-    has_cmd distrobox || die "distrobox is not installed. Please install it first."
+  has_cmd distrobox || die "distrobox is not installed. Please install it first."
 }
 
 dt_exists() {
-    local container_name="$1"
-    distrobox list | grep -q "^$container_name "
-    return $?
+  local container_name="$1"
+  distrobox list | grep -q "^$container_name "
+  return $?
 }
 
 dt_check_exists() {
-    local container_name="$1"
-    if ! dt_exists "$container_name"; then
-        fail "Container '$container_name' does not exist"
-        return 1
-    fi
-    return 0
+  local container_name="$1"
+  if ! dt_exists "$container_name"; then
+    fail "Container '$container_name' does not exist"
+    return 1
+  fi
+  return 0
+}
+
+create_commands() {
+  if [ "$#" -lt 3 ]; then
+    echo "Usage: create_commands <output_array_name> <prefix> <distro1> ..." >&2
+    return 1
+  fi
+
+  local -n cmds
+  cmds="$1"
+  local cmd_prefix="$2"
+  shift 2
+
+  local -a distro_list=("$@")
+
+  cmds=()
+  for distro in "${distro_list[@]}"; do
+    cmds+=("distrobox enter -nw --clean-path --name ${distro}-${cmd_prefix}")
+  done
 }
 
 create_session() {
-    tmux_session "$SESSION_NAME" "$1"
+  tmux_session "$SESSION_NAME" "$1"
 
-    slog "Creating tmux session '$SESSION_NAME' with SSH connections to Distrobox containers..."
+  slog "Creating tmux session '$SESSION_NAME' with SSH connections to Distrobox containers..."
 
-    local ssh_cmds=()
-    create_commands ssh_cmds "dt" "${DT_DISTRO_LIST[@]}"
+  local ssh_cmds=()
+  create_commands ssh_cmds "dt" "${DT_DISTRO_LIST[@]}"
 
-    start_sessions "dt" "${DT_DISTRO_LIST[@]}"
+  start_sessions "dt" "${DT_DISTRO_LIST[@]}"
 
-    if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
-        fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to containers."
-        return 1
-    fi
+  if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
+    fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to containers."
+    return 1
+  fi
 
-    if ! tmux attach-session -t "$SESSION_NAME"; then
-        fail "Failed to attach to tmux session '$SESSION_NAME'."
-        return 1
-    fi
+  if ! tmux attach-session -t "$SESSION_NAME"; then
+    fail "Failed to attach to tmux session '$SESSION_NAME'."
+    return 1
+  fi
 }
 
 main() {
-    check_distrobox
-    check_tmux
+  check_distrobox
+  check_tmux
 
-    local command="${1:-}"
+  local command="${1:-}"
 
-    case "$command" in
-    create | -c | --create | "")
-        create_session "true"
-        ;;
-    attach)
-        attach_session "$SESSION_NAME"
-        ;;
-    detach)
-        detach_session "$SESSION_NAME"
-        ;;
-    destroy)
-        destroy_session "$SESSION_NAME"
-        ;;
-    help | --help | -h)
-        usage
-        ;;
-    *)
-        fail "Unknown option: $command"
-        usage
-        exit 1
-        ;;
-    esac
+  case "$command" in
+  create | -c | --create | "")
+    create_session "true"
+    ;;
+  attach)
+    attach_session "$SESSION_NAME"
+    ;;
+  detach)
+    detach_session "$SESSION_NAME"
+    ;;
+  destroy)
+    destroy_session "$SESSION_NAME"
+    ;;
+  help | --help | -h)
+    usage
+    ;;
+  *)
+    fail "Unknown option: $command"
+    usage
+    exit 1
+    ;;
+  esac
 }
 
 main "$@"

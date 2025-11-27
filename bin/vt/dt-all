@@ -7,11 +7,7 @@ set -euo pipefail
 source "$(dirname "$0")/dt-utils"
 source "$(dirname "$0")/all-utils"
 
-DT_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "alpine" "tw" "nix" "centos" "rocky")
-
-dt_exists() {
-  distrobox list | grep -q "$1" >/dev/null
-}
+DT_DISTRO_LIST=("ubuntu" "arch" "fedora" "tw" "nix" "centos" "alpine")
 
 check_prerequisites() {
   has_cmd distrobox || die "distrobox is not installed. Please install it first."
@@ -43,6 +39,8 @@ all_delete() {
     if dt_exists "$ct-dt"; then
       slog "Deleting container: $ct-dt"
       dt delete "$ct-dt"
+    else
+      slog "Container $ct-dt does not exist, skipping..."
     fi
   done
   success "All containers deleted successfully!"
@@ -54,6 +52,8 @@ all_start() {
     if dt_exists "$ct-dt"; then
       slog "Starting container: $ct-dt"
       dt start "$ct-dt"
+    else
+      slog "Container $ct-dt does not exist, skipping..."
     fi
   done
   success "All containers started successfully!"
@@ -65,6 +65,8 @@ all_stop() {
     if dt_exists "$ct-dt"; then
       slog "Stopping container: $ct-dt"
       dt stop "$ct-dt"
+    else
+      slog "Container $ct-dt does not exist, skipping..."
     fi
   done
   success "All containers stopped successfully!"
@@ -77,6 +79,8 @@ all_restart() {
       slog "Restarting container: $ct-dt"
       dt restart "$ct-dt"
       sleep 1
+    else
+      slog "Container $ct-dt does not exist, skipping..."
     fi
   done
   success "All containers restarted successfully!"

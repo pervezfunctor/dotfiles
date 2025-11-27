@@ -3,6 +3,7 @@
 # shellcheck disable=SC1091
 
 source "$DOT_DIR/share/utils"
+source "$(dirname "$0")/vt-utils"
 
 if [[ -z ${DT_ROOT_ARGS+x} ]]; then
   DT_ROOT_ARGS=()
