@@ -51,7 +51,7 @@ cleanup_on_error() {
     sudo rm -rf "$WORK_DIR" 2>/dev/null
   fi
 
-  stop_sudo_keepalive
+  keep_sudo_running
 }
 
 trap cleanup_on_error ERR

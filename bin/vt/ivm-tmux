@@ -6,13 +6,7 @@
 
 set -euo pipefail
 
-source "$(dirname "$0")/ivm-utils"
-
-if ! has_cmd ivm_exists; then
-    slog FOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-    exit 100
-fi
-
+source "$(dirname "$0")/incus-utils"
 source "$(dirname "$0")/tmux-utils"
 
 IVM_DISTRO_LIST=("ubuntu" "fedora" "arch" "tw" "debian")

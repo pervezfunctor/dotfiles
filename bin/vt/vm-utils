@@ -203,3 +203,155 @@ vm_ssh() {
   slog "Connecting to $vm_name ($ip) as $username..."
   ssh "$username@$ip"
 }
+
+define_default_net() {
+  local net_name=${1:-default}
+  if virsh net-info "$net_name" >/dev/null 2>&1; then
+    echo "Network '$net_name' is already defined."
+    return 0
+  else
+    echo "Network '$net_name' is not defined. Attempting to define it..."
+  fi
+
+  local candidates=(
+    /usr/share/libvirt/networks/default.xml
+    /usr/local/share/libvirt/networks/default.xml
+    /var/lib/libvirt/network/default.xml
+    /etc/libvirt/qemu/networks/default.xml
+  )
+
+  local xml
+  for xml in "${candidates[@]}"; do
+    if [[ -r "$xml" ]]; then
+      echo "Found default network XML at $xml"
+      virsh net-define "$xml"
+      return $?
+    fi
+  done
+
+  echo "Dumping default network XML to /tmp/default.xml to define it..."
+  rm -f /tmp/default.xml
+  virsh net-dumpxml default >/tmp/default.xml
+  virsh net-define /tmp/default.xml
+}
+
+undefine_default_net() {
+  local net_name=${1:-default}
+  if virsh net-info "$net_name" >/dev/null 2>&1; then
+    echo "Network '$net_name' is defined. Attempting to undefine it..."
+    virsh net-destroy "$net_name"
+    virsh net-undefine "$net_name"
+  else
+    echo "Network '$net_name' is not defined."
+    return 0
+  fi
+}
+
+ensure_libvirt_default_net() {
+  local net_name=${1:default}
+  define_default_net "$net_name" || {
+    echo "Failed to define network '$net_name'" >&2
+    return 1
+  }
+
+  local state
+  state=$(virsh net-info "$net_name" | awk '/State:/ {print $2}')
+  if [[ "$state" != "active" ]]; then
+    echo "Starting network '$net_name'..."
+    virsh net-start "$net_name" || return 1
+  else
+    echo "Network '$net_name' is already running."
+  fi
+
+  local autostart
+  autostart=$(virsh net-info "$net_name" | awk '/Autostart:/ {print $2}')
+  if [[ "$autostart" != "yes" ]]; then
+    echo "Enabling autostart for '$net_name'..."
+    virsh net-autostart "$net_name"
+  fi
+}
+
+
+
+VMU_PORTS_FILE="$HOME/.vmu-ports"
+
+find_free_port_random() {
+  local max_attempts=100
+  local vm_assigned_ports
+
+  if [[ -f "$VMU_PORTS_FILE" ]]; then
+    vm_assigned_ports=$(awk '{print $2}' "$VMU_PORTS_FILE")
+  fi
+
+  for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+    local port=$((RANDOM % (65000 - 2222 + 1) + 2222))
+
+    if ss -l -t -n | awk '{print $4}' | grep -q ":$port\$"; then
+      continue
+    fi
+
+    if [[ -n "${vm_assigned_ports:-}" ]] && grep -q "^$port\$" <<<"$vm_assigned_ports"; then
+      continue
+    fi
+
+    echo "$port"
+    return 0
+  done
+
+  echo "Could not find free port after $max_attempts attempts" >&2
+  return 1
+}
+
+register_vm_port() {
+  local name="$1"
+  local port="$2"
+  local user="$3"
+
+  # remove old entry if exists
+  sed -i "/^$name /d" "$VMU_PORTS_FILE" 2>/dev/null || true
+  touch "$VMU_PORTS_FILE"
+  echo "$name $port $user" >>"$VMU_PORTS_FILE"
+}
+
+LIBVIRT_ISO_POOL_PATH="/srv/libvirt/images/iso"
+LIBVIRT_ISO_POOL_NAME="iso-pool"
+
+libvirt_iso_pool_create() {
+  if virsh pool-info "$LIBVIRT_ISO_POOL_NAME" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "Creating ISO pool $LIBVIRT_ISO_POOL_NAME at $LIBVIRT_ISO_POOL_PATH..."
+  sudo mkdir -p "$LIBVIRT_ISO_POOL_PATH"
+  sudo virsh pool-define-as "$LIBVIRT_ISO_POOL_NAME" dir --target "$LIBVIRT_ISO_POOL_PATH"
+  sudo virsh pool-start "$LIBVIRT_ISO_POOL_NAME"
+  sudo virsh pool-autostart "$LIBVIRT_ISO_POOL_NAME"
+}
+
+check_and_add_port_forward() {
+  local vm_name=$1
+  local host_port=${2:-2222}
+  local guest_port=${3:-22}
+
+  echo "Checking existing port forwards for VM: $vm_name"
+
+  local network_info
+  network_info=$(virsh --connect qemu:///session \
+    qemu-monitor-command "$vm_name" \
+    --hmp "info network" 2>/dev/null || echo "")
+
+  if echo "$network_info" | grep -q "TCP\[HOST_FORWARD\].*:${host_port}-"; then
+    echo "Port forwarding already exists for port $host_port"
+    return 0
+  fi
+
+  echo "Adding port forwarding: localhost:$host_port -> guest:$guest_port"
+  if virsh --connect qemu:///session qemu-monitor-command "$vm_name" \
+    --hmp "hostfwd_add ::${host_port}-:${guest_port}"; then
+    echo "Port forwarding added successfully"
+    return 0
+  else
+    echo "Failed to add port forwarding"
+    return 1
+  fi
+}

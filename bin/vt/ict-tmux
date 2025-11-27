@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-source "$(dirname "$0")/ict-utils"
+source "$(dirname "$0")/incus-utils"
 source "$(dirname "$0")/tmux-utils"
 
 ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tumbleweed")

@@ -35,7 +35,7 @@ The ICT tools are located in `bin/vt/`:
 
 - `bin/vt/ict` - Container management script
 - `bin/vt/ict-create` - Container creation script
-- `bin/vt/ict-utils` - Shared utility functions
+- `bin/vt/incus-utils` - Shared utility functions
 
 Ensure these scripts are in your PATH and that you have Incus installed and configured with proper user permissions.
 
@@ -560,7 +560,7 @@ ict restore container-name snapshot-name
 bin/vt/
 ├── ict           # Main container management script
 ├── ict-create    # Container creation script
-├── ict-utils     # Shared utility functions
+├── incus-utils     # Shared utility functions
 └── ...           # Other related tools
 
 docs/ict/

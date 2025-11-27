@@ -183,7 +183,7 @@ if has_cmd distrobox; then
   alias dbl='distrobox list'
   alias dbr='distrobox run'
   alias dbc='distrobox create'
-  alias dbs='distrobox stop'
+  alias dbs='distrobox stop --yes'
   alias dbu='distrobox upgrade'
   alias dbrm='distrobox rm'
 

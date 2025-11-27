@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # shellcheck disable=SC1091
-source "$(dirname "$0")/ivm-utils"
+source "$(dirname "$0")/incus-utils"
 
 set -euo pipefail
 

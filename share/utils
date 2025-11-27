@@ -7,6 +7,15 @@ export ILM_SETUP_URL="${ILM_BASE_URL}/share/installers/setup"
 
 export BOXES_DIR=${USE_BOXES_DIR:-$HOME/.boxes}
 
+for_all() {
+  local fn="$1"
+  shift
+
+  for arg in "$@"; do
+    "$fn" "$arg"
+  done
+}
+
 marker_file_create() {
   local MARKER=${1:-"$HOME/.ilm/.markers/$(basename "${BASH_SOURCE[1]}").marker"}
 
@@ -1242,7 +1251,6 @@ ssh_enable() {
   sudo systemctl restart ssh || sudo systemctl restart sshd
 }
 
-
 keep_sudo_running() {
   if ! has_cmd sudo; then
     slog "Error: sudo command not found."
@@ -1266,8 +1274,8 @@ keep_sudo_running() {
   SUDO_KEEPALIVE_PID=$!
   slog "Sudo keep-alive background process started (PID: $SUDO_KEEPALIVE_PID)."
 
-  trap '_stop_sudo_keepalive' EXIT INT TERM HUP
-  # trap '_stop_sudo_keepalive; dotfiles_log_close' EXIT INT TERM HUP
+  trap '_keep_sudo_running' EXIT INT TERM HUP
+  # trap '_keep_sudo_running; dotfiles_log_close' EXIT INT TERM HUP
 }
 
 download_to() {
@@ -1739,22 +1747,22 @@ fedora_version() {
 }
 
 select_functions_by_suffix() {
-    local suffix="$1"
+  local suffix="$1"
 
-    local selection
-    selection=$(
-        compgen -A function \
-        | grep "_${suffix}$" \
-        | sed "s/_${suffix}$//" \
-        | fzf --multi
-    ) || return 1
+  local selection
+  selection=$(
+    compgen -A function |
+      grep "_${suffix}$" |
+      sed "s/_${suffix}$//" |
+      fzf --multi
+  ) || return 1
 
-    local out=()
-    while IFS= read -r base; do
-        out+=("${base}_${suffix}")
-    done <<< "$selection"
+  local out=()
+  while IFS= read -r base; do
+    out+=("${base}_${suffix}")
+  done <<<"$selection"
 
-    printf '%s\n' "${out[@]}"
+  printf '%s\n' "${out[@]}"
 }
 
 select-one() {

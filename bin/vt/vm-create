@@ -30,7 +30,7 @@ cleanup_on_error() {
     sudo rm -f "$SEED_ISO" 2>/dev/null || true
     sudo virsh destroy "$VM_NAME" 2>/dev/null || true
     sudo virsh undefine "$VM_NAME" 2>/dev/null || true
-    stop_sudo_keepalive
+    keep_sudo_running
 }
 
 trap cleanup_on_error ERR
@@ -934,7 +934,7 @@ main() {
     create_cloud_init_iso
     launch_vm
     show_completion_info
-    stop_sudo_keepalive
+    keep_sudo_running
 
     success "All done! Your $DISTRO VM will be ready in a few minutes."
     echo "'vm console $VM_NAME' allows you to access the VM console"
