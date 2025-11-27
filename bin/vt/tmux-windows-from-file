@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091
+
+set -euo pipefail
+
+# Source the tmux-utils script to get access to the tmux_windows_from_file function
+source "$(dirname "$0")/tmux-utils"
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") <session-name> <file-with-name-command-pairs>
+
+Create a tmux session with multiple named windows, where each window runs a command from a file.
+The file should contain one name-command pair per line, separated by a space.
+Empty lines and lines starting with # are ignored.
+
+File format:
+  window_name command_to_run
+  another_name another_command
+
+Arguments:
+  session-name      Name for the tmux session
+  file-with-name-command-pairs  Path to file containing name-command pairs
+
+Examples:
+  $(basename "$0") my-session windows.txt
+  $(basename "$0") servers ~/server_windows.txt
+EOF
+}
+
+main() {
+  if [ "$#" -lt 2 ]; then
+    usage
+    exit 1
+  fi
+
+  local session_name="$1"
+  local file_path="$2"
+
+  # Call the tmux_windows_from_file function from tmux-utils
+  tmux_windows_from_file "$session_name" "$file_path"
+}
+
+main "$@"

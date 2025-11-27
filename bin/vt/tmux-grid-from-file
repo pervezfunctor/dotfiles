@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091
+
+set -euo pipefail
+
+# Source the tmux-utils script to get access to the tmux_grid_from_file function
+source "$(dirname "$0")/tmux-utils"
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") <session-name> <file-with-commands>
+
+Create a tmux session with a grid layout, where each pane runs a command from a file.
+The file should contain one command per line. Empty lines and lines starting with # are ignored.
+
+Arguments:
+  session-name      Name for the tmux session
+  file-with-commands  Path to file containing commands (one per line)
+
+Examples:
+  $(basename "$0") my-session commands.txt
+  $(basename "$0") servers ~/server_commands.txt
+EOF
+}
+
+main() {
+  if [ "$#" -lt 2 ]; then
+    usage
+    exit 1
+  fi
+
+  local session_name="$1"
+  local file_path="$2"
+
+  # Call the tmux_grid_from_file function from tmux-utils
+  tmux_grid_from_file "$session_name" "$file_path"
+}
+
+main "$@"

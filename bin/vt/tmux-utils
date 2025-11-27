@@ -142,9 +142,208 @@ tmux_grid() {
   tmux attach-session -t "$session_name"
 }
 
+tmux_grid_from_file() {
+  if [ "$#" -lt 2 ]; then
+    fail "Usage: tmux_grid_from_file <session-name> <file-with-commands>" >&2
+    return 1
+  fi
+
+  local session_name="$1"
+  local file_path="$2"
+
+  if [ -z "$session_name" ]; then
+    fail "Error: Session name cannot be empty." >&2
+    return 1
+  fi
+
+  if [ -z "$file_path" ]; then
+    fail "Error: File path cannot be empty." >&2
+    return 1
+  fi
+
+  if [ ! -f "$file_path" ]; then
+    fail "Error: File '$file_path' does not exist." >&2
+    return 1
+  fi
+
+  if [ ! -r "$file_path" ]; then
+    fail "Error: File '$file_path' is not readable." >&2
+    return 1
+  fi
+
+  local -a cmds=()
+  while IFS= read -r line; do
+    # Skip empty lines and lines starting with #
+    if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# ]]; then
+      # Remove leading/trailing whitespace
+      cmds+=("$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')")
+    fi
+  done <"$file_path"
+
+  if [ ${#cmds[@]} -eq 0 ]; then
+    fail "Error: No valid commands found in '$file_path'" >&2
+    return 1
+  fi
+
+  tmux_grid "$session_name" "${cmds[@]}"
+}
+
+tmux_windows() {
+  if ! has_cmd tmux; then
+    fail "Error: tmux is not installed. Please install it first." >&2
+    return 1
+  fi
+
+  if [ "$#" -lt 3 ] || [ $(($# % 2)) -eq 0 ]; then
+    fail "Usage: tmux_windows <session-name> <name1> <command1> [<name2> <command2> ...]" >&2
+    return 1
+  fi
+
+  local session_name="$1"
+  shift
+
+  if [ -z "$session_name" ]; then
+    fail "Error: Session name cannot be empty." >&2
+    return 1
+  fi
+
+  if tmux has-session -t "$session_name" 2>/dev/null; then
+    slog "Session '$session_name' already exists."
+    if [[ -t 1 ]]; then
+      slog "Attaching to it..."
+      tmux attach-session -t "$session_name"
+    else
+      slog "Use 'tmux attach-session -t $session_name' to connect."
+    fi
+    return 0
+  fi
+
+  local base_index
+  base_index=$(tmux show-options -gqv base-index 2>/dev/null)
+  base_index=${base_index:-1}
+
+  # Parse name-command pairs
+  local -a names=()
+  local -a cmds=()
+  while [ "$#" -gt 0 ]; do
+    names+=("$1")
+    cmds+=("$2")
+    shift 2
+  done
+
+  local num_windows=${#names[@]}
+
+  slog "Creating new tmux session '$session_name' with $num_windows window(s)..."
+
+  # Create the first window with the first name
+  tmux new-session -d -s "$session_name" -n "${names[0]}"
+  # Send the first command to the first window
+  tmux send-keys -t "$session_name:$base_index" "${cmds[0]}" C-m
+
+  # Create additional windows for remaining name-command pairs
+  for ((i = 1; i < num_windows; i++)); do
+    local window_num=$((base_index + i))
+    tmux new-window -t "$session_name:$window_num" -n "${names[$i]}"
+    tmux send-keys -t "$session_name:$window_num" "${cmds[$i]}" C-m
+  done
+
+  # Only attach if we're in a terminal
+  if [[ -t 1 ]]; then
+    tmux attach-session -t "$session_name"
+  else
+    slog "Session '$session_name' created with $num_windows window(s). Use 'tmux attach-session -t $session_name' to connect."
+  fi
+}
+
+tmux_windows_from_file() {
+  if [ "$#" -lt 2 ]; then
+    fail "Usage: tmux_windows_from_file <session-name> <file-with-name-command-pairs>" >&2
+    return 1
+  fi
+
+  local session_name="$1"
+  local file_path="$2"
+
+  if [ -z "$session_name" ]; then
+    fail "Error: Session name cannot be empty." >&2
+    return 1
+  fi
+
+  if [ -z "$file_path" ]; then
+    fail "Error: File path cannot be empty." >&2
+    return 1
+  fi
+
+  if [ ! -f "$file_path" ]; then
+    fail "Error: File '$file_path' does not exist." >&2
+    return 1
+  fi
+
+  if [ ! -r "$file_path" ]; then
+    fail "Error: File '$file_path' is not readable." >&2
+    return 1
+  fi
+
+  # Create a temporary file to store parsed data
+  local temp_file
+  temp_file=$(mktemp)
+
+  # Parse the file and extract name-command pairs
+  awk '
+  /^[[:space:]]*#/ { next }  # Skip comment lines
+  /^[[:space:]]*$/ { next }  # Skip empty lines
+  {
+    # Remove leading/trailing whitespace
+    gsub(/^[[:space:]]+/, "")
+    gsub(/[[:space:]]+$/, "")
+
+    # Check if line contains at least one space
+    if (index($0, " ") > 0) {
+      # Extract name (first word) and command (rest of the line)
+      name = $1
+      $1 = ""
+      cmd = substr($0, 2)
+
+      # Print name and command on separate lines
+      print name
+      print cmd
+    }
+  }' "$file_path" >"$temp_file"
+
+  # Read the parsed data back into arrays
+  local -a names=()
+  local -a cmds=()
+
+  while IFS= read -r name && IFS= read -r cmd; do
+    names+=("$name")
+    cmds+=("$cmd")
+  done <"$temp_file"
+
+  rm -f "$temp_file"
+
+  if [ ${#names[@]} -eq 0 ]; then
+    fail "Error: No valid name-command pairs found in '$file_path'" >&2
+    return 1
+  fi
+
+  # Call tmux_windows with the parsed name-command pairs
+  local args=("$session_name")
+  for ((i = 0; i < ${#names[@]}; i++)); do
+    args+=("${names[$i]}" "${cmds[$i]}")
+  done
+
+  tmux_windows "${args[@]}"
+}
+
 # for testing purposes
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  tmux_grid "$@"
+  # Check which function to call based on the script name
+  script_name=$(basename "$0")
+  if [[ "$script_name" == "tmux-grid-from-file" ]]; then
+    tmux_grid_from_file "$@"
+  else
+    tmux_grid "$@"
+  fi
 fi
 
 create_commands() {
