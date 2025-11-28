@@ -10,80 +10,50 @@ source "$(dirname "$0")/all-utils"
 DT_DISTRO_LIST=("ubuntu" "arch" "fedora" "tw" "nix" "centos" "alpine")
 
 check_prerequisites() {
-  has_cmd distrobox || die "distrobox is not installed. Please install it first."
-  has_cmd dt || die "dt is not in PATH."
+  has_cmd distrobox || die "distrobox is not installed. Please install it first with: $0 install."
+  has_cmd dt || die "dt is not in PATH. It should be in the same directory as this script."
 }
 
 all_create() {
-  slog "Creating Distrobox containers (Ubuntu, Fedora, Arch, Debian, Alpine, Tumbleweed, NixOS)..."
+  slog "Creating Distrobox containers (Ubuntu, Arch, Fedora, Tumbleweed, NixOS, CentOS, Alpine)..."
 
   for d in "${DT_DISTRO_LIST[@]}"; do
-    if dt_exists "${d}-dt"; then
-      slog "Container for ${d}-dt already exists, skipping..."
-    else
-      slog "Creating container for ${d}-dt..."
-      dt create "$d" "${d}-dt"
-    fi
+    dt create "$d" "${d}-dt"
   done
-
-  slog "Listing created containers:"
-  dt list
 
   success "All containers created successfully!"
   slog "You can access them using: dt enter <container-name>"
 }
 
-all_delete() {
-  slog "Deleting all containers..."
+all_op() {
+  local op="$1"
+  slog "Performing operation '$op' on all containers..."
+
   for ct in "${DT_DISTRO_LIST[@]}"; do
     if dt_exists "$ct-dt"; then
-      slog "Deleting container: $ct-dt"
-      dt delete "$ct-dt"
+      dt "$op" "$ct-dt"
     else
       slog "Container $ct-dt does not exist, skipping..."
     fi
   done
-  success "All containers deleted successfully!"
+
+  success "Performed operation '$op' on all containers successfully!"
+}
+
+all_delete() {
+  all_op "delete"
 }
 
 all_start() {
-  slog "Starting all containers..."
-  for ct in "${DT_DISTRO_LIST[@]}"; do
-    if dt_exists "$ct-dt"; then
-      slog "Starting container: $ct-dt"
-      dt start "$ct-dt"
-    else
-      slog "Container $ct-dt does not exist, skipping..."
-    fi
-  done
-  success "All containers started successfully!"
+  all_op "start"
 }
 
 all_stop() {
-  slog "Stopping all containers..."
-  for ct in "${DT_DISTRO_LIST[@]}"; do
-    if dt_exists "$ct-dt"; then
-      slog "Stopping container: $ct-dt"
-      dt stop "$ct-dt"
-    else
-      slog "Container $ct-dt does not exist, skipping..."
-    fi
-  done
-  success "All containers stopped successfully!"
+  all_op "stop"
 }
 
 all_restart() {
-  slog "Restarting all containers..."
-  for ct in "${DT_DISTRO_LIST[@]}"; do
-    if dt_exists "$ct-dt"; then
-      slog "Restarting container: $ct-dt"
-      dt restart "$ct-dt"
-      sleep 1
-    else
-      slog "Container $ct-dt does not exist, skipping..."
-    fi
-  done
-  success "All containers restarted successfully!"
+  all_op "restart"
 }
 
 usage() {

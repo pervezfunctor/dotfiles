@@ -9,14 +9,28 @@ source "$(dirname "$0")/all-utils"
 
 VM_EASY_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "tw")
 
+all_op() {
+  local op="$1"
+  slog "Performing operation '$op' on all VMs..."
+
+  for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
+    if vm_exists "${vm}-vme"; then
+      vme "$op" "${vm}-vme"
+    else
+      warn "VM ${vm}-vme does not exist, skipping..."
+    fi
+  done
+
+  success "Performed operation '$op' on all VMs successfully!"
+}
+
 all_create() {
   slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
 
   for distro in "${VM_EASY_DISTRO_LIST[@]}"; do
     if vm_exists "${distro}-vme"; then
-      slog "$distro VM already exists, skipping..."
+      warn "$distro VM already exists, skipping..."
     else
-      slog "Creating $distro VM: $distro-vme"
       vme-create --distro "$distro" --name "${distro}-vme"
     fi
   done
@@ -26,47 +40,19 @@ all_create() {
 }
 
 all_delete() {
-  slog "Deleting all VMs..."
-  for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
-    if vm_exists "${vm}-vme"; then
-      slog "Deleting VM: ${vm}-vme"
-      vm delete "${vm}-vme"
-    fi
-  done
-  success "All VMs deleted successfully!"
+  all_op "delete"
 }
 
 all_start() {
-  slog "Starting all VMs..."
-  for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
-    if vm_exists "${vm}-vme"; then
-      slog "Starting VM: ${vm}-vme"
-      vm start "${vm}-vme"
-    fi
-  done
-  success "All VMs started successfully!"
+  all_op "start"
 }
 
 all_stop() {
-  slog "Stopping all VMs..."
-  for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
-    if vm_exists "${vm}-vme"; then
-      slog "Stopping VM: ${vm}-vme"
-      vm stop "${vm}-vme"
-    fi
-  done
-  success "All VMs stopped successfully!"
+  all_op "stop"
 }
 
 all_restart() {
-  slog "Restarting all VMs..."
-  for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
-    if vm_exists "${vm}-vme"; then
-      slog "Restarting VM: ${vm}-vme"
-      vm restart "${vm}-vme"
-    fi
-  done
-  success "All VMs restarted successfully!"
+  all_op "restart"
 }
 
 usage() {

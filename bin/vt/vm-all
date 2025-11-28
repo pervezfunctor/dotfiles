@@ -10,75 +10,58 @@ source "$(dirname "$0")/all-utils"
 VM_DISTRO_LIST=("ubuntu" "fedora" "debian" "arch" "alpine")
 
 all_create() {
-    slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Alpine, Debian)..."
+  slog "Creating libvirt VMs (Ubuntu, Fedora, Alpine, Debian)..."
 
-    for distro in "${VM_DISTRO_LIST[@]}"; do
-        if vm_exists "${distro}-vm"; then
-            slog "$distro VM already exists, skipping..."
-        else
-            slog "Creating $distro VM: $distro-vm"
-            vm-create --distro "$distro" --name "${distro}-vm"
-        fi
-    done
+  for distro in "${VM_DISTRO_LIST[@]}"; do
+    if vm_exists "${distro}-vm"; then
+      warn "$distro VM already exists, skipping..."
+    else
+      vm-create --distro "$distro" --name "${distro}-vm"
+    fi
+  done
 
-    slog "Listing created VMs:"
-    vm_list
-
-    success "All VMs created successfully!"
-    slog "You can access them using: virsh console <vm-name>"
+  success "All VMs created successfully!"
+  slog "You can access them using: virsh console <vm-name>"
 }
 
 usage() {
-    all_usage "libvirt" "VMs"
+  all_usage "libvirt" "VMs"
+}
+
+all_op() {
+  local op="$1"
+  slog "Performing operation '$op' on all VMs..."
+
+  for vm in "${VM_DISTRO_LIST[@]}"; do
+    if vm_exists "${vm}-vm"; then
+      vm "$op" "${vm}-vm"
+    else
+      warn "VM ${vm}-vm does not exist, skipping..."
+    fi
+  done
+
+  success "Performed operation '$op' on all VMs successfully!"
 }
 
 all_delete() {
-    slog "Deleting all VMs..."
-    for vm in "${VM_DISTRO_LIST[@]}"; do
-        if vm_exists "${vm}-vm"; then
-            slog "Deleting VM: ${vm}-vm"
-            vm delete "${vm}-vm"
-        fi
-    done
-    success "All VMs deleted successfully!"
+  all_op "delete"
 }
 
 all_start() {
-    slog "Starting all VMs..."
-    for vm in "${VM_DISTRO_LIST[@]}"; do
-        if vm_exists "${vm}-vm"; then
-            slog "Starting VM: ${vm}-vm"
-            vm start "${vm}-vm"
-        fi
-    done
-    success "All VMs started successfully!"
+  all_op "start"
 }
 
 all_stop() {
-    slog "Stopping all VMs..."
-    for vm in "${VM_DISTRO_LIST[@]}"; do
-        if vm_exists "${vm}-vm"; then
-            slog "Stopping VM: ${vm}-vm"
-            vm stop "${vm}-vm"
-        fi
-    done
-    success "All VMs stopped successfully!"
+  all_op "stop"
 }
 
 all_restart() {
-    slog "Restarting all VMs..."
-    for vm in "${VM_DISTRO_LIST[@]}"; do
-        if vm_exists "${vm}-vm"; then
-            slog "Restarting VM: ${vm}-vm"
-            vm restart "${vm}-vm"
-        fi
-    done
-    success "All VMs restarted successfully!"
+  all_op "restart"
 }
 
 main() {
-    virt_check_prerequisites
-    all_parse_args "$@"
+  virt_check_prerequisites
+  all_parse_args "$@"
 }
 
 main "$@"
