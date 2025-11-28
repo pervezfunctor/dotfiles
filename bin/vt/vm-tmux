@@ -7,12 +7,10 @@ set -euo pipefail
 source "$(dirname "$0")/vm-utils"
 source "$(dirname "$0")/tmux-utils"
 
-VM_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "alpine")
-
-SESSION_NAME="LIBVIRT_TMUX"
+SESSION_NAME="LIBVIRT"
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $(basename "$0") [OPTION]
 
 Manage a tmux session with SSH connections to libvirt VMs.
@@ -34,59 +32,59 @@ EOF
 }
 
 check_prerequisites() {
-    vm_check_prerequisites
-    check_tmux
+  vm_check_prerequisites
+  check_tmux
 }
 
 create_session() {
 
-    tmux_session "$SESSION_NAME" "$1"
+  tmux_session "$SESSION_NAME" "$1"
 
-    slog "Creating tmux session '$SESSION_NAME' with SSH connections to libvirt VMs..."
+  slog "Creating tmux session '$SESSION_NAME' with SSH connections to libvirt VMs..."
 
-    local ssh_cmds=()
-    create_commands ssh_cmds "vm" "${VM_DISTRO_LIST[@]}"
+  local ssh_cmds=()
+  create_commands ssh_cmds "vm" "${VM_DISTRO_LIST[@]}"
 
-    start_sessions "vm" "${VM_DISTRO_LIST[@]}"
+  start_sessions "vm" "${VM_DISTRO_LIST[@]}"
 
-    if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
-        fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."
-        return 1
-    fi
+  if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
+    fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."
+    return 1
+  fi
 
-    if ! tmux attach-session -t "$SESSION_NAME"; then
-        fail "Failed to attach to tmux session '$SESSION_NAME'."
-        return 1
-    fi
+  if ! tmux attach-session -t "$SESSION_NAME"; then
+    fail "Failed to attach to tmux session '$SESSION_NAME'."
+    return 1
+  fi
 }
 
 main() {
-    local command="${1:-}"
+  local command="${1:-}"
 
-    check_prerequisites
+  check_prerequisites
 
-    case "$command" in
-    create | "" | -c | --create)
-        create_session "true"
-        ;;
-    attach)
-        attach_session "$SESSION_NAME"
-        ;;
-    detach)
-        detach_session "$SESSION_NAME"
-        ;;
-    destroy)
-        destroy_session "$SESSION_NAME"
-        ;;
-    help | --help | -h)
-        usage
-        ;;
-    *)
-        fail "Unknown option: $command"
-        usage
-        exit 1
-        ;;
-    esac
+  case "$command" in
+  create | "" | -c | --create)
+    create_session "true"
+    ;;
+  attach)
+    attach_session "$SESSION_NAME"
+    ;;
+  detach)
+    detach_session "$SESSION_NAME"
+    ;;
+  destroy)
+    destroy_session "$SESSION_NAME"
+    ;;
+  help | --help | -h)
+    usage
+    ;;
+  *)
+    fail "Unknown option: $command"
+    usage
+    exit 1
+    ;;
+  esac
 }
 
 main "$@"

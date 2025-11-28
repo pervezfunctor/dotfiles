@@ -19,7 +19,7 @@ vme-tmux [command]
 ## Session Management
 
 ### Session Name
-The script uses a fixed session name: `VME_TMUX`
+The script uses a fixed session name: `VME`
 
 ### Supported VMs
 The script manages SSH connections to these VMs:
@@ -40,7 +40,7 @@ vme-tmux --create
 ```
 
 **Process:**
-1. Creates a new tmux session named `VME_TMUX`
+1. Creates a new tmux session named `VME`
 2. Generates SSH commands for each VM
 3. Creates tmux windows for each VM connection
 4. Arranges windows in a grid layout
@@ -53,7 +53,7 @@ vme-tmux --create
 - Session persistence
 
 ### attach
-Attaches to an existing VME_TMUX session:
+Attaches to an existing VME session:
 ```bash
 vme-tmux attach
 ```
@@ -75,7 +75,7 @@ vme-tmux detach
 - Session remains active for later re-attachment
 
 ### destroy
-Kills the VME_TMUX tmux session:
+Kills the VME tmux session:
 ```bash
 vme-tmux destroy
 ```

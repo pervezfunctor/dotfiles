@@ -5,7 +5,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/dck-utils"
 
-SESSION_NAME="DCK_TMUX"
+SESSION_NAME="DCK"
 
 DCK_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
 

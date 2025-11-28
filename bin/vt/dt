@@ -30,7 +30,7 @@ COMMANDS:
     restart <name>          Restart a container
     delete <name>           Delete a container completely
     enter <name>            Enter container shell
-    run <name> <cmd>        Run command in container
+    exec <name> <cmd>       Execute command in container
     export <name> <app>     Export application from container
     unexport <app>          Unexport application
     upgrade <name>          Upgrade container packages
@@ -47,7 +47,7 @@ EXAMPLES:
     $0 create ubuntu myubuntu       # Create Ubuntu container named 'myubuntu'
     $0 create fedora                # Create Fedora container with default name
     $0 enter ubuntu                 # Enter 'ubuntu' container
-    $0 run ubuntu "ls -la"          # Run command in 'ubuntu' container
+    $0 exec ubuntu "ls -la"        # Execute command in 'ubuntu' container
     $0 export ubuntu firefox        # Export firefox from ubuntu container
     $0 logs ubuntu                  # Show logs for 'ubuntu' container
     $0 logs-tail ubuntu             # Follow logs for 'ubuntu' container
@@ -217,15 +217,15 @@ enter_dt() {
   dt_distrobox enter -nw --clean-path --name "$dt_name"
 }
 
-run_in_dt() {
+exec_dt() {
   local dt_name="$1"
   shift
   local command="$*"
 
   dt_check_exists "$dt_name"
 
-  slog "Running command in container '$dt_name': $command"
-  dt_distrobox enter -nw --clean-path --name "$dt_name" "$@"
+  slog "Executing command in container '$dt_name': $command"
+  dt_distrobox enter -nw --clean-path --name "$dt_name" -- "$@"
 }
 
 export_app() {
@@ -372,8 +372,8 @@ delete)
 enter)
   enter_dt "$@"
   ;;
-run)
-  run_in_dt "$@"
+exec)
+  exec_dt "$@"
   ;;
 export)
   [[ -z "${3:-}" ]] && {

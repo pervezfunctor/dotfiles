@@ -7,8 +7,6 @@ set -euo pipefail
 source "$(dirname "$0")/dt-utils"
 source "$(dirname "$0")/all-utils"
 
-DT_DISTRO_LIST=("ubuntu" "arch" "fedora" "tw" "nix" "centos" "alpine")
-
 check_prerequisites() {
   has_cmd distrobox || die "distrobox is not installed. Please install it first with: $0 install."
   has_cmd dt || die "dt is not in PATH. It should be in the same directory as this script."
@@ -18,7 +16,12 @@ all_create() {
   slog "Creating Distrobox containers (Ubuntu, Arch, Fedora, Tumbleweed, NixOS, CentOS, Alpine)..."
 
   for d in "${DT_DISTRO_LIST[@]}"; do
-    dt create "$d" "${d}-dt"
+    if dt_exists "${d}-dt"; then
+      slog "Container for $d already exists, skipping..."
+      continue
+    else
+      dt create "$d" "${d}-dt"
+    fi
   done
 
   success "All containers created successfully!"
@@ -27,6 +30,7 @@ all_create() {
 
 all_op() {
   local op="$1"
+
   slog "Performing operation '$op' on all containers..."
 
   for ct in "${DT_DISTRO_LIST[@]}"; do
@@ -54,6 +58,19 @@ all_stop() {
 
 all_restart() {
   all_op "restart"
+}
+
+all_exec() {
+  slog "Executing command in all containers..."
+  for ct in "${DT_DISTRO_LIST[@]}"; do
+    if dt_exists "$ct-dt"; then
+      dt "$op" "$ct-dt"
+    else
+      slog "Container $ct-dt does not exist, skipping..."
+    fi
+  done
+
+  success "Performed operation '$op' on all containers successfully!"
 }
 
 usage() {

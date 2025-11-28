@@ -26,14 +26,14 @@ dbox_exec() {
   local CONTAINER_NAME=${1}
   shift
 
-  dbox_enter "${CONTAINER_NAME}" -- "$@"
+  dbox_enter "${CONTAINER_NAME}" "$@"
 }
 
 dbox_exec_root() {
   local CONTAINER_NAME=${1}
   shift
 
-  dbox_enter_root "${CONTAINER_NAME}" -- "$@"
+  dbox_enter_root "${CONTAINER_NAME}" "$@"
 }
 
 dbox_bash_exec() {
@@ -253,7 +253,7 @@ dbox-alpine-edge() {
     --init \
     --additional-packages "openrc openssh-server"
 
-  dbox_exec "${CONTAINER_NAME}" rc-update add sshd default
+  dbox_exec "${CONTAINER_NAME}" sudo rc-update add sshd default
 }
 
 dbox-alpine() {
@@ -263,7 +263,7 @@ dbox-alpine() {
   dbox_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
     --init --additional-packages "openrc openssh-server"
 
-  dbox_exec "${CONTAINER_NAME}" rc-update add sshd default
+  dbox_exec "${CONTAINER_NAME}" sudo rc-update add sshd default
 }
 
 dbox-debian() {
@@ -274,7 +274,7 @@ dbox-debian() {
     --init \
     --additional-packages "systemd libpam-systemd openssh-server"
 
-  dbox_exec "${CONTAINER_NAME}" systemctl enable sshd
+  dbox_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
 dbox-ubuntu() {
@@ -285,7 +285,7 @@ dbox-ubuntu() {
     --init \
     --additional-packages "systemd libpam-systemd openssh-server"
 
-  dbox_exec "${CONTAINER_NAME}" systemctl enable sshd
+  dbox_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
 dbox-arch() {
@@ -295,9 +295,9 @@ dbox-arch() {
   dbox_create "${CONTAINER_NAME}" archlinux:latest \
     --yes \
     --init \
-    --additional-packages "systemd openssh-server"
+    --additional-packages "systemd openssh"
 
-  dbox_exec "${CONTAINER_NAME}" systemctl enable sshd
+  dbox_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
 dbox-tw() {
@@ -308,7 +308,7 @@ dbox-tw() {
     --init \
     --additional-packages "systemd openssh-server"
 
-  dbox_exec "${CONTAINER_NAME}" systemctl enable sshd
+  dbox_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
 dbox-fedora() {
@@ -319,7 +319,18 @@ dbox-fedora() {
     --init \
     --additional-packages "systemd openssh-server"
 
-  dbox_exec "${CONTAINER_NAME}" systemctl enable sshd
+  dbox_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+}
+
+dbox-centos() {
+  local CONTAINER_NAME=${1:-centos}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" centos:latest \
+    --init \
+    --additional-packages "systemd openssh-server"
+
+  dbox_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
 dbox-alpine-noinit() {

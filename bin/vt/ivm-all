@@ -7,8 +7,6 @@ set -euo pipefail
 source "$(dirname "$0")/incus-utils"
 source "$(dirname "$0")/all-utils"
 
-IVM_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tw")
-
 all_create() {
   slog "Creating Incus VMs (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
 

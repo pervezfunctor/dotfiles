@@ -7,9 +7,7 @@ set -euo pipefail
 source "$(dirname "$0")/incus-utils"
 source "$(dirname "$0")/tmux-utils"
 
-ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tumbleweed")
-
-SESSION_NAME="ICT_TMUX"
+SESSION_NAME="ICT"
 
 usage() {
   cat <<EOF

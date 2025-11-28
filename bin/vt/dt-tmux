@@ -7,9 +7,7 @@ set -euo pipefail
 source "$(dirname "$0")/dt-utils"
 source "$(dirname "$0")/tmux-utils"
 
-DT_DISTRO_LIST=("ubuntu" "arch" "fedora" "tw" "nix" "centos" "alpine")
-
-SESSION_NAME="DT_TMUX"
+SESSION_NAME="DT"
 
 usage() {
   cat <<EOF

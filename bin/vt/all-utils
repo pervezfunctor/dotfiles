@@ -30,22 +30,11 @@ EOF
 all_parse_args() {
   if [[ $# -eq 0 ]]; then
     all_create "$@"
-    exit 0
-  fi
-
-  if [[ "$1" == "delete" ]]; then
-    all_delete
-  elif [[ "$1" == "start" ]]; then
-    all_start
-  elif [[ "$1" == "stop" ]]; then
-    all_stop
-  elif [[ "$1" == "restart" ]]; then
-    all_restart
+    all_start "$@"
   elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
     usage
-    exit 0
-  elif [[ $# -eq 0 ]] || [[ "$1" == "create" ]]; then
-    all_create
+  elif fn_exists "all_${1}"; then
+    all_"$1"
   else
     fail "Unknown option: $1"
     usage

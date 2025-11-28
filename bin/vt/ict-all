@@ -13,8 +13,6 @@ check_prerequisites() {
   has_cmd ict || die "ict is not in PATH."
 }
 
-ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tw")
-
 all_create() {
   slog "Creating Incus LXC containers (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
 

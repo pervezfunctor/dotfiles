@@ -5,6 +5,8 @@
 source "$DOT_DIR/share/utils"
 source "$(dirname "$0")/vt-utils"
 
+export DT_DISTRO_LIST=("ubuntu" "arch" "fedora" "tw" "nix" "centos" "alpine")
+
 if [[ -z ${DT_ROOT_ARGS+x} ]]; then
   DT_ROOT_ARGS=()
 fi

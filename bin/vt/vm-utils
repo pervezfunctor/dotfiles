@@ -3,6 +3,10 @@
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vt-utils"
 
+export VM_EASY_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "tw")
+
+export VM_DISTRO_LIST=("ubuntu" "fedora" "debian" "arch" "alpine")
+
 virt_check_prerequisites() {
   local missing_tools=()
   for tool in virsh virt-install qemu-img wget xorriso openssl; do
@@ -270,8 +274,6 @@ ensure_libvirt_default_net() {
     virsh net-autostart "$net_name"
   fi
 }
-
-
 
 VMU_PORTS_FILE="$HOME/.vmu-ports"
 

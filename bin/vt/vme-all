@@ -7,8 +7,6 @@ set -euo pipefail
 source "$(dirname "$0")/vm-utils"
 source "$(dirname "$0")/all-utils"
 
-VM_EASY_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "tw")
-
 all_op() {
   local op="$1"
   slog "Performing operation '$op' on all VMs..."
