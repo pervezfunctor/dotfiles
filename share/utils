@@ -16,6 +16,30 @@ for_all() {
   done
 }
 
+# split args at --
+# take arrays by reference 'after' and 'before' as first two arguments
+split_args() {
+  local -n before_ref=$1
+  local -n after_ref=$2
+  shift 2
+
+  local args=("$@")
+
+  local in_after=false
+  for arg in "${args[@]}"; do
+    if [[ "$arg" == "--" ]]; then
+      in_after=true
+      continue
+    fi
+
+    if [[ "$in_after" == true ]]; then
+      after_ref+=("$arg")
+    else
+      before_ref+=("$arg")
+    fi
+  done
+}
+
 marker_file_create() {
   local MARKER=${1:-"$HOME/.ilm/.markers/$(basename "${BASH_SOURCE[1]}").marker"}
 
