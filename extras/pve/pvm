@@ -1,0 +1,453 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# CONFIG --------------------------------------------------------------
+# Default configuration
+PVE_HOST="https://pve.example.lan:8006"
+TOKEN_ID="vmops@pve!vmops-token"
+TOKEN_SECRET="YOUR_API_TOKEN_SECRET"
+NODE_NAME="" # leave empty to autodetect
+SSH_DEFAULT_USER="root"
+
+# Load configuration from environment file if it exists
+load_config() {
+  local config_file="${PVM_CONFIG_FILE:-$HOME/.pvmrc}"
+
+  if [[ -f "$config_file" ]]; then
+    info "Loading configuration from $config_file"
+    # shellcheck disable=SC1090
+    source "$config_file"
+  fi
+
+  # Also check for environment variables
+  PVE_HOST="${PVE_HOST:-$PVE_HOST}"
+  TOKEN_ID="${TOKEN_ID:-$TOKEN_ID}"
+  TOKEN_SECRET="${TOKEN_SECRET:-$TOKEN_SECRET}"
+  NODE_NAME="${NODE_NAME:-$NODE_NAME}"
+  SSH_DEFAULT_USER="${SSH_DEFAULT_USER:-$SSH_DEFAULT_USER}"
+}
+
+# Load configuration
+load_config
+# ---------------------------------------------------------------------
+
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Error handling
+error() {
+  echo -e "${RED}Error: $1${NC}" >&2
+  exit 1
+}
+
+warning() {
+  echo -e "${YELLOW}Warning: $1${NC}" >&2
+}
+
+info() {
+  echo -e "${BLUE}Info: $1${NC}"
+}
+
+success() {
+  echo -e "${GREEN}Success: $1${NC}"
+}
+
+# API function with error handling
+api() {
+  local method="$1"
+  local path="$2"
+  local data="${3:-}"
+
+  if [[ -z "$PVE_HOST" || -z "$TOKEN_ID" || -z "$TOKEN_SECRET" ]]; then
+    error "PVE_HOST, TOKEN_ID, and TOKEN_SECRET must be configured"
+  fi
+
+  local curl_cmd=(
+    curl -sS -k
+    -H "Authorization: PVEAPIToken=${TOKEN_ID}=${TOKEN_SECRET}"
+  )
+
+  if [[ "$method" == "GET" ]]; then
+    "${curl_cmd[@]}" "${PVE_HOST}/api2/json/${path}"
+  elif [[ "$method" == "POST" ]]; then
+    if [[ -n "$data" ]]; then
+      "${curl_cmd[@]}" -X POST -H "Content-Type: application/json" -d "$data" "${PVE_HOST}/api2/json/${path}"
+    else
+      "${curl_cmd[@]}" -X POST -d "" "${PVE_HOST}/api2/json/${path}"
+    fi
+  elif [[ "$method" == "DELETE" ]]; then
+    "${curl_cmd[@]}" -X DELETE "${PVE_HOST}/api2/json/${path}"
+  else
+    "${curl_cmd[@]}" -X "$method" "${PVE_HOST}/api2/json/${path}"
+  fi
+}
+
+# Auto-detect node if not specified
+if [[ -z "$NODE_NAME" ]]; then
+  NODE_NAME=$(api GET "nodes" | jq -r '.data[0].node' 2>/dev/null || echo "")
+  if [[ -z "$NODE_NAME" ]]; then
+    error "Could not auto-detect node name. Please set NODE_NAME in the configuration."
+  fi
+  info "Auto-detected node: $NODE_NAME"
+fi
+
+# Validate VM ID
+validate_vmid() {
+  local vmid="$1"
+  if ! [[ "$vmid" =~ ^[0-9]+$ ]]; then
+    error "VM ID must be a number"
+  fi
+
+  # Check if VM exists
+  local vm_exists
+  vm_exists=$(api GET "nodes/${NODE_NAME}/qemu/${vmid}/status/current" 2>/dev/null | jq -r '.data' 2>/dev/null || echo "")
+  if [[ -z "$vm_exists" ]]; then
+    error "VM with ID $vmid does not exist"
+  fi
+}
+
+# Format VM status
+format_vm_status() {
+  local vmid="$1"
+  local status_data
+  status_data=$(api GET "nodes/${NODE_NAME}/qemu/${vmid}/status/current")
+
+  local status
+  status=$(echo "$status_data" | jq -r '.data.status')
+  local name
+  name=$(echo "$status_data" | jq -r '.data.name')
+  local cpus
+  cpus=$(echo "$status_data" | jq -r '.data.cpus')
+  local memory
+  memory=$(echo "$status_data" | jq -r '.data.mem // 0')
+  local maxmem
+  maxmem=$(echo "$status_data" | jq -r '.data.maxmem // 0')
+
+  # Convert memory to MB
+  memory=$((memory / 1024 / 1024))
+  maxmem=$((maxmem / 1024 / 1024))
+
+  echo "VM ID: $vmid"
+  echo "Name: $name"
+  echo "Status: $status"
+  echo "CPUs: $cpus"
+  echo "Memory: ${memory}MB / ${maxmem}MB"
+}
+
+# Handle multi-VM operations
+handle_multi() {
+  local cmd="$1"
+  shift
+
+  local -a vmids=("$@")
+
+  if [[ ${#vmids[@]} -eq 0 ]]; then
+    # Get all VMs if none specified
+    local all_vms
+    all_vms=$(api GET "nodes/${NODE_NAME}/qemu" | jq -r '.data[].vmid' 2>/dev/null || true)
+
+    if [[ -z "$all_vms" ]]; then
+      error "No VMs found. Please create a VM first."
+    fi
+
+    # Simple selection interface
+    echo "Available VMs:"
+    echo "$all_vms" | nl
+    echo ""
+    read -r -p "Enter VM numbers to $cmd (space-separated, or 'all' for all VMs): " selection
+
+    if [[ "$selection" == "all" ]]; then
+      readarray -t vmids <<<"$all_vms"
+    else
+      local -a selected_nums
+      read -ra selected_nums <<<"$selection"
+      vmids=()
+      for num in "${selected_nums[@]}"; do
+        local vmid
+        vmid=$(echo "$all_vms" | sed -n "${num}p")
+        if [[ -n "$vmid" ]]; then
+          vmids+=("$vmid")
+        fi
+      done
+    fi
+
+    if [[ ${#vmids[@]} -eq 0 ]]; then
+      error "No VMs selected. Quitting."
+    fi
+
+    echo "Selected VMs: ${vmids[*]}"
+  fi
+
+  for vmid in "${vmids[@]}"; do
+    validate_vmid "$vmid"
+    case "$cmd" in
+    start)
+      start_vm "$vmid"
+      ;;
+    stop)
+      stop_vm "$vmid"
+      ;;
+    restart)
+      restart_vm "$vmid"
+      ;;
+    delete)
+      delete_vm "$vmid"
+      ;;
+    esac
+    echo ""
+  done
+}
+
+# VM operation functions
+start_vm() {
+  local vmid="$1"
+  info "Starting VM $vmid..."
+  api POST "nodes/${NODE_NAME}/qemu/$vmid/status/start" >/dev/null
+  success "VM $vmid start command sent"
+}
+
+stop_vm() {
+  local vmid="$1"
+  info "Stopping VM $vmid..."
+  api POST "nodes/${NODE_NAME}/qemu/$vmid/status/stop" >/dev/null
+  success "VM $vmid stop command sent"
+}
+
+restart_vm() {
+  local vmid="$1"
+  info "Restarting VM $vmid..."
+  api POST "nodes/${NODE_NAME}/qemu/$vmid/status/reboot" >/dev/null
+  success "VM $vmid restart command sent"
+}
+
+delete_vm() {
+  local vmid="$1"
+  warning "This will permanently delete VM $vmid. Are you sure? (y/N)"
+  read -r confirm
+  if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    info "Deleting VM $vmid..."
+    api DELETE "nodes/${NODE_NAME}/qemu/$vmid" >/dev/null
+    success "VM $vmid deleted"
+  else
+    info "Operation cancelled for VM $vmid"
+  fi
+}
+
+# Usage function
+usage() {
+  echo "Usage: pvm <command> [args]"
+  echo ""
+  echo "VM Lifecycle Management:"
+  echo "  list                    List all VMs"
+  echo "  status <vmid>           Show VM status and info"
+  echo "  start [vmid...]         Start VM(s) - if no VM IDs provided, select from list"
+  echo "  stop [vmid...]          Stop VM(s) - if no VM IDs provided, select from list"
+  echo "  restart [vmid...]       Restart VM(s) - if no VM IDs provided, select from list"
+  echo "  shutdown <vmid>         Gracefully shutdown a VM"
+  echo "  delete [vmid...]        Delete VM(s) - if no VM IDs provided, select from list"
+  echo ""
+  echo "VM Interaction:"
+  echo "  console <vmid>          Connect to VM console"
+  echo "  ip <vmid>               Get VM IP address"
+  echo "  ssh <vmid> [username]   Connect to VM via SSH"
+  echo ""
+  echo "VM Information:"
+  echo "  info <vmid>             Show detailed VM information"
+  echo "  config <vmid>           Show VM configuration"
+  echo ""
+  echo "Snapshot Management:"
+  echo "  snapshot-list <vmid>    List VM snapshots"
+  echo "  snapshot-create <vmid> <name>  Create VM snapshot"
+  echo "  snapshot-restore <vmid> <name>  Restore VM from snapshot"
+  echo "  snapshot-delete <vmid> <name>  Delete VM snapshot"
+  echo ""
+  echo "Utility Commands:"
+  echo "  node-list               List all Proxmox nodes"
+  echo "  version                 Show PVE version info"
+  echo ""
+  echo "Examples:"
+  echo "  pvm list"
+  echo "  pvm start 100"
+  echo "  pvm start 100 101 102    # Start multiple VMs"
+  echo "  pvm stop                 # Select VMs to stop from menu"
+  echo "  pvm ssh 100 admin"
+  echo "  pvm snapshot-create 100 backup-001"
+}
+
+cmd="${1:-}"
+
+case "$cmd" in
+list)
+  info "Listing all VMs on node $NODE_NAME..."
+  api GET "nodes/${NODE_NAME}/qemu" |
+    jq -r '.data[] | "\(.vmid)\t\(.name // "unnamed")\t\(.status)\t\(.cpus)\t\(.maxmem / 1024 / 1024)MB"' |
+    (echo -e "VMID\tName\tStatus\tCPUs\tMemory" && cat) |
+    column -t
+  ;;
+
+status)
+  [[ $# -ne 2 ]] && usage && exit 1
+  validate_vmid "$2"
+  info "Getting status for VM $2..."
+  format_vm_status "$2"
+  ;;
+
+start)
+  handle_multi start "${@:2}"
+  ;;
+
+stop)
+  handle_multi stop "${@:2}"
+  ;;
+
+shutdown)
+  [[ $# -ne 2 ]] && usage && exit 1
+  validate_vmid "$2"
+  info "Shutting down VM $2..."
+  api POST "nodes/${NODE_NAME}/qemu/$2/status/shutdown" >/dev/null
+  success "VM $2 shutdown command sent"
+  ;;
+
+restart)
+  handle_multi restart "${@:2}"
+  ;;
+
+delete)
+  handle_multi delete "${@:2}"
+  ;;
+
+ip)
+  [[ $# -ne 2 ]] && usage && exit 1
+  validate_vmid "$2"
+  info "Getting IP addresses for VM $2..."
+  api GET "nodes/${NODE_NAME}/qemu/$2/agent/network-get-interfaces" |
+    jq -r '
+                .data.interfaces[]? as $i |
+                ($i.name) as $nic |
+                ($i."ip-addresses" // [])[]? |
+                "\(.["ip-address"])\t\($nic)"
+            ' |
+    (echo -e "IP Address\tInterface" && cat) |
+    column -t
+  ;;
+
+ssh)
+  [[ $# -lt 2 ]] && usage && exit 1
+  validate_vmid "$2"
+  VMID="$2"
+  USER="${3:-$SSH_DEFAULT_USER}"
+
+  info "Finding IP address for VM $VMID..."
+  IP=$(api GET "nodes/${NODE_NAME}/qemu/${VMID}/agent/network-get-interfaces" |
+    jq -r '
+                    .data.interfaces[]?."ip-addresses"[]? |
+                    select(."ip-address" | test("^192|10|172")) |
+                    ."ip-address"' | head -n1)
+
+  if [[ -z "$IP" ]]; then
+    error "No IP address found for VM $VMID. Make sure QEMU agent is running."
+  fi
+
+  info "Connecting to $USER@$IP..."
+  exec ssh "$USER@$IP"
+  ;;
+
+console)
+  [[ $# -ne 2 ]] && usage && exit 1
+  validate_vmid "$2"
+  info "Opening console for VM $2..."
+  api POST "nodes/${NODE_NAME}/qemu/$2/term" >/dev/null
+  info "Console session started. Use 'pve' command in your browser to access."
+  ;;
+
+info)
+  [[ $# -ne 2 ]] && usage && exit 1
+  validate_vmid "$2"
+  info "Getting detailed information for VM $2..."
+  format_vm_status "$2"
+  echo ""
+
+  # Get additional info
+  vm_config=$(api GET "nodes/${NODE_NAME}/qemu/$2/config")
+  echo "Configuration:"
+  echo "$vm_config" | jq -r '.data | to_entries[] | "\(.key): \(.value)"' | head -10
+  ;;
+
+config)
+  [[ $# -ne 2 ]] && usage && exit 1
+  validate_vmid "$2"
+  info "Getting configuration for VM $2..."
+  api GET "nodes/${NODE_NAME}/qemu/$2/config" | jq -r '.data | to_entries[] | "\(.key): \(.value)"'
+  ;;
+
+snapshot-list)
+  [[ $# -ne 2 ]] && usage && exit 1
+  validate_vmid "$2"
+  info "Listing snapshots for VM $2..."
+  api GET "nodes/${NODE_NAME}/qemu/$2/snapshot" |
+    jq -r '.data[] | "\(.name)\t\(.description // "No description")\t\(.snaptime)"' |
+    (echo -e "Snapshot\tDescription\tTime" && cat) |
+    column -t
+  ;;
+
+snapshot-create)
+  [[ $# -ne 3 ]] && usage && exit 1
+  validate_vmid "$2"
+  snapname="$3"
+  info "Creating snapshot '$snapname' for VM $2..."
+  api POST "nodes/${NODE_NAME}/qemu/$2/snapshot" "{\"snapname\":\"$snapname\"}" >/dev/null
+  success "Snapshot '$snapname' created for VM $2"
+  ;;
+
+snapshot-restore)
+  [[ $# -ne 3 ]] && usage && exit 1
+  validate_vmid "$2"
+  snapname="$3"
+  warning "This will restore VM $2 from snapshot '$snapname'. Are you sure? (y/N)"
+  read -r confirm
+  if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    info "Restoring VM $2 from snapshot '$snapname'..."
+    api POST "nodes/${NODE_NAME}/qemu/$2/snapshot/$snapname/rollback" >/dev/null
+    success "VM $2 restored from snapshot '$snapname'"
+  else
+    info "Operation cancelled"
+  fi
+  ;;
+
+snapshot-delete)
+  [[ $# -ne 3 ]] && usage && exit 1
+  validate_vmid "$2"
+  snapname="$3"
+  warning "This will delete snapshot '$snapname' from VM $2. Are you sure? (y/N)"
+  read -r confirm
+  if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    info "Deleting snapshot '$snapname' from VM $2..."
+    api DELETE "nodes/${NODE_NAME}/qemu/$2/snapshot/$snapname" >/dev/null
+    success "Snapshot '$snapname' deleted from VM $2"
+  else
+    info "Operation cancelled"
+  fi
+  ;;
+
+node-list)
+  info "Listing all Proxmox nodes..."
+  api GET "nodes" |
+    jq -r '.data[] | "\(.node)\t\(.status)\t\(.cpu // "N/A")%\t\(.memory // 0 / 1024 / 1024 / 1024)GB\t\(.maxmem // 0 / 1024 / 1024 / 1024)GB"' |
+    (echo -e "Node\tStatus\tCPU\tMemory\tMax Memory" && cat) |
+    column -t
+  ;;
+
+version)
+  info "Getting Proxmox VE version information..."
+  api GET "version" | jq -r '.data | "Version: \(.version)\nRelease: \(.release)\nRepository: \(.repository)"'
+  ;;
+
+*)
+  usage
+  exit 1
+  ;;
+esac

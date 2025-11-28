@@ -1,0 +1,25 @@
+# PVM Configuration File Example
+# Copy this file to ~/.pvmrc and customize with your settings
+
+# Proxmox server URL
+PVE_HOST="https://pve.example.lan:8006"
+
+# API token credentials (format: user@realm!token-name)
+TOKEN_ID="vmops@pve!vmops-token"
+
+# API token secret
+TOKEN_SECRET="YOUR_API_TOKEN_SECRET"
+
+# Proxmox node name (leave empty to autodetect)
+NODE_NAME=""
+
+# Default SSH user for VM access
+SSH_DEFAULT_USER="root"
+
+# You can also override these settings using environment variables:
+# export PVM_CONFIG_FILE="/path/to/custom/config"
+# export PVE_HOST="https://another-server:8006"
+# export TOKEN_ID="another-user@pve!another-token"
+# export TOKEN_SECRET="another-secret"
+# export NODE_NAME="another-node"
+# export SSH_DEFAULT_USER="another-user"

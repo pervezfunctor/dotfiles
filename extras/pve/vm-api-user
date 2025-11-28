@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 <linux-username>"
+    exit 1
+fi
+
+LINUX_USER="$1"
+REALM="pve"
+PVE_USER="${LINUX_USER}@${REALM}"
+TOKEN_ID="vmops-token"          # consistent name
+ACL_PATH="/vms"
+ROLE="PVEVMUser"
+
+# Functions ---------------------------------------------------------------
+
+exists_user() {
+    pveum user list | awk '{print $1}' | grep -qx "$PVE_USER"
+}
+
+exists_acl() {
+    pveum acl list | grep -qE "^${ACL_PATH}\s+${PVE_USER}\s+${ROLE}"
+}
+
+exists_token() {
+    pveum user token list "$PVE_USER" 2>/dev/null \
+       | awk '{print $1}' | grep -qx "$PVE_USER!$TOKEN_ID"
+}
+
+create_user_if_missing() {
+    if exists_user; then
+        echo "[OK] User $PVE_USER already exists."
+    else
+        echo "[CREATE] Adding Proxmox user $PVE_USER"
+        pveum user add "$PVE_USER" --comment "Linked to Linux user $LINUX_USER"
+    fi
+}
+
+assign_role() {
+    if exists_acl; then
+        echo "[OK] ACL already present: $PVE_USER → $ROLE on $ACL_PATH"
+    else
+        echo "[ACL] Assigning $ROLE to $PVE_USER on $ACL_PATH"
+        pveum aclmod "$ACL_PATH" -user "$PVE_USER" -role "$ROLE"
+    fi
+}
+
+create_token() {
+    if exists_token; then
+        echo "[OK] Token already exists: $PVE_USER!$TOKEN_ID"
+
+        SECRET=$(pveum user token list "$PVE_USER" --verbose \
+                  | awk -v t="$TOKEN_ID" '$1==t {print $3}')
+        echo "TOKEN_SECRET=${SECRET}"
+    else
+        echo "[TOKEN] Creating API token $PVE_USER!$TOKEN_ID"
+        # --privsep=0 so it inherits user permissions
+        OUTPUT=$(pveum user token add "$PVE_USER" "$TOKEN_ID" --privsep=0)
+        TOKEN_SECRET=$(echo "$OUTPUT" | awk '/value:/{print $2}')
+
+        echo "TOKEN_ID=${PVE_USER}!${TOKEN_ID}"
+        echo "TOKEN_SECRET=${TOKEN_SECRET}"
+    fi
+}
+
+# Execution ---------------------------------------------------------------
+
+# Ensure local sudo user exists
+if ! id "$LINUX_USER" >/dev/null 2>&1; then
+    echo "ERROR: Linux user '$LINUX_USER' does not exist."
+    exit 1
+fi
+
+create_user_if_missing
+assign_role
+create_token
+
+echo "[DONE]"
