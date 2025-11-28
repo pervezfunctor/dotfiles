@@ -26,7 +26,7 @@ check_prerequisites() {
 
 usage() {
   cat <<EOF
-Usage: $0 <command> [vm-name]
+Usage: $0 <command> [vm-name...]
 
 Manage VMs created with vme-create script. These are user-mode VMs, not full libvirt VMs.
 
@@ -34,11 +34,11 @@ COMMANDS:
     list                List all VMs
     create  ARGS        Create a new VM, with same ARGS as vme-create
     autostart <vm-name> Set VM to start on boot
-    start <vm-name>     Start a VM
-    shutdown <vm-name>  Gracefully stop a VM
-    restart <vm-name>   Restart a VM
-    kill <vm-name>      Force stop a VM
-    delete <vm-name>    Delete a VM completely
+    start [vm-name...]  Start VM(s) - if no names provided, select from list
+    shutdown [vm-name...] Gracefully stop VM(s) - if no names provided, select from list
+    restart [vm-name...] Restart VM(s) - if no names provided, select from list
+    kill [vm-name...]   Force stop VM(s) - if no names provided, select from list
+    delete [vm-name...] Delete VM(s) completely - if no names provided, select from list
     console <vm-name>   Connect to VM console
     show-ip <vm-name>   Show VM IP address
     info <vm-name>      Show VM status and info
@@ -55,7 +55,10 @@ EXAMPLES:
     $0 status debian           # Show status of 'debian' VM
     $0 create debian           # Create debian VM
     $0 start debian            # Start 'debian' VM
+    $0 start debian fedora     # Start multiple VMs
+    $0 start                   # Select VMs to start from menu
     $0 delete old-vm           # Delete 'old-vm' completely
+    $0 delete ubuntu fedora    # Delete multiple VMs
     $0 ssh debian              # SSH into 'debian' VM
 EOF
 }
@@ -290,6 +293,40 @@ net_vme() {
   esac
 }
 
+handle_multi() {
+  local cmd
+  cmd="$1"
+  shift
+
+  local -a vms=("$@")
+
+  if [[ ${#vms[@]} -eq 0 ]]; then
+    local all_vms
+    all_vms=$(virsh --connect qemu:///system list --all --name 2>/dev/null | grep -v '^$' || true)
+
+    local vm_array
+    readarray -t vm_array <<<"$all_vms"
+
+    if [[ ${#vm_array[@]} -eq 0 ]]; then
+      echo "Error: no VMs found"
+      exit 1
+    fi
+
+    readarray -t vms <<<"$(select-multi "Select VMs to $cmd:" "${vm_array[@]}")"
+
+    if [[ -z "${vms[*]}" ]] || [[ ${#vms[@]} -eq 0 ]]; then
+      echo "No VMs selected. Quitting."
+      exit 1
+    fi
+
+    echo "Selected VMs: ${vms[*]}"
+  fi
+
+  for vm in "${vms[@]}"; do
+    "${cmd}_vme" "$vm"
+  done
+}
+
 main() {
   if [[ $# -eq 0 ]]; then
     usage
@@ -334,34 +371,19 @@ main() {
     autostart_vme "$target"
     ;;
   start | boot)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    start_vme "$target"
+    handle_multi start "${@:2}"
     ;;
   stop | shutdown)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    shutdown_vme "$target"
+    handle_multi shutdown "${@:2}"
     ;;
   restart | reboot)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    reboot_vme "$target"
+    handle_multi reboot "${@:2}"
     ;;
   destroy | kill | force-stop)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    force_stop_vme "$target"
+    handle_multi force_stop "${@:2}"
     ;;
   delete | rm)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    delete_vme "$target"
+    handle_multi delete "${@:2}"
     ;;
   console)
     {
