@@ -90,48 +90,48 @@ dbox_create_root() {
   fi
 }
 
-dbox-ubuntu() {
-  local CONTAINER_NAME=${1:-ubuntu}
+dbox-ubuntu-noinit() {
+  local CONTAINER_NAME=${1:-ubuntu-noinit}
   dbox_create "${CONTAINER_NAME}" ubuntu:questing
 }
 
-dbox-arch() {
-  local CONTAINER_NAME=${1:-arch}
+dbox-arch-noinit() {
+  local CONTAINER_NAME=${1:-arch-noinit}
   dbox_create "${CONTAINER_NAME}" archlinux:latest
 }
 
-dbox-fedora-minimal() {
-  local CONTAINER_NAME=${1:-fedora-minimal}
+dbox-fedora-minimal-noinit() {
+  local CONTAINER_NAME=${1:-fedora-minimal-noinit}
   dbox_create "${CONTAINER_NAME}" registry.fedoraproject.org/fedora-minimal:latest
 }
 
-dbox-debian-slim() {
-  local CONTAINER_NAME=${1:-debian-slim}
+dbox-debian-slim-noinit() {
+  local CONTAINER_NAME=${1:-debian-slim-noinit}
   dbox_create "${CONTAINER_NAME}" debian:trixie-slim
 }
 
-dbox-fedora() {
-  local CONTAINER_NAME=${1:-fedora}
+dbox-fedora-noinit() {
+  local CONTAINER_NAME=${1:-fedora-noinit}
   dbox_create "${CONTAINER_NAME}" fedora:latest
 }
 
-dbox-centos() {
-  local CONTAINER_NAME=${1:-centos}
+dbox-centos-noinit() {
+  local CONTAINER_NAME=${1:-centos-noinit}
   dbox_create "${CONTAINER_NAME}" centos:latest
 }
 
-dbox-debian() {
-  local CONTAINER_NAME=${1:-debian}
+dbox-debian-noinit() {
+  local CONTAINER_NAME=${1:-debian-noinit}
   dbox_create "${CONTAINER_NAME}" debian:latest
 }
 
-dbox-rocky() {
-  local CONTAINER_NAME=${1:-rocky}
+dbox-rocky-noinit() {
+  local CONTAINER_NAME=${1:-rocky-noinit}
   dbox_create "${CONTAINER_NAME}" rockylinux:9
 }
 
-dbox-tw() {
-  local CONTAINER_NAME=${1:-tw}
+dbox-tw-noinit() {
+  local CONTAINER_NAME=${1:-tw-noinit}
   dbox_create "${CONTAINER_NAME}" opensuse/tumbleweed
 }
 
@@ -245,67 +245,15 @@ dbox-incus() {
     --init-hooks "usermod -aG incus-admin ${USER}"
 }
 
-dbox-alpine-edge-init() {
-  local CONTAINER_NAME=${1:-alpine-edge-init}
+dbox-alpine-edge() {
+  local CONTAINER_NAME=${1:-alpine-edge}
   slog "Creating distrobox $CONTAINER_NAME"
 
   dbox_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:edge \
     --init \
-    --additional-packages "openrc"
-}
+    --additional-packages "openrc openssh-server"
 
-dbox-alpine-init() {
-  local CONTAINER_NAME=${1:-alpine-init}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dbox_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
-    --init --additional-packages "openrc"
-}
-
-dbox-debian-init() {
-  local CONTAINER_NAME=${1:-debian-init}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dbox_create "${CONTAINER_NAME}" debian:latest \
-    --init \
-    --additional-packages "systemd libpam-systemd"
-}
-
-dbox-ubuntu-init() {
-  local CONTAINER_NAME=${1:-ubuntu-init}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dbox_create "${CONTAINER_NAME}" ubuntu:questing \
-    --init \
-    --additional-packages "systemd libpam-systemd"
-}
-
-dbox-arch-init() {
-  local CONTAINER_NAME=${1:-arch-init}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dbox_create "${CONTAINER_NAME}" archlinux:latest \
-    --yes \
-    --init \
-    --additional-packages "systemd"
-}
-
-dbox-tw-init() {
-  local CONTAINER_NAME=${1:-tw-init}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dbox_create "${CONTAINER_NAME}" opensuse/tumbleweed \
-    --init \
-    --additional-packages "systemd"
-}
-
-dbox-fedora-init() {
-  local CONTAINER_NAME=${1:-fedora-init}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dbox_create "${CONTAINER_NAME}" fedora:latest \
-    --init \
-    --additional-packages "systemd"
+  dbox_exec "${CONTAINER_NAME}" rc-update add sshd default
 }
 
 dbox-alpine() {
@@ -313,11 +261,77 @@ dbox-alpine() {
   slog "Creating distrobox $CONTAINER_NAME"
 
   dbox_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
+    --init --additional-packages "openrc openssh-server"
+
+  dbox_exec "${CONTAINER_NAME}" rc-update add sshd default
+}
+
+dbox-debian() {
+  local CONTAINER_NAME=${1:-debian}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" debian:latest \
+    --init \
+    --additional-packages "systemd libpam-systemd openssh-server"
+
+  dbox_exec "${CONTAINER_NAME}" systemctl enable sshd
+}
+
+dbox-ubuntu() {
+  local CONTAINER_NAME=${1:-ubuntu}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" ubuntu:questing \
+    --init \
+    --additional-packages "systemd libpam-systemd openssh-server"
+
+  dbox_exec "${CONTAINER_NAME}" systemctl enable sshd
+}
+
+dbox-arch() {
+  local CONTAINER_NAME=${1:-arch}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" archlinux:latest \
+    --yes \
+    --init \
+    --additional-packages "systemd openssh-server"
+
+  dbox_exec "${CONTAINER_NAME}" systemctl enable sshd
+}
+
+dbox-tw() {
+  local CONTAINER_NAME=${1:-tw}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" opensuse/tumbleweed \
+    --init \
+    --additional-packages "systemd openssh-server"
+
+  dbox_exec "${CONTAINER_NAME}" systemctl enable sshd
+}
+
+dbox-fedora() {
+  local CONTAINER_NAME=${1:-fedora}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" fedora:latest \
+    --init \
+    --additional-packages "systemd openssh-server"
+
+  dbox_exec "${CONTAINER_NAME}" systemctl enable sshd
+}
+
+dbox-alpine-noinit() {
+  local CONTAINER_NAME=${1:-alpine-noinit}
+  slog "Creating distrobox $CONTAINER_NAME"
+
+  dbox_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
     --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli"
 }
 
-dbox-alpine-edge() {
-  local CONTAINER_NAME=${1:-alpine-edge}
+dbox-alpine-edge-noinit() {
+  local CONTAINER_NAME=${1:-alpine-edge-noinit}
   slog "Creating distrobox $CONTAINER_NAME"
 
   dbox_create "${CONTAINER_NAME}" \
@@ -326,7 +340,6 @@ dbox-alpine-edge() {
 }
 
 dbox-dev-default() {
-
   distrobox create --yes
   distrobox enter -nw --clean-path -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic
   slog "Default distrobox created!"
@@ -337,12 +350,12 @@ dbox-dev() {
   slog "Creating default distrobox"
 
   local os
-  os=${1:-fedora-init}
+  os=${1:-fedora}
   local CONTAINER_NAME=${2:-dev}
 
-  if [[ ! "$os" =~ ^(ubuntu|debian|arch|tw|fedora)-init$ ]]; then
+  if [[ ! "$os" =~ ^(ubuntu|debian|arch|tw|fedora)$ ]]; then
     fail "Invalid OS type: $os"
-    slog "Valid options are: ubuntu-init, debian-init, arch-init, tw-init, fedora-init"
+    slog "Valid options are: ubuntu, debian, arch, tw, fedora"
     return 1
   fi
 
@@ -367,7 +380,7 @@ dbox-main-install() {
   local mainstall=$2
   local name=${3:-"${distro}-${mainstall}-test"}
 
-  "dbox-$distro-init" "$name"
+  "dbox-$distro" "$name"
   distrobox enter -nw --clean-path --name "$name" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$mainstall"
 }
 
@@ -380,7 +393,7 @@ dbox-group-install() {
   local groupstall=$2
   local name=${3:-"${distro}-${groupstall}-test"}
 
-  "dbox-$distro-init" "$name"
+  "dbox-$distro" "$name"
   distrobox enter -nw --clean-path --name "$name" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")"
   distrobox enter -nw --clean-path --name "$name" -- ilmg "@$groupstall"
 }
@@ -515,7 +528,7 @@ dbox-nix() {
 
   srm "${BOXES_DIR}/${CONTAINER_NAME}"
 
-  if dbox-debian-init "$CONTAINER_NAME"; then
+  if dbox-debian "$CONTAINER_NAME"; then
     distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- nix
     slog "Done creating distrobox $CONTAINER_NAME"
   fi
