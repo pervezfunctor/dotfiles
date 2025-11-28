@@ -9,6 +9,7 @@ source "$(dirname "$0")/all-utils"
 
 all_create() {
   slog "Creating Incus VMs (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
+  echo
 
   for distro in "${IVM_DISTRO_LIST[@]}"; do
     if ivm_exists "${distro}-ivm"; then
@@ -18,39 +19,50 @@ all_create() {
     fi
   done
 
+  echo
   success "All VMs created successfully!"
   slog "You can access them using: incus console <vm-name> <username>"
+  echo
 }
 
 all_op() {
   local op="$1"
+  shift
+
   slog "Performing operation '$op' on all VMs..."
+  echo
 
   for vm in "${IVM_DISTRO_LIST[@]}"; do
     if ivm_exists "${vm}-ivm"; then
-      ivm "$op" "${vm}-ivm"
+      ivm "$op" "${vm}-ivm" "$@"
     else
       warn "VM ${vm}-ivm does not exist, skipping..."
     fi
   done
 
+  echo
   success "Performed operation '$op' on all VMs successfully!"
+  echo
 }
 
 all_delete() {
-  all_op "delete"
+  all_op "delete" "$@"
 }
 
 all_start() {
-  all_op "start"
+  all_op "start" "$@"
 }
 
 all_stop() {
-  all_op "stop"
+  all_op "stop" "$@"
 }
 
 all_restart() {
-  all_op "restart"
+  all_op "restart" "$@"
+}
+
+all_exec() {
+  all_op "exec" "$@"
 }
 
 usage() {

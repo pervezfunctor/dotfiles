@@ -15,6 +15,7 @@ check_prerequisites() {
 
 all_create() {
   slog "Creating Incus LXC containers (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
+  echo
 
   for ct in "${ICT_DISTRO_LIST[@]}"; do
     if ! ict_exists "${ct}-ict"; then
@@ -22,40 +23,51 @@ all_create() {
     fi
   done
 
+  echo
   success "All containers created successfully!"
   slog "You can access them using: ict ssh <container-name>"
   slog "Or use ict-tmux to manage all containers at once."
+  echo
 }
 
 all_op() {
   local op="$1"
+  shift
+
   slog "Performing operation '$op' on all containers..."
+  echo
 
   for ct in "${ICT_DISTRO_LIST[@]}"; do
     if ict_exists "${ct}-ict"; then
-      ict "$op" "${ct}-ict"
+      ict "$op" "${ct}-ict" "$@"
     else
       warn "Container ${ct}-ict does not exist, skipping..."
     fi
   done
 
+  echo
   success "Performed operation '$op' on all containers successfully!"
+  echo
 }
 
 all_delete() {
-  all_op "delete"
+  all_op "delete" "$@"
 }
 
 all_start() {
-  all_op "start"
+  all_op "start" "$@"
 }
 
 all_stop() {
-  all_op "stop"
+  all_op "stop" "$@"
 }
 
 all_restart() {
-  all_op "restart"
+  all_op "restart" "$@"
+}
+
+all_exec() {
+  all_op "exec" "$@"
 }
 
 usage() {

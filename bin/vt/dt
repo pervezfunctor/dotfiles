@@ -220,11 +220,9 @@ enter_dt() {
 exec_dt() {
   local dt_name="$1"
   shift
-  local command="$*"
-
   dt_check_exists "$dt_name"
 
-  slog "Executing command in container '$dt_name': $command"
+  slog "Executing command in container '$dt_name': $*"
   dt_distrobox enter -nw --clean-path --name "$dt_name" -- "$@"
 }
 

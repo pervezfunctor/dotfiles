@@ -11,6 +11,7 @@ Usage: $(basename "$0") [OPTION]
 
 Options:
   create    # Create all "${vt}" {$type} for various Linux distributions.(default if no option)
+  exec      # Execute a command in all "${vt}" {$type} for various Linux distributions.
   delete    # Delete all "${vt}" {$type} for various Linux distributions.
   start     # Start all "${vt}" {$type} for various Linux distributions.
   stop      # Stop all "${vt}" {$type} for various Linux distributions.
@@ -30,14 +31,41 @@ EOF
 all_parse_args() {
   if [[ $# -eq 0 ]]; then
     all_create "$@"
-    all_start "$@"
-  elif [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
+    exit 0
+  fi
+
+  if [[ "$1" == "--help" || "$1" == "help" || "$1" == "help" ]]; then
     usage
-  elif fn_exists "all_${1}"; then
-    all_"$1"
+    exit 0
+  fi
+
+  local op="$1"
+  shift
+
+  if fn_exists "all_${op}"; then
+    "all_${op}" "$@"
   else
-    fail "Unknown option: $1"
+    fail "Unknown option: $op"
     usage
     exit 1
   fi
 }
+
+# @TODO:
+# all_op() {
+#   local vt="$1"
+#   local op="$2"
+#   shift 2
+
+#   slog "Performing operation '$op' on all ${vt}..."
+
+#   for ct in "${ICT_DISTRO_LIST[@]}"; do
+#     if ict_exists "${ct}-ict"; then
+#       ict "$op" "${ct}-ict" "$@"
+#     else
+#       warn "Container ${ct}-ict does not exist, skipping..."
+#     fi
+#   done
+
+#   success "Performed operation '$op' on all containers successfully!"
+# }

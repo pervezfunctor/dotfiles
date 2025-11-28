@@ -17,60 +17,56 @@ all_create() {
 
   for d in "${DT_DISTRO_LIST[@]}"; do
     if dt_exists "${d}-dt"; then
-      slog "Container for $d already exists, skipping..."
-      continue
+      warn "Container for $d already exists, skipping..."
     else
       dt create "$d" "${d}-dt"
     fi
   done
 
+  echo
   success "All containers created successfully!"
   slog "You can access them using: dt enter <container-name>"
+  echo
 }
 
 all_op() {
   local op="$1"
+  shift
 
   slog "Performing operation '$op' on all containers..."
+  echo
 
   for ct in "${DT_DISTRO_LIST[@]}"; do
     if dt_exists "$ct-dt"; then
-      dt "$op" "$ct-dt"
+      dt "$op" "$ct-dt" "$@"
     else
-      slog "Container $ct-dt does not exist, skipping..."
+      warn "Container $ct-dt does not exist, skipping..."
     fi
   done
 
+  echo
   success "Performed operation '$op' on all containers successfully!"
+  echo
 }
 
 all_delete() {
-  all_op "delete"
+  all_op "delete" "$@"
 }
 
 all_start() {
-  all_op "start"
+  all_op "start" "$@"
 }
 
 all_stop() {
-  all_op "stop"
+  all_op "stop" "$@"
 }
 
 all_restart() {
-  all_op "restart"
+  all_op "restart" "$@"
 }
 
 all_exec() {
-  slog "Executing command in all containers..."
-  for ct in "${DT_DISTRO_LIST[@]}"; do
-    if dt_exists "$ct-dt"; then
-      dt "$op" "$ct-dt"
-    else
-      slog "Container $ct-dt does not exist, skipping..."
-    fi
-  done
-
-  success "Performed operation '$op' on all containers successfully!"
+  all_op "exec" "$@"
 }
 
 usage() {

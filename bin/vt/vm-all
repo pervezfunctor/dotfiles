@@ -9,6 +9,7 @@ source "$(dirname "$0")/all-utils"
 
 all_create() {
   slog "Creating libvirt VMs (Ubuntu, Fedora, Alpine, Debian)..."
+  echo
 
   for distro in "${VM_DISTRO_LIST[@]}"; do
     if vm_exists "${distro}-vm"; then
@@ -18,8 +19,10 @@ all_create() {
     fi
   done
 
+  echo
   success "All VMs created successfully!"
   slog "You can access them using: virsh console <vm-name>"
+  echo
 }
 
 usage() {
@@ -28,34 +31,43 @@ usage() {
 
 all_op() {
   local op="$1"
+  shift
+
   slog "Performing operation '$op' on all VMs..."
+  echo
 
   for vm in "${VM_DISTRO_LIST[@]}"; do
     if vm_exists "${vm}-vm"; then
-      vm "$op" "${vm}-vm"
+      vm "$op" "${vm}-vm" "$@"
     else
       warn "VM ${vm}-vm does not exist, skipping..."
     fi
   done
 
+  echo
   success "Performed operation '$op' on all VMs successfully!"
+  echo
 }
 
 all_delete() {
-  all_op "delete"
+  all_op "delete" "$@"
 }
 
 all_start() {
-  all_op "start"
+  all_op "start" "$@"
 }
 
 all_stop() {
-  all_op "stop"
+  all_op "stop" "$@"
 }
 
 all_restart() {
-  all_op "restart"
+  all_op "restart" "$@"
 }
+
+# all_exec() {
+#   all_op "exec" "$@"
+# }
 
 main() {
   virt_check_prerequisites

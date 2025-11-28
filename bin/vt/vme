@@ -45,6 +45,7 @@ COMMANDS:
     logs <vm-name>      Show cloud-init logs
     disk <vm-name>      Show VM disk usage
     ssh <vm-name> [user] SSH into VM (auto-detects user if omitted)
+    exec <vm-name> <command> Execute command in VM
     cmd <virsh-args>    Run virsh command with qemu:///system connection
     net <command>       Manage libvirt virtual networks (see 'vm net' command)
     start-libvirt       Start the libvirtd service
@@ -60,6 +61,7 @@ EXAMPLES:
     $0 delete old-vm           # Delete 'old-vm' completely
     $0 delete ubuntu fedora    # Delete multiple VMs
     $0 ssh debian              # SSH into 'debian' VM
+    $0 exec debian "ls -la"    # Run command in 'debian' VM
 EOF
 }
 
@@ -232,6 +234,51 @@ ssh_vme() {
     -o ConnectTimeout="${connect_timeout}" \
     -o ConnectionAttempts=1 \
     "${user}@${ip}"
+}
+
+exec_vme() {
+  local vm="$1"
+  shift
+  local command="$*"
+
+  if [[ -z "$vm" ]]; then
+    echo "Error: VM name required for exec"
+    echo "Usage: $0 exec <vm-name> <command>"
+    exit 1
+  fi
+
+  if [[ -z "$command" ]]; then
+    echo "Error: Command required for exec"
+    echo "Usage: $0 exec <vm-name> <command>"
+    exit 1
+  fi
+
+  local user ip
+  user=$(detect_user_for_vm "$vm")
+  ip=$(get_ip_for_vm "$vm")
+
+  if [[ -z "$ip" ]]; then
+    echo "Error: could not determine IP for VM '$vm'"
+    echo "- Ensure the VM is running and QEMU guest agent is installed."
+    echo "- Try: $0 start $vm; then wait a few seconds."
+    exit 1
+  fi
+
+  local connect_timeout
+  connect_timeout=${VME_SSH_CONNECT_TIMEOUT:-15}
+  if ! [[ "$connect_timeout" =~ ^[0-9]+$ ]]; then
+    connect_timeout=15
+  fi
+
+  echo "Executing command in VM '$vm' as user '$user': $command"
+  ssh \
+    -o StrictHostKeyChecking=no \
+    -o UserKnownHostsFile=/dev/null \
+    -o ConnectTimeout="${connect_timeout}" \
+    -o ConnectionAttempts=1 \
+    -o LogLevel=ERROR \
+    "${user}@${ip}" \
+    "$command"
 }
 
 net_usage() {
@@ -411,6 +458,12 @@ main() {
       target=$(resolve_vm_name "$vm_name")
     } || exit 1
     ssh_vme "$target" "${3:-}"
+    ;;
+  exec)
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    exec_vme "$target" "${@:3}"
     ;;
   --help | -h)
     usage

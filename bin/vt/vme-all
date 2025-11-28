@@ -9,21 +9,27 @@ source "$(dirname "$0")/all-utils"
 
 all_op() {
   local op="$1"
+  shift
+
   slog "Performing operation '$op' on all VMs..."
+  echo
 
   for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
     if vm_exists "${vm}-vme"; then
-      vme "$op" "${vm}-vme"
+      vme "$op" "${vm}-vme" "$@"
     else
       warn "VM ${vm}-vme does not exist, skipping..."
     fi
   done
 
+  echo
   success "Performed operation '$op' on all VMs successfully!"
+  echo
 }
 
 all_create() {
   slog "Creating 4 libvirt VMs (Ubuntu, Fedora, Arch, Debian)..."
+  echo
 
   for distro in "${VM_EASY_DISTRO_LIST[@]}"; do
     if vm_exists "${distro}-vme"; then
@@ -33,24 +39,30 @@ all_create() {
     fi
   done
 
+  echo
   success "All VMs created successfully!"
   slog "You can access them using: virsh console <vm-name>"
+  echo
 }
 
 all_delete() {
-  all_op "delete"
+  all_op "delete" "$@"
 }
 
 all_start() {
-  all_op "start"
+  all_op "start" "$@"
 }
 
 all_stop() {
-  all_op "stop"
+  all_op "stop" "$@"
 }
 
 all_restart() {
-  all_op "restart"
+  all_op "restart" "$@"
+}
+
+all_exec() {
+  all_op "exec" "$@"
 }
 
 usage() {
