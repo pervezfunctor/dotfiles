@@ -245,11 +245,18 @@ dbox-incus() {
     --init-hooks "usermod -aG incus-admin ${USER}"
 }
 
+dbox_create_init() {
+  dbox_create "$@"
+  local CONTAINER_NAME=${1}
+
+  dbox_exec "${CONTAINER_NAME}" sudo curl -fsSL -o /etc/ssh/sshd_config.d/98-ilm-ssh.conf https://raw.githubusercontent.com/pervezfunctor/dotfiles/main/extras/configs/98-ilm-dbox-ssh.conf
+}
+
 dbox-alpine-edge() {
   local CONTAINER_NAME=${1:-alpine-edge}
   slog "Creating distrobox $CONTAINER_NAME"
 
-  dbox_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:edge \
+  dbox_create_init "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:edge \
     --init \
     --additional-packages "openrc openssh-server"
 
@@ -260,7 +267,7 @@ dbox-alpine() {
   local CONTAINER_NAME=${1:-alpine}
   slog "Creating distrobox $CONTAINER_NAME"
 
-  dbox_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
+  dbox_create_init "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
     --init --additional-packages "openrc openssh-server"
 
   dbox_exec "${CONTAINER_NAME}" sudo rc-update add sshd default
@@ -270,7 +277,7 @@ dbox-debian() {
   local CONTAINER_NAME=${1:-debian}
   slog "Creating distrobox $CONTAINER_NAME"
 
-  dbox_create "${CONTAINER_NAME}" debian:latest \
+  dbox_create_init "${CONTAINER_NAME}" debian:latest \
     --init \
     --additional-packages "systemd libpam-systemd openssh-server"
 
@@ -281,7 +288,7 @@ dbox-ubuntu() {
   local CONTAINER_NAME=${1:-ubuntu}
   slog "Creating distrobox $CONTAINER_NAME"
 
-  dbox_create "${CONTAINER_NAME}" ubuntu:questing \
+  dbox_create_init "${CONTAINER_NAME}" ubuntu:questing \
     --init \
     --additional-packages "systemd libpam-systemd openssh-server"
 
@@ -292,7 +299,7 @@ dbox-arch() {
   local CONTAINER_NAME=${1:-arch}
   slog "Creating distrobox $CONTAINER_NAME"
 
-  dbox_create "${CONTAINER_NAME}" archlinux:latest \
+  dbox_create_init "${CONTAINER_NAME}" archlinux:latest \
     --yes \
     --init \
     --additional-packages "systemd openssh"
@@ -304,7 +311,7 @@ dbox-tw() {
   local CONTAINER_NAME=${1:-tw}
   slog "Creating distrobox $CONTAINER_NAME"
 
-  dbox_create "${CONTAINER_NAME}" opensuse/tumbleweed \
+  dbox_create_init "${CONTAINER_NAME}" opensuse/tumbleweed \
     --init \
     --additional-packages "systemd openssh-server"
 
@@ -315,7 +322,7 @@ dbox-fedora() {
   local CONTAINER_NAME=${1:-fedora}
   slog "Creating distrobox $CONTAINER_NAME"
 
-  dbox_create "${CONTAINER_NAME}" fedora:latest \
+  dbox_create_init "${CONTAINER_NAME}" fedora:latest \
     --init \
     --additional-packages "systemd openssh-server"
 
@@ -326,7 +333,7 @@ dbox-centos() {
   local CONTAINER_NAME=${1:-centos}
   slog "Creating distrobox $CONTAINER_NAME"
 
-  dbox_create "${CONTAINER_NAME}" centos:latest \
+  dbox_create_init "${CONTAINER_NAME}" centos:latest \
     --init \
     --additional-packages "systemd openssh-server"
 

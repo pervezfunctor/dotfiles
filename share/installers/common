@@ -416,6 +416,14 @@ git_conf() {
   git config --global "$@"
 }
 
+ssh_confstall() {
+  slog "Configuring ssh"
+  stowdf ssh
+  ssh_key_generate
+  md "$HOME/.ssh/conf.d"
+  slog "ssh config done!"
+}
+
 git_confstall() {
   if ! has_cmd git; then
     warn "git not installed, skipping git config"
