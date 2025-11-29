@@ -419,3 +419,17 @@ rcp() {
 rmv() {
   rsync --archive -hh --partial --info=stats1,progress2 --modify-window=1 --remove-source-files "$@"
 }
+
+sshl() {
+  host=$(
+    grep -rIhE '^Host[[:space:]]+' ~/.ssh/{config,conf.d} 2>/dev/null |
+      sed -E 's/^Host[[:space:]]+//' |
+      tr -s ' ' '\n' |
+      sed '/^\s*$/d' |
+      grep -v '^\*$' |
+      sort -u |
+      fzf --prompt="SSH Host: "
+  )
+
+  [[ -n "${host:-}" ]] && ssh "$host"
+}
