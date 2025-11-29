@@ -789,9 +789,10 @@ ublue_common_install() {
   ai-cli_install
   brew-shell-slim_install
   apps-slim_install
-
+  jetbrains-mono_install
   vscode_confstall
   is_gnome && gnome-settings_install
+  # brew tap colindean/fonts-nonfree && brew install --cask font-microsoft-office font-microsoft-aptos font-arial font-arial-black font-courier-new font-times-new-roman font-georgia
 }
 
 ublue_mainstall() {
