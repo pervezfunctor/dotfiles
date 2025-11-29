@@ -1,0 +1,5 @@
+[Unit]
+Description=Regenerate SSH config from Incus instances
+
+[Service]
+ExecStart=/usr/local/bin/generate_incus_ssh

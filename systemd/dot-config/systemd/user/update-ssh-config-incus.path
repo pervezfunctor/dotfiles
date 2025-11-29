@@ -1,0 +1,10 @@
+[Unit]
+Description=Trigger SSH config regeneration on Incus changes
+
+[Path]
+PathChanged=/var/lib/incus
+PathChanged=/run/incus
+Unit=update-ssh-incus.service
+
+[Install]
+WantedBy=multi-user.target
