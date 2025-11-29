@@ -1,32 +1,14 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
 
-if [ $# -lt 2 ]; then
-  echo "Usage: dbox-vscode <container-name> <path>"
-  exit 1
-fi
+container_name="$(printf '{"containerName":"%s"}' "$1" | od -A n -t x1 | tr -d "\n\t ")"
 
-CONTAINER="$1"
-TARGET_PATH="$2"
-
-if ! distrobox list | awk 'NR>1 {print $3}' | grep -q "^${CONTAINER}$"; then
-  echo "Error: Container '$CONTAINER' not found."
-  echo "Available containers:"
-  distrobox list | awk 'NR>1 {print "  " $3}'
-  exit 1
-fi
-
-if command -v code >/dev/null 2>&1; then
-  CODE_CMD="code"
-elif flatpak list 2>/dev/null | grep -q com.visualstudio.code; then
-  CODE_CMD="flatpak run com.visualstudio.code"
+if command -v code 2>/dev/null >/dev/null; then
+  code_command="code"
+elif flatpak list | grep -q com.visualstudio.code; then
+  code_command="flatpak run com.visualstudio.code"
 else
-  echo "VS Code not found on host. Please install VS Code first."
+  echo "vscode not installed"
   exit 127
 fi
 
-CONTAINER_HOME="${BOXES_DIR:-$HOME/.boxes}/${CONTAINER}"
-
-CONTAINER_TARGET_PATH="${CONTAINER_HOME}/${TARGET_PATH}"
-echo "Opening VS Code for container '$CONTAINER' at path '$CONTAINER_TARGET_PATH'..."
-exec $CODE_CMD "$CONTAINER_TARGET_PATH"
+${code_command} --folder-uri="vscode-remote://attached-container+${container_name}/$(realpath "${2}")"
