@@ -32,10 +32,11 @@ arch_packages() {
 
   slog "Installing packages"
 
-  si git-core github-cli git-delta unzip wget curl trash-cli tar stow \
-    gcc make file starship gum wl-clipboard tree bat eza fzf ripgrep \
-    zoxide fd htop sd yazi bat tealdeer lazygit libsecret net-tools \
-    iproute2 nmap dialog newt python python-pipx python-pip
+  si  bat bottom choose curl dialog direnv dust dysk eza fd file fzf gcc git \
+   git-delta github-cli gum htop iproute2 jq just lazygit libnewt libsecret \
+   make micro net-tools nmap pixi procs python python-pip python-pipx \
+   python-uv ripgrep sd shellcheck shfmt starship starship stow tar tealdeer \
+   trash-cli tree ugrep unzip wget which wl-clipboard xh yazi yq zoxide
 
   has_cmd tldr && tldr --update
 
@@ -135,7 +136,7 @@ cli_install() {
 
   si neovim tmux shellcheck shfmt python-pynvim zsh-completions bat jq yq \
     luarocks duf lazygit ugrep git-delta navi sd gdu hyperfine fd lsd xh \
-    htop nushell bottom plocate tealdeer television dysk yazi pixi procs \
+    htop nushell bottom plocate tealdeer television dysk yazi procs \
     dust direnv atuin broot glances curlie superfile choose just dialog \
     gum lazydocker
 
