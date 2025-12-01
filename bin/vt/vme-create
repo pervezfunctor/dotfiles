@@ -86,11 +86,15 @@ configure_debian() {
 
 configure_fedora() {
   VM_NAME=${VM_NAME:="fedora-vme"}
-  RELEASE=${RELEASE:=42}
-  BASE_IMAGE_NAME="Fedora-Cloud-Base-Generic-${RELEASE}-1.1.x86_64.qcow2"
+  RELEASE=${RELEASE:=43}
+  BASE_IMAGE_NAME="Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
   DOWNLOAD_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/${BASE_IMAGE_NAME}"
   USER_GROUPS=("wheel" "network" "storage")
-  OS_VARIANT="fedora42"
+  OS_VARIANT="fedora${RELEASE}"
+
+  if [[ "$RELEASE" -ne 43 ]]; then
+    warn "Only Fedora 43 is supported. Installing Fedora 43."
+  fi
 }
 
 configure_tw() {
