@@ -32,11 +32,11 @@ arch_packages() {
 
   slog "Installing packages"
 
-  si  bat bottom choose curl dialog direnv dust dysk eza fd file fzf gcc git \
-   git-delta github-cli gum htop iproute2 jq just lazygit libnewt libsecret \
-   make micro net-tools nmap pixi procs python python-pip python-pipx \
-   python-uv ripgrep sd shellcheck shfmt starship starship stow tar tealdeer \
-   trash-cli tree ugrep unzip wget which wl-clipboard xh yazi yq zoxide
+  si bat bottom choose curl dialog direnv dust dysk eza fd file fzf gcc git \
+    git-delta github-cli gum htop iproute2 jq just lazygit libnewt libsecret \
+    make micro net-tools nmap pixi procs python python-pip python-pipx \
+    python-uv ripgrep sd shellcheck shfmt starship starship stow tar tealdeer \
+    trash-cli tree ugrep unzip wget which wl-clipboard xh yazi yq zoxide
 
   has_cmd tldr && tldr --update
 
@@ -205,15 +205,23 @@ cockpit_install() {
   slog "cockpit installation done!"
 }
 
+nftables_install() {
+  if pacman -Qi nftables >/dev/null 2>&1; then
+    exit 0
+  fi
+
+  sudo pacman -S --noconfirm --ask=4 iptables-nft nftables
+}
+
 vm_install() {
   slog "Installing vm"
 
-  sudo pacman -R --noconfirm iptables
+  iptales_nft_install
 
-  si iptables-nft libvirt qemu-base virt-install bridge-utils dnsmasq jq \
-    edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs \
+  si libvirt qemu-base virt-install bridge-utils dnsmasq libosinfo openssl \
+    edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs jq \
     guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat \
-    xmlstarlet osinfo-db ovmf libosinfo openssl
+    xmlstarlet osinfo-db ovmf
 
   slog "vm installation done!"
 }
@@ -233,6 +241,7 @@ incus_install() {
 
   slog "Installing incus"
 
+  nftables_install
   si incus qemu-desktop bridge-utils openssl
   incus_confstall
 
