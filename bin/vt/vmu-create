@@ -217,9 +217,9 @@ configure_distro() {
     OS_VARIANT="ubuntu25.10"
     ;;
   fedora)
-    IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
-    BASE_IMG="${BASE_IMG_DIR}/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
-    OS_VARIANT="fedora41"
+    IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
+    BASE_IMG="${BASE_IMG_DIR}/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
+    OS_VARIANT="fedora42"
     ;;
   arch)
     IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
