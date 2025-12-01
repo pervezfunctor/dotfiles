@@ -9,7 +9,7 @@ has_cmd() {
 LIBVIRT_NET="virbr0"
 LIBVIRT_SUBNET="192.168.122.0/24"
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
   echo "Error: Please provide the outgoing interface (e.g., eth0) as an argument."
   echo "Usage: $0 <OUT_IF> (e.g. eth0)"
   exit 1
