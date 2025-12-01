@@ -96,9 +96,9 @@ wsl --list --online
 Install any of them. For example, to install fedora.
 
 ```powershell
-wsl --install FedoraLinux-42
-wsl --set-default FedoraLinux-42
-wsl -d FedoraLinux-42
+wsl --install FedoraLinux-43
+wsl --set-default FedoraLinux-43
+wsl -d FedoraLinux-43
 ```
 
 Setup `wsl` with the following command.
@@ -317,7 +317,7 @@ sudo systemctl restart libvirtd
 <details>
 <summary>Fedora Workstation</summary>
 
-### Fedora Workstation(42 only)
+### Fedora Workstation(43 only)
 
 Fedora Workstation/Fedora KDE/Fedora Sway are all good choices. They are stable, have the latest kernel supporting most modern hardware. Most software is latest or will be in fedora soon. This has the right balance of stability and latest software. This is also the operating system, where majority of the interesting things are happening in the linux desktop space.
 

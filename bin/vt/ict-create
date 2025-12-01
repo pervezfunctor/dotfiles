@@ -67,7 +67,7 @@ configure_distribution() {
     IMAGE="images:ubuntu/${RELEASE}/cloud"
     ;;
   fedora)
-    RELEASE=${RELEASE:-"42"}
+    RELEASE=${RELEASE:-"43"}
     IMAGE="images:fedora/${RELEASE}/cloud"
     ;;
   arch)

@@ -461,7 +461,7 @@ dbox-arch-toolbox() {
 }
 
 dbox-fedora-toolbox() {
-  dbox_create fedora-toolbox quay.io/fedora/fedora-toolbox:42 \
+  dbox_create fedora-toolbox quay.io/fedora/fedora-toolbox:43 \
     --init \
     --additional-packages "systemd"
 }

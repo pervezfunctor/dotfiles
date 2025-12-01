@@ -22,7 +22,7 @@ DISK_SIZE="20GB"
 BRIDGE_IF="incusbr0"
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 --distro DISTRO [OPTIONS]
 
 Create Incus virtual machines with cloud-init and SSH access.
@@ -61,97 +61,97 @@ EOF
 }
 
 configure_distribution() {
-    case "$DISTRO" in
-    ubuntu)
-        RELEASE=${RELEASE:-"plucky"}
-        IMAGE="images:ubuntu/${RELEASE}/cloud"
-        ;;
-    fedora)
-        RELEASE=${RELEASE:-"42"}
-        IMAGE="images:fedora/${RELEASE}/cloud"
-        ;;
-    arch)
-        RELEASE=${RELEASE:-"current"}
-        IMAGE="images:archlinux/${RELEASE}/cloud"
-        ;;
-    debian)
-        RELEASE=${RELEASE:-"13"}
-        IMAGE="images:debian/${RELEASE}/cloud"
-        ;;
-    centos)
-        RELEASE=${RELEASE:-"9-Stream"}
-        IMAGE="images:centos/${RELEASE}/cloud"
-        ;;
-    tumbleweed | tw)
-        RELEASE=${RELEASE:-"current"}
-        IMAGE="images:opensuse/tumbleweed/cloud"
-        ;;
-    nix)
-        RELEASE=${RELEASE:-"unstable"}
-        IMAGE="images:nixos/${RELEASE}/cloud"
-        ;;
-    rocky)
-        RELEASE=${RELEASE:-"9"}
-        IMAGE="images:rockylinux/${RELEASE}/cloud"
-        ;;
-    alpine)
-        RELEASE=${RELEASE:-"3.22"}
-        IMAGE="images:alpine/${RELEASE}/cloud"
-        ;;
-    *)
-        fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed, alpine"
-        exit 1
-        ;;
-    esac
+  case "$DISTRO" in
+  ubuntu)
+    RELEASE=${RELEASE:-"plucky"}
+    IMAGE="images:ubuntu/${RELEASE}/cloud"
+    ;;
+  fedora)
+    RELEASE=${RELEASE:-"43"}
+    IMAGE="images:fedora/${RELEASE}/cloud"
+    ;;
+  arch)
+    RELEASE=${RELEASE:-"current"}
+    IMAGE="images:archlinux/${RELEASE}/cloud"
+    ;;
+  debian)
+    RELEASE=${RELEASE:-"13"}
+    IMAGE="images:debian/${RELEASE}/cloud"
+    ;;
+  centos)
+    RELEASE=${RELEASE:-"9-Stream"}
+    IMAGE="images:centos/${RELEASE}/cloud"
+    ;;
+  tumbleweed | tw)
+    RELEASE=${RELEASE:-"current"}
+    IMAGE="images:opensuse/tumbleweed/cloud"
+    ;;
+  nix)
+    RELEASE=${RELEASE:-"unstable"}
+    IMAGE="images:nixos/${RELEASE}/cloud"
+    ;;
+  rocky)
+    RELEASE=${RELEASE:-"9"}
+    IMAGE="images:rockylinux/${RELEASE}/cloud"
+    ;;
+  alpine)
+    RELEASE=${RELEASE:-"3.22"}
+    IMAGE="images:alpine/${RELEASE}/cloud"
+    ;;
+  *)
+    fail "Unsupported distribution: $DISTRO"
+    fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed, alpine"
+    exit 1
+    ;;
+  esac
 
-    VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
-    USER_NAME=${USER_NAME:=$(default_username "$DISTRO")}
-    PASSWORD=${PASSWORD:-"$USER_NAME"}
-    PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
+  VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
+  USER_NAME=${USER_NAME:=$(default_username "$DISTRO")}
+  PASSWORD=${PASSWORD:-"$USER_NAME"}
+  PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
-    slog "Configuration:"
-    slog "  Distribution: $DISTRO $RELEASE"
-    slog "  VM Name: $VM_NAME"
-    slog "  Username: $USER_NAME"
-    slog "  Image: $IMAGE"
-    slog "  Resources: ${VCPUS} vCPUs, ${MEMORY_MB}MB RAM, ${DISK_SIZE} disk"
-    slog "  Network Bridge: $BRIDGE_IF"
+  slog "Configuration:"
+  slog "  Distribution: $DISTRO $RELEASE"
+  slog "  VM Name: $VM_NAME"
+  slog "  Username: $USER_NAME"
+  slog "  Image: $IMAGE"
+  slog "  Resources: ${VCPUS} vCPUs, ${MEMORY_MB}MB RAM, ${DISK_SIZE} disk"
+  slog "  Network Bridge: $BRIDGE_IF"
 }
 
 generate_cloud_init_config() {
-    slog "Generating cloud-init configuration..."
+  slog "Generating cloud-init configuration..."
 
-    CLOUD_INIT_DIR=$(mktemp -d)
-    trap '[[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]] && rm -rf "$CLOUD_INIT_DIR"' EXIT
+  CLOUD_INIT_DIR=$(mktemp -d)
+  trap '[[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]] && rm -rf "$CLOUD_INIT_DIR"' EXIT
 
-    local pub_key
-    pub_key=$(cat "$SSH_KEY")
+  local pub_key
+  pub_key=$(cat "$SSH_KEY")
 
-    local packages_common="qemu-guest-agent bash curl"
+  local packages_common="qemu-guest-agent bash curl"
 
-    local openssh_pkg
+  local openssh_pkg
 
-    if [[ "$DISTRO" == "arch" ]]; then
-        openssh_pkg="openssh"
-    else
-        openssh_pkg="openssh-server"
-    fi
+  if [[ "$DISTRO" == "arch" ]]; then
+    openssh_pkg="openssh"
+  else
+    openssh_pkg="openssh-server"
+  fi
 
-    local runcmd_lines
+  local runcmd_lines
 
-    if [[ "$DISTRO" == "alpine" ]]; then
-        runcmd_lines=(
-            "rc-update add qemug-guest-agent default"
-            "rc-update add sshd default"
-        )
-    else
-        runcmd_lines=(
-            "systemctl enable --now ssh || systemctl enable --now sshd || true"
-        )
-    fi
+  if [[ "$DISTRO" == "alpine" ]]; then
+    runcmd_lines=(
+      "rc-update add qemug-guest-agent default"
+      "rc-update add sshd default"
+    )
+  else
+    runcmd_lines=(
+      "systemctl enable --now ssh || systemctl enable --now sshd || true"
+    )
+  fi
 
-    cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
+  cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
 #cloud-config
 hostname: $VM_NAME
 manage_etc_hosts: true
@@ -185,183 +185,183 @@ disable_root: false
 final_message: "VM $VM_NAME setup complete! SSH access is ready."
 EOF
 
-    cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
+  cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
 instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
-    success "Cloud-init configuration files created in: $CLOUD_INIT_DIR"
+  success "Cloud-init configuration files created in: $CLOUD_INIT_DIR"
 }
 
 create_vm() {
-    slog "Creating Incus VM '$VM_NAME'..."
+  slog "Creating Incus VM '$VM_NAME'..."
 
-    if incus_instance_exists "$VM_NAME"; then
-        fail "instance '$VM_NAME' already exists"
-        exit 1
-    fi
+  if incus_instance_exists "$VM_NAME"; then
+    fail "instance '$VM_NAME' already exists"
+    exit 1
+  fi
 
-    generate_cloud_init_config
+  generate_cloud_init_config
 
-    slog "Launching VM with image: $IMAGE"
+  slog "Launching VM with image: $IMAGE"
 
-    local launch_cmd=(
-        incus launch "$IMAGE" "$VM_NAME" --vm
-        --config "limits.cpu=$VCPUS"
-        --config "limits.memory=${MEMORY_MB}MB"
-        --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
-        --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
-        --device "root,size=$DISK_SIZE"
-        --config "security.secureboot=false"
-        --network "$BRIDGE_IF"
-    )
+  local launch_cmd=(
+    incus launch "$IMAGE" "$VM_NAME" --vm
+    --config "limits.cpu=$VCPUS"
+    --config "limits.memory=${MEMORY_MB}MB"
+    --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
+    --config "user.meta-data=$(cat "${CLOUD_INIT_DIR}/meta-data")"
+    --device "root,size=$DISK_SIZE"
+    --config "security.secureboot=false"
+    --network "$BRIDGE_IF"
+  )
 
-    if ! "${launch_cmd[@]}"; then
-        fail "Failed to create VM '$VM_NAME'"
-        exit 1
-    fi
+  if ! "${launch_cmd[@]}"; then
+    fail "Failed to create VM '$VM_NAME'"
+    exit 1
+  fi
 
-    success "VM '$VM_NAME' created successfully"
+  success "VM '$VM_NAME' created successfully"
 
-    if [[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]]; then
-        rm -rf "$CLOUD_INIT_DIR"
-        slog "Cleaned up temporary cloud-init files"
-    fi
+  if [[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]]; then
+    rm -rf "$CLOUD_INIT_DIR"
+    slog "Cleaned up temporary cloud-init files"
+  fi
 }
 
 show_completion_info() {
-    echo
-    printf '\033[1;32m╭─────────────────────────────────────────────────────────────╮\033[0m\n'
-    printf '\033[1;32m│\033[1;37m                     VM CREATED SUCCESSFULLY!                \033[1;32m│\033[0m\n'
-    printf '\033[1;32m╰─────────────────────────────────────────────────────────────╯\033[0m\n'
-    echo
+  echo
+  printf '\033[1;32m╭─────────────────────────────────────────────────────────────╮\033[0m\n'
+  printf '\033[1;32m│\033[1;37m                     VM CREATED SUCCESSFULLY!                \033[1;32m│\033[0m\n'
+  printf '\033[1;32m╰─────────────────────────────────────────────────────────────╯\033[0m\n'
+  echo
 
-    printf '\033[1;36m📋 VM INFORMATION:\033[0m\n'
-    printf '\033[0;36m─────────────────\033[0m\n'
-    printf '\033[1mVM Name:\033[0m    \033[0;33m%s\033[0m\n' "$VM_NAME"
-    printf '\033[1mUsername:\033[0m   \033[0;33m%s\033[0m\n' "$USER_NAME"
-    printf '\033[1mPassword:\033[0m   \033[0;33m%s\033[0m\n' "$PASSWORD"
-    echo
+  printf '\033[1;36m📋 VM INFORMATION:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  printf '\033[1mVM Name:\033[0m    \033[0;33m%s\033[0m\n' "$VM_NAME"
+  printf '\033[1mUsername:\033[0m   \033[0;33m%s\033[0m\n' "$USER_NAME"
+  printf '\033[1mPassword:\033[0m   \033[0;33m%s\033[0m\n' "$PASSWORD"
+  echo
 
-    printf '\033[1;36m🔍 STATUS CHECK:\033[0m\n'
-    printf '\033[0;36m─────────────────\033[0m\n'
-    info 'Check if the VM is running with:'
-    info '  ivm status %s' "$VM_NAME"
-    echo
+  printf '\033[1;36m🔍 STATUS CHECK:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  info 'Check if the VM is running with:'
+  info '  ivm status %s' "$VM_NAME"
+  echo
 
-    printf '\033[1;36m🌐 NETWORK ACCESS:\033[0m\n'
-    printf '\033[0;36m─────────────────\033[0m\n'
-    info 'Once the VM is up, get its IP address with:'
-    info '  ivm info %s' "$VM_NAME"
-    echo
-    info 'Then connect to it using SSH:'
-    info '  ssh %s@<IP_ADDRESS>' "$USER_NAME"
-    echo
+  printf '\033[1;36m🌐 NETWORK ACCESS:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  info 'Once the VM is up, get its IP address with:'
+  info '  ivm info %s' "$VM_NAME"
+  echo
+  info 'Then connect to it using SSH:'
+  info '  ssh %s@<IP_ADDRESS>' "$USER_NAME"
+  echo
 
-    printf '\033[1;36m🔧 VM MANAGEMENT:\033[0m\n'
-    printf '\033[0;36m─────────────────\033[0m\n'
-    info 'Stop the VM:'
-    info '  ivm stop %s' "$VM_NAME"
-    echo
-    info 'Start the VM:'
-    info '  ivm start %s' "$VM_NAME"
-    echo
-    info 'Delete the VM:'
-    info '  ivm delete %s' "$VM_NAME"
-    echo
+  printf '\033[1;36m🔧 VM MANAGEMENT:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  info 'Stop the VM:'
+  info '  ivm stop %s' "$VM_NAME"
+  echo
+  info 'Start the VM:'
+  info '  ivm start %s' "$VM_NAME"
+  echo
+  info 'Delete the VM:'
+  info '  ivm delete %s' "$VM_NAME"
+  echo
 
-    printf '\033[1;36m🔧 TROUBLESHOOTING:\033[0m\n'
-    printf '\033[0;36m─────────────────\033[0m\n'
-    info 'If you need to access the console:'
-    info '  ivm console %s' "$VM_NAME"
-    printf '  \033[0;90m(Exit with Ctrl+A then Q)\033[0m\n'
-    echo
+  printf '\033[1;36m🔧 TROUBLESHOOTING:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  info 'If you need to access the console:'
+  info '  ivm console %s' "$VM_NAME"
+  printf '  \033[0;90m(Exit with Ctrl+A then Q)\033[0m\n'
+  echo
 
-    success "VM '$VM_NAME' creation process completed successfully!"
-    echo
+  success "VM '$VM_NAME' creation process completed successfully!"
+  echo
 }
 
 parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-        --distro)
-            DISTRO="$2"
-            shift 2
-            ;;
-        --name)
-            VM_NAME="$2"
-            shift 2
-            ;;
-        --release)
-            RELEASE="$2"
-            shift 2
-            ;;
-        --username)
-            USER_NAME="$2"
-            shift 2
-            ;;
-        --password)
-            PASSWORD="$2"
-            shift 2
-            ;;
-        --vcpus)
-            VCPUS="$2"
-            shift 2
-            ;;
-        --memory)
-            MEMORY_MB="$2"
-            shift 2
-            ;;
-        --disk-size)
-            DISK_SIZE="$2"
-            shift 2
-            ;;
-        --ssh-key)
-            SSH_KEY="$2"
-            shift 2
-            ;;
-        --bridge)
-            BRIDGE_IF="$2"
-            shift 2
-            ;;
-        --help | -h)
-            usage
-            exit 0
-            ;;
-        *)
-            fail "Unknown option: $1"
-            usage
-            exit 1
-            ;;
-        esac
-    done
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --distro)
+      DISTRO="$2"
+      shift 2
+      ;;
+    --name)
+      VM_NAME="$2"
+      shift 2
+      ;;
+    --release)
+      RELEASE="$2"
+      shift 2
+      ;;
+    --username)
+      USER_NAME="$2"
+      shift 2
+      ;;
+    --password)
+      PASSWORD="$2"
+      shift 2
+      ;;
+    --vcpus)
+      VCPUS="$2"
+      shift 2
+      ;;
+    --memory)
+      MEMORY_MB="$2"
+      shift 2
+      ;;
+    --disk-size)
+      DISK_SIZE="$2"
+      shift 2
+      ;;
+    --ssh-key)
+      SSH_KEY="$2"
+      shift 2
+      ;;
+    --bridge)
+      BRIDGE_IF="$2"
+      shift 2
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    esac
+  done
 
-    if [[ -z "${DISTRO:-}" ]]; then
-        fail "Distribution is required. Use --distro option."
-        usage
-        exit 1
-    fi
+  if [[ -z "${DISTRO:-}" ]]; then
+    fail "Distribution is required. Use --distro option."
+    usage
+    exit 1
+  fi
 }
 
 main() {
-    slog "Starting Incus VM creation..."
-    ivm_check_exists_prerequisites
-    parse_args "$@"
+  slog "Starting Incus VM creation..."
+  ivm_check_exists_prerequisites
+  parse_args "$@"
 
-    if [[ -z "${SSH_KEY:-}" ]]; then
-        SSH_KEY=$(ssh_key_path)
-    fi
+  if [[ -z "${SSH_KEY:-}" ]]; then
+    SSH_KEY=$(ssh_key_path)
+  fi
 
-    if [[ ! -f "$SSH_KEY" ]]; then
-        fail "SSH public key not found at: $SSH_KEY"
-        exit 1
-    fi
+  if [[ ! -f "$SSH_KEY" ]]; then
+    fail "SSH public key not found at: $SSH_KEY"
+    exit 1
+  fi
 
-    configure_distribution
-    create_vm
-    show_completion_info
+  configure_distribution
+  create_vm
+  show_completion_info
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
+  main "$@"
 fi
