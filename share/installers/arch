@@ -221,7 +221,7 @@ vm_install() {
   si libvirt qemu-base virt-install bridge-utils dnsmasq libosinfo openssl \
     edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs jq \
     guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat \
-    xmlstarlet osinfo-db ovmf
+    xmlstarlet ovmf osinfo-db osinfo-db-tools
 
   slog "vm installation done!"
 }
