@@ -46,7 +46,7 @@ EXAMPLES:
     $0 --distro tw --name opensuse-container --vcpus 2 --memory 2048
 
 SUPPORTED DISTRIBUTIONS:
-    ubuntu      - Ubuntu (plucky/25.04) or specified release
+    ubuntu      - Ubuntu (questing/25.10) or specified release
     fedora      - Fedora (latest) or specified release
     arch        - Arch Linux (current)
     debian      - Debian (13/trixie) or specified release
@@ -63,7 +63,7 @@ EOF
 configure_distribution() {
   case "$DISTRO" in
   ubuntu)
-    RELEASE=${RELEASE:-"plucky"}
+    RELEASE=${RELEASE:-"questing"}
     IMAGE="images:ubuntu/${RELEASE}/cloud"
     ;;
   fedora)
