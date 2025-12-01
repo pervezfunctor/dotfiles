@@ -73,13 +73,14 @@ configure_tw() {
 
 configure_fedora() {
     VM_NAME=${VM_NAME:=fedora}
-    RELEASE=${RELEASE:=42}
-
-    IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${RELEASE}-1.1.x86_64.qcow2"
-
+    RELEASE=${RELEASE:=43}
+    IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
     BASE_IMG_NAME="fedora-${RELEASE}.qcow2"
     USER_GROUPS=("wheel")
     OS_VARIANT="fedora${RELEASE}"
+    if [[ "$RELEASE" -ne 43 ]]; then
+        warn "Only Fedora 43 is supported. Installing Fedora 43."
+    fi
     # INSTALL_CMD="sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
 }
 
@@ -164,7 +165,7 @@ DISTRIBUTION-SPECIFIC OPTIONS:
     Ubuntu:
         Default release: questing (25.10)
     Fedora:
-        Default release: 42
+        Default release: 43
     Arch:
         Default release: latest
     Debian:
