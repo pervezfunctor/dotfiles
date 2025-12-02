@@ -162,7 +162,7 @@ syslogs() {
   sudo journalctl -b -p 3 -xn
 }
 
-source "${DOT_DIR}/share/dbox-fns"
+source "${DOT_DIR}/share/dt-fns"
 source "${DOT_DIR}/share/tbox-fns"
 source "${DOT_DIR}/share/incus-fns"
 source "${DOT_DIR}/share/virt-fns"

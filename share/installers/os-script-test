@@ -93,7 +93,7 @@ cmd_check terminal_boxstall
 cmd_check slimbox_mainstall
 cmd_check box_mainstall
 cmd_check terminal_boxstall
-cmd_check dbox_mainstall
+cmd_check dt_mainstall
 cmd_check wslbox_mainstall
 cmd_check wsl_mainstall
 cmd_check wsl_mainstall

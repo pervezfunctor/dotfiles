@@ -180,18 +180,18 @@ alias dlogs = docker logs -f
 alias lzg = lazygit
 alias lzd = lazydocker
 
-alias dbox = distrobox
-alias dboxe = distrobox enter -nw --clean-path
-alias dboxl = distrobox list
-alias dboxr = distrobox run
-alias dboxc = distrobox create
-alias dboxd = distrobox rm
+alias dt = distrobox
+alias dte = distrobox enter -nw --clean-path
+alias dtl = distrobox list
+alias dtr = distrobox run
+alias dtc = distrobox create
+alias dtd = distrobox rm
 
-alias rdboxe = distrobox enter -nw --clean-path --root
-alias rdboxl = distrobox list --root
-alias rdboxr = distrobox run --root
-alias rdboxc = distrobox create --root
-alias rdboxd = distrobox rm --root
+alias rdte = distrobox enter -nw --clean-path --root
+alias rdtl = distrobox list --root
+alias rdtr = distrobox run --root
+alias rdtc = distrobox create --root
+alias rdtd = distrobox rm --root
 
 alias n = pnpm
 alias ni = pnpm install

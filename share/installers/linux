@@ -296,7 +296,7 @@ dev-work-full_mainstall() {
   incus_install
 }
 
-dbox-docker-dev_mainstall() {
+dt-docker-dev_mainstall() {
   is_distrobox || die "This script is only for Ubuntu distrobox container"
   is_ubuntu || die "This script is only for Ubuntu distrobox container"
   has_cmd docker || die "This script requires docker"
@@ -308,7 +308,7 @@ dbox-docker-dev_mainstall() {
   docker_confstall
 }
 
-dbox-dev_mainstall() {
+dt-dev_mainstall() {
   shell-slim_mainstall
   vscode_groupstall
 
@@ -317,7 +317,7 @@ dbox-dev_mainstall() {
   systemctl --user enable --now dbus
 }
 
-dbox_dev_exports() {
+dt_dev_exports() {
   distrobox-export --bin "$(which stow)"
   distrobox-export --bin "$(which code)"
   distrobox-export --app "Visual Studio Code"
@@ -326,9 +326,9 @@ dbox_dev_exports() {
   # distrobox-export --app "kitty"
 }
 
-dbox-dev-atomic_mainstall() {
-  dbox-dev_mainstall
-  dbox_dev_exports
+dt-dev-atomic_mainstall() {
+  dt-dev_mainstall
+  dt_dev_exports
 }
 
 nixos_mainstall() {

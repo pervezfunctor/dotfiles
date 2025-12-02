@@ -890,20 +890,20 @@ generic_mainstall() {
   vscode-flatpak_install
 }
 
-fedora-atomic-dbox_mainstall() {
+fedora-atomic-dt_mainstall() {
   generic_mainstall
 
   # shellcheck disable=SC1091
-  source_curl "${ILM_BASE_URL}/share/dbox-fns"
+  source_curl "${ILM_BASE_URL}/share/dt-fns"
 
-  if fn_exists dbox-docker; then
-    dbox-docker
+  if fn_exists dt-docker; then
+    dt-docker
   else
     warn "cannot setup docker distrobox container"
   fi
 
-  if fn_exists dbox-nix; then
-    dbox-nix
+  if fn_exists dt-nix; then
+    dt-nix
   else
     warn "Cannot setup nix distrobox container"
   fi

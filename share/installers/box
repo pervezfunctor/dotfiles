@@ -103,7 +103,7 @@ box_base() {
     zsh_boxstall
 }
 
-dbox_base() {
+dt_base() {
     is_distrobox || die "This script is only for distrobox containers"
     [[ "$HOME" == *"boxes"* ]] || die "This script is only for distrobox containers with isolated home directory"
 
@@ -145,8 +145,8 @@ fullbox_mainstall() {
     emacs_boxstall
 }
 
-dbox_mainstall() {
-    dbox_base "$(get_boxos)"
+dt_mainstall() {
+    dt_base "$(get_boxos)"
 }
 
 tw-wslbox_mainstall() {

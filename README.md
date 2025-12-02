@@ -248,13 +248,13 @@ bash -c "$(curl -sSL https://is.gd/egitif)" -- fedora-atomic
 For developer tools(`vscode`, `docker` etc.), restart your terminal and use the following command. This will take a long time to install. This works best on Silverblue.
 
 ```bash
-dbox-dev
+dt-dev
 ```
 
 I will add more instructions to use distrobox in the future. For now, you could use the following command to use `vscode` from distrobox container.
 
 ```bash
-dbe dev # enter distrobox container
+dte dev # enter distrobox container
 code # opens vscode from distrobox container
 ```
 
@@ -491,15 +491,15 @@ ilmi distrobox
 Some helper functions for distrobox are available. For example you could create and enter a debian distrobox container with systemd with the following commands.
 
 ```bash
-dbox-debian-init my-dbox
-dbe my-dbox
+dt-debian-init my-dt
+dte my-dt
 ```
 
 You could have a distrobox container setup with this repository using the following.
 
 ```bash
-dbox-main-install debian shell-slim my-dbox2
-dbe my-dbox2
+dt-main-install debian shell-slim my-dt2
+dte my-dt2
 ```
 
 Install nix and home-manager with the following command.

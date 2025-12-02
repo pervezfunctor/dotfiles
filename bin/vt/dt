@@ -7,7 +7,7 @@ set -euo pipefail
 source "$(dirname "$0")/dt-utils"
 
 export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
-source "$DOT_DIR/share/dbox-fns"
+source "$DOT_DIR/share/dt-fns"
 
 export BOXES_DIR=${USE_BOXES_DIR:-${BOXES_DIR}}
 
@@ -124,7 +124,7 @@ create_dt() {
 
   slog "Creating $distro distrobox container: $dt_name"
 
-  if dbox-"$distro" "$dt_name"; then
+  if dt-"$distro" "$dt_name"; then
     success "Container '$dt_name' created successfully"
   else
     fail "Failed to create container '$dt_name'"

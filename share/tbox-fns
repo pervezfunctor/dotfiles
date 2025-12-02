@@ -139,5 +139,5 @@ tbox-group() {
 }
 
 tbox-dev() {
-  tbox-group dbox-dev-atomic
+  tbox-group dt-dev-atomic
 }

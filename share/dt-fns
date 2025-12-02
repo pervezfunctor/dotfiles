@@ -6,7 +6,7 @@ export BOXES_DIR=${USE_BOXES_DIR:-${BOXES_DIR}}
 
 has_cmd distrobox || return 0
 
-dbox-logs() {
+dt_logs() {
   podman logs "$1"
 }
 
@@ -67,7 +67,7 @@ dt_create() {
     --name "$CONTAINER_NAME" \
     "$@"; then
     slog "Distrobox ${CONTAINER_NAME} created successfully"
-    slog "Use dbe ${CONTAINER_NAME} to enter"
+    slog "Use dte ${CONTAINER_NAME} to enter"
     return 0
   else
     fail "Failed to create distrobox ${CONTAINER_NAME}"
@@ -82,7 +82,7 @@ dt_create_root() {
 
   if dt_create "$CONTAINER_NAME" "$IMAGE" --root "$@"; then
     slog "Distrobox ${CONTAINER_NAME} created successfully"
-    slog "Use rdbe ${CONTAINER_NAME} to enter"
+    slog "Use rdte ${CONTAINER_NAME} to enter"
     return 0
   else
     fail "Failed to create distrobox ${CONTAINER_NAME}"
@@ -90,62 +90,62 @@ dt_create_root() {
   fi
 }
 
-dbox-ubuntu-noinit() {
+dt_ubuntu-noinit() {
   local CONTAINER_NAME=${1:-ubuntu-noinit}
   dt_create "${CONTAINER_NAME}" ubuntu:questing
 }
 
-dbox-arch-noinit() {
+dt_arch-noinit() {
   local CONTAINER_NAME=${1:-arch-noinit}
   dt_create "${CONTAINER_NAME}" archlinux:latest
 }
 
-dbox-fedora-minimal-noinit() {
+dt_fedora-minimal-noinit() {
   local CONTAINER_NAME=${1:-fedora-minimal-noinit}
   dt_create "${CONTAINER_NAME}" registry.fedoraproject.org/fedora-minimal:latest
 }
 
-dbox-debian-slim-noinit() {
+dt_debian-slim-noinit() {
   local CONTAINER_NAME=${1:-debian-slim-noinit}
   dt_create "${CONTAINER_NAME}" debian:trixie-slim
 }
 
-dbox-fedora-noinit() {
+dt_fedora-noinit() {
   local CONTAINER_NAME=${1:-fedora-noinit}
   dt_create "${CONTAINER_NAME}" fedora:latest
 }
 
-dbox-centos-noinit() {
+dt_centos-noinit() {
   local CONTAINER_NAME=${1:-centos-noinit}
   dt_create "${CONTAINER_NAME}" centos:latest
 }
 
-dbox-debian-noinit() {
+dt_debian-noinit() {
   local CONTAINER_NAME=${1:-debian-noinit}
   dt_create "${CONTAINER_NAME}" debian:latest
 }
 
-dbox-rocky-noinit() {
+dt_rocky-noinit() {
   local CONTAINER_NAME=${1:-rocky-noinit}
   dt_create "${CONTAINER_NAME}" rockylinux:9
 }
 
-dbox-tw-noinit() {
+dt_tw-noinit() {
   local CONTAINER_NAME=${1:-tw-noinit}
   dt_create "${CONTAINER_NAME}" opensuse/tumbleweed
 }
 
-dbox-bluefin() {
+dt_bluefin() {
   local CONTAINER_NAME=${1:-bluefin-cli}
   dt_create "${CONTAINER_NAME}" ghcr.io/ublue-os/bluefin-cli
 }
 
-dbox-wolfi() {
+dt_wolfi() {
   local CONTAINER_NAME=${1:-wolfi-ublue}
   dt_create "${CONTAINER_NAME}" ghcr.io/ublue-os/wolfi-toolbox
 }
 
-dbox-virt-manager() {
+dt_virt-manager() {
   local CONTAINER_NAME=${1:-virt-manager}
 
   local PKGS=(
@@ -179,7 +179,7 @@ dbox-virt-manager() {
     --init-hooks "zypper in -y --no-recommends ${PKGS[*]} && systemctl enable ${services[*]} && usermod -aG libvirt $USER"
 }
 
-dbox-fedora-virt-manager() {
+dt_fedora-virt-manager() {
   local CONTAINER_NAME=${1:-fedora-virt-manager}
   local PKGS=(
     openssh-server
@@ -200,7 +200,7 @@ dbox-fedora-virt-manager() {
     --init-hooks "dnf install -y --skip-unavailable ${PKGS[*]} && systemctl enable ${services[*]} && usermod -aG libvirt $USER"
 }
 
-dbox-docker-base() {
+dt_docker-base() {
   local CONTAINER_NAME=${1:-docker-base}
 
   dt_create_root "${CONTAINER_NAME}" fedora:latest \
@@ -212,7 +212,7 @@ dbox-docker-base() {
   dt_exec "${CONTAINER_NAME}" --root sudo usermod -aG docker "$USER"
 }
 
-dbox-docker-slim() {
+dt_docker-slim() {
   local CONTAINER_NAME=${1:-docker}
   slog "Creating Docker distrobox: ${CONTAINER_NAME}"
   sudo mkdir -p /var/lib/docker
@@ -223,14 +223,14 @@ dbox-docker-slim() {
     --additional-packages "systemd libpam-systemd"
 }
 
-dbox-docker() {
+dt_docker() {
   local CONTAINER_NAME=${1:-docker}
-  dbox-docker-slim "${CONTAINER_NAME}"
+  dt_docker-slim "${CONTAINER_NAME}"
 
   dt_ilm_exec "${CONTAINER_NAME}"
 }
 
-dbox-incus() {
+dt_incus() {
   local CONTAINER_NAME=${1:-incus}
   slog "Creating Incus distrobox: ${CONTAINER_NAME}"
   sudo mkdir -p /var/lib/incus
@@ -249,7 +249,7 @@ dt_create_ilm() {
   dt_exec "${CONTAINER_NAME}" bash -c "$(curl -sSL "${ILM_SETUP_URL}")"
 }
 
-dbox-alpine-edge() {
+dt_alpine-edge() {
   local CONTAINER_NAME=${1:-alpine-edge}
   slog "Creating distrobox $CONTAINER_NAME"
 
@@ -260,7 +260,7 @@ dbox-alpine-edge() {
   dt_exec "${CONTAINER_NAME}" sudo rc-update add sshd default
 }
 
-dbox-alpine() {
+dt_alpine() {
   local CONTAINER_NAME=${1:-alpine}
   slog "Creating distrobox $CONTAINER_NAME"
 
@@ -270,7 +270,7 @@ dbox-alpine() {
   dt_exec "${CONTAINER_NAME}" sudo rc-update add sshd default
 }
 
-dbox-debian() {
+dt_debian() {
   local CONTAINER_NAME=${1:-debian}
   slog "Creating distrobox $CONTAINER_NAME"
 
@@ -281,7 +281,7 @@ dbox-debian() {
   dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
-dbox-ubuntu() {
+dt_ubuntu() {
   local CONTAINER_NAME=${1:-ubuntu}
   slog "Creating distrobox $CONTAINER_NAME"
 
@@ -292,7 +292,7 @@ dbox-ubuntu() {
   dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
-dbox-arch() {
+dt_arch() {
   local CONTAINER_NAME=${1:-arch}
   slog "Creating distrobox $CONTAINER_NAME"
 
@@ -304,7 +304,7 @@ dbox-arch() {
   dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
-dbox-tw() {
+dt_tw() {
   local CONTAINER_NAME=${1:-tw}
   slog "Creating distrobox $CONTAINER_NAME"
 
@@ -315,7 +315,7 @@ dbox-tw() {
   dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
-dbox-fedora() {
+dt_fedora() {
   local CONTAINER_NAME=${1:-fedora}
   slog "Creating distrobox $CONTAINER_NAME"
 
@@ -326,7 +326,7 @@ dbox-fedora() {
   dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
-dbox-centos() {
+dt_centos() {
   local CONTAINER_NAME=${1:-centos}
   slog "Creating distrobox $CONTAINER_NAME"
 
@@ -337,7 +337,7 @@ dbox-centos() {
   dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
 }
 
-dbox-alpine-noinit() {
+dt_alpine-noinit() {
   local CONTAINER_NAME=${1:-alpine-noinit}
   slog "Creating distrobox $CONTAINER_NAME"
 
@@ -345,7 +345,7 @@ dbox-alpine-noinit() {
     --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli"
 }
 
-dbox-alpine-edge-noinit() {
+dt_alpine-edge-noinit() {
   local CONTAINER_NAME=${1:-alpine-edge-noinit}
   slog "Creating distrobox $CONTAINER_NAME"
 
@@ -354,14 +354,14 @@ dbox-alpine-edge-noinit() {
     --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli"
 }
 
-dbox-dev-default() {
+dt_dev-default() {
   distrobox create --yes
-  distrobox enter -nw --clean-path -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic
+  distrobox enter -nw --clean-path -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dt_dev-atomic
   slog "Default distrobox created!"
 }
 
 # shellcheck disable=SC2120
-dbox-dev() {
+dt_dev() {
   slog "Creating default distrobox"
 
   local os
@@ -374,11 +374,11 @@ dbox-dev() {
     return 1
   fi
 
-  "dbox-$os" "$CONTAINER_NAME"
+  "dt_$os" "$CONTAINER_NAME"
 
-  if distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dbox-dev-atomic; then
+  if distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dt_dev-atomic; then
     slog "Distrobox ${CONTAINER_NAME} setup successfully"
-    slog "Use dbe ${CONTAINER_NAME} to enter"
+    slog "Use dte ${CONTAINER_NAME} to enter"
     return 0
   else
     fail "Failed to setup distrobox ${CONTAINER_NAME}"
@@ -386,39 +386,39 @@ dbox-dev() {
   fi
 }
 
-dbox-main-install() {
+dt_main-install() {
   if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-main-install <distro> <mainstall> [name]"
+    fail "Usage: dt_main-install <distro> <mainstall> [name]"
     return 1
   fi
   local distro=$1
   local mainstall=$2
   local name=${3:-"${distro}-${mainstall}"}
 
-  "dbox-$distro" "$name"
+  "dt_$distro" "$name"
   distrobox enter -nw --clean-path --name "$name" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$mainstall"
 }
 
-dbox-group-install() {
+dt_group-install() {
   if [[ $# -lt 2 ]]; then
-    fail "Usage: dbox-group-install <distro> <groupstall> [name]"
+    fail "Usage: dt_group-install <distro> <groupstall> [name]"
     return 1
   fi
   local distro=$1
   local groupstall=$2
   local name=${3:-"${distro}-${groupstall}-test"}
 
-  "dbox-$distro" "$name"
+  "dt_$distro" "$name"
   distrobox enter -nw --clean-path --name "$name" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")"
   distrobox enter -nw --clean-path --name "$name" -- ilmg "@$groupstall"
 }
 
-dbox-ublue-all() {
+dt_ublue-all() {
   slog "Creating Bluefin, Wolfi and Ublue distroboxes"
-  dbox-bluefin
-  dbox-wolfi
-  dbox-docker
-  dbox-incus
+  dt_bluefin
+  dt_wolfi
+  dt_docker
+  dt_incus
 
   distrobox create \
     --hostname ubuntu-ublue \
@@ -450,57 +450,57 @@ dbox-ublue-all() {
   slog "Creating Bluefin, Wolfi and Ublue distroboxes done!"
 }
 
-dbox-alpine-toolbox() {
+dt_alpine-toolbox() {
   dt_create alpine-toolbox quay.io/toolbx-images/alpine-toolbox:latest
 }
 
-dbox-arch-toolbox() {
+dt_arch-toolbox() {
   dt_create arch-toolbox quay.io/toolbx/arch-toolbox:latest \
     --init \
     --additional-packages "systemd"
 }
 
-dbox-fedora-toolbox() {
+dt_fedora-toolbox() {
   dt_create fedora-toolbox quay.io/fedora/fedora-toolbox:43 \
     --init \
     --additional-packages "systemd"
 }
 
-dbox-centos-toolbox() {
+dt_centos-toolbox() {
   dt_create centos-toolbox quay.io/toolbx-images/centos-toolbox:latest \
     --init \
     --additional-packages "systemd"
 }
 
-dbox-debian-toolbox() {
+dt_debian-toolbox() {
   dt_create debian-toolbox quay.io/toolbx-images/debian-toolbox:latest \
     --init \
     --additional-packages "systemd"
 }
 
-dbox-rockylinux-toolbox() {
+dt_rockylinux-toolbox() {
   dt_create rockylinux-toolbox quay.io/toolbx-images/rockylinux-toolbox:latest \
     --init \
     --additional-packages "systemd"
 }
 
-dbox-ubuntu-toolbox() {
+dt_ubuntu-toolbox() {
   dt_create ubuntu-toolbox quay.io/toolbx/ubuntu-toolbox:latest \
     --init \
     --additional-packages "systemd libpam-systemd"
 }
 
-dbox-toolbox-all() {
-  dbox-alpine-toolbox
-  dbox-arch-toolbox
-  dbox-fedora-toolbox
-  dbox-centos-toolbox
-  dbox-debian-toolbox
-  dbox-rockylinux-toolbox
-  dbox-ubuntu-toolbox
+dt_toolbox-all() {
+  dt_alpine-toolbox
+  dt_arch-toolbox
+  dt_fedora-toolbox
+  dt_centos-toolbox
+  dt_debian-toolbox
+  dt_rockylinux-toolbox
+  dt_ubuntu-toolbox
 }
 
-dbox-nvidia-container-toolkit() {
+dt_nvidia-container-toolkit() {
   if has_cmd podman; then
     dt_create example-nvidia-toolkit docker.io/nvidia/cuda \
       --additional-flags "--gpus all"
@@ -512,7 +512,7 @@ dbox-nvidia-container-toolkit() {
   fi
 }
 
-dbox-to-image() {
+dt_to-image() {
   if has_cmd podman; then
     podman container commit -p dt_name "$1"
     podman save "$1":latest | bzip2 >"$1".tar.bz
@@ -522,8 +522,8 @@ dbox-to-image() {
   fi
 }
 
-dbox-from-image() {
-  local dt_name=${1:dbox}
+dt_from-image() {
+  local dt_name=${1:dt}
   slog "Creating distrobox from image $1"
 
   if distrobox create \
@@ -536,37 +536,37 @@ dbox-from-image() {
   fi
 }
 
-dbox-nix() {
+dt_nix() {
   local CONTAINER_NAME=${1:-deb-nix}
 
   slog "Creating distrobox $CONTAINER_NAME"
 
   srm "${BOXES_DIR}/${CONTAINER_NAME}"
 
-  if dbox-debian "$CONTAINER_NAME"; then
+  if dt_debian "$CONTAINER_NAME"; then
     distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- nix
     slog "Done creating distrobox $CONTAINER_NAME"
   fi
 }
 
-dbox-containers() {
+dt_containers() {
   podman ps -a -s
 }
 
-dbox-static-network-create() {
+dt_static-network-create() {
   local network=${1:-default}
   local subnet=${2:-"192.168.100.0/24"}
 
   podman network create --subnet="${subnet}" "${network}"
 }
 
-dbox-static-network-remove() {
+dt_static-network-remove() {
   local network=${1:-default}
 
   podman network rm "${network}"
 }
 
-dbox-static-ip() {
+dt_static-ip() {
   local CONTAINER_NAME=${1:-static-box}
   local IP_ADDR=${2:-"192.168.100.10"}
 
@@ -587,13 +587,13 @@ dt_root_exists() {
   distrobox list --root | grep -Fq -- "${CONTAINER_NAME}"
 }
 
-dbox-root-ip() {
+dt_root-ip() {
   local CONTAINER_NAME=${1}
   local CONTAINER_ENGINE
   local IP_ADDRESS
 
   if [[ -z "${CONTAINER_NAME}" ]]; then
-    echo "Usage: dbox-root-ip <container-name>" >&2
+    echo "Usage: dt_root-ip <container-name>" >&2
     echo "Shows the IP address of a distrobox container" >&2
     return 1
   fi
@@ -635,18 +635,18 @@ dbox-root-ip() {
   printf '%s\n' "${IP_ADDRESS}"
 }
 
-dbox-root-ssh() {
+dt_root-ssh() {
   local CONTAINER_NAME=${1}
   local USER=${2:-$USER}
   local PORT=${3:-22}
   local CONTAINER_IP
 
   if [[ -z "${CONTAINER_NAME}" ]]; then
-    echo "Usage: dbox-root-ssh <container-name> [user] [port]" >&2
+    echo "Usage: dt_root-ssh <container-name> [user] [port]" >&2
     return 1
   fi
 
-  if ! CONTAINER_IP=$(dbox-root-ip "${CONTAINER_NAME}"); then
+  if ! CONTAINER_IP=$(dt_root-ip "${CONTAINER_NAME}"); then
     echo "Error: Could not determine IP address for container '${CONTAINER_NAME}'" >&2
     return 1
   fi
@@ -658,13 +658,13 @@ dbox-root-ssh() {
 check_whiptail() {
   has_cmd whiptail && return 0
 
-  echo "Error: whiptail is not installed. Please install it to use dbox-root-ssh-tui."
+  echo "Error: whiptail is not installed. Please install it to use dt_root-ssh-tui."
   echo "On Ubuntu/Debian: sudo apt install whiptail"
   echo "On Fedora: sudo dnf install newt"
   echo "On Arch: sudo pacman -S newt"
 }
 
-dbox-root-ssh-tui() {
+dt_root-ssh-tui() {
   local CONTAINER_LIST
   local CONTAINER_NAME
   local CONTAINER_IP
@@ -684,7 +684,7 @@ dbox-root-ssh-tui() {
 
   while IFS= read -r CONTAINER_NAME; do
     if [[ -n "${CONTAINER_NAME}" ]]; then
-      if CONTAINER_IP=$(dbox-root-ip "${CONTAINER_NAME}" 2>/dev/null); then
+      if CONTAINER_IP=$(dt_root-ip "${CONTAINER_NAME}" 2>/dev/null); then
         MENU_ITEMS+=("${CONTAINER_NAME}" "${CONTAINER_IP}")
       else
         MENU_ITEMS+=("${CONTAINER_NAME}" "IP not available")
@@ -702,7 +702,7 @@ dbox-root-ssh-tui() {
     return 0
   fi
 
-  if ! CONTAINER_IP=$(dbox-root-ip "${CONTAINER_NAME}"); then
+  if ! CONTAINER_IP=$(dt_root-ip "${CONTAINER_NAME}"); then
     whiptail --title "Error" --msgbox "Could not determine IP address for container '${CONTAINER_NAME}'" 10 40
     return 1
   fi
@@ -730,7 +730,7 @@ dt_root_list-ips() {
 
   while IFS= read -r CONTAINER_NAME; do
     if [[ -n "${CONTAINER_NAME}" ]]; then
-      if CONTAINER_IP=$(dbox-root-ip "${CONTAINER_NAME}" 2>/dev/null); then
+      if CONTAINER_IP=$(dt_root-ip "${CONTAINER_NAME}" 2>/dev/null); then
         printf "%-20s %-15s\n" "${CONTAINER_NAME}" "${CONTAINER_IP}"
       else
         printf "%-20s %-15s\n" "${CONTAINER_NAME}" "N/A"
@@ -739,19 +739,19 @@ dt_root_list-ips() {
   done <<<"${CONTAINER_LIST}"
 }
 
-vscode-dbox-root-ssh() {
+vscode-dt_root-ssh() {
   local CONTAINER_NAME=${1:-docker}
   local USER=${2:-$USER}
   local PORT=${3:-22}
 
   if [[ -z "${CONTAINER_NAME}" ]]; then
-    echo "Usage: vscode-dbox-root-ssh <container-name> [user] [port] [open-code] [pubkey] [known-dir] [strict-host-key-checking]" >&2
+    echo "Usage: vscode-dt_root-ssh <container-name> [user] [port] [open-code] [pubkey] [known-dir] [strict-host-key-checking]" >&2
     echo "Connect VS Code to a root distrobox container via SSH" >&2
     return 1
   fi
 
   local CONTAINER_IP
-  if ! CONTAINER_IP=$(dbox-root-ip "${CONTAINER_NAME}"); then
+  if ! CONTAINER_IP=$(dt_root-ip "${CONTAINER_NAME}"); then
     echo "Error: Could not determine IP address for container '${CONTAINER_NAME}'" >&2
     return 1
   fi

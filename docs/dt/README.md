@@ -21,13 +21,13 @@ A comprehensive collection of bash functions for managing [Distrobox](https://gi
 
 ```bash
 # Create an Ubuntu container
-dt-ubuntu my-ubuntu
+dt_ubuntu my-ubuntu
 
 # Enter the container
 dt_enter my-ubuntu
 
 # Create a development environment
-dt-dev fedora-init my-dev-env
+dt_dev fedora-init my-dev-env
 
 # List all containers
 dt_root_list-ips
@@ -44,7 +44,7 @@ dt_root_list-ips
 | [`dt_exec`](#dt_exec)             | Execute command      | `dt_exec my-container ls -la`            |
 | [`dt_exec_root`](#dt_exec_root)   | Execute as root      | `dt_exec_root my-container apt update`   |
 | [`dt_bash_exec`](#dt_bash_exec)   | Execute bash command | `dt_bash_exec my-container "echo hello"` |
-| [`dt-logs`](#dt-logs)             | View container logs  | `dt-logs my-container`                   |
+| [`dt_logs`](#dt_logs)             | View container logs  | `dt_logs my-container`                   |
 
 ### Container Creation
 
@@ -111,9 +111,9 @@ Executes a bash command inside a distrobox container.
 - `container_name`: Name of the container to execute command in
 - `bash_command`: Bash command to execute
 
-### dt-logs
+### dt_logs
 ```bash
-dt-logs <container_name>
+dt_logs <container_name>
 ```
 Displays the logs for a specified container using podman.
 
@@ -154,41 +154,41 @@ Creates a new distrobox container with root privileges.
 
 | Function              | Image                                              | Default Name   |
 | --------------------- | -------------------------------------------------- | -------------- |
-| `dt-ubuntu`         | `ubuntu:questing`                                  | ubuntu         |
-| `dt-arch`           | `archlinux:latest`                                 | arch           |
-| `dt-fedora`         | `fedora:latest`                                    | fedora         |
-| `dt-debian`         | `debian:latest`                                    | debian         |
-| `dt-centos`         | `centos:latest`                                    | centos         |
-| `dt-rocky`          | `rockylinux:9`                                     | rocky          |
-| `dt-tw`             | `opensuse/tumbleweed`                              | tumbleweed     |
-| `dt-fedora-minimal` | `registry.fedoraproject.org/fedora-minimal:latest` | fedora-minimal |
-| `dt-debian-slim`    | `debian:trixie-slim`                               | debian-slim    |
+| `dt_ubuntu`         | `ubuntu:questing`                                  | ubuntu         |
+| `dt_arch`           | `archlinux:latest`                                 | arch           |
+| `dt_fedora`         | `fedora:latest`                                    | fedora         |
+| `dt_debian`         | `debian:latest`                                    | debian         |
+| `dt_centos`         | `centos:latest`                                    | centos         |
+| `dt_rocky`          | `rockylinux:9`                                     | rocky          |
+| `dt_tw`             | `opensuse/tumbleweed`                              | tumbleweed     |
+| `dt_fedora-minimal` | `registry.fedoraproject.org/fedora-minimal:latest` | fedora-minimal |
+| `dt_debian-slim`    | `debian:trixie-slim`                               | debian-slim    |
 
 ### Systemd-Enabled Containers
 
 | Function                | Image                                         | Default Name     |
 | ----------------------- | --------------------------------------------- | ---------------- |
-| `dt-ubuntu-init`      | `ubuntu:questing`                             | ubuntu-init      |
-| `dt-debian-init`      | `debian:latest`                               | debian-init      |
-| `dt-arch-init`        | `archlinux:latest`                            | arch-init        |
-| `dt-fedora-init`      | `fedora:latest`                               | fedora-init      |
-| `dt-tw-init`          | `opensuse/tumbleweed`                         | tw-init          |
-| `dt-alpine-init`      | `quay.io/toolbx-images/alpine-toolbox:latest` | alpine-init      |
-| `dt-alpine-edge-init` | `quay.io/toolbx-images/alpine-toolbox:edge`   | alpine-edge-init |
+| `dt_ubuntu-init`      | `ubuntu:questing`                             | ubuntu-init      |
+| `dt_debian-init`      | `debian:latest`                               | debian-init      |
+| `dt_arch-init`        | `archlinux:latest`                            | arch-init        |
+| `dt_fedora-init`      | `fedora:latest`                               | fedora-init      |
+| `dt_tw-init`          | `opensuse/tumbleweed`                         | tw-init          |
+| `dt_alpine-init`      | `quay.io/toolbx-images/alpine-toolbox:latest` | alpine-init      |
+| `dt_alpine-edge-init` | `quay.io/toolbx-images/alpine-toolbox:edge`   | alpine-edge-init |
 
 ### Development-Ready Containers
 
 | Function           | Image                                         | Default Name | Pre-installed Tools                                                          |
 | ------------------ | --------------------------------------------- | ------------ | ---------------------------------------------------------------------------- |
-| `dt-alpine`      | `quay.io/toolbx-images/alpine-toolbox:latest` | alpine       | gcc, git, neovim, tmux, ripgrep, fzf, eza, zoxide, gh, delta, bat, trash-cli |
-| `dt-alpine-edge` | `quay.io/toolbx-images/alpine-toolbox:edge`   | alpine-edge  | Same as alpine                                                               |
+| `dt_alpine`      | `quay.io/toolbx-images/alpine-toolbox:latest` | alpine       | gcc, git, neovim, tmux, ripgrep, fzf, eza, zoxide, gh, delta, bat, trash-cli |
+| `dt_alpine-edge` | `quay.io/toolbx-images/alpine-toolbox:edge`   | alpine-edge  | Same as alpine                                                               |
 
 ### Specialized Images
 
 | Function       | Image                            | Default Name |
 | -------------- | -------------------------------- | ------------ |
-| `dt-bluefin` | `ghcr.io/ublue-os/bluefin-cli`   | bluefin-cli  |
-| `dt-wolfi`   | `ghcr.io/ublue-os/wolfi-toolbox` | wolfi-ublue  |
+| `dt_bluefin` | `ghcr.io/ublue-os/bluefin-cli`   | bluefin-cli  |
+| `dt_wolfi`   | `ghcr.io/ublue-os/wolfi-toolbox` | wolfi-ublue  |
 
 ## 💻 Development Environments
 
@@ -196,10 +196,10 @@ Creates a new distrobox container with root privileges.
 
 ```bash
 # Create a development environment with default settings
-dt-dev-default
+dt_dev-default
 
 # Create a development environment with specific OS
-dt-dev fedora-init my-dev-env
+dt_dev fedora-init my-dev-env
 
 # Valid OS types: ubuntu-init, debian-init, arch-init, tw-init, fedora-init
 ```
@@ -208,15 +208,15 @@ dt-dev fedora-init my-dev-env
 
 | Function             | Description                                       | Example                                   |
 | -------------------- | ------------------------------------------------- | ----------------------------------------- |
-| `dt-dev-default`   | Creates default development environment           | `dt-dev-default`                        |
-| `dt-dev`           | Creates development environment with specified OS | `dt-dev fedora-init my-dev`             |
-| `dt-main-install`  | Creates container and runs mainstall script       | `dt-main-install fedora my-mainstall`   |
-| `dt-group-install` | Creates container and runs groupstall script      | `dt-group-install ubuntu my-groupstall` |
-| `dt-nix`           | Creates Debian container with Nix                 | `dt-nix my-nix-env`                     |
+| `dt_dev-default`   | Creates default development environment           | `dt_dev-default`                        |
+| `dt_dev`           | Creates development environment with specified OS | `dt_dev fedora-init my-dev`             |
+| `dt_main-install`  | Creates container and runs mainstall script       | `dt_main-install fedora my-mainstall`   |
+| `dt_group-install` | Creates container and runs groupstall script      | `dt_group-install ubuntu my-groupstall` |
+| `dt_nix`           | Creates Debian container with Nix                 | `dt_nix my-nix-env`                     |
 
-### dt-dev
+### dt_dev
 ```bash
-dt-dev [os_type] [container_name]
+dt_dev [os_type] [container_name]
 ```
 Creates a development environment with the specified OS type.
 
@@ -235,9 +235,9 @@ Creates a development environment with the specified OS type.
 
 ### Virtualization Management
 
-#### dt-virt-manager
+#### dt_virt-manager
 ```bash
-dt-virt-manager [container_name]
+dt_virt-manager [container_name]
 ```
 Creates an openSUSE container for virtualization management.
 
@@ -253,9 +253,9 @@ Creates an openSUSE container for virtualization management.
 
 **Enabled services:** sshd.service, virtqemud.socket, virtnetworkd.socket, virtstoraged.socket, virtnodedevd.socket
 
-#### dt-fedora-virt-manager
+#### dt_fedora-virt-manager
 ```bash
-dt-fedora-virt-manager [container_name]
+dt_fedora-virt-manager [container_name]
 ```
 Creates a Fedora container for virtualization management.
 
@@ -271,13 +271,13 @@ Creates a Fedora container for virtualization management.
 
 | Function           | Description                | Default Name |
 | ------------------ | -------------------------- | ------------ |
-| `dt-docker-base` | Basic Fedora with Docker   | docker-base  |
-| `dt-docker-slim` | Minimal Docker container   | docker       |
-| `dt-docker`      | Full Docker with dev tools | docker       |
+| `dt_docker-base` | Basic Fedora with Docker   | docker-base  |
+| `dt_docker-slim` | Minimal Docker container   | docker       |
+| `dt_docker`      | Full Docker with dev tools | docker       |
 
-#### dt-docker
+#### dt_docker
 ```bash
-dt-docker [container_name]
+dt_docker [container_name]
 ```
 Creates a fully configured Docker container with development tools.
 
@@ -290,9 +290,9 @@ Creates a fully configured Docker container with development tools.
 
 ### Container Management
 
-#### dt-incus
+#### dt_incus
 ```bash
-dt-incus [container_name]
+dt_incus [container_name]
 ```
 Creates a container for Incus (LXD successor) management.
 
@@ -308,8 +308,8 @@ Creates a container for Incus (LXD successor) management.
 
 | Function           | Description                                                                          |
 | ------------------ | ------------------------------------------------------------------------------------ |
-| `dt-ublue-all`   | Creates all uBlue containers (bluefin, wolfi, docker, incus, ubuntu, fedora, arch)   |
-| `dt-toolbox-all` | Creates all toolbox containers (alpine, arch, fedora, centos, debian, rocky, ubuntu) |
+| `dt_ublue-all`   | Creates all uBlue containers (bluefin, wolfi, docker, incus, ubuntu, fedora, arch)   |
+| `dt_toolbox-all` | Creates all toolbox containers (alpine, arch, fedora, centos, debian, rocky, ubuntu) |
 
 ## 🌐 Network & SSH
 
@@ -317,23 +317,23 @@ Creates a container for Incus (LXD successor) management.
 
 | Function                     | Description                     | Example                                              |
 | ---------------------------- | ------------------------------- | ---------------------------------------------------- |
-| `dt-static-network-create` | Create static network           | `dt-static-network-create my-net 192.168.100.0/24` |
-| `dt-static-network-remove` | Remove static network           | `dt-static-network-remove my-net`                  |
-| `dt-static-ip`             | Create container with static IP | `dt-static-ip my-box 192.168.100.10`               |
+| `dt_static-network-create` | Create static network           | `dt_static-network-create my-net 192.168.100.0/24` |
+| `dt_static-network-remove` | Remove static network           | `dt_static-network-remove my-net`                  |
+| `dt_static-ip`             | Create container with static IP | `dt_static-ip my-box 192.168.100.10`               |
 
 ### SSH & Remote Access
 
 | Function               | Description              | Example                              |
 | ---------------------- | ------------------------ | ------------------------------------ |
-| `dt-root-ip`         | Get container IP         | `dt-root-ip my-container`          |
-| `dt-root-ssh`        | SSH into container       | `dt-root-ssh my-container user 22` |
-| `dt-root-ssh-tui`    | Interactive SSH menu     | `dt-root-ssh-tui`                  |
+| `dt_root-ip`         | Get container IP         | `dt_root-ip my-container`          |
+| `dt_root-ssh`        | SSH into container       | `dt_root-ssh my-container user 22` |
+| `dt_root-ssh-tui`    | Interactive SSH menu     | `dt_root-ssh-tui`                  |
 | `dt_root_list-ips`   | List containers with IPs | `dt_root_list-ips`                 |
-| `vscode-dt-root-ssh` | Connect VS Code via SSH  | `vscode-dt-root-ssh my-container`  |
+| `vscode-dt_root-ssh` | Connect VS Code via SSH  | `vscode-dt_root-ssh my-container`  |
 
-### dt-root-ssh-tui
+### dt_root-ssh-tui
 ```bash
-dt-root-ssh-tui [user] [port]
+dt_root-ssh-tui [user] [port]
 ```
 Provides a text user interface for selecting and SSHing into root containers.
 
@@ -352,14 +352,14 @@ Provides a text user interface for selecting and SSHing into root containers.
 
 | Function                        | Description                    | Example                         |
 | ------------------------------- | ------------------------------ | ------------------------------- |
-| `dt-containers`               | List all containers with sizes | `dt-containers`               |
-| `dt-to-image`                 | Convert container to image     | `dt-to-image my-container`    |
-| `dt-from-image`               | Create container from image    | `dt-from-image my-image`      |
-| `dt-nvidia-container-toolkit` | Create GPU-enabled container   | `dt-nvidia-container-toolkit` |
+| `dt_containers`               | List all containers with sizes | `dt_containers`               |
+| `dt_to-image`                 | Convert container to image     | `dt_to-image my-container`    |
+| `dt_from-image`               | Create container from image    | `dt_from-image my-image`      |
+| `dt_nvidia-container-toolkit` | Create GPU-enabled container   | `dt_nvidia-container-toolkit` |
 
-### dt-to-image
+### dt_to-image
 ```bash
-dt-to-image <container_name>
+dt_to-image <container_name>
 ```
 Converts a distrobox container to an image.
 
@@ -371,9 +371,9 @@ Converts a distrobox container to an image.
 - 🗜️ Saves the image to a compressed file
 - 🔧 Uses different compression based on container runtime
 
-### dt-from-image
+### dt_from-image
 ```bash
-dt-from_image <image_name> [container_name]
+dt_from_image <image_name> [container_name]
 ```
 Creates a distrobox container from an existing image.
 
@@ -395,24 +395,24 @@ Creates a distrobox container from an existing image.
 - [podman](https://podman.io/) or [docker](https://www.docker.com/) - Container runtime
 
 ### Optional
-- [whiptail](https://packages.debian.org/sid/whiptail) - Required for `dt-root-ssh-tui`
+- [whiptail](https://packages.debian.org/sid/whiptail) - Required for `dt_root-ssh-tui`
 - [curl](https://curl.se/) - Required for setup scripts
 - [ssh](https://www.openssh.com/) - Required for SSH functions
-- [VS Code](https://code.visualstudio.com/) - Required for `vscode-dt-root-ssh`
+- [VS Code](https://code.visualstudio.com/) - Required for `vscode-dt_root-ssh`
 
 ## 💡 Tips & Tricks
 
 ### Quick Container Creation
 ```bash
 # Create multiple containers at once
-dt-ublue-all    # All uBlue containers
-dt-toolbox-all  # All toolbox containers
+dt_ublue-all    # All uBlue containers
+dt_toolbox-all  # All toolbox containers
 ```
 
 ### Development Workflow
 ```bash
 # Create a development environment
-dt-dev fedora-init my-project
+dt_dev fedora-init my-project
 
 # Enter the container
 dt_enter my-project
@@ -427,10 +427,10 @@ dt_exec my-project -- make build
 dt_root_list-ips
 
 # SSH into any container
-dt-root-ssh-tui
+dt_root-ssh-tui
 
 # Connect VS Code to container
-vscode-dt-root-ssh my-container
+vscode-dt_root-ssh my-container
 ```
 
 ## 📄 License
