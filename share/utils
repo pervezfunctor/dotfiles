@@ -701,6 +701,10 @@ backup_file() {
 }
 
 srm() {
+  if ! exists "$1"; then
+    return 0
+  fi
+
   for f in "$@"; do
     if [ -L "$f" ]; then
       rm -f "$f" && slog "Removing link $f"
@@ -716,6 +720,10 @@ srm() {
 }
 
 frm() {
+  if ! exists "$1"; then
+    return 0
+  fi
+
   for f in "$@"; do
     if [ -L "$f" ]; then
       rm -f "$f" && slog "Removing link $f"
