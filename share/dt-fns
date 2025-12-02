@@ -763,3 +763,28 @@ vscode-dt_root-ssh() {
   echo "Connecting to ${CONTAINER_NAME} at ${CONTAINER_IP}:${PORT} as ${USER}..."
   code --remote "ssh-remote+${USER}@${CONTAINER_IP}" # -- "~-container-${CONTAINER_NAME}"
 }
+
+show_completion_info() {
+  local distro="$1"
+  local dt_name="$2"
+
+  success "🎉 === Distrobox Creation Complete ==="
+  echo
+  slog "📦 Container Details:"
+  echo "  Name: $dt_name"
+  echo "  Distribution: $distro"
+  echo "  Home Directory: ${BOXES_DIR}/${dt_name}"
+  echo
+
+  slog "🚀 Useful Commands:"
+  echo "  List containers:      dt list"
+  echo "  Enter container:      dt enter $dt_name"
+  echo "  Delete container:     dt delete $dt_name"
+  echo "  Stop container:       dt stop $dt_name"
+  echo "If you need ssh access to the container, run inside container:"
+  echo "   dt-ssh-enable <port-no>"
+  echo "Afterwards you can ssh to the container from host using:"
+  echo "   ssh -p <port-no> $USER@$dt_name"
+  # echo "Or use vscode to connect to the container:"
+  # echo "   code --remote ssh-remote+${USER}@${CONTAINER_IP}"
+}

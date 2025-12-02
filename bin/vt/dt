@@ -126,6 +126,7 @@ create_dt() {
 
   if dt-"$distro" "$dt_name"; then
     success "Container '$dt_name' created successfully"
+    show_completion_info "$distro" "$dt_name"
   else
     fail "Failed to create container '$dt_name'"
     return 1
