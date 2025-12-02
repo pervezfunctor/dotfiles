@@ -24,13 +24,13 @@ A comprehensive collection of bash functions for managing [Distrobox](https://gi
 dbox-ubuntu my-ubuntu
 
 # Enter the container
-dbox_enter my-ubuntu
+dt_enter my-ubuntu
 
 # Create a development environment
 dbox-dev fedora-init my-dev-env
 
 # List all containers
-dbox_root_list-ips
+dt_root_list-ips
 ```
 
 ## 🔧 Core Functions
@@ -39,25 +39,25 @@ dbox_root_list-ips
 
 | Function                              | Description          | Example                                    |
 | ------------------------------------- | -------------------- | ------------------------------------------ |
-| [`dbox_enter`](#dbox_enter)           | Enter a container    | `dbox_enter my-container`                  |
-| [`dbox_enter_root`](#dbox_enter_root) | Enter as root        | `dbox_enter_root my-container`             |
-| [`dbox_exec`](#dbox_exec)             | Execute command      | `dbox_exec my-container ls -la`            |
-| [`dbox_exec_root`](#dbox_exec_root)   | Execute as root      | `dbox_exec_root my-container apt update`   |
-| [`dbox_bash_exec`](#dbox_bash_exec)   | Execute bash command | `dbox_bash_exec my-container "echo hello"` |
+| [`dt_enter`](#dt_enter)           | Enter a container    | `dt_enter my-container`                  |
+| [`dt_enter_root`](#dt_enter_root) | Enter as root        | `dt_enter_root my-container`             |
+| [`dt_exec`](#dt_exec)             | Execute command      | `dt_exec my-container ls -la`            |
+| [`dt_exec_root`](#dt_exec_root)   | Execute as root      | `dt_exec_root my-container apt update`   |
+| [`dt_bash_exec`](#dt_bash_exec)   | Execute bash command | `dt_bash_exec my-container "echo hello"` |
 | [`dbox-logs`](#dbox-logs)             | View container logs  | `dbox-logs my-container`                   |
 
 ### Container Creation
 
 | Function                                | Description            | Example                                      |
 | --------------------------------------- | ---------------------- | -------------------------------------------- |
-| [`dbox_create`](#dbox_create)           | Create basic container | `dbox_create my-box ubuntu:latest`           |
-| [`dbox_create_root`](#dbox_create_root) | Create root container  | `dbox_create_root my-root-box fedora:latest` |
+| [`dt_create`](#dt_create)           | Create basic container | `dt_create my-box ubuntu:latest`           |
+| [`dt_create_root`](#dt_create_root) | Create root container  | `dt_create_root my-root-box fedora:latest` |
 
 ---
 
-### dbox_enter
+### dt_enter
 ```bash
-dbox_enter <container_name> [-- additional_commands]
+dt_enter <container_name> [-- additional_commands]
 ```
 Enters a distrobox container with a clean path environment.
 
@@ -67,13 +67,13 @@ Enters a distrobox container with a clean path environment.
 
 **Example:**
 ```bash
-dbox_enter my-container
-dbox_enter my-container -- ls -la
+dt_enter my-container
+dt_enter my-container -- ls -la
 ```
 
-### dbox_enter_root
+### dt_enter_root
 ```bash
-dbox_enter_root <container_name> [-- additional_commands]
+dt_enter_root <container_name> [-- additional_commands]
 ```
 Enters a distrobox container as root with a clean path environment.
 
@@ -81,9 +81,9 @@ Enters a distrobox container as root with a clean path environment.
 - `container_name`: Name of the container to enter as root
 - `additional_commands`: Optional commands to execute after entering
 
-### dbox_exec
+### dt_exec
 ```bash
-dbox_exec <container_name> <command>
+dt_exec <container_name> <command>
 ```
 Executes a command inside a distrobox container.
 
@@ -91,9 +91,9 @@ Executes a command inside a distrobox container.
 - `container_name`: Name of the container to execute command in
 - `command`: Command to execute
 
-### dbox_exec_root
+### dt_exec_root
 ```bash
-dbox_exec_root <container_name> <command>
+dt_exec_root <container_name> <command>
 ```
 Executes a command inside a distrobox container as root.
 
@@ -101,9 +101,9 @@ Executes a command inside a distrobox container as root.
 - `container_name`: Name of the container to execute command in as root
 - `command`: Command to execute
 
-### dbox_bash_exec
+### dt_bash_exec
 ```bash
-dbox_bash_exec <container_name> <bash_command>
+dt_bash_exec <container_name> <bash_command>
 ```
 Executes a bash command inside a distrobox container.
 
@@ -120,9 +120,9 @@ Displays the logs for a specified container using podman.
 **Parameters:**
 - `container_name`: Name of the container to view logs for
 
-### dbox_create
+### dt_create
 ```bash
-dbox_create <container_name> <image> [-- additional_options]
+dt_create <container_name> <image> [-- additional_options]
 ```
 Creates a new distrobox container with the specified image.
 
@@ -137,9 +137,9 @@ Creates a new distrobox container with the specified image.
 - ✅ Creates container in `${BOXES_DIR}`
 - ✅ Provides success/failure feedback
 
-### dbox_create_root
+### dt_create_root
 ```bash
-dbox_create_root <container_name> <image> [-- additional_options]
+dt_create_root <container_name> <image> [-- additional_options]
 ```
 Creates a new distrobox container with root privileges.
 
@@ -328,7 +328,7 @@ Creates a container for Incus (LXD successor) management.
 | `dbox-root-ip`         | Get container IP         | `dbox-root-ip my-container`          |
 | `dbox-root-ssh`        | SSH into container       | `dbox-root-ssh my-container user 22` |
 | `dbox-root-ssh-tui`    | Interactive SSH menu     | `dbox-root-ssh-tui`                  |
-| `dbox_root_list-ips`   | List containers with IPs | `dbox_root_list-ips`                 |
+| `dt_root_list-ips`   | List containers with IPs | `dt_root_list-ips`                 |
 | `vscode-dbox-root-ssh` | Connect VS Code via SSH  | `vscode-dbox-root-ssh my-container`  |
 
 ### dbox-root-ssh-tui
@@ -415,16 +415,16 @@ dbox-toolbox-all  # All toolbox containers
 dbox-dev fedora-init my-project
 
 # Enter the container
-dbox_enter my-project
+dt_enter my-project
 
 # Execute commands without entering
-dbox_exec my-project -- make build
+dt_exec my-project -- make build
 ```
 
 ### Container Management
 ```bash
 # List all containers with IPs
-dbox_root_list-ips
+dt_root_list-ips
 
 # SSH into any container
 dbox-root-ssh-tui
