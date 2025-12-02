@@ -107,6 +107,32 @@ configure_debian() {
     # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
 }
 
+setup_storage() {
+    local base_dir IMG_DIR
+
+    base_dir="/var/lib/libvirt/images"
+
+    IMG_DIR="${base_dir}/vm-base-images"
+    WORKDIR="${base_dir}/${VM_NAME}-vm"
+    CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+    DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
+    SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
+    BASE_IMG="${IMG_DIR}/${BASE_IMG_NAME}"
+
+    sudo mkdir -p "$IMG_DIR" "$WORKDIR" "$CLOUD_INIT_DIR"
+
+    sudo chown -R "$USER":kvm "$IMG_DIR"
+    sudo chmod -R 755 "$IMG_DIR"
+
+    sudo chown -R "$USER":kvm "$WORKDIR"
+    sudo chmod -R 755 "$WORKDIR"
+
+    sudo chown -R "$USER":kvm "$CLOUD_INIT_DIR"
+    sudo chmod -R 755 "$CLOUD_INIT_DIR"
+
+    sudo mkdir -p /var/lib/libvirt/boot # bug in libvirt/virt-install?
+}
+
 configure_distribution() {
     case "$DISTRO" in
     ubuntu) configure_ubuntu ;;
@@ -127,11 +153,6 @@ configure_distribution() {
         exit 1
     fi
 
-    WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
-    CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
-    DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
-    SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
-    BASE_IMG="${WORKDIR}/${BASE_IMG_NAME}"
     USERNAME=${USERNAME:=$(default_username "$DISTRO")}
     PASSWORD=${PASSWORD:=$USERNAME}
     PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
@@ -322,54 +343,26 @@ download_image() {
     slog "Preparing $DISTRO cloud image..."
 
     if [[ -f "$BASE_IMG" ]]; then
-        slog "Using existing $DISTRO image: $BASE_IMG"
+        info "Base image '${BASE_IMG}' already exists. Skipping download."
         return 0
     fi
 
     slog "Downloading $DISTRO $RELEASE cloud image..."
     slog "URL: $IMG_URL"
 
-    sudo mkdir -p "$WORKDIR"
-    if [[ ! -d "$WORKDIR" ]]; then
-        fail "Failed to create working directory: $WORKDIR"
-        exit 1
+    if ! sudo wget -q --show-progress "$IMG_URL" -O "${BASE_IMG}"; then
+        fail "Failed to download base image."
+    else
+        sudo chown root:kvm "${BASE_IMG}"
+        sudo chmod 644 "${BASE_IMG}"
+        success "Base image downloaded successfully."
     fi
-
-    sudo chown "$QEMU_USER:$QEMU_GROUP" "$WORKDIR"
-    sudo chmod 755 "$WORKDIR"
-
-    if ! sudo wget -O "$BASE_IMG" "$IMG_URL"; then
-        fail "Failed to download $DISTRO cloud image"
-        sudo rm -f "$BASE_IMG"
-        exit 1
-    fi
-
-    if [[ ! -f "$BASE_IMG" ]]; then
-        fail "Image file was not created: $BASE_IMG"
-        exit 1
-    fi
-
-    sudo chown "$QEMU_USER:$QEMU_GROUP" "$BASE_IMG"
-    sudo chmod 644 "$BASE_IMG"
-    success "$DISTRO cloud image downloaded: $BASE_IMG"
 }
 
 create_vm_disk() {
-    slog "Creating VM disk..."
-
-    if ! sudo cp "$BASE_IMG" "$DISK_IMG"; then
-        fail "Failed to copy base image"
-        exit 1
-    fi
-
-    if ! sudo qemu-img resize "$DISK_IMG" "$DISK_SIZE"; then
-        fail "Failed to resize VM disk"
-        exit 1
-    fi
-
-    sudo chown "$QEMU_USER:$QEMU_GROUP" "$DISK_IMG"
-    sudo chmod 644 "$DISK_IMG"
-    success "VM disk created: $DISK_IMG ($DISK_SIZE)"
+    slog "Creating and resizing disk for ${VM_NAME} at ${DISK_IMG}..."
+    sudo qemu-img create -f qcow2 -b "${BASE_IMG}" -F qcow2 "${DISK_IMG}" "${DISK_SIZE}"
+    success "Disk created successfully."
 }
 
 generate_cloud_init() {
@@ -651,7 +644,6 @@ generate_cloud_init() {
 hostname: $VM_NAME
 manage_etc_hosts: true
 
-# User configuration
 users:
   - name: $USERNAME
     groups:
@@ -661,23 +653,16 @@ $(printf "      - %s\n" "${USER_GROUPS[@]}")
     lock_passwd: false
     passwd: "$PASSWORD_HASH"
     ssh_authorized_keys:
-      - "$pub_key"
+      - |
+        $pub_key
 
-# System configuration
 package_update: true
-package_upgrade: true
 
 packages:
 $(printf "  - %s\n" "${packages[@]}")
 
 runcmd:
 $(printf "  - %s\n" "${runcmd[@]}")
-
-# Ensure SSH service is enabled
-ssh_pwauth: true
-disable_root: false
-
-timezone: UTC
 
 write_files:
   - path: /etc/motd
@@ -779,106 +764,162 @@ launch_vm() {
     # fi
 }
 
+wait_for_ip() {
+    local vm_name="$1"
+
+    printf '\033[1;36m🔍 Wait for IP address? (Y/n):\033[0m ' >&2
+    read -t 5 -r response || response="y"
+
+    case "$response" in
+    n | N)
+        slog "Skipping IP wait. You can get the IP later with: virsh domifaddr $vm_name --source agent"
+        return 1
+        ;;
+    *)
+        if wait_until 30 3 bash -c "virsh domstate $vm_name | grep -q running"; then
+            slog "VM is running"
+        else
+            return 1
+        fi
+        if wait_until 60 3 vm_ip "$vm_name"; then
+            slog "VM has IP address"
+        else
+            return 1
+        fi
+        return 0
+        ;;
+    esac
+}
+
 show_completion_info() {
-    success "=== VM Creation Complete ==="
+    slog "Waiting for VM to be ready. This could take a few minutes..."
+    if ! wait_for_ip "$VM_NAME"; then
+        fail "VM did not get an IP in time. Try 'vm show-ip $VM_NAME' later."
+        info "If you still can't connect, Use 'vm console $VM_NAME' to access it."
+    fi
+
     echo
-    slog "VM Details:"
-    echo "  Name: $VM_NAME"
-    echo "  Distribution: $DISTRO $RELEASE"
-    echo "  Memory: ${RAM_MB}MB"
-    echo "  vCPUs: $VCPUS"
-    echo "  Disk: $DISK_SIZE"
-    echo "  Username: $USERNAME"
+    printf '\033[1;32m╭─────────────────────────────────────────────────────────────╮\033[0m\n'
+    printf '\033[1;32m│\033[1;37m                       VM CREATED SUCCESSFULLY!             \033[1;32m│\033[0m\n'
+    printf '\033[1;32m╰─────────────────────────────────────────────────────────────╯\033[0m\n'
+    echo
+
+    printf '\033[1;36m📋 VM INFORMATION:\033[0m\n'
+    printf '\033[0;36m──────────────────────\033[0m\n'
+    printf '\033[1mVM Name:\033[0m      \033[0;33m%s\033[0m\n' "$VM_NAME"
+    printf '\033[1mDistribution:\033[0m   \033[0;33m%s %s\033[0m\n' "$DISTRO" "$RELEASE"
+    printf '\033[1mUsername:\033[0m      \033[0;33m%s\033[0m\n' "$USERNAME"
+    printf '\033[1mPassword:\033[0m      \033[0;33m%s\033[0m\n' "$PASSWORD"
+    printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$RAM_MB" "$DISK_SIZE"
+    printf '\033[1mType:\033[0m          \033[0;33mVirtual Machine (full virtualization)\033[0m\n'
+    echo
+
+    printf '\033[1;36m🌐 NETWORK ACCESS:\033[0m\n'
+    printf '\033[0;36m─────────────────\033[0m\n'
+
+    local ip
+    if ip=$(vm_ip "$VM_NAME" 2>/dev/null); then
+        printf '\033[1mIP Address:\033[0m   \033[0;33m%s\033[0m\n' "$ip"
+        printf '\033[1mSSH Command:\033[0m  \033[0;33mvm ssh %s\033[0m\n' "$VM_NAME"
+        printf '\033[1mSSH Command:\033[0m  \033[0;33mssh %s@%s\033[0m\n' "$USERNAME" "$ip"
+    else
+        printf '\033[1mGet IP Address:\033[0m \033[0;33mvirsh domifaddr %s --source agent\033[0m\n' "$VM_NAME"
+    fi
+    echo
+
+    printf '\033[1;36m🔧 VM MANAGEMENT:\033[0m\n'
+    printf '\033[0;36m──────────────────────\033[0m\n'
+    printf '\033[1mStart:\033[0m      \033[0;33mvm start %s\033[0m\n' "$VM_NAME"
+    printf '\033[1mStop:\033[0m       \033[0;33mvm shutdown %s\033[0m\n' "$VM_NAME"
+    printf '\033[1mDelete:\033[0m     \033[0;33mvm delete %s\033[0m\n' "$VM_NAME"
+    printf '\033[1mAutostart:\033[0m  \033[0;33mvm autostart %s\033[0m\n' "$VM_NAME"
+    echo
+
+    printf '\033[1;36m📊 VM DETAILS:\033[0m\n'
+    printf '\033[0;36m────────────────────\033[0m\n'
+    printf '\033[1mInfo:\033[0m        \033[0;33mvm info %s\033[0m\n' "$VM_NAME"
+    printf '\033[1mList VMs:\033[0m    \033[0;33mvm list\033[0m\n'
+    echo
+
+    printf '\033[1;36m🔧 TROUBLESHOOTING:\033[0m\n'
+    printf '\033[0;36m─────────────────\033[0m\n'
+    printf '\033[1mConsole:\033[0m   \033[0;33mvm console %s\033[0m\n' "$VM_NAME"
+    printf '\033[0;90m(Exit console with Ctrl+])\033[0m\n'
     echo
 
     if [[ "$INSTALL_DOCKER" == "true" ]]; then
-        slog "Docker is pre-installed on this VM"
-        echo "  Docker Commands:"
-        echo "    Test Docker:        docker run hello-world"
-        echo "    Check version:      docker --version"
-        echo "    Check compose:      docker compose version"
+        printf '\033[1;36m🐳 DOCKER:\033[0m\n'
+        printf '\033[0;36m─────────────\033[0m\n'
+        printf '\033[1mDocker is pre-installed on this VM\033[0m\n'
+        printf '\033[1mTest Docker:\033[0m        \033[0;33mdocker run hello-world\033[0m\n'
+        printf '\033[1mCheck version:\033[0m      \033[0;33mdocker --version\033[0m\n'
+        printf '\033[1mCheck compose:\033[0m      \033[0;33mdocker compose version\033[0m\n'
         echo
     fi
 
     if [[ "$INSTALL_BREW" == "true" ]]; then
-        slog "Homebrew is pre-installed on this VM"
-        echo "  Homebrew Commands:"
-        echo "    Check version:      brew --version"
-        echo "    List packages:      brew list"
-        echo "    Search packages:    brew search <term>"
-        echo "    Install package:    brew install <package>"
-        echo "    Update packages:    brew update && brew upgrade"
+        printf '\033[1;36m🍺 HOMEBREW:\033[0m\n'
+        printf '\033[0;36m──────────────\033[0m\n'
+        printf '\033[1mHomebrew is pre-installed on this VM\033[0m\n'
+        printf '\033[1mCheck version:\033[0m      \033[0;33mbrew --version\033[0m\n'
+        printf '\033[1mList packages:\033[0m      \033[0;33mbrew list\033[0m\n'
+        printf '\033[1mSearch packages:\033[0m    \033[0;33mbrew search <term>\033[0m\n'
+        printf '\033[1mInstall package:\033[0m    \033[0;33mbrew install <package>\033[0m\n'
+        printf '\033[1mUpdate packages:\033[0m    \033[0;33mbrew update && brew upgrade\033[0m\n'
         echo
     fi
 
     if [[ -n "$DOTFILES_OPTIONS" ]]; then
-        slog "Dotfiles are pre-installed on this VM with options: $DOTFILES_OPTIONS"
-        echo "  Dotfiles Commands:"
-        echo "    Location:           ~/.ilm"
-        echo "    Install shell:      ilmi shell"
-        echo "    Install Docker:     ilmi docker"
-        echo "    Install Python:     ilmi python"
-        echo "    Config zsh:         ilmc zsh"
-        echo "    Config tmux:        ilmc tmux"
-        echo "    Config nvim:        ilmc nvim"
-        echo "  Repository: https://github.com/pervezfunctor/dotfiles"
+        printf '\033[1;36m📁 DOTFILES:\033[0m\n'
+        printf '\033[0;36m──────────────\033[0m\n'
+        printf '\033[1mDotfiles are pre-installed with options: %s\033[0m\n' "$DOTFILES_OPTIONS"
+        printf '\033[1mLocation:\033[0m           \033[0;33m~/.ilm\033[0m\n'
+        printf '\033[1mInstall shell:\033[0m      \033[0;33milmi shell\033[0m\n'
+        printf '\033[1mInstall Docker:\033[0m     \033[0;33milmi docker\033[0m\n'
+        printf '\033[1mInstall Python:\033[0m     \033[0;33milmi python\033[0m\n'
+        printf '\033[1mConfig zsh:\033[0m         \033[0;33milmc zsh\033[0m\n'
+        printf '\033[1mConfig tmux:\033[0m        \033[0;33milmc tmux\033[0m\n'
+        printf '\033[1mConfig nvim:\033[0m        \033[0;33milmc nvim\033[0m\n'
+        printf '\033[1mRepository:\033[0m        \033[0;33mhttps://github.com/pervezfunctor/dotfiles\033[0m\n'
         echo
     fi
 
-    slog "Useful Commands:"
-    echo "  Check VM status:    virsh list --all"
-    echo "  Start VM:           virsh start $VM_NAME"
-    echo "  Stop VM:            virsh shutdown $VM_NAME"
-    echo "  Force stop VM:      virsh destroy $VM_NAME"
-    echo "  Delete VM:          virsh undefine $VM_NAME"
-    echo "  Console access:     virsh console $VM_NAME"
-    echo "  Get VM IP:          virsh domifaddr $VM_NAME"
-    echo
-    slog "SSH Access:"
-    echo "  Wait 2-3 minutes for cloud-init to complete"
-    echo "  Find VM IP:         virsh domifaddr $VM_NAME"
-    echo "  SSH by name:        ssh $USERNAME@$VM_NAME"
-    echo "  SSH by IP:          ssh $USERNAME@<VM_IP>"
-    echo
-
+    printf '\033[1;36m📦 PACKAGE MANAGEMENT:\033[0m\n'
+    printf '\033[0;36m─────────────────────\033[0m\n'
     case "$DISTRO" in
     ubuntu | debian)
-        slog "Package Management:"
-        echo "  Update system:      sudo apt update && sudo apt upgrade"
-        echo "  Install packages:   sudo apt install <package>"
-        echo "  Search packages:    apt search <term>"
+        printf '\033[1mUpdate system:\033[0m      \033[0;33msudo apt update && sudo apt upgrade\033[0m\n'
+        printf '\033[1mInstall packages:\033[0m   \033[0;33msudo apt install <package>\033[0m\n'
+        printf '\033[1mSearch packages:\033[0m    \033[0;33mapt search <term>\033[0m\n'
         ;;
     fedora)
-        slog "Fedora Commands:"
-        echo "  Update system:      sudo dnf update"
-        echo "  Install packages:   sudo dnf install <package>"
-        echo "  Search packages:    dnf search <term>"
-        echo "  List installed:     dnf list installed"
+        printf '\033[1mUpdate system:\033[0m      \033[0;33msudo dnf update\033[0m\n'
+        printf '\033[1mInstall packages:\033[0m   \033[0;33msudo dnf install <package>\033[0m\n'
+        printf '\033[1mSearch packages:\033[0m    \033[0;33mdnf search <term>\033[0m\n'
+        printf '\033[1mList installed:\033[0m     \033[0;33mdnf list installed\033[0m\n'
         ;;
     arch)
-        slog "Arch Linux Commands:"
-        echo "  Update system:      sudo pacman -Syu"
-        echo "  Install packages:   sudo pacman -S <package>"
-        echo "  Search packages:    pacman -Ss <term>"
-        echo "  List installed:     pacman -Q"
-        echo "  AUR helper setup:   Install yay or paru for AUR access"
+        printf '\033[1mUpdate system:\033[0m      \033[0;33msudo pacman -Syu\033[0m\n'
+        printf '\033[1mInstall packages:\033[0m   \033[0;33msudo pacman -S <package>\033[0m\n'
+        printf '\033[1mSearch packages:\033[0m    \033[0;33mpacman -Ss <term>\033[0m\n'
+        printf '\033[1mList installed:\033[0m     \033[0;33mpacman -Q\033[0m\n'
+        printf '\033[1mAUR helper setup:\033[0m   \033[0;33mInstall yay or paru for AUR access\033[0m\n'
         ;;
     alpine)
-        slog "Alpine Linux Commands:"
-        echo "  Update system:      sudo apk update && sudo apk upgrade"
-        echo "  Install packages:   sudo apk add <package>"
-        echo "  Search packages:    apk search <term>"
+        printf '\033[1mUpdate system:\033[0m      \033[0;33msudo apk update && sudo apk upgrade\033[0m\n'
+        printf '\033[1mInstall packages:\033[0m   \033[0;33msudo apk add <package>\033[0m\n'
+        printf '\033[1mSearch packages:\033[0m    \033[0;33mapk search <term>\033[0m\n'
         ;;
     opensuse | tumbleweed | tw)
-        slog "openSUSE Tumbleweed Commands:"
-        echo "  Update system:      sudo zypper refresh && sudo zypper dup"
-        echo "  Install packages:   sudo zypper install <package>"
-        echo "  Search packages:    zypper search <term>"
+        printf '\033[1mUpdate system:\033[0m      \033[0;33msudo zypper refresh && sudo zypper dup\033[0m\n'
+        printf '\033[1mInstall packages:\033[0m   \033[0;33msudo zypper install <package>\033[0m\n'
+        printf '\033[1mSearch packages:\033[0m    \033[0;33mzypper search <term>\033[0m\n'
         ;;
     esac
-
     echo
-    warn "Note: Cloud-init setup takes 1-3 minutes."
+
+    success "VM '${VM_NAME}' creation process completed successfully!"
+    echo
 }
 
 echo_all_vars() {
@@ -913,6 +954,7 @@ echo_all_vars() {
 main() {
     parse_args "$@"
     configure_distribution
+    setup_storage
 
     check_prerequisites
 
@@ -927,15 +969,14 @@ main() {
         exit 1
     fi
 
-    start_sudo_keepalive
-    # echo_all_vars
+    keep_sudo_running
+
     download_image
     create_vm_disk
     generate_cloud_init
     create_cloud_init_iso
     launch_vm
     show_completion_info
-    keep_sudo_running
 
     success "All done! Your $DISTRO VM will be ready in a few minutes."
     echo "'vm console $VM_NAME' allows you to access the VM console"

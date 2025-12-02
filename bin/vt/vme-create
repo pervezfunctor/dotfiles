@@ -245,8 +245,6 @@ users:
     groups:
       - $sudo_groups
     shell: /bin/bash
-    groups:
-$(for g in "${USER_GROUPS[@]}"; do printf "      - %s\n" "$g"; done)
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
     passwd: $PASSWORD_HASH
@@ -330,12 +328,12 @@ wait_for_ip() {
     return 1
     ;;
   *)
-    if wait_until 30 3 "virsh domstate $vm_name | grep -q running"; then
+    if wait_until 30 3 bash -c "virsh domstate $vm_name | grep -q running"; then
       slog "VM is running"
     else
       return 1
     fi
-    if wait_until 60 3 "vm_ip $vm_name"; then
+    if wait_until 60 3 vm_ip "$vm_name"; then
       slog "VM has IP address"
     else
       return 1
