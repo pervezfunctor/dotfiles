@@ -118,26 +118,26 @@ detect_container_user() {
   esac
 }
 
-# wait_for_vm_state() {
-#   local vm_name="$1"
-#   local expected_state="$2"
-#   local timeout="${3:-60}"
-#   local interval="${4:-3}"
+wait_for_vm_state() {
+  local vm_name="$1"
+  local expected_state="$2"
+  local timeout="${3:-60}"
+  local interval="${4:-3}"
 
-#   local count=0
-#   local max_attempts=$((timeout / interval))
+  local count=0
+  local max_attempts=$((timeout / interval))
 
-#   while ((count < max_attempts)); do
-#     local state
-#     state=$(ivm_state "$vm_name")
-#     if [[ "$state" == "$expected_state" ]]; then
-#       return 0
-#     fi
-#     sleep "$interval"
-#     ((count++))
-#   done
-#   return 1
-# }
+  while ((count < max_attempts)); do
+    local state
+    state=$(ivm_state "$vm_name")
+    if [[ "$state" == "$expected_state" ]]; then
+      return 0
+    fi
+    sleep "$interval"
+    ((count++))
+  done
+  return 1
+}
 
 ivm_ip() {
   local vm_name="$1"
@@ -299,6 +299,44 @@ ict_ip() {
   echo "$ip"
   return 0
 }
+
+# get_incus_ip() {
+#     local name="$1"
+#     if [[ -z "$name" ]]; then
+#         printf "Usage: get_incus_ip <container>\n" >&2
+#         return 1
+#     fi
+
+#     # Fetch JSON safely
+#     local json
+#     if ! json="$(incus list --format json 2>/dev/null)"; then
+#         printf "Error: failed to run incus\n" >&2
+#         return 1
+#     fi
+
+#     # Parse:
+#     # - find matching container
+#     # - filter only IPv4
+#     # - ignore loopback
+#     # - return **first** global IPv4
+#     local ip
+#     ip="$(jq -r --arg n "$name" '
+#         .[] | select(.name == $n)
+#         | .state.network
+#         | to_entries[]
+#         | .value.addresses[]
+#         | select(.family == "inet")
+#         | select(.scope == "global")
+#         | .address
+#         ' <<< "$json" | head -n1)"
+
+#     if [[ -z "$ip" ]]; then
+#         printf "Error: no IPv4 found for container %s\n" "$name" >&2
+#         return 1
+#     fi
+
+#     printf "%s\n" "$ip"
+# }
 
 ict_ssh() {
   local container_name="$1"

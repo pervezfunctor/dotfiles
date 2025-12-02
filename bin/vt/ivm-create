@@ -11,10 +11,10 @@ trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
 unset VM_NAME
 unset DISTRO
 unset RELEASE
-unset USER_NAME
+unset USERNAME
 unset PASSWORD
-unset SSH_KEY
-unset IMAGE
+unset SSH_KEY_PATH
+unset IMAGE_URL
 
 VCPUS="3"
 MEMORY_MB="4096"
@@ -60,63 +60,67 @@ SUPPORTED DISTRIBUTIONS:
 EOF
 }
 
+show_configuration() {
+  echo
+  printf '\033[1;36m⚙️  CONFIGURATION:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  printf '\033[1mDistribution:\033[0m   \033[0;33m%s %s\033[0m\n' "$DISTRO" "$RELEASE"
+  printf '\033[1mVM Name:\033[0m      \033[0;33m%s\033[0m\n' "$VM_NAME"
+  printf '\033[1mUsername:\033[0m      \033[0;33m%s\033[0m\n' "$USERNAME"
+  printf '\033[1mPassword:\033[0m      \033[0;33m%s\033[0m\n' "$PASSWORD"
+  printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$MEMORY_MB" "$DISK_SIZE"
+  printf '\033[1mNetwork Bridge:\033[0m \033[0;33m%s\033[0m\n' "$BRIDGE_IF"
+  echo
+}
+
 configure_distribution() {
   case "$DISTRO" in
   ubuntu)
     RELEASE=${RELEASE:-"plucky"}
-    IMAGE="images:ubuntu/${RELEASE}/cloud"
+    IMAGE_URL="images:ubuntu/${RELEASE}/cloud"
     ;;
   fedora)
     RELEASE=${RELEASE:-"43"}
-    IMAGE="images:fedora/${RELEASE}/cloud"
+    IMAGE_URL="images:fedora/${RELEASE}/cloud"
     ;;
   arch)
     RELEASE=${RELEASE:-"current"}
-    IMAGE="images:archlinux/${RELEASE}/cloud"
+    IMAGE_URL="images:archlinux/${RELEASE}/cloud"
     ;;
   debian)
     RELEASE=${RELEASE:-"13"}
-    IMAGE="images:debian/${RELEASE}/cloud"
+    IMAGE_URL="images:debian/${RELEASE}/cloud"
     ;;
   centos)
     RELEASE=${RELEASE:-"9-Stream"}
-    IMAGE="images:centos/${RELEASE}/cloud"
+    IMAGE_URL="images:centos/${RELEASE}/cloud"
     ;;
   tumbleweed | tw)
     RELEASE=${RELEASE:-"current"}
-    IMAGE="images:opensuse/tumbleweed/cloud"
-    ;;
-  nix)
-    RELEASE=${RELEASE:-"unstable"}
-    IMAGE="images:nixos/${RELEASE}/cloud"
+    IMAGE_URL="images:opensuse/tumbleweed/cloud"
     ;;
   rocky)
     RELEASE=${RELEASE:-"9"}
-    IMAGE="images:rockylinux/${RELEASE}/cloud"
+    IMAGE_URL="images:rockylinux/${RELEASE}/cloud"
     ;;
   alpine)
     RELEASE=${RELEASE:-"3.22"}
-    IMAGE="images:alpine/${RELEASE}/cloud"
+    IMAGE_URL="images:alpine/${RELEASE}/cloud"
     ;;
   *)
     fail "Unsupported distribution: $DISTRO"
-    fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed, alpine"
+    fail "Supported distributions: ubuntu, fedora, arch, debian, centos, tumbleweed, rocky, alpine"
     exit 1
     ;;
   esac
 
   VM_NAME=${VM_NAME:-"${DISTRO}-vm"}
-  USER_NAME=${USER_NAME:=$(default_username "$DISTRO")}
-  PASSWORD=${PASSWORD:-"$USER_NAME"}
+  USERNAME=${USERNAME:=$USER}
+  PASSWORD=${PASSWORD:-$(generate_password_for "$VM_NAME")}
   PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
+  validate_password "$PASSWORD" || true
 
-  slog "Configuration:"
-  slog "  Distribution: $DISTRO $RELEASE"
-  slog "  VM Name: $VM_NAME"
-  slog "  Username: $USER_NAME"
-  slog "  Image: $IMAGE"
-  slog "  Resources: ${VCPUS} vCPUs, ${MEMORY_MB}MB RAM, ${DISK_SIZE} disk"
-  slog "  Network Bridge: $BRIDGE_IF"
+  show_configuration
 }
 
 generate_cloud_init_config() {
@@ -126,29 +130,37 @@ generate_cloud_init_config() {
   trap '[[ -n "$CLOUD_INIT_DIR" && -d "$CLOUD_INIT_DIR" ]] && rm -rf "$CLOUD_INIT_DIR"' EXIT
 
   local pub_key
-  pub_key=$(cat "$SSH_KEY")
-
-  local packages_common="qemu-guest-agent bash curl"
+  pub_key=$(cat "$SSH_KEY_PATH")
 
   local openssh_pkg
-
   if [[ "$DISTRO" == "arch" ]]; then
     openssh_pkg="openssh"
   else
     openssh_pkg="openssh-server"
   fi
 
-  local runcmd_lines
+  local -a packages=(
+    "qemu-guest-agent"
+    "bash"
+    "curl"
+    "$openssh_pkg"
+  )
+
+  local runcmd_lines=(
+    "systemctl enable --now ssh || systemctl enable --now sshd || true"
+  )
 
   if [[ "$DISTRO" == "alpine" ]]; then
     runcmd_lines=(
-      "rc-update add qemug-guest-agent default"
       "rc-update add sshd default"
+      "service sshd start"
     )
-  else
-    runcmd_lines=(
-      "systemctl enable --now ssh || systemctl enable --now sshd || true"
-    )
+  fi
+
+  local sudo_groups="wheel"
+
+  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" ]]; then
+    sudo_groups="sudo"
   fi
 
   cat >"${CLOUD_INIT_DIR}/user-data" <<EOF
@@ -157,11 +169,9 @@ hostname: $VM_NAME
 manage_etc_hosts: true
 
 users:
-  - name: $USER_NAME
+  - name: $USERNAME
     groups:
-      - sudo
-      - wheel
-      - adm
+      - $sudo_groups
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
@@ -173,16 +183,10 @@ package_update: true
 package_upgrade: true
 
 packages:
-  - $openssh_pkg
-$(for pkg in $packages_common; do echo "  - $pkg"; done)
+$(for pkg in "${packages[@]}"; do echo "  - $pkg"; done)
 
 runcmd:
 $(printf "  - %s\n" "${runcmd_lines[@]}")
-
-ssh_pwauth: true
-disable_root: false
-
-final_message: "VM $VM_NAME setup complete! SSH access is ready."
 EOF
 
   cat >"${CLOUD_INIT_DIR}/meta-data" <<EOF
@@ -203,10 +207,10 @@ create_vm() {
 
   generate_cloud_init_config
 
-  slog "Launching VM with image: $IMAGE"
+  slog "Launching VM with image: $IMAGE_URL"
 
   local launch_cmd=(
-    incus launch "$IMAGE" "$VM_NAME" --vm
+    incus launch "$IMAGE_URL" "$VM_NAME" --vm
     --config "limits.cpu=$VCPUS"
     --config "limits.memory=${MEMORY_MB}MB"
     --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
@@ -229,55 +233,92 @@ create_vm() {
   fi
 }
 
+wait_for_ip() {
+  local vm_name="$1"
+
+  printf '\033[1;36m🔍 Wait for IP address? (Y/n):\033[0m ' >&2
+  read -t 5 -r response || response="y"
+
+  case "$response" in
+  n | N)
+    slog "Skipping IP wait. You can get the IP later with: ivm ip $vm_name"
+    return 1
+    ;;
+  *)
+    if wait_for_vm_state "$vm_name" "RUNNING"; then
+      slog "VM is running"
+    else
+      fail "VM did not start in time"
+      return 1
+    fi
+    if wait_until 30 3 "ivm ip $vm_name"; then
+      slog "VM has IP address"
+    else
+      fail "VM did not get an IP in time. Try 'ivm ip $vm_name' later."
+      info "If you still can't connect, Use 'ivm console $vm_name' to access it."
+      return 1
+    fi
+    ;;
+  esac
+}
+
 show_completion_info() {
+  slog "Waiting for VM to be ready. This could take a few minutes..."
+  if ! wait_for_ip "$VM_NAME"; then
+    fail "Failed to get VM IP. Wait a few moments and try ivm ip $VM_NAME."
+  fi
+
   echo
   printf '\033[1;32m╭─────────────────────────────────────────────────────────────╮\033[0m\n'
-  printf '\033[1;32m│\033[1;37m                     VM CREATED SUCCESSFULLY!                \033[1;32m│\033[0m\n'
+  printf '\033[1;32m│\033[1;37m                       VM CREATED SUCCESSFULLY!             \033[1;32m│\033[0m\n'
   printf '\033[1;32m╰─────────────────────────────────────────────────────────────╯\033[0m\n'
   echo
 
   printf '\033[1;36m📋 VM INFORMATION:\033[0m\n'
-  printf '\033[0;36m─────────────────\033[0m\n'
-  printf '\033[1mVM Name:\033[0m    \033[0;33m%s\033[0m\n' "$VM_NAME"
-  printf '\033[1mUsername:\033[0m   \033[0;33m%s\033[0m\n' "$USER_NAME"
-  printf '\033[1mPassword:\033[0m   \033[0;33m%s\033[0m\n' "$PASSWORD"
-  echo
-
-  printf '\033[1;36m🔍 STATUS CHECK:\033[0m\n'
-  printf '\033[0;36m─────────────────\033[0m\n'
-  info 'Check if the VM is running with:'
-  info '  ivm status %s' "$VM_NAME"
+  printf '\033[0;36m──────────────────────\033[0m\n'
+  printf '\033[1mVM Name:\033[0m      \033[0;33m%s\033[0m\n' "$VM_NAME"
+  printf '\033[1mDistribution:\033[0m   \033[0;33m%s %s\033[0m\n' "$DISTRO" "$RELEASE"
+  printf '\033[1mUsername:\033[0m      \033[0;33m%s\033[0m\n' "$USERNAME"
+  printf '\033[1mPassword:\033[0m      \033[0;33m%s\033[0m\n' "$PASSWORD"
+  printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$MEMORY_MB" "$DISK_SIZE"
+  printf '\033[1mType:\033[0m          \033[0;33mVirtual Machine (full virtualization)\033[0m\n'
   echo
 
   printf '\033[1;36m🌐 NETWORK ACCESS:\033[0m\n'
   printf '\033[0;36m─────────────────\033[0m\n'
-  info 'Once the VM is up, get its IP address with:'
-  info '  ivm info %s' "$VM_NAME"
-  echo
-  info 'Then connect to it using SSH:'
-  info '  ssh %s@<IP_ADDRESS>' "$USER_NAME"
+
+  local ip
+  if ip=$(ivm_ip "$VM_NAME" 2>/dev/null); then
+    printf '\033[1mIP Address:\033[0m   \033[0;33m%s\033[0m\n' "$ip"
+    printf '\033[1mSSH Command:\033[0m  \033[0;33mssh %s@%s\033[0m\n' "$USERNAME" "$ip"
+  else
+    printf '\033[1mGet IP Address:\033[0m \033[0;33mivm ip %s\033[0m\n' "$VM_NAME"
+  fi
   echo
 
   printf '\033[1;36m🔧 VM MANAGEMENT:\033[0m\n'
-  printf '\033[0;36m─────────────────\033[0m\n'
-  info 'Stop the VM:'
-  info '  ivm stop %s' "$VM_NAME"
+  printf '\033[0;36m──────────────────────\033[0m\n'
+  printf '\033[1mStop:\033[0m     \033[0;33mivm stop %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mStart:\033[0m    \033[0;33mivm start %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mDelete:\033[0m   \033[0;33mivm delete %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mShell:\033[0m    \033[0;33mincus exec %s -- /bin/bash\033[0m\n' "$VM_NAME"
+  printf '\033[1mExecute:\033[0m   \033[0;33mincus exec %s -- <command>\033[0m\n' "$VM_NAME"
+  printf '\033[1mStatus:\033[0m    \033[0;33mivm status %s\033[0m\n' "$VM_NAME"
   echo
-  info 'Start the VM:'
-  info '  ivm start %s' "$VM_NAME"
-  echo
-  info 'Delete the VM:'
-  info '  ivm delete %s' "$VM_NAME"
+
+  printf '\033[1;36m📊 VM DETAILS:\033[0m\n'
+  printf '\033[0;36m────────────────────\033[0m\n'
+  incus list "$VM_NAME"
   echo
 
   printf '\033[1;36m🔧 TROUBLESHOOTING:\033[0m\n'
   printf '\033[0;36m─────────────────\033[0m\n'
-  info 'If you need to access the console:'
-  info '  ivm console %s' "$VM_NAME"
-  printf '  \033[0;90m(Exit with Ctrl+A then Q)\033[0m\n'
+  printf '\033[1mConsole:\033[0m   \033[0;33mivm console %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mInfo:\033[0m      \033[0;33mivm info %s\033[0m\n' "$VM_NAME"
+  printf '\033[1;90m(Exit console with Ctrl+A then Q)\033[0m\n'
   echo
 
-  success "VM '$VM_NAME' creation process completed successfully!"
+  success "VM '$VM_NAME' is ready to use!"
   echo
 }
 
@@ -297,7 +338,7 @@ parse_args() {
       shift 2
       ;;
     --username)
-      USER_NAME="$2"
+      USERNAME="$2"
       shift 2
       ;;
     --password)
@@ -317,7 +358,7 @@ parse_args() {
       shift 2
       ;;
     --ssh-key)
-      SSH_KEY="$2"
+      SSH_KEY_PATH="$2"
       shift 2
       ;;
     --bridge)
@@ -348,18 +389,14 @@ main() {
   ivm_check_exists_prerequisites
   parse_args "$@"
 
-  if [[ -z "${SSH_KEY:-}" ]]; then
-    SSH_KEY=$(ssh_key_path)
+  if [[ -z "${SSH_KEY_PATH:-}" ]]; then
+    SSH_KEY_PATH=$(ssh_key_path)
   fi
 
-  if [[ ! -f "$SSH_KEY" ]]; then
-    fail "SSH public key not found at: $SSH_KEY"
-    exit 1
-  fi
+  file_exists "$SSH_KEY_PATH" || die "SSH public key not found at: $SSH_KEY_PATH"
 
   configure_distribution
-  create_vm
-  show_completion_info
+  create_vm && show_completion_info
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

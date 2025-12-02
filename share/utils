@@ -7,6 +7,14 @@ export ILM_SETUP_URL="${ILM_BASE_URL}/share/installers/setup"
 
 export BOXES_DIR=${USE_BOXES_DIR:-$HOME/.boxes}
 
+is_empty() {
+  [[ -z "$1" ]]
+}
+
+is_non_empty() {
+  [[ -n "$1" ]]
+}
+
 for_all() {
   local fn="$1"
   shift

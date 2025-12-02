@@ -7,13 +7,13 @@ source "$(dirname "$0")/vm-utils"
 
 unset USERNAME
 unset PASSWORD
+unset DISTRO
 
 VCPUS="4"
 MEMORY="8192"
 DISK_SIZE="30G"
 BRIDGE="default"
 OS_VARIANT="linux"
-DISTRO="arch"
 
 check_whiptail() {
   if ! has_cmd whiptail; then
@@ -28,7 +28,7 @@ setup_storage() {
   base_dir="/var/lib/libvirt/images"
 
   IMG_DIR="${base_dir}/base-images"
-  WORK_DIR="${base_dir}/${VM_NAME}" # global
+  WORK_DIR="${base_dir}/${VM_NAME}"
 
   sudo mkdir -p "$IMG_DIR" "$WORK_DIR"
 
@@ -62,7 +62,6 @@ configure_arch() {
   RELEASE=${RELEASE:="latest"}
   BASE_IMAGE_NAME="Arch-Linux-x86_64-cloudimg.qcow2"
   DOWNLOAD_URL="https://geo.mirror.pkgbuild.com/images/latest/${BASE_IMAGE_NAME}"
-  USER_GROUPS=("wheel" "network" "storage")
   OS_VARIANT="archlinux"
 }
 
@@ -71,7 +70,6 @@ configure_ubuntu() {
   RELEASE=${RELEASE:="plucky"}
   BASE_IMAGE_NAME="${RELEASE}-server-cloudimg-amd64.img"
   DOWNLOAD_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${BASE_IMAGE_NAME}"
-  USER_GROUPS=("sudo" "adm" "sambashare")
   OS_VARIANT="ubuntu25.10"
 }
 
@@ -80,7 +78,6 @@ configure_debian() {
   RELEASE=${RELEASE:="trixie"} # 13
   BASE_IMAGE_NAME="debian-13-generic-amd64.qcow2"
   DOWNLOAD_URL="https://cloud.debian.org/images/cloud/trixie/latest/${BASE_IMAGE_NAME}"
-  USER_GROUPS=("sudo" "adm")
   OS_VARIANT="debian13"
 }
 
@@ -89,7 +86,6 @@ configure_fedora() {
   RELEASE=${RELEASE:=43}
   BASE_IMAGE_NAME="Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
   DOWNLOAD_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/${BASE_IMAGE_NAME}"
-  USER_GROUPS=("wheel" "network" "storage")
   OS_VARIANT="fedora${RELEASE}"
 
   if [[ "$RELEASE" -ne 43 ]]; then
@@ -102,17 +98,44 @@ configure_tw() {
   RELEASE=${RELEASE:=latest}
   BASE_IMAGE_NAME="openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
   DOWNLOAD_URL="https://download.opensuse.org/tumbleweed/appliances/${BASE_IMAGE_NAME}"
-  USER_GROUPS=("wheel" "network" "users")
   OS_VARIANT="opensusetumbleweed"
 }
 
-generate_password() {
-  has_cmd pass && PASSWORD=$(pass generate "$(hostname)/${VM_NAME}" 12) && return 0
-  has_cmd pwgen && PASSWORD=$(pwgen 12 1) && return 0
-  has_cmd openssl && PASSWORD=$(openssl rand -base64 12) && return 0
+configure_centos() {
+  VM_NAME=${VM_NAME:-centos-vme}
+  RELEASE=${RELEASE:-"9-Stream"}
+  BASE_IMAGE_NAME="CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2"
+  DOWNLOAD_URL="https://cloud.centos.org/centos/${RELEASE}/x86_64/images/${BASE_IMAGE_NAME}"
+  OS_VARIANT="centos-stream9"
+}
 
-  PASSWORD=${USERNAME:-program}
-  return 0
+configure_rocky() {
+  VM_NAME=${VM_NAME:-rocky-vme}
+  RELEASE=${RELEASE:-"9"}
+  BASE_IMAGE_NAME="Rocky-9-GenericCloud.latest.x86_64.qcow2"
+  DOWNLOAD_URL="https://download.rockylinux.org/pub/rocky/${RELEASE}/images/x86_64/${BASE_IMAGE_NAME}"
+  OS_VARIANT="rocky-linux-9"
+}
+
+configure_alpine() {
+  VM_NAME=${VM_NAME:-alpine-vme}
+  RELEASE=${RELEASE:-"3.22"}
+  BASE_IMAGE_NAME="alpine-standard-${RELEASE}-x86_64-cloud-init.qcow2"
+  DOWNLOAD_URL="https://dl-cdn.alpinelinux.org/alpine/v${RELEASE}/releases/cloud/${BASE_IMAGE_NAME}"
+  OS_VARIANT="alpinelinux3.22"
+}
+
+show_configuration() {
+  echo
+  printf '\033[1;36m⚙️  CONFIGURATION:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  printf '\033[1mDistribution:\033[0m   \033[0;33m%s %s\033[0m\n' "$DISTRO" "$RELEASE"
+  printf '\033[1mVM Name:\033[0m      \033[0;33m%s\033[0m\n' "$VM_NAME"
+  printf '\033[1mUsername:\033[0m      \033[0;33m%s\033[0m\n' "$USERNAME"
+  printf '\033[1mPassword:\033[0m      \033[0;33m%s\033[0m\n' "$PASSWORD"
+  printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$MEMORY" "$DISK_SIZE"
+  printf '\033[1mNetwork Bridge:\033[0m \033[0;33m%s\033[0m\n' "$BRIDGE"
+  echo
 }
 
 configure_distribution() {
@@ -132,17 +155,28 @@ configure_distribution() {
   tw | tumbleweed)
     configure_tw
     ;;
+  centos)
+    configure_centos
+    ;;
+  rocky)
+    configure_rocky
+    ;;
+  alpine)
+    configure_alpine
+    ;;
   *)
     fail "Unknown distribution: $DISTRO"
+    fail "Supported distributions: arch, ubuntu, debian, fedora, tumbleweed, centos, rocky, alpine"
     usage
     exit 1
     ;;
   esac
 
-  USERNAME=${USERNAME:-$USER}
-  [[ -z "${PASSWORD:-}" ]] && generate_password
-
+  is_empty "${USERNAME:-}" && USERNAME="$USER"
+  is_empty "${PASSWORD:-}" && PASSWORD=$(generate_password_for "$VM_NAME")
   PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
+
+  show_configuration
 }
 
 download_base_image() {
@@ -185,9 +219,21 @@ generate_cloud_init() {
 
   local -a packages=(
     "qemu-guest-agent"
+    "bash"
     "curl"
     "$openssh_pkg"
   )
+
+  local runcmd_lines=(
+    "systemctl enable --now ssh || systemctl enable --now sshd || true"
+    "systemctl enable --now qemu-guest-agent || true"
+  )
+
+  local sudo_groups="wheel"
+
+  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" ]]; then
+    sudo_groups="sudo"
+  fi
 
   cat >"${USER_DATA}" <<EOF
 #cloud-config
@@ -196,6 +242,8 @@ manage_etc_hosts: true
 
 users:
   - name: $USERNAME
+    groups:
+      - $sudo_groups
     shell: /bin/bash
     groups:
 $(for g in "${USER_GROUPS[@]}"; do printf "      - %s\n" "$g"; done)
@@ -207,15 +255,12 @@ $(for g in "${USER_GROUPS[@]}"; do printf "      - %s\n" "$g"; done)
         $pub_key
 
 package_update: true
+
 packages:
 $(for p in "${packages[@]}"; do printf "  - %s\n" "$p"; done)
 
-ssh_pwauth: false
-disable_root: true
-
 runcmd:
-  - systemctl enable --now sshd || systemctl enable --now ssh || true
-  - systemctl enable --now qemu-guest-agent || true
+$(printf "  - %s\n" "${runcmd_lines[@]}")
 EOF
 
   cat >"${META_DATA}" <<EOF
@@ -273,40 +318,87 @@ create_vm() {
   success "VM creation process started for '${VM_NAME}'."
 }
 
+wait_for_ip() {
+  local vm_name="$1"
+
+  printf '\033[1;36m🔍 Wait for IP address? (Y/n):\033[0m ' >&2
+  read -t 5 -r response || response="y"
+
+  case "$response" in
+  n | N)
+    slog "Skipping IP wait. You can get the IP later with: virsh domifaddr $vm_name --source agent"
+    return 1
+    ;;
+  *)
+    if wait_until 30 3 "virsh domstate $vm_name | grep -q running"; then
+      slog "VM is running"
+    else
+      return 1
+    fi
+    if wait_until 60 3 "vm_ip $vm_name"; then
+      slog "VM has IP address"
+    else
+      return 1
+    fi
+    return 0
+    ;;
+  esac
+}
+
 show_completion_info() {
+  slog "Waiting for VM to be ready. This could take a few minutes..."
+  if ! wait_for_ip "$VM_NAME"; then
+    fail "VM did not get an IP in time. Try 'vme show-ip $VM_NAME' later."
+    info "If you still can't connect, Use 'vme console $VM_NAME' to access it."
+  fi
+
   echo
   printf '\033[1;32m╭─────────────────────────────────────────────────────────────╮\033[0m\n'
-  printf '\033[1;32m│\033[1;37m                     VM CREATED SUCCESSFULLY!                \033[1;32m│\033[0m\n'
+  printf '\033[1;32m│\033[1;37m                       VM CREATED SUCCESSFULLY!             \033[1;32m│\033[0m\n'
   printf '\033[1;32m╰─────────────────────────────────────────────────────────────╯\033[0m\n'
   echo
 
   printf '\033[1;36m📋 VM INFORMATION:\033[0m\n'
-  printf '\033[0;36m─────────────────\033[0m\n'
-  printf '\033[1mVM Name:\033[0m    \033[0;33m%s\033[0m\n' "$VM_NAME"
-  printf '\033[1mUsername:\033[0m   \033[0;33m%s\033[0m\n' "$USERNAME"
-  printf '\033[1mPassword:\033[0m   \033[0;33m%s\033[0m\n' "$PASSWORD"
-  echo
-
-  printf '\033[1;36m🔍 STATUS CHECK:\033[0m\n'
-  printf '\033[0;36m─────────────────\033[0m\n'
-  printf 'Check if the VM is running with:'
-  printf '  virsh domstate %s' "$VM_NAME"
+  printf '\033[0;36m──────────────────────\033[0m\n'
+  printf '\033[1mVM Name:\033[0m      \033[0;33m%s\033[0m\n' "$VM_NAME"
+  printf '\033[1mDistribution:\033[0m   \033[0;33m%s %s\033[0m\n' "$DISTRO" "$RELEASE"
+  printf '\033[1mUsername:\033[0m      \033[0;33m%s\033[0m\n' "$USERNAME"
+  printf '\033[1mPassword:\033[0m      \033[0;33m%s\033[0m\n' "$PASSWORD"
+  printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$MEMORY" "$DISK_SIZE"
+  printf '\033[1mType:\033[0m          \033[0;33mVirtual Machine (full virtualization)\033[0m\n'
   echo
 
   printf '\033[1;36m🌐 NETWORK ACCESS:\033[0m\n'
   printf '\033[0;36m─────────────────\033[0m\n'
-  printf 'Once the VM is up, get its IP address with:'
-  printf '  virsh domifaddr %s --source agent' "$VM_NAME"
+
+  local ip
+  if ip=$(vm_ip "$VM_NAME" 2>/dev/null); then
+    printf '\033[1mIP Address:\033[0m   \033[0;33m%s\033[0m\n' "$ip"
+    printf '\033[1mSSH Command:\033[0m  \033[0;33mvme ssh %s\033[0m\n' "$VM_NAME"
+    printf '\033[1mSSH Command:\033[0m  \033[0;33mssh %s@%s\033[0m\n' "$USERNAME" "$ip"
+  else
+    printf '\033[1mGet IP Address:\033[0m \033[0;33mvirsh domifaddr %s --source agent\033[0m\n' "$VM_NAME"
+  fi
   echo
-  printf 'Then connect to it using SSH:'
-  printf '  ssh %s@<IP_ADDRESS>' "$USERNAME"
+
+  printf '\033[1;36m🔧 VM MANAGEMENT:\033[0m\n'
+  printf '\033[0;36m──────────────────────\033[0m\n'
+  printf '\033[1mStart:\033[0m      \033[0;33mvme start %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mStop:\033[0m       \033[0;33mvme shutdown %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mDelete:\033[0m     \033[0;33mvme delete %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mAutostart:\033[0m  \033[0;33mvme autostart %s\033[0m\n' "$VM_NAME"
+  echo
+
+  printf '\033[1;36m📊 VM DETAILS:\033[0m\n'
+  printf '\033[0;36m────────────────────\033[0m\n'
+  printf '\033[1mInfo:\033[0m        \033[0;33mvme info %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mList VMs:\033[0m    \033[0;33mvme list\033[0m\n'
   echo
 
   printf '\033[1;36m🔧 TROUBLESHOOTING:\033[0m\n'
   printf '\033[0;36m─────────────────\033[0m\n'
-  printf 'If you need to access the serial console:'
-  printf '  virsh console %s' "$VM_NAME"
-  printf '  \033[0;90m(Exit with Ctrl+])\033[0m\n'
+  printf '\033[1mConsole:\033[0m   \033[0;33mvme console %s\033[0m\n' "$VM_NAME"
+  printf '\033[0;90m(Exit console with Ctrl+])\033[0m\n'
   echo
 
   success "VM '${VM_NAME}' creation process completed successfully!"
@@ -314,18 +406,42 @@ show_completion_info() {
 }
 
 usage() {
-  echo "Usage: $0 [options]"
-  echo "Options:"
-  echo "  --username USERNAME   Set the username for the VM (default: 'arch')"
-  echo "  --password PASSWORD   Set the password for the VM (default: same as username)"
-  echo "  --vcpus VCPUS         Set the number of vCPUs (default: 4)"
-  echo "  --memory MEMORY       Set the amount of memory in MB (default: 8192)"
-  echo "  --distro DISTRO       Set the distribution (arch or ubuntu, default: arch)"
-  echo "  --name VM_NAME        Set the name of the VM (default: 'arch')"
-  echo "  --release RELEASE     Set the release version (default: 'latest')"
-  echo "  --bridge BRIDGE       Set the network bridge (default: 'default')"
-  echo "  --disk-size SIZE      Set the disk size (default: '30G')"
-  echo "  --help                Show this help message"
+  cat <<EOF
+Usage: $0 --distro DISTRO [OPTIONS]
+
+Create libvirt virtual machines with cloud-init and SSH access.
+
+REQUIRED:
+    --distro DISTRO         Distribution (arch, ubuntu, debian, fedora, tumbleweed, centos, rocky, alpine)
+
+OPTIONS:
+    --name NAME             VM name (default: distro-vme)
+    --release RELEASE       Distribution release (default: latest)
+    --username USER         Username for VM (default: current user)
+    --password PASS         User password (default: auto-generated)
+    --vcpus NUM             Number of vCPUs (default: 4)
+    --memory MB             RAM in MB (default: 8192)
+    --disk-size SIZE        Disk size (default: 30G)
+    --bridge BRIDGE         Network bridge (default: default)
+    --help, -h              Show this help
+
+EXAMPLES:
+    $0 --distro ubuntu
+    $0 --distro fedora --name my-fedora --vcpus 4 --memory 4096
+    $0 --distro debian --username admin --password mypass
+    $0 --distro arch --release current --disk-size 40G
+    $0 --distro tumbleweed --name opensuse-vm --vcpus 2 --memory 4096
+
+SUPPORTED DISTRIBUTIONS:
+    arch        - Arch Linux (latest)
+    ubuntu      - Ubuntu (plucky/25.10)
+    debian      - Debian (13/trixie)
+    fedora      - Fedora (43)
+    tumbleweed  - openSUSE Tumbleweed (rolling release)
+    centos      - CentOS Stream (9-Stream)
+    rocky       - Rocky Linux (9)
+    alpine      - Alpine Linux (3.22)
+EOF
 }
 
 parse_args() {
@@ -367,7 +483,7 @@ parse_args() {
       BRIDGE="$2"
       shift 2
       ;;
-    --help)
+    --help | -h)
       usage
       exit 0
       ;;
@@ -378,6 +494,12 @@ parse_args() {
       ;;
     esac
   done
+
+  if [[ -z "${DISTRO:-}" ]]; then
+    fail "Distribution is required. Use --distro option."
+    usage
+    exit 1
+  fi
 }
 
 main() {
@@ -405,8 +527,8 @@ main() {
   echo
   sleep 1
 
-  slog "Using username: ${USERNAME}"
   if [ -z "$PASSWORD" ]; then
+    slog "Using username: ${USERNAME}"
     read -r -s -p "Enter password to use for the user: " PASSWORD
     echo
   fi
@@ -419,12 +541,15 @@ main() {
 }
 
 interactive_mode() {
-  if ! DISTRO=$(whiptail --title "Select Distribution" --menu "Choose a distribution" 15 60 5 \
+  if ! DISTRO=$(whiptail --title "Select Distribution" --menu "Choose a distribution" 18 60 8 \
     "arch" "Arch Linux" \
     "ubuntu" "Ubuntu" \
     "debian" "Debian" \
     "fedora" "Fedora" \
-    "tumbleweed" "openSUSE Tumbleweed" 3>&1 1>&2 2>&3); then
+    "tumbleweed" "openSUSE Tumbleweed" \
+    "centos" "CentOS Stream" \
+    "rocky" "Rocky Linux" \
+    "alpine" "Alpine Linux" 3>&1 1>&2 2>&3); then
 
     exit 1
   fi

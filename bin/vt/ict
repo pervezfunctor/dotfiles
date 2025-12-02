@@ -335,7 +335,7 @@ show_container_ip() {
 
   local ip
   if ip=$(ict_ip "$container_name"); then
-    echo "IP: $ip"
+    echo "$ip"
     return 0
   else
     local ret=$?
@@ -506,7 +506,7 @@ incus_check
 
 case "$command" in
 list)
-  ict_list
+  ict_list "${@:3}"
   ;;
 list-remote-images)
   list_remote_images
