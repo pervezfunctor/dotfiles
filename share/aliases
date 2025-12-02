@@ -178,18 +178,18 @@ if has_cmd docker; then
 fi
 
 if has_cmd distrobox; then
-  alias db='distrobox'
-  alias dbe='distrobox enter -nw --clean-path'
-  alias dbl='distrobox list'
-  alias dbr='distrobox run'
-  alias dbc='distrobox create'
-  alias dbs='distrobox stop --yes'
-  alias dbu='distrobox upgrade'
-  alias dbrm='distrobox rm'
+  alias dt='distrobox'
+  alias dte='distrobox enter -nw --clean-path'
+  alias dtl='distrobox list'
+  alias dtr='distrobox run'
+  alias dtc='distrobox create'
+  alias dts='distrobox stop --yes'
+  alias dtu='distrobox upgrade'
+  alias dtrm='distrobox rm'
 
-  dbrc() {
+  dtrc() {
     if [ -z "$2" ]; then
-      echo "Usage: dbrc <container_name> <command>"
+      echo "Usage: dtrc <container_name> <command>"
       return 1
     fi
     local container="$1"
@@ -197,7 +197,7 @@ if has_cmd distrobox; then
     distrobox run --name "$container" -- "$@"
   }
 
-  dbsa() {
+  dtsa() {
     local containers
     containers=$(distrobox list --no-color | awk 'NR>1 && $3 == "Up" {print $2}')
     for container in $containers; do
@@ -207,48 +207,48 @@ if has_cmd distrobox; then
   }
 
   # List containers with details
-  dbld() {
+  dtld() {
     distrobox list --no-color | column -t -s '|'
   }
 
   # Export app from container to host
-  dbexp() {
+  dtexp() {
     if [ -z "$2" ]; then
-      echo "Usage: dbexp <container_name> <app_command>"
+      echo "Usage: dtexp <container_name> <app_command>"
       return 1
     fi
     distrobox export --name "$1" --app "$2" --export-path "$HOME/.local/bin"
   }
 
   # Import app from host to container
-  dbimp() {
+  dtimp() {
     if [ -z "$2" ]; then
-      echo "Usage: dbimp <container_name> <app_command>"
+      echo "Usage: dtimp <container_name> <app_command>"
       return 1
     fi
     distrobox enter --name "$1" -- distrobox-export --app "$2" --export-path "$HOME/.local/bin"
   }
 
-  dbsh() {
+  dtsh() {
     local shell="${2:-bash}"
     if [ -z "$1" ]; then
-      echo "Usage: dbsh <container_name> [shell]"
+      echo "Usage: dtsh <container_name> [shell]"
       return 1
     fi
     distrobox enter --name "$1" --additional-flags "--shell $shell"
   }
 
-  dbmount() {
+  dtmount() {
     if [ -z "$3" ]; then
-      echo "Usage: dbmount <container_name> <host_path> <container_path>"
+      echo "Usage: dtmount <container_name> <host_path> <container_path>"
       return 1
     fi
     distrobox enter --name "$1" --additional-flags "--volume $2:$3"
   }
 
-  dbbackup() {
+  dtbackup() {
     if [ -z "$1" ]; then
-      echo "Usage: dbbackup <container_name>"
+      echo "Usage: dtbackup <container_name>"
       return 1
     fi
     local backup_dir="${BOXES_DIR:-$HOME/.local/share/distrobox}/backups"
@@ -258,9 +258,9 @@ if has_cmd distrobox; then
     cd "${BOXES_DIR:-$HOME/.local/share/distrobox}" && tar -czf "$backup_dir/$1.tar.gz" "$1"
   }
 
-  dbrestore() {
+  dtrestore() {
     if [ -z "$1" ]; then
-      echo "Usage: dbrestore <container_name>"
+      echo "Usage: dtrestore <container_name>"
       return 1
     fi
     local backup_dir="${BOXES_DIR:-$HOME/.local/share/distrobox}/backups"
@@ -273,20 +273,21 @@ if has_cmd distrobox; then
     fi
   }
 
-  dbd() {
+  dtd() {
     distrobox list | grep -q "$1" || return
     distrobox rm "$@" && srm "${BOXES_DIR}/$1"
   }
 
-  alias rdbe='distrobox enter -nw --clean-path --root'
-  alias rdbl='distrobox list --root'
-  alias rdbr='distrobox run --root'
-  alias rdbc='distrobox create --root'
-  alias rdbs='distrobox stop --root'
-  alias rdbu='distrobox upgrade --root'
-  alias rdbrm='distrobox rm --root'
+  alias rdt='distrobox --root'
+  alias rdte='distrobox enter -nw --clean-path --root'
+  alias rdtl='distrobox list --root'
+  alias rdtr='distrobox run --root'
+  alias rdtc='distrobox create --root'
+  alias rdts='distrobox stop --root'
+  alias rdtu='distrobox upgrade --root'
+  alias rdtrm='distrobox rm --root'
 
-  rdbd() {
+  rdtd() {
     distrobox list --root | grep -q "$1" || return
     distrobox rm --root "$@" && srm "${BOXES_DIR}/$1"
   }
