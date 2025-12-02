@@ -74,7 +74,7 @@ ict-create --distro arch --ssh-key ~/.ssh/my_key.pub
 | Distribution | Default Release | Default User | Image Source             |
 | ------------ | --------------- | ------------ | ------------------------ |
 | Ubuntu       | 24.04           | ubuntu       | images:ubuntu/24.04      |
-| Fedora       | 42              | fedora       | images:fedora/42         |
+| Fedora       | 43              | fedora       | images:fedora/42         |
 | Arch Linux   | current         | arch         | images:archlinux/current |
 | Debian       | 12              | debian       | images:debian/12         |
 | CentOS       | 9-Stream        | centos       | images:centos/9-Stream   |

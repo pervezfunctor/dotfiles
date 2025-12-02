@@ -1683,7 +1683,7 @@ function Install-SelectedComponents {
             "wsl-ubuntu" { Install-WSLDistro -DistroName "Ubuntu-24.04" }
             "wsl-debian" { Install-WSLDistro -DistroName "Debian" }
             "wsl-opensuse" { Install-WSLDistro -DistroName "openSUSE-Tumbleweed" }
-            "wsl-fedora" { Install-WSLDistro -DistroName "FedoraLinux-42" }
+            "wsl-fedora" { Install-WSLDistro -DistroName "FedoraLinux-43" }
             "wsl-centos" { Install-CentOSWSL }
             "wsl-nixos" { Install-NixOSWSL }
             "wsl-ubuntu-25.10" { Install-Ubuntu2510 }
