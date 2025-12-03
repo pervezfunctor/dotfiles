@@ -204,7 +204,7 @@ stop_vm() {
         success "Shutdown command sent to VM '$vm_name'"
         slog "Waiting for VM to stop..."
 
-        if wait_for "shut off" 60 3 virsh domstate "$vm_name"; then
+        if wait_until 10 5 virsh domstate "$vm_name" | grep -q "shut off"; then
             success "VM '$vm_name' stopped gracefully"
             return 0
         else

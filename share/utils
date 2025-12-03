@@ -58,6 +58,7 @@ marker_file_create() {
     sudo touch "$MARKER"
   fi
 }
+
 group_exists() {
   getent group "$1" >/dev/null 2>&1
 }
@@ -365,27 +366,27 @@ source_dotfile() {
 }
 
 slog() {
-  printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*" >>"$HOME/.dotfiles-slog"
+  printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*" >>"$HOME/.dotfiles-slog.log"
   printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*"
 }
 
 fail() {
-  printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >>"$HOME/.dotfiles-fail"
+  printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >>"$HOME/.dotfiles-fail.log"
   printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >&2
 }
 
 warn() {
-  printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >>"$HOME/.dotfiles-warn"
+  printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >>"$HOME/.dotfiles-warn.log"
   printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >&2
 }
 
 success() {
-  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*" >>"$HOME/.dotfiles-success"
+  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*" >>"$HOME/.dotfiles-slog.log"
   printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*"
 }
 
 info() {
-  printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*" >>"$HOME/.dotfiles-info"
+  printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*" >>"$HOME/.dotfiles-slog.log"
   printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*"
 }
 
@@ -1666,26 +1667,6 @@ common_installer() {
   done
 }
 
-wait_for() {
-  local expected="$1"
-  local timeout="$2"
-  local interval="$3"
-  shift 3
-  local cmd=("$@")
-  local count=0
-  local max_attempts=$((timeout / interval))
-
-  while ((count < max_attempts)); do
-    output=$("${cmd[@]}" 2>/dev/null)
-    if [[ "$output" == "$expected" ]]; then
-      return 0
-    fi
-    sleep "$interval"
-    ((count++))
-  done
-  return 1
-}
-
 source_installers() {
   local INSTALLERS="${ILM_BASE_URL}/share/installers"
 
@@ -1737,7 +1718,8 @@ bootstrap() {
   cd "$HOME" || die "could not cd to $HOME"
 
   slog "Removing old logs"
-  rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log 2>/dev/null
+  rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log ~/.dotfiles-slog.log \
+    ~/.dotfiles-warn.log ~/.dotfiles-fail.log ~/.dotfiles-success.log 2>/dev/null
 
   has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 
