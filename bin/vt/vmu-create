@@ -126,6 +126,7 @@ parse_args() {
   if [[ -z "${SSH_PORT:-}" ]]; then
     SSH_PORT=$(find_free_port_random)
     warn "SSH port not provided, using random: $SSH_PORT"
+    sleep 1
   fi
 
   VM_NAME=${VM_NAME:-$DISTRO-vmu}

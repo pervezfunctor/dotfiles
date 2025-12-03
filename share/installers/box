@@ -149,6 +149,10 @@ dt_mainstall() {
     dt_base "$(get_boxos)"
 }
 
+dbox_mainstall() {
+  dt_mainstall
+}
+
 tw-wslbox_mainstall() {
     is_tw || die "This script is only for openSUSE Tumbleweed"
 

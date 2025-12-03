@@ -2,7 +2,7 @@
 
 # shellcheck disable=SC1091
 
-DOT_DIR=${DOT_DIR:-$HOME/.ilm}
+export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 source "$DOT_DIR/share/utils"
 
 is_net_service_running() {
@@ -176,4 +176,95 @@ stable_hash() {
 
   digest=$(printf '%s' "$input" | sha256sum | cut -d' ' -f1)
   printf "%0${digits}d\n" "$(( 0x${digest:0:8} % mod ))"
+}
+
+handle_multiple_arguments() {
+  if [[ $# -lt 2 ]]; then
+    fail "handle_multiple_arguments: requires at least 2 arguments" >&2
+    return 1
+  fi
+
+  local backend="$1"
+  local cmd
+  cmd="$2"
+  shift 2
+
+  local -a items=("$@")
+
+  #  use fzf if no items were passed
+  if [[ ${#items[@]} -eq 0 ]]; then
+    local list_fn="list_${backend}"
+
+    if ! fn_exists "$list_fn"; then
+      fail "Missing backend function: $list_fn"
+      return 1
+    fi
+
+    mapfile -t available < <("$list_fn")
+
+    if [[ ${#available[@]} -eq 0 ]]; then
+      slog "No items found for '$backend'."
+      return 1
+    fi
+
+    mapfile -t items < <(select-multi "Select items to ${cmd}:" "${available[@]}")
+
+    [[ ${#items[@]} -gt 0 ]] || {
+      slog "Nothing selected."
+      return 1
+    }
+  fi
+
+  # execute handler for each selected item
+  local handler="${cmd}_${backend}"
+  if ! fn_exists "$handler"; then
+    fail "Missing handler: $handler" >&2
+    return 1
+  fi
+
+  for item in "${items[@]}"; do
+    "$handler" "$item"
+  done
+}
+
+wait_for_ip() {
+  local backend="$1"
+  local name="$2"
+
+  printf '\033[1;36mWait for IP address? (Y/n):\033[0m ' >&2
+  read -t 5 -r response || response="y"
+
+  case "$response" in
+    n|N)
+      slog "Not waiting for IP."
+      return 1
+      ;;
+  esac
+
+  local state_fn="${backend}_running"
+  if ! fn_exists "$state_fn"; then
+    fail "Backend missing: $state_fn"
+    return 1
+  fi
+
+  if wait_until 30 3 "$state_fn" "$name"; then
+    slog "Instance is running"
+  else
+    fail "Instance did not start in time"
+    return 1
+  fi
+
+  local ip_fn="${backend}_ip"
+  if ! fn_exists "$ip_fn"; then
+    fail "Backend missing: $ip_fn"
+    return 1
+  fi
+
+  if wait_until 60 3 "$ip_fn" "$name"; then
+    slog "Instance has IP address: $("$ip_fn" "$name")"
+    return 0
+  else
+    fail "Instance did not get IP address in time"
+    return 1
+  fi
 }

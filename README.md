@@ -237,7 +237,7 @@ sudo nixos-rebuild switch --flake ~/nix-config\#$(hostname) # Or use alias 'upda
 
 ### Fedora Atomic(Silverblue, Kinoite, Sway Atomic)
 
-If you don't want to use rpm-ostree, then you need to distrobox for everything instead. I have multiple distrobox containers for different purposes. But they are a bit brittle.
+If you don't want to use rpm-ostree, then you need to use distrobox for everything instead. I have multiple distrobox containers for different purposes. But they are a bit brittle.
 
 First install very essential shell tools on host with the following command.
 

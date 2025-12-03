@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC1091
+
 set -euo pipefail
+
+source "$(dirname "$0")/vt-utils"
 
 trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
 
@@ -25,7 +29,7 @@ Manage VMs created with vmu-create script. These are user-mode VMs, not full lib
 
 COMMANDS:
     list                List all VMs
-    create  ARGS        Create a new VM, with same ARGS as vmu-create
+    create  ARGS        Create a new VM, see vmu create --help for options
     autostart <vm-name> Set VM to start on boot
     start <vm-name>     Start a VM
     shutdown <vm-name>  Gracefully stop a VM
@@ -41,6 +45,7 @@ COMMANDS:
 
 EXAMPLES:
     $0 list                    # List all VMs
+    $0 ssh dev                 # SSH into 'dev' VM
     $0 show-ip debian          # Show IP address of 'debian' VM
     $0 status debian           # Show status of 'debian' VM
     $0 create debian           # Create debian VM
@@ -162,22 +167,22 @@ main() {
     vmu-create "${@:2}"
     ;;
   autostart)
-    autostart_vmu "$vm_name"
+    handle_multiple_arguments autostart "$vm_name"
     ;;
   start | boot)
-    start_vmu "$vm_name"
+    handle_multiple_arguments start "$vm_name"
     ;;
   stop | shutdown)
-    shutdown_vmu "$vm_name"
+    handle_multiple_arguments shutdown "$vm_name"
     ;;
   restart | reboot)
-    reboot_vmu "$vm_name"
+    handle_multiple_arguments reboot "$vm_name"
     ;;
   destroy | kill | force-stop)
-    force_stop_vmu "$vm_name"
+    handle_multiple_arguments force_stop "$vm_name"
     ;;
   delete | rm)
-    delete_vmu "$vm_name"
+    handle_multiple_arguments delete "$vm_name"
     ;;
   console)
     console_vmu "$vm_name"
