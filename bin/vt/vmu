@@ -14,7 +14,7 @@ cmd_vmu() {
 
 check_prerequisites() {
   for cmd in virsh vmu-create trash; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
+    if ! has_cmd "$cmd"; then
       echo "Error: Required command '$cmd' is not available."
       exit 1
     fi
@@ -25,32 +25,33 @@ usage() {
   cat <<EOF
 Usage: $0 <command> [vm-name]
 
-Manage VMs created with vmu-create script. These are user-mode VMs, not full libvirt VMs.
+Description:
+  Manage VMs created with vmu-create script. These are user-mode VMs, not full libvirt VMs.
 
 COMMANDS:
-    list                List all VMs
-    create  ARGS        Create a new VM, see vmu create --help for options
-    autostart <vm-name> Set VM to start on boot
-    start <vm-name>     Start a VM
-    shutdown <vm-name>  Gracefully stop a VM
-    restart <vm-name>   Restart a VM
-    kill <vm-name>      Force stop a VM
-    delete <vm-name>    Delete a VM completely
-    console <vm-name>   Connect to VM console
-    ssh <vm-name>       Connect to VM via SSH
-    info <vm-name>      Show VM status and info
-    logs <vm-name>      Show cloud-init logs
-    disk <vm-name>      Show VM disk usage
-    cmd <virsh-args>    Run virsh command with qemu:///session connection
+    list                          List all VMs
+    create  ARGS                  Create a new VM, see vmu create --help for options
+    autostart <vm-name>           Set VM to start on boot
+    start <vm-name>               Start a VM
+    shutdown <vm-name>            Gracefully stop a VM
+    restart <vm-name>             Restart a VM
+    kill <vm-name>                Force stop a VM
+    delete <vm-name>              Delete a VM completely
+    console <vm-name>             Connect to VM console
+    ssh <vm-name> [username]      Connect to VM via SSH
+    info <vm-name>                Show VM status and info
+    logs <vm-name>                Show cloud-init logs
+    disk <vm-name>                Show VM disk usage
+    cmd <virsh-args>              Run virsh command with qemu:///session connection
 
 EXAMPLES:
-    $0 list                    # List all VMs
-    $0 ssh dev                 # SSH into 'dev' VM
-    $0 show-ip debian          # Show IP address of 'debian' VM
-    $0 status debian           # Show status of 'debian' VM
-    $0 create debian           # Create debian VM
-    $0 start debian            # Start 'debian' VM
-    $0 delete old-vm           # Delete 'old-vm' completely
+    $0 list                       # List all VMs
+    $0 ssh dev username           # SSH into 'dev' VM with username 'username'
+    $0 show-ip debian             # Show IP address of 'debian' VM
+    $0 status debian              # Show status of 'debian' VM
+    $0 create debian              # Create debian VM
+    $0 start debian               # Start 'debian' VM
+    $0 delete old-vm              # Delete 'old-vm' completely
 EOF
 }
 
@@ -86,8 +87,9 @@ delete_vmu() {
   local vda
   vda=$(virsh --connect qemu:///session domblklist "$1" | grep vda | awk '{print $2}')
 
-  virsh --connect qemu:///session destroy "$1" >/dev/null 2>&1 || true
-  virsh --connect qemu:///session undefine "$1" >/dev/null 2>&1 || true
+  virsh --connect qemu:///session destroy "$1" >/dev/null || true
+  virsh --connect qemu:///session undefine "$1" >/dev/null || true
+  virsh --connect qemu:///session managedsave-remove "$1" >/dev/null || true
 
   if [[ -n "$vda" ]]; then
     dir=$(dirname "$vda")
@@ -146,52 +148,52 @@ main() {
 
   check_prerequisites
 
-  local command vm_name
+  local command
   command="$1"
-  vm_name="${2:-}"
+  shift
 
   case "$command" in
   list | ls)
     list_vmu
     ;;
   cmd)
-    cmd_vmu "${@:2}"
+    cmd_vmu "$@"
     ;;
   disk)
-    disk_vmu "$vm_name"
+    disk_vmu "$@"
     ;;
   info | status)
-    status_vmu "$vm_name"
+    status_vmu "$@"
     ;;
   create | new)
-    vmu-create "${@:2}"
+    vmu-create "$@"
     ;;
   autostart)
-    handle_multiple_arguments autostart "$vm_name"
+    handle_multiple_arguments vmu autostart "$@"
     ;;
   start | boot)
-    handle_multiple_arguments start "$vm_name"
+    handle_multiple_arguments vmu start "$@"
     ;;
   stop | shutdown)
-    handle_multiple_arguments shutdown "$vm_name"
+    handle_multiple_arguments vmu shutdown "$@"
     ;;
   restart | reboot)
-    handle_multiple_arguments reboot "$vm_name"
+    handle_multiple_arguments vmu reboot "$@"
     ;;
   destroy | kill | force-stop)
-    handle_multiple_arguments force_stop "$vm_name"
+    handle_multiple_arguments vmu force_stop "$@"
     ;;
   delete | rm)
-    handle_multiple_arguments delete "$vm_name"
+    handle_multiple_arguments vmu delete "$@"
     ;;
   console)
-    console_vmu "$vm_name"
+    console_vmu "$@"
     ;;
   ssh)
-    ssh_vmu "$vm_name"
+    ssh_vmu "$@"
     ;;
   logs)
-    logs_vmu "$vm_name"
+    logs_vmu "$@"
     ;;
   --help | -h)
     usage

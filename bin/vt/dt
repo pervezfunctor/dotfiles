@@ -26,7 +26,7 @@ COMMANDS:
     status <name>           Show container status and info
     create <distro> [name]  Create a new distrobox container
     start <name>            Start a container
-    stop <name>             Stop a container
+    kill <name>             Force stopa container
     restart <name>          Restart a container
     delete <name>           Delete a container completely
     enter <name>            Enter container shell
@@ -156,7 +156,7 @@ start_dt() {
   success "Container '$dt_name' started (will be fully initialized on first enter)"
 }
 
-stop_dt() {
+kill_dt() {
   local dt_name="$1"
 
   dt_check_exists "$dt_name"
@@ -177,7 +177,7 @@ restart_dt() {
   dt_check_exists "$dt_name"
 
   slog "Restarting container '$dt_name'..."
-  stop_dt "$dt_name"
+  kill_dt "$dt_name"
 
   while dt_distrobox list | grep -q "\b${dt_name}\b"; do
     sleep 1
@@ -379,8 +379,8 @@ create)
 start)
   handle_multi start "$@"
   ;;
-stop)
-  handle_multi stop "$@"
+kill)
+  handle_multi kill "$@"
   ;;
 restart)
   handle_multi restart "$@"

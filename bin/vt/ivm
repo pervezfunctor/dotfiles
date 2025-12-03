@@ -18,7 +18,7 @@ COMMANDS:
     status <name>           Show VM status and info
     create [ivm-create args]  Create a new Incus VM (forwards all args to ivm-create)
     start [name...]         Start VM(s) - if no names provided, select from list
-    stop [name...]          Stop VM(s) - if no names provided, select from list
+    kill [name...]          Force stop VM(s) - if no names provided, select from list
     restart [name...]       Restart VM(s) - if no names provided, select from list
     delete [name...]        Delete VM(s) - if no names provided, select from list
     console <name>          Connect to VM console
@@ -51,9 +51,9 @@ EXAMPLES:
     $0 create --distro alpine --release 3.19 --nix
 
     # Multi-VM operations:
-    $0 start ubuntu fedora          # Start multiple VMs
-    $0 stop                         # Select VMs to stop from menu
-    $0 restart ubuntu               # Restart single VM
+    $0 start ubuntu fedora           # Start multiple VMs
+    $0 kill tw myubuntu              # Select VMs to stop from menu
+    $0 restart ubuntu                # Restart single VM
     $0 delete ubuntu fedora arch     # Delete multiple VMs
 
 All arguments after 'create' are forwarded directly to ivm-create.
@@ -126,7 +126,7 @@ start_vm() {
   fi
 }
 
-stop_vm() {
+kill_vm() {
   local vm_name="$1"
 
   ivm_check_exists "$vm_name" || return 1
@@ -632,8 +632,8 @@ create)
 start)
   handle_multi start "${@:2}"
   ;;
-stop)
-  handle_multi stop "${@:2}"
+kill)
+  handle_multi kill "${@:2}"
   ;;
 restart)
   handle_multi restart "${@:2}"

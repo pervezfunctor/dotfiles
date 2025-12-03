@@ -18,7 +18,7 @@ COMMANDS:
     status <name>           Show container status and info
     create [ict-create args]  Create a new Incus container (forwards all args to ict-create)
     start [name...]         Start container(s) - if no names provided, select from list
-    stop [name...]          Stop container(s) - if no names provided, select from list
+    kill [name...]          Force stop container(s) - if no names provided, select from list
     restart [name...]       Restart container(s) - if no names provided, select from list
     delete [name...]        Delete container(s) - if no names provided, select from list
     shell <name>            Enter container shell
@@ -57,7 +57,7 @@ EXAMPLES:
 
     # Multi-container operations:
     $0 start ubuntu fedora          # Start multiple containers
-    $0 stop                         # Select containers to stop from menu
+    $0 kill                         # Select containers to force stop from menu
     $0 restart ubuntu               # Restart single container
     $0 delete ubuntu fedora arch     # Delete multiple containers
 
@@ -77,11 +77,11 @@ container_status() {
   incus info "$container_name" | head -20
 }
 
-create_container() {
+create_ict() {
   ict-create "$@"
 }
 
-start_container() {
+start_ict() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -101,7 +101,7 @@ start_container() {
   fi
 }
 
-stop_container() {
+kill_ict() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -116,7 +116,7 @@ stop_container() {
   fi
 }
 
-restart_container() {
+restart_ict() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
   ict_check_running "$container_name" || return 0
@@ -132,7 +132,7 @@ restart_container() {
   fi
 }
 
-delete_container() {
+delete_ict() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -178,7 +178,7 @@ enter_shell() {
   fi
 }
 
-exec_in_container() {
+exec_in_ict() {
   local container_name="$1"
   shift
   local command="$*"
@@ -189,7 +189,7 @@ exec_in_container() {
   incus exec "$container_name" -- "$@"
 }
 
-show_container_info() {
+show_ict_info() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -198,7 +198,7 @@ show_container_info() {
   incus info "$container_name"
 }
 
-show_container_config() {
+show_ict_config() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -296,40 +296,40 @@ restore_snapshot() {
   fi
 }
 
-copy_container() {
-  local source_container="$1"
-  local dest_container="$2"
-  ict_check_exists "$source_container" || return 1
-  ict_check_exists "$dest_container" && {
-    fail "Destination container '$dest_container' already exists"
+copy_ict() {
+  local source_ict="$1"
+  local dest_ict="$2"
+  ict_check_exists "$source_ict" || return 1
+  ict_check_exists "$dest_ict" && {
+    fail "Destination container '$dest_ict' already exists"
     return 1
   }
 
-  if [[ -z "$dest_container" ]]; then
+  if [[ -z "$dest_ict" ]]; then
     fail "Destination container name required"
     return 1
   fi
 
-  if ! incus info "$source_container" >/dev/null 2>&1; then
-    fail "Source container '$source_container' not found"
+  if ! incus info "$source_ict" >/dev/null 2>&1; then
+    fail "Source container '$source_ict' not found"
     return 1
   fi
 
-  if incus info "$dest_container" >/dev/null 2>&1; then
-    fail "Destination container '$dest_container' already exists"
+  if incus info "$dest_ict" >/dev/null 2>&1; then
+    fail "Destination container '$dest_ict' already exists"
     return 1
   fi
 
-  slog "Copying container '$source_container' to '$dest_container'..."
-  if incus copy "$source_container" "$dest_container"; then
-    success "Container '$source_container' copied to '$dest_container'"
+  slog "Copying container '$source_ict' to '$dest_ict'..."
+  if incus copy "$source_ict" "$dest_ict"; then
+    success "Container '$source_ict' copied to '$dest_ict'"
   else
-    fail "Failed to copy container '$source_container' to '$dest_container'"
+    fail "Failed to copy container '$source_ict' to '$dest_ict'"
     return 1
   fi
 }
 
-show_container_ip() {
+show_ict_ip() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -370,11 +370,11 @@ handle_multi() {
   local -a containers=("$@")
 
   if [[ ${#containers[@]} -eq 0 ]]; then
-    local all_containers
-    all_containers=$(incus list type=container --format csv --columns n | grep -v '^$' || true)
+    local all_icts
+    all_icts=$(incus list type=container --format csv --columns n | grep -v '^$' || true)
 
     local container_array
-    readarray -t container_array <<<"$all_containers"
+    readarray -t container_array <<<"$all_icts"
 
     if [[ ${#container_array[@]} -eq 0 ]]; then
       fail "No containers found. Please create a container first."
@@ -392,7 +392,7 @@ handle_multi() {
   fi
 
   for container in "${containers[@]}"; do
-    "${cmd}_container" "$container"
+    "${cmd}_ict" "$container"
   done
 }
 
@@ -420,7 +420,7 @@ list_host_usb_devices() {
   slog "  By Bus/Device: $0 usb-attach CONTAINER_NAME bus.device"
 }
 
-list_container_usb_devices() {
+list_ict_usb_devices() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -520,13 +520,13 @@ status)
   container_status "$container_name"
   ;;
 create)
-  create_container "${@:2}"
+  create_ict "${@:2}"
   ;;
 start)
   handle_multi start "${@:2}"
   ;;
-stop)
-  handle_multi stop "${@:2}"
+kill)
+  handle_multi kill "${@:2}"
   ;;
 restart)
   handle_multi restart "${@:2}"
@@ -553,7 +553,7 @@ exec)
     usage
     exit 1
   }
-  exec_in_container "$container_name" "${@:3}"
+  exec_in_ict "$container_name" "${@:3}"
   ;;
 ip)
   [[ -z "$container_name" ]] && {
@@ -561,7 +561,7 @@ ip)
     usage
     exit 1
   }
-  show_container_ip "$container_name"
+  show_ict_ip "$container_name"
   ;;
 ssh)
   [[ -z "$container_name" ]] && {
@@ -577,7 +577,7 @@ info)
     usage
     exit 1
   }
-  show_container_info "$container_name"
+  show_ict_info "$container_name"
   ;;
 config)
   [[ -z "$container_name" ]] && {
@@ -585,7 +585,7 @@ config)
     usage
     exit 1
   }
-  show_container_config "$container_name"
+  show_ict_config "$container_name"
   ;;
 logs)
   [[ -z "$container_name" ]] && {
@@ -627,7 +627,7 @@ copy)
     usage
     exit 1
   }
-  copy_container "$container_name" "$3"
+  copy_ict "$container_name" "$3"
   ;;
 usb-list)
   list_host_usb_devices
@@ -638,7 +638,7 @@ usb-attached)
     usage
     exit 1
   }
-  list_container_usb_devices "$container_name"
+  list_ict_usb_devices "$container_name"
   ;;
 usb-attach)
   [[ -z "$container_name" ]] && {

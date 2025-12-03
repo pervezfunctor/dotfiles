@@ -28,9 +28,9 @@ COMMANDS:
     create  ARGS        Create a new VM, with same ARGS as vm-create
     autostart <vm-name> Set VM to start on boot
     start <vm-name>     Start a VM
-    stop <vm-name>      Gracefully stop a VM
+    shutdown <vm-name>  Gracefully stop a VM
     restart <vm-name>   Restart a VM
-    destroy <vm-name>   Force stop a VM
+    kill <vm-name>      Force stop a VM
     delete <vm-name>    Delete a VM completely
     console <vm-name>   Connect to VM console
     ip <vm-name>        Get VM IP address
@@ -960,7 +960,7 @@ restart | reboot)
     }
     restart_vm "$vm_name"
     ;;
-destroy)
+destroy | kill)
     [[ -z "$vm_name" ]] && {
         fail "VM name required"
         usage

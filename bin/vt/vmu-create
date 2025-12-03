@@ -110,7 +110,7 @@ parse_args() {
       exit 0
       ;;
     *)
-      die "Unknown option: $1"
+      fail "Unknown option: $1"
       usage
       exit 1
       ;;
@@ -118,7 +118,7 @@ parse_args() {
   done
 
   if [[ -z "${DISTRO:-}" ]]; then
-    die "Distro is required"
+    fail "Distro is required"
     usage
     exit 1
   fi
@@ -172,7 +172,6 @@ check_prerequisites() {
 
   if virsh --connect qemu:///session list --all --name 2>/dev/null | grep -q "^$VM_NAME$"; then
     die "VM '$VM_NAME' already exists"
-    exit 1
   fi
 
   if ! [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
@@ -216,7 +215,7 @@ configure_distro() {
     OS_VARIANT="opensusetumbleweed"
     ;;
   *)
-    die "Unsupported distro: $DISTRO"
+    fail "Unsupported distro: $DISTRO"
     usage
     ;;
   esac
