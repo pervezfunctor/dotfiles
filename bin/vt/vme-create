@@ -303,12 +303,12 @@ create_vm() {
     --connect qemu:///system \
     --name "${VM_NAME}" \
     --memory "${MEMORY}" \
-    --os-variant "${OS_VARIANT}" \
     --vcpus "${VCPUS}" \
-    --import \
+    --os-variant "${OS_VARIANT}" \
     --disk path="${VM_DISK}",device=disk,bus=virtio,format=qcow2 \
     --network network="${BRIDGE}",model=virtio \
     --cloud-init user-data="${USER_DATA}",meta-data="${META_DATA}" \
+    --import \
     --video=virtio \
     --graphics none \
     --console pty,target_type=serial \

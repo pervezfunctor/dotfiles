@@ -29,7 +29,7 @@ usage() {
 
   OPTIONS:
       --vcpus NUM         Number of vCPUs (default: 4)
-      --memory MB         RAM in MB (default: 8192)
+      --memory MB         MEMORY in MB (default: 8192)
       --disk-size SIZE    Disk size (default: 20G)
       --ssh-key PATH      SSH public key path (default: auto-detect)
       --password PASS     User password (default: username)
@@ -50,7 +50,7 @@ EOF
 parse_args() {
   ASK_PASSWORD=false
   CPUS=4
-  RAM=8192
+  MEMORY=8192
   DISK_SIZE=20G
   CONSOLE=false
   SPICE=false
@@ -74,7 +74,7 @@ parse_args() {
       shift 2
       ;;
     --memory)
-      RAM="$2"
+      MEMORY="$2"
       shift 2
       ;;
     --disk-size)
@@ -246,49 +246,67 @@ create_disk() {
 }
 
 generate_cloud_init() {
-  local password_hash cloud_init_dir
-  password_hash=$(openssl passwd -6 "$PASSWORD")
+  local PASSWORD_HASH cloud_init_dir
+  PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
   cloud_init_dir=$(mktemp -d)
 
   USER_DATA="${cloud_init_dir}/user-data"
   META_DATA="${cloud_init_dir}/meta-data"
 
-  # This is deliberately insecure configuration as the vm is supposed to be for develpoment.
+  local openssh_pkg
+  case "$DISTRO" in
+  arch | tw | tumbleweed)
+    openssh_pkg="openssh"
+    ;;
+  *)
+    openssh_pkg="openssh-server"
+    ;;
+  esac
+
+  local -a packages=(
+    "qemu-guest-agent"
+    "bash"
+    "curl"
+    "$openssh_pkg"
+  )
+
+  local sudo_groups="wheel"
+
+  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" ]]; then
+    sudo_groups="sudo"
+  fi
+
+  local runcmd_lines=(
+    "systemctl enable --now ssh || systemctl enable --now sshd || true"
+    "systemctl enable --now qemu-guest-agent || true"
+  )
+
+  # This is deliberate insecure configuration as the vm is for development.
   cat >"$USER_DATA" <<EOF
 #cloud-config
 hostname: $VM_NAME
+manage_etc_hosts: true
 
 users:
   - name: $USERNAME
-    groups: [wheel, sudo]
+    groups:
+      - $sudo_groups
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
-    passwd: "$password_hash"
+    passwd: $PASSWORD_HASH
     ssh_authorized_keys:
-      - "$SSH_KEY"
-
-ssh_pwauth: true
-disable_root: false
+      - |
+        $SSH_KEY
 
 package_update: true
-package_upgrade: false
 
 packages:
-  - qemu-guest-agent
-  - curl
-  - bash
+$(for p in "${packages[@]}"; do printf "  - %s\n" "$p"; done)
 
 runcmd:
-  - |
-    if command -v systemctl >/dev/null 2>&1; then
-        systemctl enable --now qemu-guest-agent || true
-        systemctl enable --now sshd || systemctl enable --now ssh || true
-    else
-        rc-update add qemu-guest-agent default || true
-        rc-update add sshd default || true
-    fi
+$(printf "  - %s\n" "${runcmd_lines[@]}")
 EOF
 
   cat >"$META_DATA" <<EOF
@@ -304,18 +322,18 @@ create_vm() {
   virt_install_args=(
     --connect qemu:///session
     --name "$VM_NAME"
-    --memory "$RAM"
+    --memory "$MEMORY"
     --vcpus "$CPUS"
-    --disk "path=$DISK_IMG,format=qcow2,bus=virtio"
-    --cloud-init "user-data=$USER_DATA,meta-data=$META_DATA"
     --os-variant "$OS_VARIANT"
+    --disk "path=$DISK_IMG,format=qcow2,bus=virtio"
+    --network "passt,model=virtio,portForward=${SSH_PORT}:22"
+    --cloud-init "user-data=$USER_DATA,meta-data=$META_DATA"
     --virt-type kvm
     --import
-    --network "passt,model=virtio,portForward=${SSH_PORT}:22"
   )
 
   if [[ "$CONSOLE" == true ]]; then
-    virt_install_args+=("--console pty,target_type=serial")
+    virt_install_args+=("--console=pty,target_type=serial")
   else
     virt_install_args+=("--noautoconsole")
   fi
@@ -343,7 +361,7 @@ show_completion_info() {
   printf '\033[1mDistribution:\033[0m   \033[0;33m%s\033[0m\n' "$DISTRO"
   printf '\033[1mUsername:\033[0m      \033[0;33m%s\033[0m\n' "$USERNAME"
   printf '\033[1mPassword:\033[0m      \033[0;33m%s\033[0m\n' "$PASSWORD"
-  printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$CPUS" "$RAM" "$DISK_SIZE"
+  printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB MEMORY, %s disk\033[0m\n' "$CPUS" "$MEMORY" "$DISK_SIZE"
   echo
 
   printf '\033[1;36m🌐 NETWORK ACCESS:\033[0m\n'
@@ -384,7 +402,7 @@ echo_all_vars() {
   echo "PASSWORD: $PASSWORD"
   echo "SSH_PORT: $SSH_PORT"
   echo "CPUS: $CPUS"
-  echo "RAM: $RAM"
+  echo "MEMORY: $MEMORY"
   echo "DISK_SIZE: $DISK_SIZE"
   echo "OS_VARIANT: $OS_VARIANT"
   sleep 1

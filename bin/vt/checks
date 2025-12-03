@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ---- Libvirt VM ----
+check_libvirt_vm() {
+  local vm="$1"
+  local result=0
+
+  # Check agent responsiveness
+  if virsh qemu-agent-command "$vm" '{"execute":"guest-ping"}' --timeout 2 >/dev/null 2>&1; then
+    echo "[$vm] qemu-guest-agent: running"
+  else
+    echo "[$vm] qemu-guest-agent: not running"
+    result=1
+  fi
+
+  # Check cloud-init status (requires agent)
+  if virsh qemu-agent-command "$vm" '{"execute":"guest-file-open","arguments":{"path":"/var/lib/cloud/instance/boot-finished"}}' --timeout 2 >/dev/null 2>&1; then
+    echo "[$vm] cloud-init: done"
+  else
+    echo "[$vm] cloud-init: not finished"
+    result=1
+  fi
+
+  return "$result"
+}
+
+# ---- Incus VM ----
+check_incus_vm() {
+  local vm="$1"
+  local result=0
+
+  # Verify VM running
+  if [ "$(incus info "$vm" --format=json | jq -r '.status')" != "Running" ]; then
+    echo "[$vm] instance not running"
+    return 1
+  fi
+
+  # Check agent responsiveness
+  if incus exec "$vm" -- true >/dev/null 2>&1; then
+    echo "[$vm] incus agent: running"
+  else
+    echo "[$vm] incus agent: not running"
+    result=1
+  fi
+
+  # Check cloud-init completion
+  if incus file stat "$vm"/var/lib/cloud/instance/boot-finished >/dev/null 2>&1; then
+    echo "[$vm] cloud-init: done"
+  else
+    echo "[$vm] cloud-init: not finished"
+    result=1
+  fi
+
+  return "$result"
+}
+
+# ---- Incus LXC ----
+check_incus_lxc() {
+  local name="$1"
+  local result=0
+
+  # Verify container running
+  if [ "$(incus info "$name" --format=json | jq -r '.status')" != "Running" ]; then
+    echo "[$name] container not running"
+    return 1
+  fi
+
+  # Agent check (LXC agent always available)
+  if incus exec "$name" -- true >/dev/null 2>&1; then
+    echo "[$name] incus agent: running"
+  else
+    echo "[$name] incus agent: not running"
+    result=1
+  fi
+
+  # Cloud-init completion check
+  if incus file stat "$name"/var/lib/cloud/instance/boot-finished >/dev/null 2>&1; then
+    echo "[$name] cloud-init: done"
+  else
+    echo "[$name] cloud-init: not finished"
+    result=1
+  fi
+
+  return "$result"
+}
+
+# ---- Dispatcher ----
+check_guest() {
+  local type="$1"
+  local name="$2"
+
+  case "$type" in
+  libvirt) check_libvirt_vm "$name" ;;
+  incus-vm) check_incus_vm "$name" ;;
+  incus-lxc) check_incus_lxc "$name" ;;
+  *)
+    echo "Usage: check_guest <libvirt|incus-vm|incus-lxc> <name>" >&2
+    return 2
+    ;;
+  esac
+}
+
+# ---- Example usage ----
+# check_guest libvirt myvm
+# check_guest incus-vm ubuntu-vm
+# check_guest incus-lxc alpine-lxc

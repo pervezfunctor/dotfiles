@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/vm-utils"
 
 trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
 
@@ -13,7 +13,7 @@ cmd_vmu() {
 }
 
 check_prerequisites() {
-  for cmd in virsh vmu-create trash; do
+  for cmd in virsh trash virt-cat vmu-create; do
     if ! has_cmd "$cmd"; then
       echo "Error: Required command '$cmd' is not available."
       exit 1
@@ -42,6 +42,7 @@ COMMANDS:
     info <vm-name>                Show VM status and info
     logs <vm-name>                Show cloud-init logs
     disk <vm-name>                Show VM disk usage
+    is-running <vm-name>          Check if VM is running (returns exit code)
     cmd <virsh-args>              Run virsh command with qemu:///session connection
 
 EXAMPLES:
@@ -71,6 +72,10 @@ start_vmu() {
   virsh --connect qemu:///session start "$1"
 }
 
+is_running_vmu() {
+  virsh --connect qemu:///session domstate "$1" | grep -q "^running$"
+}
+
 shutdown_vmu() {
   virsh --connect qemu:///session shutdown "$1"
 }
@@ -87,9 +92,9 @@ delete_vmu() {
   local vda
   vda=$(virsh --connect qemu:///session domblklist "$1" | grep vda | awk '{print $2}')
 
-  virsh --connect qemu:///session destroy "$1" >/dev/null || true
-  virsh --connect qemu:///session undefine "$1" >/dev/null || true
-  virsh --connect qemu:///session managedsave-remove "$1" >/dev/null || true
+  virsh --connect qemu:///session destroy "$1" >/dev/null 2>&1 || true
+  virsh --connect qemu:///session undefine "$1" >/dev/null 2>&1 || true
+  virsh --connect qemu:///session managedsave-remove "$1" >/dev/null 2>&1 || true
 
   if [[ -n "$vda" ]]; then
     dir=$(dirname "$vda")
@@ -101,6 +106,8 @@ delete_vmu() {
       trash "$dir"
     fi
   fi
+  # remove from .vmu-ports
+  sed -i "/^$1 /d" "$VMU_PORTS_FILE"
 }
 
 logs_vmu() {
@@ -166,7 +173,7 @@ main() {
     status_vmu "$@"
     ;;
   create | new)
-    vmu-create "$@"
+    "$(dirname "$0")/vmu-create" "$@"
     ;;
   autostart)
     handle_multiple_arguments vmu autostart "$@"
@@ -194,6 +201,9 @@ main() {
     ;;
   logs)
     logs_vmu "$@"
+    ;;
+  is-running)
+    is_running_vmu "$1"
     ;;
   --help | -h)
     usage

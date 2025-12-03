@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+
+# Backend must support the following commands
+# create, start, stop, restart, delete, list, ip, is-running
+
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: $(basename "$0") <command> <machine>..."
+  exit 1
+fi
+
+show_error() {
+  local exit_code=$?
+
+  echo "Error occurred in function: ${FUNCNAME[1]:-main}" >&2
+  echo "Error occurred on line: ${BASH_LINENO[0]}" >&2
+  echo "Error occurred in file: ${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}" >&2
+  echo "Exit code: $exit_code" >&2
+}
+
+trap 'show_error' ERR
+
+command="$1"
+
+case "$command" in
+vmu | vme | ivm | ict | dt) ;;
+*)
+  echo "Error: Unknown command: $command"
+  exit 1
+  ;;
+esac
+
+shift
+VT_DISTROS=("$@")
+VT_MACHINES=("${VT_DISTROS[@]/%/-testing}")
+
+echo "machines: ${VT_MACHINES[*]}"
+sleep 1
+
+if ! command -v "$command" >/dev/null 2>&1; then
+  echo "Error: Command '$command' is not found"
+  exit 1
+fi
+
+create_all() {
+  echo "Creating ${command}s..."
+  for machine in "${VT_DISTROS[@]}"; do
+    "$command" create --distro "$machine" --name "${machine}-testing" --username testing
+  done
+  echo "Waiting for ${command}s to be ready..."
+}
+
+list_all() {
+  echo "Listing ${command}s..."
+  "$command" list
+}
+
+ssh_all() {
+  echo "ssh to ${command}s..."
+  "$command" ssh "${VT_MACHINES[@]}" testing
+}
+stop_all() {
+  echo "Stopping ${command}s..."
+  for machine in "${VT_MACHINES[@]}"; do
+    "$command" stop "$machine"
+    sleep 5
+    echo "Waiting for ${machine} to stop..."
+    while "$command" is-running "${machine}"; do
+      printf '.'
+      sleep 2
+    done
+  done
+}
+
+start_all() {
+  echo "Starting ${command}s..."
+  "$command" start "${VT_MACHINES[@]}"
+}
+
+restart_all() {
+  echo "Restarting ${command}s..."
+  "$command" restart "${VT_MACHINES[@]}"
+}
+
+delete_all() {
+  echo "Deleting ${command}s..."
+  "$command" delete "${VT_MACHINES[@]}"
+}
+
+main() {
+  create_all
+  sleep 120
+  list_all
+  ssh_all
+  stop_all
+  start_all
+  restart_all
+  delete_all
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
