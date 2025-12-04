@@ -21,14 +21,27 @@ select_distributions() {
 }
 
 create_all_vms() {
-  local VMU_CREATE_ARGS=("$@")
+  local filtered_args=()
   local failed_count=0
   local total_count=${#SELECTED_DISTRIBUTIONS[@]}
+
+  # Filter out --distro and --name arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    --distro | --name)
+      shift 2 # Skip this argument and its value
+      ;;
+    *)
+      filtered_args+=("$1")
+      shift
+      ;;
+    esac
+  done
 
   slog "Starting creation of $total_count VMs..."
 
   for distro in "${SELECTED_DISTRIBUTIONS[@]}"; do
-    if ! vmu-create --distro "$distro" "${VMU_CREATE_ARGS[@]}"; then
+    if ! vmu-create --distro "$distro" "${filtered_args[@]}"; then
       fail "VM creation for $distro failed"
       ((failed_count++))
     fi
@@ -46,11 +59,7 @@ create_all_vms() {
 }
 
 main() {
-  if [[ $# -eq 0 ]]; then
-    vmu-create --help
-    exit 1
-  fi
-  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
     vmu-create --help
     exit 0
   fi
