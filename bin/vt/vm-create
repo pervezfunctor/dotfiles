@@ -21,151 +21,163 @@ unset DISTRO
 unset PASSWORD
 
 cleanup_on_error() {
-    echo "Error occurred in function: ${FUNCNAME[1]:-main}"
-    echo "Error occurred on line: ${BASH_LINENO[0]}"
-    echo "Error occurred in file: ${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
+  echo "Error occurred in function: ${FUNCNAME[1]:-main}"
+  echo "Error occurred on line: ${BASH_LINENO[0]}"
+  echo "Error occurred in file: ${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
 
-    warn "Cleaning up due to error..."
-    sudo rm -f "$DISK_IMG" 2>/dev/null || true
-    sudo rm -f "$SEED_ISO" 2>/dev/null || true
-    sudo virsh destroy "$VM_NAME" 2>/dev/null || true
-    sudo virsh undefine "$VM_NAME" 2>/dev/null || true
-    keep_sudo_running
+  warn "Cleaning up due to error..."
+  sudo rm -f "$DISK_IMG" 2>/dev/null || true
+  sudo rm -f "$SEED_ISO" 2>/dev/null || true
+  sudo virsh destroy "$VM_NAME" 2>/dev/null || true
+  sudo virsh undefine "$VM_NAME" 2>/dev/null || true
+  keep_sudo_running
 }
 
 trap cleanup_on_error ERR
 trap 'cleanup_on_error; exit 1' INT TERM
 
 configure_alpine() {
-    VM_NAME=${VM_NAME:=alpine}
-    RELEASE=${RELEASE:=3.22}
+  VM_NAME=${VM_NAME:=alpine}
+  RELEASE=${RELEASE:=3.22}
 
-    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v${RELEASE}/releases/cloud/generic_alpine-${RELEASE}.1-x86_64-bios-cloudinit-r0.qcow2"
-    BASE_IMG_NAME="generic_alpine-${RELEASE}.0-x86_64-uefi-cloudinit-r0.qcow2"
-    USER_GROUPS=("wheel")
-    # INSTALL_CMD="sudo apk add qemu libvirt qemu-img wget genisoimage"
+  IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v${RELEASE}/releases/cloud/generic_alpine-${RELEASE}.1-x86_64-bios-cloudinit-r0.qcow2"
+  BASE_IMG_NAME="generic_alpine-${RELEASE}.0-x86_64-uefi-cloudinit-r0.qcow2"
+  USER_GROUPS=("wheel")
+  # INSTALL_CMD="sudo apk add qemu libvirt qemu-img wget genisoimage"
 
-    OS_VARIANT="alpinelinux3.21"
+  OS_VARIANT="alpinelinux3.21"
 }
 
 configure_ubuntu() {
-    VM_NAME=${VM_NAME:=ubuntu}
-    RELEASE=${RELEASE:=questing} # 25.10
+  VM_NAME=${VM_NAME:=ubuntu}
+  RELEASE=${RELEASE:=questing} # 25.10
 
-    IMG_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${RELEASE}-server-cloudimg-amd64.img"
-    BASE_IMG_NAME="${RELEASE}.img"
-    USER_GROUPS=("adm" "sudo")
-    # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
+  IMG_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${RELEASE}-server-cloudimg-amd64.img"
+  BASE_IMG_NAME="${RELEASE}.img"
+  USER_GROUPS=("adm" "sudo")
+  # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
 
-    # Only support the default release
-    OS_VARIANT="ubuntu25.10"
+  # Only support the default release
+  OS_VARIANT="ubuntu25.10"
 }
 configure_tw() {
-    VM_NAME=${VM_NAME:=tw}
-    RELEASE=${RELEASE:=latest} # Not used in URL, but good for consistency
+  VM_NAME=${VM_NAME:=tw}
+  RELEASE=${RELEASE:=latest} # Not used in URL, but good for consistency
 
-    IMG_URL="https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
-    BASE_IMG_NAME="openSUSE-Tumbleweed-Cloud.qcow2"
-    USER_GROUPS=("wheel" "users")
-    OS_VARIANT="opensusetumbleweed"
-    # INSTALL_CMD="sudo zypper install qemu_kvm libvirt virt-install qemu-img wget"
+  IMG_URL="https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
+  BASE_IMG_NAME="openSUSE-Tumbleweed-Cloud.qcow2"
+  USER_GROUPS=("wheel" "users")
+  OS_VARIANT="opensusetumbleweed"
+  # INSTALL_CMD="sudo zypper install qemu_kvm libvirt virt-install qemu-img wget"
 }
 
 configure_fedora() {
-    VM_NAME=${VM_NAME:=fedora}
-    RELEASE=${RELEASE:=43}
-    IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
-    BASE_IMG_NAME="fedora-${RELEASE}.qcow2"
-    USER_GROUPS=("wheel")
-    OS_VARIANT="fedora${RELEASE}"
-    if [[ "$RELEASE" -ne 43 ]]; then
-        warn "Only Fedora 43 is supported. Installing Fedora 43."
-    fi
-    # INSTALL_CMD="sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
+  VM_NAME=${VM_NAME:=fedora}
+  RELEASE=${RELEASE:=43}
+  IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
+  BASE_IMG_NAME="fedora-${RELEASE}.qcow2"
+  USER_GROUPS=("wheel")
+  OS_VARIANT="fedora${RELEASE}"
+  if [[ "$RELEASE" -ne 43 ]]; then
+    warn "Only Fedora 43 is supported. Installing Fedora 43."
+  fi
+  # INSTALL_CMD="sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
 }
 
 configure_arch() {
-    VM_NAME=${VM_NAME:=arch}
-    RELEASE=${RELEASE:=latest}
+  VM_NAME=${VM_NAME:=arch}
+  RELEASE=${RELEASE:=latest}
 
-    IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
-    BASE_IMG_NAME="arch-latest.qcow2"
-    USER_GROUPS=("wheel")
-    OS_VARIANT="archlinux"
-    # INSTALL_CMD="sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools"
+  IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
+  BASE_IMG_NAME="arch-latest.qcow2"
+  USER_GROUPS=("wheel")
+  OS_VARIANT="archlinux"
+  # INSTALL_CMD="sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools"
 }
 
 configure_debian() {
-    VM_NAME=${VM_NAME:=debian}
-    RELEASE=${RELEASE:=trixie} # 13
+  VM_NAME=${VM_NAME:=debian}
+  RELEASE=${RELEASE:=trixie} # 13
 
-    IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
-    OS_VARIANT="debian13"
+  IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+  OS_VARIANT="debian13"
 
-    BASE_IMG_NAME="debian-${RELEASE}.qcow2"
-    USER_GROUPS=("sudo")
-    # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
+  BASE_IMG_NAME="debian-${RELEASE}.qcow2"
+  USER_GROUPS=("sudo")
+  # INSTALL_CMD="sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage"
+}
+
+configure_centos() {
+  VM_NAME=${VM_NAME:=centos}
+  RELEASE=${RELEASE:=9-stream}
+
+  IMG_URL="https://cloud.centos.org/centos/${RELEASE}/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2"
+  BASE_IMG_NAME="centos-${RELEASE}.qcow2"
+  USER_GROUPS=("wheel")
+  OS_VARIANT="centos-stream9"
+  # INSTALL_CMD="sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage"
 }
 
 setup_storage() {
-    local base_dir IMG_DIR
+  local base_dir IMG_DIR
 
-    base_dir="/var/lib/libvirt/images"
+  base_dir="/var/lib/libvirt/images"
 
-    IMG_DIR="${base_dir}/vm-base-images"
-    WORKDIR="${base_dir}/${VM_NAME}-vm"
-    CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
-    DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
-    SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
-    BASE_IMG="${IMG_DIR}/${BASE_IMG_NAME}"
+  IMG_DIR="${base_dir}/vm-base-images"
+  WORKDIR="${base_dir}/${VM_NAME}-vm"
+  CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+  DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
+  SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
+  BASE_IMG="${IMG_DIR}/${BASE_IMG_NAME}"
 
-    sudo mkdir -p "$IMG_DIR" "$WORKDIR" "$CLOUD_INIT_DIR"
+  sudo mkdir -p "$IMG_DIR" "$WORKDIR" "$CLOUD_INIT_DIR"
 
-    sudo chown -R "$USER":kvm "$IMG_DIR"
-    sudo chmod -R 755 "$IMG_DIR"
+  sudo chown -R "$USER":kvm "$IMG_DIR"
+  sudo chmod -R 755 "$IMG_DIR"
 
-    sudo chown -R "$USER":kvm "$WORKDIR"
-    sudo chmod -R 755 "$WORKDIR"
+  sudo chown -R "$USER":kvm "$WORKDIR"
+  sudo chmod -R 755 "$WORKDIR"
 
-    sudo chown -R "$USER":kvm "$CLOUD_INIT_DIR"
-    sudo chmod -R 755 "$CLOUD_INIT_DIR"
+  sudo chown -R "$USER":kvm "$CLOUD_INIT_DIR"
+  sudo chmod -R 755 "$CLOUD_INIT_DIR"
 
-    sudo mkdir -p /var/lib/libvirt/boot # bug in libvirt/virt-install?
+  sudo mkdir -p /var/lib/libvirt/boot # bug in libvirt/virt-install?
 }
 
 configure_distribution() {
-    case "$DISTRO" in
-    ubuntu) configure_ubuntu ;;
-    fedora) configure_fedora ;;
-    arch) configure_arch ;;
-    debian) configure_debian ;;
-    alpine) configure_alpine ;;
-    opensuse | tumbleweed | tw) configure_tw ;;
-    *)
-        fail "Unsupported distribution: $DISTRO"
-        fail "Supported distributions: ubuntu, fedora, arch, debian, alpine"
-        exit 1
-        ;;
-    esac
+  case "$DISTRO" in
+  ubuntu) configure_ubuntu ;;
+  fedora) configure_fedora ;;
+  arch) configure_arch ;;
+  debian) configure_debian ;;
+  alpine) configure_alpine ;;
+  opensuse | tumbleweed | tw) configure_tw ;;
+  centos) configure_centos ;;
+  *)
+    fail "Unsupported distribution: $DISTRO"
+    fail "Supported distributions: ubuntu, fedora, arch, debian, alpine, centos"
+    exit 1
+    ;;
+  esac
 
-    if [[ -z "$VM_NAME" ]]; then
-        fail "VM name is empty after configuration"
-        exit 1
-    fi
+  if [[ -z "$VM_NAME" ]]; then
+    fail "VM name is empty after configuration"
+    exit 1
+  fi
 
-    USERNAME=${USERNAME:=$(default_username "$DISTRO")}
-    PASSWORD=${PASSWORD:=$USERNAME}
-    PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
+  USERNAME=${USERNAME:=$(default_username "$DISTRO")}
+  PASSWORD=${PASSWORD:=$USERNAME}
+  PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 }
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 --distro DISTRO [OPTIONS]
 
 Create a VM using virt-install and cloud-init for various Linux distributions.
 
 REQUIRED:
-    --distro DISTRO     Distribution to install (ubuntu|fedora|arch|debian|alpine|tumbleweed)
+    --distro DISTRO     Distribution to install (ubuntu|fedora|arch|debian|alpine|tumbleweed|centos)
 
 OPTIONS:
     --name NAME         VM name (default: distribution name)
@@ -193,6 +205,8 @@ DISTRIBUTION-SPECIFIC OPTIONS:
         Default release: trixie (13)
     Alpine:
         Default release: 3.22
+    CentOS:
+        Default release: 9-stream
     Tumbleweed:
         Default release: latest
 
@@ -202,6 +216,7 @@ EXAMPLES:
     $0 --distro arch --disk-size 80G --vcpus 4   # Arch VM with larger disk
     $0 --distro debian                           # Debian VM with defaults
     $0 --distro tumbleweed --name tw-vm --vcpus 2 --memory 4096  # openSUSE Tumbleweed VM
+    $0 --distro centos --name my-centos --vcpus 2 --memory 4096  # CentOS Stream VM
     $0 --distro ubuntu --docker                  # Ubuntu VM with Docker pre-installed
     $0 --distro ubuntu --brew                    # Ubuntu VM with Homebrew and dev tools
     $0 --distro ubuntu --nix                     # Ubuntu VM with Nix package manager
@@ -218,6 +233,7 @@ PREREQUISITES:
 INSTALL COMMANDS BY DISTRIBUTION:
     Ubuntu/Debian: sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients virtinst qemu-utils wget genisoimage
     Fedora:        sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage
+    CentOS:         sudo dnf install qemu-kvm libvirt virt-install qemu-img wget genisoimage
     Arch:          sudo pacman -S qemu-desktop libvirt virt-install qemu-img wget cdrtools
     Alpine:        sudo apk add qemu libvirt virt-install qemu-img wget
     Tumbleweed:    sudo zypper install qemu libvirt virt-install qemu-img wget
@@ -225,158 +241,158 @@ EOF
 }
 
 parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-        --distro)
-            DISTRO="$2"
-            shift 2
-            ;;
-        --name)
-            VM_NAME="$2"
-            shift 2
-            ;;
-        --memory)
-            RAM_MB="$2"
-            shift 2
-            ;;
-        --vcpus)
-            VCPUS="$2"
-            shift 2
-            ;;
-        --disk-size)
-            DISK_SIZE="$2"
-            shift 2
-            ;;
-        --ssh-key)
-            SSH_KEY="$2"
-            shift 2
-            ;;
-        --bridge)
-            BRIDGE_IF="$2"
-            shift 2
-            ;;
-        --username)
-            USERNAME="$2"
-            shift 2
-            ;;
-        --docker)
-            INSTALL_DOCKER=true
-            shift
-            ;;
-        --brew)
-            INSTALL_BREW=true
-            shift
-            ;;
-        --nix)
-            INSTALL_NIX=true
-            shift
-            ;;
-        --dotfiles)
-            shift                 # Remove --dotfiles from arguments
-            DOTFILES_OPTIONS="$*" # Capture all remaining arguments
-            break                 # Exit the loop since --dotfiles must be last
-            ;;
-        --password)
-            PASSWORD="$2"
-            shift 2
-            ;;
-        --help | -h)
-            usage
-            exit 0
-            ;;
-        *)
-            fail "Unknown option: $1"
-            usage
-            exit 1
-            ;;
-        esac
-    done
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --distro)
+      DISTRO="$2"
+      shift 2
+      ;;
+    --name)
+      VM_NAME="$2"
+      shift 2
+      ;;
+    --memory)
+      RAM_MB="$2"
+      shift 2
+      ;;
+    --vcpus)
+      VCPUS="$2"
+      shift 2
+      ;;
+    --disk-size)
+      DISK_SIZE="$2"
+      shift 2
+      ;;
+    --ssh-key)
+      SSH_KEY="$2"
+      shift 2
+      ;;
+    --bridge)
+      BRIDGE_IF="$2"
+      shift 2
+      ;;
+    --username)
+      USERNAME="$2"
+      shift 2
+      ;;
+    --docker)
+      INSTALL_DOCKER=true
+      shift
+      ;;
+    --brew)
+      INSTALL_BREW=true
+      shift
+      ;;
+    --nix)
+      INSTALL_NIX=true
+      shift
+      ;;
+    --dotfiles)
+      shift                 # Remove --dotfiles from arguments
+      DOTFILES_OPTIONS="$*" # Capture all remaining arguments
+      break                 # Exit the loop since --dotfiles must be last
+      ;;
+    --password)
+      PASSWORD="$2"
+      shift 2
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    esac
+  done
 
-    if [[ -z "${DISTRO:-}" ]]; then
-        DISTRO="ubuntu"
-    fi
+  if [[ -z "${DISTRO:-}" ]]; then
+    DISTRO="ubuntu"
+  fi
 
 }
 
 check_prerequisites() {
-    slog "Checking prerequisites..."
+  slog "Checking prerequisites..."
 
-    if ! sudo -v; then
-        fail "This script requires sudo privileges to create files in system directories"
-        exit 1
-    fi
+  if ! sudo -v; then
+    fail "This script requires sudo privileges to create files in system directories"
+    exit 1
+  fi
 
-    if getent passwd libvirt-qemu >/dev/null; then
-        QEMU_USER="libvirt-qemu"
-        QEMU_GROUP="libvirt-qemu"
-    elif getent passwd qemu >/dev/null; then
-        QEMU_USER="qemu"
-        QEMU_GROUP="qemu"
-    elif getent passwd libvirt >/dev/null; then
-        QEMU_USER="libvirt"
-        QEMU_GROUP="libvirt"
-    else
-        warn "Could not determine QEMU user, using 'root:kvm' as fallback"
-        QEMU_USER="root"
-        QEMU_GROUP="kvm"
-    fi
+  if getent passwd libvirt-qemu >/dev/null; then
+    QEMU_USER="libvirt-qemu"
+    QEMU_GROUP="libvirt-qemu"
+  elif getent passwd qemu >/dev/null; then
+    QEMU_USER="qemu"
+    QEMU_GROUP="qemu"
+  elif getent passwd libvirt >/dev/null; then
+    QEMU_USER="libvirt"
+    QEMU_GROUP="libvirt"
+  else
+    warn "Could not determine QEMU user, using 'root:kvm' as fallback"
+    QEMU_USER="root"
+    QEMU_GROUP="kvm"
+  fi
 
-    slog "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
+  slog "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
 
-    virt_check_prerequisites
+  virt_check_prerequisites
 
-    if vm_exists "$VM_NAME"; then
-        fail "VM '$VM_NAME' already exists"
-        fail "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
-        exit 1
-    fi
+  if vm_exists "$VM_NAME"; then
+    fail "VM '$VM_NAME' already exists"
+    fail "Remove with: virsh destroy $VM_NAME && virsh undefine $VM_NAME"
+    exit 1
+  fi
 
-    if ! ip link show "$BRIDGE_IF" &>/dev/null; then
-        warn "Bridge '$BRIDGE_IF' not found, will use default libvirt network"
-        BRIDGE_IF="default"
-    fi
+  if ! ip link show "$BRIDGE_IF" &>/dev/null; then
+    warn "Bridge '$BRIDGE_IF' not found, will use default libvirt network"
+    BRIDGE_IF="default"
+  fi
 
-    success "Prerequisites check passed"
+  success "Prerequisites check passed"
 }
 
 download_image() {
-    slog "Preparing $DISTRO cloud image..."
+  slog "Preparing $DISTRO cloud image..."
 
-    if [[ -f "$BASE_IMG" ]]; then
-        info "Base image '${BASE_IMG}' already exists. Skipping download."
-        return 0
-    fi
+  if [[ -f "$BASE_IMG" ]]; then
+    info "Base image '${BASE_IMG}' already exists. Skipping download."
+    return 0
+  fi
 
-    slog "Downloading $DISTRO $RELEASE cloud image..."
-    slog "URL: $IMG_URL"
+  slog "Downloading $DISTRO $RELEASE cloud image..."
+  slog "URL: $IMG_URL"
 
-    if ! sudo wget -q --show-progress "$IMG_URL" -O "${BASE_IMG}"; then
-        fail "Failed to download base image."
-    else
-        sudo chown root:kvm "${BASE_IMG}"
-        sudo chmod 644 "${BASE_IMG}"
-        success "Base image downloaded successfully."
-    fi
+  if ! sudo wget -q --show-progress "$IMG_URL" -O "${BASE_IMG}"; then
+    fail "Failed to download base image."
+  else
+    sudo chown root:kvm "${BASE_IMG}"
+    sudo chmod 644 "${BASE_IMG}"
+    success "Base image downloaded successfully."
+  fi
 }
 
 create_vm_disk() {
-    slog "Creating and resizing disk for ${VM_NAME} at ${DISK_IMG}..."
-    sudo qemu-img create -f qcow2 -b "${BASE_IMG}" -F qcow2 "${DISK_IMG}" "${DISK_SIZE}"
-    success "Disk created successfully."
+  slog "Creating and resizing disk for ${VM_NAME} at ${DISK_IMG}..."
+  sudo qemu-img create -f qcow2 -b "${BASE_IMG}" -F qcow2 "${DISK_IMG}" "${DISK_SIZE}"
+  success "Disk created successfully."
 }
 
 generate_cloud_init() {
-    slog "Generating cloud-init configuration..."
+  slog "Generating cloud-init configuration..."
 
-    sudo mkdir -p "$CLOUD_INIT_DIR"
-    sudo chown "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
-    sudo chmod 755 "$CLOUD_INIT_DIR"
+  sudo mkdir -p "$CLOUD_INIT_DIR"
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
+  sudo chmod 755 "$CLOUD_INIT_DIR"
 
-    local pub_key
-    pub_key=$(cat "$SSH_KEY")
+  local pub_key
+  pub_key=$(cat "$SSH_KEY")
 
-    local motd_content
-    motd_content="
+  local motd_content
+  motd_content="
       Welcome to your $DISTRO $RELEASE VM ($VM_NAME)!
       Created on $(date)
       --------------------------------------------
@@ -385,88 +401,102 @@ generate_cloud_init() {
       --------------------------------------------
 "
 
-    local -a packages=(
-        "qemu-guest-agent"
-        "git"
-        "trash-cli"
-        "tree"
-        "curl"
-        "wget"
-        "unzip"
-        "htop"
-        "zsh"
-        "tmux"
+  local -a packages=(
+    "qemu-guest-agent"
+    "git"
+    "trash-cli"
+    "tree"
+    "curl"
+    "wget"
+    "unzip"
+    "htop"
+    "zsh"
+    "tmux"
+  )
+
+  local -a runcmd=("touch /home/$USERNAME/vm-setup-complete"
+    "chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete"
+    "chown -R $USERNAME:$USERNAME /home/$USERNAME"
+  )
+
+  if [[ "$DISTRO" == "alpine" ]]; then
+    runcmd+=(
+      "rc-update add qemu-guest-agent default || true"
+      "service qemu-guest-agent start || true"
     )
-
-    local -a runcmd=("touch /home/$USERNAME/vm-setup-complete"
-        "chown $USERNAME:$USERNAME /home/$USERNAME/vm-setup-complete"
-        "chown -R $USERNAME:$USERNAME /home/$USERNAME"
+  else
+    runcmd+=(
+      "systemctl enable --now qemu-guest-agent || true"
+      "systemctl enable --now sshd || systemctl enable --now ssh || true"
     )
+  fi
 
-    if [[ "$DISTRO" == "alpine" ]]; then
-        runcmd+=(
-            "rc-update add qemu-guest-agent default || true"
-            "service qemu-guest-agent start || true"
-        )
-    else
-        runcmd+=(
-            "systemctl enable --now qemu-guest-agent || true"
-            "systemctl enable --now sshd || systemctl enable --now ssh || true"
-        )
-    fi
+  case "$DISTRO" in
+  ubuntu | debian)
+    packages+=(
+      "stow"
+      "ca-certificates"
+      "gnupg"
+      "lsb-release"
+    )
+    ;;
 
-    case "$DISTRO" in
-    ubuntu | debian)
-        packages+=(
-            "stow"
-            "ca-certificates"
-            "gnupg"
-            "lsb-release"
-        )
-        ;;
+  fedora)
+    packages+=(
+      "stow"
+      "dnf-plugins-core"
+      "ca-certificates"
+      "policycoreutils-python-utils"
+    )
+    runcmd+=(
+      "systemctl enable --now firewalld || true"
+      "firewall-cmd --permanent --add-service=ssh || true"
+      "firewall-cmd --reload || true"
+    )
+    ;;
 
-    fedora)
-        packages+=(
-            "stow"
-            "dnf-plugins-core"
-            "ca-certificates"
-            "policycoreutils-python-utils"
-        )
-        runcmd+=(
-            "systemctl enable --now firewalld || true"
-            "firewall-cmd --permanent --add-service=ssh || true"
-            "firewall-cmd --reload || true"
-        )
-        ;;
+  arch)
+    packages+=(
+      "openssh-server"
+      "stow"
+      "base-devel"
+    )
+    ;;
 
-    arch)
-        packages+=(
-            "openssh-server"
-            "stow"
-            "base-devel"
-        )
-        ;;
+  alpine)
+    packages+=(
+      "openssh-server"
+      "stow"
+      "alpine-sdk"
+      "bash"
+    )
+    ;;
 
-    alpine)
-        packages+=(
-            "openssh-server"
-            "stow"
-            "alpine-sdk"
-            "bash"
-        )
-        ;;
+  opensuse | tumbleweed | tw)
+    packages+=(
+      "openssh"
+      "stow"
+    )
+    ;;
 
-    opensuse | tumbleweed | tw)
-        packages+=(
-            "openssh"
-            "stow"
-        )
-        ;;
+  centos)
+    packages+=(
+      "openssh-server"
+      "stow"
+      "dnf-plugins-core"
+      "ca-certificates"
+    )
+    runcmd+=(
+      "systemctl enable --now firewalld || true"
+      "firewall-cmd --permanent --add-service=ssh || true"
+      "firewall-cmd --reload || true"
+    )
+    ;;
 
-    esac
+  esac
 
-    if [[ "$INSTALL_DOCKER" == "true" ]]; then
-        motd_content+="
+  if [[ "$INSTALL_DOCKER" == "true" ]]; then
+    motd_content+="
       Docker is installed and ready to use.
       Quick commands:
       docker --version
@@ -474,61 +504,70 @@ generate_cloud_init() {
       docker run hello-world
 "
 
-        slog "Adding Docker installation to cloud-init"
+    slog "Adding Docker installation to cloud-init"
 
-        case "$DISTRO" in
-        ubuntu | debian)
-            runcmd+=(
-                "curl -fsSL https://get.docker.com -o get-docker.sh"
-                "sh get-docker.sh"
-                "rm get-docker.sh"
-            )
-            ;;
+    case "$DISTRO" in
+    ubuntu | debian)
+      runcmd+=(
+        "curl -fsSL https://get.docker.com -o get-docker.sh"
+        "sh get-docker.sh"
+        "rm get-docker.sh"
+      )
+      ;;
 
-        fedora)
-            runcmd+=(
-                "dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo"
-                "dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
-            )
-            ;;
+    fedora)
+      runcmd+=(
+        "dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo"
+        "dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+      )
+      ;;
 
-        arch)
-            packages+=(
-                "docker"
-                "docker-compose"
-            )
-            ;;
+    arch)
+      packages+=(
+        "docker"
+        "docker-compose"
+      )
+      ;;
 
-        alpine)
-            packages+=(
-                "docker"
-                "docker-cli-compose"
-            )
-            ;;
+    alpine)
+      packages+=(
+        "docker"
+        "docker-cli-compose"
+      )
+      ;;
 
-        opensuse | tumbleweed | tw)
-            packages+=(
-                "docker"
-                "docker-compose"
-            )
-            ;;
-        esac
+    opensuse | tumbleweed | tw)
+      packages+=(
+        "docker"
+        "docker-compose"
+      )
+      ;;
 
-        if [[ "$DISTRO" == "alpine" ]]; then
-            runcmd+=(
-                "rc-update add docker default"
-                "service docker start"
-            )
-        else
-            runcmd+=(
-                "usermod -aG docker $USERNAME"
-                "systemctl enable --now docker"
-            )
-        fi
+    centos)
+      runcmd+=(
+        "dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/centos/docker-ce.repo"
+        "dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+        "usermod -aG docker $USERNAME"
+        "systemctl enable --now docker"
+      )
+      ;;
+    esac
+
+    if [[ "$DISTRO" == "alpine" ]]; then
+      runcmd+=(
+        "rc-update add docker default"
+        "service docker start"
+      )
+    else
+      runcmd+=(
+        "usermod -aG docker $USERNAME"
+        "systemctl enable --now docker"
+      )
     fi
+  fi
 
-    if [[ "$INSTALL_BREW" == "true" ]]; then
-        motd_content+="
+  if [[ "$INSTALL_BREW" == "true" ]]; then
+    motd_content+="
       Homebrew is installed and ready to use.
       Essential development tools are pre-installed:
 
@@ -539,61 +578,71 @@ generate_cloud_init() {
       brew install <package>
 "
 
-        slog "Adding Homebrew installation to cloud-init"
+    slog "Adding Homebrew installation to cloud-init"
 
-        case "$DISTRO" in
-        ubuntu | debian)
-            packages+=(
-                "build-essential"
-                "procps"
-                "file"
-            )
-            ;;
+    case "$DISTRO" in
+    ubuntu | debian)
+      packages+=(
+        "build-essential"
+        "procps"
+        "file"
+      )
+      ;;
 
-        fedora)
-            packages+=(
-                "gcc"
-                "gcc-c++"
-                "make"
-                "procps-ng"
-                "file"
-            )
-            ;;
+    fedora)
+      packages+=(
+        "gcc"
+        "gcc-c++"
+        "make"
+        "procps-ng"
+        "file"
+      )
+      ;;
 
-        arch)
-            packages+=(
-                "procps-ng"
-                "file"
-            )
-            ;;
-        alpine)
-            packages+=(
-                "build-base"
-                "procps"
-                "file"
-            )
-            ;;
-        opensuse | tumbleweed | tw)
-            packages+=(
-                "gcc"
-                "make"
-                "procps"
-                "file"
-            )
-            ;;
+    arch)
+      packages+=(
+        "procps-ng"
+        "file"
+      )
+      ;;
+    alpine)
+      packages+=(
+        "build-base"
+        "procps"
+        "file"
+      )
+      ;;
+    opensuse | tumbleweed | tw)
+      packages+=(
+        "gcc"
+        "make"
+        "procps"
+        "file"
+      )
+      ;;
 
-        esac
+    centos)
+      packages+=(
+        "gcc"
+        "gcc-c++"
+        "make"
+        "procps-ng"
+        "file"
+      )
+      ;;
 
-        runcmd+=(
-            "su - $USERNAME -c 'NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"'"
-            "echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.bashrc"
-            "echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.profile"
-            "su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install stow starship fzf ripgrep eza zoxide fd bat'"
-        )
-    fi
+    esac
 
-    if [[ "$INSTALL_NIX" == "true" ]]; then
-        motd_content+="
+    runcmd+=(
+      "su - $USERNAME -c 'NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"'"
+      "echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.bashrc"
+      "echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> /home/$USERNAME/.profile"
+      "su - $USERNAME -c 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew install stow starship fzf ripgrep eza zoxide fd bat'"
+    )
+  fi
+
+  if [[ "$INSTALL_NIX" == "true" ]]; then
+    motd_content+="
       Nix package manager is installed and ready to use.
       Quick commands:
         nix --version
@@ -602,24 +651,24 @@ generate_cloud_init() {
         nix-shell -p <package>
 "
 
-        slog "Adding Nix installation to cloud-init"
+    slog "Adding Nix installation to cloud-init"
 
-        packages+=(
-            "curl"
-            "ca-certificates"
-        )
+    packages+=(
+      "curl"
+      "ca-certificates"
+    )
 
-        runcmd+=(
-            "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm"
-            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/bash.bashrc"
-            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/profile"
-            "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /home/$USERNAME/.bashrc"
-            "systemctl enable --now nix-daemon || true"
-        )
-    fi
+    runcmd+=(
+      "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm"
+      "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/bash.bashrc"
+      "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /etc/profile"
+      "echo 'source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /home/$USERNAME/.bashrc"
+      "systemctl enable --now nix-daemon || true"
+    )
+  fi
 
-    if [[ -n "$DOTFILES_OPTIONS" ]]; then
-        motd_content+="
+  if [[ -n "$DOTFILES_OPTIONS" ]]; then
+    motd_content+="
       Dotfiles are installed and ready to use.
       Location: /home/$USERNAME/.ilm
       Quick commands:
@@ -632,14 +681,14 @@ generate_cloud_init() {
         ilmc nvim
 "
 
-        slog "Adding dotfiles installation to cloud-init with options: $DOTFILES_OPTIONS"
+    slog "Adding dotfiles installation to cloud-init with options: $DOTFILES_OPTIONS"
 
-        runcmd+=(
-            "su - $USERNAME -c 'bash -c \"\$(curl -sSL ${ILM_SETUP_URL} || wget -qO- ${ILM_SETUP_URL})\" -- $DOTFILES_OPTIONS'"
-        )
-    fi
+    runcmd+=(
+      "su - $USERNAME -c 'bash -c \"\$(curl -sSL ${ILM_SETUP_URL} || wget -qO- ${ILM_SETUP_URL})\" -- $DOTFILES_OPTIONS'"
+    )
+  fi
 
-    sudo tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
+  sudo tee "${CLOUD_INIT_DIR}/user-data" >/dev/null <<EOF
 #cloud-config
 hostname: $VM_NAME
 manage_etc_hosts: true
@@ -673,318 +722,324 @@ write_files:
 final_message: "VM $VM_NAME setup complete!"
 EOF
 
-    sudo tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
+  sudo tee "${CLOUD_INIT_DIR}/meta-data" >/dev/null <<EOF
 instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
-    if [[ ! -f "${CLOUD_INIT_DIR}/user-data" ||
-        ! -f "${CLOUD_INIT_DIR}/meta-data" ]]; then
-        fail "Failed to create one or more cloud-init configuration files"
-        exit 1
-    fi
+  if [[ ! -f "${CLOUD_INIT_DIR}/user-data" ||
+    ! -f "${CLOUD_INIT_DIR}/meta-data" ]]; then
+    fail "Failed to create one or more cloud-init configuration files"
+    exit 1
+  fi
 
-    sudo chown -R "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
-    sudo chmod -R 644 "$CLOUD_INIT_DIR"/*
-    sudo chmod 755 "$CLOUD_INIT_DIR"
+  sudo chown -R "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
+  sudo chmod -R 644 "$CLOUD_INIT_DIR"/*
+  sudo chmod 755 "$CLOUD_INIT_DIR"
 
-    success "Cloud-init configuration generated"
+  success "Cloud-init configuration generated"
 }
 
 create_cloud_init_iso() {
-    slog "Creating cloud-init ISO..."
+  slog "Creating cloud-init ISO..."
 
-    if ! sudo xorriso -as mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
-        "${CLOUD_INIT_DIR}/user-data" \
-        "${CLOUD_INIT_DIR}/meta-data" 2>/dev/null; then
-        fail "Failed to create cloud-init ISO"
-        exit 1
-    fi
+  if ! sudo xorriso -as mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
+    "${CLOUD_INIT_DIR}/user-data" \
+    "${CLOUD_INIT_DIR}/meta-data" 2>/dev/null; then
+    fail "Failed to create cloud-init ISO"
+    exit 1
+  fi
 
-    if [[ ! -f "$SEED_ISO" ]]; then
-        fail "Cloud-init ISO was not created: $SEED_ISO"
-        exit 1
-    fi
+  if [[ ! -f "$SEED_ISO" ]]; then
+    fail "Cloud-init ISO was not created: $SEED_ISO"
+    exit 1
+  fi
 
-    sudo chown "$QEMU_USER:$QEMU_GROUP" "$SEED_ISO"
-    sudo chmod 644 "$SEED_ISO"
-    success "Cloud-init ISO created: $SEED_ISO"
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$SEED_ISO"
+  sudo chmod 644 "$SEED_ISO"
+  success "Cloud-init ISO created: $SEED_ISO"
 }
 
 launch_vm() {
-    slog "Launching VM '$VM_NAME'..."
+  slog "Launching VM '$VM_NAME'..."
 
-    local network_config
-    if [[ "$BRIDGE_IF" == "default" ]]; then
-        network_config="network=default,model=virtio"
-    else
-        network_config="bridge=$BRIDGE_IF,model=virtio"
-    fi
+  local network_config
+  if [[ "$BRIDGE_IF" == "default" ]]; then
+    network_config="network=default,model=virtio"
+  else
+    network_config="bridge=$BRIDGE_IF,model=virtio"
+  fi
 
-    slog "VM Configuration:"
-    slog "  Name: $VM_NAME"
-    slog "  Distribution: $DISTRO $RELEASE"
-    slog "  Memory: ${RAM_MB}MB"
-    slog "  vCPUs: $VCPUS"
-    slog "  Disk: $DISK_IMG ($DISK_SIZE)"
-    slog "  Network: $network_config"
-    slog "  OS Variant: $OS_VARIANT"
+  slog "VM Configuration:"
+  slog "  Name: $VM_NAME"
+  slog "  Distribution: $DISTRO $RELEASE"
+  slog "  Memory: ${RAM_MB}MB"
+  slog "  vCPUs: $VCPUS"
+  slog "  Disk: $DISK_IMG ($DISK_SIZE)"
+  slog "  Network: $network_config"
+  slog "  OS Variant: $OS_VARIANT"
 
-    if ! virt-install \
-        --connect qemu:///system \
-        --name "$VM_NAME" \
-        --memory "$RAM_MB" \
-        --vcpus "$VCPUS" \
-        --disk path="$DISK_IMG",format=qcow2,bus=virtio \
-        --disk path="$SEED_ISO",device=cdrom \
-        --os-variant "$OS_VARIANT" \
-        --video virtio \
-        --virt-type kvm \
-        --graphics none \
-        --network "$network_config" \
-        --import \
-        --noautoconsole; then
-        fail "Failed to create VM"
-        exit 1
-    fi
+  if ! virt-install \
+    --connect qemu:///system \
+    --name "$VM_NAME" \
+    --memory "$RAM_MB" \
+    --vcpus "$VCPUS" \
+    --disk path="$DISK_IMG",format=qcow2,bus=virtio \
+    --disk path="$SEED_ISO",device=cdrom \
+    --os-variant "$OS_VARIANT" \
+    --video virtio \
+    --virt-type kvm \
+    --graphics none \
+    --network "$network_config" \
+    --import \
+    --noautoconsole; then
+    fail "Failed to create VM"
+    exit 1
+  fi
 
-    if ! vm_exists "$VM_NAME"; then
-        fail "VM '$VM_NAME' was not created successfully"
-        exit 1
-    fi
+  if ! vm_exists "$VM_NAME"; then
+    fail "VM '$VM_NAME' was not created successfully"
+    exit 1
+  fi
 
-    success "VM '$VM_NAME' created successfully!"
+  success "VM '$VM_NAME' created successfully!"
 
-    # slog "Adding VM to /etc/hosts for name-based access..."
-    # sleep 5
-    # if has_cmd vm-hosts; then
-    #     vm-hosts add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
-    # else
-    #     warn "vm-hosts script not found, skipping /etc/hosts update"
-    # fi
+  # slog "Adding VM to /etc/hosts for name-based access..."
+  # sleep 5
+  # if has_cmd vm-hosts; then
+  #     vm-hosts add "$VM_NAME" || warn "Could not add VM to /etc/hosts automatically"
+  # else
+  #     warn "vm-hosts script not found, skipping /etc/hosts update"
+  # fi
 }
 
 wait_for_ip() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    printf '\033[1;36m🔍 Wait for IP address? (Y/n):\033[0m ' >&2
-    read -t 5 -r response || response="y"
+  printf '\033[1;36m🔍 Wait for IP address? (Y/n):\033[0m ' >&2
+  read -t 5 -r response || response="y"
 
-    case "$response" in
-    n | N)
-        slog "Skipping IP wait. You can get the IP later with: virsh domifaddr $vm_name --source agent"
-        return 1
-        ;;
-    *)
-        if wait_until 30 3 bash -c "virsh domstate $vm_name | grep -q running"; then
-            slog "VM is running"
-        else
-            return 1
-        fi
-        if wait_until 60 3 vm_ip "$vm_name"; then
-            slog "VM has IP address"
-        else
-            return 1
-        fi
-        return 0
-        ;;
-    esac
+  case "$response" in
+  n | N)
+    slog "Skipping IP wait. You can get the IP later with: virsh domifaddr $vm_name --source agent"
+    return 1
+    ;;
+  *)
+    if wait_until 30 3 bash -c "virsh domstate $vm_name | grep -q running"; then
+      slog "VM is running"
+    else
+      return 1
+    fi
+    if wait_until 60 3 vm_ip "$vm_name"; then
+      slog "VM has IP address"
+    else
+      return 1
+    fi
+    return 0
+    ;;
+  esac
 }
 
 show_completion_info() {
-    slog "Waiting for VM to be ready. This could take a few minutes..."
-    if ! wait_for_ip "$VM_NAME"; then
-        fail "VM did not get an IP in time. Try 'vm show-ip $VM_NAME' later."
-        info "If you still can't connect, Use 'vm console $VM_NAME' to access it."
-    fi
+  slog "Waiting for VM to be ready. This could take a few minutes..."
+  if ! wait_for_ip "$VM_NAME"; then
+    fail "VM did not get an IP in time. Try 'vm show-ip $VM_NAME' later."
+    info "If you still can't connect, Use 'vm console $VM_NAME' to access it."
+  fi
 
+  echo
+  printf '\033[1;32m╭─────────────────────────────────────────────────────────────╮\033[0m\n'
+  printf '\033[1;32m│\033[1;37m                       VM CREATED SUCCESSFULLY!             \033[1;32m│\033[0m\n'
+  printf '\033[1;32m╰─────────────────────────────────────────────────────────────╯\033[0m\n'
+  echo
+
+  printf '\033[1;36m📋 VM INFORMATION:\033[0m\n'
+  printf '\033[0;36m──────────────────────\033[0m\n'
+  printf '\033[1mVM Name:\033[0m      \033[0;33m%s\033[0m\n' "$VM_NAME"
+  printf '\033[1mDistribution:\033[0m      \033[0;33m%s %s\033[0m\n' "$DISTRO" "$RELEASE"
+  printf '\033[1mUsername:\033[0m      \033[0;33m%s\033[0m\n' "$USERNAME"
+  printf '\033[1mPassword:\033[0m      \033[0;33m%s\033[0m\n' "$PASSWORD"
+  printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$RAM_MB" "$DISK_SIZE"
+  printf '\033[1mType:\033[0m          \033[0;33mVirtual Machine (full virtualization)\033[0m\n'
+  echo
+
+  printf '\033[1;36m🌐 NETWORK ACCESS:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+
+  local ip
+  if ip=$(vm_ip "$VM_NAME" 2>/dev/null); then
+    printf '\033[1mIP Address:\033[0m   \033[0;33m%s\033[0m\n' "$ip"
+    printf '\033[1mSSH Command:\033[0m  \033[0;33mvm ssh %s\033[0m\n' "$VM_NAME"
+    printf '\033[1mSSH Command:\033[0m  \033[0;33mssh %s@%s\033[0m\n' "$USERNAME" "$ip"
+  else
+    printf '\033[1mGet IP Address:\033[0m \033[0;33mvirsh domifaddr %s --source agent\033[0m\n' "$VM_NAME"
+  fi
+  echo
+
+  printf '\033[1;36m🔧 VM MANAGEMENT:\033[0m\n'
+  printf '\033[0;36m──────────────────────\033[0m\n'
+  printf '\033[1mStart:\033[0m      \033[0;33mvm start %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mStop:\033[0m       \033[0;33mvm shutdown %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mDelete:\033[0m     \033[0;33mvm delete %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mAutostart:\033[0m  \033[0;33mvm autostart %s\033[0m\n' "$VM_NAME"
+  echo
+
+  printf '\033[1;36m📊 VM DETAILS:\033[0m\n'
+  printf '\033[0;36m────────────────────\033[0m\n'
+  printf '\033[1mInfo:\033[0m        \033[0;33mvm info %s\033[0m\n' "$VM_NAME"
+  printf '\033[1mList VMs:\033[0m    \033[0;33mvm list\033[0m\n'
+  echo
+
+  printf '\033[1;36m🔧 TROUBLESHOOTING:\033[0m\n'
+  printf '\033[0;36m─────────────────\033[0m\n'
+  printf '\033[1mConsole:\033[0m   \033[0;33mvm console %s\033[0m\n' "$VM_NAME"
+  printf '\033[0;90m(Exit console with Ctrl+])\033[0m\n'
+  echo
+
+  if [[ "$INSTALL_DOCKER" == "true" ]]; then
+    printf '\033[1;36m🐳 DOCKER:\033[0m\n'
+    printf '\033[0;36m─────────────\033[0m\n'
+    printf '\033[1mDocker is pre-installed on this VM\033[0m\n'
+    printf '\033[1mTest Docker:\033[0m        \033[0;33mdocker run hello-world\033[0m\n'
+    printf '\033[1mCheck version:\033[0m      \033[0;33mdocker --version\033[0m\n'
+    printf '\033[1mCheck compose:\033[0m      \033[0;33mdocker compose version\033[0m\n'
     echo
-    printf '\033[1;32m╭─────────────────────────────────────────────────────────────╮\033[0m\n'
-    printf '\033[1;32m│\033[1;37m                       VM CREATED SUCCESSFULLY!             \033[1;32m│\033[0m\n'
-    printf '\033[1;32m╰─────────────────────────────────────────────────────────────╯\033[0m\n'
+  fi
+
+  if [[ "$INSTALL_BREW" == "true" ]]; then
+    printf '\033[1;36m🍺 HOMEBREW:\033[0m\n'
+    printf '\033[0;36m──────────────\033[0m\n'
+    printf '\033[1mHomebrew is pre-installed on this VM\033[0m\n'
+    printf '\033[1mCheck version:\033[0m      \033[0;33mbrew --version\033[0m\n'
+    printf '\033[1mList packages:\033[0m      \033[0;33mbrew list\033[0m\n'
+    printf '\033[1mSearch packages:\033[0m    \033[0;33mbrew search <term>\033[0m\n'
+    printf '\033[1mInstall package:\033[0m    \033[0;33mbrew install <package>\033[0m\n'
+    printf '\033[1mUpdate packages:\033[0m    \033[0;33mbrew update && brew upgrade\033[0m\n'
     echo
+  fi
 
-    printf '\033[1;36m📋 VM INFORMATION:\033[0m\n'
-    printf '\033[0;36m──────────────────────\033[0m\n'
-    printf '\033[1mVM Name:\033[0m      \033[0;33m%s\033[0m\n' "$VM_NAME"
-    printf '\033[1mDistribution:\033[0m      \033[0;33m%s %s\033[0m\n' "$DISTRO" "$RELEASE"
-    printf '\033[1mUsername:\033[0m      \033[0;33m%s\033[0m\n' "$USERNAME"
-    printf '\033[1mPassword:\033[0m      \033[0;33m%s\033[0m\n' "$PASSWORD"
-    printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$RAM_MB" "$DISK_SIZE"
-    printf '\033[1mType:\033[0m          \033[0;33mVirtual Machine (full virtualization)\033[0m\n'
+  if [[ -n "$DOTFILES_OPTIONS" ]]; then
+    printf '\033[1;36m📁 DOTFILES:\033[0m\n'
+    printf '\033[0;36m──────────────\033[0m\n'
+    printf '\033[1mDotfiles are pre-installed with options: %s\033[0m\n' "$DOTFILES_OPTIONS"
+    printf '\033[1mLocation:\033[0m           \033[0;33m~/.ilm\033[0m\n'
+    printf '\033[1mInstall shell:\033[0m      \033[0;33milmi shell\033[0m\n'
+    printf '\033[1mInstall Docker:\033[0m     \033[0;33milmi docker\033[0m\n'
+    printf '\033[1mInstall Python:\033[0m     \033[0;33milmi python\033[0m\n'
+    printf '\033[1mConfig zsh:\033[0m         \033[0;33milmc zsh\033[0m\n'
+    printf '\033[1mConfig tmux:\033[0m        \033[0;33milmc tmux\033[0m\n'
+    printf '\033[1mConfig nvim:\033[0m        \033[0;33milmc nvim\033[0m\n'
+    printf '\033[1mRepository:\033[0m        \033[0;33mhttps://github.com/pervezfunctor/dotfiles\033[0m\n'
     echo
+  fi
 
-    printf '\033[1;36m🌐 NETWORK ACCESS:\033[0m\n'
-    printf '\033[0;36m─────────────────\033[0m\n'
+  printf '\033[1;36m📦 PACKAGE MANAGEMENT:\033[0m\n'
+  printf '\033[0;36m─────────────────────\033[0m\n'
+  case "$DISTRO" in
+  ubuntu | debian)
+    printf '\033[1mUpdate system:\033[0m      \033[0;33msudo apt update && sudo apt upgrade\033[0m\n'
+    printf '\033[1mInstall packages:\033[0m   \033[0;33msudo apt install <package>\033[0m\n'
+    printf '\033[1mSearch packages:\033[0m    \033[0;33mapt search <term>\033[0m\n'
+    ;;
+  fedora)
+    printf '\033[1mUpdate system:\033[0m      \033[0;33msudo dnf update\033[0m\n'
+    printf '\033[1mInstall packages:\033[0m   \033[0;33msudo dnf install <package>\033[0m\n'
+    printf '\033[1mSearch packages:\033[0m    \033[0;33mdnf search <term>\033[0m\n'
+    printf '\033[1mList installed:\033[0m     \033[0;33mdnf list installed\033[0m\n'
+    ;;
+  arch)
+    printf '\033[1mUpdate system:\033[0m      \033[0;33msudo pacman -Syu\033[0m\n'
+    printf '\033[1mInstall packages:\033[0m   \033[0;33msudo pacman -S <package>\033[0m\n'
+    printf '\033[1mSearch packages:\033[0m    \033[0;33mpacman -Ss <term>\033[0m\n'
+    printf '\033[1mList installed:\033[0m     \033[0;33mpacman -Q\033[0m\n'
+    printf '\033[1mAUR helper setup:\033[0m   \033[0;33mInstall yay or paru for AUR access\033[0m\n'
+    ;;
+  alpine)
+    printf '\033[1mUpdate system:\033[0m      \033[0;33msudo apk update && sudo apk upgrade\033[0m\n'
+    printf '\033[1mInstall packages:\033[0m   \033[0;33msudo apk add <package>\033[0m\n'
+    printf '\033[1mSearch packages:\033[0m    \033[0;33mapk search <term>\033[0m\n'
+    ;;
+  opensuse | tumbleweed | tw)
+    printf '\033[1mUpdate system:\033[0m      \033[0;33msudo zypper refresh && sudo zypper dup\033[0m\n'
+    printf '\033[1mInstall packages:\033[0m   \033[0;33msudo zypper install <package>\033[0m\n'
+    printf '\033[1mSearch packages:\033[0m    \033[0;33mzypper search <term>\033[0m\n'
+    ;;
+  centos)
+    printf '\033[1mUpdate system:\033[0m      \033[0;33msudo dnf update\033[0m\n'
+    printf '\033[1mInstall packages:\033[0m   \033[0;33msudo dnf install <package>\033[0m\n'
+    printf '\033[1mSearch packages:\033[0m    \033[0;33mdnf search <term>\033[0m\n'
+    printf '\033[1mList installed:\033[0m     \033[0;33mdnf list installed\033[0m\n'
+    ;;
+  esac
+  echo
 
-    local ip
-    if ip=$(vm_ip "$VM_NAME" 2>/dev/null); then
-        printf '\033[1mIP Address:\033[0m   \033[0;33m%s\033[0m\n' "$ip"
-        printf '\033[1mSSH Command:\033[0m  \033[0;33mvm ssh %s\033[0m\n' "$VM_NAME"
-        printf '\033[1mSSH Command:\033[0m  \033[0;33mssh %s@%s\033[0m\n' "$USERNAME" "$ip"
-    else
-        printf '\033[1mGet IP Address:\033[0m \033[0;33mvirsh domifaddr %s --source agent\033[0m\n' "$VM_NAME"
-    fi
-    echo
-
-    printf '\033[1;36m🔧 VM MANAGEMENT:\033[0m\n'
-    printf '\033[0;36m──────────────────────\033[0m\n'
-    printf '\033[1mStart:\033[0m      \033[0;33mvm start %s\033[0m\n' "$VM_NAME"
-    printf '\033[1mStop:\033[0m       \033[0;33mvm shutdown %s\033[0m\n' "$VM_NAME"
-    printf '\033[1mDelete:\033[0m     \033[0;33mvm delete %s\033[0m\n' "$VM_NAME"
-    printf '\033[1mAutostart:\033[0m  \033[0;33mvm autostart %s\033[0m\n' "$VM_NAME"
-    echo
-
-    printf '\033[1;36m📊 VM DETAILS:\033[0m\n'
-    printf '\033[0;36m────────────────────\033[0m\n'
-    printf '\033[1mInfo:\033[0m        \033[0;33mvm info %s\033[0m\n' "$VM_NAME"
-    printf '\033[1mList VMs:\033[0m    \033[0;33mvm list\033[0m\n'
-    echo
-
-    printf '\033[1;36m🔧 TROUBLESHOOTING:\033[0m\n'
-    printf '\033[0;36m─────────────────\033[0m\n'
-    printf '\033[1mConsole:\033[0m   \033[0;33mvm console %s\033[0m\n' "$VM_NAME"
-    printf '\033[0;90m(Exit console with Ctrl+])\033[0m\n'
-    echo
-
-    if [[ "$INSTALL_DOCKER" == "true" ]]; then
-        printf '\033[1;36m🐳 DOCKER:\033[0m\n'
-        printf '\033[0;36m─────────────\033[0m\n'
-        printf '\033[1mDocker is pre-installed on this VM\033[0m\n'
-        printf '\033[1mTest Docker:\033[0m        \033[0;33mdocker run hello-world\033[0m\n'
-        printf '\033[1mCheck version:\033[0m      \033[0;33mdocker --version\033[0m\n'
-        printf '\033[1mCheck compose:\033[0m      \033[0;33mdocker compose version\033[0m\n'
-        echo
-    fi
-
-    if [[ "$INSTALL_BREW" == "true" ]]; then
-        printf '\033[1;36m🍺 HOMEBREW:\033[0m\n'
-        printf '\033[0;36m──────────────\033[0m\n'
-        printf '\033[1mHomebrew is pre-installed on this VM\033[0m\n'
-        printf '\033[1mCheck version:\033[0m      \033[0;33mbrew --version\033[0m\n'
-        printf '\033[1mList packages:\033[0m      \033[0;33mbrew list\033[0m\n'
-        printf '\033[1mSearch packages:\033[0m    \033[0;33mbrew search <term>\033[0m\n'
-        printf '\033[1mInstall package:\033[0m    \033[0;33mbrew install <package>\033[0m\n'
-        printf '\033[1mUpdate packages:\033[0m    \033[0;33mbrew update && brew upgrade\033[0m\n'
-        echo
-    fi
-
-    if [[ -n "$DOTFILES_OPTIONS" ]]; then
-        printf '\033[1;36m📁 DOTFILES:\033[0m\n'
-        printf '\033[0;36m──────────────\033[0m\n'
-        printf '\033[1mDotfiles are pre-installed with options: %s\033[0m\n' "$DOTFILES_OPTIONS"
-        printf '\033[1mLocation:\033[0m           \033[0;33m~/.ilm\033[0m\n'
-        printf '\033[1mInstall shell:\033[0m      \033[0;33milmi shell\033[0m\n'
-        printf '\033[1mInstall Docker:\033[0m     \033[0;33milmi docker\033[0m\n'
-        printf '\033[1mInstall Python:\033[0m     \033[0;33milmi python\033[0m\n'
-        printf '\033[1mConfig zsh:\033[0m         \033[0;33milmc zsh\033[0m\n'
-        printf '\033[1mConfig tmux:\033[0m        \033[0;33milmc tmux\033[0m\n'
-        printf '\033[1mConfig nvim:\033[0m        \033[0;33milmc nvim\033[0m\n'
-        printf '\033[1mRepository:\033[0m        \033[0;33mhttps://github.com/pervezfunctor/dotfiles\033[0m\n'
-        echo
-    fi
-
-    printf '\033[1;36m📦 PACKAGE MANAGEMENT:\033[0m\n'
-    printf '\033[0;36m─────────────────────\033[0m\n'
-    case "$DISTRO" in
-    ubuntu | debian)
-        printf '\033[1mUpdate system:\033[0m      \033[0;33msudo apt update && sudo apt upgrade\033[0m\n'
-        printf '\033[1mInstall packages:\033[0m   \033[0;33msudo apt install <package>\033[0m\n'
-        printf '\033[1mSearch packages:\033[0m    \033[0;33mapt search <term>\033[0m\n'
-        ;;
-    fedora)
-        printf '\033[1mUpdate system:\033[0m      \033[0;33msudo dnf update\033[0m\n'
-        printf '\033[1mInstall packages:\033[0m   \033[0;33msudo dnf install <package>\033[0m\n'
-        printf '\033[1mSearch packages:\033[0m    \033[0;33mdnf search <term>\033[0m\n'
-        printf '\033[1mList installed:\033[0m     \033[0;33mdnf list installed\033[0m\n'
-        ;;
-    arch)
-        printf '\033[1mUpdate system:\033[0m      \033[0;33msudo pacman -Syu\033[0m\n'
-        printf '\033[1mInstall packages:\033[0m   \033[0;33msudo pacman -S <package>\033[0m\n'
-        printf '\033[1mSearch packages:\033[0m    \033[0;33mpacman -Ss <term>\033[0m\n'
-        printf '\033[1mList installed:\033[0m     \033[0;33mpacman -Q\033[0m\n'
-        printf '\033[1mAUR helper setup:\033[0m   \033[0;33mInstall yay or paru for AUR access\033[0m\n'
-        ;;
-    alpine)
-        printf '\033[1mUpdate system:\033[0m      \033[0;33msudo apk update && sudo apk upgrade\033[0m\n'
-        printf '\033[1mInstall packages:\033[0m   \033[0;33msudo apk add <package>\033[0m\n'
-        printf '\033[1mSearch packages:\033[0m    \033[0;33mapk search <term>\033[0m\n'
-        ;;
-    opensuse | tumbleweed | tw)
-        printf '\033[1mUpdate system:\033[0m      \033[0;33msudo zypper refresh && sudo zypper dup\033[0m\n'
-        printf '\033[1mInstall packages:\033[0m   \033[0;33msudo zypper install <package>\033[0m\n'
-        printf '\033[1mSearch packages:\033[0m    \033[0;33mzypper search <term>\033[0m\n'
-        ;;
-    esac
-    echo
-
-    success "VM '${VM_NAME}' creation process completed successfully!"
-    echo
+  success "VM '${VM_NAME}' creation process completed successfully!"
+  echo
 }
 
 echo_all_vars() {
-    slog "All variables:"
-    echo "  VM_NAME: $VM_NAME"
-    echo "  DISTRO: $DISTRO"
-    echo "  RELEASE: $RELEASE"
-    echo "  USERNAME: $USERNAME"
-    echo "  PASSWORD: $PASSWORD"
-    echo "  SSH_KEY: $SSH_KEY"
-    echo "  RAM_MB: $RAM_MB"
-    echo "  VCPUS: $VCPUS"
-    echo "  DISK_SIZE: $DISK_SIZE"
-    echo "  BRIDGE_IF: $BRIDGE_IF"
-    echo "  INSTALL_DOCKER: $INSTALL_DOCKER"
-    echo "  INSTALL_BREW: $INSTALL_BREW"
-    echo "  DOTFILES_OPTIONS: $DOTFILES_OPTIONS"
-    echo "  OS_VARIANT: $OS_VARIANT"
-    echo "  BASE_IMG_NAME: $BASE_IMG_NAME"
-    echo "  BASE_IMG: $BASE_IMG"
-    echo "  PASSWORD_HASH: $PASSWORD_HASH"
-    echo "  WORKDIR: $WORKDIR"
-    echo "  CLOUD_INIT_DIR: $CLOUD_INIT_DIR"
-    echo "  DISK_IMG: $DISK_IMG"
-    echo "  SEED_ISO: $SEED_ISO"
+  slog "All variables:"
+  echo "  VM_NAME: $VM_NAME"
+  echo "  DISTRO: $DISTRO"
+  echo "  RELEASE: $RELEASE"
+  echo "  USERNAME: $USERNAME"
+  echo "  PASSWORD: $PASSWORD"
+  echo "  SSH_KEY: $SSH_KEY"
+  echo "  RAM_MB: $RAM_MB"
+  echo "  VCPUS: $VCPUS"
+  echo "  DISK_SIZE: $DISK_SIZE"
+  echo "  BRIDGE_IF: $BRIDGE_IF"
+  echo "  INSTALL_DOCKER: $INSTALL_DOCKER"
+  echo "  INSTALL_BREW: $INSTALL_BREW"
+  echo "  DOTFILES_OPTIONS: $DOTFILES_OPTIONS"
+  echo "  OS_VARIANT: $OS_VARIANT"
+  echo "  BASE_IMG_NAME: $BASE_IMG_NAME"
+  echo "  BASE_IMG: $BASE_IMG"
+  echo "  PASSWORD_HASH: $PASSWORD_HASH"
+  echo "  WORKDIR: $WORKDIR"
+  echo "  CLOUD_INIT_DIR: $CLOUD_INIT_DIR"
+  echo "  DISK_IMG: $DISK_IMG"
+  echo "  SEED_ISO: $SEED_ISO"
 
-    echo "  Check the above variables for any issues before proceeding."
-    echo "  Press enter to continue..."
-    # read -r
+  echo "  Check the above variables for any issues before proceeding."
+  echo "  Press enter to continue..."
+  # read -r
 }
 
 main() {
-    parse_args "$@"
-    configure_distribution
-    setup_storage
+  parse_args "$@"
+  configure_distribution
+  setup_storage
 
-    check_prerequisites
+  check_prerequisites
 
-    slog "Starting $DISTRO VM creation..."
-    slog "VM Name: $VM_NAME"
-    slog "Distribution: $DISTRO $RELEASE"
-    slog "Working Directory: $WORKDIR"
+  slog "Starting $DISTRO VM creation..."
+  slog "VM Name: $VM_NAME"
+  slog "Distribution: $DISTRO $RELEASE"
+  slog "Working Directory: $WORKDIR"
 
-    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(ssh_key_path)
-    if [[ ! -f "$SSH_KEY" ]]; then
-        fail "SSH public key not found at: $SSH_KEY"
-        exit 1
-    fi
+  [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(ssh_key_path)
+  if [[ ! -f "$SSH_KEY" ]]; then
+    fail "SSH public key not found at: $SSH_KEY"
+    exit 1
+  fi
 
-    keep_sudo_running
+  keep_sudo_running
 
-    download_image
-    create_vm_disk
-    generate_cloud_init
-    create_cloud_init_iso
-    launch_vm
-    show_completion_info
+  download_image
+  create_vm_disk
+  generate_cloud_init
+  create_cloud_init_iso
+  launch_vm
+  show_completion_info
 
-    success "All done! Your $DISTRO VM will be ready in a few minutes."
-    echo "'vm console $VM_NAME' allows you to access the VM console"
-    slog "Use username: $USERNAME and password: $PASSWORD to login."
-    echo "Use ctrl + ] to exit the console."
-    sleep 2
-    echo "'vm ssh $VM_NAME' to ssh into the VM."
-    sleep 3
+  success "All done! Your $DISTRO VM will be ready in a few minutes."
+  echo "'vm console $VM_NAME' allows you to access the VM console"
+  slog "Use username: $USERNAME and password: $PASSWORD to login."
+  echo "Use ctrl + ] to exit the console."
+  sleep 2
+  echo "'vm ssh $VM_NAME' to ssh into the VM."
+  sleep 3
 }
 
 main "$@"

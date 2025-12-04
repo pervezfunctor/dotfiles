@@ -13,14 +13,16 @@ unset USERNAME
 unset PASSWORD
 unset DISK_IMG
 
+SCRIPT_NAME="$(basename "$0")"
+
 usage() {
   cat <<EOF
-  Usage: $0 --distro DISTRO [OPTIONS]
+  Usage: $SCRIPT_NAME --distro DISTRO [OPTIONS]
 
   Create a VM using virt-install and cloud-init for various Linux distributions.
 
   REQUIRED:
-      --distro DISTRO     Distribution to install (alpine|debian|ubuntu|fedora|arch|tw)
+      --distro DISTRO     Distribution to install (alpine|debian|ubuntu|fedora|arch|tw|centos)
 
   RECOMMENDED:
       --ssh-port PORT     SSH port (default: random)
@@ -31,30 +33,41 @@ usage() {
       --vcpus NUM         Number of vCPUs (default: 4)
       --memory MB         MEMORY in MB (default: 8192)
       --disk-size SIZE    Disk size (default: 20G)
+
       --ssh-key PATH      SSH public key path (default: auto-detect)
       --password PASS     User password (default: username)
       --ask-password      Prompt for password
+
       --console           Attach console to VM
       --spice             Attach spice to VM
       --help, -h          Show this help
   EXAMPLES:
-      $0 --distro alpine
-      $0 --distro debian --name my-debian --username admin --password mypass
-      $0 --distro ubuntu --vcpus 4 --memory 4096 --disk-size 40G
-      $0 --distro fedora --ssh-key ~/.ssh/my_key.pub
-      $0 --distro arch --console --spice
-      $0 --distro tw --ask-password
+      $SCRIPT_NAME --distro alpine
+      $SCRIPT_NAME --distro debian --name my-debian --username admin --password mypass
+      $SCRIPT_NAME --distro ubuntu --vcpus 4 --memory 4096 --disk-size 40G
+      $SCRIPT_NAME --distro fedora --ssh-key ~/.ssh/my_key.pub
+      $SCRIPT_NAME --distro arch --console --spice
+      $SCRIPT_NAME --distro centos --name my-centos --username admin
+      $SCRIPT_NAME --distro tw --ask-password
 EOF
 }
 
-parse_args() {
-  ASK_PASSWORD=false
-  CPUS=4
-  MEMORY=8192
-  DISK_SIZE=20G
-  CONSOLE=false
-  SPICE=false
+CPUS=4
+MEMORY=8192
+DISK_SIZE=20G
+CONSOLE=false
+SPICE=false
+ASK_PASSWORD=false
 
+cleanup() {
+  echo "CLEANUP"
+  fail "An die occurred. Cleaning up..."
+  frm "$DISK_IMG"
+}
+
+trap 'cleanup' ERR INT TERM
+
+parse_args() {
   while [[ $# -gt 0 ]]; do
     case $1 in
     --ask-password)
@@ -141,25 +154,29 @@ parse_args() {
   PASSWORD="${PASSWORD:-$USERNAME}"
 
   BASE_DIR="${BASE_DIR:=$HOME/.vmus}"
-  WORKDIR="$BASE_DIR/${VM_NAME}"
+  WORKDIR="$BASE_DIR/vmus/${VM_NAME}"
   BASE_IMG_DIR="$BASE_DIR/images/${DISTRO}"
   DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
 }
 
 create_dirs() {
-  frm "$WORKDIR"
+  # if [[ -d "$WORKDIR" ]]; then
+  #   fail "Directory already exists: $WORKDIR"
+  #   fail "Please remove it or choose a different name for the VM"
+  #   fail "You could remove folder with trash $WORKDIR"
+  #   exit 1
+  # fi
 
+  frm "$WORKDIR"
   info "Creating directories: $BASE_IMG_DIR, $WORKDIR"
   mkdir -p "$BASE_IMG_DIR" "$WORKDIR"
 
-  tree "$BASE_DIR"
-  tree "$BASE_IMG_DIR"
-  tree "$WORKDIR"
+  # tree "$BASE_DIR"
 }
 
 check_prerequisites() {
   local missing=()
-  for cmd in qemu-img virt-install virsh jq openssl wget trash ssh-keygen wget; do
+  for cmd in qemu-img virt-install virsh jq openssl wget trash ssh-keygen wget sha256sum; do
     has_cmd "$cmd" || missing+=("$cmd")
   done
 
@@ -185,57 +202,120 @@ check_prerequisites() {
 configure_distro() {
   case "$DISTRO" in
   alpine)
-    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.1-x86_64-bios-cloudinit-r0.qcow2"
-    BASE_IMG="${BASE_IMG_DIR}/generic_alpine-3.22.1-x86_64-bios-cloudinit-r0.qcow2"
+    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.2-x86_64-bios-tiny-r0.qcow2"
+    BASE_IMG="${BASE_IMG_DIR}/generic_alpine-3.22.2-x86_64-bios-tiny-r0.qcow2"
     OS_VARIANT="alpinelinux3.21"
+    CHECKSUM_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.2-x86_64-bios-tiny-r0.qcow2.sha512"
     ;;
   debian)
     IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
     BASE_IMG="${BASE_IMG_DIR}/debian-13-generic-amd64.qcow2"
     OS_VARIANT="debian13"
+    CHECKSUM_URL="https://cloud.debian.org/images/cloud/trixie/latest/SHA512SUMS"
     ;;
   ubuntu)
     IMG_URL="https://cloud-images.ubuntu.com/questing/current/questing-server-cloudimg-amd64.img"
     BASE_IMG="${BASE_IMG_DIR}/questing-server-cloudimg-amd64.img"
     OS_VARIANT="ubuntu25.10"
+    CHECKSUM_URL="https://cloud-images.ubuntu.com/questing/current/SHA256SUMS"
     ;;
   fedora)
     IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
     BASE_IMG="${BASE_IMG_DIR}/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
     OS_VARIANT="fedora42"
+    CHECKSUM_URL="https://mirror.hoster.kz/fedora/fedora/linux/releases/43/Cloud/x86_64/images/Fedora-Cloud-43-1.6-x86_64-CHECKSUM"
     ;;
   arch)
     IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
     BASE_IMG="${BASE_IMG_DIR}/Arch-Linux-x86_64-cloudimg.qcow2"
     OS_VARIANT="archlinux"
+    CHECKSUM_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2.SHA256"
     ;;
   tw)
     IMG_URL="https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
     BASE_IMG="${BASE_IMG_DIR}/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
     OS_VARIANT="opensusetumbleweed"
+    CHECKSUM_URL="https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2.sha256"
+    ;;
+  centos)
+    IMG_URL="https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2"
+    BASE_IMG="${BASE_IMG_DIR}/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2"
+    OS_VARIANT="centos-stream9"
+    CHECKSUM_URL="https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2.SHA256SUM"
     ;;
   *)
     fail "Unsupported distro: $DISTRO"
     usage
     ;;
   esac
+
+  CHECKSUM_FILE="${BASE_IMG}.checksum"
 }
 
-cleanup_on_die() {
-  fail "An die occurred. Cleaning up..."
-  frm "$DISK_IMG"
-}
+verify_checksum() {
+  local img="$1"
+  local sumfile="$2"
+  local base_img
+  base_img="$(basename "$img")"
 
-trap cleanup_on_die ERR INT TERM
+  info "Verifying checksum for: $base_img"
+
+  # Remove PGP signature from the checksum file
+  grep -vE '^(-----BEGIN|-----END)' "$sumfile" >"${sumfile}.clean"
+  mv "${sumfile}.clean" "$sumfile"
+
+  local hash=""
+
+  # 1. Fedora/Centos style: SHA256 (filename) = hash
+  if grep -q "SHA256 (${base_img}) =" "$sumfile"; then
+    hash="$(grep "SHA256 (${base_img}) =" "$sumfile" | awk -F'= ' '{print $2}')"
+  # 2. GNU-style(ubuntu): <hash> [*]filename
+  elif
+    hash="$(grep -E "[[:space:]]\*?${base_img}$" "$sumfile" | awk '{print $1}' 2>/dev/null)"
+    [[ -n "$hash" ]]
+  then
+    :
+  # 3. Raw Alpine-style: single-line hash only
+  elif [[ $(wc -l <"$sumfile") -eq 1 && $(wc -w <"$sumfile") -eq 1 ]]; then
+    hash="$(cat "$sumfile")"
+  # 4. No supported format matched
+  else
+    fail "Unsupported checksum format for $base_img"
+    sleep 2
+    warn "Skipping checksum verification..."
+  fi
+
+  case "${#hash}" in
+  64)
+    echo "${hash}  ${img}" | sha256sum -c - || die "SHA256 checksum mismatch"
+    ;;
+  128)
+    echo "${hash}  ${img}" | sha512sum -c - || die "SHA512 checksum mismatch"
+    ;;
+  *)
+    die "Unknown checksum length ${#hash}"
+    ;;
+  esac
+
+  info "Checksum OK"
+}
 
 download_image() {
-  if [[ -f "$BASE_IMG" ]]; then
-    info "Using existing image: $BASE_IMG"
-    sleep 1
-  else
-    info "Downloading image..."
-    wget --quiet --show-progress -O "$BASE_IMG" "$IMG_URL"
+  mkdir -p "$BASE_IMG_DIR"
+
+  if [[ ! -f "$BASE_IMG" ]]; then
+    info "Downloading image: $IMG_URL"
+    wget --continue --progress=bar:force -O "$BASE_IMG" "$IMG_URL" ||
+      die "Image download failed"
   fi
+
+  if [[ ! -f "$CHECKSUM_FILE" ]]; then
+    info "Downloading checksum: $CHECKSUM_URL"
+    wget --quiet -O "$CHECKSUM_FILE" "$CHECKSUM_URL" ||
+      die "Checksum download failed"
+  fi
+
+  verify_checksum "$BASE_IMG" "$CHECKSUM_FILE"
 }
 
 create_disk() {
@@ -421,10 +501,10 @@ main() {
   # print all info for debugging
   # echo_all_vars
 
-  create_vm
-
-  register_vm_port "$VM_NAME" "$SSH_PORT" "$USERNAME"
-  show_completion_info
+  if create_vm; then
+    register_vm_port "$VM_NAME" "$SSH_PORT" "$USERNAME"
+    show_completion_info
+  fi
 }
 
 main "$@"

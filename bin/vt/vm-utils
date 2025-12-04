@@ -5,7 +5,7 @@ source "$(dirname "$0")/vt-utils"
 
 export VM_EASY_DISTRO_LIST=("ubuntu" "fedora" "arch" "debian" "tw")
 
-export VM_DISTRO_LIST=("ubuntu" "fedora" "debian" "arch" "alpine")
+export VM_DISTRO_LIST=("ubuntu" "fedora" "debian" "arch" "alpine" "centos")
 
 virt_check_prerequisites() {
   local missing_tools=()
