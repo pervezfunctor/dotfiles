@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# shellcheck disable=SC1091
+source "$(dirname "$0")/incus-utils"
+
+ALL_DISTRIBUTIONS=("ubuntu" "fedora" "arch" "debian" "centos" "tumbleweed" "rocky" "alpine")
+
+select_distributions() {
+  local prompt="Select distributions to create:"
+
+  mapfile -t SELECTED_DISTRIBUTIONS < <(select-multi "$prompt" "${ALL_DISTRIBUTIONS[@]}")
+
+  if [[ ${#SELECTED_DISTRIBUTIONS[@]} -eq 0 ]]; then
+    slog "No distributions selected. Exiting."
+    exit 0
+  fi
+
+  slog "Selected distributions: ${SELECTED_DISTRIBUTIONS[*]}"
+}
+
+create_all_vms() {
+  local IVM_CREATE_ARGS=("$@")
+  local failed_count=0
+  local total_count=${#SELECTED_DISTRIBUTIONS[@]}
+
+  slog "Starting creation of $total_count VMs..."
+
+  for distro in "${SELECTED_DISTRIBUTIONS[@]}"; do
+    if ! ivm-create --distro "$distro" "${IVM_CREATE_ARGS[@]}"; then
+      fail "VM creation for $distro failed"
+      ((failed_count++))
+    fi
+
+    sleep 2
+  done
+
+  if [[ $failed_count -eq 0 ]]; then
+    success "All VMs created successfully!"
+  else
+    info "Total VMs attempted: $total_count"
+    info "Successfully created: $((total_count - failed_count))"
+    info "Failed: $failed_count"
+  fi
+}
+
+main() {
+  if [[ $# -eq 0 ]]; then
+    ivm-create --help
+    exit 1
+  fi
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    ivm-create --help
+    exit 0
+  fi
+
+  select_distributions
+
+  create_all_vms "$@"
+}
+
+main "$@"

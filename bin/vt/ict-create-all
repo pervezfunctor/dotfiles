@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# shellcheck disable=SC1091
+source "$(dirname "$0")/incus-utils"
+
+ALL_DISTRIBUTIONS=("ubuntu" "fedora" "arch" "debian" "centos" "tumbleweed" "alpine")
+
+select_distributions() {
+  local prompt="Select distributions to create:"
+
+  mapfile -t SELECTED_DISTRIBUTIONS < <(select-multi "$prompt" "${ALL_DISTRIBUTIONS[@]}")
+
+  if [[ ${#SELECTED_DISTRIBUTIONS[@]} -eq 0 ]]; then
+    slog "No distributions selected. Exiting."
+    exit 0
+  fi
+
+  slog "Selected distributions: ${SELECTED_DISTRIBUTIONS[*]}"
+}
+
+create_all_containers() {
+  local ICT_CREATE_ARGS=("$@")
+  local failed_count=0
+  local total_count=${#SELECTED_DISTRIBUTIONS[@]}
+
+  slog "Starting creation of $total_count containers..."
+
+  for distro in "${SELECTED_DISTRIBUTIONS[@]}"; do
+    if ! ict-create --distro "$distro" "${ICT_CREATE_ARGS[@]}"; then
+      fail "Container creation for $distro failed"
+      ((failed_count++))
+    fi
+
+    sleep 2
+  done
+
+  if [[ $failed_count -eq 0 ]]; then
+    success "All containers created successfully!"
+  else
+    info "Total containers attempted: $total_count"
+    info "Successfully created: $((total_count - failed_count))"
+    info "Failed: $failed_count"
+  fi
+}
+
+main() {
+  if [[ $# -eq 0 ]]; then
+    ict-create --help
+    exit 1
+  fi
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    ict-create --help
+    exit 0
+  fi
+
+  select_distributions
+
+  create_all_containers "$@"
+}
+
+main "$@"
