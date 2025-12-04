@@ -441,6 +441,7 @@ main() {
   local command ct_id
   command="$1"
   ct_id="${2:-}"
+  shift
 
   case "$command" in
   list | ls)
@@ -460,38 +461,38 @@ main() {
     ;;
   create | new)
     # Forward to ct-create script
-    "$(dirname "$0")/ct-create" "${@:2}"
+    "$(dirname "$0")/ct-create" "$@"
     ;;
   create-all)
-    ct_all_install "${@:2}"
+    ct_all_install "$@"
     ;;
   start | boot)
     {
-      readarray -t targets < <(resolve_multiple_ct_ids "${@:2}")
+      readarray -t targets < <(resolve_multiple_ct_ids "$@")
     } || exit 1
     start_ct "${targets[@]}"
     ;;
   stop)
     {
-      readarray -t targets < <(resolve_multiple_ct_ids "${@:2}")
+      readarray -t targets < <(resolve_multiple_ct_ids "$@")
     } || exit 1
     stop_ct "${targets[@]}"
     ;;
   shutdown)
     {
-      readarray -t targets < <(resolve_multiple_ct_ids "${@:2}")
+      readarray -t targets < <(resolve_multiple_ct_ids "$@")
     } || exit 1
     shutdown_ct "${targets[@]}"
     ;;
   restart | reboot)
     {
-      readarray -t targets < <(resolve_multiple_ct_ids "${@:2}")
+      readarray -t targets < <(resolve_multiple_ct_ids "$@")
     } || exit 1
     restart_ct "${targets[@]}"
     ;;
   delete | rm)
     {
-      readarray -t targets < <(resolve_multiple_ct_ids "${@:2}")
+      readarray -t targets < <(resolve_multiple_ct_ids "$@")
     } || exit 1
     delete_ct "${targets[@]}"
     ;;

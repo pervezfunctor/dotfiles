@@ -4,58 +4,15 @@ set -euo pipefail
 
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vm-utils"
+# shellcheck disable=SC1091
+source "$(dirname "$0")/vt-utils"
 
 ALL_DISTRIBUTIONS=("alpine" "debian" "ubuntu" "fedora" "arch" "tw" "centos")
 
-select_distributions() {
-  local prompt="Select distributions to create:"
-
-  mapfile -t SELECTED_DISTRIBUTIONS < <(select-multi "$prompt" "${ALL_DISTRIBUTIONS[@]}")
-
-  if [[ ${#SELECTED_DISTRIBUTIONS[@]} -eq 0 ]]; then
-    slog "No distributions selected. Exiting."
-    exit 0
-  fi
-
-  slog "Selected distributions: ${SELECTED_DISTRIBUTIONS[*]}"
-}
-
 create_all_vms() {
-  local filtered_args=()
-  local failed_count=0
-  local total_count=${#SELECTED_DISTRIBUTIONS[@]}
-
-  # Filter out --distro and --name arguments
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-    --distro | --name)
-      shift 2 # Skip this argument and its value
-      ;;
-    *)
-      filtered_args+=("$1")
-      shift
-      ;;
-    esac
-  done
-
-  slog "Starting creation of $total_count VMs..."
-
-  for distro in "${SELECTED_DISTRIBUTIONS[@]}"; do
-    if ! vmu-create --distro "$distro" "${filtered_args[@]}"; then
-      fail "VM creation for $distro failed"
-      ((failed_count++))
-    fi
-
-    sleep 2
-  done
-
-  if [[ $failed_count -eq 0 ]]; then
-    success "All VMs created successfully!"
-  else
-    info "Total VMs attempted: $total_count"
-    info "Successfully created: $((total_count - failed_count))"
-    info "Failed: $failed_count"
-  fi
+  # shellcheck disable=SC2034
+  local additional_args=("$@")
+  create_all_vt "vmu-create" SELECTED_DISTRIBUTIONS additional_args
 }
 
 main() {
@@ -64,7 +21,8 @@ main() {
     exit 0
   fi
 
-  select_distributions
+  # shellcheck disable=SC2034
+  mapfile -t SELECTED_DISTRIBUTIONS < <(select_distributions "${ALL_DISTRIBUTIONS[@]}")
 
   create_all_vms "$@"
 }

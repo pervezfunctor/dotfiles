@@ -7,6 +7,7 @@ set -euo pipefail
 export DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
 source "$DOT_DIR/share/utils"
 source "$DOT_DIR/share/fns"
+source "$(dirname "$0")/vt-utils"
 
 trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
 
@@ -341,40 +342,6 @@ net_vme() {
   esac
 }
 
-handle_multi() {
-  local cmd
-  cmd="$1"
-  shift
-
-  local -a vms=("$@")
-
-  if [[ ${#vms[@]} -eq 0 ]]; then
-    local all_vms
-    all_vms=$(virsh --connect qemu:///system list --all --name 2>/dev/null | grep -v '^$' || true)
-
-    local vm_array
-    readarray -t vm_array <<<"$all_vms"
-
-    if [[ ${#vm_array[@]} -eq 0 ]]; then
-      echo "Error: no VMs found"
-      exit 1
-    fi
-
-    readarray -t vms <<<"$(select-multi "Select VMs to $cmd:" "${vm_array[@]}")"
-
-    if [[ -z "${vms[*]}" ]] || [[ ${#vms[@]} -eq 0 ]]; then
-      echo "No VMs selected. Quitting."
-      exit 1
-    fi
-
-    echo "Selected VMs: ${vms[*]}"
-  fi
-
-  for vm in "${vms[@]}"; do
-    "${cmd}_vme" "$vm"
-  done
-}
-
 main() {
   if [[ $# -eq 0 ]]; then
     usage
@@ -386,6 +353,7 @@ main() {
   local command vm_name
   command="$1"
   vm_name="${2:-}"
+  shift
 
   case "$command" in
   start-libvirt)
@@ -395,7 +363,7 @@ main() {
     list_vme
     ;;
   cmd)
-    cmd_vme "${@:2}"
+    cmd_vme "$@"
     ;;
   disk)
     {
@@ -410,31 +378,28 @@ main() {
     status_vme "$target"
     ;;
   create | new)
-    vme-create "${@:2}"
+    vme-create "$@"
     ;;
   create-all)
-    vme-create-multi "${@:2}"
+    vme-create-multi "$@"
     ;;
   autostart)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    autostart_vme "$target"
+    handle_multiple_arguments vme autostart "$@"
     ;;
   start | boot)
-    handle_multi start "${@:2}"
+    handle_multiple_arguments vme start "$@"
     ;;
   stop | shutdown)
-    handle_multi shutdown "${@:2}"
+    handle_multiple_arguments vme shutdown "$@"
     ;;
   restart | reboot)
-    handle_multi reboot "${@:2}"
+    handle_multiple_arguments vme reboot "$@"
     ;;
   destroy | kill | force-stop)
-    handle_multi force_stop "${@:2}"
+    handle_multiple_arguments vme force_stop "$@"
     ;;
   delete | rm)
-    handle_multi delete "${@:2}"
+    handle_multiple_arguments vme delete "$@"
     ;;
   console)
     {
@@ -449,7 +414,7 @@ main() {
     show_ip_vme "$target"
     ;;
   net)
-    net_vme "${@:2}"
+    net_vme "$@"
     ;;
   logs)
     {

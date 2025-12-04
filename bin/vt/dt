@@ -5,6 +5,7 @@
 set -euo pipefail
 
 source "$(dirname "$0")/dt-utils"
+source "$(dirname "$0")/vt-utils"
 
 export DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 source "$DOT_DIR/share/dt-fns"
@@ -80,39 +81,6 @@ get_containers_list() {
   dt_distrobox list | awk 'NR>1 {print $3}' | grep -v '^$' || true
 }
 
-handle_multi() {
-  local cmd
-  cmd="$1"
-  shift
-
-  local -a dts=("$@")
-
-  if [[ ${#dts[@]} -eq 0 ]]; then
-    local containers
-    containers=$(get_containers_list)
-
-    local dt_array
-    readarray -t dt_array <<<"$containers"
-
-    if [[ ${#dt_array[@]} -eq 0 ]]; then
-      fail "No containers found. Please create a container first."
-      exit 1
-    fi
-
-    readarray -t dts <<<"$(select-multi "Select containers to $cmd:" "${dt_array[@]}")"
-
-    if [[ -z "${dts[*]}" ]] || [[ ${#dts[@]} -eq 0 ]]; then
-      fail "No containers selected. Quitting."
-      exit 1
-    fi
-
-    echo "Selected containers: ${dts[*]}"
-  fi
-
-  for dt in "${dts[@]}"; do
-    "${cmd}_dt" "$dt"
-  done
-}
 
 create_dt() {
   local distro="$1"
@@ -381,16 +349,16 @@ create-all)
   dt-create-multi "$@"
   ;;
 start)
-  handle_multi start "$@"
+  handle_multiple_arguments dt start "$@"
   ;;
 kill)
-  handle_multi kill "$@"
+  handle_multiple_arguments dt kill "$@"
   ;;
 restart)
-  handle_multi restart "$@"
+  handle_multiple_arguments dt restart "$@"
   ;;
 delete)
-  handle_multi delete "$@"
+  handle_multiple_arguments dt delete "$@"
   ;;
 enter)
   enter_dt "$@"
@@ -410,7 +378,7 @@ unexport)
   unexport_app "$@"
   ;;
 upgrade)
-  handle_multi upgrade "$@"
+  handle_multiple_arguments dt upgrade "$@"
   ;;
 logs)
   show_logs "$@"

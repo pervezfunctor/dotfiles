@@ -5,6 +5,7 @@
 # set -euo pipefail
 
 source "$(dirname "$0")/incus-utils"
+source "$(dirname "$0")/vt-utils"
 
 usage() {
   cat <<EOF
@@ -363,40 +364,6 @@ show_ict_ip() {
   fi
 }
 
-handle_multi() {
-  local cmd
-  cmd="$1"
-  shift
-
-  local -a containers=("$@")
-
-  if [[ ${#containers[@]} -eq 0 ]]; then
-    local all_icts
-    all_icts=$(incus list type=container --format csv --columns n | grep -v '^$' || true)
-
-    local container_array
-    readarray -t container_array <<<"$all_icts"
-
-    if [[ ${#container_array[@]} -eq 0 ]]; then
-      fail "No containers found. Please create a container first."
-      exit 1
-    fi
-
-    readarray -t containers <<<"$(select-multi "Select containers to $cmd:" "${container_array[@]}")"
-
-    if [[ -z "${containers[*]}" ]] || [[ ${#containers[@]} -eq 0 ]]; then
-      fail "No containers selected. Quitting."
-      exit 1
-    fi
-
-    echo "Selected containers: ${containers[*]}"
-  fi
-
-  for container in "${containers[@]}"; do
-    "${cmd}_ict" "$container"
-  done
-}
-
 # Main command handling
 # USB device management functions
 list_host_usb_devices() {
@@ -502,6 +469,7 @@ fi
 
 command="$1"
 container_name="${2:-}"
+shift
 
 incus_check
 
@@ -521,22 +489,22 @@ status)
   container_status "$container_name"
   ;;
 create)
-  create_ict "${@:2}"
+  create_ict "$@"
   ;;
 create-all)
-  ict-create-multi "${@:2}"
+  ict-create-multi "$@"
   ;;
 start)
-  handle_multi start "${@:2}"
+  handle_multiple_arguments ict start "$@"
   ;;
 kill)
-  handle_multi kill "${@:2}"
+  handle_multiple_arguments ict kill "$@"
   ;;
 restart)
-  handle_multi restart "${@:2}"
+  handle_multiple_arguments ict restart "$@"
   ;;
 delete)
-  handle_multi delete "${@:2}"
+  handle_multiple_arguments ict delete "$@"
   ;;
 shell)
   [[ -z "$container_name" ]] && {

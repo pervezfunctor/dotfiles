@@ -5,6 +5,7 @@
 set -euo pipefail
 
 source "$(dirname "$0")/incus-utils"
+source "$(dirname "$0")/vt-utils"
 
 usage() {
   cat <<EOF
@@ -376,40 +377,6 @@ cleanup_vms() {
   success "Cleanup complete"
 }
 
-handle_multi() {
-  local cmd
-  cmd="$1"
-  shift
-
-  local -a vms=("$@")
-
-  if [[ ${#vms[@]} -eq 0 ]]; then
-    local all_vms
-    all_vms=$(incus list type=virtual-machine --format csv --columns n | grep -v '^$' || true)
-
-    local vm_array
-    readarray -t vm_array <<<"$all_vms"
-
-    if [[ ${#vm_array[@]} -eq 0 ]]; then
-      fail "No VMs found. Please create a VM first."
-      exit 1
-    fi
-
-    readarray -t vms <<<"$(select-multi "Select VMs to $cmd:" "${vm_array[@]}")"
-
-    if [[ -z "${vms[*]}" ]] || [[ ${#vms[@]} -eq 0 ]]; then
-      fail "No VMs selected. Quitting."
-      exit 1
-    fi
-
-    echo "Selected VMs: ${vms[*]}"
-  fi
-
-  for vm in "${vms[@]}"; do
-    "${cmd}_vm" "$vm"
-  done
-}
-
 shell_to_vm() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
@@ -602,6 +569,7 @@ fi
 
 command="$1"
 vm_name="${2:-}"
+shift
 
 if [[ "$command" != "install" ]]; then
   ivm_check_exists_prerequisites
@@ -631,19 +599,19 @@ create)
   create_vm "$vm_name" "${3:-}"
   ;;
 create-all)
-  ivm-create-multi "${@:2}"
+  ivm-create-multi "$@"
   ;;
 start)
-  handle_multi start "${@:2}"
+  handle_multiple_arguments ivm start "$@"
   ;;
 kill)
-  handle_multi kill "${@:2}"
+  handle_multiple_arguments ivm kill "$@"
   ;;
 restart)
-  handle_multi restart "${@:2}"
+  handle_multiple_arguments ivm restart "$@"
   ;;
 delete)
-  handle_multi delete "${@:2}"
+  handle_multiple_arguments ivm delete "$@"
   ;;
 console)
   [[ -z "$vm_name" ]] && {

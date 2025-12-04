@@ -175,7 +175,7 @@ stable_hash() {
   mod=$((10#$mod + 1))
 
   digest=$(printf '%s' "$input" | sha256sum | cut -d' ' -f1)
-  printf "%0${digits}d\n" "$(( 0x${digest:0:8} % mod ))"
+  printf "%0${digits}d\n" "$((0x${digest:0:8} % mod))"
 }
 
 handle_multiple_arguments() {
@@ -235,10 +235,10 @@ wait_for_ip() {
   read -t 5 -r response || response="y"
 
   case "$response" in
-    n|N)
-      slog "Not waiting for IP."
-      return 1
-      ;;
+  n | N)
+    slog "Not waiting for IP."
+    return 1
+    ;;
   esac
 
   local state_fn="${backend}_running"
@@ -266,5 +266,43 @@ wait_for_ip() {
   else
     fail "Instance did not get IP address in time"
     return 1
+  fi
+}
+
+select_distributions() {
+  local distributions=("$@")
+  local prompt="Select distributions to create:"
+  local selected_distributions=()
+
+  mapfile -t selected_distributions < <(select-multi "$prompt" "${distributions[@]}")
+
+  printf '%s\n' "${selected_distributions[@]}"
+}
+
+create_all_vt() {
+  local command="$1"
+  local -n distros_ref=$2
+  local -n args_ref=$3
+
+  local failed_count=0
+  local total_count=${#distros_ref[@]}
+
+  slog "Starting creation of $total_count VMs with $command..."
+
+  for distro in "${distros_ref[@]}"; do
+    if ! "$command" --distro "$distro" "${args_ref[@]}"; then
+      fail "VM creation for $distro failed"
+      ((++failed_count))
+    fi
+
+    sleep 2
+  done
+
+  if [[ $failed_count -eq 0 ]]; then
+    success "All VMs created successfully!"
+  else
+    info "Total VMs attempted: $total_count"
+    info "Successfully created: $((total_count - failed_count))"
+    info "Failed: $failed_count"
   fi
 }
