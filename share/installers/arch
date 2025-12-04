@@ -35,7 +35,7 @@ arch_packages() {
   si bat bottom choose curl dialog direnv dust dysk eza fd file fzf gcc git \
     git-delta github-cli gum htop iproute2 jq just lazygit libnewt libsecret \
     make micro net-tools nmap pixi procs python python-pip python-pipx \
-    python-uv ripgrep sd shellcheck shfmt starship starship stow tar tealdeer \
+    python-uv ripgrep sd shellcheck shfmt starship stow tar tealdeer \
     trash-cli tree ugrep unzip wget which wl-clipboard xh yazi yq zoxide
 
   has_cmd tldr && tldr --update
