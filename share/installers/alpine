@@ -1,121 +1,185 @@
 #!/usr/bin/env bash
 
-# @TODO: Make this work for alpine
-
 function si() {
-    sudo apk add --no-cache "$@"
+  doas apk add --no-cache "$@"
 }
 
 update_packages() {
-    slog "Updating Alpine"
+  slog "Updating Alpine"
 
-    if ! { sudo apk update && sudo apk upgrade; }; then
-        die "apk update/upgrade failed, quitting"
-    fi
+  if ! { doas apk update && doas apk upgrade; }; then
+    die "apk update/upgrade failed, quitting"
+  fi
 }
 
 alpine_packages() {
-    sudo apk add --no-cache curl wget gcc libc-dev make gzip zsh git unzip \
-        neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat nmap \
-        trash-cli starship stow just file tree fd htop sd net-tools iproute2
+  doas apk add --no-cache curl wget gcc libc-dev make gzip zsh git unzip \
+    neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat nmap \
+    trash-cli starship stow just file tree fd htop sd net-tools iproute2 \
+    bottom choose dialog direnv dust dysk delta gum jq lazygit libsecret micro \
+    pixi procs shellcheck shfmt stow tar tldr ugrep which xh yazi yq newt
+
 }
 
 locale_setup() {
-    local LOCALE KEYMAP
-    LOCALE="en_US.UTF-8"
-    KEYMAP="us"
+  local LOCALE KEYMAP
+  LOCALE="en_US.UTF-8"
+  KEYMAP="us"
 
-    echo "$LOCALE UTF-8" >>/etc/locale.gen
-    echo "LANG=$LOCALE" >/etc/locale.conf
-    setup-keymap $KEYMAP # May need user interaction
+  echo "$LOCALE UTF-8" >>/etc/locale.gen
+  echo "LANG=$LOCALE" >/etc/locale.conf
+  setup-keymap $KEYMAP # May need user interaction
 }
+
 core_install() {
-    update_packages
+  update_packages
 
-    slog "Installing core packages"
+  slog "Installing core packages"
 
-    si gpg curl wget git trash-cli tree tar unzip stow
+  si gpg curl wget git trash-cli tree tar unzip stow zstd file
 
-    slog "Core packages installation done!"
+  slog "Core packages installation done!"
 }
 
 system-python_install() {
-    slog "Installing python"
+  slog "Installing python"
 
-    si python3 py3-virtualenv pipx uv
+  si python3 py3-virtualenv pipx uv python python-pip python-pipx python-uv
 
-    slog "Python installation done!"
+  slog "Python installation done!"
 
-    cmd_check uv
+  cmd_check uv
 }
 
 essential_install() {
-    slog "Installing essential packages"
+  slog "Installing essential packages"
 
-    pkgx_install
-    system-python_install
+  pkgx_install
+  system-python_install
 
-    si zip micro p7zip net-tools iproute2 nmap gcc make fzf gawk just
+  si zip micro p7zip net-tools iproute2 nmap gcc make fzf gawk just tmux \
+    readline newt sqlite libffi zlib pkgfile gawk
 
-    slog "Essential packages installation done!"
+  slog "Essential packages installation done!"
+}
+
+cli-slim_install() {
+  slog "Installing cli tools using apt"
+
+  si zsh github-cli fzf ripgrep zoxide eza starship
+
+  slog "cli tools installation done!"
 }
 
 cli_install() {
-    slog "Installing cli tools using apt"
+  slog "Installing cli tools using apt"
 
-    si tmux urlview zsh git sd gdu bat hyperfine fd ripgrep \
-        zoxide eza github-cli shellcheck htop shfmt fzf ugrep starship gum \
-        delta direnv yq
+  doas apk add neovim tmux shellcheck shfmt zsh-completions bat jq yq luarocks \
+    lazygit ugrep delta navi sd gdu hyperfine fd lsd xh htop nushell bottom \
+    plocate dysk yazi procs dust direnv atuin broot glances curlie choose just \
+    dialog lazydocker
 
-    slog "cli tools installation done!"
+  slog "cli tools installation done!"
 }
 
 cpp_install() {
-    slog "Installing C++"
+  slog "Installing C++"
 
-    si libstdc++ libc6-compat python3 g++ bash emacs clang-analyzer lldb lld \
-        clang-ccache clang-extra-tools llvm gcc gdb g++ catch2 clang llvm \
-        clang-extra-tools ccache cppcheck pre-commit valgrind ltrace strace \
-        cmake
+  si libstdc++ libc6-compat python3 g++ bash emacs clang-analyzer lldb lld \
+    clang-ccache clang-extra-tools llvm gcc gdb g++ catch2 clang llvm \
+    clang-extra-tools ccache cppcheck pre-commit valgrind ltrace strace \
+    cmake
 
-    conan_install
+  conan_install
 
-    cmd_check gcc g++ gdb clang clang-tidy clang-format
-    cmd_check cmake conan
+  cmd_check gcc g++ gdb clang clang-tidy clang-format
+  cmd_check cmake conan
 
-    slog "C++ installation done!"
+  slog "C++ installation done!"
 }
 
 terminal_binstall() {
-    has_cmd kitty && return 1
+  has_cmd kitty && return 1
 
-    slog "Installing terminal"
+  slog "Installing terminal"
 
-    si kitty
+  si kitty
 
-    slog "terminal installation done!"
+  slog "terminal installation done!"
+}
+
+ui_install() {
+  is_desktop || return 1
+
+  slog "Installing ui"
+
+  si gnome-keyring wl-clipboard flatpak
+  flathub_install
+
+  slog "ui installation done!"
+}
+
+libvirt_confstall() {
+  doas rc-update add libvirtd default
+  doas service libvirtd start
 }
 
 vm_install() {
-    si libvirt jq
-    sudo systemctl enable --now libvirtd
+  slog "Installing libvirt"
+
+  si libvirt virt-install bridge-utils dnsmasq libosinfo openssl virglrenderer \ libisoburn cloud-utils dmidecode jq qemu-hw-display-virtio-gpu libosinfo \
+    xmlstarlet ovmf osinfo-db osinfo-db-tools
+
+  slog "libvirt installation done!"
+}
+
+vm-ui_install() {
+  is_desktop || return 1
+
+  slog "Installing virt ui packages"
+
+  local -a pkgs=()
+  has_cmd gnome-boxes || pkgs+=("gnome-boxes")
+  has_cmd virt-install && pkgs+=("virt-manager" "virt-viewer")
+
+  si "${pkgs[@]}"
+
+  slog "virt ui packages installation done!"
 }
 
 incus_install() {
-    has_cmd incus && return 1
+  has_cmd incus && return 1
 
-    slog "Installing incus"
+  slog "Installing incus"
 
-    si incus
-    incus_confstall
+  si incus incus-vm openssl bridge-utils
+  incus_confstall
 
-    slog "incus installation done!"
+  slog "incus installation done!"
 }
 
 distrobox_install() {
-    has_cmd distrobox && return 1
+  has_cmd distrobox && return 1
 
-    slog "Installing distrobox"
-    si podman podman-compose buildah distrobox
-    slog "distrobox installation done!"
+  slog "Installing distrobox"
+  si podman podman-compose buildah distrobox
+  slog "distrobox installation done!"
+}
+
+docker_confstall() {
+  doas rc-update add docker default
+  doas service docker start
+
+  doas addgroup "$USER" docker
+
+}
+
+docker_install() {
+  has_cmd docker && return 1
+
+  slog "Installing docker"
+
+  si docker docker-compose
+
+  slog "docker installation done!"
 }
