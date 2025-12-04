@@ -33,6 +33,7 @@ Manage VMs created with vme-create script. These are user-mode VMs, not full lib
 COMMANDS:
     list                List all VMs
     create  ARGS        Create a new VM, with same ARGS as vme-create
+    create-all ARGS     Create multiple VMs, see vme-create-multi --help for options
     autostart <vm-name> Set VM to start on boot
     start [vm-name...]  Start VM(s) - if no names provided, select from list
     shutdown [vm-name...] Gracefully stop VM(s) - if no names provided, select from list
@@ -410,6 +411,9 @@ main() {
     ;;
   create | new)
     vme-create "${@:2}"
+    ;;
+  create-all)
+    vme-create-multi "${@:2}"
     ;;
   autostart)
     {

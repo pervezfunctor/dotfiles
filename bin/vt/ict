@@ -17,6 +17,7 @@ COMMANDS:
     list-remote-images      List all remote images available for container creation
     status <name>           Show container status and info
     create [ict-create args]  Create a new Incus container (forwards all args to ict-create)
+    create-all [ict-create-multi args]  Create multiple Incus containers (forwards all args to ict-create-multi)
     start [name...]         Start container(s) - if no names provided, select from list
     kill [name...]          Force stop container(s) - if no names provided, select from list
     restart [name...]       Restart container(s) - if no names provided, select from list
@@ -521,6 +522,9 @@ status)
   ;;
 create)
   create_ict "${@:2}"
+  ;;
+create-all)
+  ict-create-multi "${@:2}"
   ;;
 start)
   handle_multi start "${@:2}"

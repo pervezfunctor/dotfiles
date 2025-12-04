@@ -31,6 +31,7 @@ Description:
 COMMANDS:
     list                          List all VMs
     create  ARGS                  Create a new VM, see vmu create --help for options
+    create-all  ARGS              Create multiple VMs, see vmu-create-multi --help for options
     autostart <vm-name>           Set VM to start on boot
     start <vm-name>               Start a VM
     shutdown <vm-name>            Gracefully stop a VM
@@ -179,6 +180,9 @@ main() {
     ;;
   create | new)
     "$(dirname "$0")/vmu-create" "$@"
+    ;;
+  create-all)
+    "$(dirname "$0")/vmu-create-multi" "$@"
     ;;
   autostart)
     handle_multiple_arguments vmu autostart "$@"

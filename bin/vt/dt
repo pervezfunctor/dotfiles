@@ -25,6 +25,7 @@ COMMANDS:
     list                    List all distrobox containers
     status <name>           Show container status and info
     create <distro> [name]  Create a new distrobox container
+    create-all [dt-create-multi args]  Create multiple distrobox containers (forwards all args to dt-create-multi)
     start <name>            Start a container
     kill <name>             Force stopa container
     restart <name>          Restart a container
@@ -375,6 +376,9 @@ list)
 #   ;;
 create)
   create_dt "$@"
+  ;;
+create-all)
+  dt-create-multi "$@"
   ;;
 start)
   handle_multi start "$@"

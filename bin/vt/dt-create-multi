@@ -21,14 +21,27 @@ select_distributions() {
 }
 
 create_all_containers() {
-  local DT_CREATE_ARGS=("$@")
+  local filtered_args=()
   local failed_count=0
   local total_count=${#SELECTED_DISTRIBUTIONS[@]}
+
+  # Filter out --distro and --name arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --distro|--name)
+        shift 2  # Skip this argument and its value
+        ;;
+      *)
+        filtered_args+=("$1")
+        shift
+        ;;
+    esac
+  done
 
   slog "Starting creation of $total_count containers..."
 
   for distro in "${SELECTED_DISTRIBUTIONS[@]}"; do
-    if ! dt create "$distro" "${DT_CREATE_ARGS[@]}"; then
+    if ! dt create "$distro" "${filtered_args[@]}"; then
       fail "Container creation for $distro failed"
       ((failed_count++))
     fi

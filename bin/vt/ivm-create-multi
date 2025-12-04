@@ -21,14 +21,27 @@ select_distributions() {
 }
 
 create_all_vms() {
-  local IVM_CREATE_ARGS=("$@")
+  local filtered_args=()
   local failed_count=0
   local total_count=${#SELECTED_DISTRIBUTIONS[@]}
+
+  # Filter out --distro and --name arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --distro|--name)
+        shift 2  # Skip this argument and its value
+        ;;
+      *)
+        filtered_args+=("$1")
+        shift
+        ;;
+    esac
+  done
 
   slog "Starting creation of $total_count VMs..."
 
   for distro in "${SELECTED_DISTRIBUTIONS[@]}"; do
-    if ! ivm-create --distro "$distro" "${IVM_CREATE_ARGS[@]}"; then
+    if ! ivm-create --distro "$distro" "${filtered_args[@]}"; then
       fail "VM creation for $distro failed"
       ((failed_count++))
     fi

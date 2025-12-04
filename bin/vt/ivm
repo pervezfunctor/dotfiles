@@ -17,6 +17,7 @@ COMMANDS:
     list                    List all Incus VMs
     status <name>           Show VM status and info
     create [ivm-create args]  Create a new Incus VM (forwards all args to ivm-create)
+    create-all [ivm-create-multi args]  Create multiple Incus VMs (forwards all args to ivm-create-multi)
     start [name...]         Start VM(s) - if no names provided, select from list
     kill [name...]          Force stop VM(s) - if no names provided, select from list
     restart [name...]       Restart VM(s) - if no names provided, select from list
@@ -628,6 +629,9 @@ create)
     exit 1
   }
   create_vm "$vm_name" "${3:-}"
+  ;;
+create-all)
+  ivm-create-multi "${@:2}"
   ;;
 start)
   handle_multi start "${@:2}"
