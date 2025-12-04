@@ -41,6 +41,7 @@ COMMANDS:
     ssh <vm-name> [username]      Connect to VM via SSH
     info <vm-name>                Show VM status and info
     logs <vm-name>                Show cloud-init logs
+    output-logs <vm-name>         Show cloud-init output logs
     disk <vm-name>                Show VM disk usage
     is-running <vm-name>          Check if VM is running (returns exit code)
     cmd <virsh-args>              Run virsh command with qemu:///session connection
@@ -111,7 +112,11 @@ delete_vmu() {
 }
 
 logs_vmu() {
-  sudo virt-cat -d "$1" /var/log/cloud-init.log
+  virt-cat --connect qemu:///session -d "$1" /var/log/cloud-init.log
+}
+
+output_logs_vmu() {
+  virt-cat --connect qemu:///session -d "$1" /var/log/cloud-init-output.log
 }
 
 console_vmu() {
@@ -201,6 +206,9 @@ main() {
     ;;
   logs)
     logs_vmu "$@"
+    ;;
+  output-logs)
+    output_logs_vmu "$@"
     ;;
   is-running)
     is_running_vmu "$1"

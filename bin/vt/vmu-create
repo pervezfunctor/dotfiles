@@ -160,18 +160,9 @@ parse_args() {
 }
 
 create_dirs() {
-  # if [[ -d "$WORKDIR" ]]; then
-  #   fail "Directory already exists: $WORKDIR"
-  #   fail "Please remove it or choose a different name for the VM"
-  #   fail "You could remove folder with trash $WORKDIR"
-  #   exit 1
-  # fi
-
   frm "$WORKDIR"
   info "Creating directories: $BASE_IMG_DIR, $WORKDIR"
   mkdir -p "$BASE_IMG_DIR" "$WORKDIR"
-
-  # tree "$BASE_DIR"
 }
 
 check_prerequisites() {
