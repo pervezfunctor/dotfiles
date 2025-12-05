@@ -175,7 +175,7 @@ The script provides comprehensive error handling:
 - **State validation** (running/stopped) for appropriate commands
 - **Network connectivity** verification for SSH operations
 - **Resource availability** checks for mounting operations
-- **User confirmation** for destructive operations (delete)
+- **User confirmation** for destructive operations (rm | delete)
 
 ## Integration with Other Scripts
 

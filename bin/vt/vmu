@@ -45,11 +45,13 @@ COMMANDS:
     output-logs <vm-name>         Show cloud-init output logs
     disk <vm-name>                Show VM disk usage
     is-running <vm-name>          Check if VM is running (returns exit code)
+    exec <vm-name> <command>      Execute a command inside a running VM
     cmd <virsh-args>              Run virsh command with qemu:///session connection
 
 EXAMPLES:
     $0 list                       # List all VMs
     $0 ssh dev username           # SSH into 'dev' VM with username 'username'
+    $0 exec debian "ls -l"        # Execute 'ls -l' command in 'debian' VM
     $0 show-ip debian             # Show IP address of 'debian' VM
     $0 status debian              # Show status of 'debian' VM
     $0 create debian              # Create debian VM
@@ -149,6 +151,38 @@ ssh_vmu() {
   ssh -p "$port" "$user"@127.0.0.1
 }
 
+exec_vmu() {
+  local VM="$1"
+  local CMD="${*:2}"
+
+  if [ -z "$VM" ] || [ -z "$CMD" ]; then
+    echo "Usage: vmu exec <vm-name> <command>"
+    exit 1
+  fi
+
+  if ! is_running_vmu "$VM"; then
+    echo "Error: VM '$VM' is not running"
+    exit 1
+  fi
+
+  if [[ ! -f ~/.vmu-ports ]]; then
+    echo "No VMs found"
+    exit 1
+  fi
+
+  local entry
+  entry=$(grep -m1 "^$VM " ~/.vmu-ports) || {
+    echo "VM $VM not found"
+    exit 1
+  }
+
+  local port user
+  port=$(echo "$entry" | awk '{print $2}')
+  user=$(echo "$entry" | awk '{print $3}')
+
+  ssh -p "$port" "$user"@127.0.0.1 "$CMD"
+}
+
 list_vmu() {
   virsh --connect qemu:///session list --all
 }
@@ -215,7 +249,10 @@ main() {
     output_logs_vmu "$@"
     ;;
   is-running)
-    is_running_vmu "$1"
+    is_running_vmu "$@"
+    ;;
+  exec)
+    exec_vmu "$@"
     ;;
   --help | -h)
     usage

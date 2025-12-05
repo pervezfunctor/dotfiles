@@ -20,7 +20,7 @@ COMMANDS:
     create [ivm-create args]  Create a new Incus VM (forwards all args to ivm-create)
     create-all [ivm-create-multi args]  Create multiple Incus VMs (forwards all args to ivm-create-multi)
     start [name...]         Start VM(s) - if no names provided, select from list
-    kill [name...]          Force stop VM(s) - if no names provided, select from list
+    stop [name...]          Gracefully stop VM(s) - if no names provided, select from list
     restart [name...]       Restart VM(s) - if no names provided, select from list
     delete [name...]        Delete VM(s) - if no names provided, select from list
     console <name>          Connect to VM console
@@ -54,7 +54,7 @@ EXAMPLES:
 
     # Multi-VM operations:
     $0 start ubuntu fedora           # Start multiple VMs
-    $0 kill tw myubuntu              # Select VMs to stop from menu
+    $0 stop tw myubuntu              # Select VMs to stop from menu
     $0 restart ubuntu                # Restart single VM
     $0 delete ubuntu fedora arch     # Delete multiple VMs
 
@@ -86,7 +86,7 @@ install_incus() {
   fi
 }
 
-list_vms() {
+list_ivms() {
   slog "Listing all Incus VMs..."
   echo
   ivm_list
@@ -105,11 +105,11 @@ vm_status() {
   incus info "$vm_name"
 }
 
-create_vm() {
+create_ivm() {
   ivm-create "$@"
 }
 
-start_vm() {
+start_ivm() {
   local vm_name="$1"
 
   ivm_check_exists "$vm_name" || return 1
@@ -128,7 +128,7 @@ start_vm() {
   fi
 }
 
-kill_vm() {
+stop_ivm() {
   local vm_name="$1"
 
   ivm_check_exists "$vm_name" || return 1
@@ -147,7 +147,7 @@ kill_vm() {
   fi
 }
 
-restart_vm() {
+restart_ivm() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -160,7 +160,7 @@ restart_vm() {
   fi
 }
 
-delete_vm() {
+delete_ivm() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -196,7 +196,7 @@ connect_console() {
   incus console "$vm_name"
 }
 
-exec_in_vm() {
+exec_in_ivm() {
   local vm_name="$1"
   shift
   local command="$*"
@@ -212,7 +212,7 @@ exec_in_vm() {
   incus exec "$vm_name" -- "$@"
 }
 
-show_vm_info() {
+show_ivm_info() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -221,7 +221,7 @@ show_vm_info() {
   incus info "$vm_name"
 }
 
-show_vm_config() {
+show_ivm_config() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -324,41 +324,41 @@ restore_snapshot() {
   fi
 }
 
-copy_vm() {
-  local source_vm="$1"
-  local dest_vm="$2"
+copy_ivm() {
+  local source_ivm="$1"
+  local dest_ivm="$2"
 
-  if [[ -z "$dest_vm" ]]; then
+  if [[ -z "$dest_ivm" ]]; then
     fail "Destination VM name required"
     return 1
   fi
 
-  ivm_check_exists "$source_vm" || return 1
+  ivm_check_exists "$source_ivm" || return 1
 
-  ivm_check_exists "$dest_vm" && {
-    fail "Destination VM '$dest_vm' already exists"
+  ivm_check_exists "$dest_ivm" && {
+    fail "Destination VM '$dest_ivm' already exists"
     return 1
   }
 
-  slog "Copying VM '$source_vm' to '$dest_vm'..."
-  if incus copy "$source_vm" "$dest_vm"; then
-    success "VM '$source_vm' copied to '$dest_vm'"
+  slog "Copying VM '$source_ivm' to '$dest_ivm'..."
+  if incus copy "$source_ivm" "$dest_ivm"; then
+    success "VM '$source_ivm' copied to '$dest_ivm'"
   else
-    fail "Failed to copy VM '$source_vm' to '$dest_vm'"
+    fail "Failed to copy VM '$source_ivm' to '$dest_ivm'"
     return 1
   fi
 }
 
-cleanup_vms() {
+cleanup_ivms() {
   slog "Cleaning up stopped VMs..."
 
   # List stopped VMs
-  local stopped_vms
-  stopped_vms=$(ivm_list "" "--format csv --columns n,s" | grep ",STOPPED$" | cut -d',' -f1)
+  local stopped_ivms
+  stopped_ivms=$(ivm_list "" "--format csv --columns n,s" | grep ",STOPPED$" | cut -d',' -f1)
 
-  if [[ -n "$stopped_vms" ]]; then
+  if [[ -n "$stopped_ivms" ]]; then
     slog "Stopped VMs found:"
-    echo "$stopped_vms"
+    echo "$stopped_ivms"
     echo
 
     read -p "Remove all stopped VMs? (y/N): " -r
@@ -368,7 +368,7 @@ cleanup_vms() {
           slog "Removing stopped VM: $vm"
           incus delete "$vm" 2>/dev/null || true
         fi
-      done <<<"$stopped_vms"
+      done <<<"$stopped_ivms"
     fi
   else
     slog "No stopped VMs found"
@@ -377,7 +377,7 @@ cleanup_vms() {
   success "Cleanup complete"
 }
 
-shell_to_vm() {
+shell_to_ivm() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
   ivm_check_exists_running "$vm_name" || return 1
@@ -424,7 +424,7 @@ list_host_usb_devices() {
   slog "  By Bus/Device: $0 usb-attach VM_NAME bus.device"
 }
 
-list_vm_usb_devices() {
+list_ivm_usb_devices() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -506,7 +506,7 @@ list_host_disk_devices() {
   slog "  $0 disk-attach VM_NAME /dev/sdb1 my-disk"
 }
 
-list_vm_disk_devices() {
+list_ivm_disk_devices() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -568,7 +568,6 @@ if [[ $# -eq 0 ]]; then
 fi
 
 command="$1"
-vm_name="${2:-}"
 shift
 
 if [[ "$command" != "install" ]]; then
@@ -579,24 +578,14 @@ case "$command" in
 install)
   install_incus
   ;;
-list)
-  list_vms
+ls | list)
+  list_ivms
   ;;
 status)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  vm_status "$vm_name"
+  vm_status "$@"
   ;;
 create)
-  [[ -z "$vm_name" ]] && {
-    fail "Distro name required"
-    usage
-    exit 1
-  }
-  create_vm "$vm_name" "${3:-}"
+  create_ivm "$@"
   ;;
 create-all)
   ivm-create-multi "$@"
@@ -604,199 +593,74 @@ create-all)
 start)
   handle_multiple_arguments ivm start "$@"
   ;;
-kill)
-  handle_multiple_arguments ivm kill "$@"
+shutdown | stop)
+  handle_multiple_arguments ivm stop "$@"
   ;;
 restart)
   handle_multiple_arguments ivm restart "$@"
   ;;
-delete)
+rm | delete)
   handle_multiple_arguments ivm delete "$@"
   ;;
 console)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  connect_console "$vm_name"
+  connect_console "$@"
   ;;
 exec)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  [[ $# -lt 3 ]] && {
-    fail "Command required"
-    usage
-    exit 1
-  }
-  exec_in_vm "$vm_name" "${@:3}"
+  exec_in_ivm "$@"
   ;;
 shell)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-
-  shell_to_vm "$vm_name" "${3:-}"
+  shell_to_ivm "$@"
   ;;
 ip)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  ivm_show_ip "$vm_name"
+  ivm_show_ip "$@"
   ;;
 ssh)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  ivm_ssh "$vm_name" "${3:-}"
+  ivm_ssh "$@"
   ;;
 info)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  show_vm_info "$vm_name"
+  show_ivm_info "$@"
   ;;
 config)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  show_vm_config "$vm_name"
+  show_ivm_config "$@"
   ;;
 logs)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  show_logs "$vm_name" "${3:-}"
+  show_logs "$@"
   ;;
 snapshot)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  create_snapshot "$vm_name" "${3:-}"
+  create_snapshot "$@"
   ;;
 restore)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  [[ -z "${3:-}" ]] && {
-    fail "Snapshot name required"
-    usage
-    exit 1
-  }
-  restore_snapshot "$vm_name" "$3"
+  restore_snapshot "$@"
   ;;
 copy)
-  [[ -z "$vm_name" ]] && {
-    fail "Source VM name required"
-    usage
-    exit 1
-  }
-  [[ -z "${3:-}" ]] && {
-    fail "Destination VM name required"
-    usage
-    exit 1
-  }
-  copy_vm "$vm_name" "$3"
+  copy_ivm "$@"
   ;;
 cleanup)
-  cleanup_vms
+  cleanup_ivms
   ;;
 usb-list)
   list_host_usb_devices
   ;;
 usb-attached)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  list_vm_usb_devices "$vm_name"
+  list_ivm_usb_devices "$@"
   ;;
 usb-attach)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  device_spec="${3:-}"
-  [[ -z "$device_spec" ]] && {
-    fail "Device specification required"
-    usage
-    exit 1
-  }
-  attach_usb_device "$vm_name" "$device_spec" "${4:-}"
+  attach_usb_device "$@"
   ;;
 usb-detach)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  device_name="${3:-}"
-  [[ -z "$device_name" ]] && {
-    fail "Device name required"
-    usage
-    exit 1
-  }
-  detach_usb_device "$vm_name" "$device_name"
+  detach_usb_device "$@"
   ;;
 disk-list)
   list_host_disk_devices
   ;;
 disk-attached)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  list_vm_disk_devices "$vm_name"
+  list_ivm_disk_devices "$@"
   ;;
 disk-attach)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  device_path="${3:-}"
-  [[ -z "$device_path" ]] && {
-    fail "Device path required"
-    usage
-    exit 1
-  }
-  attach_disk_device "$vm_name" "$device_path" "${4:-}"
+  attach_disk_device "$@"
   ;;
 disk-detach)
-  [[ -z "$vm_name" ]] && {
-    fail "VM name required"
-    usage
-    exit 1
-  }
-  device_name="${3:-}"
-  [[ -z "$device_name" ]] && {
-    fail "Device name required"
-    usage
-    exit 1
-  }
-  detach_disk_device "$vm_name" "$device_name"
+  detach_disk_device "$@"
   ;;
 --help | -h)
   usage

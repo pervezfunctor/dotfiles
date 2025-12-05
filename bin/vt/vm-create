@@ -700,7 +700,7 @@ $(printf "      - %s\n" "${USER_GROUPS[@]}")
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: false
-    passwd: "$PASSWORD_HASH"
+    passwd: $PASSWORD_HASH
     ssh_authorized_keys:
       - |
         $pub_key

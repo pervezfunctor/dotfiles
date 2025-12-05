@@ -137,6 +137,8 @@ show_configuration() {
   printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$MEMORY" "$DISK_SIZE"
   printf '\033[1mNetwork Bridge:\033[0m \033[0;33m%s\033[0m\n' "$BRIDGE"
   echo
+  printf "\033[1;36mPress enter to continue...\033[0m\n"
+  read -r
 }
 
 configure_distribution() {
@@ -225,15 +227,26 @@ generate_cloud_init() {
     "$openssh_pkg"
   )
 
-  local runcmd_lines=(
-    "systemctl enable --now ssh || systemctl enable --now sshd || true"
-    "systemctl enable --now qemu-guest-agent || true"
-  )
+  local -a runcmd_lines
+  if [[ "$DISTRO" == "alpine" ]]; then
+    runcmd_lines=(
+      "rc-update add qemu-guest-agent default || true"
+      "service qemu-guest-agent start || true"
+      "rc-update add sshd default || true"
+      "service sshd start || true"
+    )
+  else
+    runcmd_lines=(
+      "systemctl enable --now qemu-guest-agent || true"
+      "systemctl enable --now ssh || systemctl enable --now sshd || true"
+    )
+  fi
 
-  local sudo_groups="wheel"
-
+  local sudo_groups
   if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" ]]; then
     sudo_groups="sudo"
+  else
+    sudo_groups="wheel"
   fi
 
   cat >"${USER_DATA}" <<EOF
@@ -250,8 +263,7 @@ users:
     lock_passwd: false
     passwd: $PASSWORD_HASH
     ssh_authorized_keys:
-      - |
-        $pub_key
+      - $pub_key
 
 package_update: true
 
@@ -329,19 +341,37 @@ wait_for_ip() {
     return 1
     ;;
   *)
-    if wait_until 30 3 bash -c "virsh domstate $vm_name | grep -q running"; then
+    if wait_until 30 2 bash -c "virsh domstate $vm_name | grep -q running"; then
       slog "VM is running"
     else
       return 1
     fi
-    if wait_until 60 3 vm_ip "$vm_name"; then
+
+    if wait_until 60 2 vm_ip "$vm_name" >/dev/null; then
       slog "VM has IP address"
+      sleep 1
     else
       return 1
     fi
+
     return 0
     ;;
   esac
+}
+
+add_ssh_config() {
+  has_cmd ssh-config || return 0
+
+  local ip
+  ip=$(vm_ip "$VM_NAME")
+
+  slog "Adding SSH configuration for $VM_NAME..."
+  if ssh-config add --host "$VM_NAME" --ip "$ip" --user "$USERNAME" --identity "${SSH_KEY%.pub}"; then
+    printf '\033[1mSSH Config:\033[0m    \033[0;32mAdded to ~/.ssh/conf.d/%s.conf\033[0m\n' "$VM_NAME"
+    printf '\033[1mSSH Shortcut:\033[0m  \033[0;33mssh %s\033[0m\n' "$VM_NAME"
+  else
+    warn "Failed to add SSH configuration"
+  fi
 }
 
 show_completion_info() {
@@ -375,6 +405,7 @@ show_completion_info() {
     printf '\033[1mIP Address:\033[0m   \033[0;33m%s\033[0m\n' "$ip"
     printf '\033[1mSSH Command:\033[0m  \033[0;33mvme ssh %s\033[0m\n' "$VM_NAME"
     printf '\033[1mSSH Command:\033[0m  \033[0;33mssh %s@%s\033[0m\n' "$USERNAME" "$ip"
+    echo
   else
     printf '\033[1mGet IP Address:\033[0m \033[0;33mvirsh domifaddr %s --source agent\033[0m\n' "$VM_NAME"
   fi
@@ -539,8 +570,10 @@ main() {
   download_base_image
   generate_cloud_init
   create_disk
-  create_vm
-  show_completion_info
+  if create_vm; then
+    show_completion_info
+    add_ssh_config
+  fi
 }
 
 interactive_mode() {

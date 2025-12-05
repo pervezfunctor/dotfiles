@@ -81,7 +81,6 @@ get_containers_list() {
   dt_distrobox list | awk 'NR>1 {print $3}' | grep -v '^$' || true
 }
 
-
 create_dt() {
   local distro="$1"
   local dt_name="${2:-$distro}"
@@ -336,7 +335,7 @@ case "$command" in
 install)
   install_distrobox
   ;;
-list)
+ls | list)
   dt_list
   ;;
 # status)
@@ -351,13 +350,13 @@ create-all)
 start)
   handle_multiple_arguments dt start "$@"
   ;;
-kill)
+kill | force-stop)
   handle_multiple_arguments dt kill "$@"
   ;;
 restart)
   handle_multiple_arguments dt restart "$@"
   ;;
-delete)
+rm | delete)
   handle_multiple_arguments dt delete "$@"
   ;;
 enter)
@@ -367,11 +366,6 @@ exec)
   exec_dt "$@"
   ;;
 export)
-  [[ -z "${3:-}" ]] && {
-    fail "Application name required"
-    usage
-    exit 1
-  }
   export_app "$@"
   ;;
 unexport)

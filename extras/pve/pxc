@@ -228,7 +228,7 @@ handle_multi() {
     restart)
       restart_ct "$ctid"
       ;;
-    delete)
+    rm | delete)
       delete_ct "$ctid"
       ;;
     esac
@@ -273,7 +273,7 @@ usage() {
 cmd="${1:-}"
 
 case "$cmd" in
-list)
+ls | list)
   info "Listing all containers on node $NODE_NAME..."
   api GET "nodes/${NODE_NAME}/lxc" |
     jq -r '.data[] | "\(.vmid)\t\(.name // "unnamed")\t\(.status)\t\(.cpus)\t\(.maxmem / 1024 / 1024)MB"' |
@@ -300,7 +300,7 @@ restart)
   handle_multi restart "${@:2}"
   ;;
 
-delete)
+rm | delete)
   handle_multi delete "${@:2}"
   ;;
 

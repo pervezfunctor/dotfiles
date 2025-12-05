@@ -194,7 +194,7 @@ handle_multi() {
     restart)
       restart_vm "$vmid"
       ;;
-    delete)
+    rm | delete)
       delete_vm "$vmid"
       ;;
     esac
@@ -281,7 +281,7 @@ usage() {
 cmd="${1:-}"
 
 case "$cmd" in
-list)
+ls | list)
   info "Listing all VMs on node $NODE_NAME..."
   api GET "nodes/${NODE_NAME}/qemu" |
     jq -r '.data[] | "\(.vmid)\t\(.name // "unnamed")\t\(.status)\t\(.cpus)\t\(.maxmem / 1024 / 1024)MB"' |
@@ -316,7 +316,7 @@ restart)
   handle_multi restart "${@:2}"
   ;;
 
-delete)
+rm | delete)
   handle_multi delete "${@:2}"
   ;;
 
@@ -418,7 +418,7 @@ snapshot-restore)
   fi
   ;;
 
-snapshot-delete)
+snapshot-rm | delete)
   [[ $# -ne 3 ]] && usage && exit 1
   validate_vmid "$2"
   snapname="$3"

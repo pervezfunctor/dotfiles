@@ -86,94 +86,10 @@ vm_state() {
 }
 
 vm_ip() {
-  local vm_name="$1"
-  local ip
-  local mac
-  local network
-  local mac_addrs
-  local state
-
-  vm_exists "$vm_name" || return 1
-
-  state=$(virsh domstate "$vm_name" 2>/dev/null)
-  if [[ "$state" != "running" ]]; then
-    return 2
-  fi
-
-  # Method 1: QEMU Guest Agent
-  ip=$(virsh domifaddr "$vm_name" --source agent 2>/dev/null | awk '/ipv4/ {print $4}' | cut -d'/' -f1 | grep -v '^127\.0\.0\.1$' | head -n 1)
-  if [[ -n "$ip" ]]; then
-    echo "$ip"
-    return 0
-  fi
-
-  # Method 2: DHCP Leases based on MAC Address
-  mac_addrs=$(virsh domiflist "$vm_name" | awk 'NR>2 {print $5}')
-
-  if [[ -n "$mac_addrs" ]]; then
-    for mac in $mac_addrs; do
-      # Find the network associated with the MAC address.
-      network=$(virsh domiflist "$vm_name" | grep -i "$mac" | awk '{print $3}')
-
-      if [[ -n "$network" && "$network" != "-" ]]; then
-        # Check for IP using the specific network and MAC.
-        if virsh net-dhcp-leases --help | grep -q -- '--mac'; then
-          ip=$(virsh net-dhcp-leases "$network" --mac "$mac" 2>/dev/null | awk 'NR>2 {print $5}' | cut -d'/' -f1 | head -n 1)
-        else
-          # Fallback for older libvirt versions that don't support --mac.
-          ip=$(virsh net-dhcp-leases "$network" 2>/dev/null | grep -i "$mac" | awk '{print $5}' | cut -d'/' -f1 | head -n 1)
-        fi
-
-        if [[ -n "$ip" ]]; then
-          echo "$ip"
-          return 0
-        fi
-      fi
-    done
-
-    # If IP not found on the primary network, check all active networks.
-    for mac in $mac_addrs; do
-      for network in $(virsh net-list --name); do
-        if virsh net-dhcp-leases --help | grep -q -- '--mac'; then
-          ip=$(virsh net-dhcp-leases "$network" --mac "$mac" 2>/dev/null | awk 'NR>2 {print $5}' | cut -d'/' -f1 | head -n 1)
-        else
-          ip=$(virsh net-dhcp-leases "$network" 2>/dev/null | grep -i "$mac" | awk '{print $5}' | cut -d'/' -f1 | head -n 1)
-        fi
-
-        if [[ -n "$ip" ]]; then
-          echo "$ip"
-          return 0
-        fi
-      done
-    done
-  fi
-
-  # Method 3: Fallback to original script's less reliable grep method
-  # This is a last resort and might be inaccurate.
-  ip=$(virsh net-dhcp-leases default 2>/dev/null | grep "$vm_name" | awk '{print $5}' | cut -d'/' -f1 | head -1)
-  if [[ -n "$ip" ]]; then
-    echo "$ip"
-    return 0
-  fi
-
-  return 3
-}
-
-ip_errors() {
-  local ret=$1
-  local vm_name=$2
-
-  if [[ $ret -eq 1 ]]; then
-    fail "VM '$vm_name' not found"
-    return 1
-  elif [[ $ret -eq 2 ]]; then
-    fail "VM '$vm_name' is not running"
-    return 1
-  elif [[ $ret -eq 3 ]]; then
-    fail "Could not determine IP address for VM '$vm_name'"
-    return 1
-  fi
-
+  virsh --connect qemu:///system domifaddr --source agent "$1" 2>/dev/null |
+    awk '/ipv4/ && $1 !~ /^lo$/ {print $4}' |
+    head -n1 |
+    cut -d'/' -f1
 }
 
 vm_ssh() {
@@ -202,8 +118,6 @@ vm_ssh() {
 
   local ip
   ip=$(vm_ip "$vm_name")
-  local ret=$?
-  ip_errors "$ret" "$vm_name"
 
   slog "Connecting to $vm_name ($ip) as $username..."
   ssh "$username@$ip"

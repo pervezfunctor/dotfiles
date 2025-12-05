@@ -96,7 +96,7 @@ cmd="${1:-}"
 arg="${2:-}"
 
 case "$cmd" in
-list)
+ls | list)
   ifquery --list
   ;;
 show)

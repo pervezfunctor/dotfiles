@@ -157,7 +157,6 @@ ivm_ip() {
   ip=$(printf '%s\n' "$address_list" | awk '/\((enp|eth)/ {print $1; exit}')
 
   if [[ -z "$ip" ]]; then
-    fail "No suitable IP address found for VM '$vm_name'"
     return 1
   fi
 
@@ -277,7 +276,6 @@ ict_ip() {
 
   local address_list
   if ! address_list=$(incus list "^${container_name}$" --format csv --columns 4 2>/dev/null); then
-    fail "Unable to fetch network information for container '$container_name'"
     return 1
   fi
 
@@ -292,7 +290,6 @@ ict_ip() {
   fi
 
   if [[ -z "$ip" ]]; then
-    fail "No suitable IP address found for container '$container_name'"
     return 1
   fi
 

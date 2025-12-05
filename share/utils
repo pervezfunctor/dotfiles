@@ -365,6 +365,17 @@ source_dotfile() {
   fi
 }
 
+reset_logs() {
+  slog "Removing old logs"
+  rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log ~/.dotfiles-slog.log \
+    ~/.dotfiles-warn.log ~/.dotfiles-fail.log ~/.dotfiles-success.log 2>/dev/null
+}
+
+with_logs() {
+  main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee ~/.dotfiles-error.log >&2)
+  slog "Installation done! Look at ~/.dotfiles-error.log for any errors."
+}
+
 slog() {
   printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*" >>"$HOME/.dotfiles-slog.log"
   printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*"
@@ -1717,9 +1728,7 @@ bootstrap() {
   slog "Bootstrapping, switching to directory $HOME"
   cd "$HOME" || die "could not cd to $HOME"
 
-  slog "Removing old logs"
-  rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log ~/.dotfiles-slog.log \
-    ~/.dotfiles-warn.log ~/.dotfiles-fail.log ~/.dotfiles-success.log 2>/dev/null
+  reset_logs
 
   has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 
@@ -1728,8 +1737,7 @@ bootstrap() {
   source_installers
 
   slog "Installing ${*} ..."
-  main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee ~/.dotfiles-error.log >&2)
-  slog "Installation done! Look at ~/.dotfiles-error.log for any errors."
+  with_logs "$@"
 
   # shellcheck disable=SC2164
   cd "$curdir" || cd

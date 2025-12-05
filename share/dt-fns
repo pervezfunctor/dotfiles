@@ -26,21 +26,21 @@ dt_exec() {
   local CONTAINER_NAME=${1}
   shift
 
-  dt_enter "${CONTAINER_NAME}" -- "$@"
+  dt_enter "${CONTAINER_NAME}" "$@"
 }
 
 dt_exec_root() {
   local CONTAINER_NAME=${1}
   shift
 
-  dt_enter_root "${CONTAINER_NAME}" -- "$@"
+  dt_enter_root "${CONTAINER_NAME}" "$@"
 }
 
 dt_bash_exec() {
   local CONTAINER_NAME=${1}
   shift
 
-  dt_enter "${CONTAINER_NAME}" -- bash -c "$*"
+  dt_enter "${CONTAINER_NAME}" bash -c "$*"
 }
 
 dt_create() {
@@ -80,7 +80,7 @@ dt_create_root() {
   local IMAGE=${2}
   shift 2
 
-  if dt_create "$CONTAINER_NAME" "$IMAGE" --root "$@"; then
+  if dt_create_root "$CONTAINER_NAME" "$IMAGE" "$@"; then
     slog "Distrobox ${CONTAINER_NAME} created successfully"
     slog "Use rdte ${CONTAINER_NAME} to enter"
     return 0
@@ -208,8 +208,8 @@ dt-docker-base() {
     --init \
     --unshare-all
 
-  dt_exec "${CONTAINER_NAME}" --root sudo systemctl enable --now docker
-  dt_exec "${CONTAINER_NAME}" --root sudo usermod -aG docker "$USER"
+  dt_exec_root "${CONTAINER_NAME}" sudo systemctl enable --now docker
+  dt_exec_root "${CONTAINER_NAME}" sudo usermod -aG docker "$USER"
 }
 
 dt-docker-slim() {
@@ -376,7 +376,7 @@ dt-dev() {
 
   "dt-$os" "$CONTAINER_NAME"
 
-  if distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dt-dev-atomic; then
+  if dt_enter "${CONTAINER_NAME}" bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dt-dev-atomic; then
     slog "Distrobox ${CONTAINER_NAME} setup successfully"
     slog "Use dte ${CONTAINER_NAME} to enter"
     return 0
@@ -393,10 +393,10 @@ dt-main-install() {
   fi
   local distro=$1
   local mainstall=$2
-  local name=${3:-"${distro}-${mainstall}"}
+  local CONTAINER_NAME=${3:-"${distro}-${mainstall}"}
 
   "dt-$distro" "$name"
-  distrobox enter -nw --clean-path --name "$name" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$mainstall"
+  dt_enter "$CONTAINER_NAME" bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- "$mainstall"
 }
 
 dt-group-install() {
@@ -409,8 +409,8 @@ dt-group-install() {
   local name=${3:-"${distro}-${groupstall}-test"}
 
   "dt-$distro" "$name"
-  distrobox enter -nw --clean-path --name "$name" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")"
-  distrobox enter -nw --clean-path --name "$name" -- ilmg "@$groupstall"
+  dt_enter "$name" bash -c "$(curl -sSL "${ILM_SETUP_URL}")"
+  dt_enter "$name" ilmg "@$groupstall"
 }
 
 dt-ublue-all() {
@@ -523,15 +523,15 @@ dt-to-image() {
 }
 
 dt-from-image() {
-  local dt-name=${1:dt}
+  local CONTAINER_NAME="${1:dt}"
   slog "Creating distrobox from image $1"
 
   if distrobox create \
-    --hostname "${dt-name}" \
+    --hostname "${CONTAINER_NAME}" \
     --yes \
     --image "$1":latest \
-    --name "$dt-name"; then
-    distrobox enter -nw --clean-path --name "$dt-name"
+    --name "$CONTAINER_NAME"; then
+    dt_enter "$CONTAINER_NAME"
     slog "Done creating distrobox from image $1"
   fi
 }
@@ -544,7 +544,7 @@ dt-nix() {
   srm "${BOXES_DIR}/${CONTAINER_NAME}"
 
   if dt-debian "$CONTAINER_NAME"; then
-    distrobox enter -nw --clean-path --name "${CONTAINER_NAME}" -- bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- nix
+    dt_enter "${CONTAINER_NAME}" bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- nix
     slog "Done creating distrobox $CONTAINER_NAME"
   fi
 }

@@ -6,16 +6,16 @@ set -euo pipefail
 source "$(dirname "$0")/vm-utils"
 
 check_prerequisites() {
-    vm_check_prerequisites
+  vm_check_prerequisites
 
-    if ! has_cmd vm-create; then
-        fail "vm-create is not in PATH."
-        exit 1
-    fi
+  if ! has_cmd vm-create; then
+    fail "vm-create is not in PATH."
+    exit 1
+  fi
 }
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 <command> [vm-name]
 
 Manage VMs created with libvirt-* scripts.
@@ -68,475 +68,474 @@ EOF
 }
 
 install_vm() {
-    slog "Installing virtualization tools using ilmi..."
+  slog "Installing virtualization tools using ilmi..."
 
-    if has_cmd ilmi; then
-        ilmi vm
-    else
-        fail "ilmi not found."
-        return 1
-    fi
+  if has_cmd ilmi; then
+    ilmi vm
+  else
+    fail "ilmi not found."
+    return 1
+  fi
 
-    if ! has_cmd virsh; then
-        fail "Virtualization tools installation failed. Please check the output above for errors."
-        return 0
-    fi
+  if ! has_cmd virsh; then
+    fail "Virtualization tools installation failed. Please check the output above for errors."
+    return 0
+  fi
 
-    success "Virtualization tools installed successfully!"
-    echo
-    slog "Installed tools include:"
-    has_cmd virsh && slog "  ✓ libvirt (virsh)"
-    has_cmd qemu-system-x86_64 && slog "  ✓ QEMU"
-    has_cmd virt-install && slog "  ✓ virt-install"
-    has_cmd vm-create && slog "  ✓ vm-create scripts"
-    echo
-    slog "You can now use:"
-    slog "  $0 list                    # List VMs"
-    slog "  $0 create --distro ubuntu  # Create Ubuntu VM"
-    slog "  vm-create --distro fedora  # Create Fedora VM with cloud-init"
-    echo
-    slog "Note: You may need to log out and back in for group changes to take effect."
-    slog "Or run: newgrp libvirt"
+  success "Virtualization tools installed successfully!"
+  echo
+  slog "Installed tools include:"
+  has_cmd virsh && slog "  ✓ libvirt (virsh)"
+  has_cmd qemu-system-x86_64 && slog "  ✓ QEMU"
+  has_cmd virt-install && slog "  ✓ virt-install"
+  has_cmd vm-create && slog "  ✓ vm-create scripts"
+  echo
+  slog "You can now use:"
+  slog "  $0 list                    # List VMs"
+  slog "  $0 create --distro ubuntu  # Create Ubuntu VM"
+  slog "  vm-create --distro fedora  # Create Fedora VM with cloud-init"
+  echo
+  slog "Note: You may need to log out and back in for group changes to take effect."
+  slog "Or run: newgrp libvirt"
 }
 
 clone_vm() {
-    local src_vm="$1"
-    local dest_vm="$2"
+  local src_vm="$1"
+  local dest_vm="$2"
 
-    if [[ -z "$src_vm" || -z "$dest_vm" ]]; then
-        fail "Source and destination VM names required"
-        usage
-        return 1
-    fi
+  if [[ -z "$src_vm" || -z "$dest_vm" ]]; then
+    fail "Source and destination VM names required"
+    usage
+    return 1
+  fi
 
-    vm_check_exists "$src_vm" || return 1
-    if vm_exists "$dest_vm"; then
-        fail "Destination VM '$dest_vm' already exists"
-        return 1
-    fi
+  vm_check_exists "$src_vm" || return 1
+  if vm_exists "$dest_vm"; then
+    fail "Destination VM '$dest_vm' already exists"
+    return 1
+  fi
 
-    if has_cmd virt-clone; then
-        slog "Cloning VM '$src_vm' to '$dest_vm' using virt-clone..."
-        if sudo virt-clone --original "$src_vm" --name "$dest_vm" --auto-clone; then
-            success "VM '$src_vm' cloned to '$dest_vm' successfully!"
-        else
-            fail "Failed to clone VM using virt-clone."
-            return 1
-        fi
+  if has_cmd virt-clone; then
+    slog "Cloning VM '$src_vm' to '$dest_vm' using virt-clone..."
+    if sudo virt-clone --original "$src_vm" --name "$dest_vm" --auto-clone; then
+      success "VM '$src_vm' cloned to '$dest_vm' successfully!"
     else
-        fail "virt-clone not found. Please install virt-manager or virt-clone."
-        return 1
+      fail "Failed to clone VM using virt-clone."
+      return 1
     fi
+  else
+    fail "virt-clone not found. Please install virt-manager or virt-clone."
+    return 1
+  fi
 }
 
 vm_status() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    vm_check_exists "$vm_name" || return 1
+  vm_check_exists "$vm_name" || return 1
 
-    slog "Status for VM '$vm_name':"
-    echo
-    virsh dominfo "$vm_name"
-    echo
+  slog "Status for VM '$vm_name':"
+  echo
+  virsh dominfo "$vm_name"
+  echo
 
-    slog "Network interfaces:"
-    virsh domifaddr "$vm_name" || warn "Could not get IP address (VM may be stopped)"
-    echo
+  slog "Network interfaces:"
+  virsh domifaddr "$vm_name" || warn "Could not get IP address (VM may be stopped)"
+  echo
 
-    slog "Disk usage:"
-    virsh domblklist "$vm_name"
+  slog "Disk usage:"
+  virsh domblklist "$vm_name"
 }
 
 create_vm() {
-    vm-create "$@"
+  vm-create "$@"
 }
 
 autostart_vm() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    vm_check_exists "$vm_name" || return 1
+  vm_check_exists "$vm_name" || return 1
 
-    slog "Setting VM '$vm_name' to start on boot..."
-    virsh autostart "$vm_name"
-    success "VM '$vm_name' will start on boot"
+  slog "Setting VM '$vm_name' to start on boot..."
+  virsh autostart "$vm_name"
+  success "VM '$vm_name' will start on boot"
 }
 
 start_vm() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    vm_check_exists "$vm_name" || return 1
+  vm_check_exists "$vm_name" || return 1
 
-    local state
-    state=$(vm_state "$vm_name")
+  local state
+  state=$(vm_state "$vm_name")
 
-    if [[ "$state" == "running" ]]; then
-        warn "VM '$vm_name' is already running"
-        return 0
-    fi
+  if [[ "$state" == "running" ]]; then
+    warn "VM '$vm_name' is already running"
+    return 0
+  fi
 
-    slog "Starting VM '$vm_name'..."
-    if virsh start "$vm_name"; then
-        success "VM '$vm_name' started"
-    else
-        fail "Failed to start VM '$vm_name'"
-        return 1
-    fi
+  slog "Starting VM '$vm_name'..."
+  if virsh start "$vm_name"; then
+    success "VM '$vm_name' started"
+  else
+    fail "Failed to start VM '$vm_name'"
+    return 1
+  fi
 }
 
 stop_vm() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    if ! virsh dominfo "$vm_name" &>/dev/null; then
-        fail "VM '$vm_name' not found"
-        return 1
-    fi
+  if ! virsh dominfo "$vm_name" &>/dev/null; then
+    fail "VM '$vm_name' not found"
+    return 1
+  fi
 
-    local state
-    state=$(vm_state "$vm_name")
+  local state
+  state=$(vm_state "$vm_name")
 
-    if [[ "$state" != "running" ]]; then
-        warn "VM '$vm_name' is not running"
-        return 0
-    fi
+  if [[ "$state" != "running" ]]; then
+    warn "VM '$vm_name' is not running"
+    return 0
+  fi
 
-    slog "Gracefully stopping VM '$vm_name'..."
-    if virsh shutdown "$vm_name"; then
-        success "Shutdown command sent to VM '$vm_name'"
-        slog "Waiting for VM to stop..."
+  slog "Gracefully stopping VM '$vm_name'..."
+  if virsh shutdown "$vm_name"; then
+    success "Shutdown command sent to VM '$vm_name'"
+    slog "Waiting for VM to stop..."
 
-        if wait_until 10 5 virsh domstate "$vm_name" | grep -q "shut off"; then
-            success "VM '$vm_name' stopped gracefully"
-            return 0
-        else
-            warn "VM didn't stop gracefully, forcing shutdown..."
-            virsh destroy "$vm_name"
-            success "VM '$vm_name' force stopped"
-        fi
+    if wait_until 10 5 virsh domstate "$vm_name" | grep -q "shut off"; then
+      success "VM '$vm_name' stopped gracefully"
+      return 0
     else
-        fail "Failed to stop VM '$vm_name'"
-        return 1
+      warn "VM didn't stop gracefully, forcing shutdown..."
+      virsh destroy "$vm_name"
+      success "VM '$vm_name' force stopped"
     fi
+  else
+    fail "Failed to stop VM '$vm_name'"
+    return 1
+  fi
 }
 
 restart_vm() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    slog "Restarting VM '$vm_name'..."
-    stop_vm "$vm_name"
-    sleep 2
-    start_vm "$vm_name"
+  slog "Restarting VM '$vm_name'..."
+  stop_vm "$vm_name"
+  sleep 2
+  start_vm "$vm_name"
 }
 
 destroy_vm() {
-    local vm_name="$1"
-    vm_check_exists "$vm_name" || return 1
+  local vm_name="$1"
+  vm_check_exists "$vm_name" || return 1
 
-    warn "Force stopping VM '$vm_name'..."
-    if virsh destroy "$vm_name"; then
-        success "VM '$vm_name' force stopped"
-    else
-        warn "VM '$vm_name' was not running or already stopped"
-    fi
+  warn "Force stopping VM '$vm_name'..."
+  if virsh destroy "$vm_name"; then
+    success "VM '$vm_name' force stopped"
+  else
+    warn "VM '$vm_name' was not running or already stopped"
+  fi
 }
 
 delete_vm() {
-    local vm_name="$1"
-    vm_check_exists "$vm_name" || return 1
+  local vm_name="$1"
+  vm_check_exists "$vm_name" || return 1
 
-    warn "This will permanently delete VM '$vm_name' and all its data!"
-    read -p "Are you sure? (y/N): " -r
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        slog "Deletion cancelled"
-        return 0
-    fi
+  warn "This will permanently delete VM '$vm_name' and all its data!"
+  read -p "Are you sure? (y/N): " -r
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    slog "Deletion cancelled"
+    return 0
+  fi
 
-    local state
-    state=$(vm_state "$vm_name")
-    if [[ "$state" == "running" ]]; then
-        slog "Stopping VM first..."
-        virsh destroy "$vm_name"
-    fi
+  local state
+  state=$(vm_state "$vm_name")
+  if [[ "$state" == "running" ]]; then
+    slog "Stopping VM first..."
+    virsh destroy "$vm_name"
+  fi
 
-    local disks
-    disks=$(virsh domblklist "$vm_name" --details | awk '/file.*disk/ {print $4}')
+  local disks
+  disks=$(virsh domblklist "$vm_name" --details | awk '/file.*disk/ {print $4}')
 
-    slog "Removing VM definition..."
-    if virsh undefine "$vm_name"; then
-        success "VM '$vm_name' undefined"
-    fi
+  slog "Removing VM definition..."
+  if virsh undefine "$vm_name"; then
+    success "VM '$vm_name' undefined"
+  fi
 
-    if [[ -n "$disks" ]]; then
-        slog "Removing disk files..."
-        while IFS= read -r disk; do
-            if [[ -f "$disk" ]]; then
-                slog "Removing disk: $disk"
-                sudo rm -f "$disk"
-            fi
-        done <<<"$disks"
-    fi
+  if [[ -n "$disks" ]]; then
+    slog "Removing disk files..."
+    while IFS= read -r disk; do
+      if [[ -f "$disk" ]]; then
+        slog "Removing disk: $disk"
+        sudo rm -f "$disk"
+      fi
+    done <<<"$disks"
+  fi
 
-    local workdir="/var/lib/libvirt/images/${vm_name}-vm"
-    if [[ -d "$workdir" ]]; then
-        slog "Removing working directory: $workdir"
-        sudo rm -rf "$workdir"
-    fi
+  local workdir="/var/lib/libvirt/images/${vm_name}-vm"
+  if [[ -d "$workdir" ]]; then
+    slog "Removing working directory: $workdir"
+    sudo rm -rf "$workdir"
+  fi
 
-    success "VM '$vm_name' completely deleted"
+  success "VM '$vm_name' completely deleted"
 }
 
 connect_console() {
-    local vm_name="$1"
-    vm_check_exists "$vm_name" || return 1
+  local vm_name="$1"
+  vm_check_exists "$vm_name" || return 1
 
-    local state
-    state=$(virsh domstate "$vm_name")
+  local state
+  state=$(virsh domstate "$vm_name")
 
-    if [[ "$state" != "running" ]]; then
-        fail "VM '$vm_name' is not running"
-        slog "Start it with: $0 start $vm_name"
-        return 1
-    fi
+  if [[ "$state" != "running" ]]; then
+    fail "VM '$vm_name' is not running"
+    slog "Start it with: $0 start $vm_name"
+    return 1
+  fi
 
-    slog "Connecting to console of VM '$vm_name'..."
-    slog "Press Ctrl+] to exit console"
-    echo
-    virsh console "$vm_name"
+  slog "Connecting to console of VM '$vm_name'..."
+  slog "Press Ctrl+] to exit console"
+  echo
+  virsh console "$vm_name"
 }
 
 show_logs() {
-    local vm_name="$1"
-    vm_check_exists "$vm_name" || return 1
+  local vm_name="$1"
+  vm_check_exists "$vm_name" || return 1
 
-    slog "Showing logs for VM '$vm_name'..."
-    echo
+  slog "Showing logs for VM '$vm_name'..."
+  echo
 
-    local log_file="/var/log/libvirt/qemu/${vm_name}.log"
-    if [[ -f "$log_file" ]]; then
-        slog "Libvirt logs:"
-        sudo tail -20 "$log_file"
-    else
-        warn "No libvirt log file found at $log_file"
-    fi
+  local log_file="/var/log/libvirt/qemu/${vm_name}.log"
+  if [[ -f "$log_file" ]]; then
+    slog "Libvirt logs:"
+    sudo tail -20 "$log_file"
+  else
+    warn "No libvirt log file found at $log_file"
+  fi
 }
 
 show_cloud_init_logs() {
-    local vm_name="$1"
-    vm_check_exists "$vm_name" || return 1
+  local vm_name="$1"
+  vm_check_exists "$vm_name" || return 1
 
-    slog "Showing cloud-init logs for VM '$vm_name'..."
-    echo
+  slog "Showing cloud-init logs for VM '$vm_name'..."
+  echo
 
-    if ! has_cmd virt-cat; then
-        fail "virt-cat command not found. Please install libguestfs-tools on the host."
-        return 1
-    fi
+  if ! has_cmd virt-cat; then
+    fail "virt-cat command not found. Please install libguestfs-tools on the host."
+    return 1
+  fi
 
-    local vm_disk
-    vm_disk=$(virsh domblklist "$vm_name" --details | awk '/file.*disk/ {print $4; exit}')
+  local vm_disk
+  vm_disk=$(virsh domblklist "$vm_name" --details | awk '/file.*disk/ {print $4; exit}')
 
-    if [[ -z "$vm_disk" ]]; then
-        fail "Could not find disk image for VM '$vm_name'."
-        return 1
-    fi
+  if [[ -z "$vm_disk" ]]; then
+    fail "Could not find disk image for VM '$vm_name'."
+    return 1
+  fi
 
-    slog "Attempting to read cloud-init logs from VM disk: $vm_disk"
-    slog "Cloud-init logs (from /var/log/cloud-init.log inside VM):"
-    if sudo virt-cat -d "$vm_name" /var/log/cloud-init.log; then
-        success "Successfully retrieved cloud-init logs."
-    else
-        warn "Could not retrieve cloud-init logs using virt-cat. The VM might not be running, or the log file might not exist or be in a different location inside the VM."
-        warn "You can try to SSH into the VM and check /var/log/cloud-init.log or /var/log/cloud-init-output.log manually."
-    fi
+  slog "Attempting to read cloud-init logs from VM disk: $vm_disk"
+  slog "Cloud-init logs (from /var/log/cloud-init.log inside VM):"
+  if sudo virt-cat -d "$vm_name" /var/log/cloud-init.log; then
+    success "Successfully retrieved cloud-init logs."
+  else
+    warn "Could not retrieve cloud-init logs using virt-cat. The VM might not be running, or the log file might not exist or be in a different location inside the VM."
+    warn "You can try to SSH into the VM and check /var/log/cloud-init.log or /var/log/cloud-init-output.log manually."
+  fi
 }
 
 cleanup_vms() {
-    slog "Cleaning up stopped VMs and orphaned files..."
+  slog "Cleaning up stopped VMs and orphaned files..."
 
-    # List stopped VMs
-    local stopped_vms
-    stopped_vms=$(virsh list --inactive --name)
+  # List stopped VMs
+  local stopped_vms
+  stopped_vms=$(virsh list --inactive --name)
 
-    if [[ -n "$stopped_vms" ]]; then
-        slog "Stopped VMs found:"
-        echo "$stopped_vms"
-        echo
+  if [[ -n "$stopped_vms" ]]; then
+    slog "Stopped VMs found:"
+    echo "$stopped_vms"
+    echo
 
-        read -p "Remove all stopped VMs? (y/N): " -r
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            while IFS= read -r vm; do
-                if [[ -n "$vm" ]]; then
-                    slog "Removing stopped VM: $vm"
-                    delete_vm "$vm" </dev/null
-                fi
-            done <<<"$stopped_vms"
+    read -p "Remove all stopped VMs? (y/N): " -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      while IFS= read -r vm; do
+        if [[ -n "$vm" ]]; then
+          slog "Removing stopped VM: $vm"
+          delete_vm "$vm" </dev/null
         fi
-    else
-        slog "No stopped VMs found"
+      done <<<"$stopped_vms"
     fi
+  else
+    slog "No stopped VMs found"
+  fi
 
-    slog "Checking for orphaned working directories..."
-    for dir in /var/lib/libvirt/images/*-vm; do
-        if [[ -d "$dir" ]]; then
-            local vm_name
-            vm_name=$(basename "$dir" | sed 's/-vm$//')
-            if ! virsh dominfo "$vm_name" &>/dev/null; then
-                warn "Found orphaned directory: $dir"
-                read -p "Remove orphaned directory $dir? (y/N): " -r
-                if [[ $REPLY =~ ^[Yy]$ ]]; then
-                    sudo rm -rf "$dir"
-                    success "Removed: $dir"
-                fi
-            fi
+  slog "Checking for orphaned working directories..."
+  for dir in /var/lib/libvirt/images/*-vm; do
+    if [[ -d "$dir" ]]; then
+      local vm_name
+      vm_name=$(basename "$dir" | sed 's/-vm$//')
+      if ! virsh dominfo "$vm_name" &>/dev/null; then
+        warn "Found orphaned directory: $dir"
+        read -p "Remove orphaned directory $dir? (y/N): " -r
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+          sudo rm -rf "$dir"
+          success "Removed: $dir"
         fi
-    done
+      fi
+    fi
+  done
 
-    success "Cleanup complete"
+  success "Cleanup complete"
 }
 
 show_ip() {
-    local ip
-    ip=$(vm_ip "$vm_name")
-    local ret=$?
-    ip_errors "$ret" "$vm_name"
+  local ip
+  ip=$(vm_ip "$vm_name")
+  local ret=$?
 
-    if [[ -n "$ip" ]]; then
-        echo "$ip"
-    else
-        fail "Could not determine IP address for VM '$vm_name'"
-        return 1
-    fi
+  if [[ -n "$ip" ]]; then
+    echo "$ip"
+  else
+    fail "Could not determine IP address for VM '$vm_name'"
+    return 1
+  fi
 }
 
 # USB Device Management Functions
 list_host_usb_devices() {
-    slog "USB devices available on host:"
-    echo
+  slog "USB devices available on host:"
+  echo
 
-    if ! command -v lsusb >/dev/null; then
-        fail "lsusb command not found. Please install usbutils package."
-        return 1
+  if ! command -v lsusb >/dev/null; then
+    fail "lsusb command not found. Please install usbutils package."
+    return 1
+  fi
+
+  echo "Format: Bus Device ID: Vendor:Product Description"
+  echo "────────────────────────────────────────────────────────────────"
+  lsusb | while read -r line; do
+    # Parse lsusb output: Bus 001 Device 002: ID 1234:5678 Description
+    if [[ $line =~ Bus\ ([0-9]+)\ Device\ ([0-9]+):\ ID\ ([0-9a-fA-F]+):([0-9a-fA-F]+)\ (.+) ]]; then
+      bus="${BASH_REMATCH[1]}"
+      device="${BASH_REMATCH[2]}"
+      vendor="${BASH_REMATCH[3]}"
+      product="${BASH_REMATCH[4]}"
+      description="${BASH_REMATCH[5]}"
+
+      printf "%-3s %-6s %s:%s %s\n" "$bus" "$device" "$vendor" "$product" "$description"
     fi
-
-    echo "Format: Bus Device ID: Vendor:Product Description"
-    echo "────────────────────────────────────────────────────────────────"
-    lsusb | while read -r line; do
-        # Parse lsusb output: Bus 001 Device 002: ID 1234:5678 Description
-        if [[ $line =~ Bus\ ([0-9]+)\ Device\ ([0-9]+):\ ID\ ([0-9a-fA-F]+):([0-9a-fA-F]+)\ (.+) ]]; then
-            bus="${BASH_REMATCH[1]}"
-            device="${BASH_REMATCH[2]}"
-            vendor="${BASH_REMATCH[3]}"
-            product="${BASH_REMATCH[4]}"
-            description="${BASH_REMATCH[5]}"
-
-            printf "%-3s %-6s %s:%s %s\n" "$bus" "$device" "$vendor" "$product" "$description"
-        fi
-    done
-    echo
-    slog "Usage examples:"
-    slog "  By USB ID: $0 usb-attach VM_NAME vendor:product"
-    slog "  By Bus/Device: $0 usb-attach VM_NAME bus.device"
+  done
+  echo
+  slog "Usage examples:"
+  slog "  By USB ID: $0 usb-attach VM_NAME vendor:product"
+  slog "  By Bus/Device: $0 usb-attach VM_NAME bus.device"
 }
 
 list_vm_usb_devices() {
-    local vm_name="$1"
-    vm_check_exists "$vm_name" || return 1
+  local vm_name="$1"
+  vm_check_exists "$vm_name" || return 1
 
-    slog "USB devices attached to VM '$vm_name':"
-    echo
+  slog "USB devices attached to VM '$vm_name':"
+  echo
 
-    # Get USB devices from VM XML configuration
-    local usb_devices
-    usb_devices=$(virsh dumpxml "$vm_name" | grep -A 5 "hostdev.*usb" | grep -E "(vendor|product|bus|device)" || true)
+  # Get USB devices from VM XML configuration
+  local usb_devices
+  usb_devices=$(virsh dumpxml "$vm_name" | grep -A 5 "hostdev.*usb" | grep -E "(vendor|product|bus|device)" || true)
 
-    if [[ -z "$usb_devices" ]]; then
-        slog "No USB devices currently attached to VM '$vm_name'"
-        return 0
+  if [[ -z "$usb_devices" ]]; then
+    slog "No USB devices currently attached to VM '$vm_name'"
+    return 0
+  fi
+
+  echo "USB devices found in VM configuration:"
+  echo "─────────────────────────────────────────────"
+
+  # Parse and display USB device information
+  virsh dumpxml "$vm_name" | grep -A 10 "hostdev.*usb" | while IFS= read -r line; do
+    if [[ $line =~ vendor.*id=.0x([0-9a-fA-F]+). ]]; then
+      vendor_id="${BASH_REMATCH[1]}"
+    elif [[ $line =~ product.*id=.0x([0-9a-fA-F]+). ]]; then
+      product_id="${BASH_REMATCH[1]}"
+      if [[ -n "$vendor_id" ]]; then
+        printf "USB Device: %s:%s\n" "$vendor_id" "$product_id"
+        vendor_id=""
+        product_id=""
+      fi
     fi
-
-    echo "USB devices found in VM configuration:"
-    echo "─────────────────────────────────────────────"
-
-    # Parse and display USB device information
-    virsh dumpxml "$vm_name" | grep -A 10 "hostdev.*usb" | while IFS= read -r line; do
-        if [[ $line =~ vendor.*id=.0x([0-9a-fA-F]+). ]]; then
-            vendor_id="${BASH_REMATCH[1]}"
-        elif [[ $line =~ product.*id=.0x([0-9a-fA-F]+). ]]; then
-            product_id="${BASH_REMATCH[1]}"
-            if [[ -n "$vendor_id" ]]; then
-                printf "USB Device: %s:%s\n" "$vendor_id" "$product_id"
-                vendor_id=""
-                product_id=""
-            fi
-        fi
-    done
+  done
 }
 
 parse_usb_device() {
-    local device_spec="$1"
+  local device_spec="$1"
 
-    # Parse different device specification formats
-    if [[ "$device_spec" =~ ^([0-9a-fA-F]+):([0-9a-fA-F]+)$ ]]; then
-        # Format: vendorid:productid (e.g., 1234:5678)
-        echo "vendor"
-        echo "${BASH_REMATCH[1]}"
-        echo "product"
-        echo "${BASH_REMATCH[2]}"
-    elif [[ "$device_spec" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
-        # Format: bus.device (e.g., 001.002)
-        echo "bus"
-        echo "${BASH_REMATCH[1]}"
-        echo "device"
-        echo "${BASH_REMATCH[2]}"
-    else
-        fail "Invalid device specification: $device_spec"
-        fail "Supported formats:"
-        fail "  vendorid:productid (e.g., 1234:5678)"
-        fail "  bus.device (e.g., 001.002)"
-        return 1
-    fi
+  # Parse different device specification formats
+  if [[ "$device_spec" =~ ^([0-9a-fA-F]+):([0-9a-fA-F]+)$ ]]; then
+    # Format: vendorid:productid (e.g., 1234:5678)
+    echo "vendor"
+    echo "${BASH_REMATCH[1]}"
+    echo "product"
+    echo "${BASH_REMATCH[2]}"
+  elif [[ "$device_spec" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+    # Format: bus.device (e.g., 001.002)
+    echo "bus"
+    echo "${BASH_REMATCH[1]}"
+    echo "device"
+    echo "${BASH_REMATCH[2]}"
+  else
+    fail "Invalid device specification: $device_spec"
+    fail "Supported formats:"
+    fail "  vendorid:productid (e.g., 1234:5678)"
+    fail "  bus.device (e.g., 001.002)"
+    return 1
+  fi
 }
 
 attach_usb_device() {
-    local vm_name="$1"
-    local device_spec="$2"
-    local device_name="${3:-usb-$(date +%s)}"
+  local vm_name="$1"
+  local device_spec="$2"
+  local device_name="${3:-usb-$(date +%s)}"
 
-    vm_check_exists "$vm_name" || return 1
+  vm_check_exists "$vm_name" || return 1
 
-    local state
-    state=$(virsh domstate "$vm_name")
-    if [[ "$state" != "running" ]]; then
-        fail "VM '$vm_name' is not running (state: $state)"
-        slog "Start the VM with: $0 start $vm_name"
-        return 1
+  local state
+  state=$(virsh domstate "$vm_name")
+  if [[ "$state" != "running" ]]; then
+    fail "VM '$vm_name' is not running (state: $state)"
+    slog "Start the VM with: $0 start $vm_name"
+    return 1
+  fi
+
+  # Parse device specification
+  local device_config
+  device_config=$(parse_usb_device "$device_spec") || return 1
+
+  slog "Attaching USB device to VM '$vm_name'..."
+  slog "  Device: $device_spec"
+  slog "  Name: $device_name"
+
+  # Parse the device configuration
+  local lines=()
+  while IFS= read -r line; do
+    if [[ -n "$line" ]]; then
+      lines+=("$line")
     fi
+  done <<<"$device_config"
 
-    # Parse device specification
-    local device_config
-    device_config=$(parse_usb_device "$device_spec") || return 1
+  # Create temporary XML file for USB device
+  local temp_xml
+  temp_xml=$(mktemp)
 
-    slog "Attaching USB device to VM '$vm_name'..."
-    slog "  Device: $device_spec"
-    slog "  Name: $device_name"
+  if [[ "${lines[0]}" == "vendor" ]]; then
+    # Vendor:Product ID format
+    local vendor_id="${lines[1]}"
+    local product_id="${lines[3]}"
 
-    # Parse the device configuration
-    local lines=()
-    while IFS= read -r line; do
-        if [[ -n "$line" ]]; then
-            lines+=("$line")
-        fi
-    done <<<"$device_config"
-
-    # Create temporary XML file for USB device
-    local temp_xml
-    temp_xml=$(mktemp)
-
-    if [[ "${lines[0]}" == "vendor" ]]; then
-        # Vendor:Product ID format
-        local vendor_id="${lines[1]}"
-        local product_id="${lines[3]}"
-
-        cat >"$temp_xml" <<EOF
+    cat >"$temp_xml" <<EOF
 <hostdev mode='subsystem' type='usb' managed='yes'>
   <source>
     <vendor id='0x$vendor_id'/>
@@ -544,75 +543,75 @@ attach_usb_device() {
   </source>
 </hostdev>
 EOF
-    elif [[ "${lines[0]}" == "bus" ]]; then
-        # Bus.Device format
-        local bus_num="${lines[1]}"
-        local dev_num="${lines[3]}"
+  elif [[ "${lines[0]}" == "bus" ]]; then
+    # Bus.Device format
+    local bus_num="${lines[1]}"
+    local dev_num="${lines[3]}"
 
-        cat >"$temp_xml" <<EOF
+    cat >"$temp_xml" <<EOF
 <hostdev mode='subsystem' type='usb' managed='yes'>
   <source>
     <address bus='$bus_num' device='$dev_num'/>
   </source>
 </hostdev>
 EOF
-    else
-        fail "Invalid device configuration"
-        rm -f "$temp_xml"
-        return 1
-    fi
-
-    # Attach the USB device
-    if virsh attach-device "$vm_name" "$temp_xml" --live; then
-        success "USB device '$device_spec' attached to VM '$vm_name'"
-        slog "The device should now be available inside the VM"
-    else
-        fail "Failed to attach USB device '$device_spec' to VM '$vm_name'"
-        rm -f "$temp_xml"
-        return 1
-    fi
-
+  else
+    fail "Invalid device configuration"
     rm -f "$temp_xml"
+    return 1
+  fi
+
+  # Attach the USB device
+  if virsh attach-device "$vm_name" "$temp_xml" --live; then
+    success "USB device '$device_spec' attached to VM '$vm_name'"
+    slog "The device should now be available inside the VM"
+  else
+    fail "Failed to attach USB device '$device_spec' to VM '$vm_name'"
+    rm -f "$temp_xml"
+    return 1
+  fi
+
+  rm -f "$temp_xml"
 }
 
 detach_usb_device() {
-    local vm_name="$1"
-    local device_spec="$2"
+  local vm_name="$1"
+  local device_spec="$2"
 
-    vm_check_exists "$vm_name" || return 1
+  vm_check_exists "$vm_name" || return 1
 
-    local state
-    state=$(virsh domstate "$vm_name")
-    if [[ "$state" != "running" ]]; then
-        fail "VM '$vm_name' is not running (state: $state)"
-        slog "Start the VM with: $0 start $vm_name"
-        return 1
+  local state
+  state=$(virsh domstate "$vm_name")
+  if [[ "$state" != "running" ]]; then
+    fail "VM '$vm_name' is not running (state: $state)"
+    slog "Start the VM with: $0 start $vm_name"
+    return 1
+  fi
+
+  # Parse device specification to create matching XML
+  local device_config
+  device_config=$(parse_usb_device "$device_spec") || return 1
+
+  slog "Detaching USB device '$device_spec' from VM '$vm_name'..."
+
+  # Parse the device configuration
+  local lines=()
+  while IFS= read -r line; do
+    if [[ -n "$line" ]]; then
+      lines+=("$line")
     fi
+  done <<<"$device_config"
 
-    # Parse device specification to create matching XML
-    local device_config
-    device_config=$(parse_usb_device "$device_spec") || return 1
+  # Create temporary XML file for USB device
+  local temp_xml
+  temp_xml=$(mktemp)
 
-    slog "Detaching USB device '$device_spec' from VM '$vm_name'..."
+  if [[ "${lines[0]}" == "vendor" ]]; then
+    # Vendor:Product ID format
+    local vendor_id="${lines[1]}"
+    local product_id="${lines[3]}"
 
-    # Parse the device configuration
-    local lines=()
-    while IFS= read -r line; do
-        if [[ -n "$line" ]]; then
-            lines+=("$line")
-        fi
-    done <<<"$device_config"
-
-    # Create temporary XML file for USB device
-    local temp_xml
-    temp_xml=$(mktemp)
-
-    if [[ "${lines[0]}" == "vendor" ]]; then
-        # Vendor:Product ID format
-        local vendor_id="${lines[1]}"
-        local product_id="${lines[3]}"
-
-        cat >"$temp_xml" <<EOF
+    cat >"$temp_xml" <<EOF
 <hostdev mode='subsystem' type='usb' managed='yes'>
   <source>
     <vendor id='0x$vendor_id'/>
@@ -620,193 +619,193 @@ detach_usb_device() {
   </source>
 </hostdev>
 EOF
-    elif [[ "${lines[0]}" == "bus" ]]; then
-        # Bus.Device format
-        local bus_num="${lines[1]}"
-        local dev_num="${lines[3]}"
+  elif [[ "${lines[0]}" == "bus" ]]; then
+    # Bus.Device format
+    local bus_num="${lines[1]}"
+    local dev_num="${lines[3]}"
 
-        cat >"$temp_xml" <<EOF
+    cat >"$temp_xml" <<EOF
 <hostdev mode='subsystem' type='usb' managed='yes'>
   <source>
     <address bus='$bus_num' device='$dev_num'/>
   </source>
 </hostdev>
 EOF
-    else
-        fail "Invalid device configuration"
-        rm -f "$temp_xml"
-        return 1
-    fi
-
-    # Detach the USB device
-    if virsh detach-device "$vm_name" "$temp_xml" --live; then
-        success "USB device '$device_spec' detached from VM '$vm_name'"
-    else
-        fail "Failed to detach USB device '$device_spec' from VM '$vm_name'"
-        fail "The device may not be attached or the specification may be incorrect"
-        rm -f "$temp_xml"
-        return 1
-    fi
-
+  else
+    fail "Invalid device configuration"
     rm -f "$temp_xml"
+    return 1
+  fi
+
+  # Detach the USB device
+  if virsh detach-device "$vm_name" "$temp_xml" --live; then
+    success "USB device '$device_spec' detached from VM '$vm_name'"
+  else
+    fail "Failed to detach USB device '$device_spec' from VM '$vm_name'"
+    fail "The device may not be attached or the specification may be incorrect"
+    rm -f "$temp_xml"
+    return 1
+  fi
+
+  rm -f "$temp_xml"
 }
 
 # Disk Device Management Functions
 list_host_disks() {
-    slog "Block devices available on host:"
-    echo
+  slog "Block devices available on host:"
+  echo
 
-    if ! command -v lsblk >/dev/null; then
-        fail "lsblk command not found. Please install util-linux package."
-        return 1
+  if ! command -v lsblk >/dev/null; then
+    fail "lsblk command not found. Please install util-linux package."
+    return 1
+  fi
+
+  echo "Format: NAME SIZE TYPE MOUNTPOINT MODEL"
+  echo "────────────────────────────────────────────────────────────────"
+
+  # List block devices with useful information
+  lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,MODEL -d -e 7,11 | while IFS= read -r line; do
+    # Skip header line and loop devices
+    if [[ "$line" =~ ^NAME ]] || [[ "$line" =~ loop ]]; then
+      continue
     fi
+    echo "$line"
+  done
 
-    echo "Format: NAME SIZE TYPE MOUNTPOINT MODEL"
-    echo "────────────────────────────────────────────────────────────────"
-
-    # List block devices with useful information
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,MODEL -d -e 7,11 | while IFS= read -r line; do
-        # Skip header line and loop devices
-        if [[ "$line" =~ ^NAME ]] || [[ "$line" =~ loop ]]; then
-            continue
-        fi
-        echo "$line"
-    done
-
-    echo
-    slog "Usage examples:"
-    slog "  Attach disk: $0 disk-attach VM_NAME /dev/sdX"
-    slog "  Attach NVMe: $0 disk-attach VM_NAME /dev/nvme0n1"
-    echo
-    warn "WARNING: Only attach unmounted disks to avoid data corruption!"
-    slog "Check mount status with: lsblk -f /dev/DEVICE"
+  echo
+  slog "Usage examples:"
+  slog "  Attach disk: $0 disk-attach VM_NAME /dev/sdX"
+  slog "  Attach NVMe: $0 disk-attach VM_NAME /dev/nvme0n1"
+  echo
+  warn "WARNING: Only attach unmounted disks to avoid data corruption!"
+  slog "Check mount status with: lsblk -f /dev/DEVICE"
 }
 
 list_vm_disks() {
-    local vm_name="$1"
-    vm_check_exists "$vm_name" || return 1
+  local vm_name="$1"
+  vm_check_exists "$vm_name" || return 1
 
-    slog "Disk devices attached to VM '$vm_name':"
+  slog "Disk devices attached to VM '$vm_name':"
+  echo
+
+  # Get disk devices from VM XML configuration
+  local disk_devices
+  disk_devices=$(virsh dumpxml "$vm_name" | grep -A 5 "disk.*type.*block" | grep -E "(source.*dev|target.*dev)" || true)
+
+  if [[ -z "$disk_devices" ]]; then
+    slog "No raw disk devices currently attached to VM '$vm_name'"
     echo
-
-    # Get disk devices from VM XML configuration
-    local disk_devices
-    disk_devices=$(virsh dumpxml "$vm_name" | grep -A 5 "disk.*type.*block" | grep -E "(source.*dev|target.*dev)" || true)
-
-    if [[ -z "$disk_devices" ]]; then
-        slog "No raw disk devices currently attached to VM '$vm_name'"
-        echo
-        slog "Standard VM disks:"
-        virsh domblklist "$vm_name" --details | grep -v "^Type"
-        return 0
-    fi
-
-    echo "Raw disk devices found in VM configuration:"
-    echo "─────────────────────────────────────────────"
-
-    # Parse and display disk device information
-    virsh dumpxml "$vm_name" | grep -A 10 "disk.*type.*block" | while IFS= read -r line; do
-        if [[ $line =~ source.*dev=.([^\'\"]+). ]]; then
-            source_dev="${BASH_REMATCH[1]}"
-        elif [[ $line =~ target.*dev=.([^\'\"]+). ]]; then
-            target_dev="${BASH_REMATCH[1]}"
-            if [[ -n "$source_dev" ]]; then
-                printf "Host Device: %s -> Guest Device: %s\n" "$source_dev" "$target_dev"
-                source_dev=""
-                target_dev=""
-            fi
-        fi
-    done
-
-    echo
-    slog "All VM disks:"
+    slog "Standard VM disks:"
     virsh domblklist "$vm_name" --details | grep -v "^Type"
+    return 0
+  fi
+
+  echo "Raw disk devices found in VM configuration:"
+  echo "─────────────────────────────────────────────"
+
+  # Parse and display disk device information
+  virsh dumpxml "$vm_name" | grep -A 10 "disk.*type.*block" | while IFS= read -r line; do
+    if [[ $line =~ source.*dev=.([^\'\"]+). ]]; then
+      source_dev="${BASH_REMATCH[1]}"
+    elif [[ $line =~ target.*dev=.([^\'\"]+). ]]; then
+      target_dev="${BASH_REMATCH[1]}"
+      if [[ -n "$source_dev" ]]; then
+        printf "Host Device: %s -> Guest Device: %s\n" "$source_dev" "$target_dev"
+        source_dev=""
+        target_dev=""
+      fi
+    fi
+  done
+
+  echo
+  slog "All VM disks:"
+  virsh domblklist "$vm_name" --details | grep -v "^Type"
 }
 
 parse_disk_device() {
-    local device_path="$1"
+  local device_path="$1"
 
-    # Validate device path format
-    if [[ ! "$device_path" =~ ^/dev/ ]]; then
-        fail "Invalid device path: $device_path"
-        fail "Device path must start with /dev/"
-        return 1
-    fi
+  # Validate device path format
+  if [[ ! "$device_path" =~ ^/dev/ ]]; then
+    fail "Invalid device path: $device_path"
+    fail "Device path must start with /dev/"
+    return 1
+  fi
 
-    # Check if device exists
-    if [[ ! -b "$device_path" ]]; then
-        fail "Block device not found: $device_path"
-        fail "Use 'lsblk' to list available block devices"
-        return 1
-    fi
+  # Check if device exists
+  if [[ ! -b "$device_path" ]]; then
+    fail "Block device not found: $device_path"
+    fail "Use 'lsblk' to list available block devices"
+    return 1
+  fi
 
-    # Check if device is mounted
-    if mount | grep -q "^$device_path"; then
-        fail "Device $device_path is currently mounted!"
-        fail "Unmount the device before attaching to VM:"
-        fail "  sudo umount $device_path"
-        return 1
-    fi
+  # Check if device is mounted
+  if mount | grep -q "^$device_path"; then
+    fail "Device $device_path is currently mounted!"
+    fail "Unmount the device before attaching to VM:"
+    fail "  sudo umount $device_path"
+    return 1
+  fi
 
-    # Check for mounted partitions
-    local mounted_partitions
-    mounted_partitions=$(mount | grep "^${device_path}[0-9]" || true)
-    if [[ -n "$mounted_partitions" ]]; then
-        fail "Device $device_path has mounted partitions:"
-        echo "$mounted_partitions"
-        fail "Unmount all partitions before attaching to VM"
-        return 1
-    fi
+  # Check for mounted partitions
+  local mounted_partitions
+  mounted_partitions=$(mount | grep "^${device_path}[0-9]" || true)
+  if [[ -n "$mounted_partitions" ]]; then
+    fail "Device $device_path has mounted partitions:"
+    echo "$mounted_partitions"
+    fail "Unmount all partitions before attaching to VM"
+    return 1
+  fi
 
-    echo "valid"
-    return 0
+  echo "valid"
+  return 0
 }
 
 attach_disk_device() {
-    local vm_name="$1"
-    local device_path="$2"
-    local device_name="${3:-disk-$(date +%s)}"
+  local vm_name="$1"
+  local device_path="$2"
+  local device_name="${3:-disk-$(date +%s)}"
 
-    vm_check_exists "$vm_name" || return 1
+  vm_check_exists "$vm_name" || return 1
 
-    local state
-    state=$(virsh domstate "$vm_name")
-    if [[ "$state" != "running" ]]; then
-        fail "VM '$vm_name' is not running (state: $state)"
-        slog "Start the VM with: $0 start $vm_name"
-        return 1
+  local state
+  state=$(virsh domstate "$vm_name")
+  if [[ "$state" != "running" ]]; then
+    fail "VM '$vm_name' is not running (state: $state)"
+    slog "Start the VM with: $0 start $vm_name"
+    return 1
+  fi
+
+  # Validate device
+  if ! parse_disk_device "$device_path" >/dev/null; then
+    return 1
+  fi
+
+  slog "Attaching disk device to VM '$vm_name'..."
+  slog "  Host Device: $device_path"
+  slog "  Guest Name: $device_name"
+
+  # Find next available target device (vdb, vdc, etc.)
+  local target_dev
+  local existing_targets
+  existing_targets=$(virsh domblklist "$vm_name" | awk 'NR>2 {print $1}' | grep -E '^vd[a-z]$' | sort || true)
+
+  # Start from vdb (vda is usually the main disk)
+  local next_letter="b"
+  while [[ "$existing_targets" =~ vd${next_letter} ]]; do
+    next_letter=$(echo "$next_letter" | tr 'a-y' 'b-z')
+    if [[ "$next_letter" > "z" ]]; then
+      fail "No available target devices (vda-vdz all in use)"
+      return 1
     fi
+  done
+  target_dev="vd${next_letter}"
 
-    # Validate device
-    if ! parse_disk_device "$device_path" >/dev/null; then
-        return 1
-    fi
+  # Create temporary XML file for disk device
+  local temp_xml
+  temp_xml=$(mktemp)
 
-    slog "Attaching disk device to VM '$vm_name'..."
-    slog "  Host Device: $device_path"
-    slog "  Guest Name: $device_name"
-
-    # Find next available target device (vdb, vdc, etc.)
-    local target_dev
-    local existing_targets
-    existing_targets=$(virsh domblklist "$vm_name" | awk 'NR>2 {print $1}' | grep -E '^vd[a-z]$' | sort || true)
-
-    # Start from vdb (vda is usually the main disk)
-    local next_letter="b"
-    while [[ "$existing_targets" =~ vd${next_letter} ]]; do
-        next_letter=$(echo "$next_letter" | tr 'a-y' 'b-z')
-        if [[ "$next_letter" > "z" ]]; then
-            fail "No available target devices (vda-vdz all in use)"
-            return 1
-        fi
-    done
-    target_dev="vd${next_letter}"
-
-    # Create temporary XML file for disk device
-    local temp_xml
-    temp_xml=$(mktemp)
-
-    cat >"$temp_xml" <<EOF
+  cat >"$temp_xml" <<EOF
 <disk type='block' device='disk'>
   <driver name='qemu' type='raw' cache='none' io='native'/>
   <source dev='$device_path'/>
@@ -814,290 +813,290 @@ attach_disk_device() {
 </disk>
 EOF
 
-    # Attach the disk device
-    if virsh attach-device "$vm_name" "$temp_xml" --live; then
-        success "Disk device '$device_path' attached to VM '$vm_name' as '$target_dev'"
-        slog "The device should now be available inside the VM as /dev/$target_dev"
-        echo
-        slog "Inside the VM, you can:"
-        slog "  - Check device: lsblk | grep $target_dev"
-        slog "  - Create filesystem: sudo mkfs.ext4 /dev/$target_dev"
-        slog "  - Mount device: sudo mount /dev/$target_dev /mnt"
-    else
-        fail "Failed to attach disk device '$device_path' to VM '$vm_name'"
-        rm -f "$temp_xml"
-        return 1
-    fi
-
+  # Attach the disk device
+  if virsh attach-device "$vm_name" "$temp_xml" --live; then
+    success "Disk device '$device_path' attached to VM '$vm_name' as '$target_dev'"
+    slog "The device should now be available inside the VM as /dev/$target_dev"
+    echo
+    slog "Inside the VM, you can:"
+    slog "  - Check device: lsblk | grep $target_dev"
+    slog "  - Create filesystem: sudo mkfs.ext4 /dev/$target_dev"
+    slog "  - Mount device: sudo mount /dev/$target_dev /mnt"
+  else
+    fail "Failed to attach disk device '$device_path' to VM '$vm_name'"
     rm -f "$temp_xml"
+    return 1
+  fi
+
+  rm -f "$temp_xml"
 }
 
 detach_disk_device() {
-    local vm_name="$1"
-    local device_path="$2"
+  local vm_name="$1"
+  local device_path="$2"
 
-    vm_check_exists "$vm_name" || return 1
+  vm_check_exists "$vm_name" || return 1
 
-    local state
-    state=$(virsh domstate "$vm_name")
-    if [[ "$state" != "running" ]]; then
-        fail "VM '$vm_name' is not running (state: $state)"
-        slog "Start the VM with: $0 start $vm_name"
-        return 1
-    fi
+  local state
+  state=$(virsh domstate "$vm_name")
+  if [[ "$state" != "running" ]]; then
+    fail "VM '$vm_name' is not running (state: $state)"
+    slog "Start the VM with: $0 start $vm_name"
+    return 1
+  fi
 
-    # Validate device path format
-    if [[ ! "$device_path" =~ ^/dev/ ]]; then
-        fail "Invalid device path: $device_path"
-        fail "Device path must start with /dev/"
-        return 1
-    fi
+  # Validate device path format
+  if [[ ! "$device_path" =~ ^/dev/ ]]; then
+    fail "Invalid device path: $device_path"
+    fail "Device path must start with /dev/"
+    return 1
+  fi
 
-    slog "Detaching disk device '$device_path' from VM '$vm_name'..."
+  slog "Detaching disk device '$device_path' from VM '$vm_name'..."
 
-    # Create temporary XML file for disk device
-    local temp_xml
-    temp_xml=$(mktemp)
+  # Create temporary XML file for disk device
+  local temp_xml
+  temp_xml=$(mktemp)
 
-    cat >"$temp_xml" <<EOF
+  cat >"$temp_xml" <<EOF
 <disk type='block' device='disk'>
   <driver name='qemu' type='raw'/>
   <source dev='$device_path'/>
 </disk>
 EOF
 
-    # Detach the disk device
-    if virsh detach-device "$vm_name" "$temp_xml" --live; then
-        success "Disk device '$device_path' detached from VM '$vm_name'"
-        echo
-        warn "Make sure to unmount the device inside the VM before detaching!"
-        slog "If the device was mounted, unmount it first:"
-        slog "  sudo umount /dev/vdX  # (inside VM)"
-    else
-        fail "Failed to detach disk device '$device_path' from VM '$vm_name'"
-        fail "The device may not be attached or may be in use"
-        echo
-        slog "Troubleshooting:"
-        slog "  1. Check if device is attached: $0 disk-attached $vm_name"
-        slog "  2. Unmount device inside VM: sudo umount /dev/vdX"
-        slog "  3. Check for processes using device: sudo lsof /dev/vdX"
-        rm -f "$temp_xml"
-        return 1
-    fi
-
+  # Detach the disk device
+  if virsh detach-device "$vm_name" "$temp_xml" --live; then
+    success "Disk device '$device_path' detached from VM '$vm_name'"
+    echo
+    warn "Make sure to unmount the device inside the VM before detaching!"
+    slog "If the device was mounted, unmount it first:"
+    slog "  sudo umount /dev/vdX  # (inside VM)"
+  else
+    fail "Failed to detach disk device '$device_path' from VM '$vm_name'"
+    fail "The device may not be attached or may be in use"
+    echo
+    slog "Troubleshooting:"
+    slog "  1. Check if device is attached: $0 disk-attached $vm_name"
+    slog "  2. Unmount device inside VM: sudo umount /dev/vdX"
+    slog "  3. Check for processes using device: sudo lsof /dev/vdX"
     rm -f "$temp_xml"
+    return 1
+  fi
+
+  rm -f "$temp_xml"
 }
 
 if [[ $# -eq 0 ]]; then
-    usage
-    exit 1
+  usage
+  exit 1
 fi
 
 command="$1"
 vm_name="${2:-}"
 
 if [[ "$command" != "install" ]]; then
-    virt_check_prerequisites
+  virt_check_prerequisites
 fi
 
 case "$command" in
 install)
-    install_vm
-    ;;
+  install_vm
+  ;;
 clone)
-    src_vm="${2:-}"
-    dest_vm="${3:-}"
-    if [[ -z "$src_vm" || -z "$dest_vm" ]]; then
-        fail "Source and destination VM names required"
-        usage
-        exit 1
-    fi
-    clone_vm "$src_vm" "$dest_vm"
-    ;;
-list | ls)
-    vm_list
-    ;;
-status | info)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    vm_status "$vm_name"
-    ;;
-create | new)
-    vm-create "${@:2}"
-    ;;
-autostart)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    autostart_vm "$vm_name"
-    ;;
-start | boot)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    start_vm "$vm_name"
-    ;;
-stop | shutdown)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    stop_vm "$vm_name"
-    ;;
-restart | reboot)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    restart_vm "$vm_name"
-    ;;
-destroy | kill)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    destroy_vm "$vm_name"
-    ;;
-delete | rm)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    delete_vm "$vm_name"
-    ;;
-console)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    connect_console "$vm_name"
-    ;;
-ip)
-    show_ip "$vm_name"
-    ;;
-logs)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    show_logs "$vm_name"
-    ;;
-cloud-init-logs)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    show_cloud_init_logs "$vm_name"
-    ;;
-cleanup)
-    cleanup_vms
-    ;;
-ssh)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    vm_ssh "$vm_name" "${3:-}"
-    ;;
-usb-list)
-    list_host_usb_devices
-    ;;
-usb-attached)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    list_vm_usb_devices "$vm_name"
-    ;;
-usb-attach)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    device_spec="${3:-}"
-    [[ -z "$device_spec" ]] && {
-        fail "Device specification required"
-        usage
-        exit 1
-    }
-    attach_usb_device "$vm_name" "$device_spec" "${4:-}"
-    ;;
-usb-detach)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    device_spec="${3:-}"
-    [[ -z "$device_spec" ]] && {
-        fail "Device specification required"
-        usage
-        exit 1
-    }
-    detach_usb_device "$vm_name" "$device_spec"
-    ;;
-disk-list)
-    list_host_disks
-    ;;
-disk-attached)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    list_vm_disks "$vm_name"
-    ;;
-disk-attach)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    device_path="${3:-}"
-    [[ -z "$device_path" ]] && {
-        fail "Device path required"
-        usage
-        exit 1
-    }
-    attach_disk_device "$vm_name" "$device_path" "${4:-}"
-    ;;
-disk-detach)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    device_path="${3:-}"
-    [[ -z "$device_path" ]] && {
-        fail "Device path required"
-        usage
-        exit 1
-    }
-    detach_disk_device "$vm_name" "$device_path"
-    ;;
---help | -h)
-    usage
-    ;;
-*)
-    fail "Unknown command: $command"
+  src_vm="${2:-}"
+  dest_vm="${3:-}"
+  if [[ -z "$src_vm" || -z "$dest_vm" ]]; then
+    fail "Source and destination VM names required"
     usage
     exit 1
-    ;;
+  fi
+  clone_vm "$src_vm" "$dest_vm"
+  ;;
+list | ls)
+  vm_list
+  ;;
+status | info)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  vm_status "$vm_name"
+  ;;
+create | new)
+  vm-create "${@:2}"
+  ;;
+autostart)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  autostart_vm "$vm_name"
+  ;;
+start | boot)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  start_vm "$vm_name"
+  ;;
+stop | shutdown)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  stop_vm "$vm_name"
+  ;;
+restart | reboot)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  restart_vm "$vm_name"
+  ;;
+destroy | force-stop | kill)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  destroy_vm "$vm_name"
+  ;;
+delete | rm)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  delete_vm "$vm_name"
+  ;;
+console)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  connect_console "$vm_name"
+  ;;
+ip)
+  show_ip "$vm_name"
+  ;;
+logs)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  show_logs "$vm_name"
+  ;;
+cloud-init-logs)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  show_cloud_init_logs "$vm_name"
+  ;;
+cleanup)
+  cleanup_vms
+  ;;
+ssh)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  vm_ssh "$vm_name" "${3:-}"
+  ;;
+usb-list)
+  list_host_usb_devices
+  ;;
+usb-attached)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  list_vm_usb_devices "$vm_name"
+  ;;
+usb-attach)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  device_spec="${3:-}"
+  [[ -z "$device_spec" ]] && {
+    fail "Device specification required"
+    usage
+    exit 1
+  }
+  attach_usb_device "$vm_name" "$device_spec" "${4:-}"
+  ;;
+usb-detach)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  device_spec="${3:-}"
+  [[ -z "$device_spec" ]] && {
+    fail "Device specification required"
+    usage
+    exit 1
+  }
+  detach_usb_device "$vm_name" "$device_spec"
+  ;;
+disk-list)
+  list_host_disks
+  ;;
+disk-attached)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  list_vm_disks "$vm_name"
+  ;;
+disk-attach)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  device_path="${3:-}"
+  [[ -z "$device_path" ]] && {
+    fail "Device path required"
+    usage
+    exit 1
+  }
+  attach_disk_device "$vm_name" "$device_path" "${4:-}"
+  ;;
+disk-detach)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  device_path="${3:-}"
+  [[ -z "$device_path" ]] && {
+    fail "Device path required"
+    usage
+    exit 1
+  }
+  detach_disk_device "$vm_name" "$device_path"
+  ;;
+--help | -h)
+  usage
+  ;;
+*)
+  fail "Unknown command: $command"
+  usage
+  exit 1
+  ;;
 esac

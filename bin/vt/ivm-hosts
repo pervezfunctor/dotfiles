@@ -135,7 +135,7 @@ main() {
         }
         vm_hosts_remove "$vm_name"
         ;;
-    list)
+    ls | list)
         vm_hosts_list
         ;;
     update)

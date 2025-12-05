@@ -2,12 +2,9 @@
 
 # shellcheck disable=SC1091
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
-export DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
-source "$DOT_DIR/share/utils"
-source "$DOT_DIR/share/fns"
-source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/vm-utils"
 
 trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
 
@@ -183,23 +180,6 @@ detect_user_for_vm() {
   fi
 }
 
-get_ip_for_vm() {
-  local ip_with_mask
-  ip_with_mask=$(virsh --connect qemu:///system domifaddr --source agent "$1" 2>/dev/null |
-    awk '$1 ~ /^(enp|eth)/ && $3 ~ /ipv4/ {print $4; exit}') || true
-
-  if [[ -n "$ip_with_mask" ]]; then
-    printf '%s\n' "$ip_with_mask" | cut -d'/' -f1
-    return 0
-  fi
-
-  # Fallback: first non-loopback IPv4 if enp*/eth* not found
-  virsh --connect qemu:///system domifaddr --source agent "$1" 2>/dev/null |
-    awk '/ipv4/ && $1 !~ /^lo$/ {print $4}' |
-    head -n1 |
-    cut -d'/' -f1
-}
-
 ssh_vme() {
   local vm user ip
   vm="$1"
@@ -215,7 +195,12 @@ ssh_vme() {
     user=$(detect_user_for_vm "$vm")
   fi
 
-  ip=$(get_ip_for_vm "$vm")
+  if ! ip=$(vm_ip "$vm"); then
+    echo "Error: could not determine IP for VM '$vm'"
+    echo "- Ensure the VM is running and QEMU guest agent is installed."
+    echo "- Try: $0 start $vm; then wait a few seconds."
+    exit 1
+  fi
   if [[ -z "$ip" ]]; then
     echo "Error: could not determine IP for VM '$vm'"
     echo "- Ensure the VM is running and QEMU guest agent is installed."
@@ -241,10 +226,17 @@ ssh_vme() {
 exec_vme() {
   local vm="$1"
   shift
+  local user="$2"
   local command="$*"
 
   if [[ -z "$vm" ]]; then
     echo "Error: VM name required for exec"
+    echo "Usage: $0 exec <vm-name> <command>"
+    exit 1
+  fi
+
+  if [[ -z "$user" ]]; then
+    echo "Error: User required for exec"
     echo "Usage: $0 exec <vm-name> <command>"
     exit 1
   fi
@@ -255,9 +247,7 @@ exec_vme() {
     exit 1
   fi
 
-  local user ip
-  user=$(detect_user_for_vm "$vm")
-  ip=$(get_ip_for_vm "$vm")
+  ip=$(vm_ip "$vm")
 
   if [[ -z "$ip" ]]; then
     echo "Error: could not determine IP for VM '$vm'"
@@ -314,8 +304,9 @@ net_vme() {
   local command
   command="$1"
   shift
+
   case "$command" in
-  list)
+  ls | list)
     virsh --connect qemu:///system net-list --all
     ;;
   info)
@@ -330,7 +321,7 @@ net_vme() {
   stop)
     virsh --connect qemu:///system net-destroy "$@"
     ;;
-  delete)
+  rm | delete)
     virsh --connect qemu:///system net-destroy "$@" >/dev/null 2>&1 || true
     virsh --connect qemu:///system net-undefine "$@"
     ;;
@@ -405,13 +396,13 @@ main() {
     {
       target=$(resolve_vm_name "$vm_name")
     } || exit 1
-    console_vme "$target"
+    console_vme "$target" "${@:2}"
     ;;
   show-ip)
     {
       target=$(resolve_vm_name "$vm_name")
     } || exit 1
-    show_ip_vme "$target"
+    show_ip_vme "$target" "${@:2}"
     ;;
   net)
     net_vme "$@"
@@ -420,19 +411,19 @@ main() {
     {
       target=$(resolve_vm_name "$vm_name")
     } || exit 1
-    logs_vme "$target"
+    logs_vme "$target" "${@:2}"
     ;;
   ssh)
     {
       target=$(resolve_vm_name "$vm_name")
     } || exit 1
-    ssh_vme "$target" "${3:-}"
+    ssh_vme "$target" "${@:2}"
     ;;
   exec)
     {
       target=$(resolve_vm_name "$vm_name")
     } || exit 1
-    exec_vme "$target" "${@:3}"
+    exec_vme "$target" "${@:2}"
     ;;
   --help | -h)
     usage

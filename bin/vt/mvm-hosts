@@ -8,7 +8,7 @@ source ~/.ilm/share/utils
 set -euo pipefail
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 <command> [options]
 
 Manage /etc/hosts entries for Multipass VMs automatically.
@@ -30,198 +30,198 @@ EOF
 }
 
 get_vm_ip() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    if ! multipass info "$vm_name" &>/dev/null; then
-        return 1
-    fi
+  if ! multipass info "$vm_name" &>/dev/null; then
+    return 1
+  fi
 
-    local state
-    state=$(multipass info "$vm_name" | grep "State:" | awk '{print $2}')
+  local state
+  state=$(multipass info "$vm_name" | grep "State:" | awk '{print $2}')
 
-    if [[ "$state" != "Running" ]]; then
-        return 2
-    fi
+  if [[ "$state" != "Running" ]]; then
+    return 2
+  fi
 
-    local ip
-    ip=$(multipass info "$vm_name" | grep "IPv4:" | awk '{print $2}')
+  local ip
+  ip=$(multipass info "$vm_name" | grep "IPv4:" | awk '{print $2}')
 
-    if [[ -z "$ip" ]]; then
-        return 3
-    fi
+  if [[ -z "$ip" ]]; then
+    return 3
+  fi
 
-    echo "$ip"
-    return 0
+  echo "$ip"
+  return 0
 }
 
 mvm_hosts_add() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    local ip
-    ip=$(get_vm_ip "$vm_name")
-    local ret=$?
-    if [[ $ret -ne 0 ]]; then
-        fail "Could not get IP for Multipass VM '$vm_name'. Is it running?"
-        return 1
-    fi
+  local ip
+  ip=$(get_vm_ip "$vm_name")
+  local ret=$?
+  if [[ $ret -ne 0 ]]; then
+    fail "Could not get IP for Multipass VM '$vm_name'. Is it running?"
+    return 1
+  fi
 
-    # Check if entry already exists
-    if grep -qE "^[0-9.]+\s+$vm_name(\s|$)" /etc/hosts; then
-        warn "Entry for '$vm_name' already exists in /etc/hosts"
-        # Update existing entry
-        sudo sed -i "/^[0-9.]+\s\+$vm_name(\s|$)/d" /etc/hosts
-    fi
+  # Check if entry already exists
+  if grep -qE "^[0-9.]+\s+$vm_name(\s|$)" /etc/hosts; then
+    warn "Entry for '$vm_name' already exists in /etc/hosts"
+    # Update existing entry
+    sudo sed -i "/^[0-9.]+\s\+$vm_name(\s|$)/d" /etc/hosts
+  fi
 
-    echo "$ip $vm_name" | sudo tee -a /etc/hosts >/dev/null
-    success "Added $vm_name ($ip) to /etc/hosts"
+  echo "$ip $vm_name" | sudo tee -a /etc/hosts >/dev/null
+  success "Added $vm_name ($ip) to /etc/hosts"
 }
 
 mvm_hosts_remove() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    if grep -q "^[0-9.]* .*$vm_name" /etc/hosts; then
-        sudo sed -i "/^[0-9.]* .*$vm_name/d" /etc/hosts
-        success "Removed $vm_name from /etc/hosts"
-    else
-        warn "No entry found for '$vm_name' in /etc/hosts"
-    fi
+  if grep -q "^[0-9.]* .*$vm_name" /etc/hosts; then
+    sudo sed -i "/^[0-9.]* .*$vm_name/d" /etc/hosts
+    success "Removed $vm_name from /etc/hosts"
+  else
+    warn "No entry found for '$vm_name' in /etc/hosts"
+  fi
 }
 
 mvm_hosts_list() {
-    slog "Multipass VM entries in /etc/hosts:"
-    echo
+  slog "Multipass VM entries in /etc/hosts:"
+  echo
 
-    # Get all Multipass VM names
-    local vm_names
-    vm_names=$(multipass list --format csv | tail -n +2 | cut -d',' -f1)
+  # Get all Multipass VM names
+  local vm_names
+  vm_names=$(multipass list --format csv | tail -n +2 | cut -d',' -f1)
 
-    if [[ -z "$vm_names" ]]; then
-        warn "No Multipass VMs found"
-        return 0
+  if [[ -z "$vm_names" ]]; then
+    warn "No Multipass VMs found"
+    return 0
+  fi
+
+  # Find entries in /etc/hosts for these VMs
+  local found=false
+  while IFS= read -r vm; do
+    if grep -q "^[0-9.]* .*$vm" /etc/hosts; then
+      grep "^[0-9.]* .*$vm" /etc/hosts
+      found=true
     fi
+  done <<<"$vm_names"
 
-    # Find entries in /etc/hosts for these VMs
-    local found=false
-    while IFS= read -r vm; do
-        if grep -q "^[0-9.]* .*$vm" /etc/hosts; then
-            grep "^[0-9.]* .*$vm" /etc/hosts
-            found=true
-        fi
-    done <<<"$vm_names"
-
-    if [[ "$found" == "false" ]]; then
-        warn "No Multipass VM entries found in /etc/hosts"
-    fi
+  if [[ "$found" == "false" ]]; then
+    warn "No Multipass VM entries found in /etc/hosts"
+  fi
 }
 
 mvm_hosts_update_all() {
-    slog "Updating /etc/hosts for all running Multipass VMs..."
+  slog "Updating /etc/hosts for all running Multipass VMs..."
 
-    local vms
-    vms=$(multipass list --format csv | grep "Running" | cut -d',' -f1)
+  local vms
+  vms=$(multipass list --format csv | grep "Running" | cut -d',' -f1)
 
-    if [[ -z "$vms" ]]; then
-        warn "No running Multipass VMs found"
-        return 0
+  if [[ -z "$vms" ]]; then
+    warn "No running Multipass VMs found"
+    return 0
+  fi
+
+  while IFS= read -r vm; do
+    if [[ -n "$vm" ]]; then
+      slog "Processing VM: $vm"
+      mvm_hosts_add "$vm"
     fi
+  done <<<"$vms"
 
-    while IFS= read -r vm; do
-        if [[ -n "$vm" ]]; then
-            slog "Processing VM: $vm"
-            mvm_hosts_add "$vm"
-        fi
-    done <<<"$vms"
-
-    success "Updated /etc/hosts for all running Multipass VMs"
+  success "Updated /etc/hosts for all running Multipass VMs"
 }
 
 mvm_hosts_clean() {
-    slog "Cleaning up /etc/hosts entries for non-existent Multipass VMs..."
+  slog "Cleaning up /etc/hosts entries for non-existent Multipass VMs..."
 
-    # Get all VM names from /etc/hosts
-    local host_vms
-    host_vms=$(grep -E "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" /etc/hosts | awk '{print $2}' || true)
+  # Get all VM names from /etc/hosts
+  local host_vms
+  host_vms=$(grep -E "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" /etc/hosts | awk '{print $2}' || true)
 
-    if [[ -z "$host_vms" ]]; then
-        slog "No VM entries found in /etc/hosts"
-        return 0
+  if [[ -z "$host_vms" ]]; then
+    slog "No VM entries found in /etc/hosts"
+    return 0
+  fi
+
+  # Get all existing Multipass VM names
+  local multipass_vms
+  multipass_vms=$(multipass list --format csv | tail -n +2 | cut -d',' -f1)
+
+  while IFS= read -r vm; do
+    if [[ -n "$vm" ]]; then
+      # Check if this VM exists in Multipass
+      if ! echo "$multipass_vms" | grep -q "^$vm$"; then
+        warn "VM '$vm' no longer exists in Multipass, removing from /etc/hosts"
+        vm_hosts_remove "$vm"
+      fi
     fi
+  done <<<"$host_vms"
 
-    # Get all existing Multipass VM names
-    local multipass_vms
-    multipass_vms=$(multipass list --format csv | tail -n +2 | cut -d',' -f1)
-
-    while IFS= read -r vm; do
-        if [[ -n "$vm" ]]; then
-            # Check if this VM exists in Multipass
-            if ! echo "$multipass_vms" | grep -q "^$vm$"; then
-                warn "VM '$vm' no longer exists in Multipass, removing from /etc/hosts"
-                vm_hosts_remove "$vm"
-            fi
-        fi
-    done <<<"$host_vms"
-
-    success "Cleanup complete"
+  success "Cleanup complete"
 }
 
 if [[ $# -eq 0 ]]; then
-    usage
-    exit 1
+  usage
+  exit 1
 fi
 
 command="$1"
 vm_name="${2:-}"
 
 check_prerequisites() {
-    if ! has_cmd multipass; then
-        fail "Multipass is not installed or not in PATH. Please install Multipass first."
-        exit 1
-    fi
+  if ! has_cmd multipass; then
+    fail "Multipass is not installed or not in PATH. Please install Multipass first."
+    exit 1
+  fi
 
-    if ! multipass list &>/dev/null; then
-        fail "Multipass is not running. Please start Multipass first."
-        exit 1
-    fi
+  if ! multipass list &>/dev/null; then
+    fail "Multipass is not running. Please start Multipass first."
+    exit 1
+  fi
 }
 
 main() {
-    check_prerequisites
+  check_prerequisites
 
-    case "$command" in
-    add)
-        [[ -z "$vm_name" ]] && {
-            fail "VM name required"
-            usage
-            exit 1
-        }
-        mvm_hosts_add "$vm_name"
-        ;;
-    remove)
-        [[ -z "$vm_name" ]] && {
-            fail "VM name required"
-            usage
-            exit 1
-        }
-        mvm_hosts_remove "$vm_name"
-        ;;
-    list)
-        mvm_hosts_list
-        ;;
-    update)
-        mvm_hosts_update_all
-        ;;
-    clean)
-        mvm_hosts_clean
-        ;;
-    --help | -h)
-        usage
-        ;;
-    *)
-        fail "Unknown command: $command"
-        usage
-        exit 1
-        ;;
-    esac
+  case "$command" in
+  add)
+    [[ -z "$vm_name" ]] && {
+      fail "VM name required"
+      usage
+      exit 1
+    }
+    mvm_hosts_add "$vm_name"
+    ;;
+  remove)
+    [[ -z "$vm_name" ]] && {
+      fail "VM name required"
+      usage
+      exit 1
+    }
+    mvm_hosts_remove "$vm_name"
+    ;;
+  ls | list)
+    mvm_hosts_list
+    ;;
+  update)
+    mvm_hosts_update_all
+    ;;
+  clean)
+    mvm_hosts_clean
+    ;;
+  --help | -h)
+    usage
+    ;;
+  *)
+    fail "Unknown command: $command"
+    usage
+    exit 1
+    ;;
+  esac
 }
 
 main "$@"

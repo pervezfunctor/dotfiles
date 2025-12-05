@@ -468,25 +468,19 @@ if [[ $# -eq 0 ]]; then
 fi
 
 command="$1"
-container_name="${2:-}"
 shift
 
 incus_check
 
 case "$command" in
-list)
-  ict_list "${@:3}"
+ls | list)
+  ict_list "$@"
   ;;
-list-remote-images)
+lsi | list-remote-images)
   list_remote_images
   ;;
 status)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  container_status "$container_name"
+  container_status "$@"
   ;;
 create)
   create_ict "$@"
@@ -497,148 +491,56 @@ create-all)
 start)
   handle_multiple_arguments ict start "$@"
   ;;
-kill)
+force-stop | kill)
   handle_multiple_arguments ict kill "$@"
   ;;
 restart)
   handle_multiple_arguments ict restart "$@"
   ;;
-delete)
+rm | delete)
   handle_multiple_arguments ict delete "$@"
   ;;
 shell)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  enter_shell "$container_name"
+  enter_shell "$@"
   ;;
 exec)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  [[ $# -lt 3 ]] && {
-    fail "Command required"
-    usage
-    exit 1
-  }
-  exec_in_ict "$container_name" "${@:3}"
+  exec_in_ict "$@"
   ;;
 ip)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  show_ict_ip "$container_name"
+  show_ict_ip "$@"
   ;;
 ssh)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  ict_ssh "$container_name" "${3:-}"
+  ict_ssh "$@"
   ;;
 info)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  show_ict_info "$container_name"
+  show_ict_info "$@"
   ;;
 config)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  show_ict_config "$container_name"
+  show_ict_config "$@"
   ;;
 logs)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  show_logs "$container_name" "${3:-}"
+  show_logs "$@"
   ;;
 snapshot)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  create_snapshot "$container_name" "${3:-}"
+  create_snapshot "$@"
   ;;
 restore)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  [[ -z "${3:-}" ]] && {
-    fail "Snapshot name required"
-    usage
-    exit 1
-  }
-  restore_snapshot "$container_name" "$3"
+  restore_snapshot "$@"
   ;;
 copy)
-  [[ -z "$container_name" ]] && {
-    fail "Source container name required"
-    usage
-    exit 1
-  }
-  [[ -z "${3:-}" ]] && {
-    fail "Destination container name required"
-    usage
-    exit 1
-  }
-  copy_ict "$container_name" "$3"
+  copy_ict "$@"
   ;;
 usb-list)
   list_host_usb_devices
   ;;
 usb-attached)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  list_ict_usb_devices "$container_name"
+  list_ict_usb_devices "$@"
   ;;
 usb-attach)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  device_spec="${3:-}"
-  [[ -z "$device_spec" ]] && {
-    fail "Device specification required"
-    usage
-    exit 1
-  }
-  attach_usb_device "$container_name" "$device_spec" "${4:-}"
+  attach_usb_device "$@"
   ;;
 usb-detach)
-  [[ -z "$container_name" ]] && {
-    fail "Container name required"
-    usage
-    exit 1
-  }
-  device_name="${3:-}"
-  [[ -z "$device_name" ]] && {
-    fail "Device name required"
-    usage
-    exit 1
-  }
-  detach_usb_device "$container_name" "$device_name"
+  detach_usb_device "$@"
   ;;
 --help | -h)
   usage

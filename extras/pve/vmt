@@ -95,10 +95,10 @@ parse_args() {
   create-all)
     CREATE_ALL_ARGS=("$@")
     ;;
-  list)
+  ls | list)
     # No additional arguments for list
     ;;
-  delete)
+  rm | delete)
     if [[ $# -eq 0 ]]; then
       log_error "VM ID is required for 'delete' command"
       usage
@@ -293,10 +293,10 @@ main() {
   create-all)
     create_all_templates
     ;;
-  list)
+  ls | list)
     list_templates
     ;;
-  delete)
+  rm | delete)
     delete_template "$VM_ID"
     ;;
   delete-all)

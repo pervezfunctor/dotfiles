@@ -159,7 +159,7 @@ add)
   }
   vm_ssh_add "$vm_name" "$ssh_user"
   ;;
-remove)
+delete | remove)
   [[ -z "$vm_name" ]] && {
     fail "VM name required"
     usage
@@ -167,7 +167,7 @@ remove)
   }
   vm_ssh_remove "$vm_name"
   ;;
-list)
+ls | list)
   vm_ssh_list
   ;;
 update)

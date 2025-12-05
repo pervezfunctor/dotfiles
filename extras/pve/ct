@@ -170,7 +170,7 @@ COMMANDS:
     create-all <storage>      Create containers from all available templates
     create-all --password <password> <storage>  Create containers with password
     start <ct-id...>          Start one or more containers
-    stop <ct-id...>           Stop one or more containers
+    kill <ct-id...>           Stop one or more containers
     restart <ct-id...>        Restart one or more containers
     shutdown <ct-id...>       Gracefully stop one or more containers
     delete <ct-id...>         Delete one or more containers completely
@@ -193,8 +193,8 @@ EXAMPLES:
     $0 status 100              # Show status of container 100
     $0 start 100               # Start container 100
     $0 start 100 101 102       # Start containers 100, 101, and 102
-    $0 stop 100                # Stop container 100
-    $0 stop 100 101 102        # Stop containers 100, 101, and 102
+    $0 kill 100                # Stop container 100
+    $0 kill 100 101 102        # Stop containers 100, 101, and 102
     $0 delete 100              # Delete container 100
     $0 delete 100 101 102      # Delete containers 100, 101, and 102
     $0 console 100             # Connect to container console
@@ -232,7 +232,7 @@ start_ct() {
   done
 }
 
-stop_ct() {
+kill_ct() {
   for ct_id in "$@"; do
     check_container "$ct_id"
     echo "⏹️ Stopping container $ct_id..."
@@ -472,11 +472,11 @@ main() {
     } || exit 1
     start_ct "${targets[@]}"
     ;;
-  stop)
+  force-stop | kill)
     {
       readarray -t targets < <(resolve_multiple_ct_ids "$@")
     } || exit 1
-    stop_ct "${targets[@]}"
+    kill_ct "${targets[@]}"
     ;;
   shutdown)
     {

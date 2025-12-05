@@ -3,26 +3,34 @@ set -euo pipefail
 
 CONFIG_FILE="${HOME}/.ssh/config"
 
+SCRIPT="$(basename "$0")"
+
+echo "$SCRIPT"
+
 usage() {
-    printf "Usage:\n"
-    printf "  %s list\n" "$0"
-    printf "  %s add <host> <hostname> <user> [port]\n" "$0"
-    printf "  %s remove <host>\n" "$0"
-    printf "\n"
-    printf "Examples:\n"
-    printf "  %s list\n" "$0"
-    printf "  %s add myvm 192.168.1.10 ubuntu 22\n" "$0"
-    printf "  %s remove myvm\n" "$0"
-    exit 1
+  printf "Usage:\n"
+  printf "  %s list\n" "$SCRIPT"
+  printf "  %s add --host <host> --user <user> [--port <port>] [--identity <identity_file>]\n" "$SCRIPT"
+  printf "  %s remove <host>\n" "$SCRIPT"
+  printf "\n"
+  printf "Examples:\n"
+  printf "  %s list\n" "$SCRIPT"
+  printf "  %s add --host myvm --user ubuntu --port 22 --identity ~/.ssh/id_rsa\n" "$SCRIPT"
+  printf "  %s remove myvm\n" "$SCRIPT"
+  exit 1
 }
 
 ensure_config_file() {
-    mkdir -p "${HOME}/.ssh"
-    touch "$CONFIG_FILE"
+  mkdir -p "${HOME}/.ssh"
+  touch "$CONFIG_FILE"
+
+  if ! grep -qE "^Include[[:space:]]+~/.ssh/conf.d/*.conf$" "$CONFIG_FILE"; then
+    echo "Include ~/.ssh/conf.d/*.conf" >>"$CONFIG_FILE"
+  fi
 }
 
 list_configs() {
-    awk '
+  awk '
       /^Host[[:space:]]+/ {
           host=$2
           print host
@@ -31,74 +39,110 @@ list_configs() {
 }
 
 host_exists() {
-    grep -qE "^Host[[:space:]]+$1\$" "$CONFIG_FILE"
+  grep -qE "^Host[[:space:]]+$1\$" "$CONFIG_FILE"
 }
 
 add_config() {
-    local host="$1"
-    local hostname="$2"
-    local user="$3"
-    local port="${4:-22}"
+  local host="$1"
+  local user="$2"
+  local port="${3:-22}"
+  local identity="${4:-}"
 
-    if host_exists "$host"; then
-        printf "Host '%s' already exists. Skipping (idempotent).\n" "$host"
-        return 0
+  if host_exists "$host"; then
+    printf "Host '%s' already exists. Skipping (idempotent).\n" "$host"
+    return 0
+  fi
+
+  {
+    echo ""
+    echo "Host $host"
+    echo "    HostName $host"
+    echo "    User $user"
+    echo "    Port $port"
+    echo "    IdentitiesOnly yes"
+    if [[ -n "$identity" ]]; then
+      echo "    IdentityFile $identity"
     fi
+  } >>"$CONFIG_FILE"
 
-    {
-      echo ""
-      echo "Host $host"
-      echo "    HostName $hostname"
-      echo "    User $user"
-      echo "    Port $port"
-      echo "    IdentitiesOnly yes"
-    } >> "$CONFIG_FILE"
-
-    printf "Added host '%s'.\n" "$host"
+  printf "Added host '%s'.\n" "$host"
 }
 
 remove_config() {
-    local host="$1"
+  local host="$1"
 
-    if ! host_exists "$host"; then
-        printf "Host '%s' not found. Skipping (idempotent).\n" "$host"
-        return 0
-    fi
+  if ! host_exists "$host"; then
+    printf "Host '%s' not found. Skipping (idempotent).\n" "$host"
+    return 0
+  fi
 
-    # Remove entire Host block (Host line + indented lines following)
-    # until next Host or EOF.
-    awk -v h="$host" '
+  # Remove entire Host block (Host line + indented lines following)
+  # until next Host or EOF.
+  awk -v h="$host" '
       BEGIN {skip=0}
       $0 ~ "^Host[[:space:]]+"h"$" { skip=1; next }
       /^Host[[:space:]]+/ { skip=0 }
       skip==1 { next }
       { print }
-    ' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"
+    ' "$CONFIG_FILE" >"${CONFIG_FILE}.tmp"
 
-    mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+  mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
 
-    printf "Removed host '%s'.\n" "$host"
+  printf "Removed host '%s'.\n" "$host"
 }
 
 main() {
-    ensure_config_file
+  ensure_config_file
 
-    case "${1:-}" in
-        list)
-            list_configs
-            ;;
-        add)
-            [[ $# -lt 4 ]] && usage
-            add_config "$2" "$3" "$4" "${5:-22}"
-            ;;
-        remove)
-            [[ $# -ne 2 ]] && usage
-            remove_config "$2"
-            ;;
-        *)
-            usage
-            ;;
-    esac
+  case "${1:-}" in
+  ls | list)
+    list_configs
+    ;;
+  add)
+    local host=""
+    local user=""
+    local port="22"
+    local identity=""
+
+    shift
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+      --host)
+        host="$2"
+        shift 2
+        ;;
+      --user)
+        user="$2"
+        shift 2
+        ;;
+      --port)
+        port="$2"
+        shift 2
+        ;;
+      --identity)
+        identity="$2"
+        shift 2
+        ;;
+      *)
+        usage
+        ;;
+      esac
+    done
+
+    if [[ -z "$host" || -z "$user" ]]; then
+      usage
+    fi
+
+    add_config "$host" "$user" "$port" "$identity"
+    ;;
+  remove)
+    [[ $# -ne 2 ]] && usage
+    remove_config "$2"
+    ;;
+  *)
+    usage
+    ;;
+  esac
 }
 
 main "$@"

@@ -6,14 +6,14 @@ set -euo pipefail
 source "$(dirname "$0")/dck-utils"
 
 if check_docker; then
-    docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}" 2>/dev/null | head -10 || true
+  docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}" 2>/dev/null | head -10 || true
 else
-    echo
-    exit 1
+  echo
+  exit 1
 fi
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 <command> [container-name] [args...]
 
 Manage Docker containers similar to other container management tools.
@@ -53,330 +53,330 @@ EOF
 }
 
 dck_install() {
-    slog "Installing Docker using ilmi..."
+  slog "Installing Docker using ilmi..."
 
-    if has_cmd ilmi; then
-        ilmi docker
-    else
-        fail "ilmi not found. Please install it first."
-    fi
+  if has_cmd ilmi; then
+    ilmi docker
+  else
+    fail "ilmi not found. Please install it first."
+  fi
 
-    if has_cmd docker; then
-        success "Docker installed successfully!"
-        echo
-        slog "Installed tools include:"
-        has_cmd docker && slog "  ✓ docker"
-        has_cmd docker-compose && slog "  ✓ docker-compose"
-        echo
-        slog "You can now use:"
-        slog "  $0 list                    # List containers"
-        slog "  $0 create ubuntu           # Create Ubuntu container"
-        slog "  $0 shell ubuntu            # Enter container"
-        echo
-        if ! docker info >/dev/null 2>&1; then
-            warn "Docker daemon is not running or not accessible."
-            slog "Start Docker with: sudo systemctl start docker"
-            slog "Add your user to docker group: sudo usermod -aG docker \$USER"
-            slog "Then log out and back in for group changes to take effect."
-        fi
-    else
-        fail "Docker installation failed. Please check the output above for errors."
-        return 1
+  if has_cmd docker; then
+    success "Docker installed successfully!"
+    echo
+    slog "Installed tools include:"
+    has_cmd docker && slog "  ✓ docker"
+    has_cmd docker-compose && slog "  ✓ docker-compose"
+    echo
+    slog "You can now use:"
+    slog "  $0 list                    # List containers"
+    slog "  $0 create ubuntu           # Create Ubuntu container"
+    slog "  $0 shell ubuntu            # Enter container"
+    echo
+    if ! docker info >/dev/null 2>&1; then
+      warn "Docker daemon is not running or not accessible."
+      slog "Start Docker with: sudo systemctl start docker"
+      slog "Add your user to docker group: sudo usermod -aG docker \$USER"
+      slog "Then log out and back in for group changes to take effect."
     fi
+  else
+    fail "Docker installation failed. Please check the output above for errors."
+    return 1
+  fi
 }
 
 dck_create() {
-    local distro="$1"
-    local container_name="${2:-$distro}"
-    check_docker || return 1
-    dck_check_exists "$container_name" || return 1
+  local distro="$1"
+  local container_name="${2:-$distro}"
+  check_docker || return 1
+  dck_check_exists "$container_name" || return 1
 
-    slog "Creating $distro Docker container: $container_name"
+  slog "Creating $distro Docker container: $container_name"
 
-    local image_name
-    case "$distro" in
-    ubuntu)
-        image_name="ubuntu:questing"
-        ;;
-    debian)
-        image_name="debian:latest"
-        ;;
-    arch | archlinux)
-        image_name="archlinux:latest"
-        ;;
-    fedora)
-        image_name="fedora:latest"
-        ;;
-    rocky)
-        image_name="rockylinux:9"
-        ;;
-    tumbleweed | tw)
-        image_name="opensuse/tumbleweed:latest"
-        ;;
-    alpine)
-        image_name="alpine:latest"
-        ;;
-    centos)
-        image_name="centos:stream9"
-        ;;
-    nixos)
-        image_name="nixos/nix:latest"
-        ;;
-    *)
-        fail "Unsupported distro: $distro"
-        slog "Supported distros: ubuntu, debian, arch, fedora, rocky, tumbleweed, alpine, centos, nixos"
-        return 1
-        ;;
-    esac
+  local image_name
+  case "$distro" in
+  ubuntu)
+    image_name="ubuntu:questing"
+    ;;
+  debian)
+    image_name="debian:latest"
+    ;;
+  arch | archlinux)
+    image_name="archlinux:latest"
+    ;;
+  fedora)
+    image_name="fedora:latest"
+    ;;
+  rocky)
+    image_name="rockylinux:9"
+    ;;
+  tumbleweed | tw)
+    image_name="opensuse/tumbleweed:latest"
+    ;;
+  alpine)
+    image_name="alpine:latest"
+    ;;
+  centos)
+    image_name="centos:stream9"
+    ;;
+  nixos)
+    image_name="nixos/nix:latest"
+    ;;
+  *)
+    fail "Unsupported distro: $distro"
+    slog "Supported distros: ubuntu, debian, arch, fedora, rocky, tumbleweed, alpine, centos, nixos"
+    return 1
+    ;;
+  esac
 
-    slog "Pulling image: $image_name"
-    if ! docker pull "$image_name"; then
-        fail "Failed to pull image: $image_name"
-        return 1
-    fi
+  slog "Pulling image: $image_name"
+  if ! docker pull "$image_name"; then
+    fail "Failed to pull image: $image_name"
+    return 1
+  fi
 
-    slog "Creating container with interactive shell..."
+  slog "Creating container with interactive shell..."
 
-    if docker run -dit --name "$container_name" "$image_name" /bin/bash >/dev/null 2>&1; then
-        success "Container '$container_name' created successfully with bash"
-    else
-        docker rm "$container_name" 2>/dev/null || true
-        fail "Failed to create container '$container_name'"
-        return 1
-    fi
+  if docker run -dit --name "$container_name" "$image_name" /bin/bash >/dev/null 2>&1; then
+    success "Container '$container_name' created successfully with bash"
+  else
+    docker rm "$container_name" 2>/dev/null || true
+    fail "Failed to create container '$container_name'"
+    return 1
+  fi
 
-    sleep 1
-    local state
-    state=$(dck_state "$container_name")
+  sleep 1
+  local state
+  state=$(dck_state "$container_name")
 
-    if [[ "$state" == "running" ]]; then
-        slog "Container status:"
-        docker ps --filter "name=^${container_name}$" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}"
-    else
-        warn "Container created but not running. Status: $state"
-        slog "You may need to start it manually: $0 start $container_name"
-    fi
+  if [[ "$state" == "running" ]]; then
+    slog "Container status:"
+    docker ps --filter "name=^${container_name}$" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}"
+  else
+    warn "Container created but not running. Status: $state"
+    slog "You may need to start it manually: $0 start $container_name"
+  fi
 }
 
 dck_start() {
-    local container_name="$1"
-    check_docker || return 1
-    dck_check_exists "$container_name" || return 1
+  local container_name="$1"
+  check_docker || return 1
+  dck_check_exists "$container_name" || return 1
 
-    local state
-    state=$(dck_state "$container_name")
+  local state
+  state=$(dck_state "$container_name")
 
-    if [[ "$state" == "running" ]]; then
-        warn "Container '$container_name' is already running"
-        return 0
-    fi
+  if [[ "$state" == "running" ]]; then
+    warn "Container '$container_name' is already running"
+    return 0
+  fi
 
-    slog "Starting container '$container_name'..."
-    if docker start "$container_name"; then
-        success "Container '$container_name' started"
-        docker ps --filter "name=^${container_name}$" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}"
-    else
-        fail "Failed to start container '$container_name'"
-        return 1
-    fi
+  slog "Starting container '$container_name'..."
+  if docker start "$container_name"; then
+    success "Container '$container_name' started"
+    docker ps --filter "name=^${container_name}$" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}"
+  else
+    fail "Failed to start container '$container_name'"
+    return 1
+  fi
 }
 
 dck_stop() {
-    local container_name="$1"
-    check_docker || return 1
+  local container_name="$1"
+  check_docker || return 1
 
-    if ! docker ps -a --format "{{.Names}}" | grep -q "^${container_name}$"; then
-        fail "Container '$container_name' not found"
-        return 1
-    fi
+  if ! docker ps -a --format "{{.Names}}" | grep -q "^${container_name}$"; then
+    fail "Container '$container_name' not found"
+    return 1
+  fi
 
-    local state
-    state=$(dck_state "$container_name")
+  local state
+  state=$(dck_state "$container_name")
 
-    if [[ "$state" != "running" ]]; then
-        warn "Container '$container_name' is not running"
-        return 0
-    fi
+  if [[ "$state" != "running" ]]; then
+    warn "Container '$container_name' is not running"
+    return 0
+  fi
 
-    slog "Stopping container '$container_name'..."
-    if docker stop "$container_name"; then
-        success "Container '$container_name' stopped"
-    else
-        fail "Failed to stop container '$container_name'"
-        return 1
-    fi
+  slog "Stopping container '$container_name'..."
+  if docker stop "$container_name"; then
+    success "Container '$container_name' stopped"
+  else
+    fail "Failed to stop container '$container_name'"
+    return 1
+  fi
 }
 
 dck_restart() {
-    local container_name="$1"
-    check_docker || return 1
+  local container_name="$1"
+  check_docker || return 1
 
-    if ! docker ps -a --format "{{.Names}}" | grep -q "^${container_name}$"; then
-        fail "Container '$container_name' not found"
-        return 1
-    fi
+  if ! docker ps -a --format "{{.Names}}" | grep -q "^${container_name}$"; then
+    fail "Container '$container_name' not found"
+    return 1
+  fi
 
-    slog "Restarting container '$container_name'..."
-    if docker restart "$container_name"; then
-        success "Container '$container_name' restarted"
-        sleep 1
-        docker ps --filter "name=^${container_name}$" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}"
-    else
-        fail "Failed to restart container '$container_name'"
-        return 1
-    fi
+  slog "Restarting container '$container_name'..."
+  if docker restart "$container_name"; then
+    success "Container '$container_name' restarted"
+    sleep 1
+    docker ps --filter "name=^${container_name}$" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.CreatedAt}}"
+  else
+    fail "Failed to restart container '$container_name'"
+    return 1
+  fi
 }
 
 dck_delete() {
-    local container_name="$1"
-    check_docker || return 1
-    dck_check_exists "$container_name" || return 1
+  local container_name="$1"
+  check_docker || return 1
+  dck_check_exists "$container_name" || return 1
 
-    warn "This will permanently delete container '$container_name' and all its data!"
-    read -p "Are you sure? (y/N): " -r
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        slog "Deletion cancelled"
-        return 0
-    fi
+  warn "This will permanently delete container '$container_name' and all its data!"
+  read -p "Are you sure? (y/N): " -r
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    slog "Deletion cancelled"
+    return 0
+  fi
 
-    local state
-    state=$(dck_state "$container_name")
-    if [[ "$state" == "running" ]]; then
-        slog "Stopping container first..."
-        docker stop "$container_name"
-    fi
+  local state
+  state=$(dck_state "$container_name")
+  if [[ "$state" == "running" ]]; then
+    slog "Stopping container first..."
+    docker stop "$container_name"
+  fi
 
-    slog "Deleting container '$container_name'..."
-    if docker rm "$container_name"; then
-        success "Container '$container_name' deleted successfully"
-    else
-        fail "Failed to delete container '$container_name'"
-        return 1
-    fi
+  slog "Deleting container '$container_name'..."
+  if docker rm "$container_name"; then
+    success "Container '$container_name' deleted successfully"
+  else
+    fail "Failed to delete container '$container_name'"
+    return 1
+  fi
 }
 
 dck_shell() {
-    local container_name="$1"
-    check_docker || return 1
+  local container_name="$1"
+  check_docker || return 1
 
-    if ! docker ps -a --format "{{.Names}}" | grep -q "^${container_name}$"; then
-        fail "Container '$container_name' not found"
-        return 1
-    fi
+  if ! docker ps -a --format "{{.Names}}" | grep -q "^${container_name}$"; then
+    fail "Container '$container_name' not found"
+    return 1
+  fi
 
-    local state
-    state=$(dck_state "$container_name")
+  local state
+  state=$(dck_state "$container_name")
 
-    if [[ "$state" != "running" ]]; then
-        fail "Container '$container_name' is not running"
-        slog "Start it with: $0 start $container_name"
-        return 1
-    fi
+  if [[ "$state" != "running" ]]; then
+    fail "Container '$container_name' is not running"
+    slog "Start it with: $0 start $container_name"
+    return 1
+  fi
 
-    slog "Entering shell of container '$container_name'..."
+  slog "Entering shell of container '$container_name'..."
 
-    if ! docker exec -it "$container_name" /bin/bash 2>/dev/null; then
-        docker exec -it "$container_name" /bin/sh
-    fi
+  if ! docker exec -it "$container_name" /bin/bash 2>/dev/null; then
+    docker exec -it "$container_name" /bin/sh
+  fi
 }
 
 dck_exec() {
-    local container_name="$1"
-    shift
-    local command="$*"
-    check_docker || return 1
-    dck_check_exists "$container_name" || return 1
+  local container_name="$1"
+  shift
+  local command="$*"
+  check_docker || return 1
+  dck_check_exists "$container_name" || return 1
 
-    local state
-    state=$(dck_state "$container_name")
+  local state
+  state=$(dck_state "$container_name")
 
-    if [[ "$state" != "running" ]]; then
-        fail "Container '$container_name' is not running"
-        slog "Start it with: $0 start $container_name"
-        return 1
-    fi
+  if [[ "$state" != "running" ]]; then
+    fail "Container '$container_name' is not running"
+    slog "Start it with: $0 start $container_name"
+    return 1
+  fi
 
-    slog "Executing command in container '$container_name': $command"
-    docker exec "$container_name" sh -c "$command"
+  slog "Executing command in container '$container_name': $command"
+  docker exec "$container_name" sh -c "$command"
 }
 
 dck_logs() {
-    local container_name="$1"
-    check_docker || return 1
-    dck_check_exists "$container_name" || return 1
+  local container_name="$1"
+  check_docker || return 1
+  dck_check_exists "$container_name" || return 1
 
-    slog "Showing logs for container '$container_name'..."
-    echo
-    docker logs "$container_name"
+  slog "Showing logs for container '$container_name'..."
+  echo
+  docker logs "$container_name"
 }
 
 dck_pull_image() {
-    local image_name="$1"
-    check_docker || return 1
+  local image_name="$1"
+  check_docker || return 1
 
-    slog "Pulling Docker image: $image_name"
-    if docker pull "$image_name"; then
-        success "Image '$image_name' pulled successfully"
-    else
-        fail "Failed to pull image '$image_name'"
-        return 1
-    fi
+  slog "Pulling Docker image: $image_name"
+  if docker pull "$image_name"; then
+    success "Image '$image_name' pulled successfully"
+  else
+    fail "Failed to pull image '$image_name'"
+    return 1
+  fi
 }
 
 dck_cleanup() {
-    check_docker || return 1
-    slog "Cleaning up stopped containers and orphaned data..."
+  check_docker || return 1
+  slog "Cleaning up stopped containers and orphaned data..."
 
-    local stopped_containers
-    stopped_containers=$(docker ps -a --filter "status=exited" --format "{{.Names}}")
+  local stopped_containers
+  stopped_containers=$(docker ps -a --filter "status=exited" --format "{{.Names}}")
 
-    if [[ -n "$stopped_containers" ]]; then
-        slog "Stopped containers found:"
-        echo "$stopped_containers"
-        echo
+  if [[ -n "$stopped_containers" ]]; then
+    slog "Stopped containers found:"
+    echo "$stopped_containers"
+    echo
 
-        read -p "Remove all stopped containers? (y/N): " -r
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            while IFS= read -r container; do
-                if [[ -n "$container" ]]; then
-                    slog "Removing stopped container: $container"
-                    docker rm "$container" 2>/dev/null || true
-                fi
-            done <<<"$stopped_containers"
-        fi
-    else
-        slog "No stopped containers found"
-    fi
-
-    slog "Checking for dangling images..."
-    local dangling_images
-    dangling_images=$(docker images -f "dangling=true" -q)
-
-    if [[ -n "$dangling_images" ]]; then
-        slog "Dangling images found"
-        read -p "Remove dangling images? (y/N): " -r
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            # shellcheck disable=SC2086
-            docker rmi $dangling_images 2>/dev/null || true
-            success "Dangling images removed"
-        fi
-    else
-        slog "No dangling images found"
-    fi
-
-    slog "Checking for unused volumes..."
-    read -p "Remove unused volumes? (y/N): " -r
+    read -p "Remove all stopped containers? (y/N): " -r
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker volume prune -f 2>/dev/null || true
-        success "Unused volumes removed"
+      while IFS= read -r container; do
+        if [[ -n "$container" ]]; then
+          slog "Removing stopped container: $container"
+          docker rm "$container" 2>/dev/null || true
+        fi
+      done <<<"$stopped_containers"
     fi
+  else
+    slog "No stopped containers found"
+  fi
 
-    success "Cleanup complete"
+  slog "Checking for dangling images..."
+  local dangling_images
+  dangling_images=$(docker images -f "dangling=true" -q)
+
+  if [[ -n "$dangling_images" ]]; then
+    slog "Dangling images found"
+    read -p "Remove dangling images? (y/N): " -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      # shellcheck disable=SC2086
+      docker rmi $dangling_images 2>/dev/null || true
+      success "Dangling images removed"
+    fi
+  else
+    slog "No dangling images found"
+  fi
+
+  slog "Checking for unused volumes..."
+  read -p "Remove unused volumes? (y/N): " -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    docker volume prune -f 2>/dev/null || true
+    success "Unused volumes removed"
+  fi
+
+  success "Cleanup complete"
 }
 
 if [[ $# -eq 0 ]]; then
-    usage
-    exit 1
+  usage
+  exit 1
 fi
 
 command="$1"
@@ -384,108 +384,108 @@ container_name="${2:-}"
 
 case "$command" in
 install)
-    dck_install
-    ;;
-list)
-    dck_list
-    ;;
+  dck_install
+  ;;
+ls | list)
+  dck_list
+  ;;
 status)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    dck_state "$container_name"
-    ;;
-create)
-    [[ -z "$container_name" ]] && {
-        fail "Distro name required"
-        usage
-        exit 1
-    }
-    dck_create "$container_name" "${3:-}"
-    ;;
-start)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    dck_start "$container_name"
-    ;;
-stop)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    dck_stop "$container_name"
-    ;;
-restart)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    dck_restart "$container_name"
-    ;;
-delete)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    dck_delete "$container_name"
-    ;;
-shell)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    dck_shell "$container_name"
-    ;;
-exec)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    [[ $# -lt 3 ]] && {
-        fail "Command required"
-        usage
-        exit 1
-    }
-    dck_exec "$container_name" "${@:3}"
-    ;;
-logs)
-    [[ -z "$container_name" ]] && {
-        fail "Container name required"
-        usage
-        exit 1
-    }
-    dck_logs "$container_name"
-    ;;
-pull)
-    [[ -z "$container_name" ]] && {
-        fail "Image name required"
-        usage
-        exit 1
-    }
-    dck_pull_image "$container_name"
-    ;;
-images)
-    dck_list
-    ;;
-cleanup)
-    dck_cleanup
-    ;;
---help | -h)
-    usage
-    ;;
-*)
-    fail "Unknown command: $command"
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
     usage
     exit 1
-    ;;
+  }
+  dck_state "$container_name"
+  ;;
+create)
+  [[ -z "$container_name" ]] && {
+    fail "Distro name required"
+    usage
+    exit 1
+  }
+  dck_create "$container_name" "${3:-}"
+  ;;
+start)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  dck_start "$container_name"
+  ;;
+stop)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  dck_stop "$container_name"
+  ;;
+restart)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  dck_restart "$container_name"
+  ;;
+rm | rm | delete)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  dck_delete "$container_name"
+  ;;
+shell)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  dck_shell "$container_name"
+  ;;
+exec)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  [[ $# -lt 3 ]] && {
+    fail "Command required"
+    usage
+    exit 1
+  }
+  dck_exec "$container_name" "${@:3}"
+  ;;
+logs)
+  [[ -z "$container_name" ]] && {
+    fail "Container name required"
+    usage
+    exit 1
+  }
+  dck_logs "$container_name"
+  ;;
+pull)
+  [[ -z "$container_name" ]] && {
+    fail "Image name required"
+    usage
+    exit 1
+  }
+  dck_pull_image "$container_name"
+  ;;
+images)
+  dck_list
+  ;;
+cleanup)
+  dck_cleanup
+  ;;
+--help | -h)
+  usage
+  ;;
+*)
+  fail "Unknown command: $command"
+  usage
+  exit 1
+  ;;
 esac
