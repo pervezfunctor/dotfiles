@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail -o errtrace
+
 # Reusable utility functions for file operations
 
 # create_backup - Create a timestamped backup of a file

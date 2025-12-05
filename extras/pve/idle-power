@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 echo "⚙️ Creating runtime power tuning service..."
 
@@ -27,7 +27,7 @@ cat <<'EOF' >/usr/local/sbin/power-tweaks.sh
 
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 echo "💤 Setting USB autosuspend..."
 for f in /sys/bus/usb/devices/*/power/control; do

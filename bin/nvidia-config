@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 echo "Enabling nvidia persistence mode"
 sudo systemctl start nvidia-persistenced

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 if [[ -z "${LEFTHOOK_FILES:-}" ]]; then
   exit 0
@@ -12,9 +12,9 @@ python_files=()
 for file in "${files[@]}"; do
   [[ -f "$file" ]] || continue
   case "$file" in
-    *.py)
-      python_files+=("$file")
-      ;;
+  *.py)
+    python_files+=("$file")
+    ;;
   esac
 done
 

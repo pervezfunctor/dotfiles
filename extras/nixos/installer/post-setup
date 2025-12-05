@@ -28,8 +28,9 @@ cleanup() {
   rm -rf "${TEMP_NIXOS_CONFIG_DIR}"
 }
 
+trap cleanup EXIT
+
 main() {
-  trap cleanup EXIT
 
   slog "Starting NixOS and Home Manager setup..."
 

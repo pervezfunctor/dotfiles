@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # CentOS/RHEL WSL Setup Script
 # Sets up a new user with SSH access and configures WSL settings for CentOS/RHEL

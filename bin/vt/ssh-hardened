@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 harden_sshd() {
-    mkdir -p /etc/ssh/sshd_config.d
+  mkdir -p /etc/ssh/sshd_config.d
 
-    cat >/etc/ssh/sshd_config.d/99-hardening.conf <<EOF
+  cat >/etc/ssh/sshd_config.d/99-hardening.conf <<EOF
 # Enforce modern SSH security settings
 Protocol 2
 PermitRootLogin no
@@ -25,19 +25,19 @@ EOF
 }
 
 restart_ssh() {
-    if systemctl list-unit-files | grep -q '^sshd.'; then
-        systemctl restart sshd
-    elif systemctl list-unit-files | grep -q '^ssh.'; then
-        systemctl restart ssh
-    else
-        echo "Warning: SSH service not found."
-    fi
+  if systemctl list-unit-files | grep -q '^sshd.'; then
+    systemctl restart sshd
+  elif systemctl list-unit-files | grep -q '^ssh.'; then
+    systemctl restart ssh
+  else
+    echo "Warning: SSH service not found."
+  fi
 }
 
 main() {
-    harden_sshd
-    restart_ssh
-    echo "SSH hardening applied."
+  harden_sshd
+  restart_ssh
+  echo "SSH hardening applied."
 }
 
 main

@@ -125,8 +125,11 @@ show_ip_vme() {
   echo
 }
 
-list_vme() {
+list_all_vme() {
   virsh --connect qemu:///system list --all
+}
+list_vmu() {
+  virsh --connect qemu:///system list --all | awk 'NR>2 && $0 !~ /^[-[:space:]]*$/ {print $2}'
 }
 
 resolve_vm_name() {
@@ -351,7 +354,7 @@ main() {
     sudo systemctl start libvirtd
     ;;
   list | ls)
-    list_vme
+    list_all_vme
     ;;
   cmd)
     cmd_vme "$@"

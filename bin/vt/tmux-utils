@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 

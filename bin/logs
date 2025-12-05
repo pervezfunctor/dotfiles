@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # Color definitions
 RED='\033[0;31m'
@@ -58,7 +58,6 @@ show_menu() {
   echo "0. Exit"
   echo -e "\nEnter your choice (0-18):"
 }
-
 
 execute_command() {
   local cmd="$1"

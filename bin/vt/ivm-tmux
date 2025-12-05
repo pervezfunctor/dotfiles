@@ -4,7 +4,7 @@
 
 # Support all virtual machines created by ivm-all
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 source "$(dirname "$0")/incus-utils"
 source "$(dirname "$0")/tmux-utils"

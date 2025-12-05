@@ -3,7 +3,7 @@
 # Backend must support the following commands
 # create, start, stop, restart, delete, list, ip, is-running
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 if [[ $# -eq 0 ]]; then
   echo "Usage: $(basename "$0") <command> <machine>..."
@@ -46,9 +46,8 @@ fi
 create_all() {
   echo "Creating ${command}s..."
   for machine in "${VT_DISTROS[@]}"; do
-    "$command" create --distro "$machine" --name "${machine}-testing" --username testing
+    yes | "$command" create --distro "$machine" --name "${machine}-testing" --username testing
   done
-  echo "Waiting for ${command}s to be ready..."
 }
 
 list_all() {
@@ -58,8 +57,9 @@ list_all() {
 
 ssh_all() {
   echo "ssh to ${command}s..."
-  "$command" ssh "${VT_MACHINES[@]}" testing
+  "$command" ssh "${VT_MACHINES[@]}" testing "echo ok"
 }
+
 stop_all() {
   echo "Stopping ${command}s..."
   for machine in "${VT_MACHINES[@]}"; do
@@ -85,17 +85,20 @@ restart_all() {
 
 delete_all() {
   echo "Deleting ${command}s..."
-  "$command" delete "${VT_MACHINES[@]}"
+  yes | "$command" delete "${VT_MACHINES[@]}"
 }
 
 main() {
   create_all
-  sleep 120
+  sleep 10
   list_all
   ssh_all
   stop_all
+  sleep 10
   start_all
+  sleep 10
   restart_all
+  sleep 10
   delete_all
 }
 

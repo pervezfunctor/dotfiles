@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # === Config ===
-DEBIAN_VERSION="${1:-bookworm}"   # can override with argument
+DEBIAN_VERSION="${1:-bookworm}" # can override with argument
 ARCH="${2:-amd64}"
 ISO_URL="https://cdimage.debian.org/debian-cd/current/${ARCH}/iso-cd/debian-${DEBIAN_VERSION}-${ARCH}-netinst.iso"
 ISO_NAME="debian-${DEBIAN_VERSION}-${ARCH}-netinst.iso"
@@ -11,7 +11,10 @@ NEW_ISO="debian-${DEBIAN_VERSION}-${ARCH}-auto.iso"
 PRESEED_FILE="./preseed.cfg"
 
 # === Functions ===
-err() { echo "Error: $*" >&2; exit 1; }
+err() {
+  echo "Error: $*" >&2
+  exit 1
+}
 
 require() {
   command -v "$1" >/dev/null 2>&1 || err "$1 not found. Install it."

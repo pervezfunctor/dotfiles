@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 PROXMOX_HOST=${1:-192.168.8.33}
 VMID=${2:-151}

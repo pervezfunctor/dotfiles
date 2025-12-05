@@ -15,7 +15,7 @@
 #   slog, info, warn, fail, success
 # Also exposes: dotfiles_log_init and dotfiles_log_close (internals handled automatically).
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # ------------------------------------------------------------------
 # Configuration

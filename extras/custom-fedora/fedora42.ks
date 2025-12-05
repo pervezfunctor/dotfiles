@@ -41,7 +41,7 @@ zsh
 %end
 
 %post --log=/root/ks-post.log
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 echo ">>> Creating Btrfs subvolumes..."
 
@@ -100,7 +100,7 @@ EOF
 
 cat > /usr/local/bin/setup-home.sh << 'EOF'
 #!/bin/bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 echo ">>> Customizing user home for 'pervez'..."
 

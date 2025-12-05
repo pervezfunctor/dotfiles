@@ -2,7 +2,7 @@
 
 # shellcheck disable=SC1091
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 source "$(dirname "$0")/vm-utils"
 
@@ -183,8 +183,12 @@ exec_vmu() {
   ssh -p "$port" "$user"@127.0.0.1 "$CMD"
 }
 
-list_vmu() {
+list_all_vmu() {
   virsh --connect qemu:///session list --all
+}
+
+list_vmu() {
+  virsh --connect qemu:///session list --all | awk 'NR>2 && $0 !~ /^[-[:space:]]*$/ {print $2}'
 }
 
 main() {
@@ -201,7 +205,7 @@ main() {
 
   case "$command" in
   list | ls)
-    list_vmu
+    list_all_vmu
     ;;
   cmd)
     cmd_vmu "$@"

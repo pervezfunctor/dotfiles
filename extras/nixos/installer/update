@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 NIXOS_CONFIG_DIR="${HOME}/nix-config"
 HM_CONFIG_DIR="${HOME}/hms-config"

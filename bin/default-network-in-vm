@@ -4,7 +4,7 @@
 # Usage: default-network-in-vm [SUBNET_PREFIX]
 # Example: default-network-in-vm 192.168.124
 
-set -e
+set -eou pipefail
 
 # Default subnet prefix if none provided
 DEFAULT_SUBNET_PREFIX="192.168.124"

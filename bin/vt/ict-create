@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # shellcheck disable=SC1091
 source "$(dirname "$0")/incus-utils"
@@ -219,7 +219,7 @@ create_container() {
   fi
 
   local result=0
-  if incus launch "${launch_args[@]}" || die "Failed to create container '$CONTAINER_NAME'"; then
+  if incus launch "${launch_args[@]}"; then
     success "Container '$CONTAINER_NAME' created successfully"
   else
     fail "Failed to create container '$CONTAINER_NAME'"

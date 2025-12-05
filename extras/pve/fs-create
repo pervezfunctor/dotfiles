@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 IFS=$'\n\t'
 
 usage() {
-    cat << EOF
+  cat <<EOF
 Usage: $0 [OPTIONS]
 
 Required options:
@@ -17,279 +17,279 @@ Example:
   $0 --disk /dev/sdb --filesystem zfs --group vmusers --storage-name vmstore --users user1,user2
 
 EOF
-    exit 1
+  exit 1
 }
 
 is_proxmox() {
-    [[ -f /etc/pve/storage.cfg ]]
+  [[ -f /etc/pve/storage.cfg ]]
 }
 
 check_prerequisites() {
-    local missing_tools=()
+  local missing_tools=()
 
-    # Check for common tools needed regardless of filesystem
-    for tool in blkid getent groupadd usermod mkdir mount; do
-        if ! command -v "$tool" >/dev/null 2>&1; then
-            missing_tools+=("$tool")
-        fi
+  # Check for common tools needed regardless of filesystem
+  for tool in blkid getent groupadd usermod mkdir mount; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      missing_tools+=("$tool")
+    fi
+  done
+
+  # Check filesystem-specific tools
+  if [[ "$FS" = "btrfs" ]]; then
+    for tool in mkfs.btrfs btrfs; do
+      if ! command -v "$tool" >/dev/null 2>&1; then
+        missing_tools+=("$tool")
+      fi
     done
+  elif [[ "$FS" = "zfs" ]]; then
+    for tool in zpool zfs setfacl; do
+      if ! command -v "$tool" >/dev/null 2>&1; then
+        missing_tools+=("$tool")
+      fi
+    done
+  else
+    echo "Error: Invalid filesystem type '$FS'. Must be 'btrfs' or 'zfs'."
+    exit 1
+  fi
 
-    # Check filesystem-specific tools
-    if [[ "$FS" = "btrfs" ]]; then
-        for tool in mkfs.btrfs btrfs; do
-            if ! command -v "$tool" >/dev/null 2>&1; then
-                missing_tools+=("$tool")
-            fi
-        done
-    elif [[ "$FS" = "zfs" ]]; then
-        for tool in zpool zfs setfacl; do
-            if ! command -v "$tool" >/dev/null 2>&1; then
-                missing_tools+=("$tool")
-            fi
-        done
-    else
-        echo "Error: Invalid filesystem type '$FS'. Must be 'btrfs' or 'zfs'."
-        exit 1
+  # Check for Proxmox tools if on a Proxmox system
+  if is_proxmox; then
+    if ! command -v pvesm >/dev/null 2>&1; then
+      missing_tools+=("pvesm")
     fi
+  fi
 
-    # Check for Proxmox tools if on a Proxmox system
-    if is_proxmox; then
-        if ! command -v pvesm >/dev/null 2>&1; then
-            missing_tools+=("pvesm")
-        fi
+  # Report missing tools
+  if [[ ${#missing_tools[@]} -gt 0 ]]; then
+    echo "Error: Missing required tools: ${missing_tools[*]}"
+    echo "Please install the missing tools and try again."
+    exit 1
+  fi
+
+  # Check if disk exists and is a block device
+  if [[ ! -b "$DISK" ]]; then
+    echo "Error: Disk '$DISK' is not a valid block device."
+    exit 1
+  fi
+
+  # Check if disk is already mounted or in use (comprehensive check)
+  local disk_in_use=0
+
+  # Check if directly mounted
+  if mount | grep -q "^$DISK "; then
+    echo "Error: Disk '$DISK' is directly mounted."
+    disk_in_use=1
+  fi
+
+  # Check if any partition is mounted
+  if lsblk -ln -o NAME,MOUNTPOINT "$DISK" 2>/dev/null | awk '$2 != "" {print $2}' | grep -q .; then
+    echo "Error: One or more partitions of '$DISK' are mounted."
+    disk_in_use=1
+  fi
+
+  # Check if disk is part of an LVM volume group
+  if command -v pvs >/dev/null 2>&1 && pvs --noheadings -o pv_name 2>/dev/null | grep -q "$DISK"; then
+    echo "Error: Disk '$DISK' is part of an LVM volume group."
+    disk_in_use=1
+  fi
+
+  # Check if disk is part of a ZFS pool
+  if command -v zpool >/dev/null 2>&1 && zpool status -g 2>/dev/null | grep -q "$DISK"; then
+    echo "Error: Disk '$DISK' is part of a ZFS pool."
+    disk_in_use=1
+  fi
+
+  # Check if disk is part of a mdadm array
+  if command -v mdadm >/dev/null 2>&1 && mdadm --detail --scan 2>/dev/null | grep -q "$DISK"; then
+    echo "Error: Disk '$DISK' is part of a RAID array."
+    disk_in_use=1
+  fi
+
+  # Check if device is actively in use (has open file descriptors)
+  if command -v lsof >/dev/null 2>&1 && lsof "$DISK" 2>/dev/null | grep -q .; then
+    echo "Error: Disk '$DISK' has active file descriptors (is in use)."
+    disk_in_use=1
+  fi
+
+  # Exit if disk is in use
+  if [[ $disk_in_use -eq 1 ]]; then
+    exit 1
+  fi
+
+  # Check for storage name conflicts
+  if [[ "$FS" = "zfs" ]] && command -v zpool >/dev/null 2>&1; then
+    if zpool list "$POOL" >/dev/null 2>&1; then
+      echo "Error: ZFS pool '$POOL' already exists."
+      exit 1
     fi
+  fi
 
-    # Report missing tools
-    if [[ ${#missing_tools[@]} -gt 0 ]]; then
-        echo "Error: Missing required tools: ${missing_tools[*]}"
-        echo "Please install the missing tools and try again."
-        exit 1
+  # Check for BTRFS filesystem with same label
+  if [[ "$FS" = "btrfs" ]] && command -v blkid >/dev/null 2>&1; then
+    if blkid -L "$STOR_NAME" >/dev/null 2>&1; then
+      echo "Error: A filesystem with label '$STOR_NAME' already exists."
+      exit 1
     fi
+  fi
 
-    # Check if disk exists and is a block device
-    if [[ ! -b "$DISK" ]]; then
-        echo "Error: Disk '$DISK' is not a valid block device."
-        exit 1
-    fi
-
-    # Check if disk is already mounted or in use (comprehensive check)
-    local disk_in_use=0
-
-    # Check if directly mounted
-    if mount | grep -q "^$DISK "; then
-        echo "Error: Disk '$DISK' is directly mounted."
-        disk_in_use=1
-    fi
-
-    # Check if any partition is mounted
-    if lsblk -ln -o NAME,MOUNTPOINT "$DISK" 2>/dev/null | awk '$2 != "" {print $2}' | grep -q .; then
-        echo "Error: One or more partitions of '$DISK' are mounted."
-        disk_in_use=1
-    fi
-
-    # Check if disk is part of an LVM volume group
-    if command -v pvs >/dev/null 2>&1 && pvs --noheadings -o pv_name 2>/dev/null | grep -q "$DISK"; then
-        echo "Error: Disk '$DISK' is part of an LVM volume group."
-        disk_in_use=1
-    fi
-
-    # Check if disk is part of a ZFS pool
-    if command -v zpool >/dev/null 2>&1 && zpool status -g 2>/dev/null | grep -q "$DISK"; then
-        echo "Error: Disk '$DISK' is part of a ZFS pool."
-        disk_in_use=1
-    fi
-
-    # Check if disk is part of a mdadm array
-    if command -v mdadm >/dev/null 2>&1 && mdadm --detail --scan 2>/dev/null | grep -q "$DISK"; then
-        echo "Error: Disk '$DISK' is part of a RAID array."
-        disk_in_use=1
-    fi
-
-    # Check if device is actively in use (has open file descriptors)
-    if command -v lsof >/dev/null 2>&1 && lsof "$DISK" 2>/dev/null | grep -q .; then
-        echo "Error: Disk '$DISK' has active file descriptors (is in use)."
-        disk_in_use=1
-    fi
-
-    # Exit if disk is in use
-    if [[ $disk_in_use -eq 1 ]]; then
-        exit 1
-    fi
-
-    # Check for storage name conflicts
-    if [[ "$FS" = "zfs" ]] && command -v zpool >/dev/null 2>&1; then
-        if zpool list "$POOL" >/dev/null 2>&1; then
-            echo "Error: ZFS pool '$POOL' already exists."
-            exit 1
-        fi
-    fi
-
-    # Check for BTRFS filesystem with same label
-    if [[ "$FS" = "btrfs" ]] && command -v blkid >/dev/null 2>&1; then
-        if blkid -L "$STOR_NAME" >/dev/null 2>&1; then
-            echo "Error: A filesystem with label '$STOR_NAME' already exists."
-            exit 1
-        fi
-    fi
-
-    # Check for mount point conflicts
-    if [[ -d "$MNT" ]] && mountpoint -q "$MNT" 2>/dev/null; then
-        echo "Error: Mount point '$MNT' is already mounted."
-        exit 1
-    fi
+  # Check for mount point conflicts
+  if [[ -d "$MNT" ]] && mountpoint -q "$MNT" 2>/dev/null; then
+    echo "Error: Mount point '$MNT' is already mounted."
+    exit 1
+  fi
 }
 
 parse_args() {
-    # Default values
-    DISK=""
-    FS=""
-    GROUP=""
-    STOR_NAME=""
-    USERS=()
+  # Default values
+  DISK=""
+  FS=""
+  GROUP=""
+  STOR_NAME=""
+  USERS=()
 
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --disk)
-                DISK="$2"
-                shift 2
-                ;;
-            --filesystem)
-                FS="$2"
-                shift 2
-                ;;
-            --group)
-                GROUP="$2"
-                shift 2
-                ;;
-            --storage-name)
-                STOR_NAME="$2"
-                shift 2
-                ;;
-            --users)
-                IFS=',' read -ra USERS <<< "$2"
-                shift 2
-                ;;
-            -h|--help)
-                usage
-                ;;
-            *)
-                echo "Unknown option: $1"
-                usage
-                ;;
-        esac
-    done
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --disk)
+      DISK="$2"
+      shift 2
+      ;;
+    --filesystem)
+      FS="$2"
+      shift 2
+      ;;
+    --group)
+      GROUP="$2"
+      shift 2
+      ;;
+    --storage-name)
+      STOR_NAME="$2"
+      shift 2
+      ;;
+    --users)
+      IFS=',' read -ra USERS <<<"$2"
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      ;;
+    *)
+      echo "Unknown option: $1"
+      usage
+      ;;
+    esac
+  done
 
-    # Validate required arguments
-    if [[ -z "$DISK" || -z "$FS" || -z "$GROUP" || -z "$STOR_NAME" || ${#USERS[@]} -eq 0 ]]; then
-        usage
-    fi
+  # Validate required arguments
+  if [[ -z "$DISK" || -z "$FS" || -z "$GROUP" || -z "$STOR_NAME" || ${#USERS[@]} -eq 0 ]]; then
+    usage
+  fi
 
-    # Validate filesystem type
-    if [[ "$FS" != "btrfs" && "$FS" != "zfs" ]]; then
-        echo "Error: Filesystem must be either 'btrfs' or 'zfs', got '$FS'"
-        exit 1
-    fi
+  # Validate filesystem type
+  if [[ "$FS" != "btrfs" && "$FS" != "zfs" ]]; then
+    echo "Error: Filesystem must be either 'btrfs' or 'zfs', got '$FS'"
+    exit 1
+  fi
 
-    # Set global variables
-    MNT="/mnt/${STOR_NAME}"
-    POOL="${STOR_NAME}"
-    DATASET="${POOL}/vms"
+  # Set global variables
+  MNT="/mnt/${STOR_NAME}"
+  POOL="${STOR_NAME}"
+  DATASET="${POOL}/vms"
 }
 
 setup_group_and_users() {
-    # Create group if it doesn't exist
-    if ! getent group "$GROUP" >/dev/null 2>&1; then
-        groupadd "$GROUP"
-    fi
+  # Create group if it doesn't exist
+  if ! getent group "$GROUP" >/dev/null 2>&1; then
+    groupadd "$GROUP"
+  fi
 
-    # Add users to group
-    for u in "${USERS[@]}"; do
-        if id "$u" >/dev/null 2>&1; then
-            usermod -aG "$GROUP" "$u"
-        else
-            echo "Warning: user '$u' does not exist, skipping"
-        fi
-    done
+  # Add users to group
+  for u in "${USERS[@]}"; do
+    if id "$u" >/dev/null 2>&1; then
+      usermod -aG "$GROUP" "$u"
+    else
+      echo "Warning: user '$u' does not exist, skipping"
+    fi
+  done
 }
 
 setup_btrfs() {
-    echo "[INFO] Setting up Btrfs storage on $DISK"
+  echo "[INFO] Setting up Btrfs storage on $DISK"
 
-    # Format only if not already Btrfs
-    if ! blkid "$DISK" | grep -qi btrfs; then
-        mkfs.btrfs -f -L "$STOR_NAME" "$DISK"
-    fi
+  # Format only if not already Btrfs
+  if ! blkid "$DISK" | grep -qi btrfs; then
+    mkfs.btrfs -f -L "$STOR_NAME" "$DISK"
+  fi
 
-    mkdir -p "$MNT"
+  mkdir -p "$MNT"
 
-    UUID=$(blkid -s UUID -o value "$DISK")
+  UUID=$(blkid -s UUID -o value "$DISK")
 
-    # fstab idempotent entry
-    if ! grep -q "$UUID" /etc/fstab; then
-        echo "UUID=$UUID $MNT btrfs defaults,compress=zstd,autodefrag 0 0" >> /etc/fstab
-    fi
+  # fstab idempotent entry
+  if ! grep -q "$UUID" /etc/fstab; then
+    echo "UUID=$UUID $MNT btrfs defaults,compress=zstd,autodefrag 0 0" >>/etc/fstab
+  fi
 
-    mount "$MNT" || mount -a
+  mount "$MNT" || mount -a
 
-    # Subvolume vms (idempotent)
-    if ! btrfs subvolume list "$MNT" | grep -q "vms"; then
-        btrfs subvolume create "$MNT/vms"
-    fi
+  # Subvolume vms (idempotent)
+  if ! btrfs subvolume list "$MNT" | grep -q "vms"; then
+    btrfs subvolume create "$MNT/vms"
+  fi
 
-    chgrp "$GROUP" "$MNT"
-    chmod 2775 "$MNT"
+  chgrp "$GROUP" "$MNT"
+  chmod 2775 "$MNT"
 
-    # Disable CoW for VM images
-    chattr +C "$MNT/vms" || true
+  # Disable CoW for VM images
+  chattr +C "$MNT/vms" || true
 }
 
 setup_zfs() {
-    echo "[INFO] Setting up ZFS storage on $DISK"
+  echo "[INFO] Setting up ZFS storage on $DISK"
 
-    # Create pool only if missing
-    if ! zpool list "$POOL" >/dev/null 2>&1; then
-        zpool create -f "$POOL" "$DISK"
-    fi
+  # Create pool only if missing
+  if ! zpool list "$POOL" >/dev/null 2>&1; then
+    zpool create -f "$POOL" "$DISK"
+  fi
 
-    # Dataset idempotent
-    if ! zfs list "$DATASET" >/dev/null 2>&1; then
-        zfs create "$DATASET"
-    fi
+  # Dataset idempotent
+  if ! zfs list "$DATASET" >/dev/null 2>&1; then
+    zfs create "$DATASET"
+  fi
 
-    zfs set compression=zstd "$POOL"
-    zfs set atime=off "$POOL"
-    zfs set xattr=sa "$POOL"
-    zfs set mountpoint="$MNT" "$DATASET"
+  zfs set compression=zstd "$POOL"
+  zfs set atime=off "$POOL"
+  zfs set xattr=sa "$POOL"
+  zfs set mountpoint="$MNT" "$DATASET"
 
-    mkdir -p "$MNT"
-    mountpoint -q "$MNT" || zfs mount "$DATASET"
+  mkdir -p "$MNT"
+  mountpoint -q "$MNT" || zfs mount "$DATASET"
 
-    # Group ACLs
-    setfacl -m g:"$GROUP":rwx "$MNT"
-    setfacl -d -m g:"$GROUP":rwx "$MNT"
+  # Group ACLs
+  setfacl -m g:"$GROUP":rwx "$MNT"
+  setfacl -d -m g:"$GROUP":rwx "$MNT"
 }
 
 register_proxmox_storage() {
-    if is_proxmox; then
-        echo "[INFO] System detected: Proxmox. Registering storage."
+  if is_proxmox; then
+    echo "[INFO] System detected: Proxmox. Registering storage."
 
-        # Idempotent check
-        if ! pvesm status | awk '{print $1}' | grep -qx "$STOR_NAME"; then
-            if [[ "$FS" = "btrfs" ]]; then
-                pvesm storage add dir "$STOR_NAME" \
-                    --path "$MNT" \
-                    --content images,rootdir,iso,vztmpl,backup \
-                    --prune-backups keep-all
-            elif [[ "$FS" = "zfs" ]]; then
-                pvesm storage add zfspool "$STOR_NAME" \
-                    --pool "$DATASET" \
-                    --content images,rootdir \
-                    --sparse 1
-            fi
-        else
-            echo "[INFO] Storage '$STOR_NAME' already registered with Proxmox."
-        fi
+    # Idempotent check
+    if ! pvesm status | awk '{print $1}' | grep -qx "$STOR_NAME"; then
+      if [[ "$FS" = "btrfs" ]]; then
+        pvesm storage add dir "$STOR_NAME" \
+          --path "$MNT" \
+          --content images,rootdir,iso,vztmpl,backup \
+          --prune-backups keep-all
+      elif [[ "$FS" = "zfs" ]]; then
+        pvesm storage add zfspool "$STOR_NAME" \
+          --pool "$DATASET" \
+          --content images,rootdir \
+          --sparse 1
+      fi
+    else
+      echo "[INFO] Storage '$STOR_NAME' already registered with Proxmox."
     fi
+  fi
 }
 
 # Parse command line arguments
@@ -303,14 +303,14 @@ setup_group_and_users
 
 # Setup filesystem based on type
 if [[ "$FS" = "btrfs" ]]; then
-    setup_btrfs
-    register_proxmox_storage
-    echo "[OK] Btrfs VM storage ready at $MNT"
+  setup_btrfs
+  register_proxmox_storage
+  echo "[OK] Btrfs VM storage ready at $MNT"
 elif [[ "$FS" = "zfs" ]]; then
-    setup_zfs
-    register_proxmox_storage
-    echo "[OK] ZFS VM storage ready at $MNT"
+  setup_zfs
+  register_proxmox_storage
+  echo "[OK] ZFS VM storage ready at $MNT"
 else
-    echo "Error: Unsupported filesystem type: $FS"
-    exit 1
+  echo "Error: Unsupported filesystem type: $FS"
+  exit 1
 fi

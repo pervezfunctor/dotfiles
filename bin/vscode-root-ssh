@@ -3,7 +3,7 @@
 # Connect VS Code (or plain SSH) to a ROOT distrobox container via its dynamic IP.
 # Works with Podman or Docker. Minimal, modular, and idempotent.
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # --------------------------- Defaults ---------------------------
 NAME="${NAME:-docker}" # container name

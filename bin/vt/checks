@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # ---- Libvirt VM ----
 check_libvirt_vm() {

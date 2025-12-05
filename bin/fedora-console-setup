@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # Set keyboard layout (example: US)
 # Change "us" if needed
@@ -10,9 +10,9 @@ sudo localectl set-keymap us
 FONT="lat4-16.psfu.gz"
 
 if [ ! -f "/usr/lib/kbd/consolefonts/$FONT" ]; then
-    echo "Console font $FONT not found. Available fonts:"
-    ls /usr/lib/kbd/consolefonts/
-    exit 1
+  echo "Console font $FONT not found. Available fonts:"
+  ls /usr/lib/kbd/consolefonts/
+  exit 1
 fi
 
 # Apply immediately

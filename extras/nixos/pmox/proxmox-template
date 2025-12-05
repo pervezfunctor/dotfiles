@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # first build the image with:
 # nix build .#proxmox-template

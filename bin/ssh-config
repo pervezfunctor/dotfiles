@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 CONFIG_FILE="${HOME}/.ssh/config"
 

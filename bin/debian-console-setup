@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # Temporary preseed file
 PRESEED=$(mktemp)
 
-cat > "$PRESEED" <<'EOF'
+cat >"$PRESEED" <<'EOF'
 console-setup console-setup/charmap47 select UTF-8
 console-setup console-setup/codeset47 select Latin
 console-setup console-setup/fontface47 select Fixed

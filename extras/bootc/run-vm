@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # qemu-system-x86_64 \
 #   -M accel=kvm \

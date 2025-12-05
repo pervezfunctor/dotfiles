@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Logging library: timestamped log sets, symlinks, auto-cleanup.
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # ------------------------------------------------------------
 # Directory + retention setup

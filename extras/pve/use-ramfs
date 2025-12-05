@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 BACKUP_DIR="/var/local/ramdisk-backup"
 

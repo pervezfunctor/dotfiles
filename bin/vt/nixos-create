@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 # shellcheck disable=SC1091
@@ -19,7 +19,7 @@ RELEASE="unstable"
 AUTO_SETUP="true"
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 [OPTIONS]
 
 Create and automatically configure NixOS containers or VMs with full user setup.
@@ -62,267 +62,267 @@ EOF
 }
 
 create_nixos_container() {
-    local name="$1"
+  local name="$1"
 
-    slog "Creating NixOS container: $name"
+  slog "Creating NixOS container: $name"
 
-    if incus info "$name" >/dev/null 2>&1; then
-        fail "Container '$name' already exists"
-        exit 1
-    fi
+  if incus info "$name" >/dev/null 2>&1; then
+    fail "Container '$name' already exists"
+    exit 1
+  fi
 
-    # Create container with NixOS-specific settings
-    if incus launch "images:nixos/$RELEASE" "$name" \
-        --config "security.nesting=true" \
-        --config "limits.cpu=$VCPUS" \
-        --config "limits.memory=${RAM_MB}MB"; then
-        success "NixOS container '$name' created successfully"
-    else
-        fail "Failed to create NixOS container '$name'"
-        exit 1
-    fi
+  # Create container with NixOS-specific settings
+  if incus launch "images:nixos/$RELEASE" "$name" \
+    --config "security.nesting=true" \
+    --config "limits.cpu=$VCPUS" \
+    --config "limits.memory=${RAM_MB}MB"; then
+    success "NixOS container '$name' created successfully"
+  else
+    fail "Failed to create NixOS container '$name'"
+    exit 1
+  fi
 }
 
 create_nixos_vm() {
-    local name="$1"
+  local name="$1"
 
-    slog "Creating NixOS VM: $name"
+  slog "Creating NixOS VM: $name"
 
-    if incus info "$name" >/dev/null 2>&1; then
-        fail "VM '$name' already exists"
-        exit 1
-    fi
+  if incus info "$name" >/dev/null 2>&1; then
+    fail "VM '$name' already exists"
+    exit 1
+  fi
 
-    # Create VM with NixOS-specific settings
-    if incus launch "images:nixos/$RELEASE" "$name" --vm \
-        --config "limits.cpu=$VCPUS" \
-        --config "limits.memory=${RAM_MB}MB" \
-        --config "security.secureboot=false" \
-        --device "root,size=$DISK_SIZE"; then
-        success "NixOS VM '$name' created successfully"
-    else
-        fail "Failed to create NixOS VM '$name'"
-        exit 1
-    fi
+  # Create VM with NixOS-specific settings
+  if incus launch "images:nixos/$RELEASE" "$name" --vm \
+    --config "limits.cpu=$VCPUS" \
+    --config "limits.memory=${RAM_MB}MB" \
+    --config "security.secureboot=false" \
+    --device "root,size=$DISK_SIZE"; then
+    success "NixOS VM '$name' created successfully"
+  else
+    fail "Failed to create NixOS VM '$name'"
+    exit 1
+  fi
 }
 
 wait_for_instance() {
-    local name="$1"
+  local name="$1"
 
-    slog "Waiting for instance '$name' to be ready..."
+  slog "Waiting for instance '$name' to be ready..."
 
-    local max_attempts=60
-    local attempt=0
+  local max_attempts=60
+  local attempt=0
 
-    while [[ $attempt -lt $max_attempts ]]; do
-        if incus list "$name" --format csv | grep -q "RUNNING"; then
-            # Additional wait for system to be fully ready
-            sleep 5
-            if incus exec "$name" -- test -d /etc/nixos 2>/dev/null; then
-                success "Instance '$name' is ready"
-                return 0
-            fi
-        fi
-        sleep 2
-        ((attempt++))
-    done
+  while [[ $attempt -lt $max_attempts ]]; do
+    if incus list "$name" --format csv | grep -q "RUNNING"; then
+      # Additional wait for system to be fully ready
+      sleep 5
+      if incus exec "$name" -- test -d /etc/nixos 2>/dev/null; then
+        success "Instance '$name' is ready"
+        return 0
+      fi
+    fi
+    sleep 2
+    ((attempt++))
+  done
 
-    fail "Instance '$name' did not become ready in time"
-    exit 1
+  fail "Instance '$name' did not become ready in time"
+  exit 1
 }
 
 run_nixos_setup() {
-    local name="$1"
+  local name="$1"
 
-    slog "Running automatic NixOS configuration..."
+  slog "Running automatic NixOS configuration..."
 
-    local setup_args=(
-        "$name"
-        --username "$USERNAME"
-        --password "$PASSWORD"
-    )
+  local setup_args=(
+    "$name"
+    --username "$USERNAME"
+    --password "$PASSWORD"
+  )
 
-    if [[ -n "$SSH_KEY" ]]; then
-        setup_args+=(--ssh-key "$SSH_KEY")
-    fi
+  if [[ -n "$SSH_KEY" ]]; then
+    setup_args+=(--ssh-key "$SSH_KEY")
+  fi
 
-    if [[ "$INSTANCE_TYPE" == "container" ]]; then
-        setup_args+=(--container)
-    else
-        setup_args+=(--vm)
-    fi
+  if [[ "$INSTANCE_TYPE" == "container" ]]; then
+    setup_args+=(--container)
+  else
+    setup_args+=(--vm)
+  fi
 
-    if "$DOT_DIR/bin/vt/nixos-setup" "${setup_args[@]}"; then
-        success "NixOS configuration completed successfully"
-    else
-        warn "NixOS configuration had issues, but instance is created"
-        warn "You can run manual configuration with:"
-        warn "  $DOT_DIR/bin/vt/nixos-setup $name"
-    fi
+  if "$DOT_DIR/bin/vt/nixos-setup" "${setup_args[@]}"; then
+    success "NixOS configuration completed successfully"
+  else
+    warn "NixOS configuration had issues, but instance is created"
+    warn "You can run manual configuration with:"
+    warn "  $DOT_DIR/bin/vt/nixos-setup $name"
+  fi
 }
 
 show_final_info() {
-    local name="$1"
+  local name="$1"
 
+  echo
+  success "🎉 NixOS $INSTANCE_TYPE '$name' is ready!"
+  echo
+
+  slog "Quick Access:"
+  slog "  Direct shell: incus exec $name -- /bin/bash"
+  slog "  User shell: incus exec $name -- su - $USERNAME"
+  echo
+
+  local ip
+  ip=$(incus list "$name" --format csv --columns 4 | head -1 | cut -d' ' -f1)
+
+  if [[ -n "$ip" && "$ip" != "-" ]]; then
+    slog "SSH Access:"
+    slog "  ssh $USERNAME@$ip"
+    slog "  Password: $PASSWORD"
     echo
-    success "🎉 NixOS $INSTANCE_TYPE '$name' is ready!"
+  fi
+
+  slog "Management Commands:"
+  slog "  Status: incus list $name"
+  slog "  Stop: incus stop $name"
+  slog "  Start: incus start $name"
+  slog "  Delete: incus delete $name --force"
+
+  if [[ "$INSTANCE_TYPE" == "vm" ]]; then
     echo
+    slog "USB Device Management (VMs only):"
+    slog "  List host USB: $DOT_DIR/bin/vt/vm-usb list"
+    slog "  List attached: $DOT_DIR/bin/vt/vm-usb list-attached $name"
+    slog "  Attach USB: $DOT_DIR/bin/vt/vm-usb attach $name DEVICE"
+    slog "  Detach USB: $DOT_DIR/bin/vt/vm-usb detach $name DEVICE_NAME"
+  fi
+  echo
 
-    slog "Quick Access:"
-    slog "  Direct shell: incus exec $name -- /bin/bash"
-    slog "  User shell: incus exec $name -- su - $USERNAME"
-    echo
-
-    local ip
-    ip=$(incus list "$name" --format csv --columns 4 | head -1 | cut -d' ' -f1)
-
-    if [[ -n "$ip" && "$ip" != "-" ]]; then
-        slog "SSH Access:"
-        slog "  ssh $USERNAME@$ip"
-        slog "  Password: $PASSWORD"
-        echo
-    fi
-
-    slog "Management Commands:"
-    slog "  Status: incus list $name"
-    slog "  Stop: incus stop $name"
-    slog "  Start: incus start $name"
-    slog "  Delete: incus delete $name --force"
-
-    if [[ "$INSTANCE_TYPE" == "vm" ]]; then
-        echo
-        slog "USB Device Management (VMs only):"
-        slog "  List host USB: $DOT_DIR/bin/vt/vm-usb list"
-        slog "  List attached: $DOT_DIR/bin/vt/vm-usb list-attached $name"
-        slog "  Attach USB: $DOT_DIR/bin/vt/vm-usb attach $name DEVICE"
-        slog "  Detach USB: $DOT_DIR/bin/vt/vm-usb detach $name DEVICE_NAME"
-    fi
-    echo
-
-    if [[ "$AUTO_SETUP" == "true" ]]; then
-        slog "Features Configured:"
-        slog "  ✅ User '$USERNAME' with sudo access"
-        slog "  ✅ SSH access (key + password)"
-        slog "  ✅ Essential packages installed"
-        slog "  ✅ Network tools (net-tools, nmap)"
-        slog "  ✅ Development tools (gcc, make)"
-    else
-        slog "Manual configuration required:"
-        slog "  Run: $DOT_DIR/bin/vt/nixos-setup $name"
-    fi
+  if [[ "$AUTO_SETUP" == "true" ]]; then
+    slog "Features Configured:"
+    slog "  ✅ User '$USERNAME' with sudo access"
+    slog "  ✅ SSH access (key + password)"
+    slog "  ✅ Essential packages installed"
+    slog "  ✅ Network tools (net-tools, nmap)"
+    slog "  ✅ Development tools (gcc, make)"
+  else
+    slog "Manual configuration required:"
+    slog "  Run: $DOT_DIR/bin/vt/nixos-setup $name"
+  fi
 }
 
 parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-        --type)
-            INSTANCE_TYPE="$2"
-            if [[ "$INSTANCE_TYPE" != "container" && "$INSTANCE_TYPE" != "vm" ]]; then
-                fail "Invalid type: $INSTANCE_TYPE. Must be 'container' or 'vm'"
-                exit 1
-            fi
-            shift 2
-            ;;
-        --name)
-            INSTANCE_NAME="$2"
-            shift 2
-            ;;
-        --username)
-            USERNAME="$2"
-            shift 2
-            ;;
-        --password)
-            PASSWORD="$2"
-            shift 2
-            ;;
-        --ssh-key)
-            SSH_KEY="$2"
-            shift 2
-            ;;
-        --release)
-            RELEASE="$2"
-            shift 2
-            ;;
-        --vcpus)
-            VCPUS="$2"
-            shift 2
-            ;;
-        --ram)
-            RAM_MB="$2"
-            shift 2
-            ;;
-        --disk)
-            DISK_SIZE="$2"
-            shift 2
-            ;;
-        --no-setup)
-            AUTO_SETUP="false"
-            shift
-            ;;
-        --help | -h)
-            usage
-            exit 0
-            ;;
-        *)
-            fail "Unknown option: $1"
-            usage
-            exit 1
-            ;;
-        esac
-    done
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --type)
+      INSTANCE_TYPE="$2"
+      if [[ "$INSTANCE_TYPE" != "container" && "$INSTANCE_TYPE" != "vm" ]]; then
+        fail "Invalid type: $INSTANCE_TYPE. Must be 'container' or 'vm'"
+        exit 1
+      fi
+      shift 2
+      ;;
+    --name)
+      INSTANCE_NAME="$2"
+      shift 2
+      ;;
+    --username)
+      USERNAME="$2"
+      shift 2
+      ;;
+    --password)
+      PASSWORD="$2"
+      shift 2
+      ;;
+    --ssh-key)
+      SSH_KEY="$2"
+      shift 2
+      ;;
+    --release)
+      RELEASE="$2"
+      shift 2
+      ;;
+    --vcpus)
+      VCPUS="$2"
+      shift 2
+      ;;
+    --ram)
+      RAM_MB="$2"
+      shift 2
+      ;;
+    --disk)
+      DISK_SIZE="$2"
+      shift 2
+      ;;
+    --no-setup)
+      AUTO_SETUP="false"
+      shift
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    esac
+  done
 
-    # Set default name if not provided
-    if [[ -z "$INSTANCE_NAME" ]]; then
-        INSTANCE_NAME="nixos-$INSTANCE_TYPE"
-    fi
+  # Set default name if not provided
+  if [[ -z "$INSTANCE_NAME" ]]; then
+    INSTANCE_NAME="nixos-$INSTANCE_TYPE"
+  fi
 }
 
 main() {
-    slog "Starting NixOS $INSTANCE_TYPE creation and setup..."
+  slog "Starting NixOS $INSTANCE_TYPE creation and setup..."
 
-    parse_args "$@"
+  parse_args "$@"
 
-    # Check prerequisites
-    if ! command -v incus >/dev/null; then
-        fail "incus is not installed or not in PATH"
-        exit 1
-    fi
+  # Check prerequisites
+  if ! command -v incus >/dev/null; then
+    fail "incus is not installed or not in PATH"
+    exit 1
+  fi
 
-    slog "Configuration:"
-    slog "  Type: $INSTANCE_TYPE"
-    slog "  Name: $INSTANCE_NAME"
-    slog "  Release: NixOS $RELEASE"
-    slog "  Username: $USERNAME"
-    if [[ "$INSTANCE_TYPE" == "vm" ]]; then
-        slog "  Resources: ${VCPUS} vCPUs, ${RAM_MB}MB RAM, ${DISK_SIZE} disk"
-    else
-        slog "  Resources: ${VCPUS} vCPUs, ${RAM_MB}MB RAM"
-    fi
-    slog "  Auto-setup: $AUTO_SETUP"
-    echo
+  slog "Configuration:"
+  slog "  Type: $INSTANCE_TYPE"
+  slog "  Name: $INSTANCE_NAME"
+  slog "  Release: NixOS $RELEASE"
+  slog "  Username: $USERNAME"
+  if [[ "$INSTANCE_TYPE" == "vm" ]]; then
+    slog "  Resources: ${VCPUS} vCPUs, ${RAM_MB}MB RAM, ${DISK_SIZE} disk"
+  else
+    slog "  Resources: ${VCPUS} vCPUs, ${RAM_MB}MB RAM"
+  fi
+  slog "  Auto-setup: $AUTO_SETUP"
+  echo
 
-    # Create the instance
-    if [[ "$INSTANCE_TYPE" == "container" ]]; then
-        create_nixos_container "$INSTANCE_NAME"
-    else
-        create_nixos_vm "$INSTANCE_NAME"
-    fi
+  # Create the instance
+  if [[ "$INSTANCE_TYPE" == "container" ]]; then
+    create_nixos_container "$INSTANCE_NAME"
+  else
+    create_nixos_vm "$INSTANCE_NAME"
+  fi
 
-    # Wait for instance to be ready
-    wait_for_instance "$INSTANCE_NAME"
+  # Wait for instance to be ready
+  wait_for_instance "$INSTANCE_NAME"
 
-    # Run automatic setup if requested
-    if [[ "$AUTO_SETUP" == "true" ]]; then
-        run_nixos_setup "$INSTANCE_NAME"
-    fi
+  # Run automatic setup if requested
+  if [[ "$AUTO_SETUP" == "true" ]]; then
+    run_nixos_setup "$INSTANCE_NAME"
+  fi
 
-    # Show final information
-    show_final_info "$INSTANCE_NAME"
+  # Show final information
+  show_final_info "$INSTANCE_NAME"
 
-    success "All done! Your NixOS $INSTANCE_TYPE '$INSTANCE_NAME' is ready to use."
+  success "All done! Your NixOS $INSTANCE_TYPE '$INSTANCE_NAME' is ready to use."
 }
 
 # Only run main if script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
+  main "$@"
 fi

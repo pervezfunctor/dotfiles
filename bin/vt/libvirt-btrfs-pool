@@ -17,7 +17,7 @@
 # Requires: sudo, btrfs, libvirt-daemon, virsh, systemctl
 # ==============================================================================
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # --- Configuration ---
 LOG_FILE="/var/log/libvirt-btrfs-setup.log"

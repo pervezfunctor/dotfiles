@@ -4,15 +4,15 @@
 # shellcheck disable=SC2329
 
 cleanup() {
-    local exit_code=$?
-    log_debug "Cleaning up temporary files..."
-    if [ -d "$TEMP_DIR" ]; then
-        rm -rf "$TEMP_DIR" || log_warn "Failed to remove temporary directory: $TEMP_DIR"
-    fi
-    if [ -f "$LIBVIRT_NET_XML" ]; then
-        rm -f "$LIBVIRT_NET_XML" || log_warn "Failed to remove temporary XML file: $LIBVIRT_NET_XML"
-    fi
-    exit "$exit_code"
+  local exit_code=$?
+  log_debug "Cleaning up temporary files..."
+  if [ -d "$TEMP_DIR" ]; then
+    rm -rf "$TEMP_DIR" || log_warn "Failed to remove temporary directory: $TEMP_DIR"
+  fi
+  if [ -f "$LIBVIRT_NET_XML" ]; then
+    rm -f "$LIBVIRT_NET_XML" || log_warn "Failed to remove temporary XML file: $LIBVIRT_NET_XML"
+  fi
+  exit "$exit_code"
 }
 
 trap cleanup EXIT
@@ -30,7 +30,7 @@ log_error() { echo "❌ ERROR: $*" >&2; }
 log_debug() { [ "${DEBUG:-0}" = "1" ] && echo "🐛 DEBUG: $*" >&2; }
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $SCRIPT_NAME [OPTIONS]
 
 Creates a Linux bridge and configures libvirt to use it so VMs get IPs from the router.
@@ -50,376 +50,376 @@ EOF
 }
 
 parse_arguments() {
-    PHYSICAL_IFACE=""
-    FORCE_RECREATE=0
+  PHYSICAL_IFACE=""
+  FORCE_RECREATE=0
 
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-        -i | --interface)
-            PHYSICAL_IFACE="$2"
-            shift 2
-            ;;
-        -b | --bridge)
-            BRIDGE_NAME="$2"
-            shift 2
-            ;;
-        -f | --force)
-            FORCE_RECREATE=1
-            shift
-            ;;
-        -d | --debug)
-            DEBUG=1
-            shift
-            ;;
-        -h | --help)
-            usage
-            exit 0
-            ;;
-        *)
-            log_error "Unknown option: $1"
-            usage >&2
-            exit 1
-            ;;
-        esac
-    done
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    -i | --interface)
+      PHYSICAL_IFACE="$2"
+      shift 2
+      ;;
+    -b | --bridge)
+      BRIDGE_NAME="$2"
+      shift 2
+      ;;
+    -f | --force)
+      FORCE_RECREATE=1
+      shift
+      ;;
+    -d | --debug)
+      DEBUG=1
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      log_error "Unknown option: $1"
+      usage >&2
+      exit 1
+      ;;
+    esac
+  done
 }
 
 validate_requirements() {
-    if [ "$EUID" -ne 0 ]; then
-        log_error "This script must be run as root (use sudo)."
-        exit 1
-    fi
+  if [ "$EUID" -ne 0 ]; then
+    log_error "This script must be run as root (use sudo)."
+    exit 1
+  fi
 
-    if [ -z "$PHYSICAL_IFACE" ]; then
-        log_error "Physical interface (-i) is required."
-        usage >&2
-        exit 1
-    fi
+  if [ -z "$PHYSICAL_IFACE" ]; then
+    log_error "Physical interface (-i) is required."
+    usage >&2
+    exit 1
+  fi
 
-    if ! ip link show "$PHYSICAL_IFACE" &>/dev/null; then
-        log_error "Interface '$PHYSICAL_IFACE' does not exist."
-        log_info "Available interfaces:"
-        ip -br link show | awk '$1 !~ /^lo$/ {print $1 " (" $2 ")"}' || log_info "None"
-        exit 1
-    fi
+  if ! ip link show "$PHYSICAL_IFACE" &>/dev/null; then
+    log_error "Interface '$PHYSICAL_IFACE' does not exist."
+    log_info "Available interfaces:"
+    ip -br link show | awk '$1 !~ /^lo$/ {print $1 " (" $2 ")"}' || log_info "None"
+    exit 1
+  fi
 
-    if ! ip link show "$PHYSICAL_IFACE" | grep -q 'state UP'; then
-        log_warn "Interface '$PHYSICAL_IFACE' is not UP. Attempting to bring it up..."
-        if ! ip link set "$PHYSICAL_IFACE" up; then
-            log_error "Failed to bring up interface '$PHYSICAL_IFACE'. Check if the interface is valid and you have sufficient permissions."
-            exit 1
-        fi
-        log_info "Successfully brought interface '$PHYSICAL_IFACE' up"
+  if ! ip link show "$PHYSICAL_IFACE" | grep -q 'state UP'; then
+    log_warn "Interface '$PHYSICAL_IFACE' is not UP. Attempting to bring it up..."
+    if ! ip link set "$PHYSICAL_IFACE" up; then
+      log_error "Failed to bring up interface '$PHYSICAL_IFACE'. Check if the interface is valid and you have sufficient permissions."
+      exit 1
     fi
+    log_info "Successfully brought interface '$PHYSICAL_IFACE' up"
+  fi
 
-    if [[ "$PHYSICAL_IFACE" == w* ]]; then
-        log_error "Wireless interfaces (e.g., wlan0) cannot be used for bridging due to 802.11 limitations."
-        exit 1
-    fi
+  if [[ "$PHYSICAL_IFACE" == w* ]]; then
+    log_error "Wireless interfaces (e.g., wlan0) cannot be used for bridging due to 802.11 limitations."
+    exit 1
+  fi
 }
 
 detect_network_manager() {
-    NM_PRESENT=false
-    SYSTEMD_NETWORKD_PRESENT=false
+  NM_PRESENT=false
+  SYSTEMD_NETWORKD_PRESENT=false
 
-    if command -v nmcli >/dev/null 2>&1; then
-        if nmcli general status &>/dev/null; then
-            NM_PRESENT=true
-            log_debug "NetworkManager detected and running"
-        else
-            log_debug "NetworkManager found but not running"
-        fi
-    elif [ -d /etc/systemd/network ]; then
-        if systemctl is-active --quiet systemd-networkd; then
-            SYSTEMD_NETWORKD_PRESENT=true
-            log_debug "systemd-networkd detected and running"
-        else
-            log_debug "systemd-networkd found but not running"
-        fi
+  if command -v nmcli >/dev/null 2>&1; then
+    if nmcli general status &>/dev/null; then
+      NM_PRESENT=true
+      log_debug "NetworkManager detected and running"
     else
-        log_debug "No supported network manager detected"
+      log_debug "NetworkManager found but not running"
     fi
+  elif [ -d /etc/systemd/network ]; then
+    if systemctl is-active --quiet systemd-networkd; then
+      SYSTEMD_NETWORKD_PRESENT=true
+      log_debug "systemd-networkd detected and running"
+    else
+      log_debug "systemd-networkd found but not running"
+    fi
+  else
+    log_debug "No supported network manager detected"
+  fi
 }
 
 bridge_already_correct() {
-    ip link show "$BRIDGE_NAME" &>/dev/null || return 1
+  ip link show "$BRIDGE_NAME" &>/dev/null || return 1
 
-    if ! ip link show "$PHYSICAL_IFACE" | grep -q "master $BRIDGE_NAME"; then
-        return 1
-    fi
+  if ! ip link show "$PHYSICAL_IFACE" | grep -q "master $BRIDGE_NAME"; then
+    return 1
+  fi
 
-    if ! virsh net-info "$BRIDGE_NAME" &>/dev/null; then
-        return 1
-    fi
+  if ! virsh net-info "$BRIDGE_NAME" &>/dev/null; then
+    return 1
+  fi
 
-    if ! virsh net-info "$BRIDGE_NAME" | grep -q "Active.*yes"; then
-        return 1
-    fi
+  if ! virsh net-info "$BRIDGE_NAME" | grep -q "Active.*yes"; then
+    return 1
+  fi
 
-    local current_xml
-    current_xml=$(virsh net-dumpxml "$BRIDGE_NAME" 2>/dev/null || true)
-    local bridge_pattern="<bridge name=['\"]${BRIDGE_NAME}['\"]"
-    local forward_pattern="<forward mode=['\"]bridge['\"]"
-    if [[ ! "$current_xml" =~ $bridge_pattern ]] || [[ ! "$current_xml" =~ $forward_pattern ]]; then
-        return 1
-    fi
+  local current_xml
+  current_xml=$(virsh net-dumpxml "$BRIDGE_NAME" 2>/dev/null || true)
+  local bridge_pattern="<bridge name=['\"]${BRIDGE_NAME}['\"]"
+  local forward_pattern="<forward mode=['\"]bridge['\"]"
+  if [[ ! "$current_xml" =~ $bridge_pattern ]] || [[ ! "$current_xml" =~ $forward_pattern ]]; then
+    return 1
+  fi
 
-    return 0
+  return 0
 }
 
 clean_up_existing() {
-    log_info "Cleaning up existing or misconfigured bridge/network..."
+  log_info "Cleaning up existing or misconfigured bridge/network..."
 
-    if virsh net-info "$BRIDGE_NAME" &>/dev/null; then
-        log_debug "Destroying existing libvirt network '$BRIDGE_NAME'"
-        virsh net-destroy "$BRIDGE_NAME" 2>/dev/null || true
-        log_debug "Undefining existing libvirt network '$BRIDGE_NAME'"
-        virsh net-undefine "$BRIDGE_NAME" 2>/dev/null || true
-    fi
+  if virsh net-info "$BRIDGE_NAME" &>/dev/null; then
+    log_debug "Destroying existing libvirt network '$BRIDGE_NAME'"
+    virsh net-destroy "$BRIDGE_NAME" 2>/dev/null || true
+    log_debug "Undefining existing libvirt network '$BRIDGE_NAME'"
+    virsh net-undefine "$BRIDGE_NAME" 2>/dev/null || true
+  fi
 
-    if ip link show "$BRIDGE_NAME" &>/dev/null; then
-        log_debug "Taking down existing bridge '$BRIDGE_NAME'"
-        ip link set "$BRIDGE_NAME" down 2>/dev/null || true
-        log_debug "Deleting existing bridge '$BRIDGE_NAME'"
-        ip link delete "$BRIDGE_NAME" 2>/dev/null || true
-    fi
+  if ip link show "$BRIDGE_NAME" &>/dev/null; then
+    log_debug "Taking down existing bridge '$BRIDGE_NAME'"
+    ip link set "$BRIDGE_NAME" down 2>/dev/null || true
+    log_debug "Deleting existing bridge '$BRIDGE_NAME'"
+    ip link delete "$BRIDGE_NAME" 2>/dev/null || true
+  fi
 
-    if ip link show "$PHYSICAL_IFACE" | grep -q "master"; then
-        log_debug "Removing '$PHYSICAL_IFACE' from any existing master"
-        ip link set "$PHYSICAL_IFACE" nomaster 2>/dev/null || true
-    fi
+  if ip link show "$PHYSICAL_IFACE" | grep -q "master"; then
+    log_debug "Removing '$PHYSICAL_IFACE' from any existing master"
+    ip link set "$PHYSICAL_IFACE" nomaster 2>/dev/null || true
+  fi
 }
 
 capture_ip_configuration() {
-    log_info "Capturing current network configuration for interface '$PHYSICAL_IFACE'..."
+  log_info "Capturing current network configuration for interface '$PHYSICAL_IFACE'..."
 
-    if ! mkdir -p "$TEMP_DIR"; then
-        log_error "Failed to create temporary directory: $TEMP_DIR"
-        exit 1
+  if ! mkdir -p "$TEMP_DIR"; then
+    log_error "Failed to create temporary directory: $TEMP_DIR"
+    exit 1
+  fi
+
+  if ! ip addr show "$PHYSICAL_IFACE" >"$TEMP_DIR/host_ip_config.txt" 2>/dev/null; then
+    log_error "Failed to capture IP configuration for interface '$PHYSICAL_IFACE'"
+    exit 1
+  fi
+
+  log_debug "IP configuration saved to $TEMP_DIR/host_ip_config.txt"
+
+  USE_DHCP=false
+  if grep -q "dynamic" "$TEMP_DIR/host_ip_config.txt" 2>/dev/null; then
+    USE_DHCP=true
+  elif command -v nmcli >/dev/null && $NM_PRESENT; then
+    if nmcli -g ipv4.method con show "$(nmcli -g GENERAL.CONNECTION dev show "$PHYSICAL_IFACE")" 2>/dev/null | grep -q "auto"; then
+      USE_DHCP=true
     fi
-
-    if ! ip addr show "$PHYSICAL_IFACE" >"$TEMP_DIR/host_ip_config.txt" 2>/dev/null; then
-        log_error "Failed to capture IP configuration for interface '$PHYSICAL_IFACE'"
-        exit 1
+  elif ls /etc/netplan/*.yaml >/dev/null 2>&1; then
+    if grep -r "dhcp4: true" /etc/netplan/ &>/dev/null; then
+      USE_DHCP=true
     fi
-
-    log_debug "IP configuration saved to $TEMP_DIR/host_ip_config.txt"
-
-    USE_DHCP=false
-    if grep -q "dynamic" "$TEMP_DIR/host_ip_config.txt" 2>/dev/null; then
-        USE_DHCP=true
-    elif command -v nmcli >/dev/null && $NM_PRESENT; then
-        if nmcli -g ipv4.method con show "$(nmcli -g GENERAL.CONNECTION dev show "$PHYSICAL_IFACE")" 2>/dev/null | grep -q "auto"; then
-            USE_DHCP=true
-        fi
-    elif ls /etc/netplan/*.yaml >/dev/null 2>&1; then
-        if grep -r "dhcp4: true" /etc/netplan/ &>/dev/null; then
-            USE_DHCP=true
-        fi
-    else
-        if ip route show default | grep -q "dev $PHYSICAL_IFACE"; then
-            USE_DHCP=true
-        fi
+  else
+    if ip route show default | grep -q "dev $PHYSICAL_IFACE"; then
+      USE_DHCP=true
     fi
+  fi
 }
 
 create_bridge() {
-    log_info "Creating bridge '$BRIDGE_NAME'..."
+  log_info "Creating bridge '$BRIDGE_NAME'..."
 
-    if ! ip link add name "$BRIDGE_NAME" type bridge; then
-        log_error "Failed to create bridge '$BRIDGE_NAME'. Check if the name is already in use or if you have sufficient permissions."
-        exit 1
-    fi
-    log_debug "Bridge '$BRIDGE_NAME' created successfully"
+  if ! ip link add name "$BRIDGE_NAME" type bridge; then
+    log_error "Failed to create bridge '$BRIDGE_NAME'. Check if the name is already in use or if you have sufficient permissions."
+    exit 1
+  fi
+  log_debug "Bridge '$BRIDGE_NAME' created successfully"
 
-    if ! ip link set "$BRIDGE_NAME" up; then
-        log_error "Failed to bring up bridge '$BRIDGE_NAME'."
-        exit 1
-    fi
-    log_debug "Bridge '$BRIDGE_NAME' is up"
+  if ! ip link set "$BRIDGE_NAME" up; then
+    log_error "Failed to bring up bridge '$BRIDGE_NAME'."
+    exit 1
+  fi
+  log_debug "Bridge '$BRIDGE_NAME' is up"
 
-    if ! ip addr flush dev "$PHYSICAL_IFACE"; then
-        log_warn "Failed to flush IP addresses from '$PHYSICAL_IFACE'"
-    fi
+  if ! ip addr flush dev "$PHYSICAL_IFACE"; then
+    log_warn "Failed to flush IP addresses from '$PHYSICAL_IFACE'"
+  fi
 
-    if ! ip link set "$PHYSICAL_IFACE" master "$BRIDGE_NAME"; then
-        log_error "Failed to add '$PHYSICAL_IFACE' to bridge '$BRIDGE_NAME'. Check if the interface is already enslaved to another bridge."
-        exit 1
-    fi
-    log_debug "Interface '$PHYSICAL_IFACE' enslaved to bridge '$BRIDGE_NAME'"
+  if ! ip link set "$PHYSICAL_IFACE" master "$BRIDGE_NAME"; then
+    log_error "Failed to add '$PHYSICAL_IFACE' to bridge '$BRIDGE_NAME'. Check if the interface is already enslaved to another bridge."
+    exit 1
+  fi
+  log_debug "Interface '$PHYSICAL_IFACE' enslaved to bridge '$BRIDGE_NAME'"
 }
 
 restore_ip_configuration() {
-    if $USE_DHCP; then
-        log_info "Acquiring IP via DHCP on bridge '$BRIDGE_NAME'..."
-        if command -v dhclient >/dev/null; then
-            timeout 15 dhclient -1 "$BRIDGE_NAME" || {
-                log_warn "DHCP failed on bridge. You may need to configure it manually."
-            }
-        elif command -v systemd-dhclient >/dev/null; then
-            timeout 15 systemd-dhclient "$BRIDGE_NAME" || {
-                log_warn "DHCP failed on bridge."
-            }
-        else
-            log_warn "No DHCP client found. Bridge will not have an IP unless configured manually."
-        fi
+  if $USE_DHCP; then
+    log_info "Acquiring IP via DHCP on bridge '$BRIDGE_NAME'..."
+    if command -v dhclient >/dev/null; then
+      timeout 15 dhclient -1 "$BRIDGE_NAME" || {
+        log_warn "DHCP failed on bridge. You may need to configure it manually."
+      }
+    elif command -v systemd-dhclient >/dev/null; then
+      timeout 15 systemd-dhclient "$BRIDGE_NAME" || {
+        log_warn "DHCP failed on bridge."
+      }
     else
-        log_info "Applying static IP configuration to bridge (if any)..."
-        while IFS= read -r line; do
-            if [[ $line =~ inet\ ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/([0-9]+) ]]; then
-                ip addr add "${BASH_REMATCH[1]}/${BASH_REMATCH[2]}" dev "$BRIDGE_NAME" || true
-            fi
-        done <"$TEMP_DIR/host_ip_config.txt"
-
-        if ip route show default | grep -q "dev $PHYSICAL_IFACE"; then
-            ip route replace default dev "$BRIDGE_NAME" || true
-        fi
+      log_warn "No DHCP client found. Bridge will not have an IP unless configured manually."
     fi
+  else
+    log_info "Applying static IP configuration to bridge (if any)..."
+    while IFS= read -r line; do
+      if [[ $line =~ inet\ ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/([0-9]+) ]]; then
+        ip addr add "${BASH_REMATCH[1]}/${BASH_REMATCH[2]}" dev "$BRIDGE_NAME" || true
+      fi
+    done <"$TEMP_DIR/host_ip_config.txt"
 
-    log_debug "Waiting for network configuration to settle..."
-    sleep 2
+    if ip route show default | grep -q "dev $PHYSICAL_IFACE"; then
+      ip route replace default dev "$BRIDGE_NAME" || true
+    fi
+  fi
+
+  log_debug "Waiting for network configuration to settle..."
+  sleep 2
 }
 
 create_libvirt_network() {
-    log_info "Defining libvirt network '$BRIDGE_NAME'..."
+  log_info "Defining libvirt network '$BRIDGE_NAME'..."
 
-    local xml_content
-    xml_content=$(
-        cat <<EOF
+  local xml_content
+  xml_content=$(
+    cat <<EOF
 <network>
   <name>$BRIDGE_NAME</name>
   <forward mode='bridge'/>
   <bridge name='$BRIDGE_NAME'/>
 </network>
 EOF
-    )
+  )
 
-    if ! echo "$xml_content" >"$LIBVIRT_NET_XML"; then
-        log_error "Failed to create libvirt network XML file: $LIBVIRT_NET_XML"
-        exit 1
-    fi
+  if ! echo "$xml_content" >"$LIBVIRT_NET_XML"; then
+    log_error "Failed to create libvirt network XML file: $LIBVIRT_NET_XML"
+    exit 1
+  fi
 
-    if ! virsh net-define "$LIBVIRT_NET_XML"; then
-        log_error "Failed to define libvirt network '$BRIDGE_NAME'. Check if libvirt is running and you have sufficient permissions."
-        exit 1
-    fi
-    log_debug "Libvirt network '$BRIDGE_NAME' defined successfully"
+  if ! virsh net-define "$LIBVIRT_NET_XML"; then
+    log_error "Failed to define libvirt network '$BRIDGE_NAME'. Check if libvirt is running and you have sufficient permissions."
+    exit 1
+  fi
+  log_debug "Libvirt network '$BRIDGE_NAME' defined successfully"
 
-    if ! virsh net-start "$BRIDGE_NAME"; then
-        log_error "Failed to start libvirt network '$BRIDGE_NAME'."
-        exit 1
-    fi
-    log_debug "Libvirt network '$BRIDGE_NAME' started successfully"
+  if ! virsh net-start "$BRIDGE_NAME"; then
+    log_error "Failed to start libvirt network '$BRIDGE_NAME'."
+    exit 1
+  fi
+  log_debug "Libvirt network '$BRIDGE_NAME' started successfully"
 
-    if ! virsh net-autostart "$BRIDGE_NAME"; then
-        log_error "Failed to enable autostart for libvirt network '$BRIDGE_NAME'."
-        exit 1
-    fi
-    log_debug "Libvirt network '$BRIDGE_NAME' set to autostart"
+  if ! virsh net-autostart "$BRIDGE_NAME"; then
+    log_error "Failed to enable autostart for libvirt network '$BRIDGE_NAME'."
+    exit 1
+  fi
+  log_debug "Libvirt network '$BRIDGE_NAME' set to autostart"
 }
 
 configure_network_manager() {
-    if $NM_PRESENT; then
-        log_info "Configuring NetworkManager to ignore bridge and physical interface..."
-        local nm_conf="/etc/NetworkManager/conf.d/99-libvirt-bridge-${BRIDGE_NAME}.conf"
+  if $NM_PRESENT; then
+    log_info "Configuring NetworkManager to ignore bridge and physical interface..."
+    local nm_conf="/etc/NetworkManager/conf.d/99-libvirt-bridge-${BRIDGE_NAME}.conf"
 
-        local nm_content
-        nm_content=$(
-            cat <<NMEOF
+    local nm_content
+    nm_content=$(
+      cat <<NMEOF
 [keyfile]
 unmanaged-devices=interface-name:${BRIDGE_NAME};interface-name:${PHYSICAL_IFACE}
 NMEOF
-        )
+    )
 
-        if ! echo "$nm_content" >"$nm_conf"; then
-            log_error "Failed to create NetworkManager configuration: $nm_conf"
-            exit 1
-        fi
+    if ! echo "$nm_content" >"$nm_conf"; then
+      log_error "Failed to create NetworkManager configuration: $nm_conf"
+      exit 1
+    fi
 
-        if ! systemctl reload NetworkManager; then
-            log_warn "Failed to reload NetworkManager. You may need to restart it manually."
-        else
-            log_debug "NetworkManager reloaded successfully"
-        fi
-    elif $SYSTEMD_NETWORKD_PRESENT; then
-        log_info "Configuring systemd-networkd to ignore bridge..."
-        local net_conf="/etc/systemd/network/99-${BRIDGE_NAME}.network"
+    if ! systemctl reload NetworkManager; then
+      log_warn "Failed to reload NetworkManager. You may need to restart it manually."
+    else
+      log_debug "NetworkManager reloaded successfully"
+    fi
+  elif $SYSTEMD_NETWORKD_PRESENT; then
+    log_info "Configuring systemd-networkd to ignore bridge..."
+    local net_conf="/etc/systemd/network/99-${BRIDGE_NAME}.network"
 
-        local net_content
-        net_content=$(
-            cat <<SYSNETEOF
+    local net_content
+    net_content=$(
+      cat <<SYSNETEOF
 [Match]
 Name=$BRIDGE_NAME
 
 [Link]
 Unmanaged=yes
 SYSNETEOF
-        )
+    )
 
-        if ! echo "$net_content" >"$net_conf"; then
-            log_error "Failed to create systemd-networkd configuration: $net_conf"
-            exit 1
-        fi
-
-        if ! systemctl restart systemd-networkd; then
-            log_warn "Failed to restart systemd-networkd. You may need to restart it manually."
-        else
-            log_debug "systemd-networkd restarted successfully"
-        fi
-    else
-        log_debug "No network manager to configure"
+    if ! echo "$net_content" >"$net_conf"; then
+      log_error "Failed to create systemd-networkd configuration: $net_conf"
+      exit 1
     fi
+
+    if ! systemctl restart systemd-networkd; then
+      log_warn "Failed to restart systemd-networkd. You may need to restart it manually."
+    else
+      log_debug "systemd-networkd restarted successfully"
+    fi
+  else
+    log_debug "No network manager to configure"
+  fi
 }
 
 validate_final_setup() {
-    if ! virsh net-info "$BRIDGE_NAME" | grep -q "Active.*yes"; then
-        log_error "Libvirt network '$BRIDGE_NAME' is not active."
-        exit 1
-    fi
+  if ! virsh net-info "$BRIDGE_NAME" | grep -q "Active.*yes"; then
+    log_error "Libvirt network '$BRIDGE_NAME' is not active."
+    exit 1
+  fi
 
-    if ! ip link show "$BRIDGE_NAME" | grep -q "state UP"; then
-        log_warn "Bridge '$BRIDGE_NAME' is not UP."
-    fi
+  if ! ip link show "$BRIDGE_NAME" | grep -q "state UP"; then
+    log_warn "Bridge '$BRIDGE_NAME' is not UP."
+  fi
 
-    log_info "🎉 Bridge '$BRIDGE_NAME' successfully created and configured."
-    log_info "🚀 VMs can now attach to libvirt network '$BRIDGE_NAME' to get IPs from your router."
+  log_info "🎉 Bridge '$BRIDGE_NAME' successfully created and configured."
+  log_info "🚀 VMs can now attach to libvirt network '$BRIDGE_NAME' to get IPs from your router."
 
-    log_debug "Bridge members:"
-    bridge link show 2>/dev/null || brctl show "$BRIDGE_NAME" 2>/dev/null || true
+  log_debug "Bridge members:"
+  bridge link show 2>/dev/null || brctl show "$BRIDGE_NAME" 2>/dev/null || true
 }
 
 main() {
-    LIBVIRT_NET_XML="/tmp/${BRIDGE_NAME}.xml"
+  LIBVIRT_NET_XML="/tmp/${BRIDGE_NAME}.xml"
 
-    parse_arguments "$@"
-    validate_requirements
-    detect_network_manager
+  parse_arguments "$@"
+  validate_requirements
+  detect_network_manager
 
-    if bridge_already_correct; then
-        log_info "Bridge '$BRIDGE_NAME' is already correctly configured. Nothing to do."
-        exit 0
-    fi
-
-    if [ "$FORCE_RECREATE" -eq 1 ] || ! ip link show "$BRIDGE_NAME" &>/dev/null; then
-        clean_up_existing
-    elif ! bridge_already_correct; then
-        log_warn "Existing bridge '$BRIDGE_NAME' is misconfigured."
-        if [ "$FORCE_RECREATE" -eq 0 ]; then
-            log_error "Use --force to re-create it."
-            exit 1
-        else
-            clean_up_existing
-        fi
-    fi
-
-    capture_ip_configuration
-    create_bridge
-    restore_ip_configuration
-    create_libvirt_network
-    configure_network_manager
-    validate_final_setup
-
+  if bridge_already_correct; then
+    log_info "Bridge '$BRIDGE_NAME' is already correctly configured. Nothing to do."
     exit 0
+  fi
+
+  if [ "$FORCE_RECREATE" -eq 1 ] || ! ip link show "$BRIDGE_NAME" &>/dev/null; then
+    clean_up_existing
+  elif ! bridge_already_correct; then
+    log_warn "Existing bridge '$BRIDGE_NAME' is misconfigured."
+    if [ "$FORCE_RECREATE" -eq 0 ]; then
+      log_error "Use --force to re-create it."
+      exit 1
+    else
+      clean_up_existing
+    fi
+  fi
+
+  capture_ip_configuration
+  create_bridge
+  restore_ip_configuration
+  create_libvirt_network
+  configure_network_manager
+  validate_final_setup
+
+  exit 0
 }
 
 main "$@"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 CONF="/etc/libvirt/network.conf"
 LINE='firewall_backend = "iptables"'

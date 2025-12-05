@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 usage() {
   echo "Usage: $0 <vmid> [-u username] [-p port]"
@@ -17,17 +17,17 @@ PORT="22"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -u|--user)
-      USER="$2"
-      shift 2
-      ;;
-    -p|--port)
-      PORT="$2"
-      shift 2
-      ;;
-    *)
-      usage
-      ;;
+  -u | --user)
+    USER="$2"
+    shift 2
+    ;;
+  -p | --port)
+    PORT="$2"
+    shift 2
+    ;;
+  *)
+    usage
+    ;;
   esac
 done
 
@@ -57,7 +57,11 @@ push_keys_to_vm() {
   local pub_ed="/root/.ssh/id_ed25519.pub"
   local pub_rsa="/root/.ssh/id_rsa.pub"
 
-  AUTH_KEYS="$(cat "$pub_ed"; echo; cat "$pub_rsa")"
+  AUTH_KEYS="$(
+    cat "$pub_ed"
+    echo
+    cat "$pub_rsa"
+  )"
 
   # qm set expects a single-line string for sshkeys
   qm set "$VMID" --sshkeys <(printf "%s\n" "$AUTH_KEYS")
@@ -85,9 +89,9 @@ test_ssh() {
   local ip="$1"
 
   ssh -o ConnectTimeout=5 \
-      -o StrictHostKeyChecking=no \
-      -o UserKnownHostsFile=/dev/null \
-      -p "$PORT" "$USER@$ip" "echo ok" 2>/dev/null
+    -o StrictHostKeyChecking=no \
+    -o UserKnownHostsFile=/dev/null \
+    -p "$PORT" "$USER@$ip" "echo ok" 2>/dev/null
 }
 
 # ---------------------------------------------------------

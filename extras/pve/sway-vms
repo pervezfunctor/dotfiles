@@ -16,7 +16,7 @@
 #   LAYOUT=grid sway-vms 100 101            # Use grid layout
 #   SSH_KEY=~/.ssh/id_rsa sway-vms 100     # Use specific SSH key
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # Default configuration
 DEFAULT_SSH_USER="${SSH_USER:-pervez}"

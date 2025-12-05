@@ -3,10 +3,10 @@
 # shellcheck disable=SC1091
 source "$(dirname "$0")/incus-utils"
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 <command> [options]
 
 Manage /etc/hosts entries for Incus VMs automatically.
@@ -27,129 +27,129 @@ EOF
 }
 
 ivm_hosts_add() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    local ip
-    ip=$(ivm_ip "$vm_name")
-    local ret=$?
-    if [[ $ret -ne 0 ]]; then
-        fail "Could not get IP for Incus VM '$vm_name'. Is it running?"
-        return 1
-    fi
+  local ip
+  ip=$(ivm_ip "$vm_name")
+  local ret=$?
+  if [[ $ret -ne 0 ]]; then
+    fail "Could not get IP for Incus VM '$vm_name'. Is it running?"
+    return 1
+  fi
 
-    # Check if entry already exists, detect also Added vm ivm-hosts
-    if grep -q "^[0-9.]* .*$vm_name # Added by ivm-hosts" /etc/hosts; then
-        warn "Entry for '$vm_name' already exists in /etc/hosts"
-        # Update existing entry
-        sudo sed -i "/^[0-9.]* .*$vm_name # Added by ivm-hosts/d" /etc/hosts
-    fi
+  # Check if entry already exists, detect also Added vm ivm-hosts
+  if grep -q "^[0-9.]* .*$vm_name # Added by ivm-hosts" /etc/hosts; then
+    warn "Entry for '$vm_name' already exists in /etc/hosts"
+    # Update existing entry
+    sudo sed -i "/^[0-9.]* .*$vm_name # Added by ivm-hosts/d" /etc/hosts
+  fi
 
-    echo "$ip $vm_name # Added by ivm-hosts" | sudo tee -a /etc/hosts >/dev/null
-    success "Added $vm_name ($ip) to /etc/hosts"
+  echo "$ip $vm_name # Added by ivm-hosts" | sudo tee -a /etc/hosts >/dev/null
+  success "Added $vm_name ($ip) to /etc/hosts"
 }
 
 vm_hosts_remove() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    if grep -q "^[0-9.]* .*$vm_name # Added by ivm-hosts" /etc/hosts; then
-        sudo sed -i "/^[0-9.]* .*$vm_name # Added by ivm-hosts/d" /etc/hosts
-        success "Removed $vm_name from /etc/hosts"
-    else
-        warn "No entry found for '$vm_name' in /etc/hosts that was added by ivm-hosts"
-    fi
+  if grep -q "^[0-9.]* .*$vm_name # Added by ivm-hosts" /etc/hosts; then
+    sudo sed -i "/^[0-9.]* .*$vm_name # Added by ivm-hosts/d" /etc/hosts
+    success "Removed $vm_name from /etc/hosts"
+  else
+    warn "No entry found for '$vm_name' in /etc/hosts that was added by ivm-hosts"
+  fi
 }
 
 vm_hosts_list() {
-    slog "Incus VM entries in /etc/hosts:"
-    echo
+  slog "Incus VM entries in /etc/hosts:"
+  echo
 
-    # Get all Incus VM names
-    local vm_names
-    vm_names=$(incus list --format csv -c n | grep -v NAME)
+  # Get all Incus VM names
+  local vm_names
+  vm_names=$(incus list --format csv -c n | grep -v NAME)
 
-    if [[ -z "$vm_names" ]]; then
-        warn "No Incus VMs found"
-        return 0
+  if [[ -z "$vm_names" ]]; then
+    warn "No Incus VMs found"
+    return 0
+  fi
+
+  # Find entries in /etc/hosts for these VMs
+  local found=false
+  while IFS= read -r vm; do
+    if grep -q "^[0-9.]* .*$vm # Added by ivm-hosts" /etc/hosts; then
+      grep "^[0-9.]* .*$vm # Added by ivm-hosts" /etc/hosts
+      found=true
     fi
+  done <<<"$vm_names"
 
-    # Find entries in /etc/hosts for these VMs
-    local found=false
-    while IFS= read -r vm; do
-        if grep -q "^[0-9.]* .*$vm # Added by ivm-hosts" /etc/hosts; then
-            grep "^[0-9.]* .*$vm # Added by ivm-hosts" /etc/hosts
-            found=true
-        fi
-    done <<<"$vm_names"
-
-    if [[ "$found" == "false" ]]; then
-        warn "No Incus VM entries found in /etc/hosts"
-    fi
+  if [[ "$found" == "false" ]]; then
+    warn "No Incus VM entries found in /etc/hosts"
+  fi
 }
 
 vm_hosts_update_all() {
-    slog "Updating /etc/hosts for all running Incus VMs..."
+  slog "Updating /etc/hosts for all running Incus VMs..."
 
-    local vms
-    vms=$(incus list --format csv -c n,s | grep RUNNING | cut -d',' -f1)
+  local vms
+  vms=$(incus list --format csv -c n,s | grep RUNNING | cut -d',' -f1)
 
-    if [[ -z "$vms" ]]; then
-        warn "No running Incus VMs found"
-        return 0
+  if [[ -z "$vms" ]]; then
+    warn "No running Incus VMs found"
+    return 0
+  fi
+
+  while IFS= read -r vm; do
+    if [[ -n "$vm" ]]; then
+      slog "Processing VM: $vm"
+      ivm_hosts_add "$vm"
     fi
+  done <<<"$vms"
 
-    while IFS= read -r vm; do
-        if [[ -n "$vm" ]]; then
-            slog "Processing VM: $vm"
-            ivm_hosts_add "$vm"
-        fi
-    done <<<"$vms"
-
-    success "Updated /etc/hosts for all running Incus VMs"
+  success "Updated /etc/hosts for all running Incus VMs"
 }
 
 if [[ $# -eq 0 ]]; then
-    usage
-    exit 1
+  usage
+  exit 1
 fi
 
 command="$1"
 vm_name="${2:-}"
 
 main() {
-    ivm_check_exists_prerequisites
+  ivm_check_exists_prerequisites
 
-    case "$command" in
-    add)
-        [[ -z "$vm_name" ]] && {
-            fail "VM name required"
-            usage
-            exit 1
-        }
-        ivm_hosts_add "$vm_name"
-        ;;
-    remove)
-        [[ -z "$vm_name" ]] && {
-            fail "VM name required"
-            usage
-            exit 1
-        }
-        vm_hosts_remove "$vm_name"
-        ;;
-    ls | list)
-        vm_hosts_list
-        ;;
-    update)
-        vm_hosts_update_all
-        ;;
-    --help | -h)
-        usage
-        ;;
-    *)
-        fail "Unknown command: $command"
-        usage
-        exit 1
-        ;;
-    esac
+  case "$command" in
+  add)
+    [[ -z "$vm_name" ]] && {
+      fail "VM name required"
+      usage
+      exit 1
+    }
+    ivm_hosts_add "$vm_name"
+    ;;
+  remove)
+    [[ -z "$vm_name" ]] && {
+      fail "VM name required"
+      usage
+      exit 1
+    }
+    vm_hosts_remove "$vm_name"
+    ;;
+  ls | list)
+    vm_hosts_list
+    ;;
+  update)
+    vm_hosts_update_all
+    ;;
+  --help | -h)
+    usage
+    ;;
+  *)
+    fail "Unknown command: $command"
+    usage
+    exit 1
+    ;;
+  esac
 }
 
 main "$@"

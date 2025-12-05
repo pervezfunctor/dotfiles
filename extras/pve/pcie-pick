@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 command -v dialog >/dev/null || {
   echo "Please install 'dialog' package."

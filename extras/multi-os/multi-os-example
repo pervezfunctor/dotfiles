@@ -1,10 +1,10 @@
 #!/bin/bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 ### CONFIGURATION ###
-DISK="/dev/sdX"  # CHANGE THIS to your real device (e.g., /dev/nvme0n1, /dev/sda)
-ESP_SIZE="512M"  # EFI System Partition size
-HOST_OS_LIST=("fedora" "nixos" "debian")  # Add/remove OS names here
+DISK="/dev/sdX"                          # CHANGE THIS to your real device (e.g., /dev/nvme0n1, /dev/sda)
+ESP_SIZE="512M"                          # EFI System Partition size
+HOST_OS_LIST=("fedora" "nixos" "debian") # Add/remove OS names here
 
 ### VALIDATE ###
 if [[ ! -b "$DISK" ]]; then

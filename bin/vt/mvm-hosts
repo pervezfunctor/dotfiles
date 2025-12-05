@@ -5,7 +5,7 @@
 # shellcheck disable=SC1090
 source ~/.ilm/share/utils
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 usage() {
   cat <<EOF

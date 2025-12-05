@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 BACKPORTS_LINE="deb http://deb.debian.org/debian trixie-backports main contrib non-free non-free-firmware"
 SOURCES_FILE="/etc/apt/sources.list.d/backports.list"
@@ -15,7 +15,7 @@ fi
 # Step 1: Add backports repo if missing
 if ! grep -q "^deb .*trixie-backports" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
   log "Adding Debian Trixie backports repository"
-  echo "$BACKPORTS_LINE" > "$SOURCES_FILE"
+  echo "$BACKPORTS_LINE" >"$SOURCES_FILE"
 else
   log "Backports repository already present"
 fi

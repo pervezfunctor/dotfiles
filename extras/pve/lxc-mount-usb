@@ -3,7 +3,7 @@
 # Mounts a USB device on the Proxmox host and then bind-mounts it into an LXC container.
 # This approach is designed for unprivileged containers, as it correctly handles host permissions.
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # --- Configuration ---
 # For unprivileged containers, Proxmox maps the container's root UID (0) to a high-numbered UID on the host.
@@ -52,7 +52,7 @@ select_lxc() {
   fi
 
   # Extract just the CTID from the selection
-  awk '{print $1}' <<< "${containers[$ct_index]}"
+  awk '{print $1}' <<<"${containers[$ct_index]}"
 }
 
 # Prompts the user to select a USB device from a list of detected devices.
@@ -146,7 +146,7 @@ configure_container_mount() {
 
   echo "Adding mount point 'mp${next_mp_index}' to $conf_file..."
   # Append the new mount point configuration
-  echo "mp${next_mp_index}: ${host_path},mp=${container_path}" >> "$conf_file"
+  echo "mp${next_mp_index}: ${host_path},mp=${container_path}" >>"$conf_file"
 
   echo "true"
 }

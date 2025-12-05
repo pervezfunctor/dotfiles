@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 if [[ $# -lt 1 ]]; then
   echo "Usage: $0 <domain-name> [/dev/dri/renderD128]" >&2

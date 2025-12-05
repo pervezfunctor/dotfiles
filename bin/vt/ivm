@@ -2,7 +2,7 @@
 
 # shellcheck disable=SC1091
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 source "$(dirname "$0")/incus-utils"
 source "$(dirname "$0")/vt-utils"
@@ -90,6 +90,10 @@ list_ivms() {
   slog "Listing all Incus VMs..."
   echo
   ivm_list
+}
+
+list_ivm() {
+  incus list type=virtual-machine --format csv --columns n
 }
 
 vm_status() {

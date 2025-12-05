@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 get_latest_github_release_tag() {
   # Usage: get_latest_github_release_tag "https://github.com/owner/repo"

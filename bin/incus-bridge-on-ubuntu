@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # incus-bridge-on-ubuntu
 # Creates br0 bridge for Incus VMs/containers on Ubuntu (netplan + networkd).
@@ -7,8 +7,8 @@ set -euo pipefail
 NETPLAN_FILE="/etc/netplan/01-incus-br0.yaml"
 
 detect_primary_nic() {
-    # Pick the first non-loopback, non-virtual ethernet device.
-    ip -o link show | awk -F': ' '
+  # Pick the first non-loopback, non-virtual ethernet device.
+  ip -o link show | awk -F': ' '
         $2 !~ /^lo$/ && $2 ~ /^e/ {print $2; exit}
     '
 }
@@ -16,8 +16,8 @@ detect_primary_nic() {
 primary_nic=$(detect_primary_nic)
 
 if [ -z "$primary_nic" ]; then
-    echo "Error: Could not detect a primary NIC."
-    exit 1
+  echo "Error: Could not detect a primary NIC."
+  exit 1
 fi
 
 echo "Detected primary NIC: $primary_nic"
@@ -47,10 +47,10 @@ sudo netplan apply
 # Configure Incus default profile if needed
 echo "Checking Incus default profile..."
 if ! incus profile show default | grep -q "parent: br0"; then
-    echo "Setting br0 as default Incus network..."
-    incus profile device set default eth0 parent br0
+  echo "Setting br0 as default Incus network..."
+  incus profile device set default eth0 parent br0
 else
-    echo "Incus default profile already uses br0."
+  echo "Incus default profile already uses br0."
 fi
 
 echo "Done. Your host now uses br0 bridge, and Incus instances will obtain IP from router DHCP."

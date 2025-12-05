@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # -----------------------------
 # Parameters
@@ -18,9 +18,9 @@ POOL="${4:-data}"
 VG="${5:-pve}"
 
 if [[ -z "$VMID" || -z "$DISK" || -z "$SIZE" ]]; then
-    echo "Usage: $0 <vmid> <disk> <size> [pool] [vg]"
-    echo "Example: $0 100 scsi0 +100G"
-    exit 1
+  echo "Usage: $0 <vmid> <disk> <size> [pool] [vg]"
+  echo "Example: $0 100 scsi0 +100G"
+  exit 1
 fi
 
 # -----------------------------
@@ -34,10 +34,10 @@ VIRT_SIZE_BEFORE=$(qm config "$VMID" | awk -v disk="$DISK" '$0 ~ disk":" {print 
 
 # Convert +SIZE to absolute if needed
 if [[ "$SIZE" =~ ^\+ ]]; then
-    ADD_SIZE="${SIZE#+}"
-    NEW_VIRT_SIZE=$(echo "$VIRT_SIZE_BEFORE + $ADD_SIZE" | bc)
+  ADD_SIZE="${SIZE#+}"
+  NEW_VIRT_SIZE=$(echo "$VIRT_SIZE_BEFORE + $ADD_SIZE" | bc)
 else
-    NEW_VIRT_SIZE="$SIZE"
+  NEW_VIRT_SIZE="$SIZE"
 fi
 
 # -----------------------------
@@ -45,7 +45,7 @@ fi
 # -----------------------------
 TOTAL_ALLOCATED=$(lvs --noheadings --units g --nosuffix -o lv_size "${VG}" | awk '{sum+=$1} END {print sum}')
 if (($(echo "$TOTAL_ALLOCATED > $POOL_SIZE" | bc -l))); then
-    echo "⚠ WARNING: Current thin volumes already exceed physical pool size!"
+  echo "⚠ WARNING: Current thin volumes already exceed physical pool size!"
 fi
 
 # Estimated allocation after resize
@@ -53,10 +53,10 @@ EXTRA_ALLOC=$(echo "$NEW_VIRT_SIZE - $VIRT_SIZE_BEFORE" | bc)
 ESTIMATED_USAGE=$(echo "$POOL_USED + $EXTRA_ALLOC" | bc)
 
 if (($(echo "$ESTIMATED_USAGE > $POOL_SIZE" | bc -l))); then
-    echo "❌ ERROR: Resizing would overfill thin pool!"
-    echo "Pool size: ${POOL_SIZE}G, Current usage: ${POOL_USED}G, After resize: ${ESTIMATED_USAGE}G"
-    echo "Add more storage or reduce size."
-    exit 1
+  echo "❌ ERROR: Resizing would overfill thin pool!"
+  echo "Pool size: ${POOL_SIZE}G, Current usage: ${POOL_USED}G, After resize: ${ESTIMATED_USAGE}G"
+  echo "Add more storage or reduce size."
+  exit 1
 fi
 
 # -----------------------------

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 PROJECT_ROOT=$(
   cd -- "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1
@@ -91,13 +91,13 @@ if ! ensure_shellcheck; then
 fi
 
 run_test "shellcheck passes" <<'EOF'
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 "$SHELLCHECK_BIN" "$LOGGER_SCRIPT" "${PROJECT_ROOT}/tests/logs_test.sh"
 EOF
 
 run_test "initializes log files" <<'EOF'
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 LOG_DIR=$(mktemp -d "${TMP_BASE}/init.XXXXXX")
 export LOG_DIR
@@ -117,7 +117,7 @@ done
 EOF
 
 run_test "respects log level thresholds" <<'EOF'
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 LOG_DIR=$(mktemp -d "${TMP_BASE}/levels.XXXXXX")
 export LOG_DIR
@@ -136,7 +136,7 @@ grep -q "fail message" "$LOG_FAIL_FILE"
 EOF
 
 run_test "quiet suppresses terminal output" <<'EOF'
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 LOG_DIR=$(mktemp -d "${TMP_BASE}/quiet.XXXXXX")
 export LOG_DIR
@@ -150,7 +150,7 @@ grep -q "silent message" "$LOG_INFO_FILE"
 EOF
 
 run_test "quiet warn writes to warn log" <<'EOF'
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 LOG_DIR=$(mktemp -d "${TMP_BASE}/warnquiet.XXXXXX")
 export LOG_DIR
@@ -164,7 +164,7 @@ grep -q "be careful" "$LOG_WARN_FILE"
 EOF
 
 run_test "log trace respects level" <<'EOF'
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 LOG_DIR=$(mktemp -d "${TMP_BASE}/trace.XXXXXX")
 export LOG_DIR
@@ -181,7 +181,7 @@ grep -q "trace visible" "$LOG_INFO_FILE"
 EOF
 
 run_test "color modes toggle ANSI output" <<'EOF'
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 LOG_DIR=$(mktemp -d "${TMP_BASE}/color.XXXXXX")
 export LOG_DIR
@@ -203,7 +203,7 @@ output_plain=$(slog "plain message")
 EOF
 
 run_test "redirect captures stdout and stderr" <<'EOF'
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 LOG_DIR=$(mktemp -d "${TMP_BASE}/streams.XXXXXX")
 export LOG_DIR
@@ -226,7 +226,7 @@ stderr_capture=$({ echo "stderr capture" >&2; } 2>&1 >/dev/null)
 EOF
 
 run_test "disable redirect leaves stdstreams untouched" <<'EOF'
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 LOG_DIR=$(mktemp -d "${TMP_BASE}/no_redirect.XXXXXX")
 export LOG_DIR
@@ -241,7 +241,7 @@ log_init --session no_redirect
 EOF
 
 run_test "force reinitializes session" <<'EOF'
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 LOG_DIR=$(mktemp -d "${TMP_BASE}/force.XXXXXX")
 export LOG_DIR
@@ -266,6 +266,6 @@ EOF
 echo
 printf 'Ran %d tests, %d failed\n' "$tests_total" "$tests_failed"
 
-if (( tests_failed > 0 )); then
+if ((tests_failed > 0)); then
   exit 1
 fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # bstow - Link dotfiles from SRC_DIR into TARGET_DIR by converting "dot-*" to ".*"
 # Usage: bstow [SRC_DIR [TARGET_DIR]]

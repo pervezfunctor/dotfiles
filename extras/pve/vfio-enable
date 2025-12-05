@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 PCI_IDS=(
   "10de:2489" # nvidia rtx 3060 ti

@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 
+set -euo pipefail -o errtrace
+
 # shellcheck disable=SC1091
-
-# set -euo pipefail
-
 source "$(dirname "$0")/incus-utils"
-source "$(dirname "$0")/vt-utils"
 
 usage() {
   cat <<EOF
@@ -20,10 +18,10 @@ COMMANDS:
     create [ict-create args]  Create a new Incus container (forwards all args to ict-create)
     create-all [ict-create-multi args]  Create multiple Incus containers (forwards all args to ict-create-multi)
     start [name...]         Start container(s) - if no names provided, select from list
-    kill [name...]          Force stop container(s) - if no names provided, select from list
+    stop [name...]          Gracefully stop container(s) - if no names provided, select from list
     restart [name...]       Restart container(s) - if no names provided, select from list
     delete [name...]        Delete container(s) - if no names provided, select from list
-    shell <name>            Enter container shell
+    console <name>          Enter container shell
     exec <name> <cmd>       Execute command in container
     ip <name>               Get container IP address
     ssh <name> [username]   Connect to container via SSH
@@ -37,13 +35,14 @@ COMMANDS:
     snapshot <name> [snap]  Create container snapshot
     restore <name> <snap>   Restore container from snapshot
     copy <src> <dest>       Copy container
+    is-running <name>       Check if container is running (exit 0 if running, 1 if not)
 
 EXAMPLES:
     $0 list                         # List all containers
     $0 status ubuntu                # Show status of 'ubuntu' container
     $0 create --distro ubuntu --name myubuntu  # Create Ubuntu container named 'myubuntu'
     $0 create --distro fedora --dotfiles shell-slim docker  # Create Fedora container with dotfiles and Docker
-    $0 shell ubuntu                 # Enter 'ubuntu' container shell
+    $0 console ubuntu               # Enter 'ubuntu' container shell
     $0 exec ubuntu "ls -la"         # Run command in 'ubuntu' container
     $0 ip ubuntu                    # Get IP address of 'ubuntu' container
     $0 ssh ubuntu                   # SSH to 'ubuntu' container (auto-detect username)
@@ -56,10 +55,11 @@ EXAMPLES:
     $0 usb-list                     # List available USB devices
     $0 usb-attach ubuntu 1234:5678  # Attach USB device to container
     $0 usb-detach ubuntu my-usb     # Detach USB device from container
+    $0 is-running ubuntu            # Check if ubuntu container is running
 
     # Multi-container operations:
     $0 start ubuntu fedora          # Start multiple containers
-    $0 kill                         # Select containers to force stop from menu
+    $0 stop                         # Select containers to stop from menu
     $0 restart ubuntu               # Restart single container
     $0 delete ubuntu fedora arch     # Delete multiple containers
 
@@ -103,7 +103,7 @@ start_ict() {
   fi
 }
 
-kill_ict() {
+stop_ict() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -159,7 +159,7 @@ delete_ict() {
   fi
 }
 
-enter_shell() {
+enter_console() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -331,6 +331,12 @@ copy_ict() {
   fi
 }
 
+is_running() {
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
+  ict_check_running "$container_name"
+}
+
 show_ict_ip() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
@@ -462,6 +468,10 @@ list_remote_images() {
   incus image list images: --format csv | grep cloud | cut -d',' -f1
 }
 
+list_ict() {
+  incus list type=container --format csv --columns n
+}
+
 if [[ $# -eq 0 ]]; then
   usage
   exit 1
@@ -491,8 +501,8 @@ create-all)
 start)
   handle_multiple_arguments ict start "$@"
   ;;
-force-stop | kill)
-  handle_multiple_arguments ict kill "$@"
+shutdown | stop)
+  handle_multiple_arguments ict stop "$@"
   ;;
 restart)
   handle_multiple_arguments ict restart "$@"
@@ -500,8 +510,8 @@ restart)
 rm | delete)
   handle_multiple_arguments ict delete "$@"
   ;;
-shell)
-  enter_shell "$@"
+console)
+  enter_console "$@"
   ;;
 exec)
   exec_in_ict "$@"
@@ -541,6 +551,9 @@ usb-attach)
   ;;
 usb-detach)
   detach_usb_device "$@"
+  ;;
+is-running)
+  is_running "$@"
   ;;
 --help | -h)
   usage

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # git-up: Update git branch by fetching and rebasing
 # Usage: git-up [directory]

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vm-utils"
@@ -15,171 +15,171 @@ DISK_SIZE="20G"
 
 # Parse command line arguments
 parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-        --name)
-            VM_NAME="$2"
-            shift 2
-            ;;
-        --username)
-            USERNAME="$2"
-            shift 2
-            ;;
-        --release)
-            RELEASE="$2"
-            shift 2
-            ;;
-        --memory)
-            MEMORY="$2"
-            shift 2
-            ;;
-        --vcpus)
-            VCPUS="$2"
-            shift 2
-            ;;
-        --disk-size)
-            DISK_SIZE="$2"
-            shift 2
-            ;;
-        --ssh-key)
-            SSH_KEY="$2"
-            shift 2
-            ;;
-        --help | -h)
-            echo "Usage: $0 [OPTIONS]"
-            echo "Options:"
-            echo "  --name NAME         VM name (default: alpine)"
-            echo "  --username USER     Username (default: alpine)"
-            echo "  --release REL       Alpine version (default: 3.22)"
-            echo "  --memory MB         Memory in MB (default: 8192)"
-            echo "  --vcpus NUM         Number of vCPUs (default: 4)"
-            echo "  --disk-size SIZE    Disk size (default: 20G)"
-            echo "  --docker            Install Docker"
-            echo "  --brew             Install Homebrew and dev tools"
-            echo "  --nix              Install Nix package manager"
-            echo "  --ssh-key PATH      SSH public key path (default: auto-detect)"
-            echo "  --help, -h          Show this help"
-            exit 0
-            ;;
-        *)
-            fail "Unknown option: $1"
-            ;;
-        esac
-    done
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --name)
+      VM_NAME="$2"
+      shift 2
+      ;;
+    --username)
+      USERNAME="$2"
+      shift 2
+      ;;
+    --release)
+      RELEASE="$2"
+      shift 2
+      ;;
+    --memory)
+      MEMORY="$2"
+      shift 2
+      ;;
+    --vcpus)
+      VCPUS="$2"
+      shift 2
+      ;;
+    --disk-size)
+      DISK_SIZE="$2"
+      shift 2
+      ;;
+    --ssh-key)
+      SSH_KEY="$2"
+      shift 2
+      ;;
+    --help | -h)
+      echo "Usage: $0 [OPTIONS]"
+      echo "Options:"
+      echo "  --name NAME         VM name (default: alpine)"
+      echo "  --username USER     Username (default: alpine)"
+      echo "  --release REL       Alpine version (default: 3.22)"
+      echo "  --memory MB         Memory in MB (default: 8192)"
+      echo "  --vcpus NUM         Number of vCPUs (default: 4)"
+      echo "  --disk-size SIZE    Disk size (default: 20G)"
+      echo "  --docker            Install Docker"
+      echo "  --brew             Install Homebrew and dev tools"
+      echo "  --nix              Install Nix package manager"
+      echo "  --ssh-key PATH      SSH public key path (default: auto-detect)"
+      echo "  --help, -h          Show this help"
+      exit 0
+      ;;
+    *)
+      fail "Unknown option: $1"
+      ;;
+    esac
+  done
 }
 
 configure_alpine() {
-    case "$RELEASE" in
-    "3.22")
-        IMAGE_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.0-x86_64-bios-cloudinit-r0.qcow2"
-        BASE_IMG_NAME="generic_alpine-3.22.0-x86_64-bios-cloudinit-r0.qcow2"
-        OS_VARIANT="alpinelinux3.21"
-        ;;
-    "3.21")
-        IMAGE_URL="https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/generic_alpine-3.21.3-x86_64-bios-cloudinit-r0.qcow2"
-        BASE_IMG_NAME="generic_alpine-3.21.3-x86_64-bios-cloudinit-r0.qcow2"
-        OS_VARIANT="alpinelinux3.21"
-        ;;
-    "3.20")
-        IMAGE_URL="https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/generic_alpine-3.20.6-x86_64-bios-cloudinit-r0.qcow2"
-        BASE_IMG_NAME="generic_alpine-3.20.6-x86_64-bios-cloudinit-r0.qcow2"
-        OS_VARIANT="alpinelinux3.20"
-        ;;
-    *)
-        echo "Warning: Unknown release version '$RELEASE', defaulting to 3.22"
-        IMAGE_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.0-x86_64-bios-cloudinit-r0.qcow2"
-        BASE_IMG_NAME="generic_alpine-3.22.0-x86_64-bios-cloudinit-r0.qcow2"
-        OS_VARIANT="alpinelinux3.21"
-        ;;
-    esac
+  case "$RELEASE" in
+  "3.22")
+    IMAGE_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.0-x86_64-bios-cloudinit-r0.qcow2"
+    BASE_IMG_NAME="generic_alpine-3.22.0-x86_64-bios-cloudinit-r0.qcow2"
+    OS_VARIANT="alpinelinux3.21"
+    ;;
+  "3.21")
+    IMAGE_URL="https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/generic_alpine-3.21.3-x86_64-bios-cloudinit-r0.qcow2"
+    BASE_IMG_NAME="generic_alpine-3.21.3-x86_64-bios-cloudinit-r0.qcow2"
+    OS_VARIANT="alpinelinux3.21"
+    ;;
+  "3.20")
+    IMAGE_URL="https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/generic_alpine-3.20.6-x86_64-bios-cloudinit-r0.qcow2"
+    BASE_IMG_NAME="generic_alpine-3.20.6-x86_64-bios-cloudinit-r0.qcow2"
+    OS_VARIANT="alpinelinux3.20"
+    ;;
+  *)
+    echo "Warning: Unknown release version '$RELEASE', defaulting to 3.22"
+    IMAGE_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.0-x86_64-bios-cloudinit-r0.qcow2"
+    BASE_IMG_NAME="generic_alpine-3.22.0-x86_64-bios-cloudinit-r0.qcow2"
+    OS_VARIANT="alpinelinux3.21"
+    ;;
+  esac
 
-    local osinfo_list
-    osinfo_list=$(virt-install --osinfo list 2>/dev/null)
+  local osinfo_list
+  osinfo_list=$(virt-install --osinfo list 2>/dev/null)
 
-    if ! echo "$osinfo_list" | grep -q "alpinelinux"; then
-        warn "OS variant 'alpinelinux' not found in virt-install osinfo list, using 'linux'"
-        slog "Available alpine-related variants:"
-        echo "$osinfo_list" | grep -i alpine || true
-        OS_VARIANT="linux"
-    fi
+  if ! echo "$osinfo_list" | grep -q "alpinelinux"; then
+    warn "OS variant 'alpinelinux' not found in virt-install osinfo list, using 'linux'"
+    slog "Available alpine-related variants:"
+    echo "$osinfo_list" | grep -i alpine || true
+    OS_VARIANT="linux"
+  fi
 }
 
 main() {
-    virt_check_prerequisites
-    parse_args "$@"
-    [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(ssh_key_path)
-    if [[ ! -f "$SSH_KEY" ]]; then
-        fail "SSH public key not found at: $SSH_KEY"
-        exit 1
-    fi
+  virt_check_prerequisites
+  parse_args "$@"
+  [[ -z "${SSH_KEY:-}" ]] && SSH_KEY=$(ssh_key_path)
+  if [[ ! -f "$SSH_KEY" ]]; then
+    fail "SSH public key not found at: $SSH_KEY"
+    exit 1
+  fi
 
-    if getent passwd libvirt-qemu >/dev/null; then
-        QEMU_USER="libvirt-qemu"
-        QEMU_GROUP="libvirt-qemu"
-    elif getent passwd qemu >/dev/null; then
-        QEMU_USER="qemu"
-        QEMU_GROUP="qemu"
-    elif getent passwd libvirt >/dev/null; then
-        QEMU_USER="libvirt"
-        QEMU_GROUP="libvirt"
-    else
-        warn "Could not determine QEMU user, using 'root:kvm' as fallback"
-        QEMU_USER="root"
-        QEMU_GROUP="kvm"
-    fi
+  if getent passwd libvirt-qemu >/dev/null; then
+    QEMU_USER="libvirt-qemu"
+    QEMU_GROUP="libvirt-qemu"
+  elif getent passwd qemu >/dev/null; then
+    QEMU_USER="qemu"
+    QEMU_GROUP="qemu"
+  elif getent passwd libvirt >/dev/null; then
+    QEMU_USER="libvirt"
+    QEMU_GROUP="libvirt"
+  else
+    warn "Could not determine QEMU user, using 'root:kvm' as fallback"
+    QEMU_USER="root"
+    QEMU_GROUP="kvm"
+  fi
 
-    slog "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
+  slog "Using QEMU user/group: $QEMU_USER:$QEMU_GROUP"
 
-    configure_alpine
+  configure_alpine
 
-    # Set up working directories
-    WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
-    CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
-    DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
-    SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
-    BASE_IMG="${WORKDIR}/${BASE_IMG_NAME}"
-    PASSWORD=${PASSWORD:=$USERNAME}
+  # Set up working directories
+  WORKDIR="/var/lib/libvirt/images/${VM_NAME}-vm"
+  CLOUD_INIT_DIR="${WORKDIR}/cloud-init"
+  DISK_IMG="${WORKDIR}/${VM_NAME}.qcow2"
+  SEED_ISO="${CLOUD_INIT_DIR}/seed.iso"
+  BASE_IMG="${WORKDIR}/${BASE_IMG_NAME}"
+  PASSWORD=${PASSWORD:=$USERNAME}
 
-    PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
+  PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
 
-    sudo mkdir -p "$WORKDIR"
-    if [[ ! -d "$WORKDIR" ]]; then
-        fail "Failed to create working directory: $WORKDIR"
-        exit 1
-    fi
+  sudo mkdir -p "$WORKDIR"
+  if [[ ! -d "$WORKDIR" ]]; then
+    fail "Failed to create working directory: $WORKDIR"
+    exit 1
+  fi
 
-    sudo chown "$QEMU_USER:$QEMU_GROUP" "$WORKDIR"
-    sudo chmod 755 "$WORKDIR"
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$WORKDIR"
+  sudo chmod 755 "$WORKDIR"
 
-    # Download Alpine image if not exists
-    if [[ ! -f "$BASE_IMG" ]]; then
-        slog "Downloading Alpine image..."
-        sudo wget -O "$BASE_IMG" "$IMAGE_URL"
-        sudo chown "$QEMU_USER:$QEMU_GROUP" "$BASE_IMG"
-        sudo chmod 644 "$BASE_IMG"
-    fi
+  # Download Alpine image if not exists
+  if [[ ! -f "$BASE_IMG" ]]; then
+    slog "Downloading Alpine image..."
+    sudo wget -O "$BASE_IMG" "$IMAGE_URL"
+    sudo chown "$QEMU_USER:$QEMU_GROUP" "$BASE_IMG"
+    sudo chmod 644 "$BASE_IMG"
+  fi
 
-    slog "Creating VM disk..."
-    if ! sudo cp "$BASE_IMG" "$DISK_IMG"; then
-        fail "Failed to copy base image"
-        exit 1
-    fi
+  slog "Creating VM disk..."
+  if ! sudo cp "$BASE_IMG" "$DISK_IMG"; then
+    fail "Failed to copy base image"
+    exit 1
+  fi
 
-    if ! sudo qemu-img resize "$DISK_IMG" "$DISK_SIZE"; then
-        fail "Failed to resize VM disk"
-        exit 1
-    fi
+  if ! sudo qemu-img resize "$DISK_IMG" "$DISK_SIZE"; then
+    fail "Failed to resize VM disk"
+    exit 1
+  fi
 
-    sudo chown "$QEMU_USER:$QEMU_GROUP" "$DISK_IMG"
-    sudo chmod 644 "$DISK_IMG"
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$DISK_IMG"
+  sudo chmod 644 "$DISK_IMG"
 
-    # Create cloud-init configuration
-    slog "Creating cloud-init configuration..."
-    sudo mkdir -p "$CLOUD_INIT_DIR"
-    sudo chown "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
-    sudo chmod 755 "$CLOUD_INIT_DIR"
+  # Create cloud-init configuration
+  slog "Creating cloud-init configuration..."
+  sudo mkdir -p "$CLOUD_INIT_DIR"
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
+  sudo chmod 755 "$CLOUD_INIT_DIR"
 
-    sudo tee "${CLOUD_INIT_DIR}/user-data" <<EOF
+  sudo tee "${CLOUD_INIT_DIR}/user-data" <<EOF
 #cloud-config
 hostname: ${VM_NAME}
 manage_etc_hosts: true
@@ -218,12 +218,12 @@ runcmd:
   - echo "nameserver 1.1.1.1" >> /etc/resolv.conf
 EOF
 
-    sudo tee "${CLOUD_INIT_DIR}/meta-data" <<EOF
+  sudo tee "${CLOUD_INIT_DIR}/meta-data" <<EOF
 instance-id: ${VM_NAME}
 local-hostname: ${VM_NAME}
 EOF
 
-    sudo tee "${CLOUD_INIT_DIR}/network-config" <<EOF
+  sudo tee "${CLOUD_INIT_DIR}/network-config" <<EOF
 version: 2
 ethernets:
   eth0:
@@ -234,42 +234,42 @@ ethernets:
       addresses: [8.8.8.8, 1.1.1.1]
 EOF
 
-    sudo chown -R "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
-    sudo chmod -R 644 "$CLOUD_INIT_DIR"/*
-    sudo chmod 755 "$CLOUD_INIT_DIR"
+  sudo chown -R "$QEMU_USER:$QEMU_GROUP" "$CLOUD_INIT_DIR"
+  sudo chmod -R 644 "$CLOUD_INIT_DIR"/*
+  sudo chmod 755 "$CLOUD_INIT_DIR"
 
-    # Create cloud-init ISO
-    slog "Creating cloud-init ISO..."
-    sudo xorriso -as mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
-        "${CLOUD_INIT_DIR}/user-data" \
-        "${CLOUD_INIT_DIR}/meta-data" \
-        "${CLOUD_INIT_DIR}/network-config"
+  # Create cloud-init ISO
+  slog "Creating cloud-init ISO..."
+  sudo xorriso -as mkisofs -output "$SEED_ISO" -volid cidata -joliet -rock \
+    "${CLOUD_INIT_DIR}/user-data" \
+    "${CLOUD_INIT_DIR}/meta-data" \
+    "${CLOUD_INIT_DIR}/network-config"
 
-    sudo chown "$QEMU_USER:$QEMU_GROUP" "$SEED_ISO"
-    sudo chmod 644 "$SEED_ISO"
+  sudo chown "$QEMU_USER:$QEMU_GROUP" "$SEED_ISO"
+  sudo chmod 644 "$SEED_ISO"
 
-    # Create VM
-    slog "Creating VM ${VM_NAME}..."
-    virt-install \
-        --name "${VM_NAME}" \
-        --memory "${MEMORY}" \
-        --vcpus "${VCPUS}" \
-        --disk path="$DISK_IMG",format=qcow2,bus=virtio \
-        --disk path="$SEED_ISO",device=cdrom \
-        --os-variant "${OS_VARIANT}" \
-        --network network=default \
-        --graphics none \
-        --console pty,target_type=serial \
-        --import \
-        --noautoconsole
+  # Create VM
+  slog "Creating VM ${VM_NAME}..."
+  virt-install \
+    --name "${VM_NAME}" \
+    --memory "${MEMORY}" \
+    --vcpus "${VCPUS}" \
+    --disk path="$DISK_IMG",format=qcow2,bus=virtio \
+    --disk path="$SEED_ISO",device=cdrom \
+    --os-variant "${OS_VARIANT}" \
+    --network network=default \
+    --graphics none \
+    --console pty,target_type=serial \
+    --import \
+    --noautoconsole
 
-    slog "VM ${VM_NAME} created successfully!"
-    echo
-    slog "Alpine Linux Commands:"
-    echo "  Update system:      sudo apk update && sudo apk upgrade"
-    echo "  Install packages:   sudo apk add <package>"
-    echo "  Search packages:    apk search <term>"
-    echo "  List installed:     apk info"
+  slog "VM ${VM_NAME} created successfully!"
+  echo
+  slog "Alpine Linux Commands:"
+  echo "  Update system:      sudo apk update && sudo apk upgrade"
+  echo "  Install packages:   sudo apk add <package>"
+  echo "  Search packages:    apk search <term>"
+  echo "  List installed:     apk info"
 }
 
 main "$@"

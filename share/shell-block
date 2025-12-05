@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 ensure_block_in_file() {
   if [[ $# -ne 2 ]]; then

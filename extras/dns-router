@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 BRIDGE_IF="virbr0"
 SUBNET="192.168.122.0"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 UFW_DEFAULTS="/etc/default/ufw"
 UFW_BEFORE="/etc/ufw/before.rules"

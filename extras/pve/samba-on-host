@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 # take the media path and sambauser as an argument
 if [[ $# -ne 1 ]]; then

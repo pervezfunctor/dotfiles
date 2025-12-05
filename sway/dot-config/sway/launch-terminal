@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 if command -v ghosty >/dev/null; then
   exec ghostty

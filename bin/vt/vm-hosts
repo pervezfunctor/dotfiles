@@ -5,12 +5,12 @@
 # shellcheck disable=SC1091
 source "$(dirname "$0")/vm-utils"
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 vm_check_prerequisites
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 Usage: $0 <command> [options]
 
 Manage /etc/hosts entries for VMs automatically.
@@ -32,96 +32,96 @@ EOF
 }
 
 vm_hosts_add() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    local ip
-    ip=$(vm_ip "$vm_name")
-    local ret=$?
-    if [[ $ret -ne 0 ]]; then
-        fail "Could not get IP for VM '$vm_name'. Is it running?"
-        return 1
-    fi
+  local ip
+  ip=$(vm_ip "$vm_name")
+  local ret=$?
+  if [[ $ret -ne 0 ]]; then
+    fail "Could not get IP for VM '$vm_name'. Is it running?"
+    return 1
+  fi
 
-    # Check if entry already exists
-    if grep -q "^[0-9.]* .*$vm_name # Added by vm-hosts" /etc/hosts; then
-        warn "Entry for '$vm_name' already exists in /etc/hosts"
-        # Update existing entry
-        sudo sed -i "/^[0-9.]* .*$vm_name # Added by vm-hosts/d" /etc/hosts
-    fi
+  # Check if entry already exists
+  if grep -q "^[0-9.]* .*$vm_name # Added by vm-hosts" /etc/hosts; then
+    warn "Entry for '$vm_name' already exists in /etc/hosts"
+    # Update existing entry
+    sudo sed -i "/^[0-9.]* .*$vm_name # Added by vm-hosts/d" /etc/hosts
+  fi
 
-    echo "$ip $vm_name # Added by vm-hosts" | sudo tee -a /etc/hosts >/dev/null
-    success "Added $vm_name ($ip) to /etc/hosts"
+  echo "$ip $vm_name # Added by vm-hosts" | sudo tee -a /etc/hosts >/dev/null
+  success "Added $vm_name ($ip) to /etc/hosts"
 }
 
 vm_hosts_remove() {
-    local vm_name="$1"
+  local vm_name="$1"
 
-    if grep -q "^[0-9.]* .*$vm_name # Added by vm-hosts" /etc/hosts; then
-        sudo sed -i "/^[0-9.]* .*$vm_name # Added by vm-hosts/d" /etc/hosts
-        success "Removed $vm_name from /etc/hosts"
-    else
-        warn "No entry found for '$vm_name' in /etc/hosts that was added by vm-hosts"
-    fi
+  if grep -q "^[0-9.]* .*$vm_name # Added by vm-hosts" /etc/hosts; then
+    sudo sed -i "/^[0-9.]* .*$vm_name # Added by vm-hosts/d" /etc/hosts
+    success "Removed $vm_name from /etc/hosts"
+  else
+    warn "No entry found for '$vm_name' in /etc/hosts that was added by vm-hosts"
+  fi
 }
 
 vm_hosts_list() {
-    slog "VM entries in /etc/hosts:"
-    echo
+  slog "VM entries in /etc/hosts:"
+  echo
 
-    if grep -E "^192\.168\.122\.[0-9]+" /etc/hosts; then
-        echo
-    else
-        warn "No VM entries found in /etc/hosts"
-    fi
+  if grep -E "^192\.168\.122\.[0-9]+" /etc/hosts; then
+    echo
+  else
+    warn "No VM entries found in /etc/hosts"
+  fi
 }
 
 vm_hosts_update_all() {
-    slog "Updating /etc/hosts for all running VMs..."
+  slog "Updating /etc/hosts for all running VMs..."
 
-    local vms
-    vms=$(virsh list --name)
+  local vms
+  vms=$(virsh list --name)
 
-    if [[ -z "$vms" ]]; then
-        warn "No running VMs found"
-        return 0
+  if [[ -z "$vms" ]]; then
+    warn "No running VMs found"
+    return 0
+  fi
+
+  while IFS= read -r vm; do
+    if [[ -n "$vm" ]]; then
+      slog "Processing VM: $vm"
+      vm_hosts_add "$vm"
     fi
+  done <<<"$vms"
 
-    while IFS= read -r vm; do
-        if [[ -n "$vm" ]]; then
-            slog "Processing VM: $vm"
-            vm_hosts_add "$vm"
-        fi
-    done <<<"$vms"
-
-    success "Updated /etc/hosts for all running VMs"
+  success "Updated /etc/hosts for all running VMs"
 }
 
 vm_hosts_clean() {
-    slog "Cleaning up /etc/hosts entries for non-existent VMs..."
+  slog "Cleaning up /etc/hosts entries for non-existent VMs..."
 
-    local host_vms
-    host_vms=$(grep -E "^192\.168\.122\.[0-9]+" /etc/hosts | awk '{print $2}' || true)
+  local host_vms
+  host_vms=$(grep -E "^192\.168\.122\.[0-9]+" /etc/hosts | awk '{print $2}' || true)
 
-    if [[ -z "$host_vms" ]]; then
-        slog "No VM entries found in /etc/hosts"
-        return 0
+  if [[ -z "$host_vms" ]]; then
+    slog "No VM entries found in /etc/hosts"
+    return 0
+  fi
+
+  while IFS= read -r vm; do
+    if [[ -n "$vm" ]]; then
+      if ! virsh dominfo "$vm" &>/dev/null; then
+        warn "VM '$vm' no longer exists, removing from /etc/hosts"
+        vm_hosts_remove "$vm"
+      fi
     fi
+  done <<<"$host_vms"
 
-    while IFS= read -r vm; do
-        if [[ -n "$vm" ]]; then
-            if ! virsh dominfo "$vm" &>/dev/null; then
-                warn "VM '$vm' no longer exists, removing from /etc/hosts"
-                vm_hosts_remove "$vm"
-            fi
-        fi
-    done <<<"$host_vms"
-
-    success "Cleanup complete"
+  success "Cleanup complete"
 }
 
 if [[ $# -eq 0 ]]; then
-    usage
-    exit 1
+  usage
+  exit 1
 fi
 
 command="$1"
@@ -129,36 +129,36 @@ vm_name="${2:-}"
 
 case "$command" in
 add)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    vm_hosts_add "$vm_name"
-    ;;
-remove)
-    [[ -z "$vm_name" ]] && {
-        fail "VM name required"
-        usage
-        exit 1
-    }
-    vm_hosts_remove "$vm_name"
-    ;;
-ls | list)
-    vm_hosts_list
-    ;;
-update)
-    vm_hosts_update_all
-    ;;
-clean)
-    vm_hosts_clean
-    ;;
---help | -h)
-    usage
-    ;;
-*)
-    fail "Unknown command: $command"
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
     usage
     exit 1
-    ;;
+  }
+  vm_hosts_add "$vm_name"
+  ;;
+remove)
+  [[ -z "$vm_name" ]] && {
+    fail "VM name required"
+    usage
+    exit 1
+  }
+  vm_hosts_remove "$vm_name"
+  ;;
+ls | list)
+  vm_hosts_list
+  ;;
+update)
+  vm_hosts_update_all
+  ;;
+clean)
+  vm_hosts_clean
+  ;;
+--help | -h)
+  usage
+  ;;
+*)
+  fail "Unknown command: $command"
+  usage
+  exit 1
+  ;;
 esac
