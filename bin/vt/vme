@@ -12,12 +12,12 @@ cmd_vme() {
 
 check_prerequisites() {
   for cmd in virsh vme-create trash; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-      echo "⚠️  Warning: Required command '$cmd' is not available."
+    if ! has_cmd "$cmd"; then
+      fail "⚠️  Warning: Required command '$cmd' is not available."
       # exit 1
     fi
   done
-  command -v virt-cat >/dev/null 2>&1 || echo "⚠️  virt-cat not available, some commands won't work"
+  has_cmd virt-cat || fail "⚠️  virt-cat not available, some commands won't work"
 }
 
 usage() {
@@ -102,10 +102,10 @@ delete_vme() {
   if [[ -n "$vda" ]]; then
     dir=$(dirname "$vda")
 
-    echo "Found vm directory: $dir"
+    slog "Found vm directory: $dir"
     read -p "Delete dir? (y/N): " -r
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-      echo "Deleting $dir"
+      warn "Deleting $dir"
       sudo rm -rf "$dir"
     fi
   fi
@@ -140,12 +140,12 @@ resolve_vm_name() {
 
   local vms selected rc
   if ! vms=$(list_vme); then
-    echo "Error: failed to list virtual machines" >&2
+    fail "Failed to list virtual machines" >&2
     return 1
   fi
 
   if [[ -z "$vms" ]]; then
-    echo "Error: no virtual machines found" >&2
+    fail "No virtual machines found" >&2
     return 1
   fi
 
@@ -153,9 +153,9 @@ resolve_vm_name() {
   rc=$?
   if [[ $rc -ne 0 || -z "$selected" ]]; then
     if [[ $rc -eq 127 ]]; then
-      echo "Error: fzf is not installed or not in PATH" >&2
+      fail "fzf is not installed or not in PATH" >&2
     else
-      echo "Cancelled" >&2
+      fail "Cancelled" >&2
     fi
     return 1
   fi
@@ -286,7 +286,7 @@ net_vme() {
     virsh --connect qemu:///system net-undefine "$@"
     ;;
   *)
-    echo "Unknown net command: $1"
+    fail "Unknown net command: $1"
     net_usage
     exit 1
     ;;
@@ -399,7 +399,7 @@ main() {
     usage
     ;;
   *)
-    echo "Error: Unknown command: $command"
+    fail "Unknown command: $command"
     usage
     ;;
   esac

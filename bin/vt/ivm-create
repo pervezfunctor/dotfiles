@@ -370,6 +370,11 @@ parse_args() {
 }
 
 main() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 0
+  fi
+
   slog "Starting Incus VM creation..."
   ivm_check_exists_prerequisites
   parse_args "$@"

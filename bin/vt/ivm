@@ -639,32 +639,46 @@ parse_args() {
   fi
 
   command="$1"
-  vm_name="${2:-}"
-  shift 2
+  shift
 
   if [[ "$command" != "install" ]]; then
     ivm_check_exists_prerequisites
   fi
 
   case "$command" in
+  --help | -h)
+    usage
+    ;;
+  create)
+    create_ivm "$@"
+    exit $?
+    ;;
+  create-all)
+    ivm-create-multi "$@"
+    exit $?
+    ;;
   install)
     install_incus
+    exit $?
     ;;
   ls | list)
     list_ivms
+    exit $?
     ;;
-  status)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    vm_status "$target" "$@"
+  cleanup)
+    cleanup_ivms
+    exit $?
     ;;
-  create)
-    create_ivm "$vm_name" "$@"
+  disk-list)
+    list_host_disk_devices
+    exit $?
     ;;
-  create-all)
-    ivm-create-multi "$vm_name" "$@"
-    ;;
+  esac
+
+  vm_name="${1:-}"
+  shift
+
+  case "$command" in
   start)
     handle_multiple_arguments ivm start "$vm_name" "$@"
     ;;
@@ -707,6 +721,12 @@ parse_args() {
     } || exit 1
     ssh_ivm "$target" "$@"
     ;;
+  status)
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    vm_status "$target" "$@"
+    ;;
   info)
     {
       target=$(resolve_vm_name "$vm_name")
@@ -740,9 +760,6 @@ parse_args() {
   copy)
     copy_ivm "$vm_name" "$@"
     ;;
-  cleanup)
-    cleanup_ivms
-    ;;
   usb-list)
     list_host_usb_devices
     ;;
@@ -763,9 +780,6 @@ parse_args() {
       target=$(resolve_vm_name "$vm_name")
     } || exit 1
     detach_usb_device "$target" "$@"
-    ;;
-  disk-list)
-    list_host_disk_devices
     ;;
   disk-attached)
     {
@@ -790,9 +804,6 @@ parse_args() {
       target=$(resolve_vm_name "$vm_name")
     } || exit 1
     is-running_ivm "$target" "$@"
-    ;;
-  --help | -h)
-    usage
     ;;
   *)
     fail "Unknown command: $command"

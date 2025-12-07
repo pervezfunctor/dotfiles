@@ -400,6 +400,11 @@ check_prerequisites() {
 }
 
 main() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 0
+  fi
+
   check_prerequisites
   slog "Starting Incus LXC container creation..."
 

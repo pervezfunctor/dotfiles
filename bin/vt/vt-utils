@@ -45,24 +45,6 @@ default_username() {
   echo "$username"
 }
 
-add_port_command() {
-  local ssh_config="$HOME/.ssh/config"
-  touch "$ssh_config"
-
-  if grep -qE "^Host[[:space:]]+\\*-vmu$" "$ssh_config"; then
-    return
-  fi
-
-  cat <<'EOF' >>"$ssh_config"
-Host *-vmu
-  HostName 127.0.0.1
-  ProxyCommand sh -c 'port=$(grep -m1 "^%h " ~/.vm-ports | awk "{print \$2}"); exec nc 127.0.0.1 $port'
-  StrictHostKeyChecking no
-  UserKnownHostsFile=/dev/null
-  LogLevel ERROR
-EOF
-}
-
 get_host_nic() {
   ip route show default | awk '/default/ {print $5}'
 }

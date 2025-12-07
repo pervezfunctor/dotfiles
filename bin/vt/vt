@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091
+
+set -euo pipefail -o errtrace
+
+DOT_DIR=${DOT_DIR:-"$HOME/.ilm"}
+source "$DOT_DIR/share/utils"
+
+usage() {
+  cat <<EOF
+Usage: $0 <tool> [args...]
+
+Delegate to various virtualization and container management tools.
+
+TOOLS:
+    vmu         VM management for user-mode VMs (qemu:///session)
+    vme         VM management for system-mode VMs (qemu:///system)
+    dt          Distrobox container management
+    ivm         Incus VM management
+    ict         Incus container management
+
+EXAMPLES:
+    $0 vmu list                    # List user-mode VMs
+    $0 vme list                    # List system-mode VMs
+    $0 dt list                     # List distrobox containers
+    $0 ivm list                    # List Incus VMs
+    $0 ict list                    # List Incus containers
+
+    $0 vmu create --distro ubuntu  # Create Ubuntu user-mode VM
+    $0 vme create --distro fedora  # Create Fedora system-mode VM
+    $0 dt create ubuntu            # Create Ubuntu distrobox container
+    $0 ivm create --distro debian  # Create Debian Incus VM
+    $0 ict create --distro arch    # Create Arch Incus container
+
+EOF
+}
+
+parse_args() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  tool="$1"
+  shift
+
+  if [[ $tool == "--help" || $tool == "-h" ]]; then
+    usage
+    exit 0
+  fi
+
+  if [[ $tool != "vmu" && $tool != "vme" && $tool != "dt" && $tool != "ivm" && $tool != "ict" ]]; then
+    fail "Unknown tool '$tool'"
+    echo
+    usage
+    exit 1
+  fi
+
+  $tool "$@"
+}
+
+main() {
+  parse_args "$@"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

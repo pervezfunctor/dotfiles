@@ -15,7 +15,7 @@ cmd_vmu() {
 check_prerequisites() {
   for cmd in virsh trash virt-cat vmu-create; do
     if ! has_cmd "$cmd"; then
-      echo "Error: Required command '$cmd' is not available."
+      fail "Required command '$cmd' is not available."
       exit 1
     fi
   done
@@ -103,10 +103,10 @@ delete_vmu() {
   if [[ -n "$vda" ]]; then
     dir=$(dirname "$vda")
 
-    echo "Found vm directory: $dir"
+    slog echo "Found vm directory: $dir"
     read -p "Delete dir? (y/N): " -r
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-      echo "Deleting $dir"
+      warn "Deleting $dir"
       trash "$dir"
     fi
   fi
@@ -131,18 +131,18 @@ ssh_vmu() {
   local user="${2:-}"
 
   if [ -z "$VM" ]; then
-    echo "Usage: vmu ssh <vm-name> [username]"
+    info echo "Usage: vmu ssh <vm-name> [username]"
     exit 1
   fi
 
   if [[ ! -f ~/.vmu-ports ]]; then
-    echo "No VMs found"
+    fail "No VMs found"
     exit 1
   fi
 
   local entry
   entry=$(grep -m1 "^$VM " ~/.vmu-ports) || {
-    echo "VM $VM not found"
+    fail "VM $VM not found"
     exit 1
   }
 
@@ -162,24 +162,20 @@ exec_vmu() {
   local CMD="$*"
 
   if [ -z "$VM" ] || [ -z "$CMD" ]; then
-    echo "Usage: vmu exec <vm-name> <command>"
-    exit 1
+    die "Usage: vmu exec <vm-name> <command>"
   fi
 
   if ! is-running_vmu "$VM"; then
-    echo "Error: VM '$VM' is not running"
-    exit 1
+    die "Error: VM '$VM' is not running"
   fi
 
   if [[ ! -f ~/.vmu-ports ]]; then
-    echo "No VMs found"
-    exit 1
+    die "No VMs found"
   fi
 
   local entry
   entry=$(grep -m1 "^$VM " ~/.vmu-ports) || {
-    echo "VM $VM not found"
-    exit 1
+    die "VM $VM not found"
   }
 
   local port user
@@ -206,12 +202,12 @@ resolve_vm_name() {
 
   local vms selected rc
   if ! vms=$(list_vmu); then
-    echo "Error: failed to list virtual machines" >&2
+    fail "Failed to list virtual machines" >&2
     return 1
   fi
 
   if [[ -z "$vms" ]]; then
-    echo "Error: no virtual machines found" >&2
+    fail "No virtual machines found" >&2
     return 1
   fi
 
@@ -219,9 +215,9 @@ resolve_vm_name() {
   rc=$?
   if [[ $rc -ne 0 || -z "$selected" ]]; then
     if [[ $rc -eq 127 ]]; then
-      echo "Error: fzf is not installed or not in PATH" >&2
+      fail "fzf is not installed or not in PATH" >&2
     else
-      echo "Cancelled" >&2
+      fail "Cancelled" >&2
     fi
     return 1
   fi
@@ -267,10 +263,10 @@ main() {
     status_vmu "$target"
     ;;
   create | new)
-    "$(dirname "$0")/vmu-create" "$@"
+    vmu-create "$@"
     ;;
   create-all)
-    "$(dirname "$0")/vmu-create-multi" "$@"
+    vmu-create-multi "$@"
     ;;
   autostart)
     handle_multiple_arguments vmu autostart "$@"
@@ -330,7 +326,7 @@ main() {
     usage
     ;;
   *)
-    echo "Error: Unknown command: $command"
+    fail "Error: Unknown command: $command"
     usage
     ;;
   esac
