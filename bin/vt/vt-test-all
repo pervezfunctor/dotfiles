@@ -1,0 +1,14 @@
+#! /usr/bin/env bash
+
+set -euo pipefail -o errtrace
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 distro1 distro2 [distro3 ...]" >&2
+  exit 1
+fi
+
+COMMANDS=(vmu vme ivm ict dt)
+
+for cmd in "${COMMANDS[@]}"; do
+  "$cmd" "$@" 2>.vt-err.log 2>&1
+done
