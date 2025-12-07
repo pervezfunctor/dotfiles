@@ -5,6 +5,7 @@
 set -euo pipefail -o errtrace
 
 source "$(dirname "$0")/vm-utils"
+source "$(dirname "$0")/vt-utils"
 
 cmd_vme() {
   virsh --connect qemu:///system "$@"
@@ -129,38 +130,6 @@ list_vme_all() {
 
 list_vme() {
   virsh --connect qemu:///system list --all | awk 'NR>2 && $0 !~ /^[-[:space:]]*$/ {print $2}'
-}
-
-resolve_vm_name() {
-  local name="$1"
-  if [[ -n "$name" ]]; then
-    printf '%s\n' "$name"
-    return 0
-  fi
-
-  local vms selected rc
-  if ! vms=$(list_vme); then
-    fail "Failed to list virtual machines" >&2
-    return 1
-  fi
-
-  if [[ -z "$vms" ]]; then
-    fail "No virtual machines found" >&2
-    return 1
-  fi
-
-  selected=$(select-one 'VM > ' "$vms")
-  rc=$?
-  if [[ $rc -ne 0 || -z "$selected" ]]; then
-    if [[ $rc -eq 127 ]]; then
-      fail "fzf is not installed or not in PATH" >&2
-    else
-      fail "Cancelled" >&2
-    fi
-    return 1
-  fi
-
-  printf '%s\n' "$selected"
 }
 
 detect_user_for_vm() {
@@ -321,16 +290,10 @@ main() {
     cmd_vme "$@"
     ;;
   disk)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    disk_vme "$target"
+    handle_one_argument vme disk "$vm_name"
     ;;
   info | status)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    status_vme "$target"
+    handle_one_argument vme status "$vm_name"
     ;;
   create | new)
     vme-create "$@"
@@ -357,43 +320,25 @@ main() {
     handle_multiple_arguments vme delete "$@"
     ;;
   console)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    console_vme "$target" "${@:2}"
+    handle_one_argument vme console "$vm_name"
     ;;
   ip)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    ip_vme "$target" "${@:2}"
+    handle_one_argument vme ip "$vm_name"
     ;;
   is-running)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    is-running_vme "$target" "${@:2}"
+    handle_one_argument vme is_running "$vm_name"
     ;;
   net)
     net_vme "$@"
     ;;
   logs)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    logs_vme "$target" "${@:2}"
+    handle_one_argument vme logs "$vm_name"
     ;;
   ssh)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    ssh_vme "$target" "${@:2}"
+    handle_one_argument vme ssh "$vm_name"
     ;;
   exec)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    exec_vme "$target" "${@:2}"
+    handle_one_argument vme exec "$vm_name"
     ;;
   --help | -h)
     usage

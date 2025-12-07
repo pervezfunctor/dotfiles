@@ -185,7 +185,6 @@ handle_multiple_arguments() {
     }
   fi
 
-  # execute handler for each selected item
   local handler="${cmd}_${backend}"
   if ! fn_exists "$handler"; then
     fail "Missing handler: $handler" >&2
@@ -195,6 +194,51 @@ handle_multiple_arguments() {
   for item in "${items[@]}"; do
     "$handler" "$item"
   done
+}
+
+handle_one_argument() {
+  if [[ $# -lt 2 ]]; then
+    fail "handle_one_argument: requires at least 2 arguments" >&2
+    info "Usage: handle_one_argument <backend> <cmd> [item]"
+    return 1
+  fi
+
+  local backend="$1"
+  local cmd
+  cmd="$2"
+  shift 2
+  local item="${1:-}"
+
+  if [[ -z "$item" ]]; then
+    local list_fn="list_${backend}"
+
+    if ! fn_exists "$list_fn"; then
+      fail "Missing backend function: $list_fn"
+      return 1
+    fi
+
+    mapfile -t available < <("$list_fn")
+
+    if [[ ${#available[@]} -eq 0 ]]; then
+      slog "No items found for '$backend'."
+      return 1
+    fi
+
+    item=$(select-one "Select item to ${cmd}:" "${available[@]}")
+
+    [[ -n "$item" ]] || {
+      slog "Nothing selected."
+      return 1
+    }
+  fi
+
+  local handler="${cmd}_${backend}"
+  if ! fn_exists "$handler"; then
+    fail "Missing handler: $handler" >&2
+    return 1
+  fi
+
+  "$handler" "$item"
 }
 
 wait_for_ip() {

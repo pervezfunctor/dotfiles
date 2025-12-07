@@ -200,10 +200,6 @@ show_ict_info() {
   incus info "$container_name"
 }
 
-ip_ict() {
-  ict_ip "$@"
-}
-
 show_ict_config() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
@@ -339,6 +335,62 @@ is-running_ict() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
   ict_check_running "$container_name"
+}
+
+# Handler functions for handle_one_argument
+status_ict() {
+  local container_name="$1"
+  container_status "$container_name"
+}
+
+info_ict() {
+  local container_name="$1"
+  show_ict_info "$container_name"
+}
+
+config_ict() {
+  local container_name="$1"
+  show_ict_config "$container_name"
+}
+
+logs_ict() {
+  local container_name="$1"
+  shift
+  show_logs "$container_name" "$@"
+}
+
+snapshot_ict() {
+  local container_name="$1"
+  shift
+  create_snapshot "$container_name" "$@"
+}
+
+restore_ict() {
+  local container_name="$1"
+  shift
+  restore_snapshot "$container_name" "$@"
+}
+
+usb_attached_ict() {
+  local container_name="$1"
+  list_ict_usb_devices "$container_name"
+}
+
+usb_attach_ict() {
+  local container_name="$1"
+  shift
+  attach_usb_device "$container_name" "$@"
+}
+
+usb_detach_ict() {
+  local container_name="$1"
+  shift
+  detach_usb_device "$container_name" "$@"
+}
+
+is_running_ict() {
+  local container_name="$1"
+  is-running_ict "$container_name"
 }
 
 # Main command handling
@@ -482,7 +534,7 @@ parse_args() {
     list_remote_images
     ;;
   status)
-    container_status "$@"
+    handle_one_argument ict status "$@"
     ;;
   create)
     create_ict "$@"
@@ -503,31 +555,31 @@ parse_args() {
     handle_multiple_arguments ict delete "$@"
     ;;
   console)
-    console_ict "$@"
+    handle_one_argument ict console "$@"
     ;;
   exec)
-    exec_ict "$@"
+    handle_one_argument ict exec "$@"
     ;;
   ip)
-    ip_ict "$@"
+    handle_one_argument ict ip "$@"
     ;;
   ssh)
-    ssh_ict "$@"
+    handle_one_argument ict ssh "$@"
     ;;
   info)
-    show_ict_info "$@"
+    handle_one_argument ict info "$@"
     ;;
   config)
-    show_ict_config "$@"
+    handle_one_argument ict config "$@"
     ;;
   logs)
-    show_logs "$@"
+    handle_one_argument ict logs "$@"
     ;;
   snapshot)
-    create_snapshot "$@"
+    handle_one_argument ict snapshot "$@"
     ;;
   restore)
-    restore_snapshot "$@"
+    handle_one_argument ict restore "$@"
     ;;
   copy)
     copy_ict "$@"
@@ -536,16 +588,16 @@ parse_args() {
     list_host_usb_devices
     ;;
   usb-attached)
-    list_ict_usb_devices "$@"
+    handle_one_argument ict usb_attached "$@"
     ;;
   usb-attach)
-    attach_usb_device "$@"
+    handle_one_argument ict usb_attach "$@"
     ;;
   usb-detach)
-    detach_usb_device "$@"
+    handle_one_argument ict usb_detach "$@"
     ;;
   is-running)
-    is-running_ict "$@"
+    handle_one_argument ict is_running "$@"
     ;;
   --help | -h)
     usage

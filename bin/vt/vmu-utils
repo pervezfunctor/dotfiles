@@ -1,0 +1,115 @@
+#! /usr/bin/env bash
+
+# shellcheck disable=SC1091
+
+source "$(dirname "$0")/vm-utils"
+
+vmu_exists() {
+  virsh --connect qemu:///session dominfo "$1" &>/dev/null
+}
+
+check_vmu_exists() {
+  vmu_exists "$1" || {
+    die "VMU VM '$1' not found"
+  }
+}
+
+vmu_running() {
+  virsh --connect qemu:///session domstate "$1" | grep -q "^running$"
+}
+
+vmu_state() {
+  virsh --connect qemu:///session domstate "$1"
+}
+
+check_vmu_running() {
+  vmu_running "$1" || {
+    die "VMU VM '$1' is not running"
+  }
+}
+
+VMU_PORTS_FILE="$HOME/.vmu-ports"
+
+find_free_port_random() {
+  local max_attempts=100
+  local vm_assigned_ports
+
+  if [[ -f "$VMU_PORTS_FILE" ]]; then
+    vm_assigned_ports=$(awk '{print $2}' "$VMU_PORTS_FILE")
+  fi
+
+  for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+    local port=$((RANDOM % (65000 - 2222 + 1) + 2222))
+
+    if ss -l -t -n | awk '{print $4}' | grep -q ":$port\$"; then
+      continue
+    fi
+
+    if [[ -n "${vm_assigned_ports:-}" ]] && grep -q "^$port\$" <<<"$vm_assigned_ports"; then
+      continue
+    fi
+
+    echo "$port"
+    return 0
+  done
+
+  echo "Could not find free port after $max_attempts attempts" >&2
+  return 1
+}
+
+register_vm_port() {
+  local name="$1"
+  local port="$2"
+  local user="$3"
+
+  # remove old entry if exists
+  sed -i "/^$name /d" "$VMU_PORTS_FILE" 2>/dev/null || true
+  touch "$VMU_PORTS_FILE"
+  echo "$name $port $user" >>"$VMU_PORTS_FILE"
+}
+
+add_port_command() {
+  local ssh_config="$HOME/.ssh/config"
+  touch "$ssh_config"
+
+  if grep -qE "^Host[[:space:]]+\\*-vmu$" "$ssh_config"; then
+    return
+  fi
+
+  cat <<'EOF' >>"$ssh_config"
+Host *-vmu
+  HostName 127.0.0.1
+  ProxyCommand sh -c 'port=$(grep -m1 "^%h " ${VMU_PORTS_FILE} | awk "{print \$2}"); exec nc 127.0.0.1 $port'
+  StrictHostKeyChecking no
+  UserKnownHostsFile=/dev/null
+  LogLevel ERROR
+EOF
+}
+
+check_and_add_port_forward() {
+  local vm_name=$1
+  local host_port=${2:-2222}
+  local guest_port=${3:-22}
+
+  echo "Checking existing port forwards for VM: $vm_name"
+
+  local network_info
+  network_info=$(virsh --connect qemu:///session \
+    qemu-monitor-command "$vm_name" \
+    --hmp "info network" 2>/dev/null || echo "")
+
+  if echo "$network_info" | grep -q "TCP\[HOST_FORWARD\].*:${host_port}-"; then
+    echo "Port forwarding already exists for port $host_port"
+    return 0
+  fi
+
+  echo "Adding port forwarding: localhost:$host_port -> guest:$guest_port"
+  if virsh --connect qemu:///session qemu-monitor-command "$vm_name" \
+    --hmp "hostfwd_add ::${host_port}-:${guest_port}"; then
+    echo "Port forwarding added successfully"
+    return 0
+  else
+    echo "Failed to add port forwarding"
+    return 1
+  fi
+}

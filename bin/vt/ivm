@@ -98,36 +98,53 @@ list_ivm() {
   incus list type=virtual-machine --format csv --columns n
 }
 
-resolve_vm_name() {
-  local name="$1"
-  if [[ -n "$name" ]]; then
-    printf '%s\n' "$name"
-    return 0
-  fi
+# Wrapper functions for handle_one_argument compatibility
+status_ivm() {
+  vm_status "$@"
+}
 
-  local vms selected rc
-  if ! vms=$(list_ivm); then
-    echo "Error: failed to list virtual machines" >&2
-    return 1
-  fi
+info_ivm() {
+  show_ivm_info "$@"
+}
 
-  if [[ -z "$vms" ]]; then
-    echo "Error: no virtual machines found" >&2
-    return 1
-  fi
+config_ivm() {
+  show_ivm_config "$@"
+}
 
-  selected=$(select-one 'VM > ' "$vms")
-  rc=$?
-  if [[ $rc -ne 0 || -z "$selected" ]]; then
-    if [[ $rc -eq 127 ]]; then
-      echo "Error: fzf is not installed or not in PATH" >&2
-    else
-      echo "Cancelled" >&2
-    fi
-    return 1
-  fi
+logs_ivm() {
+  show_logs "$@"
+}
 
-  printf '%s\n' "$selected"
+snapshot_ivm() {
+  create_snapshot "$@"
+}
+
+restore_ivm() {
+  restore_snapshot "$@"
+}
+
+usb_attached_ivm() {
+  list_ivm_usb_devices "$@"
+}
+
+usb_attach_ivm() {
+  attach_usb_device "$@"
+}
+
+usb_detach_ivm() {
+  detach_usb_device "$@"
+}
+
+disk_attached_ivm() {
+  list_ivm_disk_devices "$@"
+}
+
+disk_attach_ivm() {
+  attach_disk_device "$@"
+}
+
+disk_detach_ivm() {
+  detach_disk_device "$@"
 }
 
 vm_status() {
@@ -692,70 +709,37 @@ parse_args() {
     handle_multiple_arguments ivm delete "$vm_name" "$@"
     ;;
   console)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    connect_console "$target" "$@"
+    handle_one_argument ivm console "$vm_name"
     ;;
   exec)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    exec_ivm "$target" "$@"
+    handle_one_argument ivm exec "$vm_name"
     ;;
   shell)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    shell_ivm "$target" "$@"
+    handle_one_argument ivm shell "$vm_name"
     ;;
   ip)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    ip_ivm "$target" "$@"
+    handle_one_argument ivm ip "$vm_name"
     ;;
   ssh)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    ssh_ivm "$target" "$@"
+    handle_one_argument ivm ssh "$vm_name"
     ;;
   status)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    vm_status "$target" "$@"
+    handle_one_argument ivm status "$vm_name"
     ;;
   info)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    show_ivm_info "$target" "$@"
+    handle_one_argument ivm info "$vm_name"
     ;;
   config)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    show_ivm_config "$target" "$@"
+    handle_one_argument ivm config "$vm_name"
     ;;
   logs)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    show_logs "$target" "$@"
+    handle_one_argument ivm logs "$vm_name"
     ;;
   snapshot)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    create_snapshot "$target" "$@"
+    handle_one_argument ivm snapshot "$vm_name"
     ;;
   restore)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    restore_snapshot "$target" "$@"
+    handle_one_argument ivm restore "$vm_name"
     ;;
   copy)
     copy_ivm "$vm_name" "$@"
@@ -764,46 +748,25 @@ parse_args() {
     list_host_usb_devices
     ;;
   usb-attached)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    list_ivm_usb_devices "$target" "$@"
+    handle_one_argument ivm usb_attached "$vm_name"
     ;;
   usb-attach)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    attach_usb_device "$target" "$@"
+    handle_one_argument ivm usb_attach "$vm_name"
     ;;
   usb-detach)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    detach_usb_device "$target" "$@"
+    handle_one_argument ivm usb_detach "$vm_name"
     ;;
   disk-attached)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    list_ivm_disk_devices "$target" "$@"
+    handle_one_argument ivm disk_attached "$vm_name"
     ;;
   disk-attach)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    attach_disk_device "$target" "$@"
+    handle_one_argument ivm disk_attach "$vm_name"
     ;;
   disk-detach)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    detach_disk_device "$target" "$@"
+    handle_one_argument ivm disk_detach "$vm_name"
     ;;
   is-running)
-    {
-      target=$(resolve_vm_name "$vm_name")
-    } || exit 1
-    is-running_ivm "$target" "$@"
+    handle_one_argument ivm is-running "$vm_name"
     ;;
   *)
     fail "Unknown command: $command"
