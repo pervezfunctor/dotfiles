@@ -33,7 +33,7 @@ COMMANDS:
     usb-attach <n> <device> [name]  Attach USB device to container
     usb-detach <n> <device>         Detach USB device from container
     snapshot <name> [snap]  Create container snapshot
-    restore <name> <snap>   Restore container from snapshot
+    restore-snapshot <name> <snap>   Restore container from snapshot
     copy <src> <dest>       Copy container
     is-running <name>       Check if container is running (exit 0 if running, 1 if not)
 
@@ -191,7 +191,7 @@ exec_ict() {
   incus exec "$container_name" -- "$@"
 }
 
-show_ict_info() {
+info_ict() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -200,7 +200,7 @@ show_ict_info() {
   incus info "$container_name"
 }
 
-show_ict_config() {
+config_ict() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -209,7 +209,7 @@ show_ict_config() {
   incus config show "$container_name"
 }
 
-show_logs() {
+logs_ict() {
   local container_name="$1"
   local log_type="${2:-console}"
   ict_check_exists "$container_name" || return 1
@@ -257,7 +257,7 @@ show_logs() {
   esac
 }
 
-create_snapshot() {
+snapshot_ict() {
   local container_name="$1"
   local snapshot_name="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
   ict_check_exists "$container_name" || return 1
@@ -271,7 +271,7 @@ create_snapshot() {
   fi
 }
 
-restore_snapshot() {
+restore-snapshot_ict() {
   local container_name="$1"
   local snapshot_name="$2"
   ict_check_exists "$container_name" || return 1
@@ -337,64 +337,6 @@ is-running_ict() {
   ict_check_running "$container_name"
 }
 
-# Handler functions for handle_one_argument
-status_ict() {
-  local container_name="$1"
-  container_status "$container_name"
-}
-
-info_ict() {
-  local container_name="$1"
-  show_ict_info "$container_name"
-}
-
-config_ict() {
-  local container_name="$1"
-  show_ict_config "$container_name"
-}
-
-logs_ict() {
-  local container_name="$1"
-  shift
-  show_logs "$container_name" "$@"
-}
-
-snapshot_ict() {
-  local container_name="$1"
-  shift
-  create_snapshot "$container_name" "$@"
-}
-
-restore_ict() {
-  local container_name="$1"
-  shift
-  restore_snapshot "$container_name" "$@"
-}
-
-usb_attached_ict() {
-  local container_name="$1"
-  list_ict_usb_devices "$container_name"
-}
-
-usb_attach_ict() {
-  local container_name="$1"
-  shift
-  attach_usb_device "$container_name" "$@"
-}
-
-usb_detach_ict() {
-  local container_name="$1"
-  shift
-  detach_usb_device "$container_name" "$@"
-}
-
-is_running_ict() {
-  local container_name="$1"
-  is-running_ict "$container_name"
-}
-
-# Main command handling
-# USB device management functions
 list_host_usb_devices() {
   slog "Available USB devices on host:"
   echo
@@ -417,7 +359,7 @@ list_host_usb_devices() {
   slog "  By Bus/Device: $0 usb-attach CONTAINER_NAME bus.device"
 }
 
-list_ict_usb_devices() {
+usb-attached_ict() {
   local container_name="$1"
   ict_check_exists "$container_name" || return 1
 
@@ -428,7 +370,7 @@ list_ict_usb_devices() {
   }
 }
 
-attach_usb_device() {
+usb-attach_ict() {
   local container_name="$1"
   local device_spec="$2"
   local device_name="${3:-usb-$(date +%s)}"
@@ -470,7 +412,7 @@ attach_usb_device() {
   fi
 }
 
-detach_usb_device() {
+usb-detach_ict() {
   local container_name="$1"
   local device_name="$2"
 
@@ -513,6 +455,15 @@ ssh_ict() {
   fi
 
   ssh -o "ConnectTimeout=15" "$username@$ip"
+}
+
+status_ict() {
+  local container_name="$1"
+  ict_check_exists "$container_name" || return 1
+
+  slog "Status for container '$container_name':"
+  echo
+  incus list type=container "$container_name" --columns ns4
 }
 
 parse_args() {
@@ -578,8 +529,8 @@ parse_args() {
   snapshot)
     handle_one_argument ict snapshot "$@"
     ;;
-  restore)
-    handle_one_argument ict restore "$@"
+  restore-snapshot)
+    handle_one_argument ict restore-snapshot "$@"
     ;;
   copy)
     copy_ict "$@"
@@ -588,16 +539,16 @@ parse_args() {
     list_host_usb_devices
     ;;
   usb-attached)
-    handle_one_argument ict usb_attached "$@"
+    handle_one_argument ict usb-attached "$@"
     ;;
   usb-attach)
-    handle_one_argument ict usb_attach "$@"
+    handle_one_argument ict usb-attach "$@"
     ;;
   usb-detach)
-    handle_one_argument ict usb_detach "$@"
+    handle_one_argument ict usb-detach "$@"
     ;;
   is-running)
-    handle_one_argument ict is_running "$@"
+    handle_one_argument ict is-running "$@"
     ;;
   --help | -h)
     usage

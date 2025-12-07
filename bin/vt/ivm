@@ -32,7 +32,7 @@ COMMANDS:
     config [name]           Show VM configuration - if no name provided, select from list
     logs [name] [type]      Show VM logs (instance, console, or cloud-init) - if no name provided, select from list
     snapshot [name] [snap]  Create VM snapshot - if no name provided, select from list
-    restore [name] <snap>   Restore VM from snapshot - if no name provided, select from list
+    restore-snapshot [name] <snap>   Restore VM from snapshot - if no name provided, select from list
     copy <src> <dest>       Copy VM
     cleanup                 Remove stopped VMs
     usb-list                List all available USB devices on host
@@ -98,56 +98,7 @@ list_ivm() {
   incus list type=virtual-machine --format csv --columns n
 }
 
-# Wrapper functions for handle_one_argument compatibility
 status_ivm() {
-  vm_status "$@"
-}
-
-info_ivm() {
-  show_ivm_info "$@"
-}
-
-config_ivm() {
-  show_ivm_config "$@"
-}
-
-logs_ivm() {
-  show_logs "$@"
-}
-
-snapshot_ivm() {
-  create_snapshot "$@"
-}
-
-restore_ivm() {
-  restore_snapshot "$@"
-}
-
-usb_attached_ivm() {
-  list_ivm_usb_devices "$@"
-}
-
-usb_attach_ivm() {
-  attach_usb_device "$@"
-}
-
-usb_detach_ivm() {
-  detach_usb_device "$@"
-}
-
-disk_attached_ivm() {
-  list_ivm_disk_devices "$@"
-}
-
-disk_attach_ivm() {
-  attach_disk_device "$@"
-}
-
-disk_detach_ivm() {
-  detach_disk_device "$@"
-}
-
-vm_status() {
   local vm_name="$1"
   ivm_check_exists "$vm_name"
 
@@ -242,15 +193,6 @@ delete_ivm() {
   fi
 }
 
-connect_console() {
-  local vm_name="$1"
-  ivm_check_exists "$vm_name" || return 1
-
-  ivm_check_exists_running "$vm_name" || return 1
-
-  incus console "$vm_name"
-}
-
 exec_ivm() {
   local vm_name="$1"
   shift
@@ -267,7 +209,7 @@ exec_ivm() {
   incus exec "$vm_name" -- "$@"
 }
 
-show_ivm_info() {
+info_ivm() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -276,7 +218,7 @@ show_ivm_info() {
   incus info "$vm_name"
 }
 
-show_ivm_config() {
+config_ivm() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -291,7 +233,7 @@ console_ivm() {
   incus console "$vm_name" --show-log
 }
 
-show_logs() {
+logs_ivm() {
   local vm_name="$1"
   local log_type="${2:-instance}"
   ivm_check_exists "$vm_name" || return 1
@@ -337,7 +279,7 @@ show_logs() {
   esac
 }
 
-create_snapshot() {
+snapshot_ivm() {
   local vm_name="$1"
   local snapshot_name="${2:-snap-$(date +%Y%m%d-%H%M%S)}"
   ivm_check_exists "$vm_name" || return 1
@@ -351,7 +293,7 @@ create_snapshot() {
   fi
 }
 
-restore_snapshot() {
+restore-snapshot_ivm() {
   local vm_name="$1"
   local snapshot_name="$2"
   ivm_check_exists "$vm_name" || return 1
@@ -408,7 +350,7 @@ copy_ivm() {
   fi
 }
 
-cleanup_ivms() {
+cleanup_ivm() {
   slog "Cleaning up stopped VMs..."
 
   # List stopped VMs
@@ -483,7 +425,7 @@ list_host_usb_devices() {
   slog "  By Bus/Device: $0 usb-attach VM_NAME bus.device"
 }
 
-list_ivm_usb_devices() {
+usb_attached_ivm() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -494,7 +436,7 @@ list_ivm_usb_devices() {
   }
 }
 
-attach_usb_device() {
+usb_attach_ivm() {
   local vm_name="$1"
   local device_spec="$2"
   local device_name="${3:-usb-$(date +%s)}"
@@ -537,7 +479,7 @@ attach_usb_device() {
   fi
 }
 
-detach_usb_device() {
+usb_detach_ivm() {
   local vm_name="$1"
   local device_name="$2"
 
@@ -565,7 +507,7 @@ list_host_disk_devices() {
   slog "  $0 disk-attach VM_NAME /dev/sdb1 my-disk"
 }
 
-list_ivm_disk_devices() {
+disk_attached_ivm() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -576,7 +518,7 @@ list_ivm_disk_devices() {
   }
 }
 
-attach_disk_device() {
+disk_attach_ivm() {
   local vm_name="$1"
   local device_path="$2"
   local device_name="${3:-disk-$(basename "$device_path")}"
@@ -606,7 +548,7 @@ attach_disk_device() {
   fi
 }
 
-detach_disk_device() {
+disk_detach_ivm() {
   local vm_name="$1"
   local device_name="$2"
 
@@ -668,110 +610,98 @@ parse_args() {
     ;;
   create)
     create_ivm "$@"
-    exit $?
     ;;
   create-all)
     ivm-create-multi "$@"
-    exit $?
     ;;
   install)
     install_incus
-    exit $?
     ;;
   ls | list)
     list_ivms
-    exit $?
     ;;
   cleanup)
-    cleanup_ivms
-    exit $?
+    cleanup_ivm
     ;;
   disk-list)
     list_host_disk_devices
-    exit $?
     ;;
-  esac
-
-  vm_name="${1:-}"
-  shift
-
-  case "$command" in
   start)
-    handle_multiple_arguments ivm start "$vm_name" "$@"
+    handle_multiple_arguments ivm start "$@"
     ;;
   shutdown | stop)
-    handle_multiple_arguments ivm stop "$vm_name" "$@"
+    handle_multiple_arguments ivm stop "$@"
     ;;
   restart)
-    handle_multiple_arguments ivm restart "$vm_name" "$@"
+    handle_multiple_arguments ivm restart "$@"
     ;;
   rm | delete)
-    handle_multiple_arguments ivm delete "$vm_name" "$@"
+    handle_multiple_arguments ivm delete "$@"
     ;;
   console)
-    handle_one_argument ivm console "$vm_name"
+    handle_one_argument ivm console "$@"
     ;;
   exec)
-    handle_one_argument ivm exec "$vm_name"
+    handle_one_argument ivm exec "$@"
     ;;
   shell)
-    handle_one_argument ivm shell "$vm_name"
+    handle_one_argument ivm shell "$@"
     ;;
   ip)
-    handle_one_argument ivm ip "$vm_name"
+    handle_one_argument ivm ip "$@"
     ;;
   ssh)
-    handle_one_argument ivm ssh "$vm_name"
+    handle_one_argument ivm ssh "$@"
     ;;
   status)
-    handle_one_argument ivm status "$vm_name"
+    handle_one_argument ivm status "$@"
     ;;
   info)
-    handle_one_argument ivm info "$vm_name"
+    handle_one_argument ivm info "$@"
     ;;
   config)
-    handle_one_argument ivm config "$vm_name"
+    handle_one_argument ivm config "$@"
     ;;
   logs)
-    handle_one_argument ivm logs "$vm_name"
+    handle_one_argument ivm logs "$@"
     ;;
   snapshot)
-    handle_one_argument ivm snapshot "$vm_name"
+    handle_one_argument ivm snapshot "$@"
     ;;
-  restore)
-    handle_one_argument ivm restore "$vm_name"
+  restore-snapshot)
+    handle_one_argument ivm restore-snapshot "$@"
     ;;
   copy)
-    copy_ivm "$vm_name" "$@"
+    copy_ivm "$@"
     ;;
   usb-list)
     list_host_usb_devices
     ;;
   usb-attached)
-    handle_one_argument ivm usb_attached "$vm_name"
+    handle_one_argument ivm usb_attached "$@"
     ;;
   usb-attach)
-    handle_one_argument ivm usb_attach "$vm_name"
+    handle_one_argument ivm usb_attach "$@"
     ;;
   usb-detach)
-    handle_one_argument ivm usb_detach "$vm_name"
+    handle_one_argument ivm usb_detach "$@"
     ;;
   disk-attached)
-    handle_one_argument ivm disk_attached "$vm_name"
+    handle_one_argument ivm disk_attached "$@"
     ;;
   disk-attach)
-    handle_one_argument ivm disk_attach "$vm_name"
+    handle_one_argument ivm disk_attach "$@"
     ;;
   disk-detach)
-    handle_one_argument ivm disk_detach "$vm_name"
+    handle_one_argument ivm disk_detach "$@"
     ;;
   is-running)
-    handle_one_argument ivm is-running "$vm_name"
+    handle_one_argument ivm is-running "$@"
     ;;
   *)
     fail "Unknown command: $command"
     usage
-    exit 1
+    exit 0
     ;;
   esac
 
