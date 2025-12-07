@@ -120,8 +120,8 @@ configure_rocky() {
 
 configure_alpine() {
   VM_NAME=${VM_NAME:-alpine-vme}
-  RELEASE=${RELEASE:-"3.22"}
-  BASE_IMAGE_NAME="alpine-standard-${RELEASE}-x86_64-cloud-init.qcow2"
+  RELEASE=${RELEASE:-"3.22.2"}
+  BASE_IMAGE_NAME="generic_alpine-${RELEASE}-x86_64-uefi-cloudinit-r0.qcow2"
   DOWNLOAD_URL="https://dl-cdn.alpinelinux.org/alpine/v${RELEASE}/releases/cloud/${BASE_IMAGE_NAME}"
   OS_VARIANT="alpinelinux3.22"
 }
@@ -137,8 +137,8 @@ show_configuration() {
   printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$MEMORY" "$DISK_SIZE"
   printf '\033[1mNetwork Bridge:\033[0m \033[0;33m%s\033[0m\n' "$BRIDGE"
   echo
-  printf "\033[1;36mPress enter to continue...\033[0m\n"
-  read -r
+  # printf "\033[1;36mPress enter to continue...\033[0m\n"
+  # read -r
 }
 
 configure_distribution() {
@@ -208,7 +208,7 @@ generate_cloud_init() {
   META_DATA="${cloud_init_dir}/meta-data"
 
   local pub_key
-  pub_key=$(cat "$SSH_KEY")
+  pub_key=$(cat "$SSH_KEY_PATH")
 
   local openssh_pkg
   case "$DISTRO" in
@@ -366,7 +366,7 @@ add_ssh_config() {
   ip=$(vm_ip "$VM_NAME")
 
   slog "Adding SSH configuration for $VM_NAME..."
-  if ssh-config add --host "$VM_NAME" --ip "$ip" --user "$USERNAME" --identity "${SSH_KEY%.pub}"; then
+  if ssh-config add --host "$VM_NAME" --ip "$ip" --user "$USERNAME" --identity "${SSH_KEY_PATH%.pub}"; then
     printf '\033[1mSSH Config:\033[0m    \033[0;32mAdded to ~/.ssh/conf.d/%s.conf\033[0m\n' "$VM_NAME"
     printf '\033[1mSSH Shortcut:\033[0m  \033[0;33mssh %s\033[0m\n' "$VM_NAME"
   else
@@ -554,7 +554,7 @@ main() {
 
   configure_distribution
   setup_storage
-  SSH_KEY=$(ssh_key_path)
+  SSH_KEY_PATH=$(ssh_key_path)
 
   check_prerequisites
 

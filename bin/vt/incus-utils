@@ -77,7 +77,7 @@ ivm_running() {
   [[ "$state" == "RUNNING" ]]
 }
 
-ivm_check_exists_running() {
+ivm_check_running() {
   local vm_name="$1"
   ivm_check_exists "$vm_name" || return 1
 
@@ -103,7 +103,6 @@ ivm_list() {
 detect_container_user() {
   local container_name="$1"
 
-  # Auto-detect username based on container name patterns
   case "$container_name" in
   ubuntu*) echo "ubuntu" ;;
   fedora*) echo "fedora" ;;
@@ -139,31 +138,6 @@ wait_for_vm_state() {
   return 1
 }
 
-ivm_ip() {
-  local vm_name="$1"
-
-  ivm_check_exists_running "$vm_name" || return 1
-
-  local address_list
-  if ! address_list=$(incus list "^${vm_name}$" --format csv --columns 4 2>/dev/null); then
-    fail "Unable to fetch network information for VM '$vm_name'"
-    return 1
-  fi
-
-  address_list=${address_list%\"$'\n'}
-  address_list=${address_list#\"}
-
-  local ip
-  ip=$(printf '%s\n' "$address_list" | awk '/\((enp|eth)/ {print $1; exit}')
-
-  if [[ -z "$ip" ]]; then
-    return 1
-  fi
-
-  echo "$ip"
-  return 0
-}
-
 ivm_show_ip() {
   local vm_name="$1"
   local ip
@@ -171,25 +145,6 @@ ivm_show_ip() {
     return 1
   fi
   echo "$ip"
-}
-
-ivm_ssh() {
-  local vm_name="$1"
-  local username="${2:-}"
-
-  if [[ -z "$username" ]]; then
-    fail "Username required. Usage: $0 ssh <vm_name> <username>"
-    return 1
-  fi
-
-  local ip
-  if ! ip=$(ivm_ip "$vm_name"); then
-    return 1
-  fi
-
-  local connect_timeout="${IVM_SSH_CONNECT_TIMEOUT:-15}"
-  slog "Connecting to $vm_name ($ip) as $username..."
-  ssh -o "ConnectTimeout=${connect_timeout}" "$username@$ip"
 }
 
 ict_check_prerequisites() {
@@ -243,6 +198,7 @@ ict_check_exists() {
     return 1
   fi
 }
+
 ict_state() {
   local container_name="$1"
   incus list type=container "$container_name" --format csv --columns s | head -1
@@ -269,95 +225,36 @@ ict_check_exists_running() {
   ict_check_running "$container_name" || return 1
 }
 
-ict_ip() {
-  local container_name="$1"
-
-  ict_check_exists_running "$container_name" || return 1
-
-  local address_list
-  if ! address_list=$(incus list "^${container_name}$" --format csv --columns 4 2>/dev/null); then
-    return 1
-  fi
-
-  address_list=${address_list%\"$'\n'}
-  address_list=${address_list#\"}
+incus_ip() {
+  local name="$1"
+  ivm_check_running "$name" || return 1
 
   local ip
-  ip=$(printf '%s\n' "$address_list" | awk '/\((eth|enp|ens|eno|wlp|lan)/ {print $1; exit}')
+  ip="$(
+    incus query "/1.0/instances/${name}?recursion=2" 2>/dev/null |
+      jq -r '
+          .state.network
+          | to_entries[]
+          | select(.key | test("^(eth|en|ens|eno|enp)"))
+          | .value.addresses[]
+          | select(.family == "inet" and .scope == "global")
+          | .address
+        ' | head -n1
+  )"
 
-  if [[ -z "$ip" ]]; then
-    ip=$(printf '%s\n' "$address_list" | awk '{match($0, /([0-9]{1,3}\.){3}[0-9]{1,3}/, m); if (m[0]) {print m[0]; exit}}')
-  fi
+  [[ -n "$ip" ]] || return 1
 
-  if [[ -z "$ip" ]]; then
-    return 1
-  fi
-
-  echo "$ip"
-  return 0
+  printf '%s\n' "$ip"
 }
 
-# get_incus_ip() {
-#     local name="$1"
-#     if [[ -z "$name" ]]; then
-#         printf "Usage: get_incus_ip <container>\n" >&2
-#         return 1
-#     fi
+ivm_ip() {
+  local name="$1"
+  ivm_check_running "$name" || return 1
+  incus_ip "$name" || return 1
+}
 
-#     # Fetch JSON safely
-#     local json
-#     if ! json="$(incus list --format json 2>/dev/null)"; then
-#         printf "Error: failed to run incus\n" >&2
-#         return 1
-#     fi
-
-#     # Parse:
-#     # - find matching container
-#     # - filter only IPv4
-#     # - ignore loopback
-#     # - return **first** global IPv4
-#     local ip
-#     ip="$(jq -r --arg n "$name" '
-#         .[] | select(.name == $n)
-#         | .state.network
-#         | to_entries[]
-#         | .value.addresses[]
-#         | select(.family == "inet")
-#         | select(.scope == "global")
-#         | .address
-#         ' <<< "$json" | head -n1)"
-
-#     if [[ -z "$ip" ]]; then
-#         printf "Error: no IPv4 found for container %s\n" "$name" >&2
-#         return 1
-#     fi
-
-#     printf "%s\n" "$ip"
-# }
-
-ict_ssh() {
-  local container_name="$1"
-  local username="${2:-}"
-  ict_check_exists_running "$container_name" || return 1
-
-  # Auto-detect username if not provided
-  if [[ -z "$username" ]]; then
-    username=$(detect_container_user "$container_name")
-    slog "Auto-detected username: $username (override with: $0 ssh $container_name <username>)"
-  fi
-
-  local ip
-  if ip=$(ict_ip "$container_name"); then
-    local connect_timeout="${ICT_SSH_CONNECT_TIMEOUT:-15}"
-    slog "Connecting to $container_name ($ip) as $username..."
-    if ! ssh -o "ConnectTimeout=${connect_timeout}" "$username@$ip"; then
-      local ssh_exit=$?
-      fail "SSH connection failed for container '$container_name' (exit code: ${ssh_exit})"
-      return "$ssh_exit"
-    fi
-    return 0
-  else
-    return $?
-  fi
-
+ict_ip() {
+  local name="$1"
+  ict_check_exists_running "$name" || return 1
+  incus_ip "$name" || return 1
 }

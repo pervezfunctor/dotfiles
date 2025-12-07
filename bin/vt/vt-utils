@@ -121,6 +121,7 @@ wait_until() {
   local count=0
   local max_attempts=$((timeout / interval))
 
+  echo
   # Hide cursor
   tput civis 2>/dev/null || true
   echo -n "Waiting" >&2
@@ -234,7 +235,7 @@ wait_for_ip() {
     return 1
   fi
 
-  if wait_until 30 3 "$state_fn" "$name"; then
+  if wait_until 60 3 "$state_fn" "$name"; then
     slog "Instance is running"
   else
     fail "Instance did not start in time"
@@ -247,7 +248,7 @@ wait_for_ip() {
     return 1
   fi
 
-  if wait_until 60 3 "$ip_fn" "$name"; then
+  if wait_until 120 3 "$ip_fn" "$name"; then
     slog "Instance has IP address: $("$ip_fn" "$name")"
     return 0
   else
@@ -307,4 +308,17 @@ sshn() {
     -o ConnectionAttempts=1 \
     -o LogLevel=ERROR \
     "${user}@${host}" -p "$port"
+}
+
+validate_cloud_init_yaml() {
+  local yaml_file="$1"
+
+  if has_cmd cloud-init; then
+    cloud-init devel schema --config-file "$yaml_file" >/dev/null 2>&1
+  elif has_cmd yamllint; then
+    yamllint "$yaml_file" >/dev/null 2>&1
+  else
+    fail "No cloud-init validator found. Please install cloud-init or yamllint."
+    return 1
+  fi
 }

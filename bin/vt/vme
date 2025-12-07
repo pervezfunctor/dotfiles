@@ -6,8 +6,6 @@ set -euo pipefail -o errtrace
 
 source "$(dirname "$0")/vm-utils"
 
-trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
-
 cmd_vme() {
   virsh --connect qemu:///system "$@"
 }
@@ -19,7 +17,7 @@ check_prerequisites() {
       # exit 1
     fi
   done
-  # command -v virt-cat >/dev/null 2>&1 || echo "⚠️  virt-cat not available, some commands won't work"
+  command -v virt-cat >/dev/null 2>&1 || echo "⚠️  virt-cat not available, some commands won't work"
 }
 
 usage() {
@@ -39,7 +37,8 @@ COMMANDS:
     kill [vm-name...]   Force stop VM(s) - if no names provided, select from list
     delete [vm-name...] Delete VM(s) completely - if no names provided, select from list
     console <vm-name>   Connect to VM console
-    show-ip <vm-name>   Show VM IP address
+    ip <vm-name>        Show VM IP address (short form)
+    is-running <vm-name> Check if VM is running
     info <vm-name>      Show VM status and info
     logs <vm-name>      Show cloud-init logs
     disk <vm-name>      Show VM disk usage
@@ -51,7 +50,8 @@ COMMANDS:
 
 EXAMPLES:
     $0 list                    # List all VMs
-    $0 show-ip debian          # Show IP address of 'debian' VM
+    $0 ip debian               # Show IP address of 'debian' VM (short form)
+    $0 is-running debian       # Check if 'debian' VM is running
     $0 status debian           # Show status of 'debian' VM
     $0 create debian           # Create debian VM
     $0 start debian            # Start 'debian' VM
@@ -80,11 +80,11 @@ start_vme() {
   virsh --connect qemu:///system start "$1"
 }
 
-shutdown_vme() {
+stop_vme() {
   virsh --connect qemu:///system shutdown "$1"
 }
 
-reboot_vme() {
+restart_vme() {
   virsh --connect qemu:///system reboot "$1"
 }
 
@@ -119,16 +119,15 @@ console_vme() {
   virsh --connect qemu:///system console "$1"
 }
 
-show_ip_vme() {
-  echo
-  virsh --connect qemu:///system domifaddr --source agent "$1" | grep ipv4 | grep -v lo | awk '{print $1, $4}'
-  echo
+is-running_vme() {
+  vm_exists "$1" && vm_state "$1" | grep -q "^running$"
 }
 
-list_all_vme() {
+list_vme_all() {
   virsh --connect qemu:///system list --all
 }
-list_vmu() {
+
+list_vme() {
   virsh --connect qemu:///system list --all | awk 'NR>2 && $0 !~ /^[-[:space:]]*$/ {print $2}'
 }
 
@@ -140,7 +139,7 @@ resolve_vm_name() {
   fi
 
   local vms selected rc
-  if ! vms=$(virsh --connect qemu:///system list --all 2>/dev/null | awk 'NR>2 && $0 !~ /^[-[:space:]]*$/ {print $2}'); then
+  if ! vms=$(list_vme); then
     echo "Error: failed to list virtual machines" >&2
     return 1
   fi
@@ -150,7 +149,7 @@ resolve_vm_name() {
     return 1
   fi
 
-  selected=$(printf '%s\n' "$vms" | select-one 'VM > ')
+  selected=$(select-one 'VM > ' "$vms")
   rc=$?
   if [[ $rc -ne 0 || -z "$selected" ]]; then
     if [[ $rc -eq 127 ]]; then
@@ -186,90 +185,48 @@ detect_user_for_vm() {
 ssh_vme() {
   local vm user ip
   vm="$1"
-  user="${2:-}"
+  user="${2:-$USER}"
 
-  if [[ -z "$vm" ]]; then
-    echo "Error: VM name required for ssh"
-    echo "Usage: $0 ssh <vm-name> [user]"
+  if ! vm_check_running "$vm"; then
+    fail "VM does not exist or is not running"
     exit 1
-  fi
-
-  if [[ -z "$user" ]]; then
-    user=$(detect_user_for_vm "$vm")
   fi
 
   if ! ip=$(vm_ip "$vm"); then
-    echo "Error: could not determine IP for VM '$vm'"
-    echo "- Ensure the VM is running and QEMU guest agent is installed."
-    echo "- Try: $0 start $vm; then wait a few seconds."
-    exit 1
-  fi
-  if [[ -z "$ip" ]]; then
-    echo "Error: could not determine IP for VM '$vm'"
-    echo "- Ensure the VM is running and QEMU guest agent is installed."
-    echo "- Try: $0 start $vm; then wait a few seconds."
+    fail "Could not determine IP for VM '$vm'"
     exit 1
   fi
 
-  local connect_timeout
-  connect_timeout=${VME_SSH_CONNECT_TIMEOUT:-15}
-  if ! [[ "$connect_timeout" =~ ^[0-9]+$ ]]; then
-    connect_timeout=15
-  fi
-
-  echo "Connecting: ssh ${user}@${ip} (timeout: ${connect_timeout}s)"
-  exec ssh \
-    -o StrictHostKeyChecking=no \
-    -o UserKnownHostsFile=/dev/null \
-    -o ConnectTimeout="${connect_timeout}" \
-    -o ConnectionAttempts=1 \
-    "${user}@${ip}"
+  exec ssh -o ConnectTimeout="15" -o ConnectionAttempts=1 "${user}@${ip}"
 }
 
 exec_vme() {
   local vm="$1"
   shift
-  local user="$2"
+  local user="${2:-$USER}"
   local command="$*"
 
-  if [[ -z "$vm" ]]; then
-    echo "Error: VM name required for exec"
-    echo "Usage: $0 exec <vm-name> <command>"
-    exit 1
-  fi
-
-  if [[ -z "$user" ]]; then
-    echo "Error: User required for exec"
-    echo "Usage: $0 exec <vm-name> <command>"
+  if ! vm_check_running "$vm"; then
+    fail "VM does not exist or is not running"
     exit 1
   fi
 
   if [[ -z "$command" ]]; then
-    echo "Error: Command required for exec"
-    echo "Usage: $0 exec <vm-name> <command>"
+    fail "Error: Command required for exec"
+    info "Usage: $0 exec <vm-name> <command>"
     exit 1
   fi
 
-  ip=$(vm_ip "$vm")
-
-  if [[ -z "$ip" ]]; then
-    echo "Error: could not determine IP for VM '$vm'"
-    echo "- Ensure the VM is running and QEMU guest agent is installed."
-    echo "- Try: $0 start $vm; then wait a few seconds."
+  local ip
+  if ! ip=$(vm_ip "$vm"); then
+    fail "Could not determine IP for VM '$vm'"
     exit 1
   fi
 
-  local connect_timeout
-  connect_timeout=${VME_SSH_CONNECT_TIMEOUT:-15}
-  if ! [[ "$connect_timeout" =~ ^[0-9]+$ ]]; then
-    connect_timeout=15
-  fi
-
-  echo "Executing command in VM '$vm' as user '$user': $command"
   ssh \
     -o StrictHostKeyChecking=no \
     -o UserKnownHostsFile=/dev/null \
-    -o ConnectTimeout="${connect_timeout}" \
+    -o ConnectTimeout="15" \
     -o ConnectionAttempts=1 \
     -o LogLevel=ERROR \
     "${user}@${ip}" \
@@ -336,6 +293,10 @@ net_vme() {
   esac
 }
 
+ip_vme() {
+  vm_ip "$@"
+}
+
 main() {
   if [[ $# -eq 0 ]]; then
     usage
@@ -354,7 +315,7 @@ main() {
     sudo systemctl start libvirtd
     ;;
   list | ls)
-    list_all_vme
+    list_vme_all
     ;;
   cmd)
     cmd_vme "$@"
@@ -384,10 +345,10 @@ main() {
     handle_multiple_arguments vme start "$@"
     ;;
   stop | shutdown)
-    handle_multiple_arguments vme shutdown "$@"
+    handle_multiple_arguments vme stop "$@"
     ;;
   restart | reboot)
-    handle_multiple_arguments vme reboot "$@"
+    handle_multiple_arguments vme restart "$@"
     ;;
   destroy | kill | force-stop)
     handle_multiple_arguments vme force_stop "$@"
@@ -401,11 +362,17 @@ main() {
     } || exit 1
     console_vme "$target" "${@:2}"
     ;;
-  show-ip)
+  ip)
     {
       target=$(resolve_vm_name "$vm_name")
     } || exit 1
-    show_ip_vme "$target" "${@:2}"
+    ip_vme "$target" "${@:2}"
+    ;;
+  is-running)
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    is-running_vme "$target" "${@:2}"
     ;;
   net)
     net_vme "$@"

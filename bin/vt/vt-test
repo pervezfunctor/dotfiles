@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
 
-# Backend must support the following commands
-# create, start, stop, restart, delete, list, ip, is-running
-
 set -euo pipefail -o errtrace
-
-if [[ $# -eq 0 ]]; then
-  echo "Usage: $(basename "$0") <command> <machine>..."
-  exit 1
-fi
 
 show_error() {
   local exit_code=$?
@@ -21,50 +13,63 @@ show_error() {
 
 trap 'show_error' ERR
 
-command="$1"
-
-case "$command" in
-vmu | vme | ivm | ict | dt) ;;
-*)
-  echo "Error: Unknown command: $command"
-  exit 1
-  ;;
-esac
-
-shift
-VT_DISTROS=("$@")
-VT_MACHINES=("${VT_DISTROS[@]/%/-testing}")
-
-echo "machines: ${VT_MACHINES[*]}"
-sleep 1
-
-if ! command -v "$command" >/dev/null 2>&1; then
-  echo "Error: Command '$command' is not found"
-  exit 1
-fi
+SUPPORTED_COMMANDS=(
+  # create
+  # create-all
+  start
+  stop
+  restart
+  delete
+  console
+  list
+  exec
+  ip
+  is-running
+  ssh)
 
 create_all() {
   echo "Creating ${command}s..."
   for machine in "${VT_DISTROS[@]}"; do
-    yes | "$command" create --distro "$machine" --name "${machine}-testing" --username testing
+    "$command" create --distro "$machine" --name "${machine}-${command}-testing" --username testing
+    sleep 2
   done
 }
 
 list_all() {
   echo "Listing ${command}s..."
   "$command" list
+  sleep 2
 }
 
 ssh_all() {
   echo "ssh to ${command}s..."
-  "$command" ssh "${VT_MACHINES[@]}" testing "echo ok"
+  for machine in "${VT_MACHINES[@]}"; do
+    local ip
+    ip=$("$command" ip "$machine")
+    local message="echo Hello from $machine"
+
+    ssh \
+      -o ConnectTimeout="15" \
+      -o StrictHostKeyChecking=no \
+      -o UserKnownHostsFile=/dev/null \
+      -o LogLevel=ERROR \
+      testing@"${ip}" "$message"
+  done
+}
+
+exec_all() {
+  echo "exec to ${command}s..."
+  for machine in "${VT_MACHINES[@]}"; do
+    local message="echo Hello from $machine"
+    $command exec "$machine" testing "$message"
+  done
 }
 
 stop_all() {
   echo "Stopping ${command}s..."
   for machine in "${VT_MACHINES[@]}"; do
     "$command" stop "$machine"
-    sleep 5
+    sleep 1
     echo "Waiting for ${machine} to stop..."
     while "$command" is-running "${machine}"; do
       printf '.'
@@ -85,20 +90,68 @@ restart_all() {
 
 delete_all() {
   echo "Deleting ${command}s..."
-  yes | "$command" delete "${VT_MACHINES[@]}"
+  "$command" delete "${VT_MACHINES[@]}"
 }
 
 main() {
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: $(basename "$0") <command> <machine>..."
+    exit 1
+  fi
+
+  command="$1"
+  shift
+
+  case "$command" in
+  vmu | vme | ivm | ict) ;;
+  *)
+    echo "Error: Unknown command: $command"
+    exit 1
+    ;;
+  esac
+
+  if ! command -v "$command" >/dev/null 2>&1; then
+    echo "Error: Command '$command' is not found"
+    exit 1
+  fi
+
+  VT_DISTROS=("$@")
+  VT_MACHINES=("${VT_DISTROS[@]/%/-${command}-testing}")
+
+  if [[ ${#VT_DISTROS[@]} -eq 0 ]]; then
+    echo "Error: No machines specified"
+    echo "Usage: $(basename "$0") <command> <machine>..."
+    exit 1
+  fi
+
+  (
+    # shellcheck disable=SC1090
+    source "$(dirname "$0")/${command}"
+
+    for op in "${SUPPORTED_COMMANDS[@]}"; do
+      if ! fn_exists "${op}_${command}" >/dev/null 2>&1; then
+        warn "Warning: Required command '$op' is not available."
+        sleep 2
+      fi
+    done
+  )
+
   create_all
   sleep 10
   list_all
-  ssh_all
-  stop_all
-  sleep 10
-  start_all
-  sleep 10
-  restart_all
-  sleep 10
+  if [[ "$command" == "vmu" ]]; then
+    exec_all
+  else
+    ssh_all
+  fi
+  # (
+  #   stop_all
+  #   sleep 10
+  #   start_all
+  #   sleep 10
+  #   restart_all
+  #   sleep 10
+  # )
   delete_all
 }
 

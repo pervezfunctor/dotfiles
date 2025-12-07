@@ -71,8 +71,8 @@ show_configuration() {
   printf '\033[1mResources:\033[0m      \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$MEMORY_MB" "$DISK_SIZE"
   printf '\033[1mNetwork Bridge:\033[0m \033[0;33m%s\033[0m\n' "$BRIDGE_IF"
   echo
-  printf "\033[1;36mPress enter to continue...\033[0m\n"
-  read -r
+  # printf "\033[1;36mPress enter to continue...\033[0m\n"
+  # read -r
 }
 
 configure_distribution() {
@@ -195,7 +195,11 @@ instance-id: ${VM_NAME}-$(date +%s)
 local-hostname: $VM_NAME
 EOF
 
-  success "Cloud-init configuration files created in: $CLOUD_INIT_DIR"
+  if validate_cloud_init_yaml "${CLOUD_INIT_DIR}/user-data"; then
+    success "Cloud-init configuration files created in: $CLOUD_INIT_DIR"
+  else
+    fail "Cloud-init configuration files might be invalid"
+  fi
 }
 
 create_vm() {
@@ -211,7 +215,6 @@ create_vm() {
   slog "Launching VM with image: $IMAGE_URL"
 
   local launch_cmd=(
-    incus launch "$IMAGE_URL" "$VM_NAME" --vm
     --config "limits.cpu=$VCPUS"
     --config "limits.memory=${MEMORY_MB}MB"
     --config "user.user-data=$(cat "${CLOUD_INIT_DIR}/user-data")"
@@ -221,7 +224,7 @@ create_vm() {
     --network "$BRIDGE_IF"
   )
 
-  if ! "${launch_cmd[@]}"; then
+  if ! incus launch "$IMAGE_URL" "$VM_NAME" --vm "${launch_cmd[@]}"; then
     fail "Failed to create VM '$VM_NAME'"
     exit 1
   fi
@@ -233,35 +236,6 @@ create_vm() {
     slog "Cleaned up temporary cloud-init files"
   fi
 }
-
-# wait_for_ip() {
-#   local vm_name="$1"
-
-#   printf '\033[1;36m🔍 Wait for IP address? (Y/n):\033[0m ' >&2
-#   read -t 5 -r response || response="y"
-
-#   case "$response" in
-#   n | N)
-#     slog "Skipping IP wait. You can get the IP later with: ivm ip $vm_name"
-#     return 1
-#     ;;
-#   *)
-#     if wait_for_vm_state "$vm_name" "RUNNING"; then
-#       slog "VM is running"
-#     else
-#       fail "VM did not start in time"
-#       return 1
-#     fi
-#     if wait_until 30 3 "ivm ip $vm_name"; then
-#       slog "VM has IP address"
-#     else
-#       fail "VM did not get an IP in time. Try 'ivm ip $vm_name' later."
-#       info "If you still can't connect, Use 'ivm console $vm_name' to access it."
-#       return 1
-#     fi
-#     ;;
-#   esac
-# }
 
 add_ssh_config() {
   has_cmd ssh-config || return 0
@@ -320,11 +294,6 @@ show_completion_info() {
   printf '\033[1mShell:\033[0m    \033[0;33mincus exec %s -- /bin/bash\033[0m\n' "$VM_NAME"
   printf '\033[1mExecute:\033[0m   \033[0;33mincus exec %s -- <command>\033[0m\n' "$VM_NAME"
   printf '\033[1mStatus:\033[0m    \033[0;33mivm status %s\033[0m\n' "$VM_NAME"
-  echo
-
-  printf '\033[1;36m📊 VM DETAILS:\033[0m\n'
-  printf '\033[0;36m────────────────────\033[0m\n'
-  incus list "$VM_NAME"
   echo
 
   printf '\033[1;36m🔧 TROUBLESHOOTING:\033[0m\n'
@@ -414,7 +383,7 @@ main() {
   configure_distribution
   if create_vm; then
     show_completion_info
-    add_ssh_config
+    # add_ssh_config
   fi
 }
 

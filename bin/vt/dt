@@ -324,7 +324,7 @@ else
   dt_disable_root_mode
 fi
 
-command="$1"
+command="${1:-}"
 shift
 
 if [[ "$command" != "install" ]]; then
@@ -346,6 +346,10 @@ ls | list)
 #   dt_state "$dt_name"
 #   ;;
 create)
+  if [[ $# -lt 1 ]]; then
+    fail "Usage: $0 create <distro> <container_name>"
+    exit 1
+  fi
   create_dt "$@"
   ;;
 create-all)

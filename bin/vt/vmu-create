@@ -170,8 +170,8 @@ show_configuration() {
   printf '\033[1mResources:\033[0m     \033[0;33m%s vCPUs, %sMB MEMORY, %s disk\033[0m\n' "$CPUS" "$MEMORY" "$DISK_SIZE"
   printf '\033[1mSSH Port:\033[0m      \033[0;33m%s\033[0m\n' "$SSH_PORT"
   echo
-  printf "\033[1;36mPress enter to continue...\033[0m\n"
-  read -r
+  # printf "\033[1;36mPress enter to continue...\033[0m\n"
+  # read -r
 }
 
 create_dirs() {
@@ -208,10 +208,10 @@ check_prerequisites() {
 configure_distro() {
   case "$DISTRO" in
   alpine)
-    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.2-x86_64-bios-tiny-r0.qcow2"
+    IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.2-x86_64-uefi-cloudinit-r0.qcow2"
     BASE_IMG="${BASE_IMG_DIR}/generic_alpine-3.22.2-x86_64-bios-tiny-r0.qcow2"
     OS_VARIANT="alpinelinux3.21"
-    CHECKSUM_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.2-x86_64-bios-tiny-r0.qcow2.sha512"
+    CHECKSUM_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.2-x86_64-uefi-cloudinit-r0.qcow2.sha512"
     ;;
   debian)
     IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"

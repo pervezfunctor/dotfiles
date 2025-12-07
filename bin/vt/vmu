@@ -33,27 +33,27 @@ COMMANDS:
     create  ARGS                  Create a new VM, see vmu create --help for options
     create-all  ARGS              Create multiple VMs, see vmu-create-multi --help for options
     autostart <vm-name>           Set VM to start on boot
-    start <vm-name>               Start a VM
-    shutdown <vm-name>            Gracefully stop a VM
-    restart <vm-name>             Restart a VM
-    kill <vm-name>                Force stop a VM
-    delete <vm-name>              Delete a VM completely
-    console <vm-name>             Connect to VM console
-    ssh <vm-name> [username]      Connect to VM via SSH
-    info <vm-name>                Show VM status and info
-    logs <vm-name>                Show cloud-init logs
-    output-logs <vm-name>         Show cloud-init output logs
-    disk <vm-name>                Show VM disk usage
-    is-running <vm-name>          Check if VM is running (returns exit code)
-    exec <vm-name> <command>      Execute a command inside a running VM
+    start [vm-name...]             Start VM(s) - if no names provided, select from list
+    stop [vm-name...]              Gracefully stop VM(s) - if no names provided, select from list
+    restart [vm-name...]           Restart VM(s) - if no names provided, select from list
+    kill [vm-name...]              Force stop VM(s) - if no names provided, select from list
+    delete [vm-name...]            Delete VM(s) completely - if no names provided, select from list
+    console [vm-name]              Connect to VM console - if no name provided, select from list
+    ssh [vm-name] [username]       Connect to VM via SSH - if no name provided, select from list
+    info [vm-name]                 Show VM status and info - if no name provided, select from list
+    logs [vm-name]                 Show cloud-init logs - if no name provided, select from list
+    output-logs [vm-name]          Show cloud-init output logs - if no name provided, select from list
+    disk [vm-name]                 Show VM disk usage - if no name provided, select from list
+    is-running [vm-name]           Check if VM is running (returns exit code) - if no name provided, select from list
+    exec [vm-name] <command>       Execute a command inside a running VM - if no name provided, select from list
     cmd <virsh-args>              Run virsh command with qemu:///session connection
 
 EXAMPLES:
     $0 list                       # List all VMs
     $0 ssh dev username           # SSH into 'dev' VM with username 'username'
     $0 exec debian "ls -l"        # Execute 'ls -l' command in 'debian' VM
-    $0 show-ip debian             # Show IP address of 'debian' VM
-    $0 status debian              # Show status of 'debian' VM
+    $0 info debian                # Show status of 'debian' VM
+    $0 console                   # Select VM to connect to console from menu
     $0 create debian              # Create debian VM
     $0 start debian               # Start 'debian' VM
     $0 delete old-vm              # Delete 'old-vm' completely
@@ -76,15 +76,15 @@ start_vmu() {
   virsh --connect qemu:///session start "$1"
 }
 
-is_running_vmu() {
+is-running_vmu() {
   virsh --connect qemu:///session domstate "$1" | grep -q "^running$"
 }
 
-shutdown_vmu() {
+stop_vmu() {
   virsh --connect qemu:///session shutdown "$1"
 }
 
-reboot_vmu() {
+restart_vmu() {
   virsh --connect qemu:///session reboot "$1"
 }
 
@@ -128,8 +128,10 @@ console_vmu() {
 
 ssh_vmu() {
   local VM="$1"
+  local user="${2:-}"
+
   if [ -z "$VM" ]; then
-    echo "Usage: vmu ssh <vm-name>"
+    echo "Usage: vmu ssh <vm-name> [username]"
     exit 1
   fi
 
@@ -144,23 +146,27 @@ ssh_vmu() {
     exit 1
   }
 
-  local port user
+  local port vm_user
   port=$(echo "$entry" | awk '{print $2}')
-  user=$(echo "$entry" | awk '{print $3}')
+  vm_user=$(echo "$entry" | awk '{print $3}')
+
+  # Use provided username if given, otherwise use the one from the ports file
+  user="${user:-$vm_user}"
 
   ssh -p "$port" "$user"@127.0.0.1
 }
 
 exec_vmu() {
   local VM="$1"
-  local CMD="${*:2}"
+  shift
+  local CMD="$*"
 
   if [ -z "$VM" ] || [ -z "$CMD" ]; then
     echo "Usage: vmu exec <vm-name> <command>"
     exit 1
   fi
 
-  if ! is_running_vmu "$VM"; then
+  if ! is-running_vmu "$VM"; then
     echo "Error: VM '$VM' is not running"
     exit 1
   fi
@@ -191,6 +197,43 @@ list_vmu() {
   virsh --connect qemu:///session list --all | awk 'NR>2 && $0 !~ /^[-[:space:]]*$/ {print $2}'
 }
 
+resolve_vm_name() {
+  local name="$1"
+  if [[ -n "$name" ]]; then
+    printf '%s\n' "$name"
+    return 0
+  fi
+
+  local vms selected rc
+  if ! vms=$(list_vmu); then
+    echo "Error: failed to list virtual machines" >&2
+    return 1
+  fi
+
+  if [[ -z "$vms" ]]; then
+    echo "Error: no virtual machines found" >&2
+    return 1
+  fi
+
+  selected=$(select-one 'VM > ' "$vms")
+  rc=$?
+  if [[ $rc -ne 0 || -z "$selected" ]]; then
+    if [[ $rc -eq 127 ]]; then
+      echo "Error: fzf is not installed or not in PATH" >&2
+    else
+      echo "Cancelled" >&2
+    fi
+    return 1
+  fi
+
+  printf '%s\n' "$selected"
+}
+
+ip_vmu() {
+  warn "This runs on localhost"
+  ip -brief a
+}
+
 main() {
   if [[ $# -eq 0 ]]; then
     usage
@@ -199,8 +242,9 @@ main() {
 
   check_prerequisites
 
-  local command
+  local command vm_name
   command="$1"
+  vm_name="${2:-}"
   shift
 
   case "$command" in
@@ -211,10 +255,16 @@ main() {
     cmd_vmu "$@"
     ;;
   disk)
-    disk_vmu "$@"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    disk_vmu "$target"
     ;;
   info | status)
-    status_vmu "$@"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    status_vmu "$target"
     ;;
   create | new)
     "$(dirname "$0")/vmu-create" "$@"
@@ -229,10 +279,10 @@ main() {
     handle_multiple_arguments vmu start "$@"
     ;;
   stop | shutdown)
-    handle_multiple_arguments vmu shutdown "$@"
+    handle_multiple_arguments vmu stop "$@"
     ;;
   restart | reboot)
-    handle_multiple_arguments vmu reboot "$@"
+    handle_multiple_arguments vmu restart "$@"
     ;;
   destroy | kill | force-stop)
     handle_multiple_arguments vmu force_stop "$@"
@@ -241,22 +291,40 @@ main() {
     handle_multiple_arguments vmu delete "$@"
     ;;
   console)
-    console_vmu "$@"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    console_vmu "$target" "${@:2}"
     ;;
   ssh)
-    ssh_vmu "$@"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    ssh_vmu "$target" "${@:2}"
     ;;
   logs)
-    logs_vmu "$@"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    logs_vmu "$target" "${@:2}"
     ;;
   output-logs)
-    output_logs_vmu "$@"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    output_logs_vmu "$target" "${@:2}"
     ;;
   is-running)
-    is_running_vmu "$@"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    is-running_vmu "$target" "${@:2}"
     ;;
   exec)
-    exec_vmu "$@"
+    {
+      target=$(resolve_vm_name "$vm_name")
+    } || exit 1
+    exec_vmu "$target" "${@:2}"
     ;;
   --help | -h)
     usage
@@ -268,4 +336,6 @@ main() {
   esac
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

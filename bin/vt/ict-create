@@ -75,8 +75,8 @@ show_configuration() {
   printf '\033[1mResources:\033[0m      \033[0;33m%s vCPUs, %sMB RAM\033[0m\n' "$VCPUS" "$MEMORY_MB"
   printf '\033[1mPrivileged:\033[0m     \033[0;33m%s\033[0m\n' "$PRIVILEGED"
   echo
-  printf "\033[1;36mPress enter to continue...\033[0m\n"
-  read -r
+  # printf "\033[1;36mPress enter to continue...\033[0m\n"
+  # read -r
 }
 
 configure_distribution() {
