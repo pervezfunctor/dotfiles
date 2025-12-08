@@ -353,7 +353,7 @@ nixos_mainstall() {
   local cfg_base="${DOT_DIR}/extras/nixos/vm"
 
   slog "Copying config to $cfg_dir..."
-  if ! cp "${cfg_base}/" -o "$cfg_dir/flake.nix"; then
+  if ! cp "${cfg_base}/" "$cfg_dir/flake.nix"; then
     die "Failed to download flake.nix"
   fi
 
