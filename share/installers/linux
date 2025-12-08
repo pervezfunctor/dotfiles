@@ -353,20 +353,20 @@ nixos_mainstall() {
   local cfg_base="${DOT_DIR}/extras/nixos/vm"
 
   slog "Copying config to $cfg_dir..."
-  if ! cp -r "${cfg_base}/" "$cfg_dir"; then
+  if ! cp -r "${cfg_base}" "$cfg_dir"; then
     die "Failed to download flake.nix"
   fi
 
-  if ! grep -q "<YOUR USER NAME>" "$cfg_dir/flake.nix"; then
-    die "flake.nix doesn't contain expected <YOUR USER NAME> placeholder"
+  if ! grep -q "<YOUR_USER_NAME>" "$cfg_dir/flake.nix"; then
+    die "flake.nix doesn't contain expected <YOUR_USER_NAME> placeholder"
   fi
 
-  if ! grep -q "<YOUR USER NAME>" "$cfg_dir/home.nix"; then
-    die "home.nix doesn't contain expected <YOUR USER NAME> placeholder"
+  if ! grep -q "<YOUR_USER_NAME>" "$cfg_dir/home.nix"; then
+    die "home.nix doesn't contain expected <YOUR_USER_NAME> placeholder"
   fi
 
-  if ! grep -q "<YOUR HOME DIRECTORY>" "$cfg_dir/home.nix"; then
-    die "home.nix doesn't contain expected <YOUR HOME DIRECTORY> placeholder"
+  if ! grep -q "<YOUR_HOME_DIRECTORY>" "$cfg_dir/home.nix"; then
+    die "home.nix doesn't contain expected <YOUR_HOME_DIRECTORY> placeholder"
   fi
 
   slog "Ensuring dev.nix is imported..."
@@ -384,17 +384,17 @@ nixos_mainstall() {
   fi
 
   slog "Replacing placeholders in flake.nix..."
-  if ! sed -i "s/<YOUR USER NAME>/$(whoami)/g" "$cfg_dir/flake.nix"; then
-    die "Failed to replace <YOUR USER NAME> in flake.nix"
+  if ! sed -i "s/<YOUR_USER_NAME>/$(whoami)/g" "$cfg_dir/flake.nix"; then
+    die "Failed to replace <YOUR_USER_NAME> in flake.nix"
   fi
 
   slog "Replacing placeholders in home.nix..."
-  if ! sed -i "s/<YOUR USER NAME>/$(whoami)/g" "$cfg_dir/home.nix"; then
-    die "Failed to replace <YOUR USER NAME> in home.nix"
+  if ! sed -i "s/<YOUR_USER_NAME>/$(whoami)/g" "$cfg_dir/home.nix"; then
+    die "Failed to replace <YOUR_USER_NAME> in home.nix"
   fi
 
-  if ! sed -i "s|<YOUR HOME DIRECTORY>|$HOME|g" "$cfg_dir/home.nix"; then
-    die "Failed to replace <YOUR HOME DIRECTORY> in home.nix"
+  if ! sed -i "s|<YOUR_HOME_DIRECTORY>|$HOME|g" "$cfg_dir/home.nix"; then
+    die "Failed to replace <YOUR_HOME_DIRECTORY> in home.nix"
   fi
 
   local hostname
