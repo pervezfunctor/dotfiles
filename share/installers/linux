@@ -338,7 +338,7 @@ nixos_mainstall() {
   slog "This should only be executed on a freshly installed nixos."
   sleep 3
 
-  dotfiles_install
+  nix_dotfiles_install
 
   has_cmd "$DOT_DIR" || die "Cloning to $DOT_DIR failed. Quitting."
 
