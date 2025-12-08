@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Usage:
+#   latest_from_github "owner/repo" "output-filename"
+# Returns path to downloaded file in $REPLY
+latest_from_github() {
+  local repo="$1"
+  local outfile="$2"
+
+  local api="https://api.github.com/repos/${repo}/releases/latest"
+
+  # Prefer zipball; tarball is fine.
+  local url
+  url=$(curl -sL "$api" |
+    grep -E '"(zipball_url|tarball_url)":' |
+    head -n1 |
+    sed -E 's/.*"(https:[^"]+)".*/\1/')
+
+  if [ -z "$url" ]; then
+    echo "ERROR: Unable to find latest release URL for $repo" >&2
+    exit 1
+  fi
+
+  echo "Downloading: $url"
+  curl -L -o "$outfile" "$url"
+
+  REPLY="$outfile"
+}
+
+REPO="peterfajdiga/karousel"
+DEST="$HOME/.local/share/kwin/scripts/karousel"
+
+if [ -e "$DEST" ]; then
+  echo "Destination already exists: $DEST"
+  echo "Refusing to overwrite. Delete it if you want a fresh install."
+  exit 1
+fi
+
+mkdir -p "$(dirname "$DEST")"
+
+TMPDIR="$(mktemp -d)"
+cd "$TMPDIR"
+
+latest_from_github "$REPO" "karousel-latest.tar.gz"
+ARCHIVE="$REPLY"
+
+mkdir extracted
+tar -xzf "$ARCHIVE" -C extracted
+
+topdir=$(find extracted -mindepth 1 -maxdepth 1 -type d | head -n1)
+
+if [ -z "$topdir" ]; then
+  echo "ERROR: Extraction failed (no top directory found)."
+  exit 1
+fi
+
+mv "$topdir" "$DEST"
+
+cd ~
+rm -rf "$TMPDIR"
+
+echo "Installed karousel into: $DEST"
+echo "This script will now refuse further runs until you remove that directory."
