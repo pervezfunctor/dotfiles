@@ -340,7 +340,7 @@ nixos_mainstall() {
 
   nix_dotfiles_install
 
-  has_cmd "$DOT_DIR" || die "Cloning to $DOT_DIR failed. Quitting."
+  dir_exists "$DOT_DIR" || die "Cloning to $DOT_DIR failed. Quitting."
 
   local cfg_dir=~/nix-config
   dir_exists "$cfg_dir" && die "$cfg_dir already exists. Quitting."
