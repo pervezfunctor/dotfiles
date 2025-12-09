@@ -336,7 +336,7 @@ nixos_mainstall() {
   has_cmd nix || die "nix not found, Qutting."
 
   info "This should only be executed on a freshly installed nixos."
-  sleep 3
+  sleep 5
 
   local CONFIG_DIR="$HOME/nix-config"
   dir_exists "$CONFIG_DIR" && die "$CONFIG_DIR already exists. Quitting."
@@ -400,7 +400,7 @@ nixos_mainstall() {
   fi
 
   slog "Rebuilding system with flake..."
-  if ! sudo nixos-rebuild switch --flake "$cfg_dir#$hostname"; then
+  if ! sudo nixos-rebuild switch --flake "$CONFIG_DIR#$hostname"; then
     fail "nixos-rebuild failed"
   fi
 
@@ -411,16 +411,16 @@ nixos_mainstall() {
 }
 
 nixos-wsl_mainstall() {
-  local cfg_dir=~/nix-config
+  local CONFIG_DIR=~/nix-config
 
-  if [ -d "$cfg_dir" ]; then
+  if [ -d "$CONFIG_DIR" ]; then
     die "nix-config already exists, skipping nixos installation"
   fi
 
   nix_dotfiles_install
 
-  slog "Copying nixos-wsl config to $cfg_dir..."
-  if ! cp -r "$DOT_DIR/extras/nixos-wsl/nixos" "$cfg_dir"; then
+  slog "Copying nixos-wsl config to $CONFIG_DIR..."
+  if ! cp -r "$DOT_DIR/extras/nixos-wsl/nixos" "$CONFIG_DIR"; then
     die "Failed to copy nixos-wsl config"
   fi
   slog "Copying nix.conf to ~/.config..."
@@ -429,16 +429,16 @@ nixos-wsl_mainstall() {
   fi
 
   slog "Rebuilding system with flake..."
-  if ! sudo nixos-rebuild switch --flake "$cfg_dir#$(hostname)"; then
+  if ! sudo nixos-rebuild switch --flake "$CONFIG_DIR#$(hostname)"; then
     die "nixos-rebuild failed"
   fi
 
   slog "nixos-wsl installation done!"
   slog "If anything goes wrong, rollback with:"
   slog "sudo nixos-rebuild switch --rollback"
-  slog "Your configuration is at $cfg_dir"
+  slog "Your configuration is at $CONFIG_DIR"
   slog "Update your configuration, and run:"
-  slog "sudo nixos-rebuild switch --flake $cfg_dir#$(hostname)"
+  slog "sudo nixos-rebuild switch --flake $CONFIG_DIR#$(hostname)"
   slog "Commit and push your configuration to keep it safe."
 }
 
