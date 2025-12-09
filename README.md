@@ -214,7 +214,7 @@ bash -c "$(curl -sSL https://is.gd/egitif) -- ublue"
 
 ### Nixos
 
-Install [nixos](https://channels.nixos.org/) using [graphical iso](https://channels.nixos.org/nixos-25.05/latest-nixos-graphical-x86_64-linux.iso).
+Install [nixos](https://channels.nixos.org/) using [graphical iso](https://channels.nixos.org/nixos-25.11/latest-nixos-graphical-x86_64-linux.iso).
 
 Execute the following script only on a freshly installed system.
 

@@ -335,80 +335,76 @@ nixos_mainstall() {
   has_cmd nixos-rebuild || die "Only nixos(linux) supported. Quitting."
   has_cmd nix || die "nix not found, Qutting."
 
-  slog "This should only be executed on a freshly installed nixos."
+  info "This should only be executed on a freshly installed nixos."
   sleep 3
 
-  nix_dotfiles_install
+  local CONFIG_DIR="$HOME/nix-config"
+  dir_exists "$CONFIG_DIR" && die "$CONFIG_DIR already exists. Quitting."
 
-  dir_exists "$DOT_DIR" || die "Cloning to $DOT_DIR failed. Quitting."
-
-  local cfg_dir=~/nix-config
-  dir_exists "$cfg_dir" && die "$cfg_dir already exists. Quitting."
-
-  slog "Copying /etc/nixos to $cfg_dir..."
-  if ! cp -r /etc/nixos "$cfg_dir"; then
+  slog "Copying /etc/nixos to $CONFIG_DIR..."
+  if ! cp -r /etc/nixos "$CONFIG_DIR"; then
     die "Failed to copy /etc/nixos"
   fi
 
-  local cfg_base="${DOT_DIR}/extras/nixos/vm"
+  local CONFIG_SRC="${DOT_DIR}/extras/nixos/vm"
 
-  slog "Copying config to $cfg_dir..."
-  if ! cp -r "${cfg_base}" "$cfg_dir"; then
-    die "Failed to download flake.nix"
+  slog "Copying config to $CONFIG_DIR..."
+  if ! cp "${CONFIG_SRC}/dev.nix" "${CONFIG_SRC}/flake.nix" "${CONFIG_SRC}/home.nix" "$CONFIG_DIR/"; then
+    die "Failed to copy config files"
   fi
 
-  if ! grep -q "<YOUR_USER_NAME>" "$cfg_dir/flake.nix"; then
+  if ! grep -q "<YOUR_USER_NAME>" "$CONFIG_DIR/flake.nix"; then
     die "flake.nix doesn't contain expected <YOUR_USER_NAME> placeholder"
   fi
 
-  if ! grep -q "<YOUR_USER_NAME>" "$cfg_dir/home.nix"; then
+  if ! grep -q "<YOUR_USER_NAME>" "$CONFIG_DIR/home.nix"; then
     die "home.nix doesn't contain expected <YOUR_USER_NAME> placeholder"
   fi
 
-  if ! grep -q "<YOUR_HOME_DIRECTORY>" "$cfg_dir/home.nix"; then
+  if ! grep -q "<YOUR_HOME_DIRECTORY>" "$CONFIG_DIR/home.nix"; then
     die "home.nix doesn't contain expected <YOUR_HOME_DIRECTORY> placeholder"
   fi
 
   slog "Ensuring dev.nix is imported..."
-  if [[ ! -f "$cfg_dir/configuration.nix" ]]; then
+  if [[ ! -f "$CONFIG_DIR/configuration.nix" ]]; then
     die "configuration.nix not found"
   fi
-  if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
-    if ! sed -i '/^[[:space:]]*\.\/hardware-configuration\.nix/ a\    ./dev.nix' "$cfg_dir/configuration.nix"; then
+  if ! grep -q './dev.nix' "$CONFIG_DIR/configuration.nix"; then
+    if ! sed -i '/^[[:space:]]*\.\/hardware-configuration\.nix/ a\    ./dev.nix' "$CONFIG_DIR/configuration.nix"; then
       die "Failed to add dev.nix import to configuration.nix"
     fi
   fi
 
-  if ! grep -q './dev.nix' "$cfg_dir/configuration.nix"; then
+  if ! grep -q './dev.nix' "$CONFIG_DIR/configuration.nix"; then
     die "Failed to add dev.nix to configuration.nix"
   fi
 
   slog "Replacing placeholders in flake.nix..."
-  if ! sed -i "s/<YOUR_USER_NAME>/$(whoami)/g" "$cfg_dir/flake.nix"; then
+  if ! sed -i "s/<YOUR_USER_NAME>/$(whoami)/g" "$CONFIG_DIR/flake.nix"; then
     die "Failed to replace <YOUR_USER_NAME> in flake.nix"
   fi
 
   slog "Replacing placeholders in home.nix..."
-  if ! sed -i "s/<YOUR_USER_NAME>/$(whoami)/g" "$cfg_dir/home.nix"; then
+  if ! sed -i "s/<YOUR_USER_NAME>/$(whoami)/g" "$CONFIG_DIR/home.nix"; then
     die "Failed to replace <YOUR_USER_NAME> in home.nix"
   fi
 
-  if ! sed -i "s|<YOUR_HOME_DIRECTORY>|$HOME|g" "$cfg_dir/home.nix"; then
+  if ! sed -i "s|<YOUR_HOME_DIRECTORY>|$HOME|g" "$CONFIG_DIR/home.nix"; then
     die "Failed to replace <YOUR_HOME_DIRECTORY> in home.nix"
   fi
 
   local hostname
   hostname=$(hostname)
-  if ! grep -q "\"$hostname\"" "$cfg_dir/flake.nix"; then
+  if ! grep -q "\"$hostname\"" "$CONFIG_DIR/flake.nix"; then
     die "Hostname '$hostname' not found in flake.nix. Please add it to the nixosConfigurations."
   fi
 
   slog "Rebuilding system with flake..."
   if ! sudo nixos-rebuild switch --flake "$cfg_dir#$hostname"; then
-    die "nixos-rebuild failed"
+    fail "nixos-rebuild failed"
   fi
 
-  vscode_confstall
+  has_cmd code && vscode_confstall
 
   cmd_check nixfmt nixd git zsh devbox devenv docker distrobox nvim shellcheck \
     shfmt stow trash tmux eza gcc make gh ghostty rg tldr code

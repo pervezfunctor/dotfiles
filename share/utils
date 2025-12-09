@@ -1365,11 +1365,18 @@ check_sudo_askpass() {
   fi
 }
 
+nix_flake_enabled() {
+  nix run --experimental-features 'nix-command flakes' "$@"
+}
+
 nix_dotfiles_install() {
   has_cmd git && dotfiles_install && return 0
   dir_exists "$DOT_DIR" && return 0
 
   nix run --experimental-features 'nix-command flakes' nixpkgs#git clone https://github.com/pervezfunctor/dotfiles.git "${DOT_DIR}"
+  dir_exists "$DOT_DIR" || {
+    die "Cloning $DOT_DIR failed. Quitting"
+  }
 }
 
 pkgx_install() {

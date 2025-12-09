@@ -2,7 +2,7 @@
   description = "Minimal NixOS configuration using flakes";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05"; # or use `nixos-unstable`
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11"; # or use `nixos-unstable`
   };
 
   outputs = { self, nixpkgs, ... }: {
