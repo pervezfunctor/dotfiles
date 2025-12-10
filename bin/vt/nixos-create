@@ -272,7 +272,7 @@ parse_args() {
   done
 
   # Set default name if not provided
-  if [[ -z "$INSTANCE_NAME" ]]; then
+  if [[ -z "${INSTANCE_NAME:-}" ]]; then
     INSTANCE_NAME="nixos-$INSTANCE_TYPE"
   fi
 }
