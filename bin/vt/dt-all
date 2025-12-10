@@ -19,7 +19,7 @@ all_create() {
     if dt_exists "${d}-dt"; then
       warn "Container for $d already exists, skipping..."
     else
-      dt create "$d" "${d}-dt"
+      dt create --distro "$d" --name "${d}-dt"
     fi
   done
 

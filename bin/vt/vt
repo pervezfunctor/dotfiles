@@ -29,7 +29,7 @@ EXAMPLES:
 
     $0 vmu create --distro ubuntu  # Create Ubuntu user-mode VM
     $0 vme create --distro fedora  # Create Fedora system-mode VM
-    $0 dt create ubuntu            # Create Ubuntu distrobox container
+    $0 dt create  --distro ubuntu  # Create Ubuntu distrobox container
     $0 ivm create --distro debian  # Create Debian Incus VM
     $0 ict create --distro arch    # Create Arch Incus container
 

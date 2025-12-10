@@ -293,23 +293,23 @@ tail_logs() {
 }
 
 create_dt() {
+
+  local distro=""
+  local dt_name=""
+
   if [[ $# -eq 0 ]]; then
-    usage
+    fail "dt create at least needs to be passed distribution. Use --help for details."
     return 1
   fi
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-    --help | -h)
-      usage
-      exit 0
-      ;;
     --distro)
-      local distro="${2:-}"
+      distro="${2:-}"
       shift 2
       ;;
     --name)
-      local dt_name="${2:-}"
+      dt_name="${2:-}"
       shift 2
       ;;
     *)
@@ -318,28 +318,19 @@ create_dt() {
     esac
   done
 
-  if [[ -z "$distro" ]]; then
+  if [[ -z ${distro} ]]; then
+    if [[ $# -eq 0 ]]; then
+      fail "dt create at least needs to be passed distribution. Use --help for details."
+      return 1
+    fi
     distro="$1"
     shift
   fi
-  if [[ -z "$dt_name" ]]; then
-    dt_name="$2"
-    shift
-  fi
 
-  if ! dt_exists "$dt_name"; then
-    fail "Container '$dt_name' already exists"
-    return 1
-  fi
-
-  slog "Creating $distro distrobox container: $dt_name"
-
-  if dt-"$distro" "$dt_name" "$@"; then
-    success "Container '$dt_name' created successfully"
-    show_completion_info "$distro" "$dt_name"
+  if [[ -z ${dt_name} ]]; then
+    dt-"$distro" "$@"
   else
-    fail "Failed to create container '$dt_name'"
-    return 1
+    dt-"$distro" "$dt_name" "$@"
   fi
 }
 
