@@ -1,19 +1,27 @@
 #!/usr/bin/env bash
 
+function asroot() {
+  if has_cmd sudo; then
+    sudo "$@"
+  elif has_cmd asroot; then
+    asroot "$@"
+  fi
+}
+
 function si() {
-  doas apk add --no-cache "$@"
+  asroot apk add --no-cache "$@"
 }
 
 update_packages() {
   slog "Updating Alpine"
 
-  if ! { doas apk update && doas apk upgrade; }; then
+  if ! { asroot apk update && asroot apk upgrade; }; then
     die "apk update/upgrade failed, quitting"
   fi
 }
 
 alpine_packages() {
-  doas apk add --no-cache curl wget gcc libc-dev make gzip zsh git unzip \
+  asroot apk add --no-cache curl wget gcc libc-dev make gzip zsh git unzip \
     neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat nmap \
     trash-cli starship stow just file tree fd htop sd net-tools iproute2 \
     bottom choose dialog direnv dust dysk delta gum jq lazygit libsecret micro \
@@ -74,7 +82,7 @@ cli-slim_install() {
 cli_install() {
   slog "Installing cli tools using apt"
 
-  doas apk add neovim tmux shellcheck shfmt zsh-completions bat jq yq luarocks \
+  asroot apk add neovim tmux shellcheck shfmt zsh-completions bat jq yq luarocks \
     lazygit ugrep delta navi sd gdu hyperfine fd lsd xh htop nushell bottom \
     plocate dysk yazi procs dust direnv atuin broot glances curlie choose just \
     dialog lazydocker
@@ -120,8 +128,8 @@ ui_install() {
 }
 
 libvirt_confstall() {
-  doas rc-update add libvirtd default
-  doas service libvirtd start
+  asroot rc-update add libvirtd default
+  asroot service libvirtd start
 }
 
 vm_install() {
@@ -167,10 +175,10 @@ distrobox_install() {
 }
 
 docker_confstall() {
-  doas rc-update add docker default
-  doas service docker start
+  asroot rc-update add docker default
+  asroot service docker start
 
-  doas addgroup "$USER" docker
+  asroot addgroup "$USER" docker
 
 }
 
