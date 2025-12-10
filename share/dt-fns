@@ -227,7 +227,7 @@ dt-docker() {
   local CONTAINER_NAME=${1:-docker}
   dt-docker-slim "${CONTAINER_NAME}"
 
-  dt-ilm_exec "${CONTAINER_NAME}"
+  # dt-ilm_exec "${CONTAINER_NAME}"
 }
 
 dt-incus() {
@@ -251,8 +251,6 @@ dt_create_ilm() {
 
 dt-alpine-edge() {
   local CONTAINER_NAME=${1:-alpine-edge}
-  slog "Creating distrobox $CONTAINER_NAME"
-
   dt_create_ilm "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:edge \
     --init \
     --additional-packages "openrc openssh-server"
@@ -262,8 +260,6 @@ dt-alpine-edge() {
 
 dt-alpine() {
   local CONTAINER_NAME=${1:-alpine}
-  slog "Creating distrobox $CONTAINER_NAME"
-
   dt_create_ilm "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
     --init --additional-packages "openrc openssh-server"
 
@@ -272,74 +268,70 @@ dt-alpine() {
 
 dt-debian() {
   local CONTAINER_NAME=${1:-debian}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dt_create_ilm "${CONTAINER_NAME}" debian:latest \
+  if dt_create_ilm "${CONTAINER_NAME}" \
+    quay.io/toolbx-images/debian-toolbox:latest \
     --init \
-    --additional-packages "systemd libpam-systemd openssh-server"
-
-  dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+    --additional-packages "systemd libpam-systemd openssh-server"; then
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+  fi
 }
 
 dt-ubuntu() {
   local CONTAINER_NAME=${1:-ubuntu}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dt_create_ilm "${CONTAINER_NAME}" ubuntu:questing \
-    --init \
-    --additional-packages "systemd libpam-systemd openssh-server"
-
-  dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+  if dt_create_ilm "${CONTAINER_NAME}" quay.io/toolbx/ubuntu-toolbox:latest \
+  --init \
+    --additional-packages "systemd libpam-systemd openssh-server"; then
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+  fi
 }
 
 dt-arch() {
   local CONTAINER_NAME=${1:-arch}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dt_create_ilm "${CONTAINER_NAME}" archlinux:latest \
+  if dt_create_ilm "${CONTAINER_NAME}" quay.io/toolbx/arch-toolbox:latest \
     --yes \
     --init \
-    --additional-packages "systemd openssh"
-
-  dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+    --additional-packages "systemd openssh"; then
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+  fi
 }
 
 dt-tw() {
   local CONTAINER_NAME=${1:-tw}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dt_create_ilm "${CONTAINER_NAME}" opensuse/tumbleweed \
+  if dt_create_ilm "${CONTAINER_NAME}" \
+    registry.opensuse.org/opensuse/tumbleweed:latest \
     --init \
-    --additional-packages "systemd openssh-server"
-
-  dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+    --additional-packages "systemd openssh-server"; then
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+  fi
 }
 
 dt-fedora() {
   local CONTAINER_NAME=${1:-fedora}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dt_create_ilm "${CONTAINER_NAME}" fedora:latest \
+  if dt_create_ilm "${CONTAINER_NAME}" quay.io/fedora/fedora-toolbox:43 \
     --init \
-    --additional-packages "systemd openssh-server"
-
-  dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+    --additional-packages "systemd openssh-server"; then
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+  fi
 }
 
 dt-centos() {
   local CONTAINER_NAME=${1:-centos}
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  dt_create_ilm "${CONTAINER_NAME}" centos:latest \
+  if dt_create_ilm "${CONTAINER_NAME}" quay.io/centos/centos:stream10 \
     --init \
-    --additional-packages "systemd openssh-server"
+    --additional-packages "systemd openssh-server"; then
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+  fi
+}
 
-  dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+dt-nix() {
+  local CONTAINER_NAME=${1:-deb-nix}
+  if dt-debian "$CONTAINER_NAME"; then
+    dt_enter "${CONTAINER_NAME}" bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- nix
+  fi
 }
 
 dt-alpine-noinit() {
   local CONTAINER_NAME=${1:-alpine-noinit}
-  slog "Creating distrobox $CONTAINER_NAME"
 
   dt_create "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
     --additional-packages "gcc libc-dev make gzip zsh git curl neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat trash-cli"
@@ -347,7 +339,6 @@ dt-alpine-noinit() {
 
 dt-alpine-edge-noinit() {
   local CONTAINER_NAME=${1:-alpine-edge-noinit}
-  slog "Creating distrobox $CONTAINER_NAME"
 
   dt_create "${CONTAINER_NAME}" \
     quay.io/toolbx-images/alpine-toolbox:edge \
@@ -533,19 +524,6 @@ dt-from-image() {
     --name "$CONTAINER_NAME"; then
     dt_enter "$CONTAINER_NAME"
     slog "Done creating distrobox from image $1"
-  fi
-}
-
-dt-nix() {
-  local CONTAINER_NAME=${1:-deb-nix}
-
-  slog "Creating distrobox $CONTAINER_NAME"
-
-  srm "${BOXES_DIR}/${CONTAINER_NAME}"
-
-  if dt-debian "$CONTAINER_NAME"; then
-    dt_enter "${CONTAINER_NAME}" bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- nix
-    slog "Done creating distrobox $CONTAINER_NAME"
   fi
 }
 
