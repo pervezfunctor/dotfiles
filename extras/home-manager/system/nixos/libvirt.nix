@@ -11,6 +11,8 @@
   users.extraGroups.kvm.members = [ vars.username ];
 
   environment.systemPackages = with pkgs; [
+    dnsmasq
+    openssl
     guestfs-tools
     libguestfs
     virt-manager

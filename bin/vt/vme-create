@@ -311,7 +311,7 @@ create_disk() {
 create_vm() {
   slog "Creating VM '${VM_NAME}'..."
 
-  virt-install \
+  if virt-install \
     --connect qemu:///system \
     --name "${VM_NAME}" \
     --memory "${MEMORY}" \
@@ -324,9 +324,12 @@ create_vm() {
     --video=virtio \
     --graphics none \
     --console pty,target_type=serial \
-    --noautoconsole
-
-  success "VM creation process started for '${VM_NAME}'."
+    --noautoconsole; then
+    success "VM creation process started for '${VM_NAME}'."
+    return 0
+  else
+    return 1
+  fi
 }
 
 wait_for_ip() {

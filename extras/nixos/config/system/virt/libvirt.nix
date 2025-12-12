@@ -32,6 +32,9 @@
         #   ];
         # };
       };
+      nss.enable = true;
+      firewallBackend = "nftables";
+      allowedBridges = [ "virbr0" ];
     };
     spiceUSBRedirection.enable = true;
   };
