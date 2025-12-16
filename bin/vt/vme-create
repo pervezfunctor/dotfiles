@@ -87,10 +87,12 @@ configure_fedora() {
   RELEASE=${RELEASE:=43}
   BASE_IMAGE_NAME="Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
   DOWNLOAD_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/${BASE_IMAGE_NAME}"
-  OS_VARIANT="fedora${RELEASE}"
 
   if [[ "$RELEASE" -ne 43 ]]; then
     warn "Only Fedora 43 is supported. Installing Fedora 43."
+    OS_VARIANT="fedora${RELEASE}"
+  else
+    OS_VARIANT="fedora42"
   fi
 }
 
