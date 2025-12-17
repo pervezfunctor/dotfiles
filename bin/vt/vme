@@ -97,6 +97,7 @@ delete_vme() {
   local vda
   vda=$(virsh --connect qemu:///system domblklist "$1" | grep vda | awk '{print $2}')
 
+  virsh --connect qemu:///system snapshot-delete "$1" --current --metadata
   virsh --connect qemu:///system destroy "$1" >/dev/null 2>&1 || true
   virsh --connect qemu:///system undefine "$1" >/dev/null 2>&1 || true
 
