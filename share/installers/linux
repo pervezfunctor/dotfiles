@@ -87,6 +87,12 @@ prog-group_check() {
   cmd_check go rustc npm uv pyenv conda
 }
 
+vt_mainstall() {
+  vm_mainstall
+  incus_groupstall
+  distrobox_groupstall
+}
+
 prog_mainstall() {
   vm_mainstall
   go_install
