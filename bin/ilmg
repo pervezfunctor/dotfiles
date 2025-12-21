@@ -40,16 +40,13 @@ installer() {
     for arg in "$@"; do
       if fn_exists "${arg}_groupstall"; then
         "${arg}_groupstall"
-        return 0
       elif fn_exists "${arg}_install"; then
         "${arg}_install"
-        return 0
       else
         warn "No such installer: $arg"
       fi
     done
   fi
-  return 0
 }
 
 main() {
