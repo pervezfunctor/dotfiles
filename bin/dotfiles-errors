@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DOTFILES_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/logs"
+ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ilm/logs"
 
 # shellcheck disable=SC1091
 source "$DOT_DIR/share/utils"
@@ -19,13 +19,13 @@ SEARCHES=(
 )
 
 for search in "${SEARCHES[@]}"; do
-  if grep -i "$search" <"${DOTFILES_LOG_DIR}"/output.log; then
+  if grep -i "$search" <"${ILM_LOG_DIR}"/output.log; then
     press_enter
   fi
 done
 
 for search in "${SEARCHES[@]}"; do
-  if grep -i "$search" <"${DOTFILES_LOG_DIR}"/error.log; then
+  if grep -i "$search" <"${ILM_LOG_DIR}"/error.log; then
     press_enter
   fi
 done

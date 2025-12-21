@@ -365,39 +365,42 @@ source_dotfile() {
   fi
 }
 
+
+export ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ilm/logs"
+
 reset_logs() {
   slog "Removing old logs"
-  rm -f ~/.dotfiles-error.log ~/.dotfiles-output.log ~/.dotfiles-slog.log \
-    ~/.dotfiles-warn.log ~/.dotfiles-fail.log ~/.dotfiles-success.log 2>/dev/null
+  rm -rf "$ILM_LOG_DIR" 2>/dev/null || true
 }
 
 with_logs() {
+  mkdir -p ~/.local/state/ilm/logs
   main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee ~/.dotfiles-error.log >&2)
   slog "Installation done! Look at ~/.dotfiles-error.log for any errors."
 }
 
 slog() {
-  printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*" >>"$HOME/.dotfiles-slog.log"
+  printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/slog.log
   printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*"
 }
 
 fail() {
-  printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >>"$HOME/.dotfiles-fail.log"
+  printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/fail.log
   printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >&2
 }
 
 warn() {
-  printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >>"$HOME/.dotfiles-warn.log"
+  printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/warn.log
   printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >&2
 }
 
 success() {
-  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*" >>"$HOME/.dotfiles-slog.log"
+  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/slog.log
   printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*"
 }
 
 info() {
-  printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*" >>"$HOME/.dotfiles-slog.log"
+  printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/slog.log
   printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*"
 }
 
