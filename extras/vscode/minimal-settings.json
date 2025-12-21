@@ -50,8 +50,8 @@
   "window.commandCenter": true,
   "workbench.commandPalette.preserveInput": true,
   "workbench.editor.highlightModifiedTabs": true,
-  "workbench.colorTheme": "Catppuccin Frappé",
-  "workbench.iconTheme": "catppuccin-frappe",
+  "workbench.colorTheme": "Catppuccin Macchiato",
+  "workbench.iconTheme": "Catppuccin Macchiato",
   "catppuccin.accentColor": "teal",
   "breadcrumbs.enabled": false,
   "editor.folding": false,
@@ -69,6 +69,7 @@
     "bin/vt/vm",
     "cd",
     "column",
+    "cp",
     "cut",
     "devcontainer",
     "distrobox",
@@ -81,15 +82,14 @@
     "ip",
     "nix",
     "nmcli",
+    "pct",
     "podman",
+    "qm",
     "rg",
     "sed",
+    "ssh",
     "tail",
     "virsh",
     "virt-cat"
-  ],
-  "kilo-code.deniedCommands": [
-    "rm",
-    "trash"
   ]
 }
