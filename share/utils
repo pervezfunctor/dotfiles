@@ -365,7 +365,6 @@ source_dotfile() {
   fi
 }
 
-
 export ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ilm/logs"
 
 reset_logs() {
@@ -374,9 +373,9 @@ reset_logs() {
 }
 
 with_logs() {
-  mkdir -p ~/.local/state/ilm/logs
-  main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee ~/.dotfiles-error.log >&2)
-  slog "Installation done! Look at ~/.dotfiles-error.log for any errors."
+  mkdir -p "$ILM_LOG_DIR"
+  main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee "$ILM_LOG_DIR"/.dotfiles-error.log >&2)
+  slog "Installation done! Look at $ILM_LOG_DIR/.dotfiles-error.log for any errors."
 }
 
 slog() {
