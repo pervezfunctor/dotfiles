@@ -212,7 +212,7 @@ cmake_install() {
 gnome-extensions-slim_install() {
   if ! has_cmd gext; then
     has_cmd pipx || uv_install
-    pipx install gnome-extensions-cli --system-site-packages
+    pyi gnome-extensions-cli --system-site-packages
   fi
 
   if ! has_cmd gext; then
@@ -221,9 +221,6 @@ gnome-extensions-slim_install() {
   fi
 
   gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
-  gext install just-perfection-desktop@just-perfection
-  gext install blur-my-shell@aunetx
-  gext install undecorate@sun.wxg@gmail.com
   gext install switcher@landau.fi
   gext install CoverflowAltTab@palatis.blogspot.com
 }
@@ -234,6 +231,9 @@ gnome-extensions_install() {
   gnome-extensions-slim_install
   has_cmd gext || return 1
 
+  gext install blur-my-shell@aunetx
+  gext install just-perfection-desktop@just-perfection
+  gext install undecorate@sun.wxg@gmail.com
   gext install Vitals@CoreCoding.com
   gext install tailscale@joaophi.github.com
   gext install tilingshell@ferrarodomenico.com
@@ -1003,4 +1003,14 @@ apps-slim_groupstall() {
 apps_groupstall() {
   flathub_install
   apps_install
+}
+
+enable_ssh_service() {
+  if has_cmd systemctl; then
+    sudo systemctl enable sshd
+  elif has_cmd rc-update; then
+    sudo rc-update add sshd default
+  else
+    warn "Cannot enable ssh service: no systemctl or rc-update found"
+  fi
 }

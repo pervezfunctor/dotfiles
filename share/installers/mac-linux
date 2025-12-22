@@ -63,6 +63,24 @@ base_check() {
   bash_config_check
 }
 
+df_confstall() {
+  slog "Configuring bash"
+
+  # shellcheck disable=SC2016
+  if ! grep -q '\.ilm/share/shellrc' ~/.bashrc 2>/dev/null || grep -q 'source ${DOT_DIR}/share/shellrc' ~/.bashrc 2>/dev/null; then
+    echo "export DOT_DIR=$DOT_DIR" >>~/.bashrc
+    echo 'source ${DOT_DIR}/share/shellrc' >>~/.bashrc
+  fi
+
+  slog "bash config done!"
+}
+
+df_mainstall() {
+  base_binstall
+  dotfiles_install
+  df_confstall
+}
+
 base_mainstall() {
   base_binstall
   base_config_install

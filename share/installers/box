@@ -1,152 +1,153 @@
 #!/usr/bin/env bash
 
 nvim_boxstall() {
-    astrovim_confstall
+  astrovim_confstall
 
-    if has_cmd brew; then
-        bis luarocks lazygit tectonic fd gdu fzf
-        has_cmd nvim || bi neovim
-        has_cmd tree-sitter || bi tree-sitter-cli
-        has_cmd rg || bi ripgrep
-        has_cmd btm || bi bottom
-    fi
+  if has_cmd brew; then
+    bis luarocks lazygit tectonic fd gdu fzf
+    has_cmd nvim || bi neovim
+    has_cmd tree-sitter || bi tree-sitter-cli
+    has_cmd rg || bi ripgrep
+    has_cmd btm || bi bottom
+  fi
 
-    has_cmd pixi || pixi_install
+  has_cmd pixi || pixi_install
 
-    if has_cmd pixi; then
-        pis nvim luarocks lazygit tectonic gdu fd fzf
-        has_cmd tree-sitter || pi tree-sitter-cli
-        has_cmd rg || pi ripgrep
-        has_cmd btm || pi bottom
-    elif fn_exists si; then
-        # has_cmd apk && si nvim
-        si neovim luarocks lazygit gdu ripgrep bottom btm tree-sitter-cli fd-find fzf
+  if has_cmd pixi; then
+    pis nvim luarocks lazygit tectonic gdu fd fzf
+    has_cmd tree-sitter || pi tree-sitter-cli
+    has_cmd rg || pi ripgrep
+    has_cmd btm || pi bottom
+  elif fn_exists si; then
+    # has_cmd apk && si nvim
+    si neovim luarocks lazygit gdu ripgrep bottom btm tree-sitter-cli fd-find fzf
 
-        is_apt && warn "Older version of neovim is installed. Some features might not work."
-    else
-        warn "nvim not installed!"
-        return 1
-    fi
+    is_apt && warn "Older version of neovim is installed. Some features might not work."
+  else
+    warn "nvim not installed!"
+    return 1
+  fi
 
-    has_cmd nvim || warn "nvim not installed!"
+  has_cmd nvim || warn "nvim not installed!"
 }
 
 emacs_version() {
-    emacs --version | head -1 | cut -d' ' -f3 | cut -d'.' -f1
+  emacs --version | head -1 | cut -d' ' -f3 | cut -d'.' -f1
 }
 
 emacs_boxstall() {
-    srm ~/.emacs
-    srm ~/.emacs.d
-    ln -s "$DOT_DIR/emacs-slim/dot-emacs" ~/.emacs
+  srm ~/.emacs
+  srm ~/.emacs.d
+  ln -s "$DOT_DIR/emacs-slim/dot-emacs" ~/.emacs
 
-    has_cmd emacs && [ "$(emacs_version)" -gt 29 ] && return 0
+  has_cmd emacs && [ "$(emacs_version)" -gt 29 ] && return 0
 
-    if has_cmd brew; then
-        bi emacs
-    elif has_cmd pixi; then
-        pi emacs
-    else
-        si emacs-nox
-        has_cmd emacs || si emacs
-    fi
+  if has_cmd brew; then
+    bi emacs
+  elif has_cmd pixi; then
+    pi emacs
+  else
+    si emacs-nox
+    has_cmd emacs || si emacs
+  fi
 
-    has_cmd emacs || warn "emacs not installed! Qutting."
+  has_cmd emacs || warn "emacs not installed! Qutting."
 }
 
 tmux_boxstall() {
-    srm ~/.config/tmux
-    smd ~/.config/tmux
-    smd ~/.tmux
-    ln -s "$DOT_DIR/tmux/dot-config/tmux/tmux.conf" ~/.config/tmux/tmux.conf
+  srm ~/.config/tmux
+  smd ~/.config/tmux
+  smd ~/.tmux
+  ln -s "$DOT_DIR/tmux/dot-config/tmux/tmux.conf" ~/.config/tmux/tmux.conf
 
-    has_cmd tmux && return 0
+  has_cmd tmux && return 0
 
-    if has_cmd brew; then
-        bi tmux
-    else
-        si tmux
-        has_cmd tmux || (has_cmd pixi && pi tmux)
-    fi
+  if has_cmd brew; then
+    bi tmux
+  else
+    si tmux
+    has_cmd tmux || (has_cmd pixi && pi tmux)
+  fi
 
-    has_cmd tmux || warn "tmux not installed! Qutting."
+  has_cmd tmux || warn "tmux not installed! Qutting."
 }
 
 zsh_boxstall() {
-    srm ~/.zshrc
-    ln -s "$DOT_DIR/zsh/dot-zshrc" ~/.zshrc
+  srm ~/.zshrc
+  ln -s "$DOT_DIR/zsh/dot-zshrc" ~/.zshrc
 
-    has_cmd zsh && return 0
+  has_cmd zsh && return 0
 
-    si zsh
-    has_cmd zsh || (has_cmd pixi && pi zsh)
+  si zsh
+  has_cmd zsh || (has_cmd pixi && pi zsh)
 
-    has_cmd zsh || warn "zsh not installed! Qutting."
-    set_zsh_as_default
+  has_cmd zsh || warn "zsh not installed! Qutting."
+  set_zsh_as_default
 }
 
 slimbox_base() {
-    cd "$HOME" || warn "could not cd to $HOME"
+  cd "$HOME" || warn "could not cd to $HOME"
 
-    "$1_packages"
+  "$1_packages"
 
-    dotfiles_install
-    bash_confstall
-    starship_install
+  dotfiles_install
+  bash_confstall
+  starship_install
 
-    dir_exists "$DOT_DIR" || die "$DOT_DIR doesn't exist, Installation failed."
+  dir_exists "$DOT_DIR" || die "$DOT_DIR doesn't exist, Installation failed."
 }
 
 box_base() {
-    slimbox_base "$1"
+  slimbox_base "$1"
 
-    zsh_boxstall
+  zsh_boxstall
 }
 
 dt_base() {
-    is_distrobox || die "This script is only for distrobox containers"
-    [[ "$HOME" == *"boxes"* ]] || die "This script is only for distrobox containers with isolated home directory"
+  is_distrobox || die "This script is only for distrobox containers"
+  [[ "$HOME" == *"boxes"* ]] || die "This script is only for distrobox containers with isolated home directory"
 
-    box_base "$1"
+  box_base "$1"
 }
 
 get_boxos() {
-    if is_tw; then
-        echo "tw"
-    elif is_ubuntu; then
-        echo "ubuntu"
-    elif is_debian; then
-        echo "debian"
-    elif is_fedora; then
-        echo "fedora"
-    elif is_arch; then
-        echo "arch"
-    elif is_centos; then
-        echo "centos"
-    elif is_alpine; then
-        echo "alpine"
-    else
-        echo "brew"
-    fi
+  if is_tw; then
+    echo "tw"
+  elif is_ubuntu; then
+    echo "ubuntu"
+  elif is_debian; then
+    echo "debian"
+  elif is_fedora; then
+    echo "fedora"
+  elif is_arch; then
+    echo "arch"
+  elif is_centos; then
+    echo "centos"
+  elif is_alpine; then
+    echo "alpine"
+  else
+    echo "brew"
+  fi
 }
 
 slimbox_mainstall() {
-    slimbox_base "$(get_boxos)"
+  slimbox_base "$(get_boxos)"
 }
 
 box_mainstall() {
-    box_base "$(get_boxos)"
+  box_base "$(get_boxos)"
 }
 
 fullbox_mainstall() {
-    box_base "$(get_boxos)"
-    nvim_boxstall
-    tmux_boxstall
-    emacs_boxstall
+  box_base "$(get_boxos)"
+  nvim_boxstall
+  tmux_boxstall
+  emacs_boxstall
 }
 
 dt_mainstall() {
-    dt_base "$(get_boxos)"
+  dt_base "$(get_boxos)"
+  enable_ssh_service
 }
 
 dbox_mainstall() {
@@ -154,50 +155,50 @@ dbox_mainstall() {
 }
 
 tw-wslbox_mainstall() {
-    is_tw || die "This script is only for openSUSE Tumbleweed"
+  is_tw || die "This script is only for openSUSE Tumbleweed"
 
-    sudo systemd-tmpfiles --create
-    wslbox_base tw
+  sudo systemd-tmpfiles --create
+  wslbox_base tw
 }
 
 wslbox_mainstall() {
-    if is_tw; then
-        tw-wslbox_mainstall
-    # elif is_nixos; then
-    #     nixos-wslbox_mainstall
-    else
-        box_base "$(get_boxos)"
-    fi
+  if is_tw; then
+    tw-wslbox_mainstall
+  # elif is_nixos; then
+  #     nixos-wslbox_mainstall
+  else
+    box_base "$(get_boxos)"
+  fi
 }
 
 wsl_mainstall() {
-    wslbox_mainstall
-    brew_install
-    bis stow carapace fzf trash-cli lazygit eza zoxide gh gum
-    has_cmd delta || bi git-delta
+  wslbox_mainstall
+  brew_install
+  bis stow carapace fzf trash-cli lazygit eza zoxide gh gum
+  has_cmd delta || bi git-delta
 
-    zsh_boxstall
+  zsh_boxstall
 }
 
 centos-wsl_mainstall() {
-    wsl_mainstall
+  wsl_mainstall
 
-    tmux_boxstall
-    nvim_boxstall
+  tmux_boxstall
+  nvim_boxstall
 }
 
 centos-fast_mainstall() {
-    is_centos || die "This script is only for CentOS"
+  is_centos || die "This script is only for CentOS"
 
-    sudo dnf update
-    sudo dnf install -y git-core wget curl gcc make unzip tar tree neovim tmux \
-        zsh gcc-c++ gdb clang lldb lld llvm bat gum ripgrep luarocks
+  sudo dnf update
+  sudo dnf install -y git-core wget curl gcc make unzip tar tree neovim tmux \
+    zsh gcc-c++ gdb clang lldb lld llvm bat gum ripgrep luarocks
 
-    pixi_install
-    pixi global install trash-cli fzf lazygit eza zoxide gh git-delta
+  pixi_install
+  pixi global install trash-cli fzf lazygit eza zoxide gh git-delta
 
-    starship_install
-    tmux_boxstall
-    nvim_boxstall
-    zsh_boxstall
+  starship_install
+  tmux_boxstall
+  nvim_boxstall
+  zsh_boxstall
 }

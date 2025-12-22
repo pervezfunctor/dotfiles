@@ -246,7 +246,7 @@ dt-incus() {
 dt_create_ilm() {
   local CONTAINER_NAME=${1:-ilm}
   dt_create "$@"
-  dt_exec "${CONTAINER_NAME}" bash -c "$(curl -sSL "${ILM_SETUP_URL}")"
+  dt_exec "${CONTAINER_NAME}" bash -c "$(curl -sSL "${ILM_SETUP_URL}")" -- dt-slim
 }
 
 dt-alpine-edge() {

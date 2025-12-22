@@ -372,8 +372,12 @@ reset_logs() {
   rm -rf "$ILM_LOG_DIR" 2>/dev/null || true
 }
 
+create_logs_dir() {
+  mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
+}
+
 with_logs() {
-  mkdir -p "$ILM_LOG_DIR"
+  create_logs_dir
   main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee "$ILM_LOG_DIR"/.dotfiles-error.log >&2)
   slog "Installation done! Look at $ILM_LOG_DIR/.dotfiles-error.log for any errors."
 }

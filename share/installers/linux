@@ -235,8 +235,8 @@ sway_install() {
   sway_binstall
 
   if has_cmd pipx; then
-    pipx install i3ipc
-    pipx install autotiling
+    pyi i3ipc
+    pyi autotiling
   else
     warn "pipx not installed, cannot install autotiling"
   fi
@@ -312,6 +312,11 @@ dt-docker-dev_mainstall() {
   si openssh-server micro
   ssh_enable
   docker_confstall
+}
+
+dt-slim_mainstall() {
+  base_mainstall
+  enable_ssh_service
 }
 
 dt-dev_mainstall() {
