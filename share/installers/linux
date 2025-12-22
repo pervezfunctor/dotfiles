@@ -500,6 +500,19 @@ gnome_keybindings_install() {
   # Make it easy to resize undecorated windows
   gsettings set org.gnome.desktop.wm.keybindings begin-resize "['<Super>BackSpace']"
 
+  gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-left "[]"
+  gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-right "[]"
+
+  gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-left "['<Control><Super>Left']"
+  gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-right "['<Control><Super>Right']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-up "['<Control><Super>Up']"
+  # gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-down "['<Control><Super>Down']"
+
+  gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-left "['<Control><Super><Shift>Left']"
+  gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-right "['<Control><Super><Shift>Right']"
+  # gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-up "['<Control><Super><Shift>Up']"
+  # gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-down "['<Control><Super><Shift>Down']"
+
   # Alt+F4 is very cumbersome
   # gsettings set org.gnome.desktop.wm.keybindings close "['<Super>w']"
 

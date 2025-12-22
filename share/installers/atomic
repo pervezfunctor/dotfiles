@@ -1007,7 +1007,7 @@ apps_groupstall() {
 
 enable_ssh_service() {
   if has_cmd systemctl; then
-    sudo systemctl enable sshd
+    sudo systemctl enable sshd || sudo systemctl enable ssh
   elif has_cmd rc-update; then
     sudo rc-update add sshd default
   else

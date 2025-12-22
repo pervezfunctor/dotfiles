@@ -168,8 +168,7 @@ ssh_key_generate() {
 }
 
 ssh_key_exists() {
-  [[ -f "${HOME}/.ssh/id_ed25519.pub" ]] ||
-    [[ -f "${HOME}/.ssh/id_rsa.pub" ]]
+  [[ -f "${HOME}/.ssh/id_ed25519.pub" ]] || [[ -f "${HOME}/.ssh/id_rsa.pub" ]]
 }
 
 ssh_key_path() {
@@ -1747,10 +1746,10 @@ bootstrap() {
 
   [ -n "$NOSUDO" ] || keep_sudo_running
 
+  with_logs "$@"
   source_installers
 
   slog "Installing ${*} ..."
-  with_logs "$@"
 
   # shellcheck disable=SC2164
   cd "$curdir" || cd
