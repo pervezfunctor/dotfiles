@@ -9,7 +9,7 @@
   services.gnome.gnome-keyring.enable = true;
   environment.systemPackages = with pkgs; [
     font-awesome
-    dunst
+    mako
     hyprcursor
     hypridle
     hyprlock

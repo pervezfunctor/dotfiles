@@ -68,7 +68,7 @@ fedora_packages() {
 
   si git-core gh git-delta unzip wget curl trash-cli tar stow gcc make file \
     gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate \
-    cheat libsecret net-tools iproute nmap dialog newt jq procs direnv yq \
+    cheat libsecret net-tools iproute nmap dialog newt jq jc procs direnv yq \
     python3 pipx python3-pip
 
   has_cmd tldr && tldr --update
@@ -158,7 +158,7 @@ essential_install() {
 cli-slim_install() {
   slog "Installing cli tools using dnf"
 
-  local base_pkgs=(zsh git ripgrep gh bat jq fzf)
+  local base_pkgs=(zsh git ripgrep gh bat jq jc fzf)
 
   local fedora_pkgs=()
   if is_fedora; then
@@ -327,14 +327,13 @@ pm_install() {
 vm_install() {
   slog "Installing libvirt"
 
-  si libvirt virt-install bridge-utils virglrenderer butane cloud-utils \
-    qemu qemu-kvm qemu-img qemu-ui-spice-core qemu-ui-spice-app \
-    qemu-char-spice qemu-audio-spice qemu-device-usb-redirect \
-    qemu-device-display-virtio-vga qemu-device-display-virtio-gpu \
-    qemu-user-binfmt qemu-user-static qemu-system-x86_64 jq xmlstarlet \
-    coreos-installer bootc pykickstart lorax xorriso squashfs-tools bsdtar \
-    snapper btrfs-progs grub2 grub2-tools libguestfs-tools libosinfo \
-    osinfo-db edk2-ovmf dmidecode osinfo-db-tools openssl guestfs-tools
+  si libvirt virt-install bridge-utils virglrenderer cloud-utils bsdtar butane \
+    qemu qemu-kvm qemu-img qemu-ui-spice-core qemu-ui-spice-app osinfo-db jc \
+    qemu-char-spice qemu-audio-spice qemu-device-usb-redirect xmlstarlet lorax \
+    qemu-device-display-virtio-vga qemu-device-display-virtio-gpu openssl jq \
+    qemu-user-binfmt qemu-user-static qemu-system-x86_64 libosinfo dmidecode \
+    coreos-installer pykickstart xorriso squashfs-tools osinfo-db-tools bootc \
+    snapper btrfs-progs edk2-ovmf grub2-tools libguestfs-tools guestfs-tools
 
   slog "libvirt installation done!"
 }
@@ -389,36 +388,51 @@ more_essential_install() {
   si hplip ifuse input-remapper libimobiledevice libxcrypt-compat
 }
 
-tiling_common_install() {
+sin() {
+  sudo dnf install -y --setopt=install_weak_deps=False
+}
+
+desktop-core_install() {
+  sin firefox wl-clipboard thunar thunar-archive-plugin gnome-keyring-pam \
+    gnome-keyring libsecret udisks2 gvfs udiskie flatpak
+
+  jetbrains-mono_install
+  font-awesome_install
+}
+
+wm_install() {
   slog "Installing tiling common packages"
 
-  si waybar pavucontrol Thunar wl-clipboard thunar-archive-plugin
-  si network-manager-applet blueman gnome-keyring-pam gnome-keyring
-  si gnome-themes-extra kanshi sddm playerctl wlsunset rofi-wayland
-  si rofi-themes dunst swaync lxqt-policykit network-manager-applet
-  si xdg-desktop-portal-gtk pmv imv mpv wlogout qt6-qtquickcontrols2 qt6-qtsvg
-  si SwayNotificationCenter
+  desktop-core_install
+
+  sin waybar pavucontrol network-manager-applet blueman gnome-themes-extra \
+    greetd playerctl wlsunset rofi-wayland rofi-themes SwayNotificationCenter \
+    mako swaync network-manager-applet
+
+  sin lxqt-policykit imv mpv qt6-qtsvg xdg-desktop-portal-gtk wlogout \
+    qt6-qtquickcontrols2
 
   slog "Tiling common packages installation done!"
 }
 
 hyprland_binstall() {
-  tiling_common_install
+  wm_install
+
   slog "Installing hyprland"
 
-  si hyprland hyprland-devel hyprutils hyprutils-devel
-  si hypridle hyprpaper hyprpicker hyprlock kitty hyprcursor
+  sin hyprland hyprland-devel hyprutils hyprutils-devel hyprcursor
 
   slog "hyprland installation done!"
 }
 
 sway_binstall() {
-  tiling_common_install
+  wm_install
 
   slog "Installing sway"
 
-  si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway
-  si sway-config-fedora wlogout
+  si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway \
+    sway-config-fedora
+
   terminal_binstall
 
   slog "sway installation done!"
@@ -456,16 +470,16 @@ gpgkey=https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/yum/RPM-GPG-KEY-
 kde-slim_binstall() {
   is_fedora || warn "KDE slim install only tested on fedora"
 
+  desktop-core_install
+
   slog "Installing kde plasma..."
-  sudo dnf install -y --setopt=install_weak_deps=False plasma-desktop \
-    plasma-discover systemsettings kscreen kio-extras udisks2 powerdevil \
-    power-profiles-daemon mesa-libGLES wl-clipboard
+  sin plasma-desktop plasma-discover systemsettings kscreen kio-extras \
+    powerdevil power-profiles-daemon mesa-libGLES
   slog "kde plasma installation done!"
 }
 
 kde_binstall() {
   kde-slim_binstall
 
-  sudo dnf install -y --setopt=install_weak_deps=False flatpak \
-    plasma-discover-flatpak plasma-discover-packagekit
+  sin plasma-discover-flatpak plasma-discover-packagekit
 }

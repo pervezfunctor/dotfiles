@@ -79,7 +79,7 @@ proxmox_packages() {
 
   apt-get -qq -y --no-install-recommends install git-core micro zsh curl wget \
     zsh-theme-powerlevel9k htop pciutils ripgrep rclone stow stress jq yq sudo \
-    smartmontools zfsutils-linux rsync whiptail dialog numactl fio dysk duf \
+    smartmontools zfsutils-linux rsync whiptail dialog numactl fio dysk duf jc \
     usbutils restic ethtool nvme-cli lsof lm-sensors udisks2 guestfs-tools \
     proxmox-backup-client libguestfs-tools
 }
@@ -169,7 +169,7 @@ debian_packages() {
 
   si stow git-core gh git-delta lazygit unzip wget curl trash-cli python3-pip \
     net-tools iproute2 nmap gcc make file tree ripgrep zoxide fd-find htop tar \
-    gawk tealdeer dialog whiptail starship hyperfine jq direnv yq dysk bat \
+    gawk tealdeer dialog whiptail starship hyperfine jq jc direnv yq dysk bat \
     just gum eza shellcheck shfmt broot duf sd xh atuin procs sd python3 pipx
 
   fzf_install
@@ -233,7 +233,7 @@ essential_install() {
     snap_install
   fi
 
-  si zip unar micro p7zip libreadline-dev libsqlite3-dev libffi-dev  libfuse2 \
+  si zip unar micro p7zip libreadline-dev libsqlite3-dev libffi-dev libfuse2 \
     libbz2-dev liblzma-dev libsecret-tools build-essential whiptail zstd gawk \
     command-not-found firmware-linux linux-headers-"$(uname -r)"
 
@@ -264,7 +264,7 @@ cli_install() {
   cli-slim_install
 
   si tmux pkg-config urlview plocate sd gdu hyperfine fd-find ugrep tealdeer \
-    direnv yq shellcheck shfmt htop bat jq git-delta dialog gum just
+    direnv yq shellcheck shfmt htop bat jq jc git-delta dialog gum just
 
   has_cmd tldr && tldr --update
 
@@ -378,7 +378,7 @@ vm_install() {
   slog "Installing libvirt..."
 
   si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils libosinfo-bin \
-    virgl-server qemu-utils spice-client-gtk spice-vdagent jq xmlstarlet \
+    virgl-server qemu-utils spice-client-gtk spice-vdagent jq jc xmlstarlet \
     cloud-image-utils libguestfs-tools osinfo-db edk2-ovmf edk2-ovmf dmidecode \
     osinfo-db-tools openssl
 
@@ -430,20 +430,44 @@ distrobox_install() {
   slog "distrobox installation done!"
 }
 
-sway_binstall() {
-  slog "Installing sway..."
+pm_install() {
+  si net-tools iproute2 nmap lm_sensors stress-ng taliscale wireguard-tools \
+    smartmontools memtest86+ glmark2
+}
 
-  si sway swaylock swayidle wlogout wofi dunst firefox-esr foot kitty waybar \
-    wl-clipboard swaybg polkit-kde-agent-1 gnome-keyring libsecret-tools gvfs \
-    grim imagemagick pavucontrol sway-notification-center thunar udiskie mpv \
-    thunar-archive-plugin xdg-desktop-portal-gtk fonts-noto fonts-noto-mono \
-    fonts-noto-color-emoji papirus-icon-theme bibata-cursor-theme udisks2programprogram
-  program
+sin() {
+  sudo apt install --no-install-recommends -y -qq "$@"
+}
+
+desktop-core_install() {
+  sin kitty wl-clipboard gnome-keyring libsecret-tools imagemagick \
+    papirus-icon-theme bibata-cursor-theme udisks2 udiskie gvfs flatpak
+
+  si firefox-esr firefox libgles2-mesa libgl1-mesa
 
   jetbrains-mono_install
   font-awesome_install
+}
 
-  # fonts-inter fonts-jetbrains-mono nwg-bar nwg-clipman nwg-displays nwg-look nm-connection-editor swappy tumbler network-manager-applet nvtop cliphist slurp imv
+wm_install() {
+  desktop-core_install
+
+  sin grim slurp wlogout rofi wofi mako waybar pavucontrol
+
+  sin thunar thunar-archive-plugin xdg-desktop-portal cliphist mpv fonts-noto \
+    fonts-noto-mono fonts-noto-color-emoji
+}
+
+sway_binstall() {
+  slog "Installing sway..."
+
+  wm_install
+
+  sin sway swaylock swayidle swaybg xdg-desktop-portal-kde \
+    polkit-kde-agent-1 sway-notification-center
+
+  # fonts-inter nwg-bar nwg-clipman nwg-displays nvtop imv \
+  # nwg-look nm-connection-editor swappy tumbler network-manager-applet \
 
   slog "sway installation done!"
 }
@@ -451,18 +475,19 @@ sway_binstall() {
 kde-slim_binstall() {
   slog "Installing minimal kde plasma..."
 
-  sudo apt install --no-install-recommends -y -qq kde-plasma-desktop kscreen \
-    systemsettings udisks2 powerdevil power-profiles-daemon wl-clipboard
+  desktop-core_install
+  sin kde-plasma-desktop kscreen systemsettings udisks2 powerdevil \
+    power-profiles-daemon
 
-  sudo apt install --no-install-recommends -y -qq libgles2-mesa
-  sudo apt install --no-install-recommends -y -qq libgl1-mesa
+  sin libgles2-mesa
+  sin libgl1-mesa
 
   slog "kde plasma installation done!"
 }
 
 kde_binstall() {
-  sudo apt install --no-install-recommends -y -qq plasma-discover \
-    plasma-discover-backend-flatpak plasma-discover-backend-fwupd
+  sin plasma-discover plasma-discover-backend-flatpak
+  sin plasma-discover-backend-fwupd
 }
 
 # sudo apt-get -qq -y install \
@@ -470,11 +495,6 @@ kde_binstall() {
 #   libssl-dev libreadline-dev zlib1g-dev libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev libjemalloc2 \
 #   libvips imagemagick libmagickwand-dev mupdf mupdf-tools gir1.2-gtop-2.0 gir1.2-clutter-1.0 \
 #   redis-tools sqlite3 libsqlite3-0 libmysqlclient-dev libpq-dev postgresql-client postgresql-client-common wl-clipboard
-
-pm_install() {
-  si net-tools iproute2 nmap lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ \
-    glmark2
-}
 
 system-docker_binstall() {
   has_cmd docker && return 1

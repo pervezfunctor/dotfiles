@@ -34,7 +34,7 @@ arch_packages() {
 
   si bat bottom choose curl dialog direnv dust dysk eza fd file fzf gcc git \
     git-delta github-cli gum htop iproute2 jq just lazygit libnewt libsecret \
-    make micro net-tools nmap pixi procs python python-pip python-pipx \
+    make micro net-tools nmap pixi procs python python-pip python-pipx jc \
     python-uv ripgrep sd shellcheck shfmt starship stow tar tealdeer \
     trash-cli tree ugrep unzip wget which wl-clipboard xh yazi yq zoxide
 
@@ -136,7 +136,7 @@ cli_install() {
 
   si neovim tmux shellcheck shfmt python-pynvim zsh-completions bat jq yq \
     luarocks duf lazygit ugrep git-delta navi sd gdu hyperfine fd lsd xh \
-    htop nushell bottom plocate tealdeer television dysk yazi procs \
+    htop nushell bottom plocate tealdeer television dysk yazi procs jc \
     dust direnv atuin broot glances curlie superfile choose just dialog \
     gum lazydocker
 
@@ -220,7 +220,7 @@ vm_install() {
 
   si libvirt qemu-base virt-install bridge-utils dnsmasq libosinfo openssl \
     edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs jq \
-    guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat \
+    guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat jc \
     xmlstarlet ovmf osinfo-db osinfo-db-tools
 
   slog "vm installation done!"
@@ -256,14 +256,13 @@ distrobox_install() {
   slog "distrobox installation done!"
 }
 
-desktop_essential_install() {
-  si thunar thunar-archive-plugin wl-clipboard cliphist grim slurp \
-    rofi-wayland waybar dunst nwg-displays nwg-panel xdg-desktop-portal \
-    nwg-bar dolphin swaync ghostty lxappearance qt5ct qt6ct polkit \
-    polkit-kde-agent pavucontrol nm-connection-editor mpv imv nvtop \
-    network-manager-applet otf-font-awesome noto-fonts noto-fonts-emoji \
-    ttf-font-awesome ttf-roboto tumbler firefox kvantum swappy sddm gvfs \
-    papirus-icon-theme bibata-cursor-theme nwg-look reflector
+sin() {
+  sudo pacman -S --quiet --noconfirm --needed "$@"
+}
+
+desktop-core_install() {
+  sin firefox kitty gnome-keyring wl-clipboard libsecret papirus-icon-theme \
+    udisks2 udiskie gvfs flatpak qt6-multimedia-gstreamer pipewire-jack
 
   jetbrains-mono_install
   font-awesome_install
@@ -272,14 +271,26 @@ desktop_essential_install() {
   # mesa vulkan-intel vulkan-radeon vulkan-mesa-layer
 }
 
+wm_install() {
+  desktop-core_install
+
+  sin mako nwg-displays nwg-panel grim slurp pavucontrol nm-connection-editor \
+    network-manager-applet nwg-look reflector rofi-wayland lxappearance \
+    nwg-bar
+
+  sin thunar thunar-archive-plugin cliphist xdg-desktop-portal qt5ct qt6ct \
+    polkit imv nvtop mpv ttf-roboto noto-fonts noto-fonts-emoji waybar \
+    tumbler greetd
+}
+
 hyprland_install() {
   slog "Installing hyprland packages"
 
-  desktop_essential_install
-  si hyprcursor hyprgraphics hypridle hyprland hyprland-protocols hyprshot \
-    hyprland-qt-support hyprland-qtutils hyprlock hyprpolkitagent \
+  wm_install
+
+  sin hyprland hyprcursor hypridle hyprshot hyprlock hyprpolkitagent \
     hyprsunset hyprutils hyprwayland-scanner nwg-dock-hyprland hyprpaper \
-    xdg-desktop-portal-hyprland udisks2 udiskie
+    xdg-desktop-portal-hyprland hyprland-qt-support
 
   slog "hyprland installation done!"
 }
@@ -287,8 +298,8 @@ hyprland_install() {
 sway_binstall() {
   slog "Installing sway packages"
 
-  desktop_essential_install
-  si sway swaybg swayidle swaylock
+  wm_install
+  sin sway swaybg swayidle swaylock polkit-kde-agent xdg-desktop-portal-kde
 
   slog "sway installation done!"
 }
@@ -305,14 +316,18 @@ pm_install() {
 
 kde-slim_binstall() {
   slog "Installing minimal kde plasma..."
-  sudo pacman -S --quiet --noconfirm --needed plasma-desktop noto-fonts \
+
+  desktop-core_install
+
+  sin plasma-desktop noto-fonts \
     pipewire-jack systemsettings kscreen kio-extras udisks2 powerdevil \
     power-profiles-daemon qt6-multimedia-gstreamer wl-clipboard
 
-  sudo pacman -S --quiet --noconfirm --needed mesa
+  sin mesa
   slog "kde plasma installation done!"
 }
 
 kde_binstall() {
-  sudo pacman -S --quiet --noconfirm --needed discover mesa-utils
+  kde-slim_binstall
+  sin discover mesa-utils
 }

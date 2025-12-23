@@ -17,7 +17,7 @@
 
     extraPackages = with pkgs; [
       swaylock
-      dunst
+      mako
       foot
 
       nwg-bar

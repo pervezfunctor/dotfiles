@@ -124,7 +124,7 @@ cli_install() {
   cli-slim_install
 
   si neovim sd fd procs lazygit bottom xh plocate tealdeer urlview nushell \
-    lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk jq \
+    lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk jq jc \
     hyperfine cheat curlie lsd direnv yq tmux htop fd bat git-delta dust \
     shfmt ShellCheck just dialog atuin broot choose
 
@@ -199,7 +199,7 @@ vm_install() {
   slog "Installing libvirt"
 
   si libvirt qemu-kvm virt-install bridge-utils qemu-img qemu-ui-spice-core \
-    qemu-ui-spice-app qemu-char-spice qemu-audio-spice jq xmlstarlet \
+    qemu-ui-spice-app qemu-char-spice qemu-audio-spice jq jc xmlstarlet \
     qemu-hw-display-virtio-gpu qemu-hw-display-virtio-vga qemu-hw-usb-host \
     qemu-hw-usb-redirect qemu-ovmf-x86_64 qemu-tools qemu-ui-gtk \
     qemu-ui-opengl libguestfs guestfs-tools libosinfo openssl
@@ -236,21 +236,39 @@ distrobox_install() {
   slog "distrobox installation done!"
 }
 
+desktop-core_install() {
+  sin firefox kitty wl-clipboard gnome-keyring libsecret-tools \
+    papirus-icon-theme udisks2 udiskie gvfs flatpak
+
+  jetbrains-mono_install
+  font-awesome_install
+}
+
+wm_install() {
+  desktop-core_install
+
+  sin curl grep aaa_base bash-completion tar pipewire wget imv jq \
+    xdg-utils sudo xdg-desktop-portal xdg-desktop-portal-wlr git gzip bzip2 \
+    jc adwaita-icon-theme clipman bluez qt5ct qt6ct grim cliphist mpv \
+    dejavu-fonts glibc-locale less google-roboto-fonts ghostscript-fonts-std \
+    noto-sans-fonts google-droid-fonts google-opensans-fonts playerctl pamixer \
+    gtk3-metatheme-adwaita noto-coloremoji-fonts noto-emoji-fonts mpris-ctl \
+    adobe-sourcecodepro-fonts command-not-found metatheme-adwaita-common slurp \
+    bluemoon symbols-only-nerd-fonts adobe-sourcesanspro-fonts brightnessctl \
+    adobe-sourceserifpro-fonts cantarell-fonts tlp google-carlito-fonts \
+    ghostscript-fonts-other
+}
+
 sway_binstall() {
   slog "Installing sway"
 
   sudo zypper install -y -t pattern openSuseway
 
-  si openSuseway qt6ct alacritty swaylock swaybg swayidle \
-    grim clipman imv mpv bluez slirp qt5ct swaynag waybar \
-    brightnessctl pamixer playerctl greetd mpris-ctl firefox \
-    symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard \
-    rofi-wayland SwayNotificationCenter polkit-gnome slurp \
-    SwayNotificationCenter-bash-completion bluemoon tlp \
-    SwayNotificationCenter-zsh-completion qt6ct sway-marker
+  wm_install
 
-  jetbrains-mono_install
-  font-awesome_install
+  sin swaylock swaybg swayidle swaynag waybar greetd rofi-wayland \
+    SwayNotificationCenter SwayNotificationCenter-bash-completion sway-marker \
+    SwayNotificationCenter-zsh-completion polkit-gnome
 
   cmd_check sway swaylock swaybg swayidle swaymsg sway-marker
   cmd_check swaynag pactl waybar grim clipman imv mpv
@@ -262,31 +280,19 @@ sway_binstall() {
   slog "sway installation done!"
 }
 
+sin() {
+  sudo zypper install -y --no-recommends "$@"
+}
+
 hyprland_install() {
   slog "Installing hyprland"
 
-  si grep aaa_base bash-completion ghostscript-fonts-std NetworkManager curl \
-    tar pipewire wget xdg-utils sudo xdg-desktop-portal \
-    xdg-desktop-portal-gtk git gzip bzip2 jq adwaita-icon-theme \
-    dejavu-fonts glibc-locale less wl-clipboard google-roboto-fonts \
-    noto-sans-fonts google-droid-fonts google-opensans-fonts \
-    gtk3-metatheme-adwaita noto-coloremoji-fonts noto-emoji-fonts \
-    adobe-sourcecodepro-fonts command-not-found greetd mpris-ctl \
-    metatheme-adwaita-common xdg-desktop-portal-wlr \
-    adobe-sourcesanspro-fonts adobe-sourceserifpro-fonts cantarell-fonts \
-    ghostscript-fonts-other google-carlito-fonts
+  wm_install
 
-  si hyprcursor hypridle hyprland hyprland-bash-completion hyprland-devel \
-    hyprlock hyprland-wallpapers hyprland-zsh-completion hyprpaper \
-    hyprpicker hyprpolkitagent hyprshot xdg-desktop-portal-hyprland \
-    hyprland-qt-support hyprland-qtutils qt6ctwaybar imv mpv \
-    clipman bluez slirp qt5ct qt6ct ghostty firefox \
-    brightnessctl pamixer playerctl greetd bluemoon tlp slurp mpris-ctl \
-    symbols-only-nerd-fonts jetbrains-mono-fonts wl-clipboard rofi-wayland \
-    SwayNotificationCenter SwayNotificationCenter-bash-completion \
-    SwayNotificationCenter-zsh-completion
-
-  jetbrains-mono_install
+  sin NetworkManager hyprcursor hypridle hyprland hyprland-bash-completion \
+    hyprland-devel hyprlock hyprland-wallpapers hyprland-zsh-completion \
+    hyprpaper hyprpicker hyprpolkitagent hyprshot xdg-desktop-portal-hyprland \
+    hyprland-qt-support hyprland-qtutils qt6ct waybar rofi-wayland
 
   cmd_check hyprcursor hypridle hyprctl hyprlock hyproiccker
   cmd_check pactl waybar clipman imv mpv hyprshot ghostty
@@ -299,20 +305,22 @@ hyprland_install() {
 }
 
 pm_install() {
-  si net-tools iproute2 nmap lm_sensors stress-ng taliscale wireguard-tools \
+  si net-tools iproute2 nmap sensors stress-ng taliscale wireguard-tools \
     smartmontools memtest86+ glmark2
 }
 
 kde-slim_binstall() {
   slog "Installing minimal kde plasma..."
-  sudo zypper install -y --no-recommends plasma6-desktop systemsettings6 \
-    kscreen6 kio-extras udisks2 powerdevil6 power-profiles-daemon wl-clipboard
+
+  desktop-core_install
+
+  sin plasma6-desktop systemsettings6 kscreen6 kio-extras powerdevil6 \
+    power-profiles-daemon wl-clipboard
   slog "kde plasma installation done!"
 }
 
 kde_binstall() {
   kde-slim_binstall
 
-  sudo zypper install -y --no-recommends discover6 discover6-backend-flatpak \
-    discover6-backend-packagekit
+  sin discover6 discover6-backend-flatpak discover6-backend-packagekit
 }
