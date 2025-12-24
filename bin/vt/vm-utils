@@ -5,9 +5,7 @@ source "$(dirname "$0")/vt-utils"
 
 export DISTRO_LIST_vme=("ubuntu" "fedora" "arch" "debian" "tw")
 
-export vm_DISTRO_LIST=("ubuntu" "fedora" "debian" "arch" "alpine" "centos")
-
-export DISTRO_LIST_vmu=("debian" "ubuntu" "fedora" "arch" "tw")
+export DISTRO_LIST_vm=("ubuntu" "fedora" "debian" "arch" "alpine" "centos")
 
 virt_check_prerequisites() {
   local missing_tools=()
@@ -18,9 +16,7 @@ virt_check_prerequisites() {
   done
 
   if [[ ${#missing_tools[@]} -gt 0 ]]; then
-    fail "Missing required tools: ${missing_tools[*]}"
-    slog "Install with: vm install"
-    exit 1
+    die "Missing required tools: ${missing_tools[*]}"
   fi
 
   if ! systemctl is-active --quiet libvirtd; then
@@ -29,8 +25,7 @@ virt_check_prerequisites() {
     sleep 1
 
     if ! systemctl is-active --quiet libvirtd; then
-      fail "Failed to start libvirtd service"
-      exit 1
+      die "Failed to start libvirtd service"
     else
       slog "libvirtd service started"
     fi
@@ -47,13 +42,11 @@ vm_check_prerequisites() {
   virt_check_prerequisites
 
   if ! has_cmd vm-create; then
-    fail "vm-create is not in PATH."
-    exit 1
+    die "vm-create is not in PATH."
   fi
 
   if ! has_cmd vm; then
-    fail "vm is not in PATH."
-    exit 1
+    die "vm is not in PATH."
   fi
 }
 
@@ -67,9 +60,7 @@ vm_list() {
   if has_cmd virsh; then
     virsh list --all
   else
-    fail "virsh command not found. Please install virtualization tools first."
-    slog "You can install them with: vm install"
-    return 1
+    die "virsh command not found. Please install virtualization tools first."
   fi
 }
 
@@ -77,13 +68,16 @@ vm_exists() {
   virsh dominfo "$1" &>/dev/null
 }
 
+vme_exists() {
+  vm_exists "$1"
+}
+
 vm_check_exists() {
   local vm_name="$1"
 
   vm_exists "$vm_name" && return 0
 
-  fail "VM '$vm_name' not found"
-  return 1
+  die "VM '$vm_name' not found"
 }
 
 vm_running() {
@@ -94,11 +88,17 @@ vm_running() {
   [[ "$state" == "running" ]]
 }
 
+vme_running() {
+  vm_running "$1"
+}
+
 vm_check_running() {
   local vm="$1"
-  vm_check_exists "$vm" || exit 1
+  vm_check_exists "$vm"
 
-  vm_running "$vm"
+  vm_running "$vm" || {
+    die "VM '$vm' is not running"
+  }
 }
 
 vm_state() {
@@ -119,6 +119,10 @@ vm_ip() {
   fi
 
   return 1
+}
+
+vme_ip() {
+  vm_ip "$1"
 }
 
 vm_ssh() {

@@ -6,6 +6,7 @@ set -euo pipefail -o errtrace
 
 source "$(dirname "$0")/vm-utils"
 source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/tmux-utils"
 
 cmd_vme() {
   virsh --connect qemu:///system "$@"
@@ -32,7 +33,7 @@ COMMANDS:
     create  ARGS        Create a new VM, with same ARGS as vme-create
     create-all ARGS     Create multiple VMs, see vme-create-multi --help for options
     all                 Perform operation on all VMs (delegates to vme-all)
-    tmux                Select VMs and create tmux session (delegates to vme-tmux --select)
+    tmux                Select VMs and create tmux session
     autostart <vm-name> Set VM to start on boot
     start [vm-name...]  Start VM(s) - if no names provided, select from list
     shutdown [vm-name...] Gracefully stop VM(s) - if no names provided, select from list
@@ -87,7 +88,7 @@ start_vme() {
   fi
 
   virsh --connect qemu:///system start "$1"
-  wait_for_ip "$1"
+  wait_for_ip "vme" "$1"
 }
 
 stop_vme() {
@@ -168,6 +169,28 @@ list_vme_all() {
 
 list_vme() {
   get_vm_list
+}
+
+# Tmux session functions
+select_session() {
+  local -a available_vms
+  mapfile -t available_vms < <(get_vm_list)
+
+  if [[ ${#available_vms[@]} -eq 0 ]]; then
+    fail "No VMs found. Please create VMs first."
+    exit 1
+  fi
+
+  local -a selected_vms
+  mapfile -t selected_vms < <(select-multi "Select VMs to connect to:" "${available_vms[@]}")
+
+  if [[ ${#selected_vms[@]} -eq 0 ]]; then
+    slog "No VMs selected."
+    exit 1
+  fi
+
+  export DISTRO_LIST_vme=("${selected_vms[@]}")
+  vme-tmux create
 }
 
 ssh_vme() {
@@ -304,7 +327,7 @@ main() {
     vme-all "$@"
     ;;
   tmux)
-    vme-tmux --select
+    select_session
     ;;
   list | ls)
     list_vme_all

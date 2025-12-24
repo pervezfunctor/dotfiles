@@ -6,6 +6,7 @@ set -euo pipefail -o errtrace
 
 source "$(dirname "$0")/vm-utils"
 source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/tmux-utils"
 
 trap 'echo "❌  Error on line $LINENO"; exit 1' ERR
 
@@ -33,6 +34,8 @@ COMMANDS:
     list                          List all VMs
     create  ARGS                  Create a new VM, see vmu create --help for options
     create-all  ARGS              Create multiple VMs, see vmu-create-multi --help for options
+    all                           Perform operation on all VMs (delegates to vmu-all)
+    tmux                          Select VMs and create tmux session
     autostart <vm-name>           Set VM to start on boot
     start [vm-name...]             Start VM(s) - if no names provided, select from list
     stop [vm-name...]              Gracefully stop VM(s) - if no names provided, select from list
@@ -41,7 +44,6 @@ COMMANDS:
     delete [vm-name...]            Delete VM(s) completely - if no names provided, select from list
     console [vm-name]              Connect to VM console - if no name provided, select from list
     ssh [vm-name] [username]       Connect to VM via SSH - if no name provided, select from list
-    tmux                           Select VMs and create tmux session
     info [vm-name]                 Show VM status and info - if no name provided, select from list
     logs [vm-name]                 Show cloud-init logs - if no name provided, select from list
     output-logs [vm-name]          Show cloud-init output logs - if no name provided, select from list
@@ -201,6 +203,28 @@ ip_vmu() {
   ip -brief a
 }
 
+# Tmux session functions
+select_session() {
+  local -a available_vms
+  mapfile -t available_vms < <(vmu list)
+
+  if [[ ${#available_vms[@]} -eq 0 ]]; then
+    fail "No VMs found. Please create VMs first."
+    exit 1
+  fi
+
+  local -a selected_vms
+  mapfile -t selected_vms < <(select-multi "Select VMs to connect to:" "${available_vms[@]}")
+
+  if [[ ${#selected_vms[@]} -eq 0 ]]; then
+    slog "No VMs selected."
+    exit 1
+  fi
+
+  export DISTRO_LIST_vmu=("${selected_vms[@]}")
+  vmu-tmux create
+}
+
 main() {
   if [[ $# -eq 0 ]]; then
     usage
@@ -233,6 +257,12 @@ main() {
   create-all)
     vmu-create-multi "$@"
     ;;
+  all)
+    vmu-all "$@"
+    ;;
+  tmux)
+    select_session
+    ;;
   autostart)
     handle_multiple_arguments vmu autostart "$@"
     ;;
@@ -256,9 +286,6 @@ main() {
     ;;
   ssh)
     handle_one_argument vmu ssh "$vm_name"
-    ;;
-  tmux)
-    vmu-tmux --select
     ;;
   logs)
     handle_one_argument vmu logs "$vm_name"

@@ -4,13 +4,17 @@
 
 source "$(dirname "$0")/vm-utils"
 
+export DISTRO_LIST_vmu=("debian" "ubuntu" "fedora" "arch" "tw")
+
 vmu_exists() {
   virsh --connect qemu:///session dominfo "$1" &>/dev/null
 }
 
-check_vmu_exists() {
-  vmu_exists "$1" || {
-    die "VMU VM '$1' not found"
+vmu_check_exists() {
+  local vm_name="$1"
+  vmu_exists "$vm_name" || {
+    fail "VM '$vm_name' not found"
+    exit 1
   }
 }
 
@@ -18,14 +22,16 @@ vmu_running() {
   virsh --connect qemu:///session domstate "$1" | grep -q "^running$"
 }
 
-vmu_state() {
-  virsh --connect qemu:///session domstate "$1"
+vmu_check_running() {
+  local vm="$1"
+  vmu_running "$vm" || {
+    fail "VMU VM '$vm' is not running"
+    exit 1
+  }
 }
 
-check_vmu_running() {
-  vmu_running "$1" || {
-    die "VMU VM '$1' is not running"
-  }
+vmu_state() {
+  virsh --connect qemu:///session domstate "$1"
 }
 
 VMU_PORTS_FILE="$HOME/.vmu-ports"

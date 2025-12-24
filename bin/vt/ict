@@ -4,6 +4,7 @@ set -euo pipefail -o errtrace
 
 # shellcheck disable=SC1091
 source "$(dirname "$0")/incus-utils"
+source "$(dirname "$0")/tmux-utils"
 
 usage() {
   cat <<EOF
@@ -87,7 +88,6 @@ create_ict() {
 
 start_ict() {
   local container_name="$1"
-  ict_check_exists "$container_name" || return 1
 
   ict_check_running "$container_name" && {
     warn "Container '$container_name' is already running"
@@ -439,6 +439,28 @@ list_ict() {
   incus list type=container --format csv --columns n
 }
 
+# Tmux session functions
+select_session() {
+  local -a available_containers
+  mapfile -t available_containers < <(ict_list)
+
+  if [[ ${#available_containers[@]} -eq 0 ]]; then
+    fail "No containers found. Please create containers first."
+    exit 1
+  fi
+
+  local -a selected_containers
+  mapfile -t selected_containers < <(select-multi "Select containers to connect to:" "${available_containers[@]}")
+
+  if [[ ${#selected_containers[@]} -eq 0 ]]; then
+    slog "No containers selected."
+    exit 1
+  fi
+
+  export DISTRO_LIST_ict=("${selected_containers[@]}")
+  ict-tmux create
+}
+
 ip_ict() {
   is-running_ict "$@" || return 1
   ict_ip "$@"
@@ -520,7 +542,7 @@ parse_args() {
     handle_one_argument ict ssh "$@"
     ;;
   tmux)
-    ict-tmux --select
+    select_session
     ;;
   info)
     handle_one_argument ict info "$@"

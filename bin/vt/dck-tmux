@@ -67,10 +67,13 @@ create_session() {
 
   slog "Creating tmux session '$SESSION_NAME' with connections to Docker containers..."
 
-  local ssh_cmds=()
-  create_commands ssh_cmds "dck" "${DISTRO_LIST_dck[@]}"
+  local -a container_names=()
+  generate_names container_names "dck" "${DISTRO_LIST_dck[@]}"
 
-  start_sessions "dck" "${DISTRO_LIST_dck[@]}"
+  local ssh_cmds=()
+  create_commands ssh_cmds "dck" "dck" "${container_names[@]}"
+
+  start_sessions "dck" "${container_names[@]}"
 
   if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
     fail "Failed to create tmux session '$SESSION_NAME' with connections to containers."

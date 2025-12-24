@@ -6,6 +6,7 @@ set -euo pipefail -o errtrace
 
 source "$(dirname "$0")/incus-utils"
 source "$(dirname "$0")/vt-utils"
+source "$(dirname "$0")/tmux-utils"
 
 usage() {
   cat <<EOF
@@ -19,7 +20,7 @@ COMMANDS:
     status [name]           Show VM status and info - if no name provided, select from list
     create [ivm-create args]  Create a new Incus VM (forwards all args to ivm-create)
     create-all [ivm-create-multi args]  Create multiple Incus VMs (forwards all args to ivm-create-multi)
-    tmux                    Select VMs and create tmux session (delegates to ivm-tmux --select)
+    tmux                    Select VMs and create tmux session
     start [name...]         Start VM(s) - if no names provided, select from list
     stop [name...]          Gracefully stop VM(s) - if no names provided, select from list
     restart [name...]       Restart VM(s) - if no names provided, select from list
@@ -98,6 +99,28 @@ list_ivms() {
 
 list_ivm() {
   incus list type=virtual-machine --format csv --columns n
+}
+
+# Tmux session functions
+select_session() {
+  local -a available_vms
+  mapfile -t available_vms < <(ivm_list)
+
+  if [[ ${#available_vms[@]} -eq 0 ]]; then
+    fail "No VMs found. Please create VMs first."
+    exit 1
+  fi
+
+  local -a selected_vms
+  mapfile -t selected_vms < <(select-multi "Select VMs to connect to:" "${available_vms[@]}")
+
+  if [[ ${#selected_vms[@]} -eq 0 ]]; then
+    slog "No VMs selected."
+    exit 1
+  fi
+
+  export DISTRO_LIST_ivm=("${selected_vms[@]}")
+  ivm-tmux create
 }
 
 status_ivm() {
@@ -582,7 +605,7 @@ ssh_ivm() {
   local vm_name="$1"
   local username="${2:-$USER}"
 
-  is-running_ivm "$vm_name" || return 1
+  is-running_ivm "$vm_name" || start_ivm "$vm_name" || return 1
 
   local ip
   if ! ip=$(ivm_ip "$vm_name"); then
@@ -614,7 +637,7 @@ parse_args() {
     create_ivm "$@"
     ;;
   tmux)
-    ivm-tmux --select
+    select_session
     ;;
   create-all)
     ivm-create-multi "$@"

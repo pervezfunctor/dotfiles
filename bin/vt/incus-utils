@@ -16,13 +16,11 @@ incus_instance_exists() {
 
 incus_check() {
   if ! has_cmd incus; then
-    fail "incus command not found. Please install Incus first."
-    exit 1
+    die "incus command not found. Please install Incus first."
   fi
 
   if ! incus info >/dev/null 2>&1; then
-    fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
-    exit 1
+    die "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
   fi
 }
 
@@ -35,23 +33,19 @@ ivm_check_exists_prerequisites() {
   done
 
   if ((${#missing[@]})); then
-    fail "Missing required commands: ${missing[*]}"
-    exit 1
+    die "Missing required commands: ${missing[*]}"
   fi
 
   if ! incus info >/dev/null 2>&1; then
-    fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
-    exit 1
+    die "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
   fi
 
   has_cmd ivm || {
-    fail "ivm is not in PATH."
-    exit 1
+    die "ivm is not in PATH."
   }
 
   has_cmd ivm-create || {
-    fail "ivm-create is not in PATH."
-    exit 1
+    die "ivm-create is not in PATH."
   }
 }
 
@@ -65,13 +59,13 @@ ivm_exists() {
 
 ivm_check_exists() {
   if ! ivm_exists "$1"; then
-    fail "VM '$1' not found"
-    return 1
+    die "VM '$1' not found"
   fi
 }
 
 ivm_running() {
   local vm_name="$1"
+  ivm_exists "$vm_name" || return 1
   local state
   state=$(ivm_state "$vm_name")
   [[ "$state" == "RUNNING" ]]
@@ -79,14 +73,9 @@ ivm_running() {
 
 ivm_check_running() {
   local vm_name="$1"
-  ivm_check_exists "$vm_name" || return 1
-
-  local state
-  state=$(ivm_state "$vm_name")
-  if [[ "$state" != "RUNNING" ]]; then
-    fail "VM '$vm_name' is not running (state: ${state:-unknown})"
-    return 1
-  fi
+  ivm_running "$vm_name" || {
+    die "VM '$vm_name' is not running (state: $(ivm_state "$vm_name"))"
+  }
 }
 
 ivm_list() {
@@ -156,23 +145,19 @@ ict_check_prerequisites() {
   done
 
   if ((${#missing[@]})); then
-    fail "Missing required commands: ${missing[*]}"
-    exit 1
+    die "Missing required commands: ${missing[*]}"
   fi
 
   if ! incus info >/dev/null 2>&1; then
-    fail "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
-    exit 1
+    die "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
   fi
 
   has_cmd ict-create || {
-    fail "ict-create is not in PATH."
-    exit 1
+    die "ict-create is not in PATH."
   }
 
   has_cmd ict || {
-    fail "ict is not in PATH."
-    exit 1
+    die "ict is not in PATH."
   }
 }
 
@@ -194,8 +179,7 @@ ict_exists() {
 ict_check_exists() {
   local container_name="$1"
   if ! ict_exists "$container_name"; then
-    fail "Container '$container_name' not found"
-    return 1
+    die "Container '$container_name' not found"
   fi
 }
 
@@ -206,6 +190,8 @@ ict_state() {
 
 ict_running() {
   local container_name="$1"
+  ict_exists "$container_name" || return 1
+
   local state
   state=$(ict_state "$container_name")
   [[ "$state" == "RUNNING" ]]
@@ -214,15 +200,8 @@ ict_running() {
 ict_check_running() {
   local container_name="$1"
   if ! ict_running "$container_name"; then
-    fail "Container '$container_name' is not running (state: $(ict_state "$container_name"))"
-    return 1
+    die "Container '$container_name' is not running (state: $(ict_state "$container_name"))"
   fi
-}
-
-ict_check_exists_running() {
-  local container_name="$1"
-  ict_check_exists "$container_name" || return 1
-  ict_check_running "$container_name" || return 1
 }
 
 incus_ip() {
@@ -255,6 +234,6 @@ ivm_ip() {
 
 ict_ip() {
   local name="$1"
-  ict_check_exists_running "$name" || return 1
+  ict_check_running "$name" || return 1
   incus_ip "$name" || return 1
 }

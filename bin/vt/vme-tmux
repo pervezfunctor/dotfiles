@@ -17,7 +17,6 @@ Manage a tmux session with SSH connections to libvirt VMs.
 
 Options:
   create    Create a new tmux session with SSH connections to VMs (default if no option)
-  --select  Select VMs interactively using fzf and create a tmux session
   attach    Attach to an existing session
   detach    Detach from the current session
   destroy   Kill the tmux session
@@ -26,7 +25,6 @@ Options:
 Examples:
   $(basename "$0")           # Create session or attach if exists
   $(basename "$0") create    # Force create a new session
-  $(basename "$0") --select  # Select VMs interactively and create session
   $(basename "$0") attach    # Attach to existing session
   $(basename "$0") detach    # Detach from current session
   $(basename "$0") destroy   # Kill the session
@@ -38,24 +36,10 @@ check_prerequisites() {
   check_tmux
 }
 
-create_commands() {
-  if [ "$#" -lt 3 ]; then
-    echo "Usage: create_commands <output_array_name> <prefix> <distro1> ..." >&2
-    return 1
-  fi
-
-  local -n cmds
-  cmds="$1"
-  local cmd_prefix="$2"
-  shift 2
-
-  local -a distro_list=("$@")
-
-  cmds=()
+create_command_vme() {
+  local vm_name="$1"
   local username="$USER"
-  for distro in "${distro_list[@]}"; do
-    cmds+=("${cmd_prefix} ssh ${distro}-${cmd_prefix} ${username}")
-  done
+  echo "vme ssh ${vm_name} ${username}"
 }
 
 # @TODO: This is temporary. Only until all username/password are in sync.
@@ -73,10 +57,13 @@ create_session() {
 
   slog "Creating tmux session '$SESSION_NAME' with SSH connections to libvirt VMs..."
 
-  local ssh_cmds=()
-  create_commands ssh_cmds "vme" "${vms[@]}"
+  local -a vm_names=()
+  generate_names vm_names "vme" "${vms[@]}"
 
-  start_sessions "vme" "${vms[@]}"
+  local ssh_cmds=()
+  create_commands_generic ssh_cmds "vme" "${vm_names[@]}"
+
+  start_sessions "vme" "${vm_names[@]}"
 
   if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
     fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."
@@ -89,26 +76,6 @@ create_session() {
   fi
 }
 
-select_session() {
-  local -a available_vms
-  mapfile -t available_vms < <(get_vm_list)
-
-  if [[ ${#available_vms[@]} -eq 0 ]]; then
-    fail "No VMs found. Please create VMs first."
-    exit 1
-  fi
-
-  local -a selected_vms
-  mapfile -t selected_vms < <(select-multi "Select VMs to connect to:" "${available_vms[@]}")
-
-  if [[ ${#selected_vms[@]} -eq 0 ]]; then
-    slog "No VMs selected."
-    exit 1
-  fi
-
-  create_session "true" "${selected_vms[@]}"
-}
-
 main() {
   local command="${1:-}"
 
@@ -117,9 +84,6 @@ main() {
   case "$command" in
   create | "" | -c | --create)
     create_session "true"
-    ;;
-  --select | -s | select)
-    select_session
     ;;
   attach)
     attach_session "$SESSION_NAME"
