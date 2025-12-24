@@ -11,7 +11,7 @@ all_create() {
   slog "Creating libvirt VMs (Ubuntu, Fedora, Alpine, Debian)..."
   echo
 
-  for distro in "${VM_DISTRO_LIST[@]}"; do
+  for distro in "${vm_DISTRO_LIST[@]}"; do
     if vm_exists "${distro}-vm"; then
       warn "$distro VM already exists, skipping..."
     else
@@ -36,7 +36,7 @@ all_op() {
   slog "Performing operation '$op' on all VMs..."
   echo
 
-  for vm in "${VM_DISTRO_LIST[@]}"; do
+  for vm in "${vm_DISTRO_LIST[@]}"; do
     if vm_exists "${vm}-vm"; then
       vm "$op" "${vm}-vm" "$@"
     else

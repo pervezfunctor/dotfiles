@@ -17,7 +17,7 @@ all_create() {
   slog "Creating Incus LXC containers (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
   echo
 
-  for ct in "${ICT_DISTRO_LIST[@]}"; do
+  for ct in "${DISTRO_LIST_ict[@]}"; do
     if ! ict_exists "${ct}-ict"; then
       ict-create --distro "$ct" --name "${ct}-ict"
     fi
@@ -37,7 +37,7 @@ all_op() {
   slog "Performing operation '$op' on all containers..."
   echo
 
-  for ct in "${ICT_DISTRO_LIST[@]}"; do
+  for ct in "${DISTRO_LIST_ict[@]}"; do
     if ict_exists "${ct}-ict"; then
       ict "$op" "${ct}-ict" "$@"
     else

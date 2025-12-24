@@ -6,9 +6,9 @@ DOT_DIR=${DOT_DIR:-$HOME/.ilm}
 source "$DOT_DIR/share/utils"
 source "$(dirname "$0")/vt-utils"
 
-export ICT_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tw")
+export DISTRO_LIST_ict=("debian" "ubuntu" "fedora" "arch" "tw")
 
-export IVM_DISTRO_LIST=("debian" "ubuntu" "fedora" "arch" "tw")
+export DISTRO_LIST_ivm=("debian" "ubuntu" "fedora" "arch" "tw")
 
 incus_instance_exists() {
   incus list type=container,virtual-machine --format csv --columns n | grep -q "^$1$"

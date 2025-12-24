@@ -11,7 +11,7 @@ all_create() {
   slog "Creating Incus VMs (Debian, Ubuntu, Fedora, Arch, Tumbleweed)..."
   echo
 
-  for distro in "${IVM_DISTRO_LIST[@]}"; do
+  for distro in "${DISTRO_LIST_ivm[@]}"; do
     if ivm_exists "${distro}-ivm"; then
       warn "$distro VM already exists, skipping..."
     else
@@ -32,7 +32,7 @@ all_op() {
   slog "Performing operation '$op' on all VMs..."
   echo
 
-  for vm in "${IVM_DISTRO_LIST[@]}"; do
+  for vm in "${DISTRO_LIST_ivm[@]}"; do
     if ivm_exists "${vm}-ivm"; then
       ivm "$op" "${vm}-ivm" "$@"
     else

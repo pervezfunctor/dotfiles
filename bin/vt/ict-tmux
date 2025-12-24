@@ -37,9 +37,9 @@ create_session() {
   slog "Creating tmux session '$SESSION_NAME' with SSH connections to Incus containers..."
 
   local ssh_cmds=()
-  create_commands ssh_cmds "ict" "${ICT_DISTRO_LIST[@]}"
+  create_commands ssh_cmds "ict" "${DISTRO_LIST_ict[@]}"
 
-  start_sessions "ict" "${ICT_DISTRO_LIST[@]}"
+  start_sessions "ict" "${DISTRO_LIST_ict[@]}"
 
   if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
     fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to containers."

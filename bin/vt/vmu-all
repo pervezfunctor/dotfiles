@@ -14,7 +14,7 @@ all_op() {
   slog "Performing operation '$op' on all VMU VMs..."
   echo
 
-  for vm in "${VM_EASY_DISTRO_LIST[@]}"; do
+  for vm in "${DISTRO_LIST_vmu[@]}"; do
     if virsh --connect qemu:///session dominfo "${vm}-vmu" &>/dev/null; then
       vmu "$op" "${vm}-vmu" "$@"
     else
@@ -31,7 +31,7 @@ all_create() {
   slog "Creating 4 user-mode VMs (Ubuntu, Fedora, Arch, Debian)..."
   echo
 
-  for distro in "${VM_EASY_DISTRO_LIST[@]}"; do
+  for distro in "${DISTRO_LIST_vmu[@]}"; do
     if virsh --connect qemu:///session dominfo "${distro}-vmu" &>/dev/null; then
       warn "$distro VMU already exists, skipping..."
     else

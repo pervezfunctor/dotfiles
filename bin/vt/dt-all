@@ -15,7 +15,7 @@ check_prerequisites() {
 all_create() {
   slog "Creating Distrobox containers (Ubuntu, Arch, Fedora, Tumbleweed, NixOS, CentOS, Alpine)..."
 
-  for d in "${DT_DISTRO_LIST[@]}"; do
+  for d in "${DISTRO_LIST_dt[@]}"; do
     if dt_exists "${d}-dt"; then
       warn "Container for $d already exists, skipping..."
     else
@@ -36,7 +36,7 @@ all_op() {
   slog "Performing operation '$op' on all containers..."
   echo
 
-  for ct in "${DT_DISTRO_LIST[@]}"; do
+  for ct in "${DISTRO_LIST_dt[@]}"; do
     if dt_exists "$ct-dt"; then
       dt "$op" "$ct-dt" "$@"
     else

@@ -30,6 +30,7 @@ EOF
 
 all_parse_args() {
   if [[ $# -eq 0 ]]; then
+    has_cmd all_create || die "create not supported."
     all_create "$@"
     exit 0
   fi
@@ -43,6 +44,7 @@ all_parse_args() {
   shift
 
   if fn_exists "all_${op}"; then
+    has_cmd "all_${op}" || die "${op} not supported."
     "all_${op}" "$@"
   else
     fail "Unknown option: $op"
@@ -59,7 +61,7 @@ all_parse_args() {
 
 #   slog "Performing operation '$op' on all ${vt}..."
 
-#   for ct in "${ICT_DISTRO_LIST[@]}"; do
+#   for ct in "${DISTRO_LIST_ict[@]}"; do
 #     if ict_exists "${ct}-ict"; then
 #       ict "$op" "${ct}-ict" "$@"
 #     else

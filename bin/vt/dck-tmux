@@ -7,7 +7,7 @@ source "$(dirname "$0")/dck-utils"
 
 SESSION_NAME="DCK"
 
-DCK_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
+DISTRO_LIST_dck=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
 
 usage() {
   cat <<EOF
@@ -68,9 +68,9 @@ create_session() {
   slog "Creating tmux session '$SESSION_NAME' with connections to Docker containers..."
 
   local ssh_cmds=()
-  create_commands ssh_cmds "dck" "${DCK_DISTRO_LIST[@]}"
+  create_commands ssh_cmds "dck" "${DISTRO_LIST_dck[@]}"
 
-  start_sessions "dck" "${DCK_DISTRO_LIST[@]}"
+  start_sessions "dck" "${DISTRO_LIST_dck[@]}"
 
   if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
     fail "Failed to create tmux session '$SESSION_NAME' with connections to containers."

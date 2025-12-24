@@ -43,9 +43,9 @@ create_session() {
   slog "Creating tmux session '$SESSION_NAME' with SSH connections to libvirt VMs..."
 
   local ssh_cmds=()
-  create_commands ssh_cmds "vm" "${VM_DISTRO_LIST[@]}"
+  create_commands ssh_cmds "vm" "${vm_DISTRO_LIST[@]}"
 
-  start_sessions "vm" "${VM_DISTRO_LIST[@]}"
+  start_sessions "vm" "${vm_DISTRO_LIST[@]}"
 
   if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
     fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."

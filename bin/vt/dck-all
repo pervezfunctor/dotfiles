@@ -7,7 +7,7 @@ set -euo pipefail -o errtrace
 source "$(dirname "$0")/dck-utils"
 source "$(dirname "$0")/all-utils"
 
-DCK_DISTRO_LIST=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
+DISTRO_LIST_dck=("ubuntu" "debian" "arch" "fedora" "rocky" "tw" "alpine" "centos" "nix")
 
 check_dck() {
   has_cmd docker || die "docker is not installed. Please install it first."
@@ -23,7 +23,7 @@ all_create() {
 
   slog "Creating Docker containers for various Linux distributions..."
 
-  for d in "${DCK_DISTRO_LIST[@]}"; do
+  for d in "${DISTRO_LIST_dck[@]}"; do
     if ! dck_exists "$d"; then
       slog "Creating container for $d..."
       dck create "$d" "$d"
@@ -43,7 +43,7 @@ all_delete() {
   check_dck
 
   slog "Deleting all containers..."
-  for ct in "${DCK_DISTRO_LIST[@]}"; do
+  for ct in "${DISTRO_LIST_dck[@]}"; do
     if dck_exists "$ct"; then
       slog "Deleting container: $ct"
       dck delete "$ct"
@@ -58,7 +58,7 @@ all_start() {
   check_dck
 
   slog "Starting all containers..."
-  for ct in "${DCK_DISTRO_LIST[@]}"; do
+  for ct in "${DISTRO_LIST_dck[@]}"; do
     if dck_exists "$ct"; then
       slog "Starting container: $ct"
       dck start "$ct"
@@ -73,7 +73,7 @@ all_stop() {
   check_dck
 
   slog "Stopping all containers..."
-  for ct in "${DCK_DISTRO_LIST[@]}"; do
+  for ct in "${DISTRO_LIST_dck[@]}"; do
     if dck_exists "$ct"; then
       slog "Stopping container: $ct"
       dck stop "$ct"
@@ -88,7 +88,7 @@ all_restart() {
   check_dck
 
   slog "Restarting all containers..."
-  for ct in "${DCK_DISTRO_LIST[@]}"; do
+  for ct in "${DISTRO_LIST_dck[@]}"; do
     if dck_exists "$ct"; then
       slog "Restarting container: $ct"
       dck restart "$ct"

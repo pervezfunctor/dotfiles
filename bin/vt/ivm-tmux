@@ -39,9 +39,9 @@ create_session() {
   slog "Creating tmux session '$SESSION_NAME' with SSH connections to 6 Incus VMs..."
 
   local ssh_cmds=()
-  create_commands ssh_cmds "ivm" "${IVM_DISTRO_LIST[@]}"
+  create_commands ssh_cmds "ivm" "${DISTRO_LIST_ivm[@]}"
 
-  start_sessions "ivm" "${IVM_DISTRO_LIST[@]}"
+  start_sessions "ivm" "${DISTRO_LIST_ivm[@]}"
 
   if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
     fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."

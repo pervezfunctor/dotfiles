@@ -79,9 +79,9 @@ create_session() {
   slog "Creating tmux session '$SESSION_NAME' with SSH connections to user-mode VMs..."
 
   local ssh_cmds=()
-  create_commands ssh_cmds "vmu" "${VM_EASY_DISTRO_LIST[@]}"
+  create_commands ssh_cmds "vmu" "${DISTRO_LIST_vmu[@]}"
 
-  start_sessions "vmu" "${VM_EASY_DISTRO_LIST[@]}"
+  start_sessions "vmu" "${DISTRO_LIST_vmu[@]}"
 
   if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
     fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."
