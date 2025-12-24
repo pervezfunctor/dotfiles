@@ -7,10 +7,6 @@ set -euo pipefail -o errtrace
 source "$(dirname "$0")/vm-utils"
 source "$(dirname "$0")/tmux-utils"
 
-vme_exists() {
-  virsh dominfo "$1" &>/dev/null
-}
-
 SESSION_NAME="VME"
 
 usage() {
@@ -21,6 +17,7 @@ Manage a tmux session with SSH connections to libvirt VMs.
 
 Options:
   create    Create a new tmux session with SSH connections to VMs (default if no option)
+  --select  Select VMs interactively using fzf and create a tmux session
   attach    Attach to an existing session
   detach    Detach from the current session
   destroy   Kill the tmux session
@@ -29,6 +26,7 @@ Options:
 Examples:
   $(basename "$0")           # Create session or attach if exists
   $(basename "$0") create    # Force create a new session
+  $(basename "$0") --select  # Select VMs interactively and create session
   $(basename "$0") attach    # Attach to existing session
   $(basename "$0") detach    # Detach from current session
   $(basename "$0") destroy   # Kill the session
@@ -62,14 +60,23 @@ create_commands() {
 
 # @TODO: This is temporary. Only until all username/password are in sync.
 create_session() {
-  tmux_session "$SESSION_NAME" "$1"
+  local force="$1"
+  shift
+
+  local -a vms=("$@")
+
+  if [[ ${#vms[@]} -eq 0 ]]; then
+    vms=("${DISTRO_LIST_vme[@]}")
+  fi
+
+  tmux_session "$SESSION_NAME" "$force"
 
   slog "Creating tmux session '$SESSION_NAME' with SSH connections to libvirt VMs..."
 
   local ssh_cmds=()
-  create_commands ssh_cmds "vme" "${DISTRO_LIST_vme[@]}"
+  create_commands ssh_cmds "vme" "${vms[@]}"
 
-  start_sessions "vme" "${DISTRO_LIST_vme[@]}"
+  start_sessions "vme" "${vms[@]}"
 
   if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
     fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to VMs."
@@ -82,6 +89,26 @@ create_session() {
   fi
 }
 
+select_session() {
+  local -a available_vms
+  mapfile -t available_vms < <(get_vm_list)
+
+  if [[ ${#available_vms[@]} -eq 0 ]]; then
+    fail "No VMs found. Please create VMs first."
+    exit 1
+  fi
+
+  local -a selected_vms
+  mapfile -t selected_vms < <(select-multi "Select VMs to connect to:" "${available_vms[@]}")
+
+  if [[ ${#selected_vms[@]} -eq 0 ]]; then
+    slog "No VMs selected."
+    exit 1
+  fi
+
+  create_session "true" "${selected_vms[@]}"
+}
+
 main() {
   local command="${1:-}"
 
@@ -90,6 +117,9 @@ main() {
   case "$command" in
   create | "" | -c | --create)
     create_session "true"
+    ;;
+  --select | -s | select)
+    select_session
     ;;
   attach)
     attach_session "$SESSION_NAME"

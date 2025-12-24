@@ -31,6 +31,7 @@ COMMANDS:
     stop <name>             Gracefully stops container
     restart <name>          Restart a container
     delete <name>           Delete a container completely
+    tmux                    Select containers and create tmux session
     enter <name>            Enter container shell
     exec <name> <cmd>       Execute command in container
     export <name> <app>     Export application from container
@@ -48,6 +49,7 @@ EXAMPLES:
     $0 status ubuntu                # Show status of 'ubuntu' container
     $0 create ubuntu myubuntu       # Create Ubuntu container named 'myubuntu'
     $0 create fedora                # Create Fedora container with default name
+    $0 tmux                        # Select containers and create tmux session
     $0 enter ubuntu                 # Enter 'ubuntu' container
     $0 exec ubuntu "ls -la"        # Execute command in 'ubuntu' container
     $0 export ubuntu firefox        # Export firefox from ubuntu container
@@ -403,6 +405,9 @@ parse_args() {
     ;;
   enter)
     enter_dt "$@"
+    ;;
+  tmux)
+    dt-tmux --select
     ;;
   exec)
     exec_dt "$@"

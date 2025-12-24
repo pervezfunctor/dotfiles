@@ -66,6 +66,10 @@ all_restart() {
   all_op "restart" "$@"
 }
 
+all_tmux() {
+  ict-tmux --select
+}
+
 all_exec() {
   all_op "exec" "$@"
 }

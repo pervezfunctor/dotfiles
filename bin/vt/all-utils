@@ -16,6 +16,7 @@ Options:
   start     # Start all "${vt}" {$type} for various Linux distributions.
   stop      # Stop all "${vt}" {$type} for various Linux distributions.
   restart   # Restart all "${vt}" {$type} for various Linux distributions.
+  tmux      # Create tmux session with all "${vt}" {$type} for various Linux distributions.
   --help    # Display this help message
 
 Examples:
@@ -25,6 +26,7 @@ Examples:
   $(basename "$0") start     # Start all {$type} for various Linux distributions.
   $(basename "$0") stop      # Stop all {$type} for various Linux distributions.
   $(basename "$0") restart   # Restart all {$type} for various Linux distributions.}
+  $(basename "$0") tmux      # Create tmux session with all {$type} for various Linux distributions.}
 EOF
 }
 

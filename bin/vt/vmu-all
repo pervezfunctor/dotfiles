@@ -61,6 +61,10 @@ all_restart() {
   all_op "restart" "$@"
 }
 
+all_tmux() {
+  vmu-tmux --select
+}
+
 all_exec() {
   all_op "exec" "$@"
 }

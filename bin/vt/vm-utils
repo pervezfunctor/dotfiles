@@ -57,6 +57,10 @@ vm_check_prerequisites() {
   fi
 }
 
+get_vm_list() {
+  virsh --connect qemu:///system list --all | awk 'NR>2 && $0 !~ /^[-[:space:]]*$/ {print $2}'
+}
+
 vm_list() {
   slog "Listing all VMs..."
   echo
@@ -236,4 +240,34 @@ libvirt_iso_pool_create() {
   sudo virsh pool-define-as "$LIBVIRT_ISO_POOL_NAME" dir --target "$LIBVIRT_ISO_POOL_PATH"
   sudo virsh pool-start "$LIBVIRT_ISO_POOL_NAME"
   sudo virsh pool-autostart "$LIBVIRT_ISO_POOL_NAME"
+}
+
+wait_for_ip() {
+  local vm_name="$1"
+
+  printf '\033[1;36m🔍 Wait for IP address? (Y/n):\033[0m ' >&2
+  read -t 5 -r response || response="y"
+
+  case "$response" in
+  n | N)
+    slog "Skipping IP wait. You can get the IP later with: virsh domifaddr $vm_name --source agent"
+    return 1
+    ;;
+  *)
+    if wait_until 30 2 bash -c "virsh domstate $vm_name | grep -q running"; then
+      slog "VM is running"
+    else
+      return 1
+    fi
+
+    if wait_until 60 2 vm_ip "$vm_name" >/dev/null; then
+      slog "VM has IP address"
+      sleep 1
+    else
+      return 1
+    fi
+
+    return 0
+    ;;
+  esac
 }

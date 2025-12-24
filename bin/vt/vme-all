@@ -65,6 +65,10 @@ all_exec() {
   all_op "exec" "$@"
 }
 
+all_tmux() {
+  vme-tmux --select
+}
+
 usage() {
   all_usage "libvirt" "VMs"
 }

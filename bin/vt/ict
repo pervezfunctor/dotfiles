@@ -25,6 +25,7 @@ COMMANDS:
     exec <name> <cmd>       Execute command in container
     ip <name>               Get container IP address
     ssh <name> [username]   Connect to container via SSH
+    tmux                    Select containers and create tmux session
     info <name>             Show detailed container information
     config <name>           Show container configuration
     logs <n> [type]      Show container logs (instance, console, or system)
@@ -47,6 +48,7 @@ EXAMPLES:
     $0 ip ubuntu                    # Get IP address of 'ubuntu' container
     $0 ssh ubuntu                   # SSH to 'ubuntu' container (auto-detect username)
     $0 ssh ubuntu root              # SSH to 'ubuntu' container as 'root' user
+    $0 tmux                         # Select containers and create tmux session
     $0 logs ubuntu                  # Show instance logs for 'ubuntu' container
     $0 logs ubuntu console          # Show console logs for 'ubuntu' container
     $0 logs ubuntu system           # Show system logs for 'ubuntu' container
@@ -516,6 +518,9 @@ parse_args() {
     ;;
   ssh)
     handle_one_argument ict ssh "$@"
+    ;;
+  tmux)
+    ict-tmux --select
     ;;
   info)
     handle_one_argument ict info "$@"

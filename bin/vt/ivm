@@ -19,6 +19,7 @@ COMMANDS:
     status [name]           Show VM status and info - if no name provided, select from list
     create [ivm-create args]  Create a new Incus VM (forwards all args to ivm-create)
     create-all [ivm-create-multi args]  Create multiple Incus VMs (forwards all args to ivm-create-multi)
+    tmux                    Select VMs and create tmux session (delegates to ivm-tmux --select)
     start [name...]         Start VM(s) - if no names provided, select from list
     stop [name...]          Gracefully stop VM(s) - if no names provided, select from list
     restart [name...]       Restart VM(s) - if no names provided, select from list
@@ -59,6 +60,7 @@ EXAMPLES:
     $0 restart                     # Select VM to restart from menu
     $0 delete ubuntu fedora arch     # Delete multiple VMs
     $0 console                     # Select VM to connect to console from menu
+    $0 tmux                        # Select VMs and create tmux session
 
 All arguments after 'create' are forwarded directly to ivm-create.
 EOF
@@ -610,6 +612,9 @@ parse_args() {
     ;;
   create)
     create_ivm "$@"
+    ;;
+  tmux)
+    ivm-tmux --select
     ;;
   create-all)
     ivm-create-multi "$@"

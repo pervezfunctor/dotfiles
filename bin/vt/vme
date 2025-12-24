@@ -31,6 +31,8 @@ COMMANDS:
     list                List all VMs
     create  ARGS        Create a new VM, with same ARGS as vme-create
     create-all ARGS     Create multiple VMs, see vme-create-multi --help for options
+    all                 Perform operation on all VMs (delegates to vme-all)
+    tmux                Select VMs and create tmux session (delegates to vme-tmux --select)
     autostart <vm-name> Set VM to start on boot
     start [vm-name...]  Start VM(s) - if no names provided, select from list
     shutdown [vm-name...] Gracefully stop VM(s) - if no names provided, select from list
@@ -51,6 +53,7 @@ COMMANDS:
 
 EXAMPLES:
     $0 list                    # List all VMs
+    $0 tmux                    # Select VMs and create tmux session
     $0 ip debian               # Show IP address of 'debian' VM (short form)
     $0 is-running debian       # Check if 'debian' VM is running
     $0 status debian           # Show status of 'debian' VM
@@ -84,6 +87,7 @@ start_vme() {
   fi
 
   virsh --connect qemu:///system start "$1"
+  wait_for_ip "$1"
 }
 
 stop_vme() {
@@ -97,7 +101,7 @@ stop_vme() {
 
 restart_vme() {
   if ! vm_running "$1"; then
-    vm_start "$1"
+    start_vme "$1"
   else
     virsh --connect qemu:///system reboot "$1"
   fi
@@ -163,7 +167,7 @@ list_vme_all() {
 }
 
 list_vme() {
-  virsh --connect qemu:///system list --all | awk 'NR>2 && $0 !~ /^[-[:space:]]*$/ {print $2}'
+  get_vm_list
 }
 
 ssh_vme() {
@@ -172,7 +176,7 @@ ssh_vme() {
   user="${2:-$USER}"
 
   if ! vm_running "$vm"; then
-    vm_start "$vm"
+    start_vme "$vm"
   fi
 
   if ! ip=$(vm_ip "$vm"); then
@@ -190,7 +194,7 @@ exec_vme() {
   local command="$*"
 
   if ! vm_running "$vm"; then
-    vm_start "$vm"
+    start_vme "$vm"
   fi
 
   if [[ -z "$command" ]]; then
@@ -295,6 +299,12 @@ main() {
   case "$command" in
   start-libvirt)
     sudo systemctl start libvirtd
+    ;;
+  all)
+    vme-all "$@"
+    ;;
+  tmux)
+    vme-tmux --select
     ;;
   list | ls)
     list_vme_all

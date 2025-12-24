@@ -41,6 +41,7 @@ COMMANDS:
     delete [vm-name...]            Delete VM(s) completely - if no names provided, select from list
     console [vm-name]              Connect to VM console - if no name provided, select from list
     ssh [vm-name] [username]       Connect to VM via SSH - if no name provided, select from list
+    tmux                           Select VMs and create tmux session
     info [vm-name]                 Show VM status and info - if no name provided, select from list
     logs [vm-name]                 Show cloud-init logs - if no name provided, select from list
     output-logs [vm-name]          Show cloud-init output logs - if no name provided, select from list
@@ -52,6 +53,7 @@ COMMANDS:
 EXAMPLES:
     $0 list                       # List all VMs
     $0 ssh dev username           # SSH into 'dev' VM with username 'username'
+    $0 tmux                       # Select VMs and create tmux session
     $0 exec debian "ls -l"        # Execute 'ls -l' command in 'debian' VM
     $0 info debian                # Show status of 'debian' VM
     $0 console                   # Select VM to connect to console from menu
@@ -254,6 +256,9 @@ main() {
     ;;
   ssh)
     handle_one_argument vmu ssh "$vm_name"
+    ;;
+  tmux)
+    vmu-tmux --select
     ;;
   logs)
     handle_one_argument vmu logs "$vm_name"

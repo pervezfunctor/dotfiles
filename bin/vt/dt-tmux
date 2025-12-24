@@ -17,6 +17,7 @@ Manage a tmux session with connections to distrobox containers.
 
 Options:
   create    Create a new tmux session with connections to containers (default if no option)
+  --select  Select containers interactively using fzf and create a tmux session
   attach    Attach to an existing session
   detach    Detach from the current session
   destroy   Kill the tmux session
@@ -25,6 +26,7 @@ Options:
 Examples:
   $(basename "$0")           # Create session or attach if exists
   $(basename "$0") create    # Force create a new session
+  $(basename "$0") --select  # Select containers interactively and create session
   $(basename "$0") attach    # Attach to existing session
   $(basename "$0") detach    # Detach from current session
   $(basename "$0") destroy   # Kill the session
@@ -70,14 +72,23 @@ create_commands() {
 }
 
 create_session() {
-  tmux_session "$SESSION_NAME" "$1"
+  local force="$1"
+  shift
 
-  slog "Creating tmux session '$SESSION_NAME' with SSH connections to Distrobox containers..."
+  local -a containers=("$@")
+
+  if [[ ${#containers[@]} -eq 0 ]]; then
+    containers=("${DISTRO_LIST_dt[@]}")
+  fi
+
+  tmux_session "$SESSION_NAME" "$force"
+
+  slog "Creating tmux session '$SESSION_NAME' with connections to ${#containers[@]} Distrobox container(s)..."
 
   local ssh_cmds=()
-  create_commands ssh_cmds "dt" "${DISTRO_LIST_dt[@]}"
+  create_commands ssh_cmds "dt" "${containers[@]}"
 
-  start_sessions "dt" "${DISTRO_LIST_dt[@]}"
+  start_sessions "dt" "${containers[@]}"
 
   if ! tmux_grid "$SESSION_NAME" "${ssh_cmds[@]}"; then
     fail "Failed to create tmux session '$SESSION_NAME' with SSH connections to containers."
@@ -90,6 +101,26 @@ create_session() {
   fi
 }
 
+select_session() {
+  local -a available_containers
+  mapfile -t available_containers < <(dt list)
+
+  if [[ ${#available_containers[@]} -eq 0 ]]; then
+    fail "No containers found. Please create containers first."
+    exit 1
+  fi
+
+  local -a selected_containers
+  mapfile -t selected_containers < <(select-multi "Select containers to connect to:" "${available_containers[@]}")
+
+  if [[ ${#selected_containers[@]} -eq 0 ]]; then
+    slog "No containers selected."
+    exit 1
+  fi
+
+  create_session "true" "${selected_containers[@]}"
+}
+
 main() {
   check_distrobox
   check_tmux
@@ -99,6 +130,9 @@ main() {
   case "$command" in
   create | -c | --create | "")
     create_session "true"
+    ;;
+  --select | -s | select)
+    select_session
     ;;
   attach)
     attach_session "$SESSION_NAME"
