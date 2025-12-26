@@ -365,12 +365,11 @@ source_dotfile() {
 
 export ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ilm/logs"
 
-reset_logs() {
+init_logs() {
   slog "Removing old logs"
   rm -rf "$ILM_LOG_DIR" 2>/dev/null || true
-}
 
-create_logs_dir() {
+  slog "Initializing logs"
   mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
   touch "$ILM_LOG_DIR"/.dotfiles-output.log "$ILM_LOG_DIR"/.dotfiles-error.log 2>/dev/null || true
   ln -sf "$ILM_LOG_DIR"/.dotfiles-output.log "$ILM_LOG_DIR"/output.log 2>/dev/null || true
@@ -1744,8 +1743,7 @@ bootstrap() {
   slog "Bootstrapping, switching to directory $HOME"
   cd "$HOME" || die "could not cd to $HOME"
 
-  reset_logs
-  create_logs_dir
+  init_logs
 
   [ -n "$NOSUDO" ] || keep_sudo_running
 
