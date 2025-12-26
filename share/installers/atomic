@@ -645,7 +645,7 @@ font-awesome_install() {
   frm /tmp/font-awesome /tmp/font-awesome.zip
   wget -nv https://use.fontawesome.com/releases/v7.1.0/fontawesome-free-7.1.0-desktop.zip -O /tmp/font-awesome.zip
   unzip -qq -d /tmp/font-awesome -o /tmp/font-awesome.zip
-  cp /tmp/monaspace/*.otf ~/.local/share/fonts
+  cp /tmp/font-awesome/*.otf ~/.local/share/fonts
   frm /tmp/font-awesome /tmp/font-awesome.zip
 
 }

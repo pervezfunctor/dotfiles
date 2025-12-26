@@ -296,6 +296,8 @@ hyprland_install() {
     hyprsunset hyprutils hyprwayland-scanner nwg-dock-hyprland hyprpaper \
     xdg-desktop-portal-hyprland hyprland-qt-support
 
+  aur hyprpanel
+
   slog "hyprland installation done!"
 }
 
