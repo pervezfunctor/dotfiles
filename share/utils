@@ -377,12 +377,6 @@ create_logs_dir() {
   ln -sf "$ILM_LOG_DIR"/.dotfiles-error.log "$ILM_LOG_DIR"/error.log 2>/dev/null || true
 }
 
-with_logs() {
-  create_logs_dir
-  main "$@" > >(tee "$ILM_LOG_DIR"/.dotfiles-output.log) 2> >(tee "$ILM_LOG_DIR"/.dotfiles-error.log >&2)
-  slog "Installation done! Look at $ILM_LOG_DIR/error.log for any errors."
-}
-
 slog() {
   printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/slog.log
   printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*"
@@ -1320,13 +1314,11 @@ ssh_enable() {
 
 keep_sudo_running() {
   if ! has_cmd sudo; then
-    slog "Error: sudo command not found."
-    return 1
+    die "sudo command not found."
   fi
 
   if ! sudo -v; then
-    slog "Error: Failed to validate sudo credentials. Please run sudo manually once or check password."
-    return 1
+    die "Failed to validate sudo credentials. Please run sudo manually once or check password."
   fi
 
   slog "Sudo credentials active."
@@ -1753,16 +1745,17 @@ bootstrap() {
   cd "$HOME" || die "could not cd to $HOME"
 
   reset_logs
-  with_logs "$@"
+  create_logs_dir
 
   [ -n "$NOSUDO" ] || keep_sudo_running
 
   source_installers
 
   slog "Installing ${*} ..."
-
+  main "$@" > >(tee "$ILM_LOG_DIR"/.dotfiles-output.log) 2> >(tee "$ILM_LOG_DIR"/.dotfiles-error.log >&2)
   # shellcheck disable=SC2164
   cd "$curdir" || cd
+  slog "Installation done! Look at $ILM_LOG_DIR/error.log for any errors."
 }
 
 ubuntu_version() {
