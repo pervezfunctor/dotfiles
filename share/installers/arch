@@ -18,6 +18,10 @@ update_packages() {
 }
 
 aur() {
+  if ! has_cmd paru && ! has_cmd yay; then
+    paru_install
+  fi
+
   if has_cmd paru; then
     paru -S --noconfirm "$@"
   elif has_cmd yay; then
