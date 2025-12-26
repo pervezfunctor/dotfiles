@@ -371,9 +371,13 @@ init_logs() {
 
   slog "Initializing logs"
   mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
-  touch "$ILM_LOG_DIR"/.dotfiles-output.log "$ILM_LOG_DIR"/.dotfiles-error.log 2>/dev/null || true
-  ln -sf "$ILM_LOG_DIR"/.dotfiles-output.log "$ILM_LOG_DIR"/output.log 2>/dev/null || true
-  ln -sf "$ILM_LOG_DIR"/.dotfiles-error.log "$ILM_LOG_DIR"/error.log 2>/dev/null || true
+  touch "$ILM_LOG_DIR"/.dotfiles-output.log
+  touch "$ILM_LOG_DIR"/.dotfiles-error.log
+  touch "$ILM_LOG_DIR"/slog.log
+  touch "$ILM_LOG_DIR"/fail.log
+  touch "$ILM_LOG_DIR"/warn.log
+  touch "$ILM_LOG_DIR"/info.log
+  touch "$ILM_LOG_DIR"/success.log
 }
 
 slog() {
@@ -392,12 +396,12 @@ warn() {
 }
 
 success() {
-  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/slog.log
+  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/success.log
   printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*"
 }
 
 info() {
-  printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/slog.log
+  printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/info.log
   printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*"
 }
 
