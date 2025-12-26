@@ -32,7 +32,7 @@ EOF
 }
 
 check_prerequisites() {
-  vm_check_prerequisites
+  virt_check_prerequisites
   check_tmux
 }
 

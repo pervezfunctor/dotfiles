@@ -116,7 +116,7 @@ command="$1"
 vm_name="${2:-}"
 
 main() {
-  ivm_check_exists_prerequisites
+  ivm_check_prerequisites
 
   case "$command" in
   add)

@@ -11,10 +11,8 @@ readonly SCRIPT_LOG_FILE="/tmp/proxmox-scripts.log"
 readonly SCRIPT_CACHE_DIR="/tmp/proxmox-scripts-cache"
 readonly INTEGRITY_CHECKSUMS_FILE="${SCRIPT_CACHE_DIR}/checksums.txt"
 
-# Ensure log and cache directories exist
 mkdir -p "$(dirname "$SCRIPT_LOG_FILE")" "$SCRIPT_CACHE_DIR"
 
-# Logging functions with different levels
 log() {
   local level="$1"
   shift
@@ -45,58 +43,24 @@ log() {
   esac
 }
 
-log_info() {
-  log "INFO" "$@"
-}
-
-log_warn() {
-  log "WARN" "$@"
-}
-
-log_error() {
-  log "ERROR" "$@"
-}
-
-log_debug() {
-  log "DEBUG" "$@"
-}
-
-# Check prerequisites
 check_prerequisites() {
-  log_info "Checking prerequisites..."
+  slog "Checking prerequisites..."
 
-  local missing_deps=()
+  check_cmds curl whiptail bash
 
-  # Check for required commands
-  for cmd in curl whiptail bash; do
-    if ! command -v "$cmd" &>/dev/null; then
-      missing_deps+=("$cmd")
-    fi
-  done
-
-  # Check if running on Proxmox VE
   if [[ ! -f /etc/pve/.version ]] && [[ ! -f /usr/bin/pveversion ]]; then
-    log_warn "This script is designed to run on Proxmox VE. Some features may not work correctly."
+    warn "This script is designed to run on Proxmox VE. Some features may not work correctly."
   fi
 
-  # Check network connectivity
   if ! curl -s --connect-timeout 5 "https://raw.githubusercontent.com" >/dev/null; then
-    log_error "Cannot connect to GitHub. Please check your internet connection."
+    fail "Cannot connect to GitHub. Please check your internet connection."
     return 1
   fi
 
-  # Report missing dependencies
-  if [[ ${#missing_deps[@]} -gt 0 ]]; then
-    log_error "Missing required dependencies: ${missing_deps[*]}"
-    log_error "Please install the missing dependencies and try again."
-    return 1
-  fi
-
-  log_info "All prerequisites satisfied."
+  slog "All prerequisites satisfied."
   return 0
 }
 
-# Verify script integrity (optional)
 verify_script_integrity() {
   local script_url="$1"
   local script_name
@@ -104,78 +68,65 @@ verify_script_integrity() {
   local cached_script="${SCRIPT_CACHE_DIR}/${script_name}"
   local checksum_url="${script_url}.sha256"
 
-  log_debug "Verifying integrity of $script_name"
-
-  # Download the script
   if ! curl -fsSL "$script_url" -o "$cached_script"; then
-    log_error "Failed to download script: $script_url"
+    fail "Failed to download script: $script_url"
     return 1
   fi
 
-  # Calculate actual checksum
   local actual_checksum
   actual_checksum=$(sha256sum "$cached_script" | cut -d' ' -f1)
 
-  # Try to find checksum in local cache first
   local expected_checksum=""
   if [[ -f "$INTEGRITY_CHECKSUMS_FILE" ]]; then
     expected_checksum=$(grep "^${script_name}:" "$INTEGRITY_CHECKSUMS_FILE" 2>/dev/null | cut -d':' -f2 || true)
   fi
 
-  # If not in local cache, try to download from remote
   if [[ -z "$expected_checksum" ]]; then
     if curl -fsSL "$checksum_url" -o "${cached_script}.sha256" 2>/dev/null; then
       expected_checksum=$(cat "${cached_script}.sha256" | cut -d' ' -f1)
-      # Cache the checksum for future use
       echo "${script_name}:${expected_checksum}" >>"$INTEGRITY_CHECKSUMS_FILE"
-      log_debug "Downloaded and cached checksum for $script_name"
+      info "Downloaded and cached checksum for $script_name"
     else
-      log_warn "No checksum available for $script_name, skipping verification"
+      warn "No checksum available for $script_name, skipping verification"
       return 0
     fi
   fi
 
-  # Verify checksum
   if [[ "$expected_checksum" != "$actual_checksum" ]]; then
-    log_error "Checksum verification failed for $script_name"
-    log_error "Expected: $expected_checksum"
-    log_error "Actual: $actual_checksum"
+    fail "Checksum verification failed for $script_name"
+    fail "Expected: $expected_checksum"
+    fail "Actual: $actual_checksum"
     return 1
   fi
 
-  log_debug "Checksum verification passed for $script_name"
+  info "Checksum verification passed for $script_name"
   return 0
 }
 
-# Execute remote script with error handling
 execute_remote_script() {
   local script_url="$1"
   local script_name
   script_name=$(basename "$script_url")
 
-  log_info "Executing script: $script_name"
+  slog "Executing script: $script_name"
 
-  # Verify script integrity if enabled
   if [[ "${VERIFY_INTEGRITY:-false}" == "true" ]]; then
     if ! verify_script_integrity "$script_url"; then
-      log_error "Script integrity verification failed for $script_name"
+      fail "Script integrity verification failed for $script_name"
       return 1
     fi
-    # Execute from cache
     bash "${SCRIPT_CACHE_DIR}/${script_name}"
   else
-    # Original behavior - execute directly
     if ! bash -c "$(curl -fsSL "$script_url")"; then
-      log_error "Failed to execute script: $script_name"
+      fail "Failed to execute script: $script_name"
       return 1
     fi
   fi
 
-  log_info "Successfully executed script: $script_name"
+  slog "Successfully executed script: $script_name"
   return 0
 }
 
-# Enhanced service installation functions with error handling
 casaos-lxc_install() {
   execute_remote_script "${COMMUNITY_SCRIPTS_BASE}/ct/casaos.sh"
 }
@@ -206,7 +157,7 @@ adguard-lxc_install() {
 
 pihole-lxc_install() {
   execute_remote_script "${COMMUNITY_SCRIPTS_BASE}/ct/pihole.sh"
-  log_info "Use 'pihole setpassword' to set password for Pi-hole"
+  slog "Use 'pihole setpassword' to set password for Pi-hole"
 }
 
 authelia-lxc_install() {
@@ -227,7 +178,7 @@ qbittorrent_install() {
 
 rclone-lxc_install() {
   execute_remote_script "${COMMUNITY_SCRIPTS_BASE}/ct/rclone.sh"
-  log_info "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
+  slog "Use 'htpasswd -b -B /opt/login.pwd newuser newuserpassword' to add new user"
 }
 
 syncthing-lxc_install() {
@@ -343,7 +294,7 @@ show_dialog() {
   if ! selected_output=$(whiptail --separate-output --checklist "Select services to install" 20 60 15 \
     "${checklist_entries[@]}" \
     3>&1 1>&2 2>&3); then
-    log_info "Selection cancelled by user."
+    slog "Selection cancelled by user."
     return 1
   fi
 
@@ -387,7 +338,7 @@ show_category_menu() {
     addon "Addons" \
     vm "Virtual Machines" \
     3>&1 1>&2 2>&3); then
-    log_info "Category selection cancelled by user."
+    slog "Category selection cancelled by user."
     return 1
   fi
 
@@ -400,20 +351,20 @@ execute_service() {
   local service="$2"
   local install_function="${service}-${category}_install"
 
-  log_info "Installing $service ($category)..."
+  slog "Installing $service ($category)..."
 
   if ! fn_exists "$install_function"; then
-    log_error "Installation function not found: $install_function"
+    fail "Installation function not found: $install_function"
     return 1
   fi
 
   # Execute with error handling
   if ! "$install_function"; then
-    log_error "Failed to install $service ($category)"
+    fail "Failed to install $service ($category)"
     return 1
   fi
 
-  log_info "Successfully installed $service ($category)"
+  slog "Successfully installed $service ($category)"
   return 0
 }
 
@@ -470,7 +421,7 @@ main() {
       shift
       ;;
     -*)
-      log_error "Unknown option: $1"
+      fail "Unknown option: $1"
       show_help
       exit 1
       ;;
@@ -484,59 +435,59 @@ main() {
   # Set integrity verification flag
   if [[ "$verify_integrity" == "true" ]]; then
     export VERIFY_INTEGRITY=true
-    log_info "Script integrity verification enabled"
+    slog "Script integrity verification enabled"
   fi
 
   # Check prerequisites
   if ! check_prerequisites; then
-    log_error "Prerequisites check failed"
+    fail "Prerequisites check failed"
     exit 1
   fi
 
   # If only checking prerequisites, exit here
   if [[ "$check_only" == "true" ]]; then
-    log_info "Prerequisites check completed successfully"
+    slog "Prerequisites check completed successfully"
     exit 0
   fi
 
   # Log script start
-  log_info "Starting Proxmox Scripts Installer"
-  log_info "Command: $0 $*"
+  slog "Starting Proxmox Scripts Installer"
+  slog "Command: $0 $*"
 
   # Command line mode
   if [[ ${#services[@]} -gt 0 ]]; then
-    log_info "Command line mode: Installing specified services"
+    slog "Command line mode: Installing specified services"
     local failed_services=()
 
     for service in "${services[@]}"; do
       if fn_exists "${service}_install"; then
-        log_info "Installing ${service}..."
+        slog "Installing ${service}..."
         if ! "${service}_install"; then
           failed_services+=("$service")
         fi
       else
-        log_error "No installer found for $service"
+        fail "No installer found for $service"
         failed_services+=("$service")
       fi
     done
 
     # Report results
     if [[ ${#failed_services[@]} -gt 0 ]]; then
-      log_error "Failed to install services: ${failed_services[*]}"
+      fail "Failed to install services: ${failed_services[*]}"
       exit 1
     else
-      log_info "All services installed successfully"
+      slog "All services installed successfully"
     fi
 
     exit 0
   fi
 
   # Interactive mode
-  log_info "Interactive mode: Showing service selection menu"
+  slog "Interactive mode: Showing service selection menu"
 
   local category
   if ! category=$(show_category_menu); then
-    log_info "No category selected, exiting"
+    slog "No category selected, exiting"
     exit 0
   fi
 
@@ -545,34 +496,34 @@ main() {
   case "$category" in
   lxc)
     if ! read -r -a selected < <(lxc_dialog); then
-      log_info "No LXC services selected, exiting"
+      slog "No LXC services selected, exiting"
       exit 0
     fi
     ;;
   addon)
     if ! read -r -a selected < <(addon_dialog); then
-      log_info "No addon services selected, exiting"
+      slog "No addon services selected, exiting"
       exit 0
     fi
     ;;
   vm)
     if ! read -r -a selected < <(vm_dialog); then
-      log_info "No VM services selected, exiting"
+      slog "No VM services selected, exiting"
       exit 0
     fi
     ;;
   *)
-    log_error "Invalid selection: $category"
+    fail "Invalid selection: $category"
     exit 1
     ;;
   esac
 
   if [[ ${#selected[@]} -eq 0 ]]; then
-    log_info "No services selected, exiting"
+    slog "No services selected, exiting"
     exit 0
   fi
 
-  log_info "Selected services: ${selected[*]}"
+  slog "Selected services: ${selected[*]}"
 
   local failed_services=()
   for service in "${selected[@]}"; do
@@ -583,12 +534,12 @@ main() {
 
   # Report final results
   if [[ ${#failed_services[@]} -gt 0 ]]; then
-    log_error "Failed to install services: ${failed_services[*]}"
-    log_error "Check the log file for details: $SCRIPT_LOG_FILE"
+    fail "Failed to install services: ${failed_services[*]}"
+    fail "Check the log file for details: $SCRIPT_LOG_FILE"
     exit 1
   else
-    log_info "All services installed successfully!"
-    log_info "Installation completed. Check the log file for details: $SCRIPT_LOG_FILE"
+    slog "All services installed successfully!"
+    slog "Installation completed. Check the log file for details: $SCRIPT_LOG_FILE"
   fi
 }
 

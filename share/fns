@@ -167,27 +167,7 @@ source "${DOT_DIR}/share/tbox-fns"
 source "${DOT_DIR}/share/incus-fns"
 source "${DOT_DIR}/share/virt-fns"
 
-commands_available() {
-  local failed=()
-  for cmd in "$@"; do
-    has_cmd "$cmd" || {
-      failed+=("$cmd")
-    }
-  done
-
-  if ((${#failed[@]})); then
-    fail "Missing required commands: ${failed[*]}"
-    return 1
-  fi
-
-  return 0
-}
-
-check_commands() {
-  commands_available "$@" || die "Missing required commands, quitting"
-}
-
-dirs_available() {
+dirs_exist() {
   local failed=()
   for dir in "$@"; do
     dir_exists "$dir" || {
@@ -204,7 +184,7 @@ dirs_available() {
 }
 
 check_dirs() {
-  dirs_available "$@" || die "Missing required directories, quitting"
+  dirs_exist "$@" || die "Missing required directories, quitting"
 }
 
 create-ublue-nix-mount() {
@@ -215,7 +195,7 @@ create-ublue-nix-mount() {
   parent_dir=$(dirname "$subvol_path")
 
   commands_available findmnt btrfs systemd-escape systemctl || return 1
-  dirs_available "$parent_dir" "$mount_point" || return 1
+  dirs_exist "$parent_dir" "$mount_point" || return 1
 
   local parent_fstype
   parent_fstype=$(findmnt -nro FSTYPE "$parent_dir") || {
@@ -431,4 +411,28 @@ sshl() {
   )
 
   [[ -n "${host:-}" ]] && ssh "$host"
+}
+
+greetd_setup() {
+  local WM="${1:-Hyprland}"
+
+  si greetd tuigreet dbus-user-session
+  sudo systemctl enable greetd
+  sudo systemctl start seatd
+  sudo usermod -aG seatd "$USER"
+
+  slog "Installing greetd"
+  si greetd
+  slog "greetd installation done!"
+
+  cmd_check greetd
+
+  sudo tee /etc/greetd/config.toml >/dev/null <<EOF
+[terminal]
+vt = 1
+
+[default_session]
+command = "tuigreet --time --remember --cmd ${WM}"
+user = "greeter"
+EOF
 }

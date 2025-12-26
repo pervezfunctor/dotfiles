@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2034
 # shellcheck disable=SC1091
+
 source "$(dirname "$0")/vt-utils"
 
 export DISTRO_LIST_vme=("ubuntu" "fedora" "arch" "debian" "tw")
@@ -8,16 +10,7 @@ export DISTRO_LIST_vme=("ubuntu" "fedora" "arch" "debian" "tw")
 export DISTRO_LIST_vm=("ubuntu" "fedora" "debian" "arch" "alpine" "centos")
 
 virt_check_prerequisites() {
-  local missing_tools=()
-  for tool in virsh virt-install qemu-img wget xorriso openssl; do
-    if ! has_cmd "$tool"; then
-      missing_tools+=("$tool")
-    fi
-  done
-
-  if [[ ${#missing_tools[@]} -gt 0 ]]; then
-    die "Missing required tools: ${missing_tools[*]}"
-  fi
+  check_cmds virsh virt-install qemu-img wget xorriso openssl vm-create vm
 
   if ! systemctl is-active --quiet libvirtd; then
     warn "libvirtd service is not running, Starting..."
@@ -35,18 +28,6 @@ virt_check_prerequisites() {
     fail "User not in libvirt group. You may need sudo for virsh commands"
     fail "Add user to group: sudo usermod -a -G libvirt \$USER"
     exit 1
-  fi
-}
-
-vm_check_prerequisites() {
-  virt_check_prerequisites
-
-  if ! has_cmd vm-create; then
-    die "vm-create is not in PATH."
-  fi
-
-  if ! has_cmd vm; then
-    die "vm is not in PATH."
   fi
 }
 
@@ -246,32 +227,241 @@ libvirt_iso_pool_create() {
   sudo virsh pool-autostart "$LIBVIRT_ISO_POOL_NAME"
 }
 
-wait_for_ip() {
-  local vm_name="$1"
+configure_arch() {
+  if [[ -n "$RELEASE" && "$RELEASE" != "latest" ]]; then
+    warn "Arch Linux only supports latest release. Ignoring RELEASE='$RELEASE'"
+  fi
+  RELEASE="latest"
+  IMG_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
+  CHECKSUM_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2.SHA256"
+  OS_VARIANT="archlinux"
+}
 
-  printf '\033[1;36m🔍 Wait for IP address? (Y/n):\033[0m ' >&2
-  read -t 5 -r response || response="y"
+configure_ubuntu() {
+  RELEASE=${RELEASE:="plucky"}
+  IMG_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${RELEASE}-server-cloudimg-amd64.img"
+  CHECKSUM_URL="https://cloud-images.ubuntu.com/questing/current/SHA256SUMS"
+  OS_VARIANT="ubuntu25.10"
+}
 
-  case "$response" in
-  n | N)
-    slog "Skipping IP wait. You can get the IP later with: virsh domifaddr $vm_name --source agent"
-    return 1
+configure_debian() {
+  RELEASE=${RELEASE:="trixie"}
+
+  IMG_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+  CHECKSUM_URL="https://cloud.debian.org/images/cloud/trixie/latest/SHA512SUMS"
+  OS_VARIANT="debian13"
+}
+
+configure_fedora() {
+  if [[ -z "$RELEASE" && "$RELEASE" != "43" ]]; then
+    warn "Fedora only supports release 43. Installing Fedora 43."
+  fi
+  RELEASE=43
+  IMG_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
+  CHECKSUM_URL="https://mirror.hoster.kz/fedora/fedora/linux/releases/${RELEASE}/Cloud/x86_64/images/Fedora-Cloud-43-1.6-x86_64-CHECKSUM"
+  OS_VARIANT="fedora42"
+}
+
+configure_tw() {
+  if [[ -n "$RELEASE" && "$RELEASE" != "latest" ]]; then
+    warn "Tumbleweed only supports latest release. Ignoring RELEASE='$RELEASE'"
+  fi
+  RELEASE="latest"
+  IMG_URL="https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
+  CHECKSUM_URL="https://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2.sha256"
+  OS_VARIANT="opensusetumbleweed"
+}
+
+configure_centos() {
+  RELEASE=${RELEASE:-"9"}
+  IMG_URL="https://cloud.centos.org/centos/${RELEASE}-stream/x86_64/images/CentOS-Stream-GenericCloud-${RELEASE}-latest.x86_64.qcow2"
+  CHECKSUM_URL="https://cloud.centos.org/centos/${RELEASE}-stream/x86_64/images/CentOS-Stream-GenericCloud-${RELEASE}-latest.x86_64.qcow2.SHA256SUM"
+  OS_VARIANT="centos-stream9"
+}
+
+configure_rocky() {
+  RELEASE=${RELEASE:-"9"}
+  IMG_URL="https://download.rockylinux.org/pub/rocky/${RELEASE}/images/x86_64/Rocky-${RELEASE}-GenericCloud.latest.x86_64.qcow2"
+  CHECKSUM_URL="https://download.rockylinux.org/pub/rocky/${RELEASE}/images/x86_64/CHECKSUM"
+  OS_VARIANT="rocky-linux-9"
+}
+
+configure_alpine() {
+  RELEASE=${RELEASE:-"3.22.2"}
+  IMG_URL="https://dl-cdn.alpinelinux.org/alpine/v${RELEASE}/releases/cloud/generic_alpine-${RELEASE}-x86_64-uefi-cloudinit-r0.qcow2"
+  OS_VARIANT="alpinelinux3.22"
+  CHECKSUM_URL="https://dl-cdn.alpinelinux.org/alpine/${RELEASE}/releases/cloud/generic_alpine-${RELEASE}-x86_64-uefi-cloudinit-r0.qcow2.sha512"
+}
+
+configure_distribution() {
+  local DISTRO="${1:-$DISTRO}"
+
+  case "$DISTRO" in
+  arch)
+    configure_arch
+    ;;
+  ubuntu)
+    configure_ubuntu
+    ;;
+  debian)
+    configure_debian
+    ;;
+  fedora)
+    configure_fedora
+    ;;
+  tw | tumbleweed)
+    configure_tw
+    ;;
+  centos)
+    configure_centos
+    ;;
+  rocky)
+    configure_rocky
+    ;;
+  alpine)
+    configure_alpine
     ;;
   *)
-    if wait_until 30 2 bash -c "virsh domstate $vm_name | grep -q running"; then
-      slog "VM is running"
-    else
-      return 1
-    fi
-
-    if wait_until 60 2 vm_ip "$vm_name" >/dev/null; then
-      slog "VM has IP address"
-      sleep 1
-    else
-      return 1
-    fi
-
-    return 0
+    fail "Unknown distribution: $DISTRO"
+    fail "Supported distributions: arch, ubuntu, debian, fedora, tumbleweed, centos, rocky, alpine"
+    usage
+    exit 1
     ;;
   esac
+
+  BASE_IMAGE="${BASE_IMG_DIR}/$(basename "$IMG_URL")"
+  CHECKSUM_FILE="${BASE_IMAGE}.checksum"
+}
+
+generate_cloud_init() {
+  slog "Generating cloud-init configuration..."
+  PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
+
+  local cloud_init_dir
+  cloud_init_dir=$(mktemp -d)
+
+  USER_DATA="${cloud_init_dir}/user-data"
+  META_DATA="${cloud_init_dir}/meta-data"
+
+  local pub_key
+  pub_key=$(cat "$SSH_KEY_PATH")
+
+  local openssh_pkg
+  case "$DISTRO" in
+  arch | tw | tumbleweed)
+    openssh_pkg="openssh"
+    ;;
+  *)
+    openssh_pkg="openssh-server"
+    ;;
+  esac
+
+  local -a packages=(
+    "qemu-guest-agent"
+    "bash"
+    "curl"
+    "$openssh_pkg"
+  )
+
+  local -a runcmd_lines
+  if [[ "$DISTRO" == "alpine" ]]; then
+    runcmd_lines=(
+      "rc-update add qemu-guest-agent default || true"
+      "service qemu-guest-agent start || true"
+      "rc-update add sshd default || true"
+      "service sshd start || true"
+    )
+  else
+    runcmd_lines=(
+      "systemctl enable --now qemu-guest-agent || true"
+      "systemctl enable --now ssh || systemctl enable --now sshd || true"
+    )
+  fi
+
+  local sudo_groups
+  if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" ]]; then
+    sudo_groups="sudo"
+  else
+    sudo_groups="wheel"
+  fi
+
+  cat >"${USER_DATA}" <<EOF
+#cloud-config
+hostname: $VM_NAME
+manage_etc_hosts: true
+
+users:
+  - name: $USERNAME
+    groups:
+      - $sudo_groups
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: false
+    passwd: $PASSWORD_HASH
+    ssh_authorized_keys:
+      - $pub_key
+
+package_update: true
+
+packages:
+$(for p in "${packages[@]}"; do printf "  - %s\n" "$p"; done)
+
+runcmd:
+$(printf "  - %s\n" "${runcmd_lines[@]}")
+EOF
+
+  cat >"${META_DATA}" <<EOF
+instance-id: ${VM_NAME}-$(date +%s)
+local-hostname: $VM_NAME
+EOF
+
+  success "Cloud-init configuration generated"
+}
+
+verify_checksum() {
+  local img="$1"
+  local sumfile="$2"
+  local base_img
+  base_img="$(basename "$img")"
+
+  info "Verifying checksum for: $base_img"
+
+  # Remove PGP signature from the checksum file
+  grep -vE '^(-----BEGIN|-----END)' "$sumfile" >"${sumfile}.clean"
+  mv "${sumfile}.clean" "$sumfile"
+
+  local hash=""
+
+  # 1. Fedora/Centos style: SHA256 (filename) = hash
+  if grep -q "SHA256 (${base_img}) =" "$sumfile"; then
+    hash="$(grep "SHA256 (${base_img}) =" "$sumfile" | awk -F'= ' '{print $2}')"
+  # 2. GNU-style(ubuntu): <hash> [*]filename
+  elif
+    hash="$(grep -E "[[:space:]]\*?${base_img}$" "$sumfile" | awk '{print $1}' 2>/dev/null)"
+    [[ -n "$hash" ]]
+  then
+    :
+  # 3. Raw Alpine-style: single-line hash only
+  elif [[ $(wc -l <"$sumfile") -eq 1 && $(wc -w <"$sumfile") -eq 1 ]]; then
+    hash="$(cat "$sumfile")"
+  # 4. No supported format matched
+  else
+    fail "Unsupported checksum format for $base_img"
+    sleep 2
+    warn "Skipping checksum verification..."
+  fi
+
+  case "${#hash}" in
+  64)
+    echo "${hash}  ${img}" | sha256sum -c - || die "SHA256 checksum mismatch"
+    ;;
+  128)
+    echo "${hash}  ${img}" | sha512sum -c - || die "SHA512 checksum mismatch"
+    ;;
+  *)
+    die "Unknown checksum length ${#hash}"
+    ;;
+  esac
+
+  info "Checksum OK"
 }

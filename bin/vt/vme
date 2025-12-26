@@ -13,12 +13,7 @@ cmd_vme() {
 }
 
 check_prerequisites() {
-  for cmd in virsh vme-create trash; do
-    if ! has_cmd "$cmd"; then
-      fail "⚠️  Warning: Required command '$cmd' is not available."
-      # exit 1
-    fi
-  done
+  check_cmds virsh vme-create trash
   has_cmd virt-cat || fail "⚠️  virt-cat not available, some commands won't work"
 }
 

@@ -75,8 +75,7 @@ show_configuration() {
   printf '\033[1mResources:\033[0m      \033[0;33m%s vCPUs, %sMB RAM\033[0m\n' "$VCPUS" "$MEMORY_MB"
   printf '\033[1mPrivileged:\033[0m     \033[0;33m%s\033[0m\n' "$PRIVILEGED"
   echo
-  # printf "\033[1;36mPress enter to continue...\033[0m\n"
-  # read -r
+  press_enter
 }
 
 configure_distribution() {
@@ -235,28 +234,6 @@ create_container() {
   return $result
 }
 
-wait_for_ip() {
-  local CONTAINER_NAME="$1"
-
-  printf '\033[1;36m🔍 Wait for IP address? (Y/n):\033[0m ' >&2
-  read -t 5 -r response || response="y"
-
-  case "$response" in
-  n | N)
-    return 1
-    ;;
-  *)
-    if ! wait_for_vm_state "$CONTAINER_NAME" "RUNNING"; then
-      return 1
-    fi
-    if ! wait_until 30 3 "ict ip $CONTAINER_NAME"; then
-      return 1
-    fi
-    return 0
-    ;;
-  esac
-}
-
 add_ssh_config() {
   has_cmd ssh-config || return 0
 
@@ -273,7 +250,7 @@ add_ssh_config() {
 
 show_completion_info() {
   slog "Waiting for container to be ready. This could take a few minutes..."
-  if ! wait_for_ip "$CONTAINER_NAME"; then
+  if ! wait_for_ip ict "$CONTAINER_NAME"; then
     fail "Container did not get an IP in time. Try 'ict ip $CONTAINER_NAME' later."
     info "If you still can't connect, Use 'ict console $CONTAINER_NAME' to access it."
     info "If the container has no ip(ip a), try fixing with 'incus-network-fix'"
@@ -381,18 +358,7 @@ parse_args() {
 check_prerequisites() {
   incus_check
 
-  local missing=()
-
-  for cmd in openssl awk grep tee mktemp cat ssh systemctl; do
-    if ! has_cmd "$cmd"; then
-      missing+=("$cmd")
-    fi
-  done
-
-  if ((${#missing[@]})); then
-    fail "Missing required commands: ${missing[*]}"
-    exit 1
-  fi
+  check_cmds openssl awk grep tee mktemp cat ssh systemctl
 
   has_cmd pass || {
     info "pass command not found. Using pass is recommended."

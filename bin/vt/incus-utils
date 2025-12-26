@@ -24,17 +24,8 @@ incus_check() {
   fi
 }
 
-ivm_check_exists_prerequisites() {
-  local missing=()
-  for cmd in incus openssl curl wget tee mktemp; do
-    if ! has_cmd "$cmd"; then
-      missing+=("$cmd")
-    fi
-  done
-
-  if ((${#missing[@]})); then
-    die "Missing required commands: ${missing[*]}"
-  fi
+ivm_check_prerequisites() {
+  check_cmds incus openssl curl wget tee mktemp
 
   if ! incus info >/dev/null 2>&1; then
     die "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
@@ -137,28 +128,11 @@ ivm_show_ip() {
 }
 
 ict_check_prerequisites() {
-  local missing=()
-  for cmd in incus openssl curl wget tee mktemp; do
-    if ! has_cmd "$cmd"; then
-      missing+=("$cmd")
-    fi
-  done
-
-  if ((${#missing[@]})); then
-    die "Missing required commands: ${missing[*]}"
-  fi
+  check_cmds incus openssl curl wget tee mktemp ict-create ict
 
   if ! incus info >/dev/null 2>&1; then
     die "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
   fi
-
-  has_cmd ict-create || {
-    die "ict-create is not in PATH."
-  }
-
-  has_cmd ict || {
-    die "ict is not in PATH."
-  }
 }
 
 ict_list() {

@@ -61,7 +61,7 @@ EOF
 }
 
 check_prerequisites() {
-  ivm_check_exists_prerequisites
+  ivm_check_prerequisites
 
   if ! command -v lsusb >/dev/null; then
     fail "lsusb command not found. Please install usbutils package."

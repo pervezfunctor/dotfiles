@@ -222,8 +222,7 @@ gum_install() {
 }
 
 press_enter() {
-  echo "Press Enter to continue..."
-  read -r
+  read -t 5 -n 1 -s -r -p "Press Enter to continue..."
 }
 
 is_ip() {
@@ -373,12 +372,15 @@ reset_logs() {
 
 create_logs_dir() {
   mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
+  touch "$ILM_LOG_DIR"/.dotfiles-output.log "$ILM_LOG_DIR"/.dotfiles-error.log 2>/dev/null || true
+  ln -sf "$ILM_LOG_DIR"/.dotfiles-output.log "$ILM_LOG_DIR"/output.log 2>/dev/null || true
+  ln -sf "$ILM_LOG_DIR"/.dotfiles-error.log "$ILM_LOG_DIR"/error.log 2>/dev/null || true
 }
 
 with_logs() {
   create_logs_dir
-  main "$@" > >(tee ~/.dotfiles-output.log) 2> >(tee "$ILM_LOG_DIR"/.dotfiles-error.log >&2)
-  slog "Installation done! Look at $ILM_LOG_DIR/.dotfiles-error.log for any errors."
+  main "$@" > >(tee "$ILM_LOG_DIR"/.dotfiles-output.log) 2> >(tee "$ILM_LOG_DIR"/.dotfiles-error.log >&2)
+  slog "Installation done! Look at $ILM_LOG_DIR/error.log for any errors."
 }
 
 slog() {
@@ -489,9 +491,17 @@ check_cmd() {
 }
 
 check_cmds() {
+  local missing=()
   for cmd in "$@"; do
-    check_cmd "$cmd"
+    has_cmd "$cmd" || missing+=("$cmd")
   done
+
+  if ((${#missing[@]})); then
+    echo -e "\n\033[1;31m❌ Missing required commands\033[0m\n"
+    echo -e "\033[1;34m📦 Missing:\033[0m ${missing[*]}"
+    echo -e "\033[1;34m💡 Install them before running this script.\033[0m\n"
+    exit 1
+  fi
 }
 
 sclone() {
@@ -1628,7 +1638,7 @@ eval_brew() {
     eval "$(/opt/homebrew/bin/brew shellenv)"
     return 0
   elif has_cmd /home/linuxbrew/.linuxbrew/bin/brew; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"clear
     return 0
   fi
   return 1
@@ -1658,6 +1668,8 @@ environs() {
   export HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK=1
   export HOMEBREW_NO_AUTO_UPDATE=1
   eval_brew
+
+  has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
 
   # @TODO: containers sometimes don't have this locale
   # export LANG=en_US.UTF-8
@@ -1741,12 +1753,10 @@ bootstrap() {
   cd "$HOME" || die "could not cd to $HOME"
 
   reset_logs
-
-  has_cmd ~/.local/bin/mise && eval "$(~/.local/bin/mise activate bash)"
+  with_logs "$@"
 
   [ -n "$NOSUDO" ] || keep_sudo_running
 
-  with_logs "$@"
   source_installers
 
   slog "Installing ${*} ..."

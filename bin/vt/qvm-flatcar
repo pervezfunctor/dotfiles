@@ -65,9 +65,7 @@ parse_args() {
 }
 
 check_prerequisites() {
-  for cmd in curl jq qemu-system-x86_64 qemu-img; do
-    has_cmd "$cmd" || die "Install $cmd first"
-  done
+  check_cmds curl jq qemu-system-x86_64 qemu-img
 }
 
 download_flatcar_image() {

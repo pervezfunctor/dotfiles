@@ -7,7 +7,7 @@ source "$(dirname "$0")/vm-utils"
 
 set -euo pipefail -o errtrace
 
-vm_check_prerequisites
+virt_check_prerequisites
 
 SSH_CONFIG="$HOME/.ssh/config"
 MARKER="# Added by vm-ssh"

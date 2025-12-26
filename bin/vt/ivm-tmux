@@ -73,7 +73,7 @@ create_session() {
 }
 
 main() {
-  ivm_check_exists_prerequisites
+  ivm_check_prerequisites
   check_tmux
 
   local command="${1:-}"

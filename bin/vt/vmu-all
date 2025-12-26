@@ -104,19 +104,7 @@ EOF
 }
 
 main() {
-  # Check if vmu command exists
-  if ! has_cmd vmu; then
-    fail "vmu command is not available. Please ensure vmu is in your PATH."
-    exit 1
-  fi
-
-  # Check prerequisites for VMU
-  for cmd in virsh trash virt-cat vmu-create; do
-    if ! has_cmd "$cmd"; then
-      fail "Required command '$cmd' is not available."
-      exit 1
-    fi
-  done
+  check_cmds virsh trash virt-cat vmu-create vmu
 
   all_parse_args "$@"
 }

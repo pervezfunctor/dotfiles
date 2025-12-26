@@ -626,7 +626,7 @@ parse_args() {
   shift
 
   if [[ "$command" != "install" ]]; then
-    ivm_check_exists_prerequisites
+    ivm_check_prerequisites
   fi
 
   case "$command" in

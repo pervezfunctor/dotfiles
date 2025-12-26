@@ -813,36 +813,9 @@ launch_vm() {
   # fi
 }
 
-wait_for_ip() {
-  local vm_name="$1"
-
-  printf '\033[1;36m🔍 Wait for IP address? (Y/n):\033[0m ' >&2
-  read -t 5 -r response || response="y"
-
-  case "$response" in
-  n | N)
-    slog "Skipping IP wait. You can get the IP later with: virsh domifaddr $vm_name --source agent"
-    return 1
-    ;;
-  *)
-    if wait_until 30 3 bash -c "virsh domstate $vm_name | grep -q running"; then
-      slog "VM is running"
-    else
-      return 1
-    fi
-    if wait_until 60 3 vm_ip "$vm_name"; then
-      slog "VM has IP address"
-    else
-      return 1
-    fi
-    return 0
-    ;;
-  esac
-}
-
 show_completion_info() {
   slog "Waiting for VM to be ready. This could take a few minutes..."
-  if ! wait_for_ip "$VM_NAME"; then
+  if ! wait_for_ip "vm" "$VM_NAME"; then
     fail "VM did not get an IP in time. Try 'vm show-ip $VM_NAME' later."
     info "If you still can't connect, Use 'vm console $VM_NAME' to access it."
   fi
@@ -1002,8 +975,7 @@ echo_all_vars() {
   echo "  SEED_ISO: $SEED_ISO"
 
   echo "  Check the above variables for any issues before proceeding."
-  echo "  Press enter to continue..."
-  # read -r
+  press_enter
 }
 
 main() {

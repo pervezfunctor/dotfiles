@@ -14,15 +14,6 @@ cmd_vmu() {
   virsh --connect qemu:///session "$@"
 }
 
-check_prerequisites() {
-  for cmd in virsh trash virt-cat vmu-create; do
-    if ! has_cmd "$cmd"; then
-      fail "Required command '$cmd' is not available."
-      exit 1
-    fi
-  done
-}
-
 usage() {
   cat <<EOF
 Usage: $0 <command> [vm-name]
@@ -231,7 +222,7 @@ main() {
     exit 1
   fi
 
-  check_prerequisites
+  check_cmds virsh trash virt-cat vmu-create
 
   local command vm_name
   command="$1"

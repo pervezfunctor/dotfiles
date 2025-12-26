@@ -254,7 +254,7 @@ stow tmux
 
 On Linux, follow the instruction [here](https://code.visualstudio.com/docs/setup/linux).
 
-2. Look at [minimal-settings.json](extras/vscode/minimal-settings.json) and [common extensions](extras/vscode/extensions/common). At the least install remote extensions(and wsl on windows).
+2. Look at [minimal-settings.jsonc](extras/vscode/minimal-settings.jsonc) and [common extensions](extras/vscode/extensions/common). At the least install remote extensions(and wsl on windows).
 
    ```bash
    code --install-extension ms-vscode-remote.remote-containers

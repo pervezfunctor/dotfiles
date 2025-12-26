@@ -71,8 +71,7 @@ show_configuration() {
   printf '\033[1mResources:\033[0m      \033[0;33m%s vCPUs, %sMB RAM, %s disk\033[0m\n' "$VCPUS" "$MEMORY_MB" "$DISK_SIZE"
   printf '\033[1mNetwork Bridge:\033[0m \033[0;33m%s\033[0m\n' "$BRIDGE_IF"
   echo
-  # printf "\033[1;36mPress enter to continue...\033[0m\n"
-  # read -r
+  press_enter
 }
 
 configure_distribution() {
@@ -376,7 +375,7 @@ main() {
   fi
 
   slog "Starting Incus VM creation..."
-  ivm_check_exists_prerequisites
+  ivm_check_prerequisites
   parse_args "$@"
 
   if [[ -z "${SSH_KEY_PATH:-}" ]]; then
