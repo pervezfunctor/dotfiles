@@ -371,23 +371,22 @@ reset_logs() {
 }
 
 init_logs() {
-    # return if logs are already initialized
-    if [ "$ILM_LOGS_INITIALIZED" -eq 1 ]; then
-        return 0
-    fi
+  if [ "$ILM_LOGS_INITIALIZED" -eq 1 ]; then
+    return 0
+  fi
 
-    # initialize logs if not already initialized
-    if dir_exists "$ILM_LOG_DIR"; then
-        mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
-        touch "$ILM_LOG_DIR"/.dotfiles-output.log
-        touch "$ILM_LOG_DIR"/.dotfiles-error.log
-        touch "$ILM_LOG_DIR"/slog.log
-        touch "$ILM_LOG_DIR"/fail.log
-        touch "$ILM_LOG_DIR"/warn.log
-        touch "$ILM_LOG_DIR"/info.log
-        touch "$ILM_LOG_DIR"/success.log
-    fi
-    export ILM_LOGS_INITIALIZED=1
+  if dir_exists "$ILM_LOG_DIR"; then
+    mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
+
+    touch "$ILM_LOG_DIR"/.dotfiles-output.log
+    touch "$ILM_LOG_DIR"/.dotfiles-error.log
+    touch "$ILM_LOG_DIR"/slog.log
+    touch "$ILM_LOG_DIR"/fail.log
+    touch "$ILM_LOG_DIR"/warn.log
+    touch "$ILM_LOG_DIR"/info.log
+    touch "$ILM_LOG_DIR"/success.log
+  fi
+  ILM_LOGS_INITIALIZED=1
 }
 
 slog() {
@@ -1846,11 +1845,12 @@ select-multi() {
   fi
 }
 
-if [[ "$ILM_LOGS_INITIALIZED" != 1 ]]; then
+if [[ "$ILM_LOGS_INITIALIZED" -ne 1 ]]; then
   init_logs
 fi
 
 bootstrap() {
+  ILM_LOGS_INITIALIZED=0
   check_bash
   is_root_user && die "This script must not be run as root. DO NOT use sudo."
 

@@ -627,3 +627,8 @@ alias ivms="ivm start"
 alias ivmp="ivm stop"
 alias ivmi="ivm info"
 alias ivmt="ivm tmux"
+
+if has_cmd micro; then
+  export EDITOR="micro"
+  export VISUAL="micro"
+fi
