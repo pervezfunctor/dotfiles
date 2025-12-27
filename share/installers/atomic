@@ -1016,3 +1016,20 @@ enable_ssh_service() {
     warn "Cannot enable ssh service: no systemctl or rc-update found"
   fi
 }
+
+wallpapers_install() {
+  if ! has_cmd bsdtar; then
+    warn "bsdtar not installed, skipping wallpaper installation"
+    return 1
+  fi
+
+  if dir_exists ~/.local/share/ilm/wallpapers; then
+    return 0
+  fi
+
+  slog "Installing wallpapers"
+  smd ~/Pictures/Wallpapers
+  wget -qO- https://github.com/mylinuxforwork/wallpaper/archive/refs/heads/main.zip \
+  | bsdtar -xf - -C "$HOME/Pictures/Wallpapers" --strip-components=1
+  slog "Wallpapers installation done!"
+}
