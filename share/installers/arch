@@ -337,3 +337,12 @@ kde_binstall() {
   kde-slim_binstall
   sin discover mesa-utils
 }
+
+mango_install() {
+  slog "Installing mango packages"
+
+  core_install
+  parus -S --noconfirm --needed mangowc-git
+
+  slog "mango installation done!"
+}
