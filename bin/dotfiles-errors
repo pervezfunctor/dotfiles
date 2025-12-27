@@ -18,14 +18,22 @@ SEARCHES=(
   "No match"
 )
 
-for search in "${SEARCHES[@]}"; do
-  if grep -i "$search" <"${ILM_LOG_DIR}"/output.log; then
-    press_enter
-  fi
-done
+LOG_FILES=(
+  "$ILM_LOG_DIR"/.dotfiles-output.log
+  "$ILM_LOG_DIR"/.dotfiles-error.log
+  "$ILM_LOG_DIR"/slog.log
+  "$ILM_LOG_DIR"/fail.log
+  "$ILM_LOG_DIR"/warn.log
+  "$ILM_LOG_DIR"/info.log
+  "$ILM_LOG_DIR"/success.log
+)
 
 for search in "${SEARCHES[@]}"; do
-  if grep -i "$search" <"${ILM_LOG_DIR}"/error.log; then
-    press_enter
-  fi
+    for log_file in "${LOG_FILES[@]}"; do
+      if file_exists "$log_file"; then
+        if grep -i "$search" <"$log_file"; then
+        press_enter
+      fi
+    fi
+done
 done

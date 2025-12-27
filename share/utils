@@ -365,19 +365,29 @@ source_dotfile() {
 
 export ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ilm/logs"
 
-init_logs() {
+reset_logs() {
   slog "Removing old logs"
   rm -rf "$ILM_LOG_DIR" 2>/dev/null || true
+}
 
-  slog "Initializing logs"
-  mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
-  touch "$ILM_LOG_DIR"/.dotfiles-output.log
-  touch "$ILM_LOG_DIR"/.dotfiles-error.log
-  touch "$ILM_LOG_DIR"/slog.log
-  touch "$ILM_LOG_DIR"/fail.log
-  touch "$ILM_LOG_DIR"/warn.log
-  touch "$ILM_LOG_DIR"/info.log
-  touch "$ILM_LOG_DIR"/success.log
+init_logs() {
+    # return if logs are already initialized
+    if [ "$ILM_LOGS_INITIALIZED" -eq 1 ]; then
+        return 0
+    fi
+
+    # initialize logs if not already initialized
+    if dir_exists "$ILM_LOG_DIR"; then
+        mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
+        touch "$ILM_LOG_DIR"/.dotfiles-output.log
+        touch "$ILM_LOG_DIR"/.dotfiles-error.log
+        touch "$ILM_LOG_DIR"/slog.log
+        touch "$ILM_LOG_DIR"/fail.log
+        touch "$ILM_LOG_DIR"/warn.log
+        touch "$ILM_LOG_DIR"/info.log
+        touch "$ILM_LOG_DIR"/success.log
+    fi
+    export ILM_LOGS_INITIALIZED=1
 }
 
 slog() {
@@ -1736,30 +1746,6 @@ source_installers() {
   fi
 }
 
-bootstrap() {
-  check_bash
-  is_root_user && die "This script must not be run as root. DO NOT use sudo."
-
-  environs
-
-  curdir=$(pwd)
-
-  slog "Bootstrapping, switching to directory $HOME"
-  cd "$HOME" || die "could not cd to $HOME"
-
-  init_logs
-
-  [ -n "$NOSUDO" ] || keep_sudo_running
-
-  source_installers
-
-  slog "Installing ${*} ..."
-  main "$@" > >(tee "$ILM_LOG_DIR"/.dotfiles-output.log) 2> >(tee "$ILM_LOG_DIR"/.dotfiles-error.log >&2)
-  # shellcheck disable=SC2164
-  cd "$curdir" || cd
-  slog "Installation done! Look at $ILM_LOG_DIR/error.log for any errors."
-}
-
 ubuntu_version() {
   is_ubuntu || return 1
   [[ -n "${VERSION_ID}" ]] || return 1
@@ -1858,4 +1844,33 @@ select-multi() {
     # Print selected items, one per line
     printf '%s\n' "${selected_items[@]}"
   fi
+}
+
+if [[ "$ILM_LOGS_INITIALIZED" != 1 ]]; then
+  init_logs
+fi
+
+bootstrap() {
+  check_bash
+  is_root_user && die "This script must not be run as root. DO NOT use sudo."
+
+  environs
+
+  curdir=$(pwd)
+
+  reset_logs
+  init_logs
+
+  slog "Bootstrapping, switching to directory $HOME"
+  cd "$HOME" || die "could not cd to $HOME"
+
+  [ -n "$NOSUDO" ] || keep_sudo_running
+
+  source_installers
+
+  slog "Installing ${*} ..."
+  main "$@" > >(tee "$ILM_LOG_DIR"/.dotfiles-output.log) 2> >(tee "$ILM_LOG_DIR"/.dotfiles-error.log >&2)
+  # shellcheck disable=SC2164
+  cd "$curdir" || cd
+  slog "Installation done! Look at $ILM_LOG_DIR/error.log for any errors."
 }
