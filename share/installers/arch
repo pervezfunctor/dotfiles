@@ -264,14 +264,18 @@ sin() {
   sudo pacman -S --quiet --noconfirm --needed "$@"
 }
 
+firewall_setup() {
+  si nftables firewalld
+  sudo systemctl enable --now firewalld
+}
+
 desktop-core_install() {
   sin firefox kitty gnome-keyring wl-clipboard libsecret papirus-icon-theme \
-    udisks2 udiskie gvfs flatpak qt6-multimedia-gstreamer pipewire-jack
+    udisks2 udiskie gvfs flatpak qt6-multimedia-gstreamer pipewire-jack \
+    ttf-jetbrains-mono-nerd otf-font-awesome
 
-  jetbrains-mono_install
-  font-awesome_install
-
-  # xorg-server-xwayland
+  # nftables_install
+  # firewall_setup
   # mesa vulkan-intel vulkan-radeon vulkan-mesa-layer
 }
 
@@ -287,7 +291,7 @@ wm_install() {
     tumbler greetd
 }
 
-hyprland_install() {
+hyprland_binstall() {
   slog "Installing hyprland packages"
 
   wm_install
@@ -295,8 +299,6 @@ hyprland_install() {
   sin hyprland hyprcursor hypridle hyprshot hyprlock hyprpolkitagent \
     hyprsunset hyprutils hyprwayland-scanner nwg-dock-hyprland hyprpaper \
     xdg-desktop-portal-hyprland hyprland-qt-support
-
-  aur hyprpanel
 
   slog "hyprland installation done!"
 }
@@ -308,11 +310,6 @@ sway_binstall() {
   sin sway swaybg swayidle swaylock polkit-kde-agent xdg-desktop-portal-kde
 
   slog "sway installation done!"
-}
-
-firewall_setup() {
-  si nftables firewalld
-  sudo systemctl enable --now firewalld
 }
 
 pm_install() {
