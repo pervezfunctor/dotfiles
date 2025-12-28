@@ -238,9 +238,9 @@ configure_arch() {
 }
 
 configure_ubuntu() {
-  RELEASE=${RELEASE:="plucky"}
+  RELEASE=${RELEASE:="questing"}
   IMG_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/${RELEASE}-server-cloudimg-amd64.img"
-  CHECKSUM_URL="https://cloud-images.ubuntu.com/questing/current/SHA256SUMS"
+  CHECKSUM_URL="https://cloud-images.ubuntu.com/${RELEASE}/current/SHA256SUMS"
   OS_VARIANT="ubuntu25.10"
 }
 
@@ -428,7 +428,7 @@ verify_checksum() {
 
   # Remove PGP signature from the checksum file
   grep -vE '^(-----BEGIN|-----END)' "$sumfile" >"${sumfile}.clean"
-  mv "${sumfile}.clean" "$sumfile"
+  mv -f "${sumfile}.clean" "$sumfile"
 
   local hash=""
 
