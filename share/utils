@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+if [[ -z "${ILM_UTILS_SOURCED:-}" ]]; then
+    ILM_LOGS_INITIALIZED=0
+else
+  return 0
+fi
+
 export DOT_DIR=${USE_DOT_DIR:-$HOME/.ilm}
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export ILM_BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
@@ -364,7 +370,6 @@ source_dotfile() {
 }
 
 export ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ilm/logs"
-export ILM_LOGS_INITIALIZED=0
 
 reset_logs() {
   slog "Removing old logs"
@@ -372,12 +377,11 @@ reset_logs() {
 }
 
 init_logs() {
-  if [ "$ILM_LOGS_INITIALIZED" -eq 1 ]; then
+  if [[ "${ILM_LOGS_INITIALIZED:-}" == "1" ]]; then
     return 0
   fi
 
-  if dir_exists "$ILM_LOG_DIR"; then
-    mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
+  mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
 
     touch "$ILM_LOG_DIR"/.dotfiles-output.log
     touch "$ILM_LOG_DIR"/.dotfiles-error.log
@@ -386,7 +390,6 @@ init_logs() {
     touch "$ILM_LOG_DIR"/warn.log
     touch "$ILM_LOG_DIR"/info.log
     touch "$ILM_LOG_DIR"/success.log
-  fi
   ILM_LOGS_INITIALIZED=1
 }
 
@@ -1846,7 +1849,7 @@ select-multi() {
   fi
 }
 
-if [[ "$ILM_LOGS_INITIALIZED" -ne 1 ]]; then
+if [[ -z "${ILM_LOGS_INITIALIZED:-}" ]] || [[ "$ILM_LOGS_INITIALIZED" != "1" ]]; then
   init_logs
 fi
 
@@ -1875,3 +1878,5 @@ bootstrap() {
   cd "$curdir" || cd
   slog "Installation done! Look at $ILM_LOG_DIR/error.log for any errors."
 }
+
+ILM_UTILS_SOURCED=1
