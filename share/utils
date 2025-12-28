@@ -281,7 +281,8 @@ gum_install() {
 }
 
 press_enter() {
-  read -t 5 -n 1 -s -r -p "Press Enter to continue..."
+  read -t 5 -n 1 -s -r -p "Press Enter to continue..." || true
+  echo
 }
 
 is_ip() {
