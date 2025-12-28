@@ -1,17 +1,70 @@
 #!/usr/bin/env bash
 
-if [[ -z "${ILM_UTILS_SOURCED:-}" ]]; then
-    ILM_LOGS_INITIALIZED=0
-else
-  return 0
-fi
-
 export DOT_DIR=${USE_DOT_DIR:-$HOME/.ilm}
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export ILM_BASE_URL="https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
 export ILM_SETUP_URL="${ILM_BASE_URL}/share/installers/setup"
 
 export BOXES_DIR=${USE_BOXES_DIR:-$HOME/.boxes}
+export ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ilm/logs"
+
+fn_exists() {
+  declare -f "$1" &>/dev/null
+}
+
+####################
+###    LOGGING   ###
+####################
+
+fn_exists init_logs && fn_exists reset_logs && return 0
+
+reset_logs() {
+  slog "Removing old logs"
+  rm -rf "$ILM_LOG_DIR" 2>/dev/null || true
+}
+
+init_logs() {
+  mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
+
+    touch "$ILM_LOG_DIR"/.dotfiles-output.log
+    touch "$ILM_LOG_DIR"/.dotfiles-error.log
+    touch "$ILM_LOG_DIR"/slog.log
+    touch "$ILM_LOG_DIR"/fail.log
+    touch "$ILM_LOG_DIR"/warn.log
+    touch "$ILM_LOG_DIR"/info.log
+    touch "$ILM_LOG_DIR"/success.log
+}
+
+slog() {
+  printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/slog.log
+  printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*"
+}
+
+fail() {
+  printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/fail.log
+  printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >&2
+}
+
+warn() {
+  printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/warn.log
+  printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >&2
+}
+
+success() {
+  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/success.log
+  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*"
+}
+
+info() {
+  printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/info.log
+  printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*"
+}
+
+init_logs
+
+######################
+#### LOGGING ENDS ####
+######################
 
 is_empty() {
   [[ -z "$1" ]]
@@ -367,55 +420,6 @@ source_dotfile() {
     slog "Dotfiles directory not found, sourcing from remote: $ILM_BASE_URL/$1"
     source_curl "$ILM_BASE_URL/$1"
   fi
-}
-
-export ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ilm/logs"
-
-reset_logs() {
-  slog "Removing old logs"
-  rm -rf "$ILM_LOG_DIR" 2>/dev/null || true
-}
-
-init_logs() {
-  if [[ "${ILM_LOGS_INITIALIZED:-}" == "1" ]]; then
-    return 0
-  fi
-
-  mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
-
-    touch "$ILM_LOG_DIR"/.dotfiles-output.log
-    touch "$ILM_LOG_DIR"/.dotfiles-error.log
-    touch "$ILM_LOG_DIR"/slog.log
-    touch "$ILM_LOG_DIR"/fail.log
-    touch "$ILM_LOG_DIR"/warn.log
-    touch "$ILM_LOG_DIR"/info.log
-    touch "$ILM_LOG_DIR"/success.log
-  ILM_LOGS_INITIALIZED=1
-}
-
-slog() {
-  printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/slog.log
-  printf '\r\033[2K  \033[00;34mINFO\033[0m %s\n' "$*"
-}
-
-fail() {
-  printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/fail.log
-  printf '\r\033[2K  \033[0;31mFAIL\033[0m %s\n' "$*" >&2
-}
-
-warn() {
-  printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/warn.log
-  printf '\r\033[2K  \033[00;33mWARN\033[0m %s\n' "$*" >&2
-}
-
-success() {
-  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/success.log
-  printf '\r\033[2K  \033[00;32mOK\033[0m %s\n' "$*"
-}
-
-info() {
-  printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*" >>"$ILM_LOG_DIR"/info.log
-  printf '\r\033[2K  \033[00;36mINFO\033[0m %s\n' "$*"
 }
 
 die() {
@@ -1205,12 +1209,6 @@ is_desktop() {
   [[ -n "$XDG_CURRENT_DESKTOP" ]] || [[ -n "$DESKTOP_SESSION" ]] || [[ "$XDG_SESSION_TYPE" == "wayland" ]]
 }
 
-fn_exists() {
-  # declare -f "$1" >/dev/null 2>&1
-
-  [[ $(type -t "$1") == function ]]
-}
-
 yes_or_no() {
   local prompt="$1"
   local default="${2:-n}"
@@ -1849,12 +1847,7 @@ select-multi() {
   fi
 }
 
-if [[ -z "${ILM_LOGS_INITIALIZED:-}" ]] || [[ "$ILM_LOGS_INITIALIZED" != "1" ]]; then
-  init_logs
-fi
-
 bootstrap() {
-  ILM_LOGS_INITIALIZED=0
   check_bash
   is_root_user && die "This script must not be run as root. DO NOT use sudo."
 

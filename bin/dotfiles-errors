@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ilm/logs"
+ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state/ilm/logs}"
 
 # shellcheck disable=SC1091
 source "$DOT_DIR/share/utils"
@@ -21,11 +21,11 @@ SEARCHES=(
 LOG_FILES=(
   "$ILM_LOG_DIR"/.dotfiles-output.log
   "$ILM_LOG_DIR"/.dotfiles-error.log
-  "$ILM_LOG_DIR"/slog.log
-  "$ILM_LOG_DIR"/fail.log
-  "$ILM_LOG_DIR"/warn.log
-  "$ILM_LOG_DIR"/info.log
-  "$ILM_LOG_DIR"/success.log
+  # "$ILM_LOG_DIR"/slog.log
+  # "$ILM_LOG_DIR"/fail.log
+  # "$ILM_LOG_DIR"/warn.log
+  # "$ILM_LOG_DIR"/info.log
+  # "$ILM_LOG_DIR"/success.log
 )
 
 for search in "${SEARCHES[@]}"; do
