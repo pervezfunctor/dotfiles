@@ -2,20 +2,17 @@
 
 set -euo pipefail -o errtrace
 
-# Error handling function
 error_exit() {
   echo "ERROR: $1" >&2
   exit 1
 }
 
-# Check if running as root
 check_root() {
   if [ "$(id -u)" -ne 0 ]; then
     error_exit "This script must be run as root"
   fi
 }
 
-# Check if required tools are installed
 check_requirements() {
   local required_tools=("whiptail" "sgdisk" "mkfs.fat" "mkfs.btrfs" "pacstrap" "genfstab" "arch-chroot")
 
@@ -25,22 +22,6 @@ check_requirements() {
     fi
   done
 }
-
-# NIC_NAME="$1"
-
-# if [ -z "$NIC_NAME" ]; then
-#   echo "Usage: $0 <interface-name>"
-#   exit 1
-# fi
-
-# IP_ADDR=$(ip -4 addr show "$NIC_NAME" | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-
-# if [ -n "$IP_ADDR" ]; then
-#   echo "$IP_ADDR"
-# else
-#   echo "No IPv4 address found for interface: $NIC_NAME"
-#   exit 2
-# fi
 
 detect_boot_mode() {
   if [ -f /sys/firmware/efi/fw_platform_size ]; then
@@ -85,11 +66,8 @@ check_time_sync() {
 }
 
 select_disk() {
-  # Get list of available disks
   local disks=()
   local disk_options=""
-
-  # Find available disks (not partitions)
   while IFS= read -r disk; do
     if [[ -b "$disk" && ! "$disk" == *[0-9] ]]; then
       disk_size=$(lsblk -bno SIZE "$disk" 2>/dev/null | head -n1)
@@ -103,16 +81,12 @@ select_disk() {
     echo "No disks found!"
     exit 1
   fi
-
-  # Show disk selection dialog
   DISK=$(whiptail --title "Select Installation Disk" --menu "Choose the disk to install Arch Linux on:" 15 60 6 "${disks[@]}" 3>&1 1>&2 2>&3)
 
   if [ -z "$DISK" ]; then
     echo "No disk selected. Aborting."
     exit 1
   fi
-
-  # Confirm disk selection
   if ! whiptail --yesno "You selected $DISK. This will COMPLETELY WIPE this disk. Continue?" 10 60; then
     echo "Disk selection cancelled. Aborting."
     exit 1
@@ -132,7 +106,7 @@ validate_input() {
 }
 
 take_input() {
-  # Interactive Prompts with validation
+  #
   while true; do
     HOSTNAME=$(whiptail --inputbox "Enter hostname:" 8 40 3>&1 1>&2 2>&3)
     if validate_input "$HOSTNAME" '^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$' "Invalid hostname. Please use only letters, numbers, and hyphens."; then
@@ -158,7 +132,7 @@ take_input() {
 }
 
 partition_disk() {
-  # DISK should already be set by select_disk()
+
   if [ -z "$DISK" ]; then
     echo "Error: No disk selected. This should not happen."
     exit 1
@@ -166,34 +140,26 @@ partition_disk() {
 
   echo "Partitioning disk: $DISK"
 
-  # Ensure disk is not mounted
   umount "$DISK"* 2>/dev/null || true
 
-  # Clear any existing partition tables
   sgdisk --zap-all "$DISK" || true
   wipefs -a "$DISK" || true
   sleep 1
 
-  # Create new GPT partition table
   sgdisk -og "$DISK"
 
-  # Create EFI System Partition (512MB)
   sgdisk -n 1:0:+512M -t 1:ef00 "$DISK"
 
-  # Create swap partition (8GB or based on available memory)
   MEMORY_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
   MEMORY_GB=$((MEMORY_KB / 1024 / 1024))
   SWAP_SIZE=$((MEMORY_GB < 8 ? 8 : MEMORY_GB))
   sgdisk -n 2:0:+${SWAP_SIZE}G -t 2:8200 "$DISK"
 
-  # Create root partition (remaining space)
   sgdisk -n 3:0:0 -t 3:8300 "$DISK"
 
-  # Inform kernel of partition changes
   partprobe "$DISK"
   sleep 2
 
-  # Determine partition names based on disk type
   if [[ "$DISK" == *"nvme"* ]]; then
     EFI="${DISK}p1"
     SWAP="${DISK}p2"
@@ -213,16 +179,13 @@ partition_disk() {
 format_partitions() {
   echo "Formatting partitions..."
 
-  # Format EFI partition
   echo "Formatting EFI partition ($EFI)..."
   mkfs.fat -F32 "$EFI" || error_exit "Failed to format EFI partition"
 
-  # Format and enable swap
   echo "Setting up swap partition ($SWAP)..."
   mkswap "$SWAP" || error_exit "Failed to format swap partition"
   swapon "$SWAP" || error_exit "Failed to enable swap"
 
-  # Format root partition with Btrfs
   echo "Formatting root partition ($ROOT) with Btrfs..."
   mkfs.btrfs -f "$ROOT" || error_exit "Failed to format root partition"
 
@@ -232,13 +195,11 @@ format_partitions() {
 mount_subvolumes() {
   echo "Creating Btrfs filesystem and subvolumes..."
 
-  # Mount the root partition temporarily
   if ! mount "$ROOT" /mnt; then
     echo "Failed to mount root partition"
     exit 1
   fi
 
-  # Create comprehensive subvolume layout similar to Tumbleweed
   echo "Creating subvolumes..."
   btrfs subvolume create /mnt/@
   btrfs subvolume create /mnt/@home
@@ -253,22 +214,17 @@ mount_subvolumes() {
   btrfs subvolume create /mnt/@docker
   btrfs subvolume create /mnt/@libvirt
 
-  # Set default subvolume to @
   btrfs subvolume set-default "$(btrfs subvolume list /mnt | grep "path @$" | awk '{print $2}')" /mnt
 
-  # Unmount to remount with proper options
   umount /mnt
 
-  # Mount root subvolume with optimal options
   if ! mount -o noatime,compress=zstd:3,space_cache=v2,autodefrag,subvol=@ "$ROOT" /mnt; then
     echo "Failed to mount root subvolume"
     exit 1
   fi
 
-  # Create mount points
   mkdir -p /mnt/{boot/efi,home,.snapshots,var/log,var/cache,var/tmp,tmp,opt,srv,nix,docker,libvirt}
 
-  # Mount subvolumes with appropriate options
   mount -o noatime,compress=zstd:3,space_cache=v2,autodefrag,subvol=@home "$ROOT" /mnt/home
   mount -o noatime,compress=zstd:3,space_cache=v2,autodefrag,subvol=@snapshots "$ROOT" /mnt/.snapshots
   mount -o noatime,compress=zstd:3,space_cache=v2,autodefrag,subvol=@var_log "$ROOT" /mnt/var/log
@@ -281,7 +237,6 @@ mount_subvolumes() {
   mount -o noatime,compress=zstd:3,space_cache=v2,autodefrag,subvol=@docker "$ROOT" /mnt/docker
   mount -o noatime,compress=zstd:3,space_cache=v2,autodefrag,subvol=@libvirt "$ROOT" /mnt/libvirt
 
-  # Mount EFI partition
   if ! mount "$EFI" /mnt/boot/efi; then
     echo "Failed to mount EFI partition"
     exit 1
@@ -302,12 +257,10 @@ optimize_mirrors() {
 base_system_install() {
   echo "Installing base system..."
 
-  # Optimize mirrors before installation
   optimize_mirrors
 
-  # Install base system following Arch Linux guide recommendations
   if ! pacstrap /mnt base base-devel linux linux-firmware linux-headers \
-    btrfs-progs grub efibootmgr sudo vim nano \
+    btrfs-progs grub efibootmgr sudo vim nano micro \
     networkmanager openssh reflector \
     pipewire wireplumber pipewire-pulse pipewire-alsa \
     bluez bluez-utils blueman \
@@ -329,7 +282,6 @@ generate_fstab() {
   echo "Generating fstab..."
   genfstab -U /mnt >>/mnt/etc/fstab
 
-  # Add tmpfs for /tmp
   echo "tmpfs /tmp tmpfs defaults,noatime,mode=1777 0 0" >>/mnt/etc/fstab
 
   echo "fstab generated successfully"
@@ -338,11 +290,9 @@ generate_fstab() {
 configure_system() {
   echo "Configuring system..."
 
-  # Create a temporary script to run inside arch-chroot
   cat >/tmp/config_script.sh <<'EOF'
 set -e
 
-# Timezone and Locale
 echo "Setting timezone and locale..."
 ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 hwclock --systohc
@@ -350,7 +300,6 @@ sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
 locale-gen
 echo "LANG=en_US.UTF-8" > /etc/locale.conf
 
-# Hostname configuration
 echo "$HOSTNAME" > /etc/hostname
 cat > /etc/hosts <<EOL
 127.0.0.1   localhost
@@ -358,28 +307,23 @@ cat > /etc/hosts <<EOL
 127.0.1.1   $HOSTNAME.localdomain $HOSTNAME
 EOL
 
-# Root password
 echo "root:$PASSWORD" | chpasswd
 
-# User configuration
 echo "Creating user: $USERNAME"
 useradd -m -G wheel,storage,power,network,video,audio,optical -s /bin/bash "$USERNAME"
 echo "$USERNAME:$PASSWORD" | chpasswd
 sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
 
-# Enable services
 echo "Enabling services..."
 systemctl enable NetworkManager
 systemctl enable bluetooth
 systemctl enable sshd
 
-# Btrfs maintenance
 echo "Configuring Btrfs maintenance..."
 systemctl enable btrfs-scrub@-.timer
 systemctl enable btrfs-scrub@home.timer
 systemctl enable btrfs-scrub@-.timer
 
-# Create pacman hook for automatic mirror updates
 mkdir -p /etc/pacman.d/hooks
 cat > /etc/pacman.d/hooks/mirrorupgrade.hook <<EOL
 [Trigger]
@@ -393,35 +337,28 @@ When = PostTransaction
 Exec = /usr/bin/reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 EOL
 
-# GRUB installation
 echo "Installing GRUB..."
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --recheck
 
-# Generate GRUB configuration
 echo "Generating GRUB configuration..."
 grub-mkconfig -o /boot/grub/grub.cfg
 
-# Create user directories
 echo "Creating user directories..."
 su - "$USERNAME" -c "xdg-user-dirs-update"
 
-# Enable parallel downloads in pacman
 sed -i 's/^#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf
 
-# Enable color in pacman
 sed -i 's/^#Color/Color/' /etc/pacman.conf
 
 echo "System configuration completed successfully"
 EOF
 
-  # Copy the script to the mounted system and execute it
   cp /tmp/config_script.sh /mnt/
   if ! arch-chroot /mnt /bin/bash /config_script.sh; then
     echo "System configuration failed"
     exit 1
   fi
 
-  # Clean up
   rm -f /tmp/config_script.sh /mnt/config_script.sh
 
   whiptail --msgbox "Installation Complete. The system will reboot in 5 seconds." 10 50
@@ -443,14 +380,12 @@ main() {
   echo "With enhanced Btrfs subvolume layout similar to openSUSE Tumbleweed"
   echo ""
 
-  # Initial checks
   check_root
   check_requirements
 
   echo "Setting font for better readability..."
   setfont ter-132b || echo "Font setting failed, continuing with default font"
 
-  # Check boot mode
   echo "Checking boot mode..."
   if [ "$(detect_boot_mode)" = "UEFI" ]; then
     echo "✓ UEFI boot detected"
@@ -458,16 +393,12 @@ main() {
     error_exit "✗ BIOS boot detected. This script only supports UEFI installations."
   fi
 
-  # Check internet connection
   check_internet 1.1.1.1 || error_exit "Internet connection is required for installation"
 
-  # Check time synchronization
   check_time_sync
 
-  # Get user input
   take_input
 
-  # Installation steps
   echo ""
   echo "=== Starting Installation ==="
 
@@ -483,5 +414,4 @@ main() {
   echo "=== Installation Complete ==="
 }
 
-# Run main function
 main "$@"
