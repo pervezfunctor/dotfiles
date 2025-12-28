@@ -364,6 +364,7 @@ source_dotfile() {
 }
 
 export ILM_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ilm/logs"
+export ILM_LOGS_INITIALIZED=0
 
 reset_logs() {
   slog "Removing old logs"
