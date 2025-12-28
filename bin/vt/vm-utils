@@ -228,7 +228,7 @@ libvirt_iso_pool_create() {
 }
 
 configure_arch() {
-  if [[ -n "$RELEASE" && "$RELEASE" != "latest" ]]; then
+  if [[ -n "${RELEASE:-}" && "${RELEASE:-}" != "latest" ]]; then
     warn "Arch Linux only supports latest release. Ignoring RELEASE='$RELEASE'"
   fi
   RELEASE="latest"
@@ -253,7 +253,7 @@ configure_debian() {
 }
 
 configure_fedora() {
-  if [[ -z "$RELEASE" && "$RELEASE" != "43" ]]; then
+  if [[ -z "${RELEASE:-}" && "${RELEASE:-}" != "43" ]]; then
     warn "Fedora only supports release 43. Installing Fedora 43."
   fi
   RELEASE=43
@@ -263,7 +263,7 @@ configure_fedora() {
 }
 
 configure_tw() {
-  if [[ -n "$RELEASE" && "$RELEASE" != "latest" ]]; then
+  if [[ -n "${RELEASE:-}" && "${RELEASE:-}" != "latest" ]]; then
     warn "Tumbleweed only supports latest release. Ignoring RELEASE='$RELEASE'"
   fi
   RELEASE="latest"

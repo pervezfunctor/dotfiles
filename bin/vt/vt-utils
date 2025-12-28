@@ -71,7 +71,7 @@ generate_password_for() {
   local host
   host=$(get_hostname)
 
-  try_value pass generate "$(host)/${vt_name}" 12 && return 0
+  try_value pass generate "${host}/${vt_name}" 12 && return 0
   try_value pwgen 12 1 && return 0
   try_value openssl rand -base64 12 && return 0
 
