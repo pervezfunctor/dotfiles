@@ -220,7 +220,7 @@ nftables_install() {
 vm_install() {
   slog "Installing vm"
 
-  iptales_nft_install
+  iptables_nft_install
 
   si libvirt qemu-base virt-install bridge-utils dnsmasq libosinfo openssl \
     edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs jq \
