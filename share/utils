@@ -26,13 +26,13 @@ reset_logs() {
 init_logs() {
   mkdir -p "$ILM_LOG_DIR" 2>/dev/null || true
 
-    touch "$ILM_LOG_DIR"/.dotfiles-output.log
-    touch "$ILM_LOG_DIR"/.dotfiles-error.log
-    touch "$ILM_LOG_DIR"/slog.log
-    touch "$ILM_LOG_DIR"/fail.log
-    touch "$ILM_LOG_DIR"/warn.log
-    touch "$ILM_LOG_DIR"/info.log
-    touch "$ILM_LOG_DIR"/success.log
+  touch "$ILM_LOG_DIR"/.dotfiles-output.log
+  touch "$ILM_LOG_DIR"/.dotfiles-error.log
+  touch "$ILM_LOG_DIR"/slog.log
+  touch "$ILM_LOG_DIR"/fail.log
+  touch "$ILM_LOG_DIR"/warn.log
+  touch "$ILM_LOG_DIR"/info.log
+  touch "$ILM_LOG_DIR"/success.log
 }
 
 slog() {
@@ -1845,6 +1845,21 @@ select-multi() {
     # Print selected items, one per line
     printf '%s\n' "${selected_items[@]}"
   fi
+}
+
+get_hostname() {
+  local host=""
+  if has_cmd hostnamectl; then
+    host=$(hostnamectl hostname)
+  elif has_cmd hostname; then
+    host=$(hostname)
+  elif has_cmd uname; then
+    host=$(uname -n)
+  else
+    host=$(cat /etc/hostname 2>/dev/null)
+  fi
+
+  echo "$host"
 }
 
 bootstrap() {
