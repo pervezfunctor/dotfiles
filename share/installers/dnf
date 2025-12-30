@@ -393,24 +393,31 @@ sin() {
 }
 
 desktop-core_install() {
-  sin firefox wl-clipboard thunar thunar-archive-plugin gnome-keyring-pam \
+  sin wl-clipboard thunar thunar-archive-plugin gnome-keyring-pam \
     gnome-keyring libsecret udisks2 gvfs udiskie flatpak
+
+  flatub_install
+  fpi app.zen_browser.zen
 
   jetbrains-mono_install
   font-awesome_install
+}
+
+wm-tools_install() {
+  si waybar rofi rofi-wayland rofi-themes wlogout mako gnome-themes-extra greetd \
+    network-manager-applet pavucontrol playerctl wlsunset
+
+  # swaync SwayNotificationCenter
 }
 
 wm_install() {
   slog "Installing tiling common packages"
 
   desktop-core_install
+  wm-tools_install
 
-  sin waybar pavucontrol network-manager-applet blueman gnome-themes-extra \
-    greetd playerctl wlsunset rofi-wayland rofi-themes SwayNotificationCenter \
-    mako swaync network-manager-applet
-
-  sin lxqt-policykit imv mpv qt6-qtsvg xdg-desktop-portal-gtk wlogout \
-    qt6-qtquickcontrols2
+  sin xdg-desktop-portal-gtk lxqt-policykit imv mpv grim slurp thunar thunar-archive-plugin \
+    qt6-qtsvg qt6-qtquickcontrols2 blueman fonts-noto-mono fonts-noto-color-emoji
 
   slog "Tiling common packages installation done!"
 }

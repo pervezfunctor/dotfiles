@@ -436,26 +436,36 @@ pm_install() {
 }
 
 sin() {
-  sudo apt install --no-install-recommends -y -qq "$@"
+  for pkg in "$@"; do
+    if apt-cache show "$pkg" >/dev/null 2>&1; then
+      sudo apt install --no-install-recommends -y -qq "$pkg"
+    else
+      warn "Package $pkg not found in apt repository"
+    fi
+  done
 }
 
 desktop-core_install() {
-  sin kitty wl-clipboard gnome-keyring libsecret-tools imagemagick \
-    papirus-icon-theme bibata-cursor-theme udisks2 udiskie gvfs flatpak
+  sin kitty wl-clipboard gnome-keyring libsecret-tools imagemagick libgl1-mesa \
+    papirus-icon-theme bibata-cursor-theme udisks2 udiskie gvfs flatpak libgles2-mesa
 
-  si firefox-esr firefox libgles2-mesa libgl1-mesa
+  flatub_install
+  fpi app.zen_browser.zen
 
   jetbrains-mono_install
   font-awesome_install
 }
 
+wm-tools_install() {
+  sin waybar rofi wofi mako dunst wlogout pavucontrol
+}
+
 wm_install() {
   desktop-core_install
+  wm-tools_install
 
-  sin grim slurp wlogout rofi wofi mako waybar pavucontrol
-
-  sin thunar thunar-archive-plugin xdg-desktop-portal cliphist mpv fonts-noto \
-    fonts-noto-mono fonts-noto-color-emoji
+  sin grim slurp cliphist mpv thunar thunar-archive-plugin xdg-desktop-portal \
+    fonts-noto fonts-noto-mono fonts-noto-color-emoji
 }
 
 sway_binstall() {

@@ -237,19 +237,19 @@ distrobox_install() {
 }
 
 desktop-core_install() {
-  sin firefox kitty wl-clipboard gnome-keyring libsecret-tools \
+  sin kitty wl-clipboard gnome-keyring libsecret-tools \
     papirus-icon-theme udisks2 udiskie gvfs flatpak
+
+  flatub_install
+  fpi app.zen_browser.zen
 
   jetbrains-mono_install
   font-awesome_install
 }
 
-wm_install() {
-  desktop-core_install
-
-  sin curl grep aaa_base bash-completion tar pipewire wget imv jq \
-    xdg-utils sudo xdg-desktop-portal xdg-desktop-portal-wlr git gzip bzip2 \
-    jc adwaita-icon-theme clipman bluez qt5ct qt6ct grim cliphist mpv \
+wm-tools_install() {
+  sin aaa_base bash-completion pipewire imv xdg-utils sudo gzip bzip2 jc \
+    adwaita-icon-theme clipman bluez qt5ct qt6ct grim cliphist mpv \
     dejavu-fonts glibc-locale less google-roboto-fonts ghostscript-fonts-std \
     noto-sans-fonts google-droid-fonts google-opensans-fonts playerctl pamixer \
     gtk3-metatheme-adwaita noto-coloremoji-fonts noto-emoji-fonts mpris-ctl \
@@ -257,6 +257,15 @@ wm_install() {
     bluemoon symbols-only-nerd-fonts adobe-sourcesanspro-fonts brightnessctl \
     adobe-sourceserifpro-fonts cantarell-fonts tlp google-carlito-fonts \
     ghostscript-fonts-other
+
+}
+wm_install() {
+  desktop-core_install
+  wm-tools_install
+
+  sin xdg-desktop-portal xdg-desktop-portal-wlr adwaita-icon-theme clipman \
+    bluez qt5ct qt6ct grim cliphist mpv playerctl pamixer mpris-ctl slurp \
+    bluemoon symbols-only-nerd-fonts adobe-sourcesanspro-fonts brightnessctl
 }
 
 sway_binstall() {
@@ -269,13 +278,6 @@ sway_binstall() {
   sin swaylock swaybg swayidle swaynag waybar greetd rofi-wayland \
     SwayNotificationCenter SwayNotificationCenter-bash-completion sway-marker \
     SwayNotificationCenter-zsh-completion polkit-gnome
-
-  cmd_check sway swaylock swaybg swayidle swaymsg sway-marker
-  cmd_check swaynag pactl waybar grim clipman imv mpv
-  cmd_check brightnessctl pamixer playerctl greetd alacritty
-  cmd_check /usr/libexec/polkit-gnome-authentication-agent-1
-  cmd_check bluetoothctl bluemoon tlp firefox slurp qt5ct
-  cmd_check swaync swaync-client
 
   slog "sway installation done!"
 }
