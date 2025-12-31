@@ -134,6 +134,7 @@ tmux_grid() {
     local pane_index=$((pane_base_index + i))
     local target_pane="$session_name:$base_index.$pane_index"
     tmux send-keys -t "$target_pane" "${cmds[$i]}" C-m
+    sleep 0.1
   done
 
   # tmux set-window-option -t "$session_name:$base_index" synchronize-panes on

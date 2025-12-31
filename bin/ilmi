@@ -4,88 +4,88 @@
 source <(curl -sSL https://raw.githubusercontent.com/pervezfunctor/dotfiles/refs/heads/main/share/utils)
 
 INSTALL_OPTIONS=(
-    "shell-slim"
-    "shell"
-    "vscode"
-    "jetbrains-mono"
-    "ptyxis"
-    "docker"
-    "npm"
-    "vm"
-    "ptyxis"
-    "apps"
-    "incus"
-    "nix"
-    "brew"
-    "pixi"
-    "fonts"
-    "tailscale"
-    "@nix"
-    "@shell"
-    "@vm"
+  "shell-slim"
+  "shell"
+  "vscode"
+  "jetbrains-mono"
+  "ptyxis"
+  "docker"
+  "npm"
+  "vm"
+  "ptyxis"
+  "apps"
+  "incus"
+  "nix"
+  "brew"
+  "pixi"
+  "fonts"
+  "tailscale"
+  "@nix"
+  "@shell"
+  "@vm"
 )
 
 help() {
-    echo "Usage: $0 [OPTION1] [OPTION2] ..."
-    echo "Options:"
-    echo "  shell-slim      essential shell packages."
-    echo "  shell           shell tools like zsh, tmux, nvim."
-    echo "  vscode          vscode and extensions."
-    echo "  jetbrains-mono  jetbrains mono nerd font."
-    echo "  ptyxis          ptyxis terminal."
-    echo "  docker          docker only"
-    echo "  npm             npm tools like pnpm, claude, gemini."
-    echo "  vm              vm tools like distrobox, libvirt, virt-manager."
-    echo "  ptyxis          ptyxis terminal."
-    echo "  apps            flatpak apps like firefox, chromium, zoom, obsidian, wezterm."
-    echo "  incus           incus and lxc."
-    echo "  nix             nix installation"
-    echo "  brew            homebrew for macos and linuxbrew for linux."
-    echo "  pixi            pixi for managing global packages and modern conda for python."
-    echo "  fonts           nerd fonts for jetbrains mono, cascadia code mono."
-    echo "  tailscale       tailscale for managing vpn."
-    echo ""
-    echo "Group Options"
-    echo "  @nix            nix installation"
-    echo "  @shell          min and shell tools and config for zsh, tmux, neovim."
-    echo "  @vm             vm tools like buildah, libvirt, virt-manager."
-    echo "  help            show this help."
-    echo ""
+  echo "Usage: $0 [OPTION1] [OPTION2] ..."
+  echo "Options:"
+  echo "  shell-slim      essential shell packages."
+  echo "  shell           shell tools like zsh, tmux, nvim."
+  echo "  vscode          vscode and extensions."
+  echo "  jetbrains-mono  jetbrains mono nerd font."
+  echo "  ptyxis          ptyxis terminal."
+  echo "  docker          docker only"
+  echo "  npm             npm tools like pnpm, claude, gemini."
+  echo "  vm              vm tools like distrobox, libvirt, virt-manager."
+  echo "  ptyxis          ptyxis terminal."
+  echo "  apps            flatpak apps like zoom, obsidian, wezterm."
+  echo "  incus           incus and lxc."
+  echo "  nix             nix installation"
+  echo "  brew            homebrew for macos and linuxbrew for linux."
+  echo "  pixi            pixi for managing global packages and modern conda for python."
+  echo "  fonts           nerd fonts for jetbrains mono, cascadia code mono."
+  echo "  tailscale       tailscale for managing vpn."
+  echo ""
+  echo "Group Options"
+  echo "  @nix            nix installation"
+  echo "  @shell          min and shell tools and config for zsh, tmux, neovim."
+  echo "  @vm             vm tools like buildah, libvirt, virt-manager."
+  echo "  help            show this help."
+  echo ""
 }
 
 main() {
-    if ! [[ "$#" -eq 0 ]]; then
-        common_installer "$@"
-        return 0
-    fi
+  if ! [[ "$#" -eq 0 ]]; then
+    common_installer "$@"
+    return 0
+  fi
 
-    if ! has_cmd gum && ! has_cmd fzf; then
-        help
-        exit 0
-    fi
+  if ! has_cmd gum && ! has_cmd fzf; then
+    help
+    exit 0
+  fi
 
-    local SELECTED_OPTIONS
-    SELECTED_OPTIONS=$(select-multi "Choose options to install" "${INSTALL_OPTIONS[@]}")
+  local SELECTED_OPTIONS
+  SELECTED_OPTIONS=$(select-multi "Choose options to install" "${INSTALL_OPTIONS[@]}")
 
-    if [[ ${#SELECTED_OPTIONS[@]} -gt 0 ]]; then
-        echo ""
-        slog "Selected: ${SELECTED_OPTIONS[*]}. Installing..."
-        echo ""
-        common_installer "${SELECTED_OPTIONS[@]}"
-        slog "Installation complete."
-    else
-        slog "No options selected."
-        return 1
-    fi
+  if [[ ${#SELECTED_OPTIONS[@]} -gt 0 ]]; then
+    echo ""
+    slog "Selected: ${SELECTED_OPTIONS[*]}. Installing..."
+    echo ""
+    common_installer "${SELECTED_OPTIONS[@]}"
+    slog "Installation complete."
+  else
+    slog "No options selected."
+    return 1
+  fi
 
 }
 
 if [[ "$1" == "help" ]]; then
-    help
+  help
 else
-    if [[ "$1" == "generic" ]] || [[ "$1" == "generic-ct" ]] || [[ "$1" == "fedora-atomic" ]] || is_multipass || is_distrobox; then
-        export NOSUDO=1
-    fi
+  if [[ "$1" == "generic" ]] || [[ "$1" == "generic-ct" ]] || [[ "$1" == "fedora-atomic" ]] || is_multipass || is_distrobox; then
+    export NOSUDO=1
+  fi
 
-    CLICOLOR_FORCE=1 bootstrap "$@"
+  CLICOLOR_FORCE=1 bootstrap "$@"
 fi

@@ -20,21 +20,21 @@ set -euo pipefail -o errtrace
 # ------------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------------
-: "${DOTFILES_LOG_DIR:=${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/logs}"
-mkdir -p -- "$DOTFILES_LOG_DIR"
+: "${ILMG_LOG_DIR:=${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/logs}"
+mkdir -p -- "$ILMG_LOG_DIR"
 
-OUT_FIFO="${DOTFILES_LOG_DIR}/.dotfiles_out.fifo"
-ERR_FIFO="${DOTFILES_LOG_DIR}/.dotfiles_err.fifo"
+OUT_FIFO="${ILMG_LOG_DIR}/.dotfiles_out.fifo"
+ERR_FIFO="${ILMG_LOG_DIR}/.dotfiles_err.fifo"
 
-OUT_LOG="${DOTFILES_LOG_DIR}/output.log"
-ERR_LOG="${DOTFILES_LOG_DIR}/error.log"
+OUT_LOG="${ILMG_LOG_DIR}/output.log"
+ERR_LOG="${ILMG_LOG_DIR}/error.log"
 
 # Per-severity log files
-SLOG_LOG="${DOTFILES_LOG_DIR}/dotfiles-slog.log"
-INFO_LOG="${DOTFILES_LOG_DIR}/dotfiles-info.log"
-WARN_LOG="${DOTFILES_LOG_DIR}/dotfiles-warn.log"
-FAIL_LOG="${DOTFILES_LOG_DIR}/dotfiles-fail.log"
-OK_LOG="${DOTFILES_LOG_DIR}/dotfiles-success.log"
+SLOG_LOG="${ILMG_LOG_DIR}/dotfiles-slog.log"
+INFO_LOG="${ILMG_LOG_DIR}/dotfiles-info.log"
+WARN_LOG="${ILMG_LOG_DIR}/dotfiles-warn.log"
+FAIL_LOG="${ILMG_LOG_DIR}/dotfiles-fail.log"
+OK_LOG="${ILMG_LOG_DIR}/dotfiles-success.log"
 
 # Emojis (as requested)
 EMOJI_SLOG="📝"
@@ -263,14 +263,14 @@ dotfiles_log_rotate() {
   local _old_inited="$_dotfiles_logging_inited"
   _dotfiles_logging_inited=0 # disable logging during rotation
 
-  mkdir -p -- "$DOTFILES_LOG_DIR"
+  mkdir -p -- "$ILMG_LOG_DIR"
 
   # Exclude FIFOs, hidden temp files, and anything not a regular log file
   local logfile
   while IFS= read -r -d '' logfile; do
     dotfiles__rotate_single "$logfile"
   done < <(
-    find "$DOTFILES_LOG_DIR" \
+    find "$ILMG_LOG_DIR" \
       -maxdepth 1 \
       -type f \
       -not -name '.*' \

@@ -41,7 +41,8 @@ exec /usr/libexec/lxqt-policykit-agent
 exec swaync
 exec nm-applet
 exec wl-paste -t text --watch clipman store --no-persist
-# exec wl-paste --watch cliphist store
+exec wl-paste --watch cliphist store
+exec wl-clip-persist --clipboard regular --reconnect-tries 0
 
 # output * bg ~/.config/wallpapers/wallpaper.png fill
 exec_always swaybg -i ~/.config/wallpapers/wallpaper.png -m fill

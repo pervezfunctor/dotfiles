@@ -490,3 +490,13 @@ kde_binstall() {
 
   sin plasma-discover-flatpak plasma-discover-packagekit
 }
+
+mango_binstall() {
+  # shellcheck disable=SC2016
+  slog "Installing mango packages"
+  desktop-core_install
+  wm_install
+  sudo dnf install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release
+  si mangowc
+  slog "mango installation done!"
+}

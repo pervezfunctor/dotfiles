@@ -294,7 +294,7 @@ wm_install() {
 
   sin grim slurp thunar thunar-archive-plugin cliphist xdg-desktop-portal \
     qt5ct qt6ct polkit imv nvtop mpv ttf-roboto noto-fonts noto-fonts-emoji \
-    tumbler
+    tumbler pipewire pipewire-pulse xdg-desktop-portal-wlr
 }
 
 hyprland_binstall() {
@@ -342,11 +342,10 @@ kde_binstall() {
   sin discover mesa-utils
 }
 
-mango_install() {
+mango_binstall() {
   slog "Installing mango packages"
 
-  core_install
-  parus -S --noconfirm --needed mangowc-git
+  sin mangowc-git
 
   slog "mango installation done!"
 }
