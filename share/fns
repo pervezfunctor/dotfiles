@@ -436,3 +436,7 @@ command = "tuigreet --time --remember --cmd ${WM}"
 user = "greeter"
 EOF
 }
+
+gh-auth() {
+  gh auth login --hostname github.com --git-protocol https
+}
