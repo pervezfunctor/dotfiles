@@ -294,7 +294,8 @@ wm_install() {
 
   sin grim slurp thunar thunar-archive-plugin cliphist xdg-desktop-portal \
     qt5ct qt6ct polkit imv nvtop mpv ttf-roboto noto-fonts noto-fonts-emoji \
-    tumbler pipewire pipewire-pulse xdg-desktop-portal-wlr
+    tumbler pipewire pipewire-pulse xdg-desktop-portal-wlr wl-clip-persist \
+    pamixer brightnessctl
 }
 
 hyprland_binstall() {
@@ -344,8 +345,11 @@ kde_binstall() {
 
 mango_binstall() {
   slog "Installing mango packages"
+  wm_install
 
-  sin mangowc-git
+  sin mangowc-git swayidle wlr-randr swayosd satty sox swaybg
+
+  aur sway-audio-idle-inhibit-git swaylock-effects-git matugen-bin dms-shell-git
 
   slog "mango installation done!"
 }
