@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+set -euo pipefail -o errtrace
+
+# ---------------- CONFIG ----------------
+WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+CACHE_DIR="$HOME/.cache/wallpaper-thumbs"
+THUMB_SIZE="400x250"
+ROFI_THEME="" # optional: -theme path/to/theme.rasi
+# ---------------------------------------
+
+mkdir -p "$CACHE_DIR"
+
+# Generate thumbnails if missing
+generate_thumb() {
+  local img="$1"
+  local base
+  base="$(basename "$img")"
+  local thumb="$CACHE_DIR/$base.png"
+
+  if [[ ! -f "$thumb" ]]; then
+    convert "$img" \
+      -auto-orient \
+      -thumbnail "$THUMB_SIZE^" \
+      -gravity center \
+      -extent "$THUMB_SIZE" \
+      "$thumb"
+  fi
+
+  echo "$thumb"
+}
+
+# Build rofi input
+entries=()
+declare -A map
+
+shopt -s nullglob
+for img in "$WALLPAPER_DIR"/*.{jpg,jpeg,png,webp}; do
+  thumb="$(generate_thumb "$img")"
+  label=" " # blank label → image-only UI
+  entries+=("$label\x00icon\x1f$thumb")
+  map["$thumb"]="$img"
+done
+shopt -u nullglob
+
+[[ ${#entries[@]} -eq 0 ]] && exit 0
+
+selection="$(
+  printf '%b\n' "${entries[@]}" |
+    rofi -dmenu \
+      -p "Wallpaper" \
+      -show-icons \
+      -i \
+      -markup-rows \
+      ${ROFI_THEME:+-theme "$ROFI_THEME"}
+)"
+
+# Extract selected icon path
+selected_thumb="$(printf '%s' "$selection" | sed -n 's/.*icon\x1f\(.*\)$/\1/p')"
+[[ -z "$selected_thumb" ]] && exit 0
+
+wallpaper="${map[$selected_thumb]}"
+
+# Replace existing swaybg
+pkill swaybg 2>/dev/null || true
+exec swaybg -i "$wallpaper" -m fill
