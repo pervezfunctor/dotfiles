@@ -1,65 +1,128 @@
 #!/usr/bin/env bash
-set -euo pipefail -o errtrace
+set -Eeuo pipefail
 
-# ---------------- CONFIG ----------------
-WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+#######################################
+# CONFIG
+#######################################
+WALLPAPER_DIR="${1:-$HOME/Pictures/Wallpapers}"
 CACHE_DIR="$HOME/.cache/wallpaper-thumbs"
-THUMB_SIZE="400x250"
-ROFI_THEME="" # optional: -theme path/to/theme.rasi
-# ---------------------------------------
+THUMB_SIZE="800x500"
+ROFI_THEME="" # optional: path to .rasi
 
-mkdir -p "$CACHE_DIR"
-
-# Generate thumbnails if missing
-generate_thumb() {
-  local img="$1"
-  local base
-  base="$(basename "$img")"
-  local thumb="$CACHE_DIR/$base.png"
-
-  if [[ ! -f "$thumb" ]]; then
-    convert "$img" \
-      -auto-orient \
-      -thumbnail "$THUMB_SIZE^" \
-      -gravity center \
-      -extent "$THUMB_SIZE" \
-      "$thumb"
-  fi
-
-  echo "$thumb"
+#######################################
+# HELPERS
+#######################################
+die() {
+  notify-send "Wallpaper Picker Error" "$1" 2>/dev/null || true
+  printf 'error: %s\n' "$1" >&2
+  exit 1
 }
 
-# Build rofi input
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
+}
+
+cleanup() {
+  # nothing critical yet, placeholder for future temp files
+  :
+}
+trap cleanup EXIT
+
+#######################################
+# PRE-FLIGHT CHECKS
+#######################################
+require_cmd rofi
+require_cmd swaybg
+require_cmd magick # ImageMagick (preferred over legacy `convert`)
+
+[[ -d "$WALLPAPER_DIR" ]] || die "Wallpaper directory not found: $WALLPAPER_DIR"
+
+mkdir -p "$CACHE_DIR" || die "Cannot create cache dir: $CACHE_DIR"
+
+#######################################
+# THUMBNAIL GENERATION
+#######################################
+generate_thumb() {
+  local img="$1"
+  local base thumb
+
+  base="$(basename "$img")"
+  thumb="$CACHE_DIR/$base.png"
+
+  if [[ ! -f "$thumb" ]]; then
+    magick "$img" \
+      -auto-orient \
+      -thumbnail "${THUMB_SIZE}^" \
+      -gravity center \
+      -extent "$THUMB_SIZE" \
+      "$thumb" ||
+      {
+        printf 'warning: failed thumbnail for %s\n' "$img" >&2
+        return 1
+      }
+  fi
+
+  printf '%s\n' "$thumb"
+}
+
+#######################################
+# COLLECT WALLPAPERS
+#######################################
 entries=()
 declare -A map
 
 shopt -s nullglob
-for img in "$WALLPAPER_DIR"/*.{jpg,jpeg,png,webp}; do
-  thumb="$(generate_thumb "$img")"
-  label=" " # blank label → image-only UI
-  entries+=("$label\x00icon\x1f$thumb")
-  map["$thumb"]="$img"
-done
+images=("$WALLPAPER_DIR"/*.{jpg,jpeg,png,webp})
 shopt -u nullglob
 
-[[ ${#entries[@]} -eq 0 ]] && exit 0
+((${#images[@]} > 0)) || die "No wallpapers found in $WALLPAPER_DIR"
 
+for img in "${images[@]}"; do
+  [[ -r "$img" ]] || {
+    printf 'warning: unreadable file skipped: %s\n' "$img" >&2
+    continue
+  }
+
+  if thumb="$(generate_thumb "$img")"; then
+    entries+=(" \x00icon\x1f$thumb")
+    map["$thumb"]="$img"
+  fi
+done
+
+((${#entries[@]} > 0)) || die "No valid wallpapers available after filtering"
+
+#######################################
+# ROFI SELECTION
+#######################################
 selection="$(
-  printf '%b\n' "${entries[@]}" |
-    rofi -dmenu \
-      -p "Wallpaper" \
-      -show-icons \
-      -i \
-      -markup-rows \
-      ${ROFI_THEME:+-theme "$ROFI_THEME"}
+  printf '%b\n' "${entries[@]}" | rofi -dmenu \
+    -p "Wallpaper" \
+    -show-icons \
+    -i \
+    -markup-rows \
+    ${ROFI_THEME:+-theme "$ROFI_THEME"} ||
+    true
 )"
 
-# Extract selected icon path
+# User pressed Escape / closed Rofi
+[[ -n "$selection" ]] || exit 0
+
+#######################################
+# RESOLVE SELECTION
+#######################################
 selected_thumb="$(printf '%s' "$selection" | sed -n 's/.*icon\x1f\(.*\)$/\1/p')"
-[[ -z "$selected_thumb" ]] && exit 0
+[[ -n "$selected_thumb" ]] || die "Failed to resolve selected thumbnail"
 
-wallpaper="${map[$selected_thumb]}"
+wallpaper="${map[$selected_thumb]:-}"
+[[ -n "$wallpaper" ]] || die "Selected wallpaper not mapped"
+[[ -f "$wallpaper" ]] || die "Wallpaper file disappeared: $wallpaper"
 
-# Replace existing swaybg
+#######################################
+# APPLY WALLPAPER
+#######################################
 pkill swaybg 2>/dev/null || true
-exec swaybg -i "$wallpaper" -m fill
+
+swaybg -i "$wallpaper" -m fill ||
+  die "swaybg failed to set wallpaper"
+
+exit 0
