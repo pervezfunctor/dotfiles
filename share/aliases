@@ -633,7 +633,7 @@ if has_cmd micro; then
   export VISUAL="micro"
 fi
 
-uv-jupyter-notebook() {
+uv-jupyter() {
   dir_exists ~/jupyter-standalone || {
     warn "Directory ~/jupyter-standalone does not exist"
     return 1
@@ -642,4 +642,16 @@ uv-jupyter-notebook() {
   cd ~/jupyter-standalone && .venv/bin/jupyter lab
 }
 
-alias uvjn="uv-jupyter-notebook"
+uv-marimo() {
+  dir_exists ~/marimo-standalone || {
+    warn "Directory ~/marimo-standalone does not exist"
+    return 1
+  }
+
+  uv run marimo edit
+}
+
+if has_cmd uv; then
+  alias uvj="uv-jupyter-notebook"
+  alias uvm="uv run marimo edit"
+fi

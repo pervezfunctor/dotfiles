@@ -579,13 +579,12 @@ all-confstall() {
 }
 
 uv-jupyter_install() {
-  dir_exists ~/jupyter-standalone && {
-    warn "Directory ~/jupyter-standalone already exists, skipping jupyter installation"
-    return 1
-  }
-
   has_cmd uv || {
     warn "uv not installed, skipping jupyter installation"
+    return 1
+  }
+  dir_exists ~/jupyter-standalone && {
+    warn "Directory ~/jupyter-standalone already exists, skipping jupyter installation"
     return 1
   }
 
@@ -595,6 +594,26 @@ uv-jupyter_install() {
     uv pip install jupyterlab
   else
     warn "Failed to create python directory ~/jupyter-standalone"
+    return 1
+  fi
+}
+
+uv-marimo_install() {
+  has_cmd uv || {
+    warn "uv not installed, skipping marimo installation"
+    return 1
+  }
+  dir_exists ~/marimo-standalone && {
+    warn "Directory ~/marimo-standalone already exists, skipping marimo installation"
+    return 1
+  }
+
+  if mkdir ~/marimo-standalone && cd ~/marimo-standalone; then
+    uv venv
+    uv pip install numpy
+    uv pip install marimo
+  else
+    warn "Failed to create python directory ~/marimo-standalone"
     return 1
   fi
 }
