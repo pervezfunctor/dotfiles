@@ -578,6 +578,27 @@ all-confstall() {
   has_cmd amethyst && amethyst_confstall
 }
 
+uv-jupyter_install() {
+  dir_exists ~/jupyter-standalone && {
+    warn "Directory ~/jupyter-standalone already exists, skipping jupyter installation"
+    return 1
+  }
+
+  has_cmd uv || {
+    warn "uv not installed, skipping jupyter installation"
+    return 1
+  }
+
+  if mkdir ~/jupyter-standalone && cd ~/jupyter-standalone; then
+    uv venv --seed
+    uv pip install pydantic
+    uv pip install jupyterlab
+  else
+    warn "Failed to create python directory ~/jupyter-standalone"
+    return 1
+  fi
+}
+
 poetry_install() {
   has_cmd poetry && return 0
 

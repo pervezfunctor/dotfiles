@@ -632,3 +632,14 @@ if has_cmd micro; then
   export EDITOR="micro"
   export VISUAL="micro"
 fi
+
+uv-jupyter-notebook() {
+  dir_exists ~/jupyter-standalone || {
+    warn "Directory ~/jupyter-standalone does not exist"
+    return 1
+  }
+
+  cd ~/jupyter-standalone && .venv/bin/jupyter lab
+}
+
+alias uvjn="uv-jupyter-notebook"

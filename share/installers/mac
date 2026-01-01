@@ -29,6 +29,10 @@ ui_install() {
   bic nikitabobko/tap/aerospace
 }
 
+uv_install() {
+  bis uv
+}
+
 apps-slim_install() {
   bic zoom telegram-desktop
 }
