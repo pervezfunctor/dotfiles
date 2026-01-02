@@ -69,7 +69,7 @@ brew-shell_install() {
   bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
     atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi \
     ollama carapace lazygit fd luarocks runme act mask devcontainer gum \
-    nixfmt pass tailscale age imagemagick tmuxp
+    nixfmt pass tailscale age imagemagick tmuxp mcat
 
   local pkgs=()
 

@@ -23,6 +23,7 @@
     libsecret
     lm_sensors
     lsof
+    mcat
     micro
     net-tools
     newt
