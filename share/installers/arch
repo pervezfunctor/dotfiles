@@ -272,7 +272,7 @@ firewall_setup() {
 desktop-core_install() {
   sin kitty gnome-keyring wl-clipboard libsecret papirus-icon-theme \
     udisks2 udiskie gvfs flatpak qt6-multimedia-gstreamer pipewire-jack \
-    ttf-jetbrains-mono-nerd otf-font-awesome
+    ttf-jetbrains-mono-nerd otf-font-awesome imagemagick
 
   flatub_install
   fpi app.zen_browser.zen

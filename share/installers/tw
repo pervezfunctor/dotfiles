@@ -238,7 +238,7 @@ distrobox_install() {
 
 desktop-core_install() {
   sin kitty wl-clipboard gnome-keyring libsecret-tools \
-    papirus-icon-theme udisks2 udiskie gvfs flatpak
+    papirus-icon-theme udisks2 udiskie gvfs flatpak imagemagick
 
   flatub_install
   fpi app.zen_browser.zen

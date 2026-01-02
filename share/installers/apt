@@ -447,7 +447,8 @@ sin() {
 
 desktop-core_install() {
   sin kitty wl-clipboard gnome-keyring libsecret-tools imagemagick libgl1-mesa \
-    papirus-icon-theme bibata-cursor-theme udisks2 udiskie gvfs flatpak libgles2-mesa
+    papirus-icon-theme bibata-cursor-theme udisks2 udiskie gvfs flatpak \
+    libgles2-mesa imagemagick
 
   flatub_install
   fpi app.zen_browser.zen
