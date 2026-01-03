@@ -212,7 +212,7 @@ cmake_install() {
 gnome-extensions-slim_install() {
   if ! has_cmd gext; then
     has_cmd pipx || uv_install
-    pyi gnome-extensions-cli --system-site-packages
+    pipx install gnome-extensions-cli --system-site-packages
   fi
 
   if ! has_cmd gext; then
@@ -232,7 +232,7 @@ gnome-extensions_install() {
   gnome-extensions-slim_install
   has_cmd gext || return 1
 
-  gext search-light@icedman.github.com
+  gext install search-light@icedman.github.com
   gext install blur-my-shell@aunetx
   gext install just-perfection-desktop@just-perfection
   gext install undecorate@sun.wxg@gmail.com
