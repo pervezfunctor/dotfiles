@@ -1054,6 +1054,22 @@ get_current_shell() {
   ps -p "$$" -o comm=
 }
 
+is_pkg_available() {
+  local package=$1
+
+  if has_cmd dpkg; then
+    dpkg -l "$package" 2>/dev/null | grep -q "^ii"
+  elif has_cmd rpm; then
+    rpm -q "$package" &>/dev/null
+  elif has_cmd pacman; then
+    pacman -Qi "$package" &>/dev/null
+  elif has_cmd apk; then
+    apk info -e "$package" &>/dev/null
+  else
+    return 1
+  fi
+}
+
 is_apt() {
   is_ubuntu || is_debian
 }
@@ -1206,8 +1222,18 @@ is_wayland() {
   [[ -n "$WAYLAND_DISPLAY" ]]
 }
 
+# is_desktop() {
+#   [[ -n "$XDG_CURRENT_DESKTOP" ]] || [[ -n "$DESKTOP_SESSION" ]] || [[ "$XDG_SESSION_TYPE" == "wayland" ]]
+# }
+
 is_desktop() {
-  [[ -n "$XDG_CURRENT_DESKTOP" ]] || [[ -n "$DESKTOP_SESSION" ]] || [[ "$XDG_SESSION_TYPE" == "wayland" ]]
+  for de in gnome-shell plasma-desktop startplasma-wayland niri hyprland sway mango; do
+    if has_cmd "$de"; then
+      return 0
+    fi
+  done
+
+  return 1
 }
 
 yes_or_no() {
