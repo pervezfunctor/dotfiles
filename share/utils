@@ -1233,7 +1233,7 @@ is_desktop() {
     fi
   done
 
-  return 1
+  [[ -n "$XDG_CURRENT_DESKTOP" ]] || [[ -n "$DESKTOP_SESSION" ]] || [[ "$XDG_SESSION_TYPE" == "wayland" ]]
 }
 
 yes_or_no() {
