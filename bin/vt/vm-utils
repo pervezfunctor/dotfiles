@@ -10,6 +10,8 @@ export DISTRO_LIST_vme=("ubuntu" "fedora" "arch" "debian" "tw")
 export DISTRO_LIST_vm=("ubuntu" "fedora" "debian" "arch" "alpine" "centos")
 
 virt_check_prerequisites() {
+  has_cmd osquery-update-db && osquery-update-db
+
   check_cmds virsh virt-install qemu-img wget xorriso openssl vm-create vm
 
   if ! systemctl is-active --quiet libvirtd; then
