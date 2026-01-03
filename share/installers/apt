@@ -263,8 +263,8 @@ cli_install() {
 
   cli-slim_install
 
-  si tmux pkg-config urlview plocate sd gdu hyperfine fd-find ugrep tealdeer \
-    direnv yq shellcheck shfmt htop bat jq jc git-delta dialog gum just
+  si tmux pkg-config urlview plocate htop gdu hyperfine fd-find ugrep tealdeer \
+    direnv yq shellcheck shfmt sd bat jq jc git-delta dialog gum just fastfetch
 
   has_cmd tldr && tldr --update
 

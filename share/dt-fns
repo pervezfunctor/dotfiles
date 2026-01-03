@@ -255,7 +255,7 @@ dt-alpine-edge() {
     --init \
     --additional-packages "openrc openssh-server"
 
-  dt_exec "${CONTAINER_NAME}" sudo rc-update add sshd default
+  dt_exec "${CONTAINER_NAME}" sudo rc-update add sshd default || true
 }
 
 dt-alpine() {
@@ -263,7 +263,7 @@ dt-alpine() {
   dt_create_ilm "${CONTAINER_NAME}" quay.io/toolbx-images/alpine-toolbox:latest \
     --init --additional-packages "openrc openssh-server"
 
-  dt_exec "${CONTAINER_NAME}" sudo rc-update add sshd default
+  dt_exec "${CONTAINER_NAME}" sudo rc-update add sshd default || true
 }
 
 dt-debian() {
@@ -272,7 +272,7 @@ dt-debian() {
     quay.io/toolbx-images/debian-toolbox:latest \
     --init \
     --additional-packages "systemd libpam-systemd openssh-server"; then
-    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd || true
   fi
 }
 
@@ -281,7 +281,7 @@ dt-ubuntu() {
   if dt_create_ilm "${CONTAINER_NAME}" quay.io/toolbx/ubuntu-toolbox:latest \
   --init \
     --additional-packages "systemd libpam-systemd openssh-server"; then
-    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd || true
   fi
 }
 
@@ -291,7 +291,7 @@ dt-arch() {
     --yes \
     --init \
     --additional-packages "systemd openssh"; then
-    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd || true
   fi
 }
 
@@ -301,7 +301,7 @@ dt-tw() {
     registry.opensuse.org/opensuse/tumbleweed:latest \
     --init \
     --additional-packages "systemd openssh-server"; then
-    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd || true
   fi
 }
 
@@ -310,7 +310,7 @@ dt-fedora() {
   if dt_create_ilm "${CONTAINER_NAME}" quay.io/fedora/fedora-toolbox:43 \
     --init \
     --additional-packages "systemd openssh-server"; then
-    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd || true
   fi
 }
 
@@ -319,7 +319,7 @@ dt-centos() {
   if dt_create_ilm "${CONTAINER_NAME}" quay.io/centos/centos:stream10 \
     --init \
     --additional-packages "systemd openssh-server"; then
-    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd
+    dt_exec "${CONTAINER_NAME}" sudo systemctl enable sshd | true
   fi
 }
 

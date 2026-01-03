@@ -126,7 +126,7 @@ cli_install() {
   si neovim sd fd procs lazygit bottom xh plocate tealdeer urlview nushell \
     lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk jq jc \
     hyperfine cheat curlie lsd direnv yq tmux htop fd bat git-delta dust \
-    shfmt ShellCheck just dialog atuin broot choose
+    shfmt ShellCheck just dialog atuin broot choose fastfetch
 
   has_cmd tldr && tldr --update
 
