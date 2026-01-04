@@ -404,8 +404,8 @@ desktop-core_install() {
 }
 
 wm-tools_install() {
-  si waybar rofi rofi-wayland rofi-themes wlogout mako gnome-themes-extra greetd \
-    network-manager-applet pavucontrol playerctl wlsunset
+  si waybar rofi rofi-wayland rofi-themes wlogout mako gnome-themes-extra \
+    greetd network-manager-applet pavucontrol playerctl wlsunset
 
   # swaync SwayNotificationCenter
 }
@@ -416,8 +416,10 @@ wm_install() {
   desktop-core_install
   wm-tools_install
 
-  sin xdg-desktop-portal-gtk lxqt-policykit imv mpv grim slurp thunar thunar-archive-plugin \
-    qt6-qtsvg qt6-qtquickcontrols2 blueman fonts-noto-mono fonts-noto-color-emoji
+  sin xdg-desktop-portal-gnome lxqt-policykit imv mpv grim slurp thunar \
+    thunar-archive-plugin nwg-launchers qt6-qtsvg qt6-qtquickcontrols2 \
+    google-noto-fonts-all google-noto-emoji-fonts \
+    google-noto-color-emoji-fonts blueman bluez
 
   slog "Tiling common packages installation done!"
 }

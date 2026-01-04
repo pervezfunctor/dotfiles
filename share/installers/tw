@@ -259,13 +259,15 @@ wm-tools_install() {
     ghostscript-fonts-other
 
 }
+
 wm_install() {
   desktop-core_install
   wm-tools_install
 
   sin xdg-desktop-portal xdg-desktop-portal-wlr adwaita-icon-theme clipman \
     bluez qt5ct qt6ct grim cliphist mpv playerctl pamixer mpris-ctl slurp \
-    bluemoon symbols-only-nerd-fonts adobe-sourcesanspro-fonts brightnessctl
+    bluemoon symbols-only-nerd-fonts adobe-sourcesanspro-fonts brightnessctl \
+    nwg-displays nwg-look inter-fonts nvtop
 }
 
 sway_binstall() {

@@ -295,7 +295,10 @@ wm_install() {
   sin grim slurp thunar thunar-archive-plugin cliphist xdg-desktop-portal \
     qt5ct qt6ct polkit imv nvtop mpv ttf-roboto noto-fonts noto-fonts-emoji \
     tumbler pipewire pipewire-pulse xdg-desktop-portal-wlr wl-clip-persist \
-    pamixer brightnessctl
+    pamixer brightnessctl pavucontrol pywal matugen-bin blueman \
+    bluez bluez-utils
+
+  aur pywalfox-native
 }
 
 hyprland_binstall() {
@@ -349,7 +352,7 @@ mango_binstall() {
 
   sin mangowc-git swayidle wlr-randr swayosd satty sox swaybg
 
-  aur sway-audio-idle-inhibit-git swaylock-effects-git matugen-bin dms-shell-git
+  aur sway-audio-idle-inhibit-git swaylock-effects-git dms-shell-git
 
   slog "mango installation done!"
 }

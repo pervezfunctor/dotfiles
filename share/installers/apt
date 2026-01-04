@@ -466,7 +466,7 @@ wm_install() {
   wm-tools_install
 
   sin grim slurp cliphist mpv thunar thunar-archive-plugin xdg-desktop-portal \
-    fonts-noto fonts-noto-mono fonts-noto-color-emoji
+    fonts-noto fonts-noto-mono fonts-noto-color-emoji nwg-look nwg-displays nvtop imv fonts-inter
 }
 
 sway_binstall() {
@@ -475,10 +475,9 @@ sway_binstall() {
   wm_install
 
   sin sway swaylock swayidle swaybg xdg-desktop-portal-kde \
-    polkit-kde-agent-1 sway-notification-center
+    polkit-kde-agent-1 sway-notification-center swappy nm-connection-editor network-manager-applet
 
-  # fonts-inter nwg-bar nwg-clipman nwg-displays nvtop imv \
-  # nwg-look nm-connection-editor swappy tumbler network-manager-applet \
+  #  nwg-bar nwg-clipman tumbler
 
   slog "sway installation done!"
 }
