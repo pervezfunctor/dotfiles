@@ -416,7 +416,7 @@ wm_install() {
   desktop-core_install
   wm-tools_install
 
-  sin xdg-desktop-portal-gnome lxqt-policykit imv mpv grim slurp thunar \
+  sin xdg-desktop-portal-gtk lxqt-policykit imv mpv grim slurp thunar \
     thunar-archive-plugin nwg-launchers qt6-qtsvg qt6-qtquickcontrols2 \
     google-noto-fonts-all google-noto-emoji-fonts \
     google-noto-color-emoji-fonts blueman bluez
@@ -440,7 +440,7 @@ sway_binstall() {
   slog "Installing sway"
 
   si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway \
-    sway-config-fedora
+    sway-config-fedora # polkit-kde
 
   terminal_binstall
 

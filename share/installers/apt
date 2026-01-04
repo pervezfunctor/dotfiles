@@ -474,8 +474,9 @@ sway_binstall() {
 
   wm_install
 
-  sin sway swaylock swayidle swaybg xdg-desktop-portal-kde \
-    polkit-kde-agent-1 sway-notification-center swappy nm-connection-editor network-manager-applet
+  sin sway swaylock swayidle swaybg xdg-desktop-portal-gtk \
+    polkit-kde-agent-1 sway-notification-center swappy nm-connection-editor \
+    network-manager-applet
 
   #  nwg-bar nwg-clipman tumbler
 

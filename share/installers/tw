@@ -277,9 +277,9 @@ sway_binstall() {
 
   wm_install
 
-  sin swaylock swaybg swayidle swaynag waybar greetd rofi-wayland \
+  sin swaylock swaybg swayidle swaynag waybar rofi-wayland polkit-kde-agent-6 \
     SwayNotificationCenter SwayNotificationCenter-bash-completion sway-marker \
-    SwayNotificationCenter-zsh-completion polkit-gnome
+    SwayNotificationCenter-zsh-completion xdg-desktop-portal-gtk greetds
 
   slog "sway installation done!"
 }

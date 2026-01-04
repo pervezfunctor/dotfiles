@@ -318,7 +318,7 @@ sway_binstall() {
 
   wm_install
 
-  sin sway swaybg swayidle swaylock polkit-kde-agent xdg-desktop-portal-kde
+  sin sway swaybg swayidle swaylock polkit-kde-agent xdg-desktop-portal-gtk
 
   slog "sway installation done!"
 }
