@@ -48,14 +48,3 @@ incus-arch-vm() {
 incus-nixos() {
   incus launch images:nixos/unstable --vm nixos-vm -c security.secureboot=false
 }
-
-ivms() {
-  slog "Creating incus vms"
-
-  incus-ubuntu-vm
-  incus-fedora-vm
-  incus-tw-vm
-  incus-arch-vm
-
-  slog "Creating incus vms done!"
-}
