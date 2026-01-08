@@ -276,7 +276,7 @@ desktop-core_install() {
 
   flathub_install
   fpi app.zen_browser.zen
-
+  wallpapers_install
   # nftables_install
   # firewall_setup
   # mesa vulkan-intel vulkan-radeon vulkan-mesa-layer

@@ -455,6 +455,7 @@ desktop-core_install() {
 
   jetbrains-mono_install
   font-awesome_install
+  wallpapers_install
 }
 
 wm-tools_install() {
