@@ -398,6 +398,8 @@ apps-slim_install() {
   fpi page.tesk.Refine
   fpi it.mijorus.gearlever
   is_atomic && fpi org.gnome.Boxes
+
+  has_cmd firefox || fpi app.zen_browser.zen
 }
 
 apps_install() {
@@ -739,7 +741,7 @@ sway_confstall() {
   foot_confstall
   kitty_confstall
   rofi_confstall
-  wofi_confstall
+  # wofi_confstall
   wlogout_confstall
 }
 

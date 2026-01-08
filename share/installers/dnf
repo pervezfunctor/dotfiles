@@ -396,7 +396,7 @@ desktop-core_install() {
   sin wl-clipboard thunar thunar-archive-plugin gnome-keyring-pam \
     gnome-keyring libsecret udisks2 gvfs udiskie flatpak imagemagick
 
-  flatub_install
+  flathub_install
   fpi app.zen_browser.zen
 
   jetbrains-mono_install

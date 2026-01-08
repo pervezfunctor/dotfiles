@@ -233,20 +233,16 @@ sway_install() {
   slog "Installing sway..."
 
   sway_binstall
-
-  if has_cmd pipx; then
-    pyi i3ipc
-    pyi autotiling
-  else
-    warn "pipx not installed, cannot install autotiling"
-  fi
+  uv_install
+  pyi i3ipc
+  pyi autotiling
 
   slog "Installing sway done!"
 }
 
 sway_groupstall() {
   sway_install
-  sway_confstall
+  sway_confstall$()
 }
 
 hyprland_install() {

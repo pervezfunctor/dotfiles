@@ -450,7 +450,7 @@ desktop-core_install() {
     papirus-icon-theme bibata-cursor-theme udisks2 udiskie gvfs flatpak \
     libgles2-mesa imagemagick
 
-  flatub_install
+  flathub_install
   fpi app.zen_browser.zen
 
   jetbrains-mono_install
