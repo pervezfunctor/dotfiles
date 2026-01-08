@@ -25,7 +25,7 @@ incus_check() {
 }
 
 ivm_check_prerequisites() {
-  check_cmds incus openssl curl wget tee mktemp
+  check_cmds incus openssl curl wget tee mktemp jq
 
   if ! incus info >/dev/null 2>&1; then
     die "Cannot connect to Incus daemon. Please ensure Incus is running and you have proper permissions."
