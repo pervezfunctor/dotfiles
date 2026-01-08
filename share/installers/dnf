@@ -393,7 +393,7 @@ sin() {
 }
 
 desktop-core_install() {
-  sin wl-clipboard thunar thunar-archive-plugin gnome-keyring-pam \
+  sin kitty wl-clipboard thunar thunar-archive-plugin gnome-keyring-pam \
     gnome-keyring libsecret udisks2 gvfs udiskie flatpak imagemagick
 
   flathub_install
