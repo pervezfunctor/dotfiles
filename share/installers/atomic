@@ -1020,17 +1020,20 @@ enable_ssh_service() {
 }
 
 wallpapers_install() {
-  if dir_exists ~/.local/share/ilm/wallpapers; then
+  local walldir="${XDG_DATA_HOME:-$HOME/.local/share}/ilm/wallpapers"
+  if dir_exists "$walldir"; then
     return 0
   fi
 
   slog "Installing wallpapers"
 
-  smd ~/Pictures/Wallpapers
+  smd "$walldir"
   wget -nv https://github.com/mylinuxforwork/wallpaper/archive/refs/heads/main.zip -O /tmp/wallpapers.zip
-  unzip -qq -d ~/.local/share/ilm /tmp/wallpapers.zip
-  mv ~/.local/share/ilm/wallpaper-main ~/.local/share/ilm/wallpapers
+  unzip -qq -d "$walldir" /tmp/wallpapers.zip
+  mv "$walldir" /tmp/wallpapers
   frm /tmp/wallpapers.zip
+  rm -rf "$walldir"
+  mv /tmp/wallpapers "$walldir"
 
   slog "Wallpapers installation done!"
 }
