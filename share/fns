@@ -82,7 +82,11 @@ system-update() {
   has_cmd mise && mise self-update && mise upgrade --bump
   has_cmd pixi && pixi global update
 
-  cd "$DOT_DIR" && git-up
+  if cd "$DOT_DIR"; then
+   git-up
+   cd - >/dev/null 2>&1 || true
+  fi
+
   has_cmd devbox && devbox update
 }
 
