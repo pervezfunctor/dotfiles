@@ -87,7 +87,7 @@ system-update() {
    cd - >/dev/null 2>&1 || true
   fi
 
-  has_cmd devbox && devbox update
+  # has_cmd devbox && devbox update
 }
 
 remove_keyrings() {
