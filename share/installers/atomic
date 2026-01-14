@@ -1030,10 +1030,10 @@ wallpapers_install() {
   smd "$walldir"
   wget -nv https://github.com/mylinuxforwork/wallpaper/archive/refs/heads/main.zip -O /tmp/wallpapers.zip
   unzip -qq -d "$walldir" /tmp/wallpapers.zip
-  mv "$walldir" /tmp/wallpapers
+  mv "$walldir/wallpaper-main"/* "$walldir"/
   frm /tmp/wallpapers.zip
-  rm -rf "$walldir"
-  mv /tmp/wallpapers "$walldir"
+  rm -rf "$walldir/wallpaper-main"
+  sln "$walldir" "$HOME/Pictures/Wallpapers"
 
   slog "Wallpapers installation done!"
 }
