@@ -969,7 +969,7 @@ is_ubuntu() {
   ID=$(get_os)
   [[ "$ID" == *"ubuntu"* ]] || [[ "$ID" == *"neon"* ]] ||
     [[ "$ID" == *"elementary"* ]] || [[ "$ID" == *"linuxmint"* ]] ||
-    [[ "$ID" == *"pop"* ]]
+    [[ "$ID" == *"pop"* ]] || [[ "$ID" == *"zorin"* ]]
 }
 
 is_trixie() {
