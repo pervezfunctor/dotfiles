@@ -297,9 +297,9 @@ wm_install() {
   sin grim slurp thunar thunar-archive-plugin cliphist xdg-desktop-portal \
     qt5ct qt6ct polkit imv nvtop mpv ttf-roboto noto-fonts noto-fonts-emoji \
     tumbler pipewire pipewire-pulse xdg-desktop-portal-wlr wl-clip-persist \
-    pamixer brightnessctl pavucontrol blueman bluez bluez-utils
+    pamixer brightnessctl pavucontrol blueman bluez bluez-utils adw-gtk-theme
 
-  aur pywalfox-native pywal matugen-bin
+  aur pywalfox-native pywal matugen-bin bibata-cursor-theme
 }
 
 hyprland_binstall() {

@@ -24,11 +24,10 @@ set $right l
 set $term kitty
 
 # set $rofi_cmd rofi -terminal '$term'
-set $rofi_cmd wofi
+set $rofi_cmd rofi
 
 # set $menu $rofi_cmd -show combi -combi-modes drun#run -modes combi
-# set $menu $rofi_cmd -show drun
-set $menu $rofi_cmd
+set $menu $rofi_cmd -show drun
 
 set $screenlock 'swaylock --config ~/.ilm/suseway/dot-config/swaylock.conf'
 set $menu_window $rofi_cmd -show window
