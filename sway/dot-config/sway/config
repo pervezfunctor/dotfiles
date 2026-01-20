@@ -93,7 +93,7 @@ bar {
 }
 
 bindsym $mod+Return exec $term
-bindsym $mod+Shift+q kill
+bindsym $mod+q kill
 bindsym $mod+d exec $menu
 bindsym $mod+shift+d exec $menu_window
 
