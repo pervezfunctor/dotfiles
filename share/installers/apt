@@ -23,6 +23,8 @@ function si() {
 
 # Returns true if running on Ubuntu < 25.04 or Debian < 13
 is_legacy_apt() {
+  is_zorin && return 0
+
   local uver dver
   uver=$(ubuntu_major_version 2>/dev/null)
   dver=$(debian_version 2>/dev/null)

@@ -964,6 +964,12 @@ is_hyperv() {
   return 1
 }
 
+is_zorin() {
+  local ID
+  ID=$(get_os)
+  [[ "$ID" == *"zorin"* ]]
+}
+
 is_ubuntu() {
   local ID
   ID=$(get_os)
