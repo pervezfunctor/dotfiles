@@ -1494,6 +1494,7 @@ stow_core() {
 }
 
 stowgf() {
+  dir_exists "$DOT_DIR" || warn "stowgf: $DOT_DIR does not exist"
   for p in "$@"; do
     slog "stow $p"
     srm "$XDG_CONFIG_HOME/$p"
@@ -1503,6 +1504,7 @@ stowgf() {
 }
 
 stowdf() {
+  dir_exists "$DOT_DIR" || warn "stowgf: $DOT_DIR does not exist"
   for p in "$@"; do
     slog "stow $p"
     stow_core -d "$DOT_DIR" -t "$HOME" --dotfiles "$p"
@@ -1510,6 +1512,7 @@ stowdf() {
 }
 
 stownf() {
+  dir_exists "$DOT_DIR" || warn "stowgf: $DOT_DIR does not exist"
   for p in "$@"; do
     slog "stow $p"
     stow_core --no-folding -d "$DOT_DIR" -t "$HOME" --dotfiles -R "$p"
