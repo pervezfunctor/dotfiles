@@ -1,475 +1,505 @@
 #!/usr/bin/env bash
 
 nix-portable_install() {
-  smd ~/.local/bin
-  curl -L https://github.com/DavHau/nix-portable/releases/latest/download/nix-portable-"$(uname -m)" >~/.local/bin/nix-portable
-  chmod +x ~/.local/bin/nix-portable
-  cmd_check nix-portable
+    smd ~/.local/bin
+    curl -L https://github.com/DavHau/nix-portable/releases/latest/download/nix-portable-"$(uname -m)" >~/.local/bin/nix-portable
+    chmod +x ~/.local/bin/nix-portable
+    cmd_check nix-portable
 }
 
 webi_install() {
-  has_cmd ~/.local/bin/webi && return 0
+    has_cmd ~/.local/bin/webi && return 0
 
-  curl -sS https://webi.sh/webi | sh
-  webi pathman
-  source_if_exists "$XDG_CONFIG_HOME/envman/PATH.env"
+    curl -sS https://webi.sh/webi | sh
+    webi pathman
+    source_if_exists "$XDG_CONFIG_HOME/envman/PATH.env"
 
-  cmd_check webi
+    cmd_check webi
 }
 
 mise_install() {
-  if has_cmd ~/.local/bin/mise; then
+    if has_cmd ~/.local/bin/mise; then
+        eval "$(~/.local/bin/mise activate bash)"
+        return 0
+    fi
+
+    slog "Installing mise"
+    curl https://mise.run | MISE_QUIET=1 sh
     eval "$(~/.local/bin/mise activate bash)"
-    return 0
-  fi
 
-  slog "Installing mise"
-  curl https://mise.run | MISE_QUIET=1 sh
-  eval "$(~/.local/bin/mise activate bash)"
-
-  if has_cmd mise; then
-    mise use -g usage
-    mise settings experimental=true
-    mise use -g cargo-binstall
-  else
-    warn "mise installation failed"
-  fi
+    if has_cmd mise; then
+        mise use -g usage
+        mise settings experimental=true
+        mise use -g cargo-binstall
+    else
+        warn "mise installation failed"
+    fi
 }
 
 pixi_install() {
-  has_cmd ~/.pixi/bin/pixi && return 0
+    has_cmd ~/.pixi/bin/pixi && return 0
 
-  slog "Installing pixi"
-  if has_cmd curl; then
-    curl -fsSL https://pixi.sh/install.sh | bash
-  elif has_cmd wget; then
-    wget -qO- https://pixi.sh/install.sh | bash
-  else
-    warn "curl or wget not installed, skipping pixi installation"
-    return 1
-  fi
+    slog "Installing pixi"
+    if has_cmd curl; then
+        curl -fsSL https://pixi.sh/install.sh | bash
+    elif has_cmd wget; then
+        wget -qO- https://pixi.sh/install.sh | bash
+    else
+        warn "curl or wget not installed, skipping pixi installation"
+        return 1
+    fi
 
-  slog "pixi installation done!"
+    slog "pixi installation done!"
 
-  cmd_check ~/.pixi/bin/pixi
-  cmd_check pixi
+    cmd_check ~/.pixi/bin/pixi
+    cmd_check pixi
 }
 
 uv_install() {
-  has_cmd uv && return 0
+    has_cmd uv && return 0
 
-  if has_cmd pipx; then
-    pipx install uv
-  else
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-  fi
+    if has_cmd pipx; then
+        pipx install uv
+    else
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    fi
 
-  if ! has_cmd pipx; then
-    has_cmd uv && uv tool install pipx
-  fi
+    if ! has_cmd pipx; then
+        has_cmd uv && uv tool install pipx
+    fi
 }
 
 python_install() {
-  slog "Installing python tools"
+    slog "Installing python tools"
 
-  if fn_exists system-python_install; then
-    system-python_install
-    return 0
-  fi
+    if fn_exists system-python_install; then
+        system-python_install
+        return 0
+    fi
 
-  # if ! has_cmd pipx; then
-  #   if has_cmd brew; then
-  #     bis pipx
-  #   elif ! has_cmd pip; then
-  #     python3 -m ensurepip --user --default-pip
-  #     python3 -m pip install --user --force-reinstall --upgrade pip
-  #   fi
+    # if ! has_cmd pipx; then
+    #   if has_cmd brew; then
+    #     bis pipx
+    #   elif ! has_cmd pip; then
+    #     python3 -m ensurepip --user --default-pip
+    #     python3 -m pip install --user --force-reinstall --upgrade pip
+    #   fi
 
-  #   if has_cmd pip; then
-  #     pip install --upgrade --force-reinstall pipx
-  #   else
-  #     warn "pip not installed!."
-  #   fi
-  # fi
+    #   if has_cmd pip; then
+    #     pip install --upgrade --force-reinstall pipx
+    #   else
+    #     warn "pip not installed!."
+    #   fi
+    # fi
 
-  uv_install
+    uv_install
 
-  slog "Python tools installation done!"
-  cmd_check pipx uv
+    slog "Python tools installation done!"
+    cmd_check pipx uv
 }
 
 flathub_install() {
-  if ! has_cmd flatpak; then
-    has_cmd si && si flatpak
-  fi
+    if ! has_cmd flatpak; then
+        has_cmd si && si flatpak
+    fi
 
-  if has_cmd flatpak; then
-    slog "Adding flathub remote"
-    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
-  else
-    warn "flatpak not installed! Ignoring flathub config."
-  fi
+    if has_cmd flatpak; then
+        slog "Adding flathub remote"
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
+    else
+        warn "flatpak not installed! Ignoring flathub config."
+    fi
 }
 
 kitty_binstall() {
-  if ! is_desktop; then
-    warn "Not running desktop, skipping kitty installation"
-    return 1
-  fi
+    if ! is_desktop; then
+        warn "Not running desktop, skipping kitty installation"
+        return 1
+    fi
 
-  has_cmd kitty && return 1
-  has_cmd ~.local/kitty.app/bin/kitty && return 1
+    has_cmd kitty && return 1
+    has_cmd ~.local/kitty.app/bin/kitty && return 1
 
-  curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin
+    curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin
 
-  # force link
-  ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
+    # force link
+    ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
 
-  smd ~/.local/share/applications
-  cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
-  cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
+    smd ~/.local/share/applications
+    cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
+    cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
 
-  # Update the paths to the kitty and its icon in the kitty desktop file(s)
-  sed -i "s|Icon=kitty|Icon=$(readlink -f ~)/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|g" ~/.local/share/applications/kitty*.desktop
-  sed -i "s|Exec=kitty|Exec=$(readlink -f ~)/.local/kitty.app/bin/kitty|g" ~/.local/share/applications/kitty*.desktop
+    # Update the paths to the kitty and its icon in the kitty desktop file(s)
+    sed -i "s|Icon=kitty|Icon=$(readlink -f ~)/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|g" ~/.local/share/applications/kitty*.desktop
+    sed -i "s|Exec=kitty|Exec=$(readlink -f ~)/.local/kitty.app/bin/kitty|g" ~/.local/share/applications/kitty*.desktop
 
-  echo 'kitty.desktop' >~/.config/xdg-terminals.list
+    echo 'kitty.desktop' >~/.config/xdg-terminals.list
 
-  cmd_check kitty
+    cmd_check kitty
 
-  # @TODO: simpler
-  # curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin \
-  # dest=~/.local/stow
-  # cd ~/.local/stow
-  # stow kitty.app
+    # @TODO: simpler
+    # curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin \
+    # dest=~/.local/stow
+    # cd ~/.local/stow
+    # stow kitty.app
 }
 
 kitty_install() {
-  kitty_binstall
-  kitty_confstall
+    kitty_binstall
+    kitty_confstall
 }
 
 ghostty_binstall() {
-  has_cmd ghostty && return 1
+    has_cmd ghostty && return 1
 
-  local VERSION
-  VERSION=$(curl -s https://api.github.com/repos/pkgforge-dev/ghostty-appimage/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    local VERSION
+    VERSION=$(curl -s https://api.github.com/repos/pkgforge-dev/ghostty-appimage/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
-  local ARCH
-  ARCH=$(uname -m)
+    local ARCH
+    ARCH=$(uname -m)
 
-  wget "https://github.com/pkgforge-dev/ghostty-appimage/releases/download/${VERSION}/Ghostty-${VERSION}-${ARCH}.AppImage"
-  chmod +x "Ghostty-${VERSION}-${ARCH}.AppImage"
-  install "./Ghostty-${VERSION}-${ARCH}.AppImage" "$HOME/.local/bin/ghostty"
+    wget "https://github.com/pkgforge-dev/ghostty-appimage/releases/download/${VERSION}/Ghostty-${VERSION}-${ARCH}.AppImage"
+    chmod +x "Ghostty-${VERSION}-${ARCH}.AppImage"
+    install "./Ghostty-${VERSION}-${ARCH}.AppImage" "$HOME/.local/bin/ghostty"
 }
 
 ghostty_install() {
-  ghostty_binstall
-  ghostty_confstall
+    ghostty_binstall
+    ghostty_confstall
 }
 
 atomic_distrobox_install() {
-  has_cmd distrobox && return 0
+    has_cmd distrobox && return 0
 
-  slog "Installing distrobox"
+    slog "Installing distrobox"
 
-  curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
+    curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
 
-  slog "distrobox installation done!"
+    slog "distrobox installation done!"
 }
 
 cmake_install() {
-  has_cmd ~/.local/bin/cmake && return 1
+    has_cmd ~/.local/bin/cmake && return 1
 
-  CMAKE_VERSION="4.1.0"
-  ARCH=$(uname -m)
-  CMAKE_BINARY_NAME="cmake-${CMAKE_VERSION}-linux-${ARCH}.sh"
-  CMAKE_CHECKSUM_NAME="cmake-${CMAKE_VERSION}-SHA-256.txt"
+    CMAKE_VERSION="4.1.0"
+    ARCH=$(uname -m)
+    CMAKE_BINARY_NAME="cmake-${CMAKE_VERSION}-linux-${ARCH}.sh"
+    CMAKE_CHECKSUM_NAME="cmake-${CMAKE_VERSION}-SHA-256.txt"
 
-  slog "Installing latest cmake"
-  TMP_DIR=$(mktemp -d -t cmake-XXXXXXXXXX)
-  if cd "${TMP_DIR}"; then
-    curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_BINARY_NAME}" -O
-    curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_CHECKSUM_NAME}" -O
+    slog "Installing latest cmake"
+    TMP_DIR=$(mktemp -d -t cmake-XXXXXXXXXX)
+    if cd "${TMP_DIR}"; then
+        curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_BINARY_NAME}" -O
+        curl -sSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_CHECKSUM_NAME}" -O
 
-    sha256sum -c --ignore-missing "${CMAKE_CHECKSUM_NAME}"
-    local PREFIX
-    PREFIX=~/.cmake
+        sha256sum -c --ignore-missing "${CMAKE_CHECKSUM_NAME}"
+        local PREFIX
+        PREFIX=~/.cmake
 
-    sudo mkdir -p "${PREFIX}"
-    sudo sh "${TMP_DIR}/${CMAKE_BINARY_NAME}" --prefix="${PREFIX}" --skip-license
+        sudo mkdir -p "${PREFIX}"
+        sudo sh "${TMP_DIR}/${CMAKE_BINARY_NAME}" --prefix="${PREFIX}" --skip-license
 
-    sudo ln -s "${PREFIX}/bin/cmake" ~/.local/bin/cmake
-    sudo ln -s "${PREFIX}/bin/ctest" ~/.local/bin/ctest
-    frm "${TMP_DIR}"
-  fi
+        sudo ln -s "${PREFIX}/bin/cmake" ~/.local/bin/cmake
+        sudo ln -s "${PREFIX}/bin/ctest" ~/.local/bin/ctest
+        frm "${TMP_DIR}"
+    fi
 
-  slog "cmake installation done!"
+    slog "cmake installation done!"
 
-  cmd_check cmake
+    cmd_check cmake
 }
 
 gnome-extensions-slim_install() {
-  if ! has_cmd gext; then
-    has_cmd pipx || uv_install
-    pipx install gnome-extensions-cli --system-site-packages
-  fi
+    if ! has_cmd gext; then
+        has_cmd pipx || uv_install
+        pipx install gnome-extensions-cli --system-site-packages
+    fi
 
-  if ! has_cmd gext; then
-    warn "gext not found, skipping gnome extensions"
-    return 1
-  fi
+    if ! has_cmd gext; then
+        warn "gext not found, skipping gnome extensions"
+        return 1
+    fi
 
-  gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
-  gext install switcher@landau.fi
-  gext install CoverflowAltTab@palatis.blogspot.com
+    gext install windowsNavigator@gnome-shell-extensions.gcampax.github.com
+    gext install switcher@landau.fi
+    gext install CoverflowAltTab@palatis.blogspot.com
+}
 
+gei() {
+    for ext in "$@"; do
+        gext install "$ext"
+    done
+}
+gnome-paperwm_install() {
+    if ! has_cmd gext; then
+        has_cmd pipx || uv_install
+        pipx install gnome-extensions-cli --system-site-packages
+    fi
+
+    if ! has_cmd gext; then
+        warn "gext not found, skipping gnome extensions"
+        return 1
+    fi
+
+    local -a exts=(
+        paperwm@paperwm.github.com
+        switcher@landau.fi
+        windowsNavigator@gnome-shell-extensions.gcampax.github.com
+        search-light@icedman.github.com
+        openbar@neuromorph
+    )
+
+    gei "${exts[@]}"
 }
 
 gnome-extensions_install() {
-  slog "Installing gnome extensions"
+    slog "Installing gnome extensions"
 
-  gnome-extensions-slim_install
-  has_cmd gext || return 1
+    gnome-extensions-slim_install
+    has_cmd gext || return 1
 
-  gext install search-light@icedman.github.com
-  gext install blur-my-shell@aunetx
-  gext install just-perfection-desktop@just-perfection
-  gext install undecorate@sun.wxg@gmail.com
-  gext install Vitals@CoreCoding.com
-  gext install tailscale@joaophi.github.com
-  gext install tilingshell@ferrarodomenico.com
-  gext install AlphabeticalAppGrid@stuarthayhurst
+    local -a exts=(
+        search-light@icedman.github.com
+        blur-my-shell@aunetx
+        just-perfection-desktop@just-perfection
+        undecorate@sun.wxg@gmail.com
+        Vitals@CoreCoding.com
+        tailscale@joaophi.github.com
+        tilingshell@ferrarodomenico.com
+        AlphabeticalAppGrid@stuarthayhurst
+    )
 
-  slog "gnome extensions installation done!"
+    gei "${exts[@]}"
+
+    slog "gnome extensions installation done!"
 }
 
 gnome-settings_install() {
-  if ! has_cmd gsettings; then
-    warn "gsettings not found, skipping gnome basic settings"
-    return 1
-  fi
+    if ! has_cmd gsettings; then
+        warn "gsettings not found, skipping gnome basic settings"
+        return 1
+    fi
 
-  slog "gnome settings"
+    slog "gnome settings"
 
-  gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer']"
-  gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
-  gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
-  gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
-  gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
-  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-  gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
-  gsettings set org.gnome.desktop.interface accent-color 'teal'
+    gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer']"
+    gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+    gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark'
+    gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+    gsettings set org.gnome.desktop.interface gtk-key-theme "Emacs"
+    gsettings set org.gnome.desktop.interface accent-color 'teal'
 
-  # Use 4 fixed workspaces instead of dynamic mode
-  gsettings set org.gnome.mutter dynamic-workspaces false
-  gsettings set org.gnome.desktop.wm.preferences num-workspaces 4
+    # Use 4 fixed workspaces instead of dynamic mode
+    gsettings set org.gnome.mutter dynamic-workspaces false
+    gsettings set org.gnome.desktop.wm.preferences num-workspaces 4
 
-  # Center new windows in the middle of the screen
-  gsettings set org.gnome.mutter center-new-windows true
+    # Center new windows in the middle of the screen
+    gsettings set org.gnome.mutter center-new-windows true
 
-  # Set JetBrains Mono as the default monospace font
-  gsettings set org.gnome.desktop.interface monospace-font-name 'JetbrainsMono Nerd Font 11'
+    # Set JetBrains Mono as the default monospace font
+    gsettings set org.gnome.desktop.interface monospace-font-name 'JetbrainsMono Nerd Font 11'
 
-  slog "gnome settings done!"
+    slog "gnome settings done!"
 }
 
 more-gnome-flatpaks_install() {
-  fpi com.github.PintaProject.Pinta
-  fpi com.github.rafostar.Clapper
-  fpi io.github.flattool.Ignition
-  fpi io.gitlab.adhami3310.Impression
-  fpi org.gnome.Firmware
-  fpi org.gnome.World.PikaBackup
+    fpi com.github.PintaProject.Pinta
+    fpi com.github.rafostar.Clapper
+    fpi io.github.flattool.Ignition
+    fpi io.gitlab.adhami3310.Impression
+    fpi org.gnome.Firmware
+    fpi org.gnome.World.PikaBackup
 }
 
 gnome-flatpaks_install() {
-  fpi com.mattjakeman.ExtensionManager
-  fpi io.missioncenter.MissionCenter
-  fpi org.gnome.Logs
-  fpi org.gtk.Gtk3theme.adw-gtk3
-  fpi org.gtk.Gtk3theme.adw-gtk3-dark
+    fpi com.mattjakeman.ExtensionManager
+    fpi io.missioncenter.MissionCenter
+    fpi org.gnome.Logs
+    fpi org.gtk.Gtk3theme.adw-gtk3
+    fpi org.gtk.Gtk3theme.adw-gtk3-dark
 }
 
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
 gnome_confstall() {
-  if ! is_gnome; then
-    warn "Not running GNOME, skipping GNOME config"
-    return 1
-  fi
+    if ! is_gnome; then
+        warn "Not running GNOME, skipping GNOME config"
+        return 1
+    fi
 
-  slog "gnome config"
+    slog "gnome config"
 
-  if is_ubuntu; then
-    has_cmd si && si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
-  elif is_fedora && ! is_atomic; then
-    has_cmd si && si gnome-extensions-app gnome-tweaks
-  fi
+    if is_ubuntu; then
+        has_cmd si && si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
+    elif is_fedora && ! is_atomic; then
+        has_cmd si && si gnome-extensions-app gnome-tweaks
+    fi
 
-  if is_ubuntu; then
-    gnome-extensions disable tiling-assistant@ubuntu.com
-    gnome-extensions disable ubuntu-appindicators@ubuntu.com
-    gnome-extensions disable ubuntu-dock@ubuntu.com
-    gnome-extensions disable ding@rastersoft.com
-  fi
+    if is_ubuntu; then
+        gnome-extensions disable tiling-assistant@ubuntu.com
+        gnome-extensions disable ubuntu-appindicators@ubuntu.com
+        gnome-extensions disable ubuntu-dock@ubuntu.com
+        gnome-extensions disable ding@rastersoft.com
+    fi
 
-  gnome-settings_install
-  gnome-extensions-slim_install
-  # gnome_keybindings_install
-  # gnome-flatpaks_install
+    gnome-settings_install
+    gnome-extensions-slim_install
+    # gnome_keybindings_install
+    gnome-flatpaks_install
 
-  slog "gnome config done!"
+    slog "gnome config done!"
 }
 
 vscode-flatpak_confstall() {
-  slog "vscode flatpak config"
+    slog "vscode flatpak config"
 
-  smd ~/.var/app/com.visualstudio.code/config/Code/User
-  safe_cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
+    smd ~/.var/app/com.visualstudio.code/config/Code/User
+    safe_cp "$DOT_DIR/extras/vscode/flatpak-settings.json" ~/.var/app/com.visualstudio.code/config/Code/User/settings.json
 
-  vscode-extensions_install
+    vscode-extensions_install
 
-  flatpak override --user \
-    --socket=wayland --nosocket=x11 \
-    --device=dri \
-    --filesystem=host-os \
-    --talk-name=org.freedesktop.secrets \
-    com.visualstudio.code
+    flatpak override --user \
+        --socket=wayland --nosocket=x11 \
+        --device=dri \
+        --filesystem=host-os \
+        --talk-name=org.freedesktop.secrets \
+        com.visualstudio.code
 
-  slog "vscode flatpak config done!"
+    slog "vscode flatpak config done!"
 }
 
 vscode-flatpak_install() {
-  fpi com.visualstudio.code
-  fpi com.visualstudio.code.tool.podman/x86_64/stable
-  vscode-flatpak_confstall
+    fpi com.visualstudio.code
+    fpi com.visualstudio.code.tool.podman/x86_64/stable
+    vscode-flatpak_confstall
 }
 
 ptyxis_install() {
-  has_cmd ptyxis && return 0
+    has_cmd ptyxis && return 0
 
-  if ! has_cmd flatpak; then
-    warn "flatpak not installed, skipping ptyxis installation."
-    return 1
-  fi
+    if ! has_cmd flatpak; then
+        warn "flatpak not installed, skipping ptyxis installation."
+        return 1
+    fi
 
-  if ! flatpak list | grep -q -i Ptyxis >/dev/null; then
-    slog "Installing Ptyxis"
-    fpi app.devsuite.Ptyxis
-  fi
+    if ! flatpak list | grep -q -i Ptyxis >/dev/null; then
+        slog "Installing Ptyxis"
+        fpi app.devsuite.Ptyxis
+    fi
 
-  # has_cmd gsettings || return 1
+    # has_cmd gsettings || return 1
 
-  # slog "Configuring Ptyxis"
+    # slog "Configuring Ptyxis"
 
-  # gsettings set org.gnome.Ptyxis use-system-font false
-  # gsettings set org.gnome.Ptyxis font-name 'JetBrains Mono Medium 12'
-  # gsettings set org.gnome.Ptyxis interface-style 'dark'
+    # gsettings set org.gnome.Ptyxis use-system-font false
+    # gsettings set org.gnome.Ptyxis font-name 'JetBrains Mono Medium 12'
+    # gsettings set org.gnome.Ptyxis interface-style 'dark'
 
-  # local profid
-  # profid=$(gsettings get org.gnome.Ptyxis default-profile-uuid)
-  # gsettings set "org.gnome.Ptyxis.Profile:/${profid}/" palette 'Catppuccin Mocha'
+    # local profid
+    # profid=$(gsettings get org.gnome.Ptyxis default-profile-uuid)
+    # gsettings set "org.gnome.Ptyxis.Profile:/${profid}/" palette 'Catppuccin Mocha'
 
-  slog "Ptyxis installation and configuration done!"
+    slog "Ptyxis installation and configuration done!"
 }
 
 distrobox-ui_install() {
-  is_desktop || return 0
+    is_desktop || return 0
 
-  fpi io.podman_desktop.PodmanDesktop
-  fpi io.github.dvlv.boxbuddyrs
-  # fpi com.ranfdev.DistroShelf
+    fpi io.podman_desktop.PodmanDesktop
+    fpi io.github.dvlv.boxbuddyrs
+    # fpi com.ranfdev.DistroShelf
 }
 
 apps-slim_install() {
-  is_desktop || return 0
+    is_desktop || return 0
 
-  if ! has_cmd flatpak; then
-    if ! si flatpak; then
-      warn "flatpak not installed, skipping flatpak apps"
-      return 1
+    if ! has_cmd flatpak; then
+        if ! si flatpak; then
+            warn "flatpak not installed, skipping flatpak apps"
+            return 1
+        fi
     fi
-  fi
 
-  flathub_install
+    flathub_install
 
-  fpi io.github.flattool.Warehouse
-  fpi com.github.tchx84.Flatseal
-  fpi page.tesk.Refine
-  fpi it.mijorus.gearlever
-  is_atomic && fpi org.gnome.Boxes
+    fpi io.github.flattool.Warehouse
+    fpi com.github.tchx84.Flatseal
+    fpi page.tesk.Refine
+    fpi it.mijorus.gearlever
+    is_atomic && fpi org.gnome.Boxes
 
-  has_cmd firefox || fpi app.zen_browser.zen
+    has_cmd firefox || fpi app.zen_browser.zen
 }
 
 apps_install() {
-  slog "Installing flatpak apps"
+    slog "Installing flatpak apps"
 
-  apps-slim_install
+    apps-slim_install
 
-  fpi org.fedoraproject.MediaWriter
-  fpi us.zoom.Zoom # unverified
-  fpi md.obsidian.Obsidian
-  fpi org.telegram.desktop
-  fpi io.github.getnf.embellish
-  fpi com.bitwarden.desktop
-  fpi sh.cider.Cider
-  fpi org.qbittorrent.qBittorrent
-  fpi org.wireshark.Wireshark
-  fpi me.iepure.devtoolbox
-  fpi io.github.ronniedroid.concessio
+    fpi org.fedoraproject.MediaWriter
+    fpi us.zoom.Zoom # unverified
+    fpi md.obsidian.Obsidian
+    fpi org.telegram.desktop
+    fpi io.github.getnf.embellish
+    fpi com.bitwarden.desktop
+    fpi sh.cider.Cider
+    fpi org.qbittorrent.qBittorrent
+    fpi org.wireshark.Wireshark
+    fpi me.iepure.devtoolbox
+    fpi io.github.ronniedroid.concessio
 
-  slog "Flatpak apps installation done!"
+    slog "Flatpak apps installation done!"
 }
 
 incus_confstall() {
-  slog "incus config"
+    slog "incus config"
 
-  if ! has_cmd incus; then
-    warn "incus not installed, skipping incus config"
-    return 0
-  fi
+    if ! has_cmd incus; then
+        warn "incus not installed, skipping incus config"
+        return 0
+    fi
 
-  sudo usermod -aG incus "$USER"
-  sudo usermod -aG incus-admin "$USER"
+    sudo usermod -aG incus "$USER"
+    sudo usermod -aG incus-admin "$USER"
 
-  sudo systemctl enable --now incus.socket
-  # sudo systemctl enable --now incus.service
+    sudo systemctl enable --now incus.socket
+    # sudo systemctl enable --now incus.service
 
-  sudo incus admin init --minimal
-  # sudo incus network set incusbr0 ipv4.dhcp true
-  # sudo incus network set incusbr0 ipv4.dns.mode managed
-  # sudo incus config set core.https_address=127.0.0.1:8443
+    sudo incus admin init --minimal
+    # sudo incus network set incusbr0 ipv4.dhcp true
+    # sudo incus network set incusbr0 ipv4.dns.mode managed
+    # sudo incus config set core.https_address=127.0.0.1:8443
 
-  if has_cmd firewalld; then
-    sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
-    sudo firewall-cmd --reload
-  elif has_cmd ufw; then
-    sudo ufw allow in on incusbr0
-    sudo ufw route allow in on incusbr0
-    sudo ufw route allow out on incusbr0
-  fi
+    if has_cmd firewalld; then
+        sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
+        sudo firewall-cmd --reload
+    elif has_cmd ufw; then
+        sudo ufw allow in on incusbr0
+        sudo ufw route allow in on incusbr0
+        sudo ufw route allow out on incusbr0
+    fi
 
-  slog "incus config done! Re-login or reboot for group changes to apply."
+    slog "incus config done! Re-login or reboot for group changes to apply."
 }
 
 libvirt_confstall() {
-  sudo systemctl enable --now libvirtd
-  sudo systemctl enable --now libvirtd.socket
-  sudo systemctl enable --now virtlogd
+    sudo systemctl enable --now libvirtd
+    sudo systemctl enable --now libvirtd.socket
+    sudo systemctl enable --now virtlogd
 
-  add_user_to_groups "$(whoami)" libvirt libvirtd kvm libvirt-qemu
+    add_user_to_groups "$(whoami)" libvirt libvirtd kvm libvirt-qemu
 
-  local libvirt_group
-  if group_exists libvirtd; then
-    libvirt_group=libvirtd
-  else
-    libvirt_group=libvirt
-  fi
+    local libvirt_group
+    if group_exists libvirtd; then
+        libvirt_group=libvirtd
+    else
+        libvirt_group=libvirt
+    fi
 
-  has_cmd authselect && sudo authselect enable-feature with-libvirt
+    has_cmd authselect && sudo authselect enable-feature with-libvirt
 
-  sg "$libvirt_group" -c '
+    sg "$libvirt_group" -c '
     if ! virsh --connect qemu:///system net-list --all | grep -q default; then
         # virsh net-define /usr/share/libvirt/networks/default.xml
         virsh --connect qemu:///system net-start default
@@ -481,559 +511,559 @@ libvirt_confstall() {
     fi
     '
 
-  sudo osinfo-db-import --local --latest
+    sudo osinfo-db-import --local --latest
 }
 
 atomic_nvim_binstall() {
-  is_mac && return 0
+    is_mac && return 0
 
-  has_cmd nvim && return 0
+    has_cmd nvim && return 0
 
-  slog "Installing neovim..."
+    slog "Installing neovim..."
 
-  curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
-  chmod u+x nvim.appimage
+    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+    chmod u+x nvim.appimage
 
-  ./nvim.appimage --appimage-extract
+    ./nvim.appimage --appimage-extract
 
-  sudo mv squashfs-root /
-  sudo ln -s /squashfs-root/AppRun /usr/bin/nvim
-  frm nvim.appimage
+    sudo mv squashfs-root /
+    sudo ln -s /squashfs-root/AppRun /usr/bin/nvim
+    frm nvim.appimage
 
-  cmd_check nvim
+    cmd_check nvim
 }
 
 micro_install() {
-  has_cmd micro && return 0
+    has_cmd micro && return 0
 
-  slog "Installing micro"
+    slog "Installing micro"
 
-  curl https://getmic.ro | bash
-  mv micro "$HOME/.local/bin/"
+    curl https://getmic.ro | bash
+    mv micro "$HOME/.local/bin/"
 
-  slog "micro installation done!"
+    slog "micro installation done!"
 
-  cmd_check micro
+    cmd_check micro
 }
 
 rust_install() {
-  source_if_exists "$HOME/.cargo/env"
+    source_if_exists "$HOME/.cargo/env"
 
-  has_cmd rustup && return 0
+    has_cmd rustup && return 0
 
-  slog "Installing rust"
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-  source_if_exists "$HOME/.cargo/env"
+    slog "Installing rust"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source_if_exists "$HOME/.cargo/env"
 
-  slog "rust installation done!"
+    slog "rust installation done!"
 
-  cmd_check rustc
+    cmd_check rustc
 }
 
 lazydocker_install() {
-  has_cmd lazydocker && return 0
+    has_cmd lazydocker && return 0
 
-  slog "Installing lazydocker"
+    slog "Installing lazydocker"
 
-  if has_cmd brew; then
-    bi jesseduffield/lazydocker/lazydocker
-    bis lazydocker
-  elif has_cmd pixi; then
-    pis lazydocker
-  else
-    warn "cannot install lazydocker"
-  fi
+    if has_cmd brew; then
+        bi jesseduffield/lazydocker/lazydocker
+        bis lazydocker
+    elif has_cmd pixi; then
+        pis lazydocker
+    else
+        warn "cannot install lazydocker"
+    fi
 }
 
 docker_confstall() {
-  if ! has_cmd docker; then
-    warn "docker not installed, skipping docker post install configuration"
-    return 1
-  fi
+    if ! has_cmd docker; then
+        warn "docker not installed, skipping docker post install configuration"
+        return 1
+    fi
 
-  if ! grep -q docker /etc/group 2>/dev/null; then
-    sudo groupadd docker
-  fi
+    if ! grep -q docker /etc/group 2>/dev/null; then
+        sudo groupadd docker
+    fi
 
-  if ! groups "$USER" | grep -q docker 2>/dev/null; then
-    sudo usermod -aG docker "$USER"
-  fi
+    if ! groups "$USER" | grep -q docker 2>/dev/null; then
+        sudo usermod -aG docker "$USER"
+    fi
 
-  sudo systemctl enable docker
-  sudo systemctl start docker
-  sudo systemctl enable containerd
-  sudo systemctl start containerd
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    sudo systemctl enable containerd
+    sudo systemctl start containerd
 }
 
 pyi() {
-  if ! has_cmd pipx && ! has_cmd uv; then
-    warn "neither pipx not uv installed, skipping packages"
-    return 1
-  fi
+    if ! has_cmd pipx && ! has_cmd uv; then
+        warn "neither pipx not uv installed, skipping packages"
+        return 1
+    fi
 
-  local in="pipx"
-  has_cmd uv && in="uv tool"
+    local in="pipx"
+    has_cmd uv && in="uv tool"
 
-  for p in "$@"; do
-    slog "Installing $in package $p"
-    $in install "$p"
-  done
+    for p in "$@"; do
+        slog "Installing $in package $p"
+        $in install "$p"
+    done
 }
 
 conan_install() {
-  has_cmd conan && return 1
+    has_cmd conan && return 1
 
-  slog "Installing conan"
-  pyi conan
-  slog "conan installation done!"
+    slog "Installing conan"
+    pyi conan
+    slog "conan installation done!"
 
-  cmd_check conan
+    cmd_check conan
 }
 
 monaspace_install() {
-  file_exists ~/.local/share/fonts/MonaspaceRadon-Regular.otf && return 0
+    file_exists ~/.local/share/fonts/MonaspaceRadon-Regular.otf && return 0
 
-  smd ~/.local/share/fonts
+    smd ~/.local/share/fonts
 
-  frm /tmp/monaspace /tmp/monaspace.zip
-  wget -nv https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip -O /tmp/monaspace.zip
-  unzip -qq -d /tmp/monaspace -o /tmp/monaspace.zip
+    frm /tmp/monaspace /tmp/monaspace.zip
+    wget -nv https://github.com/githubnext/monaspace/releases/download/v1.000/monaspace-v1.000.zip -O /tmp/monaspace.zip
+    unzip -qq -d /tmp/monaspace -o /tmp/monaspace.zip
 
-  cp /tmp/monaspace/monaspace-*/fonts/otf/* ~/.local/share/fonts
-  cp /tmp/monaspace/monaspace-*/fonts/variable/* ~/.local/share/fonts
+    cp /tmp/monaspace/monaspace-*/fonts/otf/* ~/.local/share/fonts
+    cp /tmp/monaspace/monaspace-*/fonts/variable/* ~/.local/share/fonts
 
-  frm /tmp/monaspace /tmp/monaspace.zip
+    frm /tmp/monaspace /tmp/monaspace.zip
 }
 
 cascadia_nerd_font_install() {
-  file_exists ~/.local/share/fonts/CaskaydiaMonoNerdFont-Regular.ttf && return 0
+    file_exists ~/.local/share/fonts/CaskaydiaMonoNerdFont-Regular.ttf && return 0
 
-  smd ~/.local/share/fonts
-  frm /tmp/cascadia /tmp/CascadiaMono.zip
-  wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/CascadiaMono.zip -O /tmp/CascadiaMono.zip
-  unzip -qq -d /tmp/cascadia -o /tmp/CascadiaMono.zip
-  cp /tmp/cascadia/*.ttf ~/.local/share/fonts
-  frm /tmp/cascadia /tmp/CascadiaMono.zip
+    smd ~/.local/share/fonts
+    frm /tmp/cascadia /tmp/CascadiaMono.zip
+    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/CascadiaMono.zip -O /tmp/CascadiaMono.zip
+    unzip -qq -d /tmp/cascadia -o /tmp/CascadiaMono.zip
+    cp /tmp/cascadia/*.ttf ~/.local/share/fonts
+    frm /tmp/cascadia /tmp/CascadiaMono.zip
 }
 
 monaspace_nerd_font_install() {
-  file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf && return 0
+    file_exists ~/.local/share/fonts/MonaspiceRnNerdFont-Regular.otf && return 0
 
-  smd ~/.local/share/fonts
-  frm /tmp/monaspace /tmp/Monaspace.zip
-  wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Monaspace.zip -O /tmp/Monaspace.zip
-  unzip -qq -d /tmp/monaspace -o /tmp/Monaspace.zip
-  cp /tmp/monaspace/*.otf ~/.local/share/fonts
-  frm /tmp/monaspace /tmp/Monaspace.zip
+    smd ~/.local/share/fonts
+    frm /tmp/monaspace /tmp/Monaspace.zip
+    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Monaspace.zip -O /tmp/Monaspace.zip
+    unzip -qq -d /tmp/monaspace -o /tmp/Monaspace.zip
+    cp /tmp/monaspace/*.otf ~/.local/share/fonts
+    frm /tmp/monaspace /tmp/Monaspace.zip
 }
 
 jetbrains_nerd_font_install() {
-  file_exists ~/.local/share/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf && return 0
+    file_exists ~/.local/share/fonts/JetBrainsMonoNLNerdFontPropo-Regular.ttf && return 0
 
-  slog "Installing JetBrains Mono Nerd Font"
-  smd ~/.local/share/fonts
-  frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
-  wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
-  unzip -qq -d /tmp/jetbrains-mono -o /tmp/jetbrains-mono.zip
-  cp /tmp/jetbrains-mono/*.ttf ~/.local/share/fonts
-  frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
-  slog "JetBrains Mono Nerd Font installation done!"
+    slog "Installing JetBrains Mono Nerd Font"
+    smd ~/.local/share/fonts
+    frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
+    wget -nv https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip -O /tmp/jetbrains-mono.zip
+    unzip -qq -d /tmp/jetbrains-mono -o /tmp/jetbrains-mono.zip
+    cp /tmp/jetbrains-mono/*.ttf ~/.local/share/fonts
+    frm /tmp/jetbrains-mono/tmp/jetbrains-mono.zip
+    slog "JetBrains Mono Nerd Font installation done!"
 }
 
 font-awesome_install() {
-  file_exists "$HOME/.local/share/fonts/Font Awesome 7 Brands-Regular-400.otf" && return 0
+    file_exists "$HOME/.local/share/fonts/Font Awesome 7 Brands-Regular-400.otf" && return 0
 
-  smd ~/.local/share/fonts
-  frm /tmp/font-awesome /tmp/font-awesome.zip
-  wget -nv https://use.fontawesome.com/releases/v7.1.0/fontawesome-free-7.1.0-desktop.zip -O /tmp/font-awesome.zip
-  unzip -qq -d /tmp/font-awesome -o /tmp/font-awesome.zip
-  cp /tmp/font-awesome/*.otf ~/.local/share/fonts
-  frm /tmp/font-awesome /tmp/font-awesome.zip
+    smd ~/.local/share/fonts
+    frm /tmp/font-awesome /tmp/font-awesome.zip
+    wget -nv https://use.fontawesome.com/releases/v7.1.0/fontawesome-free-7.1.0-desktop.zip -O /tmp/font-awesome.zip
+    unzip -qq -d /tmp/font-awesome -o /tmp/font-awesome.zip
+    cp /tmp/font-awesome/*.otf ~/.local/share/fonts
+    frm /tmp/font-awesome /tmp/font-awesome.zip
 
 }
 
 maple_font_install() {
-  file_exists ~/.local/share/fonts/MapleMono-NF-Regular.ttf && return 0
+    file_exists ~/.local/share/fonts/MapleMono-NF-Regular.ttf && return 0
 
-  slog "Installing Maple Mono Font"
-  smd ~/.local/share/fonts
-  frm /tmp/maple-mono/tmp/maple-mono.zip
-  wget -nv https://github.com/subframe7536/maple-font/releases/download/v7.2/MapleMono-NF.zip -O /tmp/maple-mono.zip
-  unzip -qq -d /tmp/maple-mono -o /tmp/maple-mono.zip
-  cp /tmp/maple-mono/*.ttf ~/.local/share/fonts
-  frm /tmp/maple-mono/tmp/maple-mono.zip
-  slog "Maple Mono Font installation done!"
+    slog "Installing Maple Mono Font"
+    smd ~/.local/share/fonts
+    frm /tmp/maple-mono/tmp/maple-mono.zip
+    wget -nv https://github.com/subframe7536/maple-font/releases/download/v7.2/MapleMono-NF.zip -O /tmp/maple-mono.zip
+    unzip -qq -d /tmp/maple-mono -o /tmp/maple-mono.zip
+    cp /tmp/maple-mono/*.ttf ~/.local/share/fonts
+    frm /tmp/maple-mono/tmp/maple-mono.zip
+    slog "Maple Mono Font installation done!"
 }
 
 nerd-fonts_install() {
-  smd ~/.local/share/fonts
+    smd ~/.local/share/fonts
 
-  cascadia_nerd_font_install
-  jetbrains-mono_install
-  monaspace_nerd_font_install
+    cascadia_nerd_font_install
+    jetbrains-mono_install
+    monaspace_nerd_font_install
 }
 
 fonts_install() {
-  if ! has_cmd wget || ! has_cmd unzip; then
-    warn "wget and unzip not installed, skipping fonts"
-    return 1
-  fi
+    if ! has_cmd wget || ! has_cmd unzip; then
+        warn "wget and unzip not installed, skipping fonts"
+        return 1
+    fi
 
-  slog "Installing fonts"
+    slog "Installing fonts"
 
-  monaspace_install
-  nerd-fonts_install
-  maple_font_install
+    monaspace_install
+    nerd-fonts_install
+    maple_font_install
 
-  # if is_apt; then
-  #     si fonts-cascadia-code fonts-jetbrains-mono
-  # elif is_rh; then
-  #     is_fedora || si cascadia-fonts-all jetbrains-mono-fonts-all
-  # fi
+    # if is_apt; then
+    #     si fonts-cascadia-code fonts-jetbrains-mono
+    # elif is_rh; then
+    #     is_fedora || si cascadia-fonts-all jetbrains-mono-fonts-all
+    # fi
 
-  slog "Fonts installation done!"
+    slog "Fonts installation done!"
 }
 
 jetbrains-mono_install() {
-  slog "Installing JetBrains Mono Nerd Font..."
-  jetbrains_nerd_font_install
-  slog "JetBrains Mono Nerd Font installation done!"
+    slog "Installing JetBrains Mono Nerd Font..."
+    jetbrains_nerd_font_install
+    slog "JetBrains Mono Nerd Font installation done!"
 }
 
 starship_install() {
-  has_cmd starship && return 0
+    has_cmd starship && return 0
 
-  smd ~/.local/bin
-  curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
+    smd ~/.local/bin
+    curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
 }
 
 sway-waybar_confstall() {
-  slog "waybar config"
-  has_cmd waybar || return 1
-  stowgf sway-waybar
-  slog "waybar config done!"
+    slog "waybar config"
+    has_cmd waybar || return 1
+    stowgf sway-waybar
+    slog "waybar config done!"
 }
 
 wlogout_confstall() {
-  slog "wlogout config"
-  has_cmd wlogout || return 1
-  stowgf wlogout
-  slog "wlogout config done!"
+    slog "wlogout config"
+    has_cmd wlogout || return 1
+    stowgf wlogout
+    slog "wlogout config done!"
 }
 
 rofi_confstall() {
-  has_cmd rofi || return 1
+    has_cmd rofi || return 1
 
-  slog "rofi config"
-  stowgf rofi
-  slog "rofi config done!"
+    slog "rofi config"
+    stowgf rofi
+    slog "rofi config done!"
 }
 
 sway_confstall() {
-  if ! has_cmd sway; then
-    warn "sway not available, skipping sway config"
-    return 1
-  fi
+    if ! has_cmd sway; then
+        warn "sway not available, skipping sway config"
+        return 1
+    fi
 
-  stowgf sway
+    stowgf sway
 
-  sway-waybar_confstall
-  foot_confstall
-  kitty_confstall
-  rofi_confstall
-  # wofi_confstall
-  wlogout_confstall
+    sway-waybar_confstall
+    foot_confstall
+    kitty_confstall
+    rofi_confstall
+    # wofi_confstall
+    wlogout_confstall
 }
 
 hypr-waybar_confstall() {
-  has_cmd waybar || return 1
+    has_cmd waybar || return 1
 
-  slog "waybar config"
-  stowgf hypr-waybar
-  slog "waybar config done!"
+    slog "waybar config"
+    stowgf hypr-waybar
+    slog "waybar config done!"
 }
 
 hyprland_confstall() {
-  slog "hypr config install"
+    slog "hypr config install"
 
-  hypr-waybar_confstall
-  wlogout_confstall
-  rofi_confstall
-  kitty_confstall
+    hypr-waybar_confstall
+    wlogout_confstall
+    rofi_confstall
+    kitty_confstall
 
-  slog "hypr config done!"
+    slog "hypr config done!"
 }
 
 ublue_common_install() {
-  if is_ublue && has_cmd git && has_cmd brew && has_cmd flatpak; then
-    slog "Prerequisites met, installing uBlue OS"
-  else
-    die "Prerequisites not met. You need Aurora/Bluefin/Bazzite with git, brew and flatpak installed."
-  fi
-
-  if ! has_cmd code && ! has_cmd virt-install && ! has_cmd docker; then
-    if ujust devmode; then
-      slog "Rebooting..."
-      sleep 5
-      sudo reboot
+    if is_ublue && has_cmd git && has_cmd brew && has_cmd flatpak; then
+        slog "Prerequisites met, installing uBlue OS"
+    else
+        die "Prerequisites not met. You need Aurora/Bluefin/Bazzite with git, brew and flatpak installed."
     fi
-  fi
 
-  if ! current_user_in_group "docker"; then
-    ujust dx-group
-    incus_confstall
-    slog "Rebooting..."
-    sleep 5
-    sudo reboot
-  fi
+    if ! has_cmd code && ! has_cmd virt-install && ! has_cmd docker; then
+        if ujust devmode; then
+            slog "Rebooting..."
+            sleep 5
+            sudo reboot
+        fi
+    fi
 
-  dotfiles_install
-  python_install
-  npm_install
-  ai-cli_install
-  brew-shell-slim_install
-  apps-slim_install
-  jetbrains-mono_install
-  vscode_confstall
-  is_gnome && gnome-settings_install
-  # brew tap colindean/fonts-nonfree && brew install --cask font-microsoft-office font-microsoft-aptos font-arial font-arial-black font-courier-new font-times-new-roman font-georgia
+    if ! current_user_in_group "docker"; then
+        ujust dx-group
+        incus_confstall
+        slog "Rebooting..."
+        sleep 5
+        sudo reboot
+    fi
+
+    dotfiles_install
+    python_install
+    npm_install
+    ai-cli_install
+    brew-shell-slim_install
+    apps-slim_install
+    jetbrains-mono_install
+    vscode_confstall
+    is_gnome && gnome-settings_install
+    # brew tap colindean/fonts-nonfree && brew install --cask font-microsoft-office font-microsoft-aptos font-arial font-arial-black font-courier-new font-times-new-roman font-georgia
 }
 
 ublue_mainstall() {
-  ublue_common_install
+    ublue_common_install
 
-  if [[ "$USER" == "pervez" ]]; then
-    shell_confstall
-  else
-    is_bluefin && ujust bluefin-cli
-    is_aurora && ujust aurora-cli
-    is_bazzite && ujust bazzite-cli
-  fi
+    if [[ "$USER" == "pervez" ]]; then
+        shell_confstall
+    else
+        is_bluefin && ujust bluefin-cli
+        is_aurora && ujust aurora-cli
+        is_bazzite && ujust bazzite-cli
+    fi
 }
 
 ensure_nix_mount() {
-  [[ -d /nix ]] || die "/nix does not exist, cannot mount nix store"
+    [[ -d /nix ]] || die "/nix does not exist, cannot mount nix store"
 
-  local subvol_path="/home/nix"
-  local mount_point="/nix"
+    local subvol_path="/home/nix"
+    local mount_point="/nix"
 
-  if sudo btrfs subvolume show "$subvol_path" &>/dev/null; then
-    slog "Subvolume $subvol_path already exists, skipping creation"
-  else
-    sudo btrfs subvolume create "$subvol_path" || {
-      die "Failed to create subvolume at $subvol_path"
+    if sudo btrfs subvolume show "$subvol_path" &>/dev/null; then
+        slog "Subvolume $subvol_path already exists, skipping creation"
+    else
+        sudo btrfs subvolume create "$subvol_path" || {
+            die "Failed to create subvolume at $subvol_path"
+        }
+    fi
+
+    if findmnt -rno TARGET "$mount_point" &>/dev/null; then
+        slog "$mount_point already mounted, skipping"
+        return 0
+    fi
+
+    sudo mount -o subvol="$(basename "$subvol_path")" \
+        "$(df --output=source "$(dirname "$subvol_path")" | tail -1)" \
+        "$mount_point" || {
+        die "Failed to mount $subvol_path at $mount_point"
     }
-  fi
-
-  if findmnt -rno TARGET "$mount_point" &>/dev/null; then
-    slog "$mount_point already mounted, skipping"
-    return 0
-  fi
-
-  sudo mount -o subvol="$(basename "$subvol_path")" \
-    "$(df --output=source "$(dirname "$subvol_path")" | tail -1)" \
-    "$mount_point" || {
-    die "Failed to mount $subvol_path at $mount_point"
-  }
 }
 
 bluenix_mainstall() {
-  ublue_common_install
-  ensure_nix_mount
-  nix_groupstall
+    ublue_common_install
+    ensure_nix_mount
+    nix_groupstall
 }
 
 distrobox_groupstall() {
-  if is_distrobox; then
-    warn "Installing distrobox inside distrobox is not recommended, skipping"
-  fi
+    if is_distrobox; then
+        warn "Installing distrobox inside distrobox is not recommended, skipping"
+    fi
 
-  distrobox_install
-  is_distrobox || distrobox-ui_install
+    distrobox_install
+    is_distrobox || distrobox-ui_install
 }
 
 generic-ct_mainstall() {
-  has_cmd curl || has_cmd wget || die "Install curl and run this script again."
+    has_cmd curl || has_cmd wget || die "Install curl and run this script again."
 
-  pixi_install
-  pis git curl wget
+    pixi_install
+    pis git curl wget
 
-  pkgx_install
+    pkgx_install
 
-  slog "Installing shell tools with pixi"
-  pixi-shell-slim_install
+    slog "Installing shell tools with pixi"
+    pixi-shell-slim_install
 
-  slog "Installing shell tools with pixi done!"
+    slog "Installing shell tools with pixi done!"
 
-  dotfiles_install
+    dotfiles_install
 
-  starship_install
-  bash_confstall
-  git_confstall
+    starship_install
+    bash_confstall
+    git_confstall
 }
 
 generic_mainstall() {
-  generic-ct_mainstall
+    generic-ct_mainstall
 
-  has_cmd zsh && zsh_boxstall
-  has_cmd tmux && tmux_boxstall
+    has_cmd zsh && zsh_boxstall
+    has_cmd tmux && tmux_boxstall
 
-  if has_cmd podman || has_cmd docker; then
-    atomic_distrobox_install
-  else
-    fail "No container runtime(docker or podman) installed, skipping distrobox installation"
-  fi
+    if has_cmd podman || has_cmd docker; then
+        atomic_distrobox_install
+    else
+        fail "No container runtime(docker or podman) installed, skipping distrobox installation"
+    fi
 
-  is_desktop || return 0
-  is is_distrobox && return 0
+    is_desktop || return 0
+    is is_distrobox && return 0
 
-  jetbrains-mono_install
-  flathub_install
-  apps-slim_install
-  ptyxis_install
-  vscode-flatpak_install
+    jetbrains-mono_install
+    flathub_install
+    apps-slim_install
+    ptyxis_install
+    vscode-flatpak_install
 }
 
 fedora-atomic-dt_mainstall() {
-  generic_mainstall
+    generic_mainstall
 
-  # shellcheck disable=SC1091
-  source_curl "${ILM_BASE_URL}/share/dt-fns"
+    # shellcheck disable=SC1091
+    source_curl "${ILM_BASE_URL}/share/dt-fns"
 
-  if fn_exists dt-docker; then
-    dt-docker
-  else
-    warn "cannot setup docker distrobox container"
-  fi
+    if fn_exists dt-docker; then
+        dt-docker
+    else
+        warn "cannot setup docker distrobox container"
+    fi
 
-  if fn_exists dt-nix; then
-    dt-nix
-  else
-    warn "Cannot setup nix distrobox container"
-  fi
+    if fn_exists dt-nix; then
+        dt-nix
+    else
+        warn "Cannot setup nix distrobox container"
+    fi
 }
 
 fedora-atomic-tbox_mainstall() {
-  is_std_atomic || die "This script is only for Atomic Host"
+    is_std_atomic || die "This script is only for Atomic Host"
 
-  slog "Fedora Atomic Host setup"
+    slog "Fedora Atomic Host setup"
 
-  jetbrains-mono_install
+    jetbrains-mono_install
 
-  slog "Installing apps"
-  apps-slim_install
+    slog "Installing apps"
+    apps-slim_install
 
-  slog "Setting up default distrobox for development"
+    slog "Setting up default distrobox for development"
 
-  # shellcheck disable=SC2119
-  tbox-dev
+    # shellcheck disable=SC2119
+    tbox-dev
 
-  slog "Fedora Atomic Host With default toolbox setup done!"
+    slog "Fedora Atomic Host With default toolbox setup done!"
 }
 
 fedora-atomic_mainstall() {
-  is_std_atomic || die "This script is only for Atomic Host"
+    is_std_atomic || die "This script is only for Atomic Host"
 
-  slog "Fedora Atomic Host setup"
+    slog "Fedora Atomic Host setup"
 
-  generic-ct_mainstall
-  jetbrains-mono_install
-  atomic_distrobox_install
+    generic-ct_mainstall
+    jetbrains-mono_install
+    atomic_distrobox_install
 
-  slog "Installing apps"
-  apps-slim_install
+    slog "Installing apps"
+    apps-slim_install
 
-  python_install
-  is_gnome && gnome_confstall
-  is_sway && sway_confstall
+    python_install
+    is_gnome && gnome_confstall
+    is_sway && sway_confstall
 
-  slog "Fedora Atomic Host setup done!"
+    slog "Fedora Atomic Host setup done!"
 }
 
 fedora-layered_mainstall() {
-  is_std_atomic || die "This script is only for Atomic Host"
+    is_std_atomic || die "This script is only for Atomic Host"
 
-  slog "Fedora Atomic Host setup"
+    slog "Fedora Atomic Host setup"
 
-  pixi_install
-  pkgx_install
+    pixi_install
+    pkgx_install
 
-  pis wget
-  pixi-shell-slim_install
+    pis wget
+    pixi-shell-slim_install
 
-  dotfiles_install
-  bash_confstall
-  zsh_boxstall
+    dotfiles_install
+    bash_confstall
+    zsh_boxstall
 
-  jetbrains-mono_install
-  atomic_distrobox_install
-  vscode_confstall
-  # docker_confstall
+    jetbrains-mono_install
+    atomic_distrobox_install
+    vscode_confstall
+    # docker_confstall
 
-  apps-slim_install
+    apps-slim_install
 
-  is_gnome && gnome_confstall
-  is_sway && sway_confstall
+    is_gnome && gnome_confstall
+    is_sway && sway_confstall
 
-  slog "Fedora layered setup done! Reboot your system."
+    slog "Fedora layered setup done! Reboot your system."
 }
 
 portainer_install() {
-  if ! has_cmd docker; then
-    warn "docker not installed, skipping portainer"
-    return 1
-  fi
+    if ! has_cmd docker; then
+        warn "docker not installed, skipping portainer"
+        return 1
+    fi
 
-  if has_cmd docker && docker ps -a | grep -q portainer; then
-    slog "Portainer is already installed"
-    return 1
-  fi
+    if has_cmd docker && docker ps -a | grep -q portainer; then
+        slog "Portainer is already installed"
+        return 1
+    fi
 
-  sg docker -c '
+    sg docker -c '
     if ! docker volume inspect portainer_data &>/dev/null; then
         echo "Creating portainer_data volume"
         docker volume create portainer_data
         docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
     fi
     '
-  slog "Portainer installation done!"
+    slog "Portainer installation done!"
 }
 
 apps-slim_groupstall() {
-  flathub_install
-  apps-slim_install
+    flathub_install
+    apps-slim_install
 }
 
 apps_groupstall() {
-  flathub_install
-  apps_install
+    flathub_install
+    apps_install
 }
 
 enable_ssh_service() {
-  if has_cmd systemctl; then
-    sudo systemctl enable sshd || sudo systemctl enable ssh
-  elif has_cmd rc-update; then
-    sudo rc-update add sshd default
-  else
-    warn "Cannot enable ssh service: no systemctl or rc-update found"
-  fi
+    if has_cmd systemctl; then
+        sudo systemctl enable sshd || sudo systemctl enable ssh
+    elif has_cmd rc-update; then
+        sudo rc-update add sshd default
+    else
+        warn "Cannot enable ssh service: no systemctl or rc-update found"
+    fi
 }
 
 wallpapers_install() {
-  local walldir="${XDG_DATA_HOME:-$HOME/.local/share}/ilm/wallpapers"
-  if dir_exists "$walldir"; then
-    return 0
-  fi
+    local walldir="${XDG_DATA_HOME:-$HOME/.local/share}/ilm/wallpapers"
+    if dir_exists "$walldir"; then
+        return 0
+    fi
 
-  slog "Installing wallpapers"
+    slog "Installing wallpapers"
 
-  smd "$walldir"
-  wget -nv https://github.com/mylinuxforwork/wallpaper/archive/refs/heads/main.zip -O /tmp/wallpapers.zip
-  unzip -qq -d "$walldir" /tmp/wallpapers.zip
-  mv "$walldir/wallpaper-main"/* "$walldir"/
-  frm /tmp/wallpapers.zip
-  rm -rf "$walldir/wallpaper-main"
-  sln "$walldir" "$HOME/Pictures/Wallpapers"
+    smd "$walldir"
+    wget -nv https://github.com/mylinuxforwork/wallpaper/archive/refs/heads/main.zip -O /tmp/wallpapers.zip
+    unzip -qq -d "$walldir" /tmp/wallpapers.zip
+    mv "$walldir/wallpaper-main"/* "$walldir"/
+    frm /tmp/wallpapers.zip
+    rm -rf "$walldir/wallpaper-main"
+    sln "$walldir" "$HOME/Pictures/Wallpapers"
 
-  slog "Wallpapers installation done!"
+    slog "Wallpapers installation done!"
 }

@@ -517,3 +517,14 @@ system-docker_binstall() {
 
   si docker.io docker-compose-v2 slim
 }
+
+niri_binstall() {
+  if is_legacy_apt || is_debian; then
+    warn "niri not supported on this distro"
+    return 1
+  fi
+
+  sudo add-apt-repository ppa:avengemedia/danklinux
+  sudo add-apt-repository ppa:avengemedia/dms
+  sudo apt install niri dms sddm sddm-themes
+}

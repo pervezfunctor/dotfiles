@@ -970,6 +970,12 @@ is_zorin() {
   [[ "$ID" == *"zorin"* ]]
 }
 
+is_pikaos() {
+  local ID
+  ID=$(get_os)
+  [[ "$ID" == *"pika"* ]]
+}
+
 is_ubuntu() {
   local ID
   ID=$(get_os)
