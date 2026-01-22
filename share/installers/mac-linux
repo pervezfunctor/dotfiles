@@ -274,8 +274,11 @@ shell-slim_mainstall() {
 shell_check() {
   shell-slim_check
   cmd_check tmux nvim lazygit sd bat htop atuin gawk carapace direnv \
-    shellcheck shfmt ug tldr fdfind direnv jq yq gum bat delta just dialog \
+    shellcheck shfmt ug tldr direnv jq yq gum bat delta just dialog \
     btm yazi
+  if ! has_cmd fd && ! has_cmd fdfind; then
+    warn "fd or fdfind not found"
+  fi
 }
 
 shell_mainstall() {
