@@ -506,6 +506,6 @@ mango_binstall() {
 
 niri_install() {
   sudo dnf copr enable avengemedia/dms
-  sudo dnf install -y niri dms sddm sddm-themes
+  sudo dnf install -y niri dms sddm sddm-themes qt5ct qt6ct kitty sddm sddm-breeze
   systemctl --user add-wants niri.service dms
 }

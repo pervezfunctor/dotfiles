@@ -679,7 +679,6 @@ font-awesome_install() {
     unzip -qq -d /tmp/font-awesome -o /tmp/font-awesome.zip
     cp /tmp/font-awesome/*.otf ~/.local/share/fonts
     frm /tmp/font-awesome /tmp/font-awesome.zip
-
 }
 
 maple_font_install() {
@@ -1063,6 +1062,7 @@ wallpapers_install() {
     mv "$walldir/wallpaper-main"/* "$walldir"/
     frm /tmp/wallpapers.zip
     rm -rf "$walldir/wallpaper-main"
+    mkdir -p ~/Pictures
     sln "$walldir" "$HOME/Pictures/Wallpapers"
 
     slog "Wallpapers installation done!"
