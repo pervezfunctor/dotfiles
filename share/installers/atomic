@@ -1062,8 +1062,7 @@ wallpapers_install() {
     mv "$walldir/wallpaper-main"/* "$walldir"/
     frm /tmp/wallpapers.zip
     rm -rf "$walldir/wallpaper-main"
-    mkdir -p ~/Pictures
-    sln "$walldir" "$HOME/Pictures/Wallpapers"
+    dir_exists "$HOME/Pictures" && sln "$walldir" "$HOME/Pictures/Wallpapers"
 
     slog "Wallpapers installation done!"
 }
