@@ -304,21 +304,23 @@ gnome-settings_install() {
     slog "gnome settings done!"
 }
 
-more-gnome-flatpaks_install() {
+gnome-flatpaks_install() {
     fpi com.github.PintaProject.Pinta
     fpi com.github.rafostar.Clapper
     fpi io.github.flattool.Ignition
     fpi io.gitlab.adhami3310.Impression
     fpi org.gnome.Firmware
     fpi org.gnome.World.PikaBackup
+    fpi io.missioncenter.MissionCenter
 }
 
-gnome-flatpaks_install() {
+gnome-flatpaks-slim_install() {
     fpi com.mattjakeman.ExtensionManager
-    fpi io.missioncenter.MissionCenter
+
     fpi org.gnome.Logs
     fpi org.gtk.Gtk3theme.adw-gtk3
     fpi org.gtk.Gtk3theme.adw-gtk3-dark
+    fpi io.github.swordpuffin.rewaita
 }
 
 # https://github.com/basecamp/omakub/blob/master/install/desktop/set-gnome-extensions.sh
@@ -346,7 +348,7 @@ gnome_confstall() {
     gnome-settings_install
     gnome-extensions-slim_install
     # gnome_keybindings_install
-    gnome-flatpaks_install
+    gnome-flatpaks-slim_install
 
     slog "gnome config done!"
 }

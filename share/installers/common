@@ -108,7 +108,6 @@ pixi-shell-slim_install() {
   has_cmd rg || pi ripgrep
   has_cmd gum || pi go-gum
   has_cmd whiptail || pi newt
-
   pis micro starship zoxide gh fzf eza
 }
 
@@ -127,6 +126,7 @@ pixi-shell_install() {
   has_cmd choose || pkgs+=(choose-rust)
   has_cmd btm || pkgs+=(bottom)
   has_cmd nu || pkgs+=(nushell)
+  has_cmd shfmt || pi go-shfmt
 
   [ ${#pkgs[@]} -gt 0 ] && pis "${pkgs[@]}"
 }
