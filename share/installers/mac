@@ -60,7 +60,7 @@ essential_install() {
 }
 
 cli-slim_install() {
-  bis zsh starship ripgrep gh bat jq fzf zoxide eza \
+  bis starship ripgrep gh bat jq fzf zoxide eza \
     reattach-to-user-namespace zsh-syntax-highlighting zsh-autosuggestions
 }
 
