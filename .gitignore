@@ -37,3 +37,4 @@ vim/*.un~
 yazi/dot-config/yazi/package.toml
 .cache/
 .claude/
+__pycache__
