@@ -444,3 +444,7 @@ EOF
 gh-auth() {
   gh auth login --hostname github.com --git-protocol https
 }
+
+gh-nobrowser() {
+  BROWSER=false gh auth login
+}
