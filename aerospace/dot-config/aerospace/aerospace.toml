@@ -9,7 +9,9 @@ after-login-command = []
 # You can use it to add commands that run after AeroSpace startup.
 # 'after-startup-command' is run after 'after-login-command'
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
-after-startup-command = []
+after-startup-command = [
+  'exec-and-forget /opt/homebrew/bin/borders active_color=0xff40a02b inactive_color=0xff3a5f0b width=8.0',
+]
 
 # Start AeroSpace at login
 start-at-login = true
@@ -121,34 +123,44 @@ alt-right = 'focus right'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move
 alt-shift-h = 'move left'
-alt-shift-j = 'move down'
-alt-shift-k = 'move up'
-alt-shift-l = 'move right'
-
 alt-shift-left = 'move left'
+alt-shift-j = 'move down'
 alt-shift-down = 'move down'
+alt-shift-k = 'move up'
 alt-shift-up = 'move up'
+alt-shift-l = 'move right'
 alt-shift-right = 'move right'
 
 alt-shift-ctrl-h = ['join-with left', 'mode main']
-alt-shift-ctrl-j = ['join-with down', 'mode main']
-alt-shift-ctrl-k = ['join-with up', 'mode main']
-alt-shift-ctrl-l = ['join-with right', 'mode main']
-
 alt-shift-ctrl-left = ['join-with left', 'mode main']
+alt-shift-ctrl-j = ['join-with down', 'mode main']
 alt-shift-ctrl-down = ['join-with down', 'mode main']
+alt-shift-ctrl-k = ['join-with up', 'mode main']
 alt-shift-ctrl-up = ['join-with up', 'mode main']
+alt-shift-ctrl-l = ['join-with right', 'mode main']
 alt-shift-ctrl-right = ['join-with right', 'mode main']
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#resize
 alt-shift-minus = 'resize smart -50'
 alt-shift-equal = 'resize smart +50'
+alt-cmd-h = 'resize width +50'
+alt-cmd-left = 'resize width +50'
+alt-cmd-l = 'resize width -50'
+alt-cmd-right = 'resize width -50'
+alt-cmd-j = 'resize height -50'
+alt-cmd-down = 'resize height -50'
+alt-cmd-k = 'resize height +50'
+alt-cmd-up = 'resize height +50'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#workspace
 alt-1 = 'workspace 1'
 alt-2 = 'workspace 2'
 alt-3 = 'workspace 3'
 alt-4 = 'workspace 4'
+alt-ctrl-left = 'workspace prev --wrap-around'
+alt-ctrl-up = 'workspace prev --wrap-around'
+alt-ctrl-right = 'workspace next --wrap-around'
+alt-ctrl-down = 'workspace next --wrap-around'
 
 # alt-a = 'workspace A' # In your config, you can drop workspace bindings that you don't need
 # alt-b = 'workspace B'
@@ -183,6 +195,10 @@ alt-shift-ctrl-1 = 'move-node-to-workspace 1 --focus-follows-window'
 alt-shift-ctrl-2 = 'move-node-to-workspace 2 --focus-follows-window'
 alt-shift-ctrl-3 = 'move-node-to-workspace 3 --focus-follows-window'
 alt-shift-ctrl-4 = 'move-node-to-workspace 4 --focus-follows-window'
+alt-shift-cmd-left = 'move-node-to-workspace prev --focus-follows-window --wrap-around'
+alt-shift-cmd-up = 'move-node-to-workspace prev --focus-follows-window --wrap-around'
+alt-shift-cmd-right = 'move-node-to-workspace next --focus-follows-window --wrap-around'
+alt-shift-cmd-down = 'move-node-to-workspace next --focus-follows-window --wrap-around'
 
 # alt-shift-a = 'move-node-to-workspace A'
 # alt-shift-b = 'move-node-to-workspace B'
@@ -221,6 +237,7 @@ alt-t = 'exec-and-forget open -a /Applications/Telegram.app'
 alt-o = 'exec-and-forget open -a /Applications/Obsidian.app'
 alt-g = 'exec-and-forget open -a /Applications/Ghostty.app'
 alt-s = 'exec-and-forget open -a /Applications/Safari.app'
+alt-r = 'mode resize'                                        # enter resize mode without disturbing existing bindings
 
 # 'service' binding mode declaration.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
@@ -242,3 +259,15 @@ shift-down = ['volume set 0', 'mode main']
 
 [mode.apps.binding]
 alt-w = ['exec-and-forget open -a /Applications/Ghostty.app', 'mode main']
+
+[mode.resize.binding]
+esc = 'mode main'
+enter = 'mode main'
+h = 'resize width -50'
+left = 'resize width -50'
+l = 'resize width +50'
+right = 'resize width +50'
+j = 'resize height +50'
+down = 'resize height +50'
+k = 'resize height -50'
+up = 'resize height -50'
