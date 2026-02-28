@@ -124,9 +124,9 @@ export def rpm-ostree-install []: nothing -> nothing {
         return
     }
 
-    if (has-cmd stow) or (has-cmd zsh) or (has-cmd gcc) or (has-cmd make) or
+    if ((has-cmd stow) or (has-cmd zsh) or (has-cmd gcc) or (has-cmd make) or
        (has-cmd tmux) or (has-cmd virsh) or
-       (has-cmd virt-install) or (has-cmd code) {
+       (has-cmd virt-install) or (has-cmd code)) {
         warn "This script is supposed to be run only once"
     }
 

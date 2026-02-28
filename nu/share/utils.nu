@@ -697,7 +697,13 @@ export def ssh-enable [port?: int]: nothing -> nothing {
     }
 }
 
-export def sclone [source: string, dest: string, ...args: string]: nothing -> bool {
+export def sclone [
+    source: string
+    dest: string
+    --depth: string = ""  # Clone depth (e.g., "1" for shallow clone)
+    --branch: string = ""  # Branch to clone
+    ...args: string
+]: nothing -> bool {
     frm $dest
 
     if (dir-exists $dest) {
@@ -706,8 +712,22 @@ export def sclone [source: string, dest: string, ...args: string]: nothing -> bo
     }
 
     slog $"Cloning ($source) to ($dest)"
+
+    mut clone_args = []
+    if ($depth | is-not-empty) {
+        $clone_args = ($clone_args | append ["--depth" $depth])
+    }
+    if ($branch | is-not-empty) {
+        $clone_args = ($clone_args | append ["--branch" $branch])
+    }
+    $clone_args = ($clone_args | append $args)
+
     try {
-        git clone ...$args $source $dest
+        if ($clone_args | is-empty) {
+            git clone $source $dest
+        } else {
+            git clone ...$clone_args $source $dest
+        }
         true
     } catch {
         fail $"Failed to clone ($source) to ($dest)"

@@ -49,14 +49,7 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"
 # Main package install function
 export def si [...packages: string]: nothing -> nothing {
     if (has-cmd dnf5) {
-        sudo dnf5 -y \
-            --setopt=install_weak_deps=False \
-            --setopt=fastestmirror=True \
-            --setopt=keepcache=False \
-            --setopt=defaultyes=True \
-            --setopt=max_parallel_downloads=10 \
-            --setopt=metadata_timer_sync=0 \
-            install --skip-unavailable --skip-broken ...$packages
+        sudo dnf5 -y --setopt=install_weak_deps=False --setopt=fastestmirror=True --setopt=keepcache=False --setopt=defaultyes=True --setopt=max_parallel_downloads=10 --setopt=metadata_timer_sync=0 install --skip-unavailable --skip-broken ...$packages
     } else {
         slog "Installing packages..."
         for p in $packages {
@@ -82,8 +75,13 @@ export def enable-epel []: nothing -> nothing {
 # Update packages
 export def update-packages []: nothing -> nothing {
     slog "Updating..."
-    if not ({ sudo dnf update -y && sudo dnf upgrade -y } | complete | get exit_code | $in == 0) {
-        die "dnf update/upgrade failed, quitting"
+    let update_result = try { sudo dnf update -y | complete } catch { { exit_code: 1 } }
+    if $update_result.exit_code != 0 {
+        die "dnf update failed, quitting"
+    }
+    let upgrade_result = try { sudo dnf upgrade -y | complete } catch { { exit_code: 1 } }
+    if $upgrade_result.exit_code != 0 {
+        die "dnf upgrade failed, quitting"
     }
     slog "Update done!"
 }

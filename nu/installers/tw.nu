@@ -29,8 +29,13 @@ export def si [...packages: string]: nothing -> nothing {
 export def update-packages []: nothing -> nothing {
     slog "Updating SUSE"
 
-    if not ({ sudo zypper refresh && sudo zypper --non-interactive --quiet dup } | complete | get exit_code | $in == 0) {
+    let refresh_result = try { sudo zypper refresh | complete } catch { { exit_code: 1 } }
+    if $refresh_result.exit_code != 0 {
         die "zypper refresh failed. quitting"
+    }
+    let dup_result = try { sudo zypper --non-interactive --quiet dup | complete } catch { { exit_code: 1 } }
+    if $dup_result.exit_code != 0 {
+        die "zypper dup failed. quitting"
     }
 }
 

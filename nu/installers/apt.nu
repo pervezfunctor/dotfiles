@@ -64,8 +64,13 @@ export def pacstall-install []: nothing -> nothing {
 export def update-packages []: nothing -> nothing {
     slog "Updating packages..."
 
-    if not ({ sudo apt-get -qq update && sudo apt-get -qq upgrade -y } | complete | get exit_code | $in == 0) {
-        die "apt-get update/upgrade failed, quitting"
+    let update_result = try { sudo apt-get -qq update | complete } catch { { exit_code: 1 } }
+    if $update_result.exit_code != 0 {
+        die "apt-get update failed, quitting"
+    }
+    let upgrade_result = try { sudo apt-get -qq upgrade -y | complete } catch { { exit_code: 1 } }
+    if $upgrade_result.exit_code != 0 {
+        die "apt-get upgrade failed, quitting"
     }
 
     slog "Updating packages done!"
@@ -278,7 +283,7 @@ export def essential-install []: nothing -> nothing {
 
     si zip unar micro p7zip libreadline-dev libsqlite3-dev libffi-dev libfuse2 \
         libbz2-dev liblzma-dev libsecret-tools build-essential whiptail zstd gawk \
-        command-not-found firmware-linux linux-headers-(uname -r)
+        command-not-found firmware-linux linux-headers-(^uname -r | str trim)
 
     slog "Essential packages installation done!"
 }
@@ -493,12 +498,14 @@ export def incus-latest-install []: nothing -> nothing {
     sudo mkdir -p /etc/apt/keyrings/
     sudo curl -fsSL https://pkgs.zabbly.com/key.asc -o /etc/apt/keyrings/zabbly.asc
 
+    let suite = open /etc/os-release | lines | parse "{{key}}={{value}}" | where key == "VERSION_CODENAME" | get 0.value | str trim -c '"'
+    let arch = dpkg --print-architecture
     let sources_content = $"Enabled: yes
 Types: deb
 URIs: https://pkgs.zabbly.com/incus/stable
-Suites: (open /etc/os-release | lines | parse "{{key}}={{value}}" | where key == "VERSION_CODENAME" | get 0.value | str trim -c '"')
+Suites: ($suite)
 Components: main
-Architectures: (dpkg --print-architecture)
+Architectures: ($arch)
 Signed-By: /etc/apt/keyrings/zabbly.asc"
 
     $sources_content | sudo tee /etc/apt/sources.list.d/zabbly-incus-stable.sources | ignore

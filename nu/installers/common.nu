@@ -323,10 +323,10 @@ export def zsh-confstall []: nothing -> nothing {
 
     srm ~/.zshrc
     smd ~/.zsh
-    sclone --depth=1 https://github.com/sindresorhus/pure.git ~/.zsh/pure
-    sclone --depth=1 https://github.com/djui/alias-tips.git ~/.zsh/alias-tips
-    sclone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git ~/.zsh/zsh-autosuggestions
-    sclone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.zsh/zsh-syntax-highlighting
+    sclone https://github.com/sindresorhus/pure.git ~/.zsh/pure --depth 1
+    sclone https://github.com/djui/alias-tips.git ~/.zsh/alias-tips --depth 1
+    sclone https://github.com/zsh-users/zsh-autosuggestions.git ~/.zsh/zsh-autosuggestions --depth 1
+    sclone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.zsh/zsh-syntax-highlighting --depth 1
 
     if (has-cmd stow) {
         stowdf zsh
@@ -429,7 +429,7 @@ export def emacs-doom-confstall []: nothing -> nothing {
 
     slog "Installing doom"
 
-    sclone --depth=1 https://github.com/doomemacs/doomemacs ($env.XDG_CONFIG_HOME | path join "emacs")
+    sclone https://github.com/doomemacs/doomemacs ($env.XDG_CONFIG_HOME | path join "emacs") --depth 1
     sclone https://github.com/pervezfunctor/doomemacs-config ($env.XDG_CONFIG_HOME | path join "doom")
 
     slog "Configure doom"
@@ -507,7 +507,7 @@ export def lazyvim-confstall []: nothing -> nothing {
         git clone --depth 1 https://github.com/LazyVim/starter ~/.config/lazyvim
         frm ~/.config/nvim/.git
     }
-    sln ~/.config/lazyvim ~/.config/nvim
+    sln ~/.config/lazyvim ~/.config/nvim | ignore
 }
 
 # Git configuration helper
@@ -533,15 +533,15 @@ export def git-confstall []: nothing -> nothing {
 
     slog "Configuring git"
 
-    git-conf init.defaultBranch main
-    git-conf pull.ff only
-    git-conf delta.navigate true
-    git-conf delta.line-numbers true
+    git-conf init.defaultBranch "main"
+    git-conf pull.ff "only"
+    git-conf delta.navigate "true"
+    git-conf delta.line-numbers "true"
     git-conf delta.syntax-theme "Monokai Extended"
-    git-conf delta.side-by-side true
-    git-conf merge.conflictStyle diff3
+    git-conf delta.side-by-side "true"
+    git-conf merge.conflictStyle "diff3"
     git-conf interactive.diffFilter "delta --color-only"
-    git-conf fetch.prune true
+    git-conf fetch.prune "true"
 
     if $env.USER == "pervez" {
         git-conf user.name "Pervez Iqbal"
@@ -970,7 +970,7 @@ export def shell-slim-install []: nothing -> nothing {
         pixi-install
         pixi-shell-slim-install
     }
-    pkgx-install
+    pkgx-install | ignore
 }
 
 # Shell installation
@@ -1109,7 +1109,7 @@ export def ghostty-binstall []: nothing -> nothing {
     }
 
     let version = (curl -s https://api.github.com/repos/pkgforge-dev/ghostty-appimage/releases/latest | from json | get tag_name)
-    let arch = (uname -m)
+    let arch = (^uname -m)
 
     wget $"https://github.com/pkgforge-dev/ghostty-appimage/releases/download/($version)/Ghostty-($version)-($arch).AppImage"
     chmod +x $"Ghostty-($version)-($arch).AppImage"
@@ -1140,7 +1140,7 @@ export def cmake-install []: nothing -> nothing {
     }
 
     let cmake_version = "4.1.0"
-    let arch = (uname -m)
+    let arch = (^uname -m)
     let cmake_binary_name = $"cmake-($cmake_version)-linux-($arch).sh"
     let cmake_checksum_name = $"cmake-($cmake_version)-SHA-256.txt"
 
@@ -1340,12 +1340,7 @@ export def vscode-flatpak-confstall []: nothing -> nothing {
 
     vscode-extensions-install
 
-    flatpak override --user \
-        --socket=wayland --nosocket=x11 \
-        --device=dri \
-        --filesystem=host-os \
-        --talk-name=org.freedesktop.secrets \
-        com.visualstudio.code
+    ^flatpak override --user --socket=wayland "--nosocket=x11" --device=dri --filesystem=host-os --talk-name=org.freedesktop.secrets com.visualstudio.code
 
     slog "vscode flatpak config done!"
 }
@@ -2107,7 +2102,7 @@ export def wallpapers-install []: nothing -> nothing {
     smd $walldir
     wget -nv https://github.com/mylinuxforwork/wallpaper/archive/refs/heads/main.zip -O /tmp/wallpapers.zip
     unzip -qq -d $walldir /tmp/wallpapers.zip
-    mv ($walldir | path join "wallpaper-main")/* $walldir/
+    mv ($walldir | path join "wallpaper-main")/* $"($walldir)/"
     frm /tmp/wallpapers.zip
     rm -rf ($walldir | path join "wallpaper-main")
 
@@ -2177,7 +2172,7 @@ export def home-manager-install []: nothing -> nothing {
 
     slog "nix-config copied to ~/nix-config. Running hms to apply configuration."
 
-    hms
+    hms | ignore
 }
 
 # Nix groupstall

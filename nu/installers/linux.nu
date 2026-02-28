@@ -41,7 +41,7 @@ export def emacs-binstall []: nothing -> nothing {
         si -y --no-install-recommends emacs
     } else if (is-mac) {
         brew tap railwaycat/emacsmacport
-        bi emacs-mac --with-modules
+        brew install -q emacs-mac --with-modules
         ln -s /usr/local/opt/emacs-mac/Emacs.app /Applications/Emacs.app
     } else {
         si emacs
@@ -433,7 +433,7 @@ export def nixos-mainstall []: nothing -> nothing {
     let config_src = $env.DOT_DIR | path join "extras" "nixos" "vm"
 
     slog $"Copying config to ($config_dir)..."
-    if not (cp ($config_src | path join "dev.nix") ($config_src | path join "flake.nix") ($config_src | path join "home.nix") $config_dir/) {
+    if not (cp ($config_src | path join "dev.nix") ($config_src | path join "flake.nix") ($config_src | path join "home.nix") $"($config_dir)/") {
         die "Failed to copy config files"
     }
 

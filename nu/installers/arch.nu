@@ -322,7 +322,7 @@ export def desktop-core-install []: nothing -> nothing {
 
     flathub-install
     paru-install
-    aur -S bibata-cursor-theme
+    aur bibata-cursor-theme
 
     fpi app.zen_browser.zen
     wallpapers-install

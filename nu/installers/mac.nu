@@ -207,7 +207,11 @@ export def nix-darwin-mainstall []: nothing -> nothing {
     }
 
     slog "Rebuilding system with flake..."
-    if not (sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake $"($cfg_dir)#mac") {
+    let flake_url = "nix-darwin/master#darwin-rebuild"
+    let rebuild_result = try {
+        ^sudo nix run $flake_url -- switch --flake $"($cfg_dir)#mac" | complete
+    } catch { { exit_code: 1 } }
+    if $rebuild_result.exit_code != 0 {
         die "nix-darwin-rebuild failed"
     }
 

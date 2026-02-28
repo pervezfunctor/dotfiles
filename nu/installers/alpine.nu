@@ -16,25 +16,34 @@ export def asroot [...args: string]: nothing -> nothing {
 
 # Main package install function
 export def si [...packages: string]: nothing -> nothing {
-    asroot apk add --no-cache ...$packages
+    if (has-cmd sudo) {
+        sudo apk add --no-cache ...$packages
+    } else if (has-cmd doas) {
+        doas apk add --no-cache ...$packages
+    }
 }
 
 # Update packages
 export def update-packages []: nothing -> nothing {
     slog "Updating Alpine"
 
-    if not ({ asroot apk update && asroot apk upgrade } | complete | get exit_code | $in == 0) {
-        die "apk update/upgrade failed, quitting"
+    let update_result = try { asroot apk update | complete } catch { { exit_code: 1 } }
+    if $update_result.exit_code != 0 {
+        die "apk update failed, quitting"
+    }
+    let upgrade_result = try { asroot apk upgrade | complete } catch { { exit_code: 1 } }
+    if $upgrade_result.exit_code != 0 {
+        die "apk upgrade failed, quitting"
     }
 }
 
 # Alpine packages installation
 export def alpine-packages []: nothing -> nothing {
-    asroot apk add --no-cache curl wget gcc libc-dev make gzip zsh git unzip \
-        neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat nmap \
-        trash-cli starship stow just file tree fd htop sd net-tools iproute2 \
-        bottom choose dialog direnv dust dysk delta gum jq lazygit libsecret micro \
-        pixi procs shellcheck shfmt stow tar tldr ugrep which xh yazi yq newt
+    if (has-cmd sudo) {
+        sudo apk add --no-cache curl wget gcc libc-dev make gzip zsh git unzip neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat nmap trash-cli starship stow just file tree fd htop sd net-tools iproute2 bottom choose dialog direnv dust dysk gum jq lazygit libsecret micro pixi procs shellcheck shfmt tar tldr ugrep which xh yazi yq newt
+    } else if (has-cmd doas) {
+        doas apk add --no-cache curl wget gcc libc-dev make gzip zsh git unzip neovim tmux ripgrep luarocks fzf eza zoxide github-cli delta bat nmap trash-cli starship stow just file tree fd htop sd net-tools iproute2 bottom choose dialog direnv dust dysk gum jq lazygit libsecret micro pixi procs shellcheck shfmt tar tldr ugrep which xh yazi yq newt
+    }
 }
 
 # Locale setup

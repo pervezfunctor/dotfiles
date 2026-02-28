@@ -256,7 +256,7 @@ export def home-manager-install []: nothing -> nothing {
 
     slog "nix-config copied to ~/nix-config. Running hms to apply configuration."
 
-    hms
+    hms | ignore
 }
 
 # Nix groupstall
