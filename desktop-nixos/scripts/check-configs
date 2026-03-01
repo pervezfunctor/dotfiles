@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Checking all configurations..."
+
+# Evaluate top-level derivations for all configurations
+# This checks for detailed evaluation errors without building the system
+nix eval --json .#nixosConfigurations --apply 'configs: builtins.mapAttrs (name: sys: sys.config.system.build.toplevel.drvPath) configs'
+
+echo -e "\nAll configurations evaluated successfully!"

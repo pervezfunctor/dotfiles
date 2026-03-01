@@ -1,0 +1,203 @@
+xwayland disable
+
+input "type:keyboard" {
+	xkb_options caps:ctrl_modifier
+}
+
+output HDMI-A-1 resolution 3840x2160 position 0,0 scale 1.5
+output HDMI-A-2 resolution 3840x2160 position 0,0 scale 1.5
+output DP-1 resolution 3840x2160 position 0,0 scale 1.5
+output DP-2 resolution 3840x2160 position 0,0 scale 1.5
+output Virtual-1 resolution 3840x2160 position 0,0 scale 1.5
+output eDP-1 resolution 1920x1080 position 0,0 scale 1.25
+
+set $mod Mod4
+
+# Home row direction keys, like vim
+set $left h
+set $down j
+set $up k
+set $right l
+
+set $term kitty
+
+set $menu noctalia-shell ipc call launcher toggle
+
+
+set $screenlock noctalia-shell ipc call sessionMenu lock
+
+exec swayidle -w \
+  timeout 240 '$screenlock -f' \
+  timeout 300 'swaymsg "output * power off"' \
+  resume 'swaymsg "output * power on"' \
+  before-sleep '$screenlock -f' \
+  timeout 600 'systemctl suspend'
+
+default_border pixel 3
+default_floating_border pixel 3
+
+gaps inner 8
+gaps outer 8
+
+smart_borders on
+# smart_gaps on
+
+bindsym $mod+shift+g exec swaymsg gaps outer all set 0 && swaymsg gaps inner all set 5
+bindsym $mod+g exec swaymsg gaps outer all set 0 && swaymsg gaps inner all set 0
+
+bindsym $mod+Return exec $term
+bindsym $mod+Shift+q kill
+bindsym $mod+d exec $menu
+bindsym $mod+shift+d exec $menu_window
+
+floating_modifier $mod normal
+
+bindsym $mod+Shift+c reload
+
+bindsym $mod+Shift+e exec swaynag -t warning -m 'Do you really want to exit sway?' -B 'Yes, exit sway' 'swaymsg exit'
+
+bindsym $mod+$left focus left
+bindsym $mod+$down focus down
+bindsym $mod+$up focus up
+bindsym $mod+$right focus right
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+bindsym $mod+Shift+$left move left
+bindsym $mod+Shift+$down move down
+bindsym $mod+Shift+$up move up
+bindsym $mod+Shift+$right move right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
+bindsym $mod+7 workspace number 7
+bindsym $mod+8 workspace number 8
+bindsym $mod+9 workspace number 9
+
+bindsym $mod+Shift+1 move container to workspace number 1, workspace 1
+bindsym $mod+Shift+2 move container to workspace number 2, workspace 2
+bindsym $mod+Shift+3 move container to workspace number 3, workspace 3
+bindsym $mod+Shift+4 move container to workspace number 4, workspace 4
+bindsym $mod+Shift+5 move container to workspace number 5, workspace 5
+bindsym $mod+Shift+6 move container to workspace number 6, workspace 6
+bindsym $mod+Shift+7 move container to workspace number 7, workspace 7
+bindsym $mod+Shift+8 move container to workspace number 8, workspace 8
+bindsym $mod+Shift+9 move container to workspace number 9, workspace 9
+# bindsym $mod+Shift+0 move container to workspace number 10, workspace 10
+
+bindsym $mod+ctrl+left workspace next
+bindsym $mod+ctrl+right workspace prev
+bindsym $mod+shift+ctrl+left move container to workspace next, workspace next
+bindsym $mod+shift+ctrl+right move container to workspace prev, workspace prev
+
+bindsym $mod+b splith
+bindsym $mod+v splitv
+
+bindsym $mod+tab workspace next_on_output
+bindsym $mod+Shift+tab workspace prev_on_output
+
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+e layout toggle split
+bindsym $mod+f fullscreen
+bindsym $mod+t floating toggle
+bindsym $mod+shift+t focus mode_toggle
+
+bindsym $mod+a focus parent
+bindsym $mod+Shift+minus move scratchpad
+bindsym $mod+minus scratchpad show
+
+bindsym $mod+alt+$left resize shrink width 10px
+bindsym $mod+alt+$down resize grow height 10px
+bindsym $mod+alt+$up resize shrink height 10px
+bindsym $mod+alt+$right resize grow width 10px
+bindsym $mod+alt+Left resize shrink width 10px
+bindsym $mod+alt+Down resize grow height 10px
+bindsym $mod+alt+Up resize shrink height 10px
+bindsym $mod+alt+Right resize grow width 10px
+
+mode "resize" {
+    bindsym $left resize shrink width 10px
+    bindsym $down resize grow height 10px
+    bindsym $up resize shrink height 10px
+    bindsym $right resize grow width 10px
+
+    bindsym Left resize shrink width 10px
+    bindsym Down resize grow height 10px
+    bindsym Up resize shrink height 10px
+    bindsym Right resize grow width 10px
+
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# Open specific applications in floating mode
+for_window [title="File Transfer*"] floating enable
+for_window [class="qt5ct"] floating enable sticky enable border normal
+for_window [class="qt6ct"] floating enable sticky enable border normal
+for_window [app_id="(Calendar|Calculator|Power-statistics|Control-center)"] floating enable
+for_window [app_id="org.gnome.(Nautilus|Weather)"] floating enable
+for_window [app_id="nm-connection-editor"] floating enable
+for_window [app_id="(pavucontrol|psensor)"] floating enable
+for_window [app_id="mpv"] floating enable
+for_window [app_id="mpv"] resize set 960 540
+for_window [app_id="mpv"] border pixel 0
+for_window [app_id="firefox" title="Pushbullet"] floating enable
+for_window [app_id="firefox" title="Firefox — Sharing Indicator"] floating enable
+for_window [app_id="firefox" title="Picture-in-Picture"] floating enable
+for_window [title="Picture-in-picture"] floating enable
+for_window [app_id="firefox" title="Pushbullet – Mozilla Firefox"] floating enable
+for_window [app_id="firefox" title="About Mozilla Firefox"] floating enable
+for_window [app_id="lxqt-policykit-agent"] {
+    floating enable
+    move position center
+}
+
+bindsym $mod+alt+shift+l exec noctalia-shell ipc call lockScreen lock
+bindsym $mod+space exec noctalia-shell ipc call launcher toggle
+bindsym $mod+C exec noctalia-shell ipc call launcher clipboard
+bindsym $mod+alt+C exec noctalia-shell ipc call launcher calculator
+bindsym $mod+shift+comma exec noctalia-shell ipc call controlCenter toggle
+bindsym $mod+comma exec noctalia-shell ipc call settings toggle
+
+# # Audio controls
+# bindel = , XF86AudioRaiseVolume, exec, noctalia-shell ipc call volume increase
+# bindel = , XF86AudioLowerVolume, exec, noctalia-shell ipc call volume decrease
+# bindl = , XF86AudioMute, exec, noctalia-shell ipc call volume muteOutput
+
+# # Brightness controls
+# bindel = , XF86MonBrightnessUp, exec, noctalia-shell ipc call brightness increase
+# bindel = , XF86MonBrightnessDown, exec, noctalia-shell ipc call brightness decrease
+
+include /etc/sway/config.d/*
+exec wl-paste --watch cliphist store
+exec noctalia-shell
+# exec systemctl --user start noctalia-shell
+
+include ~/.config/sway/local
+include ~/.config/sway/noctalia
+
+# # DMS Keybindings
+# bindsym $mod+shift+return exec dms ipc call spotlight toggle
+# bindsym $mod+shift+v exec dms ipc call clipboard toggle
+# bindsym $mod+shift+m exec dms ipc call processlist focusOrToggle
+# bindsym $mod+comma exec dms ipc call settings focusOrToggle
+
+# # Audio controls
+# bindsym XF86AudioRaiseVolume exec dms ipc call audio increment 3
+# bindsym XF86AudioLowerVolume exec dms ipc call audio decrement 3
+# bindsym XF86AudioMute exec dms ipc call audio mute
+# # Brightness controls
+# bindsym XF86MonBrightnessUp exec dms ipc call brightness increment 5
+# bindsym XF86MonBrightnessDown exec dms ipc call brightness decrement 5

@@ -1,0 +1,385 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly NC='\033[0m'
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+HOSTNAME=""
+EXIT_CODE=0
+
+trap 'handle_error $? $LINENO' ERR
+trap 'handle_exit' EXIT
+
+handle_error() {
+  local error_code="$1"
+  local line_number="$2"
+  echo -e "${RED}✗ Error on line ${line_number}: Command exited with status ${error_code}${NC}" >&2
+  EXIT_CODE="$error_code"
+}
+
+handle_exit() {
+  if [ "$EXIT_CODE" -ne 0 ]; then
+    echo -e "${RED}=== Setup Failed ===${NC}"
+    exit "$EXIT_CODE"
+  fi
+}
+
+has_cmd() {
+  command -v "$1" &>/dev/null
+}
+
+dir_exists() {
+  [ -d "$1" ]
+}
+
+log_info() {
+  echo -e "${GREEN}✓ $1${NC}"
+}
+
+log_warn() {
+  echo -e "${YELLOW}⚠ $1${NC}"
+}
+
+log_error() {
+  echo -e "${RED}✗ $1${NC}" >&2
+}
+
+log_step() {
+  echo -e "${YELLOW}$1${NC}"
+}
+
+die() {
+  log_error "$1"
+  exit 1
+}
+
+run_cmd() {
+  "$@"
+}
+
+prompt_yn() {
+  local question="$1"
+  local default="${2:-y}"
+
+  read -p "$question (${default}/$([ "$default" = "y" ] && echo "n" || echo "y")) " -n 1 -r
+  echo ""
+
+  if [ -z "$REPLY" ]; then
+    REPLY="$default"
+  fi
+
+  [[ $REPLY =~ ^[Yy]$ ]]
+}
+
+print_help() {
+  echo "NixOS Config Setup Script"
+  echo ""
+  echo "Usage: setup [OPTIONS]"
+  echo ""
+  echo "Options:"
+  echo "  --help, -h    Show this help message"
+  echo ""
+  echo "This script sets up a NixOS configuration by:"
+  echo "  1. Checking prerequisites (nix, nixos-rebuild)"
+  echo "  2. Initializing a git repository (if needed)"
+  echo "  3. Creating a host directory for the current machine"
+  echo "  4. Copying existing NixOS configuration"
+  echo "  5. Helping edit flake.nix"
+  echo "  6. Rebuilding NixOS with the new configuration"
+  echo "  7. Setting up VSCode extensions and settings"
+}
+
+clone_repository() {
+  log_step "Step 0: Cloning nix-config repository..."
+
+  cd "$SCRIPT_DIR" || die "Failed to change to script directory"
+
+  if dir_exists ".git"; then
+    log_warn "Repository already exists, skipping clone"
+    return 0
+  fi
+
+  if ! has_cmd nix; then
+    die "nix is not installed. Please install Nix first."
+  fi
+
+  local temp_dir
+  temp_dir=$(mktemp -d)
+  if ! nix run nixpkgs#git -- clone --depth 1 https://github.com/pervezfunctor/nix-config.git "$temp_dir"; then
+    rm -rf "$temp_dir"
+    die "Failed to clone repository"
+  fi
+
+  if ! cp -r "$temp_dir"/* "$SCRIPT_DIR/" 2>/dev/null; then
+    rm -rf "$temp_dir"
+    die "Failed to copy repository contents"
+  fi
+
+  rm -rf "$temp_dir"
+  log_info "Repository cloned successfully"
+}
+
+check_prerequisites() {
+  log_step "Checking prerequisites..."
+
+  cd "$SCRIPT_DIR" || die "Failed to change to script directory"
+
+  if [ ! -f "flake.nix" ]; then
+    die "flake.nix not found. Please run this script from the nix-config root directory."
+  fi
+
+  if ! has_cmd nixos-rebuild; then
+    die "nixos-rebuild is not available. Please run this script on a NixOS system."
+  fi
+
+  HOSTNAME=$(hostname) || die "Failed to get hostname"
+
+  if [ -z "$HOSTNAME" ]; then
+    die "Hostname is empty"
+  fi
+
+  log_info "Prerequisites check passed (hostname: ${HOSTNAME})"
+}
+
+init_repository() {
+  log_step "Step 1: Initializing repository..."
+
+  cd "$SCRIPT_DIR" || die "Failed to change to script directory"
+
+  if dir_exists .git; then
+    log_warn "Git repository already exists, skipping initialization"
+    return 0
+  fi
+
+  run_cmd git init || die "Failed to initialize git repository"
+  log_info "Repository initialized"
+}
+
+setup_host_directory() {
+  cd "$SCRIPT_DIR" || die "Failed to change to script directory"
+
+  if dir_exists "hosts/${HOSTNAME}"; then
+    log_warn "Host directory for '${HOSTNAME}' already exists, skipping creation"
+    return 0
+  fi
+
+  log_step "Step 2: Setting up host directory for '${HOSTNAME}'..."
+
+  local host_dir="hosts/${HOSTNAME}"
+
+  if ! run_cmd mkdir -p "$host_dir"; then
+    die "Failed to create host directory: $host_dir"
+  fi
+
+  log_info "Host directory created: $host_dir"
+}
+
+copy_nixos_config() {
+  log_step "Step 3: Copying NixOS configuration files..."
+
+  cd "$SCRIPT_DIR" || die "Failed to change to script directory"
+
+  local host_dir="hosts/${HOSTNAME}"
+  local config_src="/etc/nixos"
+
+  if ! dir_exists "$config_src"; then
+    log_warn "NixOS configuration directory not found at $config_src"
+    return 0
+  fi
+
+  # Check for required files
+  if [ ! -f "$config_src/configuration.nix" ]; then
+    log_warn "configuration.nix not found at $config_src"
+    return 0
+  fi
+
+  if [ ! -f "$config_src/hardware-configuration.nix" ]; then
+    log_warn "hardware-configuration.nix not found at $config_src"
+    return 0
+  fi
+
+  if cp "$config_src/configuration.nix" "$host_dir/" &&
+    cp "$config_src/hardware-configuration.nix" "$host_dir/"; then
+    log_info "Configuration files copied to $host_dir"
+  else
+    log_warn "Some configuration files could not be copied (permission issues?)"
+  fi
+}
+
+edit_flake_nix() {
+  log_step "Step 4: Edit flake.nix"
+
+  cd "$SCRIPT_DIR" || die "Failed to change to script directory"
+
+  echo "Please add the following entry to the flake.nix mkOS section:"
+  echo -e "  ${GREEN}\"${HOSTNAME}\" = mkOS [ ./hosts/${HOSTNAME}/configuration.nix ] [];${NC}"
+  echo ""
+  echo "You can edit flake.nix with your preferred editor (e.g., nano, vim, or micro)"
+  echo ""
+
+  local editor="${EDITOR:-nano}"
+  if prompt_yn "Press Enter to open flake.nix with ${editor}?"; then
+    if has_cmd "$editor"; then
+      "$editor" flake.nix || log_warn "Editor exited with non-zero status"
+    else
+      log_warn "Editor '$editor' not found. Please manually edit flake.nix"
+    fi
+  fi
+
+  log_info "flake.nix editing step completed"
+}
+
+stage_changes() {
+  log_step "Step 5: Staging changes..."
+
+  cd "$SCRIPT_DIR" || die "Failed to change to script directory"
+
+  if ! run_cmd git add .; then
+    die "Failed to stage changes"
+  fi
+
+  local changes
+  changes=$(git diff --cached --name-only 2>/dev/null | wc -l)
+  if [ "$changes" -gt 0 ]; then
+    log_info "Staged $changes file(s)"
+  else
+    log_warn "No changes to stage"
+  fi
+}
+
+rebuild_nixos() {
+  log_step "Step 6: Rebuilding NixOS configuration..."
+  echo "This requires sudo privileges and may take a while..."
+
+  cd "$SCRIPT_DIR" || die "Failed to change to script directory"
+
+  if ! sudo nixos-rebuild switch --flake .#; then
+    die "NixOS rebuild failed"
+  fi
+
+  log_info "NixOS rebuild complete"
+}
+
+setup_zshrc() {
+  log_step "Step 7: Setting up ~/.zshrc..."
+
+  local zshrc_path="$HOME/.zshrc"
+
+  if [ -f "$zshrc_path" ]; then
+    log_warn "$HOME/.zshrc already exists, skipping creation"
+    return 0
+  fi
+
+  if ! run_cmd touch "$zshrc_path"; then
+    die "Failed to create ~/.zshrc"
+  fi
+
+  log_info "$HOME/.zshrc created"
+}
+
+install_vscode_extensions() {
+  log_step "Step 8: VSCode extension setup"
+
+  if ! has_cmd code; then
+    log_warn "VSCode is not installed, skipping extension installation"
+    return 0
+  fi
+
+  local -a extensions=(
+    "sainnhe.everforest"
+    "jnoortheen.nix-ide"
+  )
+  if prompt_yn "Install VSCode extensions?"; then
+    for ext in "${extensions[@]}"; do
+      if ! run_cmd code --install-extension "$ext"; then
+        log_warn "Failed to install VSCode extension: $ext (non-fatal)"
+      fi
+    done
+  fi
+}
+
+configure_vscode_settings() {
+  log_step "Step 9: Configuring VSCode settings..."
+
+  if ! has_cmd code; then
+    log_warn "VSCode is not installed, skipping settings configuration"
+    return 0
+  fi
+
+  local config_settings_file="$SCRIPT_DIR/config/vscode/settings.json"
+
+  if [ ! -f "$config_settings_file" ]; then
+    log_warn "VSCode settings file not found at $config_settings_file"
+    return 0
+  fi
+
+  local settings_file="$HOME/.config/Code/User/settings.json"
+  local settings_dir
+  settings_dir="$(dirname "$settings_file")"
+
+  if ! dir_exists "$settings_dir"; then
+    run_cmd mkdir -p "$settings_dir" || {
+      log_warn "Failed to create VSCode settings directory"
+      return 0
+    }
+  fi
+
+  if ! prompt_yn "Configure VSCode settings?"; then
+    return 0
+  fi
+
+  if [ ! -f "$settings_file" ]; then
+    printf '{}' >"$settings_file"
+  fi
+
+  # shellcheck disable=SC2016
+  # Use '$new[0] + .' to preserve user's existing settings (only add missing keys)
+  if nix run nixpkgs#jq -- --slurpfile new "$config_settings_file" '$new[0] + .' "$settings_file" >"$settings_file.tmp" && mv "$settings_file.tmp" "$settings_file"; then
+    log_info "VSCode settings configured from $config_settings_file (existing settings preserved)"
+  else
+    log_warn "Failed to configure VSCode settings (non-fatal)"
+    rm -f "$settings_file.tmp"
+  fi
+}
+
+main() {
+  echo -e "${GREEN}=== NixOS Config Setup ===${NC}\n"
+
+  clone_repository
+  check_prerequisites
+  init_repository
+  setup_host_directory
+  copy_nixos_config
+  edit_flake_nix
+  stage_changes
+  rebuild_nixos
+  setup_zshrc
+  install_vscode_extensions
+  configure_vscode_settings
+
+  echo ""
+  echo -e "${GREEN}=== Setup Complete ===${NC}"
+  echo "Your NixOS configuration is now ready!"
+  echo "Remember to reboot your system and commit your changes to a new repository."
+}
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  --help | -h)
+    print_help
+    exit 0
+    ;;
+  *)
+    echo "Unknown option: $1"
+    echo "Use --help for usage information"
+    exit 1
+    ;;
+  esac
+done
+
+main

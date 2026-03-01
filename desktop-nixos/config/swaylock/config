@@ -1,0 +1,24 @@
+# Background image
+image=~/.local/share/ilm/wallpapers/winter-is-here.jpg
+scaling=fill
+
+# Behavior
+daemonize
+ignore-empty-password
+
+# Indicator: minimal, subdued
+indicator-radius=90
+indicator-thickness=4
+inside-color=00000088
+ring-color=ffffff44
+line-color=00000000
+separator-color=00000000
+
+# Text
+font=Inter
+font-size=14
+text-color=ffffffcc
+
+# Reduce noise
+show-failed-attempts
+hide-keyboard-layout

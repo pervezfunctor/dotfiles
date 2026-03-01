@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FLAKE_PATH="${1:-.}"
+
+require() {
+  command -v "$1" >/dev/null || {
+    echo "Missing dependency: $1"
+    exit 1
+  }
+}
+
+require nix
+require jq
+require fzf
+
+has_attr() {
+  nix eval --json "${FLAKE_PATH}#$1" >/dev/null 2>&1
+}
+
+declare -A TARGETS
+
+if has_attr nixosConfigurations; then
+  TARGETS[nixos]="nixosConfigurations"
+  echo "nixos configurations:
+fi
+
+if has_attr darwinConfigurations; then
+  TARGETS[darwin]="darwinConfigurations"
+fi
+
+if has_attr homeConfigurations; then
+  TARGETS[home]="homeConfigurations"
+fi
+
+if [[ ${#TARGETS[@]} -eq 0 ]]; then
+  echo "No supported flake outputs found"
+  exit 1
+fi
+
+# Select configuration type
+TYPE=$(printf '%s\n' "${!TARGETS[@]}" | sort | fzf --prompt="Config type ❯ ")
+[[ -z "${TYPE:-}" ]] && exit 0
+
+ATTR="${TARGETS[$TYPE]}"
+
+mapfile -t NAMES < <(
+  nix eval --json "${FLAKE_PATH}#${ATTR}" | jq -r 'keys[]'
+)
+
+if [[ ${#NAMES[@]} -eq 0 ]]; then
+  echo "No targets found for ${TYPE}"
+  exit 1
+fi
+
+NAME=$(printf '%s\n' "${NAMES[@]}" | fzf --prompt="${TYPE} target ❯ ")
+[[ -z "${NAME:-}" ]] && exit 0
+
+case "$TYPE" in
+  nixos)
+    exec sudo nixos-rebuild switch \
+      --flake "${FLAKE_PATH}#${NAME}"
+    ;;
+  darwin)
+    require darwin-rebuild
+    exec darwin-rebuild switch \
+      --flake "${FLAKE_PATH}#${NAME}"
+    ;;
+  home)
+    require home-manager
+    exec home-manager switch \
+      --flake "${FLAKE_PATH}#${NAME}"
+    ;;
+esac

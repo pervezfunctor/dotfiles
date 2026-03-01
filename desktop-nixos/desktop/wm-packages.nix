@@ -1,0 +1,55 @@
+{ pkgs, ... }:
+with pkgs;
+[
+  adw-gtk3
+  app2unit
+  bibata-cursors
+  blueman
+  bluez
+  brightnessctl
+  cliphist
+  ddcutil
+  fastfetch
+  ffmpegthumbnailer
+  fira-code
+  fira-sans
+  fish
+  flameshot
+  font-awesome
+  gnome-themes-extra
+  grim
+  htop
+  imagemagick
+  imv
+  inter
+  libcava
+  libnotify
+  libqalculate
+  libsForQt5.qt5ct
+  lm_sensors
+  material-symbols
+  matugen
+  mpv
+  nautilus
+  nerd-fonts.caskaydia-cove
+  nwg-displays
+  nwg-look
+  pamixer
+  papirus-icon-theme
+  pavucontrol
+  pywal
+  pywalfox-native
+  qt6Packages.qt6ct
+  quickshell
+  rofi
+  slurp
+  smartmontools
+  swappy
+  swww
+  waypaper
+  wl-clip-persist
+  wl-clipboard
+  wlogout
+  wlsunset
+  # mako
+]
