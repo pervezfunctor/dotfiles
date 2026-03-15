@@ -1,6 +1,11 @@
 # vme-tmux - Tmux Session Manager for VMs
 
-The `vme-tmux` script creates and manages tmux sessions with SSH connections to multiple libvirt VMs. It provides a unified interface for working with multiple VMs simultaneously.
+The `vme-tmux` script creates and manages a tmux session (`VME`) with SSH connections to libvirt VMs in a tiled grid layout.
+
+| Implementation | Path |
+|---|---|
+| Bash | [`bin/vt/vme-tmux`](../../../bin/vt/vme-tmux) |
+| Nushell | [`nu/vme-tmux.nu`](../../../nu/vme-tmux.nu) |
 
 ## Usage
 
@@ -10,114 +15,72 @@ vme-tmux [command]
 
 ## Commands
 
-- `create` - Create a new tmux session with SSH connections to VMs (default if no option)
-- `attach` - Attach to an existing session
-- `detach` - Detach from the current session
-- `destroy` - Kill the tmux session
-- `help` - Display this help message
+| Command | Description |
+|---------|-------------|
+| `create` (default) | Kill any existing `VME` session and create a fresh one |
+| `attach` | Attach to an existing `VME` session |
+| `detach` | Detach from the current session (leaves it running) |
+| `destroy` | Kill the `VME` tmux session |
+| `--help` | Show help |
 
-## Session Management
+## Session Details
 
-### Session Name
-The script uses a fixed session name: `VME`
-
-### Supported VMs
-The script manages SSH connections to these VMs:
-- `ubuntu-vme` - Ubuntu VM
-- `fedora-vme` - Fedora VM
-- `arch-vme` - Arch Linux VM
-- `debian-vme` - Debian VM
-- `tumbleweed-vme` - openSUSE Tumbleweed VM
+- **Session name**: `VME` (fixed)
+- **VMs**: all `DISTRO_LIST_VME` distros — `ubuntu-vme`, `fedora-vme`, `arch-vme`, `debian-vme`, `tw-vme`
+- **Layout**: tiled grid, one pane per VM
+- **SSH command per pane**: `vme ssh <vm-name> $USER`
+- **Startup**: VMs that are not running are started automatically before the session opens
 
 ## Command Details
 
-### create
-Creates a new tmux session with SSH connections to all VMs:
+### create (default)
+
+Kills any existing `VME` session, starts any non-running VMs, then opens a new tiled tmux grid with SSH panes for each VM.
+
 ```bash
+vme-tmux          # same as vme-tmux create
 vme-tmux create
-# Or explicitly
+vme-tmux -c
 vme-tmux --create
 ```
 
 **Process:**
-1. Creates a new tmux session named `VME`
-2. Generates SSH commands for each VM
-3. Creates tmux windows for each VM connection
-4. Arranges windows in a grid layout
-5. Attaches to the new session
-
-**Features:**
-- Automatic SSH connection to each VM
-- Grid layout for easy navigation
-- Error handling for failed connections
-- Session persistence
+1. Checks prerequisites (`virsh`, `tmux`)
+2. Kills existing `VME` session if present
+3. Generates VM names: `<distro>-vme` for each distro in `DISTRO_LIST_VME`
+4. Starts any VMs that are not currently running
+5. Creates a tiled tmux grid with `vme ssh <vm> $USER` in each pane
+6. Attaches to the new session
 
 ### attach
-Attaches to an existing VME session:
+
+Attaches to an already-running `VME` session. Fails if the session doesn't exist.
+
 ```bash
 vme-tmux attach
 ```
 
-**Behavior:**
-- If session exists, attaches to it
-- If no session exists, creates one automatically
-- Uses tmux attach-session with proper error handling
-
 ### detach
-Detaches from the current tmux session:
+
+Detaches from the current `VME` session without killing it.
+
 ```bash
 vme-tmux detach
 ```
 
-**Result:**
-- Leaves tmux session running in background
-- Returns to shell prompt
-- Session remains active for later re-attachment
-
 ### destroy
-Kills the VME tmux session:
+
+Kills the `VME` tmux session and all its panes.
+
 ```bash
 vme-tmux destroy
 ```
 
-**Effect:**
-- Terminates all SSH connections to VMs
-- Cleans up tmux session
-- Frees up system resources
-
-## Tmux Layout
-
-The script creates a grid layout with windows for each VM:
-- Window 0: Ubuntu VM SSH
-- Window 1: Fedora VM SSH
-- Window 2: Arch Linux VM SSH
-- Window 3: Debian VM SSH
-- Window 4: Tumbleweed VM SSH
-
-## Integration
-
-The script integrates with:
-- `vm-utils` - Core VM management functions
-- `tmux-utils` - Tmux session management utilities
-- `vme` - VM existence checking
-- SSH client for VM connections
-
-## Prerequisites
-
-The script requires:
-- `tmux` installed and available
-- `vme` script available for VM management
-- Proper SSH configuration for VM access
-- VMs created and accessible via SSH
-
 ## Examples
 
 ```bash
-# Create session (or attach if exists)
+# Create (or recreate) the VME session
 vme-tmux
-
-# Force create new session
-vme-tmux create
 
 # Attach to existing session
 vme-tmux attach
@@ -125,66 +88,48 @@ vme-tmux attach
 # Detach from current session
 vme-tmux detach
 
-# Destroy session
+# Kill the session
 vme-tmux destroy
-
-# Show help
-vme-tmux help
 ```
 
-## Workflow
+## Typical Workflow
 
-### Typical Development Workflow
-1. **Create VMs**: Use `vme-all create` to set up multiple VMs
-2. **Start VMs**: Use `vme-all start` to start all VMs
-3. **Create Tmux Session**: Use `vme-tmux create` to connect to all VMs
-4. **Work Across VMs**: Navigate between tmux windows (Ctrl+B, then arrow keys)
-5. **Detach When Needed**: Use `vme-tmux detach` to leave session running
-6. **Clean Up**: Use `vme-all stop` and `vme-tmux destroy` when done
+1. `vme-all create` — create all VMs
+2. `vme-tmux` — open grid session (starts VMs automatically)
+3. Navigate panes: `Ctrl+B` then arrow keys or `Ctrl+B q` for pane numbers
+4. `vme-tmux detach` — leave session running in background
+5. `vme-tmux attach` — reconnect later
+6. `vme-all stop` then `vme-tmux destroy` — clean up when done
 
-### Tmux Navigation
-Once in the session:
-- `Ctrl+B` - Prefix key
-- `Arrow keys` - Navigate between windows
-- `Ctrl+B, then ?` - Show help
-- `Ctrl+B, then d` - Detach from session
-- `Ctrl+B, then &` - List sessions
+## Tmux Navigation
 
-## Error Handling
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+B` | Prefix key |
+| `Ctrl+B` + arrow | Move between panes |
+| `Ctrl+B q` | Show pane numbers |
+| `Ctrl+B d` | Detach from session |
+| `Ctrl+B &` | Kill current window |
+| `Ctrl+B ?` | Show all shortcuts |
 
-The script handles:
-- Missing prerequisites with clear error messages
-- Failed SSH connections with warnings
-- Tmux session creation failures
-- VM availability issues
+## Integration
+
+- **`share/vm-utils.nu`** / **`bin/vt/vm-utils`** — `vm-running`, `virt-check-prerequisites`
+- **`share/tmux-utils.nu`** / **`bin/vt/tmux-utils`** — `tmux-session`, `tmux-grid`, `attach-session`, `detach-session`, `destroy-session`, `generate-names`, `create-commands-generic`, `start-sessions`
 
 ## Troubleshooting
-
-### Common Issues
-
-1. **Session won't create**:
-   - Check if tmux is installed
-   - Verify VMs are running and accessible
-   - Check SSH key configuration
-
-2. **Can't connect to VMs**:
-   - Verify VMs are started: `vme list`
-   - Check network connectivity
-   - Validate SSH credentials
-
-3. **Tmux layout issues**:
-   - Ensure all VMs in the list exist
-   - Check if SSH connections succeed individually
-   - Try recreating the session
-
-### Debug Commands
 
 ```bash
 # Check if session exists
 tmux list-sessions
 
-# Check tmux version
-tmux -V
+# Verify VMs are running
+vme list
 
-# Test individual SSH connections
-ssh ubuntu@ubuntu-vme
+# Test a single VM SSH connection
+vme ssh ubuntu-vme
+
+# Recreate session from scratch
+vme-tmux destroy
+vme-tmux create
+```

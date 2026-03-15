@@ -4,13 +4,17 @@ The VME tools provide a simplified interface for managing virtual machines using
 
 ## Core Tools
 
-- [`vme`](../../../bin/vt/vme) - VM management utility
-- [`vme-create`](../../../bin/vt/vme-create) - VM creation utility
+| Script | Bash | Nushell |
+|--------|------|---------|
+| VM management | [`bin/vt/vme`](../../../bin/vt/vme) | [`nu/vme.nu`](../../../nu/vme.nu) |
+| VM creation | [`bin/vt/vme-create`](../../../bin/vt/vme-create) | — |
 
 ## Additional Utilities
 
-- [`vme-all`](../../../bin/vt/vme-all) - Batch VM management for multiple VMs
-- [`vme-tmux`](../../../bin/vt/vme-tmux) - Tmux session manager for VM connections
+| Script | Bash | Nushell |
+|--------|------|---------|
+| Batch operations | [`bin/vt/vme-all`](../../../bin/vt/vme-all) | [`nu/vme-all.nu`](../../../nu/vme-all.nu) |
+| Tmux sessions | [`bin/vt/vme-tmux`](../../../bin/vt/vme-tmux) | [`nu/vme-tmux.nu`](../../../nu/vme-tmux.nu) |
 
 See the following documentation for detailed information:
 - [vme-all](vme-all.md) - Batch operations for multiple VMs
@@ -59,23 +63,27 @@ vme <command> [vm-name]
 ### Commands
 
 #### VM Lifecycle Management
-- `list` - List all VMs
+- `list` / `ls` - List all VMs
 - `create <args>` - Create a new VM (same arguments as vme-create)
-- `start <vm-name>` - Start a VM
-- `shutdown <vm-name>` - Gracefully stop a VM
-- `restart <vm-name>` - Restart a VM
-- `kill <vm-name>` - Force stop a VM
-- `delete <vm-name>` - Delete a VM completely
+- `create-all` - Interactively select distros and create VMs
+- `all <op>` - Perform operation on all standard VMs
+- `start [vm-name...]` - Start VM(s); prompts with fzf if none given
+- `shutdown [vm-name...]` - Gracefully stop VM(s)
+- `restart [vm-name...]` - Restart VM(s)
+- `kill [vm-name...]` - Force stop VM(s)
+- `delete [vm-name...]` - Delete VM(s) completely
 
 #### VM Information
 - `info <vm-name>` - Show VM status and information
-- `show-ip <vm-name>` - Show VM IP address
-- `disk <vm-name>` - Show VM disk usage
+- `ip <vm-name>` - Show VM IP address
+- `is-running <vm-name>` - Check if VM is running (prints true/false)
+- `disk <vm-name>` - Show VM disk block devices
 - `logs <vm-name>` - Show cloud-init logs
 
 #### VM Access
-- `console <vm-name>` - Connect to VM console
-- `ssh <vm-name> [user]` - SSH into VM (auto-detects user if omitted)
+- `console <vm-name>` - Connect to VM serial console (exit with `Ctrl+]`)
+- `ssh <vm-name> [user]` - SSH into VM (defaults to `$USER`)
+- `exec <vm-name> <cmd...>` - Run a command in VM via SSH
 
 #### Configuration
 - `autostart <vm-name>` - Set VM to start on boot
@@ -83,6 +91,7 @@ vme <command> [vm-name]
 #### Advanced
 - `cmd <virsh-args>` - Run virsh command with qemu:///system connection
 - `net <command>` - Manage libvirt virtual networks
+- `tmux` - Interactively select VMs and open a tmux grid session
 - `start-libvirt` - Start the libvirtd service
 
 ### Examples
@@ -92,13 +101,23 @@ vme <command> [vm-name]
 vme list
 
 # Show IP address of a VM
-vme show-ip debian
+vme ip debian
 
-# Start a VM
+# Check if VM is running
+vme is-running debian
+
+# Start one or more VMs
 vme start debian
+vme start debian fedora
 
-# SSH into a VM (auto-detects user)
+# Start — prompt with fzf if no name given
+vme start
+
+# SSH into a VM (defaults to $USER)
 vme ssh debian
+
+# Run a command in a VM
+vme exec debian 'systemctl status sshd'
 
 # Delete a VM completely
 vme delete old-vm
@@ -200,13 +219,16 @@ vme-create [options]
 
 ### Distribution-Specific Defaults
 
-| Distribution        | Default VM Name | Default Release | Default Username | User Groups             |
-| ------------------- | --------------- | --------------- | ---------------- | ----------------------- |
-| Arch Linux          | arch-vme        | latest          | arch             | wheel, network, storage |
-| Ubuntu              | ubuntu-vme      | plucky (25.10)  | ubuntu           | sudo, adm, sambashare   |
-| Debian              | debian-vme      | trixie (13)     | debian           | sudo, adm               |
-| Fedora              | fedora-vme      | 42              | fedora           | wheel, network, storage |
-| openSUSE Tumbleweed | tw-vme          | latest          | opensuse         | wheel, network, users   |
+| Distribution        | Default VM Name | Default Release | Default Username | sudo group |
+| ------------------- | --------------- | --------------- | ---------------- | ---------- |
+| Arch Linux          | arch-vme        | latest          | arch             | wheel      |
+| Ubuntu              | ubuntu-vme      | questing (25.10)| ubuntu           | sudo       |
+| Debian              | debian-vme      | trixie (13)     | debian           | sudo       |
+| Fedora              | fedora-vme      | 43              | fedora           | wheel      |
+| openSUSE Tumbleweed | tw-vme          | latest          | opensuse         | wheel      |
+| CentOS Stream       | centos-vme      | 9               | centos           | wheel      |
+| Rocky Linux         | rocky-vme       | 9               | rocky            | wheel      |
+| Alpine Linux        | alpine-vme      | 3.22            | alpine           | wheel      |
 
 ### Password Generation Details
 
@@ -325,8 +347,8 @@ VMs are created in `/var/lib/libvirt/images/` with this structure:
 
 2. **Ubuntu** (`--distro ubuntu`)
    - Default: ubuntu-vme
-   - Release: plucky
-   - Base image: plucky-server-cloudimg-amd64.img
+   - Release: questing (25.10)
+   - Base image: questing-server-cloudimg-amd64.img
 
 3. **Debian** (`--distro debian`)
    - Default: debian-vme
@@ -335,13 +357,28 @@ VMs are created in `/var/lib/libvirt/images/` with this structure:
 
 4. **Fedora** (`--distro fedora`)
    - Default: fedora-vme
-   - Release: 42
-   - Base image: Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2
+   - Release: 43
+   - Base image: Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2
 
-5. **openSUSE Tumbleweed** (`--distro tumbleweed`)
+5. **openSUSE Tumbleweed** (`--distro tumbleweed` or `tw`)
    - Default: tw-vme
    - Release: latest
    - Base image: openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2
+
+6. **CentOS Stream** (`--distro centos`)
+   - Default: centos-vme
+   - Release: 9-Stream
+   - Base image: CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2
+
+7. **Rocky Linux** (`--distro rocky`)
+   - Default: rocky-vme
+   - Release: 9
+   - Base image: Rocky-9-GenericCloud.latest.x86_64.qcow2
+
+8. **Alpine Linux** (`--distro alpine`)
+   - Default: alpine-vme
+   - Release: 3.22.2
+   - Base image: generic_alpine-3.22.2-x86_64-uefi-cloudinit-r0.qcow2
 
 ### Examples
 
@@ -401,12 +438,17 @@ VMs are stored in `/var/lib/libvirt/images/` with the following structure:
 
 ## User Detection
 
-The `vme ssh` command automatically detects the appropriate username based on the VM name:
-- VMs containing "coreos" → `coreos`
-- VMs containing "fedora" → `fedora`
-- VMs containing "debian", "bookworm", "bullseye", "trixie" → `debian`
-- VMs containing "arch" → `arch`
-- All others → `ubuntu`
+The `vme ssh` command defaults to `$USER` if no username is given. The nushell `default-username` helper in `share/vt-utils.nu` can also map a distro name to its conventional username:
+- `ubuntu*` → `ubuntu`
+- `fedora*` → `fedora`
+- `centos*` → `centos`
+- `debian*` → `debian`
+- `arch*` → `arch`
+- `alpine*` → `alpine`
+- `nix*` → `nixos`
+- `rocky*` → `rocky`
+- `tumbleweed*` / `tw*` → `opensuse`
+- All others → `$USER`
 
 ## Troubleshooting
 
@@ -450,10 +492,11 @@ vme cmd list --all
 
 VME integrates with several other tools in this environment:
 
-- **vm-utils**: Shared utilities for VM management
-- **fzf**: For interactive VM selection when VM name is omitted
-- **pass**: For secure password generation (if available)
-- **pwgen**: Alternative password generation (if available)
+- **`share/vm-utils.nu`** / **`bin/vt/vm-utils`**: Shared VM management functions
+- **`share/vt-utils.nu`** / **`bin/vt/vt-utils`**: Generic VT helpers (`wait-for-ip`, `handle-multiple-arguments`, etc.)
+- **`share/tmux-utils.nu`** / **`bin/vt/tmux-utils`**: Tmux session helpers
+- **fzf**: Interactive VM/distro selection when no name is given
+- **pass** / **pwgen** / **openssl**: Password generation fallback chain
 
 ## Best Practices
 
@@ -496,7 +539,7 @@ vme logs ubuntu-dev  # Check cloud-init progress
 
 ```bash
 # Get the IP address
-vme show-ip ubuntu-dev
+vme ip ubuntu-dev
 
 # Or use virsh directly
 virsh domifaddr ubuntu-dev --source agent
@@ -569,7 +612,7 @@ vme ssh <vm-name> <username>
 
 ```bash
 # Get IP first
-vme show-ip <vm-name>
+vme ip <vm-name>
 
 # Then SSH
 ssh <username>@<ip-address>
@@ -615,7 +658,7 @@ ssh arch@arch-vme
 2. **SSH connection timeout**:
    ```bash
    # Check if VM has IP address
-   vme show-ip <vm-name>
+   vme ip <vm-name>
 
    # If no IP, check network configuration
    vme net info default
