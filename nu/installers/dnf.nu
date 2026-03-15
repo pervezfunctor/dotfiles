@@ -92,10 +92,7 @@ export def fedora-packages []: nothing -> nothing {
 
     slog "Installing packages"
 
-    si git-core gh git-delta unzip wget curl trash-cli tar stow gcc make file \
-        gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate \
-        cheat libsecret net-tools iproute nmap dialog newt jq jc procs direnv yq \
-        python3 pipx python3-pip
+    si git-core gh git-delta unzip wget curl trash-cli tar stow gcc make file gum wl-clipboard tree fzf ripgrep zoxide fd htop bat tealdeer plocate cheat libsecret net-tools iproute nmap dialog newt jq jc procs direnv yq python3 pipx python3-pip
 
     if (has-cmd tldr) {
         tldr --update
@@ -110,9 +107,7 @@ export def centos-packages []: nothing -> nothing {
 
     slog "Installing packages"
 
-    si git unzip wget curl tar gcc make gum tree bat ripgrep \
-        htop bat plocate file just emacs-nox neovim tmux zsh libsecret \
-        net-tools iproute nmap
+    si git unzip wget curl tar gcc make gum tree bat ripgrep htop bat plocate file just emacs-nox neovim tmux zsh libsecret net-tools iproute nmap
 
     slog "Installing packages done!"
 }
@@ -194,8 +189,7 @@ export def essential-install []: nothing -> nothing {
 
     base-dev-install
 
-    si zip p7zip unar gawk readline-devel sqlite-devel libffi-devel \
-        bzip2-devel xz-devel micro libsecret fuse fuse-libs zstd newt
+    si zip p7zip unar gawk readline-devel sqlite-devel libffi-devel bzip2-devel xz-devel micro libsecret fuse fuse-libs zstd newt
 
     slog "Essential packages installation done!"
 }
@@ -264,9 +258,7 @@ export def snap-install []: nothing -> nothing {
 export def cpp-install []: nothing -> nothing {
     slog "Installing C++"
 
-    si gcc gcc-c++ gdb valgrind systemtap ltrace strace clang clang-devel \
-        clang-tools-extra clang-libs clang-analyzer lldb lld llvm llvm-devel \
-        graphviz ccache cppcheck pre-commit cmake
+    si gcc gcc-c++ gdb valgrind systemtap ltrace strace clang clang-devel clang-tools-extra clang-libs clang-analyzer lldb lld llvm llvm-devel graphviz ccache cppcheck pre-commit cmake
 
     conan-install
 
@@ -347,9 +339,7 @@ export def cockpit-install []: nothing -> nothing {
     }
 
     slog "Installing cockpit"
-    si cockpit cockpit-machines cockpit-podman \
-        cockpit-storaged cockpit-bridge cockpit-networkmanager cockpit-selinux \
-        cockpit-system firewalld cockpit-packagekit
+    si cockpit cockpit-machines cockpit-podman cockpit-storaged cockpit-bridge cockpit-networkmanager cockpit-selinux cockpit-system firewalld cockpit-packagekit
 
     sudo systemctl enable --now cockpit.socket
     sudo systemctl enable --now firewalld
@@ -369,8 +359,7 @@ export def docker-install []: nothing -> nothing {
 
     docker-fedora-repo
 
-    si docker-ce docker-ce-cli containerd.io docker-buildx-plugin \
-        docker-compose-plugin dive slim
+    si docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin dive slim
 
     slog "docker installation done!"
 }
@@ -400,21 +389,14 @@ export def incus-install []: nothing -> nothing {
 
 # PM installation
 export def pm-install []: nothing -> nothing {
-    si net-tools iproute nmap lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ \
-        glmark2
+    si net-tools iproute nmap lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ glmark2
 }
 
 # VM installation
 export def vm-install []: nothing -> nothing {
     slog "Installing libvirt"
 
-    si libvirt virt-install bridge-utils virglrenderer cloud-utils bsdtar butane \
-        qemu qemu-kvm qemu-img qemu-ui-spice-core qemu-ui-spice-app osinfo-db jc \
-        qemu-char-spice qemu-audio-spice qemu-device-usb-redirect xmlstarlet lorax \
-        qemu-device-display-virtio-vga qemu-device-display-virtio-gpu openssl jq \
-        qemu-user-binfmt qemu-user-static qemu-system-x86_64 libosinfo dmidecode \
-        coreos-installer pykickstart xorriso squashfs-tools osinfo-db-tools bootc \
-        snapper btrfs-progs edk2-ovmf grub2-tools libguestfs-tools guestfs-tools
+    si libvirt virt-install bridge-utils virglrenderer cloud-utils bsdtar butane qemu qemu-kvm qemu-img qemu-ui-spice-core qemu-ui-spice-app osinfo-db jc qemu-char-spice qemu-audio-spice qemu-device-usb-redirect xmlstarlet lorax qemu-device-display-virtio-vga qemu-device-display-virtio-gpu openssl jq qemu-user-binfmt qemu-user-static qemu-system-x86_64 libosinfo dmidecode coreos-installer pykickstart xorriso squashfs-tools osinfo-db-tools bootc snapper btrfs-progs edk2-ovmf grub2-tools libguestfs-tools guestfs-tools
 
     slog "libvirt installation done!"
 }
@@ -478,8 +460,7 @@ export def sin [...packages: string]: nothing -> nothing {
 
 # Desktop core installation
 export def desktop-core-install []: nothing -> nothing {
-    sin kitty wl-clipboard thunar thunar-archive-plugin gnome-keyring-pam \
-        gnome-keyring libsecret udisks2 gvfs udiskie flatpak imagemagick
+    sin kitty wl-clipboard thunar thunar-archive-plugin gnome-keyring-pam gnome-keyring libsecret udisks2 gvfs udiskie flatpak imagemagick
 
     flathub-install
     fpi app.zen_browser.zen
@@ -491,8 +472,7 @@ export def desktop-core-install []: nothing -> nothing {
 
 # WM tools installation
 export def wm-tools-install []: nothing -> nothing {
-    si waybar rofi rofi-wayland rofi-themes wlogout mako gnome-themes-extra \
-        greetd network-manager-applet pavucontrol playerctl wlsunset
+    si waybar rofi rofi-wayland rofi-themes wlogout mako gnome-themes-extra greetd network-manager-applet pavucontrol playerctl wlsunset
 }
 
 # WM installation
@@ -502,10 +482,7 @@ export def wm-install []: nothing -> nothing {
     desktop-core-install
     wm-tools-install
 
-    sin xdg-desktop-portal-gtk lxqt-policykit imv mpv grim slurp thunar \
-        thunar-archive-plugin nwg-launchers qt6-qtsvg qt6-qtquickcontrols2 \
-        google-noto-fonts-all google-noto-emoji-fonts \
-        google-noto-color-emoji-fonts blueman bluez
+    sin xdg-desktop-portal-gtk lxqt-policykit imv mpv grim slurp thunar thunar-archive-plugin nwg-launchers qt6-qtsvg qt6-qtquickcontrols2 google-noto-fonts-all google-noto-emoji-fonts google-noto-color-emoji-fonts blueman bluez
 
     slog "Tiling common packages installation done!"
 }
@@ -527,8 +504,7 @@ export def sway-binstall []: nothing -> nothing {
 
     slog "Installing sway"
 
-    si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway \
-        sway-config-fedora
+    si sway swaybg swayidle sway-systemd swaylock sddm-wayland-sway sway-config-fedora
 
     terminal-binstall
 
@@ -581,8 +557,7 @@ export def kde-slim-binstall []: nothing -> nothing {
     desktop-core-install
 
     slog "Installing kde plasma..."
-    sin plasma-desktop plasma-discover systemsettings kscreen kio-extras \
-        powerdevil power-profiles-daemon mesa-libGLES
+    sin plasma-desktop plasma-discover systemsettings kscreen kio-extras powerdevil power-profiles-daemon mesa-libGLES
     slog "kde plasma installation done!"
 }
 

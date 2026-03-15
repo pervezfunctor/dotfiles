@@ -38,13 +38,13 @@ export def emacs-binstall []: nothing -> nothing {
 
     if (is-apt) {
         echo "postfix postfix/main_mailer_type select No configuration" | sudo debconf-set-selections
-        si -y --no-install-recommends emacs
+        sudo apt-get -qq -y --no-install-recommends install emacs
     } else if (is-mac) {
         brew tap railwaycat/emacsmacport
         brew install -q emacs-mac --with-modules
         ln -s /usr/local/opt/emacs-mac/Emacs.app /Applications/Emacs.app
     } else {
-        si emacs
+        run-active-installer-command si emacs
     }
 
     slog "emacs installation done!"
@@ -95,9 +95,9 @@ export def multipass-install []: nothing -> nothing {
 # VSCode groupstall for Linux
 export def vscode-groupstall []: nothing -> nothing {
     # Call OS-specific vscode_binstall
-    let vscode_fn = (scope commands | where name == vscode-binstall | is-not-empty)
+    let vscode_fn = (active-installer-command-exists vscode-binstall)
     if $vscode_fn {
-        vscode-binstall
+        run-active-installer-command vscode-binstall
     }
     jetbrains-mono-install
     vscode-confstall
@@ -252,9 +252,9 @@ export def tailscale-install []: nothing -> nothing {
     }
 
     # Try package manager first
-    let si_fn = (scope commands | where name == si | is-not-empty)
+    let si_fn = (active-installer-command-exists si)
     if $si_fn {
-        si tailscale
+        run-active-installer-command si tailscale
         if (has-cmd tailscale) {
             return
         }
@@ -279,9 +279,9 @@ export def tailscale-install []: nothing -> nothing {
 export def sway-install []: nothing -> nothing {
     slog "Installing sway..."
 
-    let sway_fn = (scope commands | where name == sway-binstall | is-not-empty)
+    let sway_fn = (active-installer-command-exists sway-binstall)
     if $sway_fn {
-        sway-binstall
+        run-active-installer-command sway-binstall
     }
     uv-install
     pyi i3ipc
@@ -300,9 +300,9 @@ export def sway-groupstall []: nothing -> nothing {
 export def hyprland-install []: nothing -> nothing {
     slog "Installing hyprland..."
 
-    let hypr_fn = (scope commands | where name == hyprland-binstall | is-not-empty)
+    let hypr_fn = (active-installer-command-exists hyprland-binstall)
     if $hypr_fn {
-        hyprland-binstall
+        run-active-installer-command hyprland-binstall
     }
 
     hyprland-confstall
@@ -374,7 +374,7 @@ export def dt-docker-dev-mainstall []: nothing -> nothing {
 
     base-mainstall
     sudo apt purge -y fzf
-    si openssh-server micro
+    run-active-installer-command si openssh-server micro
     ssh-enable
     docker-confstall
 }
@@ -390,7 +390,7 @@ export def dt-dev-mainstall []: nothing -> nothing {
     shell-slim-mainstall
     vscode-groupstall
 
-    si firefox gnome-keyring wl-clipboard libsecret
+    run-active-installer-command si firefox gnome-keyring wl-clipboard libsecret
     gnome-keyring-daemon -s -d --components=pkcs11,secrets,ssh
     systemctl --user enable --now dbus
 }
@@ -486,8 +486,7 @@ export def nixos-mainstall []: nothing -> nothing {
         vscode-confstall
     }
 
-    cmd-check nixfmt nixd git zsh devbox devenv docker distrobox nvim shellcheck \
-        shfmt stow trash tmux eza gcc make gh ghostty rg tldr code
+    cmd-check nixfmt nixd git zsh devbox devenv docker distrobox nvim shellcheck shfmt stow trash tmux eza gcc make gh ghostty rg tldr code
 }
 
 # NixOS WSL mainstall
@@ -535,9 +534,9 @@ export def kde-confstall []: nothing -> nothing {
 
 # KDE groupstall
 export def kde-groupstall []: nothing -> nothing {
-    let kde_fn = (scope commands | where name == kde-binstall | is-not-empty)
+    let kde_fn = (active-installer-command-exists kde-binstall)
     if $kde_fn {
-        kde-binstall
+        run-active-installer-command kde-binstall
     }
     terminal-groupstall
 
@@ -564,8 +563,8 @@ export def gnome-keybindings-install []: nothing -> nothing {
 
 # Incus groupstall
 export def incus-groupstall []: nothing -> nothing {
-    let incus_fn = (scope commands | where name == incus-install | is-not-empty)
+    let incus_fn = (active-installer-command-exists incus-install)
     if $incus_fn {
-        incus-install
+        run-active-installer-command incus-install
     }
 }

@@ -4,14 +4,71 @@
 # Usage: setup <profile> [args...]
 
 use ../share/utils.nu *
+use common.nu *
+use linux.nu *
+use apt.nu *
+use dnf.nu *
+use arch.nu *
+use tw.nu *
+use alpine.nu *
+use layered.nu *
+use box.nu *
+use mac.nu *
+use mac-linux.nu *
+use atomic.nu *
 
 # Check if a function exists in the current scope
 export def fn-exists [name: string]: nothing -> bool {
-    scope commands | where name == $name | is-not-empty
+    installer-command-exists $name
+}
+
+export def resolve-installer-command [arg: string]: nothing -> any {
+    if ($arg | str starts-with "@@") {
+        let name = ($arg | str replace --regex '^@@' '')
+        let fn_name = $"($name)-mainstall"
+        if (fn-exists $fn_name) {
+            return $fn_name
+        }
+    }
+
+    if ($arg | str starts-with "@") {
+        let name = ($arg | str replace --regex '^@' '')
+        let fn_name = $"($name)-groupstall"
+        if (fn-exists $fn_name) {
+            return $fn_name
+        }
+    }
+
+    for fn_name in [
+        $"($arg)-install"
+        $"($arg)-boxstall"
+        $"($arg)-confstall"
+        $"($arg)-groupstall"
+        $"($arg)-mainstall"
+        $"($arg)-binstall"
+        $arg
+    ] {
+        if (fn-exists $fn_name) {
+            return $fn_name
+        }
+    }
+
+    die $"No such installer: ($arg)"
 }
 
 # Bootstrap function - initialize environment
 export def bootstrap [...args: string]: nothing -> nothing {
+    if (is-root-user) {
+        die "This script must not be run as root. DO NOT use sudo."
+    }
+
+    environs
+    reset-logs
+    init-logs
+
+    slog $"Bootstrapping, switching to directory ($env.HOME)"
+    cd $env.HOME
+
     slog "Bootstrapping installer environment"
 
     # Set NOSUDO for certain environments
@@ -22,8 +79,14 @@ export def bootstrap [...args: string]: nothing -> nothing {
         $env.NOSUDO = 1
     }
 
+    if ($env.NOSUDO? | is-empty) {
+        keep-sudo-running
+    }
+
     # Source the appropriate installer modules based on OS
     source-installers
+
+    slog $"Installing ($args | str join ' ') ..."
 }
 
 # Source all installer modules dynamically
@@ -41,12 +104,10 @@ export def source-installers []: nothing -> nothing {
 
 # Common installer wrapper that runs post-install checks
 export def common-installer [...args: string]: nothing -> nothing {
-    slog "Running common installer"
-
-    # Set zsh as default if needed (only on Linux, not in atomic/ublue)
-    if not (is-ublue) and (has-cmd zsh) and ((default-shell) != "zsh") {
-        set-zsh-as-default
-        zsh-confstall
+    for arg in $args {
+        let fn_name = (resolve-installer-command $arg)
+        slog $"Running ($fn_name)"
+        run-installer-command $fn_name
     }
 }
 
@@ -67,21 +128,21 @@ export def main [...args: string]: nothing -> nothing {
 
     if (fn-exists $mainstall_fn) {
         slog $"Running ($mainstall_fn)"
-        run-external $mainstall_fn
-        $rest_args | each { |arg| $arg }
+        run-installer-command $mainstall_fn
     } else {
         # Try min_mainstall as fallback
         if (fn-exists min-mainstall) {
-            min-mainstall
+            slog "Running min-mainstall"
+            run-installer-command min-mainstall
         } else {
             die $"Unknown or unsupported profile: ($profile)"
         }
     }
 
     common-installer ...$rest_args
-}
 
-# Default mainstall for unknown profiles
-export def min-mainstall []: nothing -> nothing {
-    slog "Running minimal installation"
+    if not (is-ublue) and (has-cmd zsh) and ((default-shell) != "zsh") {
+        set-zsh-as-default
+        zsh-confstall
+    }
 }

@@ -320,8 +320,8 @@ export def spath-export-unsafe [path: string]: nothing -> nothing {
 }
 
 export def is-mac []: nothing -> bool {
-    ((sys host | get name) | str contains "darwin")
-        or ((sys host | get name) | str contains "Darwin")
+    let host = (sys host | get name)
+    (($host | str contains "darwin") or ($host | str contains "Darwin"))
 }
 
 export def is-linux []: nothing -> bool {
@@ -1142,7 +1142,7 @@ export def print-heading [title: string]: nothing -> nothing {
     let border = (seq 1 $width | each { "─" } | str join)
 
     echo $"\e[1;32m╭($border)╮\e[0m"
-    echo $"\e[1;32m│\e[1;37m(5 | fill -w 5)(" ")($title)(5 | fill -w 5)\e[1;32m│\e[0m"
+    echo $"\e[1;32m│\e[1;37m     ($title)     \e[1;32m│\e[0m"
     echo $"\e[1;32m╰($border)╯\e[0m"
     echo ""
 }
@@ -1447,6 +1447,99 @@ export def cmd-check [...cmds: string]: nothing -> nothing {
         if not (has-cmd $cmd) {
             warn $"($cmd) not installed"
         }
+    }
+}
+
+export def installer-module-path []: nothing -> string {
+    $env.DOT_DIR | path join "nu" "installers" "mod.nu"
+}
+
+export def active-installer-module-path []: nothing -> string {
+    if (is-mac) {
+        $env.DOT_DIR | path join "nu" "installers" "mac.nu"
+    } else if (is-apt) {
+        $env.DOT_DIR | path join "nu" "installers" "apt.nu"
+    } else if (is-fedora) or (is-rocky) or (is-centos) {
+        $env.DOT_DIR | path join "nu" "installers" "dnf.nu"
+    } else if (is-tw) {
+        $env.DOT_DIR | path join "nu" "installers" "tw.nu"
+    } else if (is-arch) {
+        $env.DOT_DIR | path join "nu" "installers" "arch.nu"
+    } else if (is-alpine) {
+        $env.DOT_DIR | path join "nu" "installers" "alpine.nu"
+    } else {
+        installer-module-path
+    }
+}
+
+def ensure-installer-module [mod: string]: nothing -> nothing {
+    if not (file-exists $mod) {
+        die $"Installer module not found: ($mod)"
+    }
+}
+
+def nu-quote [value: string]: nothing -> string {
+    let escaped = ($value | str replace --all "'" "''")
+    $"'($escaped)'"
+}
+
+def installer-command-script [mod: string, name: string, args: list<string>]: nothing -> string {
+    let arg_literals = ($args | each { |arg| nu-quote $arg } | str join " ")
+    if ($arg_literals | is-empty) {
+        $"use ($mod) *; ($name)"
+    } else {
+        $"use ($mod) *; ($name) ($arg_literals)"
+    }
+}
+
+def installer-command-exists-in-module [mod: string, name: string]: nothing -> bool {
+    ensure-installer-module $mod
+    let script = (
+        "use "
+        + $mod
+        + " *; print (scope commands | where name == "
+        + (nu-quote $name)
+        + " | is-not-empty)"
+    )
+    let result = (do { nu -c $script } | complete)
+    if ($result.exit_code != 0) {
+        return false
+    }
+
+    (($result.stdout | str trim) == "true")
+}
+
+def run-installer-command-in-module [mod: string, name: string, args: list<string>]: nothing -> any {
+    ensure-installer-module $mod
+    let script = (installer-command-script $mod $name $args)
+    nu -c $script
+}
+
+export def installer-command-exists [name: string]: nothing -> bool {
+    installer-command-exists-in-module (installer-module-path) $name
+}
+
+export def active-installer-command-exists [name: string]: nothing -> bool {
+    installer-command-exists-in-module (active-installer-module-path) $name
+}
+
+export def run-installer-command [name: string]: nothing -> any {
+    run-installer-command-in-module (installer-module-path) $name []
+}
+
+export def run-active-installer-command [name: string, ...args: string]: nothing -> any {
+    run-installer-command-in-module (active-installer-module-path) $name $args
+}
+
+export def capture-installer-command-json [name: string]: nothing -> any {
+    let mod = (installer-module-path)
+    ensure-installer-module $mod
+
+    let output = (nu -c $"use ($mod) *; ($name) | to json -r")
+    if (($output | str trim) == "") {
+        null
+    } else {
+        $output | from json
     }
 }
 

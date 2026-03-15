@@ -40,11 +40,7 @@ export def arch-packages []: nothing -> nothing {
 
     slog "Installing packages"
 
-    si bat bottom choose curl dialog direnv dust dysk eza fd file fzf gcc git \
-        git-delta github-cli gum htop iproute2 jq just lazygit libnewt libsecret \
-        make micro net-tools nmap pixi procs python python-pip python-pipx jc \
-        python-uv ripgrep sd shellcheck shfmt starship stow tar tealdeer fastfetch \
-        trash-cli tree ugrep unzip wget which wl-clipboard xh yazi yq zoxide
+    si bat bottom choose curl dialog direnv dust dysk eza fd file fzf gcc git git-delta github-cli gum htop iproute2 jq just lazygit libnewt libsecret make micro net-tools nmap pixi procs python python-pip python-pipx jc python-uv ripgrep sd shellcheck shfmt starship stow tar tealdeer fastfetch trash-cli tree ugrep unzip wget which wl-clipboard xh yazi yq zoxide
 
     if (has-cmd tldr) {
         tldr --update
@@ -83,8 +79,7 @@ export def core-install []: nothing -> nothing {
 export def system-python-install []: nothing -> nothing {
     slog "Installing python"
 
-    si python python-pipx python-pip python-setuptools python-wheel \
-        python-virtualenv
+    si python python-pipx python-pip python-setuptools python-wheel python-virtualenv
     pipx install uv
 
     slog "Python installation done!"
@@ -134,8 +129,7 @@ export def essential-install []: nothing -> nothing {
 
     pkgx-install
 
-    si unarchiver zip tmux pkg-config fuse2 p7zip xz readline micro libnewt \
-        sqlite libffi zlib pkgfile libxcrypt-compat libsecret gawk base-devel
+    si unarchiver zip tmux pkg-config fuse2 p7zip xz readline micro libnewt sqlite libffi zlib pkgfile libxcrypt-compat libsecret gawk base-devel
 
     sudo pkgfile --update
     sudo pacman -Fy
@@ -158,11 +152,7 @@ export def cli-install []: nothing -> nothing {
 
     cli-slim-install
 
-    si neovim tmux shellcheck shfmt python-pynvim zsh-completions bat jq yq \
-        luarocks duf lazygit ugrep git-delta navi sd gdu hyperfine fd lsd xh \
-        htop nushell bottom plocate tealdeer television dysk yazi procs jc \
-        dust direnv atuin broot glances curlie superfile choose just dialog \
-        gum lazydocker
+    si neovim tmux shellcheck shfmt python-pynvim zsh-completions bat jq yq luarocks duf lazygit ugrep git-delta navi sd gdu hyperfine fd lsd xh htop nushell bottom plocate tealdeer television dysk yazi procs jc dust direnv atuin broot glances curlie superfile choose just dialog gum lazydocker
 
     if (has-cmd tldr) {
         tldr --update
@@ -177,9 +167,7 @@ export def cli-install []: nothing -> nothing {
 export def cpp-install []: nothing -> nothing {
     slog "Installing C++"
 
-    si gcc gdb boost boost-libs catch2 libc++ clang llvm \
-        doxygen graphviz ccache cppcheck pre-commit \
-        valgrind ltrace strace lldb lld cmake
+    si gcc gdb boost boost-libs catch2 libc++ clang llvm doxygen graphviz ccache cppcheck pre-commit valgrind ltrace strace lldb lld cmake
 
     conan-install
 
@@ -233,8 +221,7 @@ export def cockpit-install []: nothing -> nothing {
 
     slog "Installing cockpit"
 
-    si cockpit cockpit-machines cockpit-packagekit cockpit-pcp cockpit-podman \
-        cockpit-storaged
+    si cockpit cockpit-machines cockpit-packagekit cockpit-pcp cockpit-podman cockpit-storaged
     sudo systemctl enable --now cockpit.socket
 
     slog "cockpit installation done!"
@@ -256,10 +243,7 @@ export def vm-install []: nothing -> nothing {
 
     nftables-install
 
-    si libvirt qemu-base virt-install bridge-utils dnsmasq libosinfo openssl \
-        edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs jq \
-        guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat jc \
-        xmlstarlet ovmf osinfo-db osinfo-db-tools
+    si libvirt qemu-base virt-install bridge-utils dnsmasq libosinfo openssl edk2-ovmf virglrenderer libisoburn cloud-utils dmidecode libguestfs jq guestfs-tools qemu-hw-display-virtio-gpu libosinfo openbsd-netcat jc xmlstarlet ovmf osinfo-db osinfo-db-tools
 
     slog "vm installation done!"
 }
@@ -316,9 +300,7 @@ export def firewall-setup []: nothing -> nothing {
 
 # Desktop core installation
 export def desktop-core-install []: nothing -> nothing {
-    si flatpak kitty gnome-keyring wl-clipboard libsecret papirus-icon-theme \
-        udisks2 udiskie gvfs flatpak qt6-multimedia-gstreamer pipewire-jack \
-        ttf-jetbrains-mono-nerd otf-font-awesome imagemagick
+    si flatpak kitty gnome-keyring wl-clipboard libsecret papirus-icon-theme udisks2 udiskie gvfs flatpak qt6-multimedia-gstreamer pipewire-jack ttf-jetbrains-mono-nerd otf-font-awesome imagemagick
 
     flathub-install
     paru-install
@@ -330,9 +312,7 @@ export def desktop-core-install []: nothing -> nothing {
 
 # WM tools installation
 export def wm-tools-install []: nothing -> nothing {
-    sin waybar rofi mako pavucontrol playerctl wlsunset \
-        network-manager-applet nm-connection-editor lxappearance nwg-bar \
-        nwg-displays nwg-panel nwg-look greetd
+    sin waybar rofi mako pavucontrol playerctl wlsunset network-manager-applet nm-connection-editor lxappearance nwg-bar nwg-displays nwg-panel nwg-look greetd
 
     aur wlogout
 }
@@ -342,10 +322,7 @@ export def wm-install []: nothing -> nothing {
     desktop-core-install
     wm-tools-install
 
-    sin grim slurp thunar thunar-archive-plugin cliphist xdg-desktop-portal \
-        qt5ct qt6ct polkit imv nvtop mpv ttf-roboto noto-fonts noto-fonts-emoji \
-        tumbler pipewire pipewire-pulse xdg-desktop-portal-wlr wl-clip-persist \
-        pamixer brightnessctl pavucontrol blueman bluez bluez-utils adw-gtk-theme
+    sin grim slurp thunar thunar-archive-plugin cliphist xdg-desktop-portal qt5ct qt6ct polkit imv nvtop mpv ttf-roboto noto-fonts noto-fonts-emoji tumbler pipewire pipewire-pulse xdg-desktop-portal-wlr wl-clip-persist pamixer brightnessctl pavucontrol blueman bluez bluez-utils adw-gtk-theme
 
     aur pywalfox-native pywal matugen-bin bibata-cursor-theme
 }
@@ -356,9 +333,7 @@ export def hyprland-binstall []: nothing -> nothing {
 
     wm-install
 
-    sin hyprland hyprcursor hypridle hyprshot hyprlock hyprpolkitagent \
-        hyprsunset hyprutils hyprwayland-scanner nwg-dock-hyprland hyprpaper \
-        xdg-desktop-portal-hyprland hyprland-qt-support
+    sin hyprland hyprcursor hypridle hyprshot hyprlock hyprpolkitagent hyprsunset hyprutils hyprwayland-scanner nwg-dock-hyprland hyprpaper xdg-desktop-portal-hyprland hyprland-qt-support
 
     slog "hyprland installation done!"
 }
@@ -376,8 +351,7 @@ export def sway-binstall []: nothing -> nothing {
 
 # PM installation
 export def pm-install []: nothing -> nothing {
-    si nmap net-tools iproute2 lm_sensors stress-ng taliscale wireguard-tools \
-        smartmontools memtest86+ glmark2
+    si nmap net-tools iproute2 lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ glmark2
 }
 
 # KDE slim binary installation
@@ -386,9 +360,7 @@ export def kde-slim-binstall []: nothing -> nothing {
 
     desktop-core-install
 
-    sin plasma-desktop noto-fonts \
-        pipewire-jack systemsettings kscreen kio-extras udisks2 powerdevil \
-        power-profiles-daemon qt6-multimedia-gstreamer wl-clipboard
+    sin plasma-desktop noto-fonts pipewire-jack systemsettings kscreen kio-extras udisks2 powerdevil power-profiles-daemon qt6-multimedia-gstreamer wl-clipboard
 
     sin mesa
     slog "kde plasma installation done!"

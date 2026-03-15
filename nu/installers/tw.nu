@@ -45,10 +45,7 @@ export def tw-packages []: nothing -> nothing {
 
     slog "Installing packages"
 
-    si git gh git-delta unzip wget curl trash-cli tar stow gcc make file \
-        starship gum wl-clipboard tree bat eza fzf ripgrep zoxide fd \
-        htop sd tealdeer yazi cheat lazygit libsecret net-tools iproute2 nmap \
-        dialog newt python314 python314-pip python314-pipx osinfo-db-tools
+    si git gh git-delta unzip wget curl trash-cli tar stow gcc make file starship gum wl-clipboard tree bat eza fzf ripgrep zoxide fd htop sd tealdeer yazi cheat lazygit libsecret net-tools iproute2 nmap dialog newt python314 python314-pip python314-pipx osinfo-db-tools
 
     if (has-cmd tldr) {
         tldr --update
@@ -61,8 +58,7 @@ export def tw-packages []: nothing -> nothing {
 export def system-python-install []: nothing -> nothing {
     slog "Installing python"
 
-    si python314 python314-virtualenv python314-pip python314-setuptools \
-        python314-pipx
+    si python314 python314-virtualenv python314-pip python314-setuptools python314-pipx
     pipx install uv
 
     slog "Python installation done!"
@@ -133,8 +129,7 @@ export def essential-install []: nothing -> nothing {
 
     sudo zypper install -y -t pattern devel_basis
 
-    si unar zip micro-editor 7zip readline-devel sqlite3-devel libffi-devel \
-        libbz2-devel xz-devel gum libsecret gawk newt
+    si unar zip micro-editor 7zip readline-devel sqlite3-devel libffi-devel libbz2-devel xz-devel gum libsecret gawk newt
 
     slog "Essential packages installation done!"
 }
@@ -154,10 +149,7 @@ export def cli-install []: nothing -> nothing {
 
     cli-slim-install
 
-    si neovim sd fd procs lazygit bottom xh plocate tealdeer urlview nushell \
-        lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk jq jc \
-        hyperfine cheat curlie lsd direnv yq tmux htop fd bat git-delta dust \
-        shfmt ShellCheck just dialog atuin broot choose fastfetch
+    si neovim sd fd procs lazygit bottom xh plocate tealdeer urlview nushell lua54-luarocks python3-neovim ImageMagick gdu duf ugrep yazi dysk jq jc hyperfine cheat curlie lsd direnv yq tmux htop fd bat git-delta dust shfmt ShellCheck just dialog atuin broot choose fastfetch
 
     if (has-cmd tldr) {
         tldr --update
@@ -172,9 +164,7 @@ export def cli-install []: nothing -> nothing {
 export def cpp-install []: nothing -> nothing {
     slog "Installing C++"
 
-    si gcc gdb g++ boost-devel catch2-devel ltrace strace lldb lld \
-        clang llvm clang-tools clang-devel valgrind systemtap \
-        doxygen graphviz ccache cppcheck python3-pre-commit cmake
+    si gcc gdb g++ boost-devel catch2-devel ltrace strace lldb lld clang llvm clang-tools clang-devel valgrind systemtap doxygen graphviz ccache cppcheck python3-pre-commit cmake
 
     conan-install
 
@@ -242,9 +232,7 @@ export def cockpit-install []: nothing -> nothing {
 
     slog "Installing cockpit"
 
-    si systemd-networkd cockpit cockpit-machines cockpit-pcp cockpit-podman \
-        cockpit-storaged cockpit-kdump cockpit-networkmanager \
-        cockpit-packagekit cockpit-system cockpit-tukit
+    si systemd-networkd cockpit cockpit-machines cockpit-pcp cockpit-podman cockpit-storaged cockpit-kdump cockpit-networkmanager cockpit-packagekit cockpit-system cockpit-tukit
     sudo systemctl enable --now cockpit.socket
 
     slog "cockpit installation done!"
@@ -254,11 +242,7 @@ export def cockpit-install []: nothing -> nothing {
 export def vm-install []: nothing -> nothing {
     slog "Installing libvirt"
 
-    si libvirt qemu-kvm virt-install bridge-utils qemu-img qemu-ui-spice-core \
-        qemu-ui-spice-app qemu-char-spice qemu-audio-spice jq jc xmlstarlet \
-        qemu-hw-display-virtio-gpu qemu-hw-display-virtio-vga qemu-hw-usb-host \
-        qemu-hw-usb-redirect qemu-ovmf-x86_64 qemu-tools qemu-ui-gtk \
-        qemu-ui-opengl libguestfs guestfs-tools libosinfo openssl
+    si libvirt qemu-kvm virt-install bridge-utils qemu-img qemu-ui-spice-core qemu-ui-spice-app qemu-char-spice qemu-audio-spice jq jc xmlstarlet qemu-hw-display-virtio-gpu qemu-hw-display-virtio-vga qemu-hw-usb-host qemu-hw-usb-redirect qemu-ovmf-x86_64 qemu-tools qemu-ui-gtk qemu-ui-opengl libguestfs guestfs-tools libosinfo openssl
 
     slog "libvirt installation done!"
 }
@@ -303,8 +287,7 @@ export def distrobox-install []: nothing -> nothing {
 
 # Desktop core installation
 export def desktop-core-install []: nothing -> nothing {
-    sin kitty wl-clipboard gnome-keyring libsecret-tools \
-        papirus-icon-theme udisks2 udiskie gvfs flatpak imagemagick
+    sin kitty wl-clipboard gnome-keyring libsecret-tools papirus-icon-theme udisks2 udiskie gvfs flatpak imagemagick
 
     flathub-install
     fpi app.zen_browser.zen
@@ -316,15 +299,7 @@ export def desktop-core-install []: nothing -> nothing {
 
 # WM tools installation
 export def wm-tools-install []: nothing -> nothing {
-    sin aaa_base bash-completion pipewire imv xdg-utils sudo gzip bzip2 jc \
-        adwaita-icon-theme clipman bluez qt5ct qt6ct grim cliphist mpv \
-        dejavu-fonts glibc-locale less google-roboto-fonts ghostscript-fonts-std \
-        noto-sans-fonts google-droid-fonts google-opensans-fonts playerctl pamixer \
-        gtk3-metatheme-adwaita noto-coloremoji-fonts noto-emoji-fonts mpris-ctl \
-        adobe-sourcecodepro-fonts command-not-found metatheme-adwaita-common slurp \
-        bluemoon symbols-only-nerd-fonts adobe-sourcesanspro-fonts brightnessctl \
-        adobe-sourceserifpro-fonts cantarell-fonts tlp google-carlito-fonts \
-        ghostscript-fonts-other
+    sin aaa_base bash-completion pipewire imv xdg-utils sudo gzip bzip2 jc adwaita-icon-theme clipman bluez qt5ct qt6ct grim cliphist mpv dejavu-fonts glibc-locale less google-roboto-fonts ghostscript-fonts-std noto-sans-fonts google-droid-fonts google-opensans-fonts playerctl pamixer gtk3-metatheme-adwaita noto-coloremoji-fonts noto-emoji-fonts mpris-ctl adobe-sourcecodepro-fonts command-not-found metatheme-adwaita-common slurp bluemoon symbols-only-nerd-fonts adobe-sourcesanspro-fonts brightnessctl adobe-sourceserifpro-fonts cantarell-fonts tlp google-carlito-fonts ghostscript-fonts-other
 }
 
 # WM installation
@@ -332,10 +307,7 @@ export def wm-install []: nothing -> nothing {
     desktop-core-install
     wm-tools-install
 
-    sin xdg-desktop-portal xdg-desktop-portal-wlr adwaita-icon-theme clipman \
-        bluez qt5ct qt6ct grim cliphist mpv playerctl pamixer mpris-ctl slurp \
-        bluemoon symbols-only-nerd-fonts adobe-sourcesanspro-fonts brightnessctl \
-        nwg-displays nwg-look inter-fonts nvtop
+    sin xdg-desktop-portal xdg-desktop-portal-wlr adwaita-icon-theme clipman bluez qt5ct qt6ct grim cliphist mpv playerctl pamixer mpris-ctl slurp bluemoon symbols-only-nerd-fonts adobe-sourcesanspro-fonts brightnessctl nwg-displays nwg-look inter-fonts nvtop
 }
 
 # sin helper
@@ -351,9 +323,7 @@ export def sway-binstall []: nothing -> nothing {
 
     wm-install
 
-    sin swaylock swaybg swayidle swaynag waybar rofi-wayland polkit-kde-agent-6 \
-        SwayNotificationCenter SwayNotificationCenter-bash-completion sway-marker \
-        SwayNotificationCenter-zsh-completion xdg-desktop-portal-gtk greetds
+    sin swaylock swaybg swayidle swaynag waybar rofi-wayland polkit-kde-agent-6 SwayNotificationCenter SwayNotificationCenter-bash-completion sway-marker SwayNotificationCenter-zsh-completion xdg-desktop-portal-gtk greetds
 
     slog "sway installation done!"
 }
@@ -364,10 +334,7 @@ export def hyprland-install []: nothing -> nothing {
 
     wm-install
 
-    sin NetworkManager hyprcursor hypridle hyprland hyprland-bash-completion \
-        hyprland-devel hyprlock hyprland-wallpapers hyprland-zsh-completion \
-        hyprpaper hyprpicker hyprpolkitagent hyprshot xdg-desktop-portal-hyprland \
-        hyprland-qt-support hyprland-qtutils qt6ct waybar rofi-wayland
+    sin NetworkManager hyprcursor hypridle hyprland hyprland-bash-completion hyprland-devel hyprlock hyprland-wallpapers hyprland-zsh-completion hyprpaper hyprpicker hyprpolkitagent hyprshot xdg-desktop-portal-hyprland hyprland-qt-support hyprland-qtutils qt6ct waybar rofi-wayland
 
     cmd-check hyprcursor hypridle hyprctl hyprlock hyprpicker
     cmd-check pactl waybar clipman imv mpv hyprshot ghostty
@@ -380,8 +347,7 @@ export def hyprland-install []: nothing -> nothing {
 
 # PM installation
 export def pm-install []: nothing -> nothing {
-    si net-tools iproute2 nmap sensors stress-ng taliscale wireguard-tools \
-        smartmontools memtest86+ glmark2
+    si net-tools iproute2 nmap sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ glmark2
 }
 
 # KDE slim binary installation
@@ -390,8 +356,7 @@ export def kde-slim-binstall []: nothing -> nothing {
 
     desktop-core-install
 
-    sin plasma6-desktop systemsettings6 kscreen6 kio-extras powerdevil6 \
-        power-profiles-daemon wl-clipboard
+    sin plasma6-desktop systemsettings6 kscreen6 kio-extras powerdevil6 power-profiles-daemon wl-clipboard
     slog "kde plasma installation done!"
 }
 

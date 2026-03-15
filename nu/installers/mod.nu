@@ -14,6 +14,7 @@ export use tw.nu *
 export use alpine.nu *
 export use layered.nu *
 export use box.nu *
+export use atomic.nu *
 export use mac.nu *
 export use mac-linux.nu *
 
@@ -31,5 +32,6 @@ export def main []: nothing -> nothing {
     echo ""
     echo "Available modules:"
     echo "  setup, common, linux, apt, dnf, arch, tw, alpine"
-    echo "  layered, box, mac, mac-linux"
+    echo "  layered, box, atomic, mac, mac-linux"
 }
+

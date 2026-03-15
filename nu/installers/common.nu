@@ -87,10 +87,7 @@ export def brew-shell-install []: nothing -> nothing {
 
     brew-shell-slim-install
 
-    bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo \
-        atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi \
-        ollama carapace lazygit fd luarocks runme act mask devcontainer gum \
-        nixfmt pass tailscale age imagemagick tmuxp mcat
+    bis jq just shfmt shellcheck lazydocker broot cheat curlie duf sd xh doggo atuin direnv dust procs hyperfine pixi yq htop dysk lsd whalebrew yazi ollama carapace lazygit fd luarocks runme act mask devcontainer gum nixfmt pass tailscale age imagemagick tmuxp mcat
 
     let pkgs = []
     let pkgs = if not (has-cmd bw) { $pkgs | append bitwarden-cli } else { $pkgs }
@@ -148,9 +145,7 @@ export def pixi-shell-slim-install []: nothing -> nothing {
 export def pixi-shell-install []: nothing -> nothing {
     pixi-shell-slim-install
 
-    pis broot just lazydocker gdu nvim lazygit luarocks micro glances mask \
-        cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi act \
-        carapace direnv yq bat shellcheck fd git-delta jq yq go-shfmt
+    pis broot just lazydocker gdu nvim lazygit luarocks micro glances mask cheat curlie duf sd xh atuin dust procs hyperfine htop jq yazi act carapace direnv yq bat shellcheck fd git-delta jq yq go-shfmt
 
     let pkgs = []
     let pkgs = if not (has-cmd ug) { $pkgs | append ugrep } else { $pkgs }
@@ -866,8 +861,8 @@ export def nvim-groupstall []: nothing -> nothing {
         if not (has-cmd tree-sitter) { pi tree-sitter-cli }
         if not (has-cmd rg) { pi ripgrep }
         if not (has-cmd btm) { pi bottom }
-    } else if (scope commands | where name == si | is-not-empty) {
-        si neovim luarocks lazygit gdu ripgrep bottom btm tree-sitter-cli fd-find fzf
+    } else if (active-installer-command-exists si) {
+        run-active-installer-command si neovim luarocks lazygit gdu ripgrep bottom btm tree-sitter-cli fd-find fzf
 
         if (is-apt) {
             warn "Older version of neovim is installed. Some features might not work."
@@ -915,9 +910,7 @@ export def go-tools-install []: nothing -> nothing {
 
 # Pixi good packages installation
 export def pixi-good-packages []: nothing -> nothing {
-    pi gh lazygit git-delta unzip wget curl trash-cli tar stow \
-        just emacs starship tmux go-gum \
-        tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer navi
+    pi gh lazygit git-delta unzip wget curl trash-cli tar stow just emacs starship tmux go-gum tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer navi
 
     if (has-cmd tldr) {
         tldr --update
@@ -945,9 +938,7 @@ export def devenv-install []: nothing -> nothing {
 
 # Brew good packages installation
 export def brew-good-packages []: nothing -> nothing {
-    bi gh unzip wget curl trash-cli stow starship tmux gum \
-        just emacs zsh tree bat eza fzf ripgrep zoxide fd \
-        htop sd yazi bat tealdeer cheat navi lazygit git-delta
+    bi gh unzip wget curl trash-cli stow starship tmux gum just emacs zsh tree bat eza fzf ripgrep zoxide fd htop sd yazi bat tealdeer cheat navi lazygit git-delta
 
     if (has-cmd tldr) {
         tldr --update
@@ -1031,9 +1022,9 @@ export def python-install []: nothing -> nothing {
     slog "Installing python tools"
 
     # Check if system-python_install exists in scope
-    let system_fn = (scope commands | where name == "system-python-install" | is-not-empty)
+    let system_fn = (active-installer-command-exists "system-python-install")
     if $system_fn {
-        system-python-install
+        run-active-installer-command "system-python-install"
         return
     }
 
@@ -1047,9 +1038,9 @@ export def python-install []: nothing -> nothing {
 export def flathub-install []: nothing -> nothing {
     if not (has-cmd flatpak) {
         # Try to install via si if available
-        let si_fn = (scope commands | where name == si | is-not-empty)
+        let si_fn = (active-installer-command-exists si)
         if $si_fn {
-            si flatpak
+            run-active-installer-command si flatpak
         }
     }
 
@@ -1305,14 +1296,14 @@ export def gnome-confstall []: nothing -> nothing {
     slog "gnome config"
 
     if (is-ubuntu) {
-        let si_fn = (scope commands | where name == si | is-not-empty)
+        let si_fn = (active-installer-command-exists si)
         if $si_fn {
-            si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
+            run-active-installer-command si gnome-shell-extension-manager gnome-tweak-tool gnome-sushi gnome-software-plugin-flatpak
         }
     } else if (is-fedora) and not (is-atomic) {
-        let si_fn = (scope commands | where name == si | is-not-empty)
+        let si_fn = (active-installer-command-exists si)
         if $si_fn {
-            si gnome-extensions-app gnome-tweaks
+            run-active-installer-command si gnome-extensions-app gnome-tweaks
         }
     }
 
@@ -1388,9 +1379,9 @@ export def apps-slim-install []: nothing -> nothing {
     }
 
     if not (has-cmd flatpak) {
-        let si_fn = (scope commands | where name == si | is-not-empty)
+        let si_fn = (active-installer-command-exists si)
         if $si_fn {
-            si flatpak
+            run-active-installer-command si flatpak
         } else {
             warn "flatpak not installed, skipping flatpak apps"
             return
@@ -2122,7 +2113,34 @@ export def foot-confstall []: nothing -> nothing {
 
 # pkgx installation
 export def pkgx-install []: nothing -> bool {
-    pkgx-install
+    if ("~/.local/bin/pkgx" | path exists) {
+        return true
+    }
+
+    if (has-cmd brew) {
+        brew install pkgx
+        return true
+    }
+
+    let platform = (uname).kernel-name
+    let arch = (uname).machine
+    let url = $"https://pkgx.sh/($platform)/($arch).tgz"
+
+    try {
+        if (has-cmd curl) {
+            curl -fsSL $url | tar xz -C ~/.local/bin
+        } else if (has-cmd wget) {
+            wget -qO- $url | tar xz -C ~/.local/bin
+        } else {
+            warn "curl or wget not installed, skipping pkgx installation"
+            return false
+        }
+
+        cmd-check pkgx
+        true
+    } catch {
+        false
+    }
 }
 
 # Nix installation
@@ -2190,9 +2208,9 @@ export def nix-check []: nothing -> nothing {
 # Nix mainstall
 export def nix-mainstall []: nothing -> nothing {
     min-mainstall
-    let si_fn = (scope commands | where name == si | is-not-empty)
+    let si_fn = (active-installer-command-exists si)
     if $si_fn and not (has-cmd zsh) {
-        si zsh
+        run-active-installer-command si zsh
     }
     nix-groupstall
     nix-check
@@ -2221,18 +2239,18 @@ export def work-groupstall []: nothing -> nothing {
 
 # VM groupstall
 export def vm-groupstall []: nothing -> nothing {
-    let vm_fn = (scope commands | where name == vm-install | is-not-empty)
+    let vm_fn = (active-installer-command-exists vm-install)
     if $vm_fn {
-        vm-install
+        run-active-installer-command vm-install
     } else {
         warn "vm-install not available, skipping vm installation"
         return
     }
 
     if not (is-distrobox) {
-        let vm_ui_fn = (scope commands | where name == vm-ui-install | is-not-empty)
+        let vm_ui_fn = (active-installer-command-exists vm-ui-install)
         if $vm_ui_fn {
-            vm-ui-install
+            run-active-installer-command vm-ui-install
         }
     }
 
@@ -2277,8 +2295,8 @@ export def shell-config-install []: nothing -> nothing {
 # Groupstall helper
 export def groupstall [name: string]: nothing -> nothing {
     let fn_name = $"($name)-groupstall"
-    if (scope commands | where name == $fn_name | is-not-empty) {
-        run-external $fn_name
+    if (installer-command-exists $fn_name) {
+        run-installer-command $fn_name
     } else {
         warn $"Groupstall function ($fn_name) not found"
     }
@@ -2287,8 +2305,8 @@ export def groupstall [name: string]: nothing -> nothing {
 # Mainstall helper
 export def mainstall [name: string]: nothing -> nothing {
     let fn_name = $"($name)-mainstall"
-    if (scope commands | where name == $fn_name | is-not-empty) {
-        run-external $fn_name
+    if (installer-command-exists $fn_name) {
+        run-installer-command $fn_name
     } else {
         warn $"Mainstall function ($fn_name) not found"
     }
@@ -2296,9 +2314,9 @@ export def mainstall [name: string]: nothing -> nothing {
 
 # Base binstall
 export def base-binstall []: nothing -> nothing {
-    let core_fn = (scope commands | where name == core-install | is-not-empty)
+    let core_fn = (active-installer-command-exists core-install)
     if $core_fn {
-        core-install
+        run-active-installer-command core-install
     } else {
         warn "core-install not available, skipping core installation"
     }
@@ -2362,9 +2380,9 @@ export def base-mainstall []: nothing -> nothing {
 # Min binstall
 export def min-binstall []: nothing -> nothing {
     base-binstall
-    let essential_fn = (scope commands | where name == essential-install | is-not-empty)
+    let essential_fn = (active-installer-command-exists essential-install)
     if $essential_fn {
-        essential-install
+        run-active-installer-command essential-install
     } else {
         warn "essential-install not available, skipping essential installation"
     }
@@ -2373,17 +2391,17 @@ export def min-binstall []: nothing -> nothing {
         return
     }
 
-    let ui_fn = (scope commands | where name == ui-install | is-not-empty)
+    let ui_fn = (active-installer-command-exists ui-install)
     if $ui_fn {
-        ui-install
+        run-active-installer-command ui-install
     }
 }
 
 # Shell-slim binstall
 export def shell-slim-binstall []: nothing -> nothing {
-    let cli_fn = (scope commands | where name == cli-slim-install | is-not-empty)
+    let cli_fn = (active-installer-command-exists cli-slim-install)
     if $cli_fn {
-        cli-slim-install
+        run-active-installer-command cli-slim-install
     } else {
         warn "cli-slim-install not available, skipping cli installation"
     }
@@ -2392,9 +2410,9 @@ export def shell-slim-binstall []: nothing -> nothing {
 
 # Shell binstall
 export def shell-binstall []: nothing -> nothing {
-    let cli_fn = (scope commands | where name == cli-install | is-not-empty)
+    let cli_fn = (active-installer-command-exists cli-install)
     if $cli_fn {
-        cli-install
+        run-active-installer-command cli-install
     } else {
         warn "cli-install not available, skipping cli installation"
     }
@@ -2483,9 +2501,7 @@ export def shell-slim-mainstall []: nothing -> nothing {
 # Shell check
 export def shell-check []: nothing -> nothing {
     shell-slim-check
-    cmd-check tmux nvim lazygit sd bat htop atuin gawk carapace direnv \
-        shellcheck shfmt ug tldr direnv jq yq gum bat delta just dialog \
-        btm yazi
+    cmd-check tmux nvim lazygit sd bat htop atuin gawk carapace direnv shellcheck shfmt ug tldr direnv jq yq gum bat delta just dialog btm yazi
 
     if not (has-cmd fd) and not (has-cmd fdfind) {
         warn "fd or fdfind not found"

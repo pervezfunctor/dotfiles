@@ -85,8 +85,7 @@ export def essential-install []: nothing -> nothing {
     pkgx-install
     system-python-install
 
-    si zip micro p7zip net-tools iproute2 nmap gcc make fzf gawk just tmux \
-        readline newt sqlite libffi zlib pkgfile gawk
+    si zip micro p7zip net-tools iproute2 nmap gcc make fzf gawk just tmux readline newt sqlite libffi zlib pkgfile gawk
 
     slog "Essential packages installation done!"
 }
@@ -104,10 +103,7 @@ export def cli-slim-install []: nothing -> nothing {
 export def cli-install []: nothing -> nothing {
     slog "Installing cli tools using apt"
 
-    asroot apk add neovim tmux shellcheck shfmt zsh-completions bat jq yq luarocks \
-        lazygit ugrep delta navi sd gdu hyperfine fd lsd xh htop nushell bottom \
-        plocate dysk yazi procs dust direnv atuin broot glances curlie choose just \
-        dialog lazydocker
+    asroot apk add neovim tmux shellcheck shfmt zsh-completions bat jq yq luarocks lazygit ugrep delta navi sd gdu hyperfine fd lsd xh htop nushell bottom plocate dysk yazi procs dust direnv atuin broot glances curlie choose just dialog lazydocker
 
     slog "cli tools installation done!"
 }
@@ -116,10 +112,7 @@ export def cli-install []: nothing -> nothing {
 export def cpp-install []: nothing -> nothing {
     slog "Installing C++"
 
-    si libstdc++ libc6-compat python3 g++ bash emacs clang-analyzer lldb lld \
-        clang-ccache clang-extra-tools llvm gcc gdb g++ catch2 clang llvm \
-        clang-extra-tools ccache cppcheck pre-commit valgrind ltrace strace \
-        cmake
+    si libstdc++ libc6-compat python3 g++ bash emacs clang-analyzer lldb lld clang-ccache clang-extra-tools llvm gcc gdb g++ catch2 clang llvm clang-extra-tools ccache cppcheck pre-commit valgrind ltrace strace cmake
 
     conan-install
 
@@ -166,9 +159,7 @@ export def libvirt-confstall []: nothing -> nothing {
 export def vm-install []: nothing -> nothing {
     slog "Installing libvirt"
 
-    si libvirt virt-install bridge-utils dnsmasq libosinfo openssl virglrenderer \
-        libisoburn cloud-utils dmidecode jq qemu-hw-display-virtio-gpu libosinfo \
-        xmlstarlet ovmf osinfo-db osinfo-db-tools
+    si libvirt virt-install bridge-utils dnsmasq libosinfo openssl virglrenderer libisoburn cloud-utils dmidecode jq qemu-hw-display-virtio-gpu libosinfo xmlstarlet ovmf osinfo-db osinfo-db-tools
 
     slog "libvirt installation done!"
 }

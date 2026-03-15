@@ -35,8 +35,7 @@ export def filter-packages [...packages: string]: nothing -> list<string> {
 
 # Core layered packages
 export def core-layered []: nothing -> list<string> {
-    filter-packages stow zsh git tmux gcc make bootc coreos-installer openssl \
-        gnome-keyring wl-clipboard
+    filter-packages stow zsh git tmux gcc make bootc coreos-installer openssl gnome-keyring wl-clipboard
 }
 
 # VSCode layered packages
@@ -44,7 +43,7 @@ export def vscode-layered []: nothing -> list<string> {
     let vscode_repo = "/etc/yum.repos.d/vscode.repo"
     if not (has-cmd code) and not ($vscode_repo | path exists) {
         let repo_content = "[code]
-name=Visual Studio Code:
+name=Visual Studio Code
 baseurl=https://packages.microsoft.com/yumrepos/vscode
 enabled=1
 gpgcheck=1
@@ -57,8 +56,7 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"
 
 # Libvirt layered packages
 export def libvirt-layered []: nothing -> list<string> {
-    filter-packages libvirt libvirt-nss virt-manager virt-install libguestfs-tools \
-        guestfs-tools
+    filter-packages libvirt libvirt-nss virt-manager virt-install libguestfs-tools guestfs-tools
 }
 
 # Incus layered packages
@@ -68,24 +66,19 @@ export def incus-layered []: nothing -> list<string> {
 
 # Layered install function
 export def layered-install [...layers: string]: nothing -> nothing {
-    let fns = []
-    let pkgs = []
-
-    for layer in $layers {
+    let fns = ($layers | each { |layer|
         let fn = $"($layer)-layered"
-        let fn_exists = (scope commands | where name == $fn | is-not-empty)
-        if $fn_exists {
-            $fns | append $fn
+        if (installer-command-exists $fn) {
+            [$fn]
         } else {
             warn $"Layer function ($fn) does not exist, skipping"
+            []
         }
-    }
+    } | flatten)
 
-    # Collect packages from layer functions
-    for f in $fns {
-        let layer_pkgs = (run-external $f)
-        $pkgs | append $layer_pkgs
-    }
+    let pkgs = ($fns | each { |f|
+        capture-installer-command-json $f
+    } | flatten | compact)
 
     let unique_pkgs = ($pkgs | uniq)
 

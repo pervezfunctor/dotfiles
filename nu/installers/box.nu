@@ -28,9 +28,9 @@ export def nvim-boxstall []: nothing -> nothing {
         if not (has-cmd btm) { pi bottom }
     } else {
         # Check for si function
-        let si_fn = (scope commands | where name == si | is-not-empty)
+        let si_fn = (active-installer-command-exists si)
         if $si_fn {
-            si neovim luarocks lazygit gdu ripgrep bottom btm tree-sitter-cli fd-find fzf
+            run-active-installer-command si neovim luarocks lazygit gdu ripgrep bottom btm tree-sitter-cli fd-find fzf
 
             if (is-apt) {
                 warn "Older version of neovim is installed. Some features might not work."
@@ -66,11 +66,11 @@ export def emacs-boxstall []: nothing -> nothing {
     } else if (has-cmd pixi) {
         pi emacs
     } else {
-        let si_fn = (scope commands | where name == si | is-not-empty)
+        let si_fn = (active-installer-command-exists si)
         if $si_fn {
-            si emacs-nox
+            run-active-installer-command si emacs-nox
             if not (has-cmd emacs) {
-                si emacs
+                run-active-installer-command si emacs
             }
         }
     }
@@ -94,9 +94,9 @@ export def tmux-boxstall []: nothing -> nothing {
     if (has-cmd brew) {
         bi tmux
     } else {
-        let si_fn = (scope commands | where name == si | is-not-empty)
+        let si_fn = (active-installer-command-exists si)
         if $si_fn {
-            si tmux
+            run-active-installer-command si tmux
         }
         if not (has-cmd tmux) and (has-cmd pixi) {
             pi tmux
@@ -117,9 +117,9 @@ export def zsh-boxstall []: nothing -> nothing {
         return
     }
 
-    let si_fn = (scope commands | where name == si | is-not-empty)
+    let si_fn = (active-installer-command-exists si)
     if $si_fn {
-        si zsh
+        run-active-installer-command si zsh
     }
     if not (has-cmd zsh) and (has-cmd pixi) {
         pi zsh
@@ -137,9 +137,9 @@ export def slimbox-base [os_type: string]: nothing -> nothing {
 
     # Call packages function based on OS type
     let pkg_fn = $"($os_type)-packages"
-    let fn_exists = (scope commands | where name == $pkg_fn | is-not-empty)
+    let fn_exists = (installer-command-exists $pkg_fn)
     if $fn_exists {
-        run-external $pkg_fn
+        run-installer-command $pkg_fn
     }
 
     dotfiles-install
@@ -265,8 +265,7 @@ export def centos-fast-mainstall []: nothing -> nothing {
     }
 
     sudo dnf update
-    sudo dnf install -y git-core wget curl gcc make unzip tar tree neovim tmux \
-        zsh gcc-c++ gdb clang lldb lld llvm bat gum ripgrep luarocks
+    sudo dnf install -y git-core wget curl gcc make unzip tar tree neovim tmux zsh gcc-c++ gdb clang lldb lld llvm bat gum ripgrep luarocks
 
     pixi-install
     pixi global install trash-cli fzf lazygit eza zoxide gh git-delta

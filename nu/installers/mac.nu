@@ -61,8 +61,7 @@ export def apps-install []: nothing -> nothing {
 export def core-install []: nothing -> nothing {
     softwareupdate --install-rosetta --agree-to-license
     brew-install
-    bi mas coreutils bash curl wget trash tree unzip coreutils stow \
-        nmap gawk
+    bi mas coreutils bash curl wget trash tree unzip coreutils stow nmap gawk
 }
 
 # Essential installation
@@ -76,14 +75,12 @@ export def essential-install []: nothing -> nothing {
 
 # CLI slim installation
 export def cli-slim-install []: nothing -> nothing {
-    bis starship ripgrep gh bat jq fzf zoxide eza \
-        reattach-to-user-namespace zsh-syntax-highlighting zsh-autosuggestions
+    bis starship ripgrep gh bat jq fzf zoxide eza reattach-to-user-namespace zsh-syntax-highlighting zsh-autosuggestions
 }
 
 # CLI installation
 export def cli-install []: nothing -> nothing {
-    bis tmux pkg-config urlview htop starship shellcheck shfmt ripgrep neovim \
-        luarocks tealdeer lsd fd git-delta just gum
+    bis tmux pkg-config urlview htop starship shellcheck shfmt ripgrep neovim luarocks tealdeer lsd fd git-delta just gum
 }
 
 # JetBrains Mono installation

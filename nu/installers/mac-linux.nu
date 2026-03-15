@@ -51,26 +51,26 @@ export def shell-config-install []: nothing -> nothing {
 # Groupstall helper
 export def groupstall [name: string]: nothing -> nothing {
     let fn_name = $"($name)-groupstall"
-    let fn_exists = (scope commands | where name == $fn_name | is-not-empty)
+    let fn_exists = (installer-command-exists $fn_name)
     if $fn_exists {
-        run-external $fn_name
+        run-installer-command $fn_name
     }
 }
 
 # Mainstall helper
 export def mainstall [name: string]: nothing -> nothing {
     let fn_name = $"($name)-mainstall"
-    let fn_exists = (scope commands | where name == $fn_name | is-not-empty)
+    let fn_exists = (installer-command-exists $fn_name)
     if $fn_exists {
-        run-external $fn_name
+        run-installer-command $fn_name
     }
 }
 
 # Base binstall
 export def base-binstall []: nothing -> nothing {
-    let core_fn = (scope commands | where name == core-install | is-not-empty)
+    let core_fn = (active-installer-command-exists core-install)
     if $core_fn {
-        core-install
+        run-active-installer-command core-install
     } else {
         warn "core-install not available, skipping core installation"
     }
@@ -134,9 +134,9 @@ export def base-mainstall []: nothing -> nothing {
 # Min binstall
 export def min-binstall []: nothing -> nothing {
     base-binstall
-    let essential_fn = (scope commands | where name == essential-install | is-not-empty)
+    let essential_fn = (active-installer-command-exists essential-install)
     if $essential_fn {
-        essential-install
+        run-active-installer-command essential-install
     } else {
         warn "essential-install not available, skipping essential installation"
     }
@@ -145,17 +145,17 @@ export def min-binstall []: nothing -> nothing {
         return
     }
 
-    let ui_fn = (scope commands | where name == ui-install | is-not-empty)
+    let ui_fn = (active-installer-command-exists ui-install)
     if $ui_fn {
-        ui-install
+        run-active-installer-command ui-install
     }
 }
 
 # Shell-slim binstall
 export def shell-slim-binstall []: nothing -> nothing {
-    let cli_fn = (scope commands | where name == cli-slim-install | is-not-empty)
+    let cli_fn = (active-installer-command-exists cli-slim-install)
     if $cli_fn {
-        cli-slim-install
+        run-active-installer-command cli-slim-install
     } else {
         warn "cli-slim-install not available, skipping cli installation"
     }
@@ -164,9 +164,9 @@ export def shell-slim-binstall []: nothing -> nothing {
 
 # Shell binstall
 export def shell-binstall []: nothing -> nothing {
-    let cli_fn = (scope commands | where name == cli-install | is-not-empty)
+    let cli_fn = (active-installer-command-exists cli-install)
     if $cli_fn {
-        cli-install
+        run-active-installer-command cli-install
     } else {
         warn "cli-install not available, skipping cli installation"
     }
@@ -274,9 +274,9 @@ export def nix-check []: nothing -> nothing {
 # Nix mainstall
 export def nix-mainstall []: nothing -> nothing {
     min-mainstall
-    let si_fn = (scope commands | where name == si | is-not-empty)
+    let si_fn = (active-installer-command-exists si)
     if $si_fn and not (has-cmd zsh) {
-        si zsh
+        run-active-installer-command si zsh
     }
     nix-groupstall
     nix-check
@@ -305,18 +305,18 @@ export def work-groupstall []: nothing -> nothing {
 
 # VM groupstall
 export def vm-groupstall []: nothing -> nothing {
-    let vm_fn = (scope commands | where name == vm-install | is-not-empty)
+    let vm_fn = (active-installer-command-exists vm-install)
     if $vm_fn {
-        vm-install
+        run-active-installer-command vm-install
     } else {
         warn "vm-install not available, skipping vm installation"
         return
     }
 
     if not (is-distrobox) {
-        let vm_ui_fn = (scope commands | where name == vm-ui-install | is-not-empty)
+        let vm_ui_fn = (active-installer-command-exists vm-ui-install)
         if $vm_ui_fn {
-            vm-ui-install
+            run-active-installer-command vm-ui-install
         }
     }
 
@@ -361,9 +361,7 @@ export def shell-slim-mainstall []: nothing -> nothing {
 # Shell check
 export def shell-check []: nothing -> nothing {
     shell-slim-check
-    cmd-check tmux nvim lazygit sd bat htop atuin gawk carapace direnv \
-        shellcheck shfmt ug tldr direnv jq yq gum bat delta just dialog \
-        btm yazi
+    cmd-check tmux nvim lazygit sd bat htop atuin gawk carapace direnv shellcheck shfmt ug tldr direnv jq yq gum bat delta just dialog btm yazi
 
     if not (has-cmd fd) and not (has-cmd fdfind) {
         warn "fd or fdfind not found"
@@ -441,9 +439,9 @@ export def desktop-mainstall []: nothing -> nothing {
 # VSCode groupstall
 export def vscode-groupstall []: nothing -> nothing {
     # OS-specific vscode_binstall would be called here
-    let vscode_fn = (scope commands | where name == vscode-binstall | is-not-empty)
+    let vscode_fn = (active-installer-command-exists vscode-binstall)
     if $vscode_fn {
-        vscode-binstall
+        run-active-installer-command vscode-binstall
     }
     jetbrains-mono-install
     vscode-confstall

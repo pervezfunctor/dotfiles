@@ -82,9 +82,7 @@ export def ubuntu-packages []: nothing -> nothing {
 
     slog "Installing ubuntu packages..."
 
-    si git-core gh git-delta unzip wget curl net-tools iproute2 nmap gum eza \
-        trash-cli tar stow gcc make file tree bat ripgrep gawk starship pipx \
-        zoxide fd-find htop sd bat dialog whiptail tealdeer yq python3 python3-pip
+    si git-core gh git-delta unzip wget curl net-tools iproute2 nmap gum eza trash-cli tar stow gcc make file tree bat ripgrep gawk starship pipx zoxide fd-find htop sd bat dialog whiptail tealdeer yq python3 python3-pip
 
     fzf-install
 
@@ -99,11 +97,7 @@ export def ubuntu-packages []: nothing -> nothing {
 export def proxmox-packages []: nothing -> nothing {
     slog "Installing packages..."
 
-    apt-get -qq -y --no-install-recommends install git-core micro zsh curl wget \
-        zsh-theme-powerlevel9k htop pciutils ripgrep rclone stow stress jq yq sudo \
-        smartmontools zfsutils-linux rsync whiptail dialog numactl fio dysk duf jc \
-        usbutils restic ethtool nvme-cli lsof lm-sensors udisks2 guestfs-tools \
-        proxmox-backup-client libguestfs-tools
+    apt-get -qq -y --no-install-recommends install git-core micro zsh curl wget zsh-theme-powerlevel9k htop pciutils ripgrep rclone stow stress jq yq sudo smartmontools zfsutils-linux rsync whiptail dialog numactl fio dysk duf jc usbutils restic ethtool nvme-cli lsof lm-sensors udisks2 guestfs-tools proxmox-backup-client libguestfs-tools
 }
 
 # Proxmox mainstall
@@ -201,10 +195,7 @@ export def debian-packages []: nothing -> nothing {
     debian-locale-install
     slog "Installing debian packages..."
 
-    si stow git-core gh git-delta lazygit unzip wget curl trash-cli python3-pip \
-        net-tools iproute2 nmap gcc make file tree ripgrep zoxide fd-find htop tar \
-        gawk tealdeer dialog whiptail starship hyperfine jq jc direnv yq dysk bat \
-        just gum eza shellcheck shfmt broot duf sd xh atuin procs sd python3 pipx
+    si stow git-core gh git-delta lazygit unzip wget curl trash-cli python3-pip net-tools iproute2 nmap gcc make file tree ripgrep zoxide fd-find htop tar gawk tealdeer dialog whiptail starship hyperfine jq jc direnv yq dysk bat just gum eza shellcheck shfmt broot duf sd xh atuin procs sd python3 pipx
 
     fzf-install
 
@@ -231,8 +222,7 @@ export def core-install []: nothing -> nothing {
     if (is-ubuntu) {
         si software-properties-common
     }
-    si apt-transport-https ca-certificates gpg curl wget git-core trash-cli \
-        tar unzip tree file stow
+    si apt-transport-https ca-certificates gpg curl wget git-core trash-cli tar unzip tree file stow
 
     slog "Core packages installation done!"
 }
@@ -281,9 +271,7 @@ export def essential-install []: nothing -> nothing {
         snap-install
     }
 
-    si zip unar micro p7zip libreadline-dev libsqlite3-dev libffi-dev libfuse2 \
-        libbz2-dev liblzma-dev libsecret-tools build-essential whiptail zstd gawk \
-        command-not-found firmware-linux linux-headers-(^uname -r | str trim)
+    si zip unar micro p7zip libreadline-dev libsqlite3-dev libffi-dev libfuse2 libbz2-dev liblzma-dev libsecret-tools build-essential whiptail zstd gawk command-not-found firmware-linux linux-headers-(^uname -r | str trim)
 
     slog "Essential packages installation done!"
 }
@@ -298,8 +286,7 @@ export def cli-slim-install []: nothing -> nothing {
 export def system-python-install []: nothing -> nothing {
     slog "Installing python..."
 
-    si python3 python3-venv python3-virtualenv python3-pip python3-setuptools \
-        python3-wheel python-is-python3 pipx
+    si python3 python3-venv python3-virtualenv python3-pip python3-setuptools python3-wheel python-is-python3 pipx
 
     pipx install uv
 
@@ -314,8 +301,7 @@ export def cli-install []: nothing -> nothing {
 
     cli-slim-install
 
-    si tmux pkg-config urlview plocate htop gdu hyperfine fd-find ugrep tealdeer \
-        direnv yq shellcheck shfmt sd bat jq jc git-delta dialog gum just fastfetch
+    si tmux pkg-config urlview plocate htop gdu hyperfine fd-find ugrep tealdeer direnv yq shellcheck shfmt sd bat jq jc git-delta dialog gum just fastfetch
 
     if (has-cmd tldr) {
         tldr --update
@@ -330,9 +316,7 @@ export def cli-install []: nothing -> nothing {
 export def cpp-install []: nothing -> nothing {
     slog "Installing C++..."
 
-    si gcc gdb g++ libboost-all-dev catch2 clang llvm clang-tidy clang-format \
-        clang-tools libclang-dev clangd doxygen graphviz ccache cppcheck \
-        pre-commit valgrind systemtap ltrace strace lldb lld cmake
+    si gcc gdb g++ libboost-all-dev catch2 clang llvm clang-tidy clang-format clang-tools libclang-dev clangd doxygen graphviz ccache cppcheck pre-commit valgrind systemtap ltrace strace lldb lld cmake
 
     conan-install
 
@@ -451,9 +435,7 @@ export def cockpit-install []: nothing -> nothing {
 
     slog "Installing cockpit..."
 
-    si cockpit cockpit-machines cockpit-networkmanager cockpit-packagekit \
-        cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged \
-        cockpit-system
+    si cockpit cockpit-machines cockpit-networkmanager cockpit-packagekit cockpit-sosreport cockpit-pcp cockpit-podman cockpit-storaged cockpit-system
 
     sudo systemctl enable --now cockpit.socket
 
@@ -464,10 +446,7 @@ export def cockpit-install []: nothing -> nothing {
 export def vm-install []: nothing -> nothing {
     slog "Installing libvirt..."
 
-    si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils libosinfo-bin \
-        virgl-server qemu-utils spice-client-gtk spice-vdagent jq jc xmlstarlet \
-        cloud-image-utils libguestfs-tools osinfo-db edk2-ovmf edk2-ovmf dmidecode \
-        osinfo-db-tools openssl
+    si libvirt-daemon-system qemu-system-x86 virtinst bridge-utils libosinfo-bin virgl-server qemu-utils spice-client-gtk spice-vdagent jq jc xmlstarlet cloud-image-utils libguestfs-tools osinfo-db edk2-ovmf edk2-ovmf dmidecode osinfo-db-tools openssl
 
     slog "libvirt installation done!"
 }
@@ -537,8 +516,7 @@ export def distrobox-install []: nothing -> nothing {
 
 # PM installation
 export def pm-install []: nothing -> nothing {
-    si net-tools iproute2 nmap lm_sensors stress-ng taliscale wireguard-tools \
-        smartmontools memtest86+ glmark2
+    si net-tools iproute2 nmap lm_sensors stress-ng taliscale wireguard-tools smartmontools memtest86+ glmark2
 }
 
 # sin helper (install if available)
@@ -555,9 +533,7 @@ export def sin [...packages: string]: nothing -> nothing {
 
 # Desktop core installation
 export def desktop-core-install []: nothing -> nothing {
-    sin kitty wl-clipboard gnome-keyring libsecret-tools imagemagick libgl1-mesa \
-        papirus-icon-theme bibata-cursor-theme udisks2 udiskie gvfs flatpak \
-        libgles2-mesa imagemagick
+    sin kitty wl-clipboard gnome-keyring libsecret-tools imagemagick libgl1-mesa papirus-icon-theme bibata-cursor-theme udisks2 udiskie gvfs flatpak libgles2-mesa imagemagick
 
     flathub-install
     fpi app.zen_browser.zen
@@ -577,8 +553,7 @@ export def wm-install []: nothing -> nothing {
     desktop-core-install
     wm-tools-install
 
-    sin grim slurp cliphist mpv thunar thunar-archive-plugin xdg-desktop-portal \
-        fonts-noto fonts-noto-mono fonts-noto-color-emoji nwg-look nwg-displays nvtop imv fonts-inter
+    sin grim slurp cliphist mpv thunar thunar-archive-plugin xdg-desktop-portal fonts-noto fonts-noto-mono fonts-noto-color-emoji nwg-look nwg-displays nvtop imv fonts-inter
 }
 
 # Sway binary installation
@@ -587,9 +562,7 @@ export def sway-binstall []: nothing -> nothing {
 
     wm-install
 
-    sin sway swaylock swayidle swaybg xdg-desktop-portal-gtk \
-        polkit-kde-agent-1 sway-notification-center swappy nm-connection-editor \
-        network-manager-applet
+    sin sway swaylock swayidle swaybg xdg-desktop-portal-gtk polkit-kde-agent-1 sway-notification-center swappy nm-connection-editor network-manager-applet
 
     slog "sway installation done!"
 }
@@ -599,8 +572,7 @@ export def kde-slim-binstall []: nothing -> nothing {
     slog "Installing minimal kde plasma..."
 
     desktop-core-install
-    sin kde-plasma-desktop kscreen systemsettings udisks2 powerdevil \
-        power-profiles-daemon
+    sin kde-plasma-desktop kscreen systemsettings udisks2 powerdevil power-profiles-daemon
 
     sin libgles2-mesa
     sin libgl1-mesa
