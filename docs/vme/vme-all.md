@@ -1,127 +1,116 @@
 # vme-all - Batch VM Management Utility
 
-The `vme-all` script provides batch operations for managing multiple VMs simultaneously. It's designed to quickly create, start, stop, or delete all standard distribution VMs.
+The `vme-all` script provides batch operations for managing multiple VMs simultaneously.
+
+| Implementation | Path |
+|---|---|
+| Bash | [`bin/vt/vme-all`](../../../bin/vt/vme-all) |
+| Nushell | [`nu/vme-all.nu`](../../../nu/vme-all.nu) |
 
 ## Usage
 
 ```bash
-vme-all [command]
+vme-all [command] [args...]
 ```
 
 ## Commands
 
-- `create` - Create all standard VMs (Ubuntu, Fedora, Arch, Debian, Tumbleweed)
-- `delete` - Delete all existing VMs
-- `start` - Start all existing VMs
-- `stop` - Stop all running VMs
+| Command | Description |
+|---------|-------------|
+| `create` (default) | Create all standard VMs |
+| `start` | Start all existing VMs |
+| `stop` | Gracefully stop all running VMs |
+| `restart` | Restart all VMs |
+| `delete` | Delete all existing VMs |
+| `exec <cmd...>` | Run a command in every running VM via SSH |
+| `tmux` | Open tmux grid session with SSH connections to all running VMs |
+| `--help` | Show help |
 
-## Supported VMs
+## Managed VMs (`DISTRO_LIST_VME`)
 
-The script manages these standard VMs by default:
-- `ubuntu-vme` - Ubuntu VM
-- `fedora-vme` - Fedora VM
-- `arch-vme` - Arch Linux VM
-- `debian-vme` - Debian VM
-- `tw-vme` - openSUSE Tumbleweed VM
+Operations run across these VMs by default (named `<distro>-vme`):
+
+| Distro | VM Name |
+|--------|---------|
+| ubuntu | `ubuntu-vme` |
+| fedora | `fedora-vme` |
+| arch | `arch-vme` |
+| debian | `debian-vme` |
+| tw | `tw-vme` |
+
+VMs that don't exist are skipped with a warning.
 
 ## Command Details
 
-### create
-Creates all standard VMs with default settings:
+### create (default)
+
+Creates all standard VMs. Runs `vme-create --distro <distro> --name <distro>-vme` for each distro in `DISTRO_LIST_VME`, skipping any that already exist.
+
 ```bash
+vme-all          # same as vme-all create
 vme-all create
 ```
 
-**Process:**
-1. Checks if each VM already exists
-2. Creates VM using `vme-create --distro <distro> --name <distro>-vme`
-3. Skips VMs that already exist
-4. Reports success/failure for each VM
+### start / stop / restart / delete
 
-### delete
-Deletes all existing VMs:
+Iterate over all `DISTRO_LIST_VME` VMs and apply the operation to each existing one.
+
 ```bash
+vme-all start
+vme-all stop
+vme-all restart
 vme-all delete
 ```
 
-**Process:**
-1. Iterates through all standard VM names
-2. Deletes VM using `vm delete <vm-name>` for each existing VM
-3. Reports deletion status for each VM
+### exec
 
-### start
-Starts all existing VMs:
+Run a shell command in every running VM via SSH.
+
 ```bash
-vme-all start
+vme-all exec 'uptime'
+vme-all exec 'sudo apt update'
 ```
 
-**Process:**
-1. Checks which VMs exist
-2. Starts each VM using `vm start <vm-name>`
-3. Reports startup status for each VM
+### tmux
 
-### stop
-Stops all running VMs:
+Open a tmux grid session with SSH panes for every currently-running VME VM.
+
 ```bash
-vme-all stop
+vme-all tmux
 ```
-
-**Process:**
-1. Checks which VMs exist
-2. Stops each VM using `vm stop <vm-name>`
-3. Reports stop status for each VM
 
 ## Examples
 
 ```bash
-# Create all standard VMs
+# Initial setup: create all VMs
 vme-all create
 
-# Start all VMs
-vme-all start
-
-# Stop all VMs
-vme-all stop
-
-# Delete all VMs
-vme-all delete
-```
-
-## Use Cases
-
-### Initial Setup
-Perfect for setting up a complete development environment:
-```bash
-vme-all create
-```
-
-### Environment Management
-Quickly manage multiple VMs:
-```bash
 # Start work environment
 vme-all start
 
+# Run a command across all VMs
+vme-all exec 'hostname'
+
+# Open a tmux session to all running VMs
+vme-all tmux
+
 # Stop all when done
 vme-all stop
-```
 
-### Cleanup
-Remove all VMs when no longer needed:
-```bash
+# Clean up everything
 vme-all delete
 ```
 
 ## Integration
 
-The script integrates with:
-- `vm-utils` - Core VM management functions
-- `all-utils` - Batch operation utilities
-- `vme-create` - Individual VM creation
-- `vme` - Individual VM management
+- **`share/vm-utils.nu`** / **`bin/vt/vm-utils`** — VM existence and state checks
+- **`share/vt-utils.nu`** / **`bin/vt/vt-utils`** — `wait-for-ip`, distro selection
+- **`share/tmux-utils.nu`** / **`bin/vt/tmux-utils`** — `tmux-grid` for the `tmux` subcommand
+- **`vme-create`** — called per-distro by the `create` subcommand
 
 ## Error Handling
 
-The script handles these scenarios:
-- VM already exists when creating - skips with warning
-- VM doesn't exist when starting/stopping - skips with warning
-- Provides clear success/failure messages for each operation
+- VM already exists on `create` → skipped with warning
+- VM doesn't exist on `start`/`stop`/`restart`/`delete` → skipped with warning
+- VM has no IP on `exec` → skipped with warning
+- Success/failure summary printed at the end of each batch operation
