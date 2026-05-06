@@ -281,13 +281,14 @@ configure_distribution() {
   fedora)
     VM_ID=${VM_ID:-202}
     VM_NAME=${VM_NAME:-fedora-template}
-    IMAGE_URL=${IMAGE_URL:-"https://mirror.twds.com.tw/fedora/fedora/linux/releases/43/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"}
+
+    IMAGE_URL=${IMAGE_URL:-"https://download.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2"}
     USERNAME=${USERNAME:-fedora}
     ;;
   ubuntu)
     VM_ID=${VM_ID:-203}
     VM_NAME=${VM_NAME:-ubuntu-template}
-    IMAGE_URL=${IMAGE_URL:-"https://cloud-images.ubuntu.com/questing/current/questing-server-cloudimg-amd64.img"}
+    IMAGE_URL=${IMAGE_URL:-"https://cloud-images.ubuntu.com/resolute/current/resolute-server-cloudimg-amd64.img"}
     USERNAME=${USERNAME:-ubuntu}
     ;;
   alpine)
