@@ -316,7 +316,7 @@ restart)
   handle_multi restart "${@:2}"
   ;;
 
-rm | delete)
+rm)
   handle_multi delete "${@:2}"
   ;;
 
@@ -418,7 +418,7 @@ snapshot-restore)
   fi
   ;;
 
-snapshot-rm | delete)
+snapshot-rm)
   [[ $# -ne 3 ]] && usage && exit 1
   validate_vmid "$2"
   snapname="$3"
