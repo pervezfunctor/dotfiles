@@ -539,6 +539,7 @@ function Install-Carapace {
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
     return Install-WingetPackageSet -Packages @(
+        @{ Name = "PowerShell 7"; Id = "Microsoft.PowerShell"; Command = "pwsh" }
         @{ Name = "Starship"; Id = "Starship.Starship"; Command = "starship" }
         @{ Name = "Git"; Id = "Git.Git"; Command = "git" }
         @{ Name = "Nushell"; Id = "Nushell.Nushell"; Command = "nu" }
@@ -1254,9 +1255,8 @@ function Initialize-Dotfiles {
     Install-Zoxide
     Install-Carapace
 
-    if ((Initialize-NushellProfile)) {
-        Set-NushellProfileAsDefault
-    }
+    Initialize-NushellProfile
+    Set-PowerShellProfileAsDefault
 }
 
 function ConvertFrom-JsonC {
@@ -1384,7 +1384,7 @@ function Initialize-NushellProfile {
     }
 }
 
-function Set-NushellProfileAsDefault {
+function Set-PowerShellProfileAsDefault {
     $possiblePaths = @(
         "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json",
         "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json",
@@ -1405,25 +1405,27 @@ function Set-NushellProfileAsDefault {
         }
         catch {
             Write-Host "Error parsing Windows Terminal settings JSON: $_" -ForegroundColor Red
-            Write-Host "Please fix the Windows Terminal settings file manually before setting Nushell as default." -ForegroundColor Red
+            Write-Host "Please fix the Windows Terminal settings file manually before setting PowerShell 7 as default." -ForegroundColor Red
             return
         }
 
-        $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
+        $powerShellProfile = $wtConfig.profiles.list | Where-Object {
+            $_.source -eq "Windows.Terminal.PowershellCore" -or $_.commandline -like "*pwsh.exe*"
+        } | Select-Object -First 1
 
-        if ($null -eq $nuProfile) {
-            Write-Host "Nushell profile not found in Windows Terminal." -ForegroundColor Red
+        if ($null -eq $powerShellProfile) {
+            Write-Host "PowerShell 7 profile not found in Windows Terminal." -ForegroundColor Red
             return
         }
 
-        $wtConfig.defaultProfile = $nuProfile.guid
+        $wtConfig.defaultProfile = $powerShellProfile.guid
 
         $newJsonContent = $wtConfig | ConvertTo-Json -Depth 10
         Set-Content -Path $wtConfigPath -Value $newJsonContent
-        Write-Host "Nushell set as default shell in Windows Terminal!" -ForegroundColor Green
+        Write-Host "PowerShell 7 set as default shell in Windows Terminal!" -ForegroundColor Green
     }
     catch {
-        Write-Host "Failed to set Nushell as default: $_" -ForegroundColor Red
+        Write-Host "Failed to set PowerShell 7 as default: $_" -ForegroundColor Red
 
     }
 }
