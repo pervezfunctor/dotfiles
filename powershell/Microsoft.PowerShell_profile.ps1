@@ -25,10 +25,13 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 }
 
-foreach ($module in 'posh-git', 'Terminal-Icons', 'PSFzf') {
+foreach ($module in 'posh-git', 'Terminal-Icons') {
     if (Get-Module -ListAvailable -Name $module) {
         Import-Module $module
     }
+}
+if ((Get-Command fzf -ErrorAction SilentlyContinue) -and (Get-Module -ListAvailable -Name PSFzf)) {
+    Import-Module PSFzf
 }
 
 # Initialize the prompt after posh-git so Starship remains in control of prompt rendering.

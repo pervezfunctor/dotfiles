@@ -1,5 +1,3 @@
-#Requires -RunAsAdministrator
-
 <#
 .SYNOPSIS
 Windows development environment setup script.
@@ -31,6 +29,41 @@ param(
     [switch]$ListComponents,
     [string[]]$Components = @()
 )
+
+$currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$currentPrincipal = [Security.Principal.WindowsPrincipal]::new($currentIdentity)
+$isAdministrator = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if (!$isAdministrator) {
+    if ([string]::IsNullOrWhiteSpace($PSCommandPath)) {
+        throw "Administrator privileges are required. Save the script to a file and run it again."
+    }
+
+    Write-Host "Administrator privileges are required. Requesting elevation..." -ForegroundColor Yellow
+    $shellPath = (Get-Process -Id $PID).Path
+    $escapedScriptPath = $PSCommandPath.Replace('"', '\"')
+    $elevatedArguments = @(
+        "-NoProfile"
+        "-ExecutionPolicy", "Bypass"
+        "-File", "`"$escapedScriptPath`""
+    )
+    if ($ListComponents) {
+        $elevatedArguments += "-ListComponents"
+    }
+    if ($Components.Count -gt 0) {
+        $elevatedArguments += "-Components"
+        $elevatedArguments += $Components
+    }
+
+    try {
+        $process = Start-Process -FilePath $shellPath -Verb RunAs -ArgumentList $elevatedArguments -PassThru -ErrorAction Stop
+        $process.WaitForExit()
+        exit $process.ExitCode
+    }
+    catch {
+        throw "Unable to start the setup with administrator privileges: $_"
+    }
+}
 
 # Set execution policy for the current process only
 $originalPolicy = Get-ExecutionPolicy -Scope Process
@@ -1226,6 +1259,77 @@ function Initialize-Dotfiles {
     }
 }
 
+function ConvertFrom-JsonC {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [string]$InputObject
+    )
+
+    process {
+        $result = [System.Text.StringBuilder]::new($InputObject.Length)
+        $inString = $false
+        $escaped = $false
+        $inLineComment = $false
+        $inBlockComment = $false
+
+        for ($i = 0; $i -lt $InputObject.Length; $i++) {
+            $character = $InputObject[$i]
+            $nextCharacter = if ($i + 1 -lt $InputObject.Length) { $InputObject[$i + 1] } else { [char]0 }
+
+            if ($inLineComment) {
+                if ($character -eq "`r" -or $character -eq "`n") {
+                    $inLineComment = $false
+                    [void]$result.Append($character)
+                }
+                continue
+            }
+
+            if ($inBlockComment) {
+                if ($character -eq '*' -and $nextCharacter -eq '/') {
+                    $inBlockComment = $false
+                    $i++
+                }
+                elseif ($character -eq "`r" -or $character -eq "`n") {
+                    [void]$result.Append($character)
+                }
+                continue
+            }
+
+            if (!$inString -and $character -eq '/' -and $nextCharacter -eq '/') {
+                $inLineComment = $true
+                $i++
+                continue
+            }
+
+            if (!$inString -and $character -eq '/' -and $nextCharacter -eq '*') {
+                $inBlockComment = $true
+                $i++
+                continue
+            }
+
+            [void]$result.Append($character)
+
+            if ($inString) {
+                if ($escaped) {
+                    $escaped = $false
+                }
+                elseif ($character -eq '\') {
+                    $escaped = $true
+                }
+                elseif ($character -eq '"') {
+                    $inString = $false
+                }
+            }
+            elseif ($character -eq '"') {
+                $inString = $true
+            }
+        }
+
+        $result.ToString() | ConvertFrom-Json -ErrorAction Stop
+    }
+}
+
 function Initialize-NushellProfile {
     if (!(Test-CommandExists nu)) {
         Write-Host "Nushell is not installed. Cannot initialize profile." -ForegroundColor Red
@@ -1249,7 +1353,7 @@ function Initialize-NushellProfile {
     Write-Host "Adding Nushell to Windows Terminal profiles..." -ForegroundColor Cyan
 
     try {
-        $wtConfig = Get-Content -Path $wtConfigPath -Raw | ConvertFrom-Json
+        $wtConfig = Get-Content -Path $wtConfigPath -Raw | ConvertFrom-JsonC
 
         $nuProfile = $wtConfig.profiles.list | Where-Object { $_.commandline -like "*nu.exe*" }
 
@@ -1297,7 +1401,7 @@ function Set-NushellProfileAsDefault {
     try {
         $jsonContent = Get-Content -Path $wtConfigPath -Raw
         try {
-            $wtConfig = $jsonContent | ConvertFrom-Json -ErrorAction Stop
+            $wtConfig = $jsonContent | ConvertFrom-JsonC
         }
         catch {
             Write-Host "Error parsing Windows Terminal settings JSON: $_" -ForegroundColor Red
