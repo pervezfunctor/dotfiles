@@ -87,7 +87,7 @@ detect_distro() {
 validate_distro() {
   local distro="$1"
   case "$distro" in
-  ubuntu | debian | fedora | centos | rhel | opensuse | suse)
+  ubuntu* | debian* | fedora* | centos* | rhel* | opensuse* | suse*)
     return 0
     ;;
   *)

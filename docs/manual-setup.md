@@ -19,7 +19,7 @@
 4. All your development could happen in `wsl`. Install `wsl` with the following command.
 
    ```powershell
-   wsl --install -d Ubuntu-24.04
+   wsl --install -d Ubuntu-26.04
    ```
 
    Similarly you could also install Tumbleweed(Recommended).

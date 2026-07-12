@@ -104,12 +104,12 @@ nvim
 If the above script does not work, you could manually set up windows wsl(Ubuntu) environment, using the following commands.
 
 ```powershell
-    wsl --install -d Ubuntu-24.04
+    wsl --install -d Ubuntu-26.04
 ```
 
 Reboot your computer. Then use the following commands.
 
-    wsl -d Ubuntu-24.04
+    wsl -d Ubuntu-26.04
     # run the following within wsl
     bash -c "$(curl -sSL https://is.gd/egitif || wget -qO- https://is.gd/egitif)" -- shell
 ```
