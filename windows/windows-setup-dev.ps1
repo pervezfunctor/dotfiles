@@ -519,6 +519,7 @@ function Install-DevTools {
         @{ Name = "fzf"; Id = "junegunn.fzf"; Command = "fzf" }
         @{ Name = "fd"; Id = "sharkdp.fd"; Command = "fd" }
         @{ Name = "bat"; Id = "sharkdp.bat"; Command = "bat" }
+        @{ Name = "eza"; Id = "eza-community.eza"; Command = "eza" }
         @{ Name = "GitHub CLI"; Id = "GitHub.cli"; Command = "gh" }
         @{ Name = "delta"; Id = "dandavison.delta"; Command = "delta" }
         @{ Name = "uv"; Id = "astral-sh.uv"; Command = "uv" }
@@ -1101,25 +1102,44 @@ function Get-Dotfiles {
 function Install-PowerShellModules {
     Write-Host "Installing essential PowerShell modules..." -ForegroundColor Cyan
 
-    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser
-
     $modules = @(
         "PSReadLine",
         "posh-git",
-        "Terminal-Icons"
+        "Terminal-Icons",
+        "PSFzf"
     )
 
-    foreach ($module in $modules) {
-        if (!(Get-Module -ListAvailable -Name $module)) {
-            Write-Host "Installing $module for Windows PowerShell..." -ForegroundColor Yellow
-            Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+    try {
+        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
+
+        foreach ($module in $modules) {
+            if (!(Get-Module -ListAvailable -Name $module)) {
+                Write-Host "Installing $module for Windows PowerShell..." -ForegroundColor Yellow
+                Install-Module -Name $module -Scope CurrentUser -Force -ErrorAction Stop
+            }
         }
+    }
+    catch {
+        Write-Host "Failed to install PowerShell modules for Windows PowerShell: $_" -ForegroundColor Red
+        return $false
     }
 
     if (Test-CommandExists pwsh) {
-        foreach ($module in $modules) {
-            Write-Host "Installing $module for PowerShell 7..." -ForegroundColor Yellow
-            pwsh -Command "if (!(Get-Module -ListAvailable -Name $module)) { Install-Module -Name $module -Scope CurrentUser -Force }"
+        $previousModuleNames = $env:DOTFILES_POWERSHELL_MODULES
+        $env:DOTFILES_POWERSHELL_MODULES = $modules -join ","
+        pwsh -NoLogo -NoProfile -Command @'
+$ErrorActionPreference = "Stop"
+foreach ($module in ($env:DOTFILES_POWERSHELL_MODULES -split ",")) {
+    if (!(Get-Module -ListAvailable -Name $module)) {
+        Write-Host "Installing $module for PowerShell 7..." -ForegroundColor Yellow
+        Install-Module -Name $module -Scope CurrentUser -Force
+    }
+}
+'@
+        $env:DOTFILES_POWERSHELL_MODULES = $previousModuleNames
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to install one or more modules for PowerShell 7." -ForegroundColor Red
+            return $false
         }
     }
     else {
@@ -1128,6 +1148,7 @@ function Install-PowerShellModules {
     }
 
     Write-Host "PowerShell modules installed successfully!" -ForegroundColor Green
+    return $true
 }
 
 function Initialize-PowerShell {
@@ -1136,11 +1157,10 @@ function Initialize-PowerShell {
         [psobject]$Context
     )
 
-    $ps5ProfilePath = Join-Path $Context.UserProfile "Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
-    $ps7ProfilePath = Join-Path $Context.UserProfile "Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
-
-    Backup-ConfigFile -FilePath $ps5ProfilePath
-    Backup-ConfigFile -FilePath $ps7ProfilePath
+    # Respect OneDrive, Group Policy, and other Documents-folder redirection.
+    $documentsPath = [Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)
+    $ps5ProfilePath = Join-Path $documentsPath "WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
+    $ps7ProfilePath = Join-Path $documentsPath "PowerShell\Microsoft.PowerShell_profile.ps1"
 
     $sourceProfilePath = Join-Path $Context.DotfilesDirectory "powershell\Microsoft.PowerShell_profile.ps1"
 

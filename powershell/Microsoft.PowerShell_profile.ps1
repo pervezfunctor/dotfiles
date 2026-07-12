@@ -1,15 +1,13 @@
 # PowerShell Profile Configuration
 
-# Initialize Starship prompt
-if (Get-Command starship -ErrorAction SilentlyContinue) {
-    Invoke-Expression (&starship init powershell)
-}
-
 # PSReadLine configuration for autosuggestions and syntax highlighting
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
-    # Set-PSReadLineOption -PredictionSource History
-    # Set-PSReadLineOption -PredictionViewStyle ListView
+    # Prediction options require PSReadLine 2.1+ and a terminal that supports VT.
+    if ((Get-Module PSReadLine).Version -ge [version]'2.1' -and $Host.UI.SupportsVirtualTerminal) {
+        Set-PSReadLineOption -PredictionSource History
+        Set-PSReadLineOption -PredictionViewStyle ListView
+    }
     Set-PSReadLineOption -Colors @{
         Command   = 'Cyan'
         Parameter = 'DarkCyan'
@@ -27,18 +25,39 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 }
 
+foreach ($module in 'posh-git', 'Terminal-Icons', 'PSFzf') {
+    if (Get-Module -ListAvailable -Name $module) {
+        Import-Module $module
+    }
+}
+
+# Initialize the prompt after posh-git so Starship remains in control of prompt rendering.
+if ($env:TERM -ne 'dumb' -and (Get-Command starship -ErrorAction SilentlyContinue)) {
+    Invoke-Expression (&starship init powershell)
+}
+
 # Common PowerShell aliases
-Set-Alias -Name vim -Value nvim -ErrorAction SilentlyContinue
-Set-Alias -Name vi -Value nvim -ErrorAction SilentlyContinue
-Set-Alias -Name g -Value git -ErrorAction SilentlyContinue
-Set-Alias -Name grep -Value Select-String -ErrorAction SilentlyContinue
-Set-Alias -Name ll -Value Get-ChildItem -ErrorAction SilentlyContinue
+if (Get-Command nvim -ErrorAction SilentlyContinue) {
+    Set-Alias vim nvim
+    Set-Alias vi nvim
+    Set-Alias v nvim
+}
+if (Get-Command git -ErrorAction SilentlyContinue) { Set-Alias g git }
+Set-Alias grep Select-String
+Set-Alias ll Get-ChildItem
 
 # Environment variables
-$env:EDITOR = "nvim"
+$editor = @('nvim', 'vim', 'notepad') | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue } | Select-Object -First 1
+if ($editor) {
+    $env:EDITOR = $editor
+    $env:VISUAL = $editor
+}
 
 # Add LLVM/Clang to PATH
-$env:PATH = "C:\Program Files\LLVM\bin;" + $env:PATH
+$llvmPath = "C:\Program Files\LLVM\bin"
+if ((Test-Path $llvmPath) -and (($env:PATH -split ';') -notcontains $llvmPath)) {
+    $env:PATH = "$llvmPath;$env:PATH"
+}
 
 # Helper functions
 function which($command) {
@@ -53,6 +72,63 @@ function touch($file) {
     else {
         New-Item -ItemType File -Path $file
     }
+}
+
+# Familiar zsh/fish navigation shortcuts (PowerShell aliases cannot contain dots).
+function .. { Set-Location .. }
+function ... { Set-Location ../.. }
+function .... { Set-Location ../../.. }
+
+function gst { git status @args }
+function gsu { git status -u @args }
+function gia { git add @args }
+function gco { git checkout @args }
+function gb { git branch @args }
+function gfm { git pull @args }
+
+# Modern file listing and viewing, matching the Linux shell configuration.
+if (Get-Command eza -ErrorAction SilentlyContinue) {
+    Remove-Item Alias:ls -Force -ErrorAction SilentlyContinue
+    Remove-Item Alias:ll -Force -ErrorAction SilentlyContinue
+    function ls { eza --icons=auto --group-directories-first @args }
+    function ll { eza -la --icons=auto --group-directories-first --git @args }
+    function lt { eza --tree --level=2 --icons=auto --group-directories-first --git @args }
+}
+
+if (Get-Command bat -ErrorAction SilentlyContinue) {
+    Set-Alias b bat
+    Remove-Item Alias:cat -Force -ErrorAction SilentlyContinue
+    function cat { bat @args }
+}
+
+# Common Docker shortcuts from the zsh/fish workflow.
+if (Get-Command docker -ErrorAction SilentlyContinue) {
+    Set-Alias d docker
+    function dco { docker compose @args }
+    function dps { docker ps @args }
+    function dpa { docker ps -a @args }
+    function dx { docker exec -it @args }
+    function dlogs { docker logs -f @args }
+}
+if (Get-Command lazygit -ErrorAction SilentlyContinue) { Set-Alias lzg lazygit }
+if (Get-Command lazydocker -ErrorAction SilentlyContinue) { Set-Alias lzd lazydocker }
+
+# pnpm shortcuts keep their native argument handling through wrapper functions.
+if (Get-Command pnpm -ErrorAction SilentlyContinue) {
+    Set-Alias n pnpm
+    # `ni` is PowerShell's built-in New-Item alias and otherwise wins over our function.
+    Remove-Item Alias:ni -Force -ErrorAction SilentlyContinue
+    function ni { pnpm install @args }
+    function nid { pnpm install --save-dev @args }
+    function nb { pnpm build @args }
+    function ne { pnpm exec @args }
+    function nd { pnpm dev @args }
+    function nt { pnpm types @args }
+    function ntt { pnpm test @args }
+}
+
+if (Get-Module PSFzf) {
+    Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+f' -PSReadlineChordReverseHistory 'Ctrl+r'
 }
 
 # Initialize zoxide if available
@@ -75,15 +151,17 @@ if (Test-Path $localProfile) {
 # Source another PS1 file
 # . "$env:USERPROFILE\.ilm\powershell\functions.ps1"
 
-# Print welcome message
-Write-Host "PowerShell profile loaded successfully!" -ForegroundColor Green
-
 # Helper function to edit PowerShell profile
 function Edit-Profile {
     if (!(Test-Path $PROFILE)) {
         New-Item -Type File -Path $PROFILE -Force
     }
-    code $PROFILE
+    if (Get-Command code -ErrorAction SilentlyContinue) {
+        code $PROFILE
+    }
+    else {
+        & $env:EDITOR $PROFILE
+    }
 }
 Set-Alias -Name ep -Value Edit-Profile
 
