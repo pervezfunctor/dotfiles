@@ -166,6 +166,5 @@ function Edit-Profile {
         & $env:EDITOR $PROFILE
     }
 }
+
 Set-Alias -Name ep -Value Edit-Profile
-
-

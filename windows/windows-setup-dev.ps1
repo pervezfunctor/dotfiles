@@ -83,6 +83,39 @@ function New-SetupContext {
     }
 }
 
+function Copy-Safe {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Source,
+        [Parameter(Mandatory)]
+        [string]$Destination
+    )
+
+    if (Test-Path -LiteralPath $Destination) {
+        Write-Error "Destination already exists: $Destination"
+        return
+    }
+
+    Copy-Item -LiteralPath $Source -Destination $Destination
+}
+
+function Copy-WithBackup {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Source,
+        [Parameter(Mandatory)]
+        [string]$Destination
+    )
+
+    if (Test-Path -LiteralPath $Destination) {
+        $timestamp = Get-Date -Format 'yyyyMMdd-HHmmssfff'
+        $backupPath = "$Destination.$timestamp.bak"
+        Move-Item -LiteralPath $Destination -Destination $backupPath
+    }
+
+    Copy-Item -LiteralPath $Source -Destination $Destination
+}
+
 function Test-CommandExists {
     param (
         [Parameter(Mandatory = $true)]
