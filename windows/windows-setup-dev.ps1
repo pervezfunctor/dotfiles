@@ -151,7 +151,7 @@ function Write-SetupResult {
     Write-Host $message -ForegroundColor $color
 }
 
-function Refresh-ProcessPath {
+function Update-ProcessPath {
     $pathValues = @(
         $env:Path
         [System.Environment]::GetEnvironmentVariable("Path", "Machine")
@@ -179,7 +179,7 @@ function Test-WingetPackageInstalled {
     return $LASTEXITCODE -eq 0
 }
 
-function Winget-Install {
+function Install-WingetPackage {
     param (
         [Parameter(Mandatory = $true)]
         [string]$PackageId,
@@ -226,7 +226,7 @@ function Winget-Install {
         return $result
     }
 
-    Refresh-ProcessPath
+    Update-ProcessPath
     $message = "$Name installed successfully."
     if (![string]::IsNullOrWhiteSpace($Command) -and !(Test-CommandExists $Command)) {
         $message += " The '$Command' command will be available after restarting the shell."
@@ -251,7 +251,7 @@ function Install-WingetPackageSet {
         if ($package.Command) { $parameters.Command = $package.Command }
         if ($package.Override) { $parameters.Override = $package.Override }
         if ($package.RestartNeeded) { $parameters.RestartNeeded = $true }
-        Winget-Install @parameters
+        Install-WingetPackage @parameters
     }
 
     return @($results)
@@ -590,17 +590,16 @@ function Install-Apps {
 function Install-AI-Tools {
     Write-Host "Installing AI tools..." -ForegroundColor Cyan
     return Install-WingetPackageSet -Packages @(
-        @{ Name = "ChatGPT"; Id = "9PLM9XGG6VKS" }
         @{ Name = "Codex CLI"; Id = "OpenAI.Codex"; Command = "codex" }
         @{ Name = "OpenCode"; Id = "SST.opencode"; Command = "opencode" }
         @{ Name = "Claude"; Id = "Anthropic.Claude" }
         @{ Name = "Claude Code"; Id = "Anthropic.ClaudeCode"; Command = "claude" }
-        @{ Name = "Ollama"; Id = "Ollama.Ollama"; Command = "ollama" }
+        @{ Name = "Claude"; Id = "ZhipuAI.ZCode"; }
     )
 }
 
 function Install-Multipass {
-    $result = Winget-Install -PackageId "Canonical.Multipass" -Name "Multipass" -Command "multipass" -RestartNeeded
+    $result = Install-WingetPackage -PackageId "Canonical.Multipass" -Name "Multipass" -Command "multipass" -RestartNeeded
     if ($result.Success -and $result.Status -eq "Installed") {
         Restart-PC
     }
@@ -1595,7 +1594,7 @@ function Resolve-ComponentOrder {
     $states = @{}
     $resolved = [System.Collections.Generic.List[string]]::new()
 
-    function Visit-Component {
+    function Resolve-ComponentDependency {
         param([string]$Name)
 
         if (!$Registry.Contains($Name)) {
@@ -1610,14 +1609,14 @@ function Resolve-ComponentOrder {
 
         $states[$Name] = 1
         foreach ($dependency in @($Registry[$Name].Dependencies)) {
-            Visit-Component -Name $dependency
+            Resolve-ComponentDependency -Name $dependency
         }
         $states[$Name] = 2
         $resolved.Add($Name)
     }
 
     foreach ($name in $Selected) {
-        Visit-Component -Name $name
+        Resolve-ComponentDependency -Name $name
     }
 
     return $resolved.ToArray()
@@ -1644,7 +1643,7 @@ function Initialize-Debloat {
 
     try {
         Write-Host "Downloading debloat script..." -ForegroundColor Cyan
-        $debloatScript = irm "https://debloat.raphi.re/" -UseBasicParsing -ErrorAction Stop
+        $debloatScript = Invoke-RestMethod "https://debloat.raphi.re/" -UseBasicParsing -ErrorAction Stop
 
         if ([string]::IsNullOrEmpty($debloatScript)) {
             Write-Host "Failed to download debloat script: Empty response" -ForegroundColor Red
