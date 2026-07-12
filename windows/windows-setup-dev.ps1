@@ -40,9 +40,15 @@ if ($originalPolicy -ne "RemoteSigned" -and $originalPolicy -ne "Unrestricted") 
     Write-Host "Execution policy set to RemoteSigned for this session." -ForegroundColor Green
 }
 
-$global:GitHubBaseUrl = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
-$global:DotDir = "$env:USERPROFILE\.ilm"
-$global:WinDir = "$global:DotDir\windows"
+function New-SetupContext {
+    return [pscustomobject]@{
+        GitHubBaseUrl    = "https://raw.githubusercontent.com/pervezfunctor/dotfiles/main"
+        DotfilesDirectory = Join-Path $env:USERPROFILE ".ilm"
+        UserProfile      = $env:USERPROFILE
+        LocalAppData     = $env:LOCALAPPDATA
+        RoamingAppData   = $env:APPDATA
+    }
+}
 
 function Test-CommandExists {
     param (
@@ -58,7 +64,6 @@ function Restart-PC {
     if ($restart -eq 'y' -or $restart -eq 'Y') {
         Write-Host "Restarting computer. Please run this script again after restart to continue setup." -ForegroundColor Cyan
         Start-Sleep -Seconds 5
-        $global:LASTEXITCODE = 0
         Restart-Computer
     }
 
@@ -66,13 +71,157 @@ function Restart-PC {
     exit 0
 }
 
-function Install-WithWinget {
-    param (
+function New-SetupResult {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("Installed", "AlreadyPresent", "Completed", "Skipped", "Failed")]
+        [string]$Status,
+
+        [string]$Message = "",
+        [int]$ExitCode = 0,
+        [bool]$RestartNeeded = $false
+    )
+
+    return [pscustomobject]@{
+        PSTypeName    = "Dotfiles.SetupResult"
+        Name          = $Name
+        Status        = $Status
+        Success       = $Status -ne "Failed"
+        Message       = $Message
+        ExitCode      = $ExitCode
+        RestartNeeded = $RestartNeeded
+    }
+}
+
+function Write-SetupResult {
+    param(
+        [Parameter(Mandatory = $true)]
+        [psobject]$Result
+    )
+
+    $color = switch ($Result.Status) {
+        "Failed" { "Red" }
+        "AlreadyPresent" { "Yellow" }
+        "Skipped" { "Yellow" }
+        default { "Green" }
+    }
+
+    $message = if ([string]::IsNullOrWhiteSpace($Result.Message)) {
+        "$($Result.Name): $($Result.Status)"
+    }
+    else {
+        $Result.Message
+    }
+    Write-Host $message -ForegroundColor $color
+}
+
+function Refresh-ProcessPath {
+    $pathValues = @(
+        $env:Path
+        [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+        [System.Environment]::GetEnvironmentVariable("Path", "User")
+    )
+
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $mergedPaths = foreach ($entry in ($pathValues -split ";")) {
+        $trimmedEntry = $entry.Trim()
+        if (![string]::IsNullOrWhiteSpace($trimmedEntry) -and $seen.Add($trimmedEntry)) {
+            $trimmedEntry
+        }
+    }
+
+    $env:Path = $mergedPaths -join ";"
+}
+
+function Test-WingetPackageInstalled {
+    param(
         [Parameter(Mandatory = $true)]
         [string]$PackageId
     )
 
-    winget install --id $PackageId -e --accept-source-agreements --accept-package-agreements --silent
+    & winget list --id $PackageId --exact --accept-source-agreements --disable-interactivity 2>$null | Out-Null
+    return $LASTEXITCODE -eq 0
+}
+
+function Winget-Install {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$PackageId,
+
+        [string]$Name = $PackageId,
+        [string]$Command,
+        [string]$Override,
+        [switch]$RestartNeeded
+    )
+
+    if (!(Test-CommandExists winget)) {
+        $result = New-SetupResult -Name $Name -Status Failed -Message "winget is unavailable; cannot install $Name." -ExitCode 1
+        Write-SetupResult $result
+        return $result
+    }
+
+    if (Test-WingetPackageInstalled -PackageId $PackageId) {
+        $result = New-SetupResult -Name $Name -Status AlreadyPresent -Message "$Name is already installed."
+        Write-SetupResult $result
+        return $result
+    }
+
+    Write-Host "Installing $Name..." -ForegroundColor Cyan
+    $arguments = @(
+        "install"
+        "--id", $PackageId
+        "--exact"
+        "--accept-source-agreements"
+        "--accept-package-agreements"
+        "--silent"
+        "--disable-interactivity"
+    )
+
+    if (![string]::IsNullOrWhiteSpace($Override)) {
+        $arguments += "--override", $Override
+    }
+
+    & winget @arguments | Out-Host
+    $exitCode = $LASTEXITCODE
+
+    if ($exitCode -ne 0) {
+        $result = New-SetupResult -Name $Name -Status Failed -Message "Failed to install $Name (winget exit code $exitCode)." -ExitCode $exitCode
+        Write-SetupResult $result
+        return $result
+    }
+
+    Refresh-ProcessPath
+    $message = "$Name installed successfully."
+    if (![string]::IsNullOrWhiteSpace($Command) -and !(Test-CommandExists $Command)) {
+        $message += " The '$Command' command will be available after restarting the shell."
+    }
+
+    $result = New-SetupResult -Name $Name -Status Installed -Message $message -RestartNeeded:$RestartNeeded
+    Write-SetupResult $result
+    return $result
+}
+
+function Install-WingetPackageSet {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object[]]$Packages
+    )
+
+    $results = foreach ($package in $Packages) {
+        $parameters = @{
+            PackageId = $package.Id
+            Name      = $package.Name
+        }
+        if ($package.Command) { $parameters.Command = $package.Command }
+        if ($package.Override) { $parameters.Override = $package.Override }
+        if ($package.RestartNeeded) { $parameters.RestartNeeded = $true }
+        Winget-Install @parameters
+    }
+
+    return @($results)
 }
 
 function Backup-ConfigFile {
@@ -209,9 +358,10 @@ function Copy-SSHKeyToWSL {
 
     Write-Host "Copying SSH key to $Distribution for user $Username..." -ForegroundColor Cyan
 
-    $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub"
+    $pubKey = (Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub" -Raw).Trim()
+    $encodedPubKey = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pubKey))
     wsl -d $Distribution -u root bash -c "mkdir -p /home/$Username/.ssh && chmod 700 /home/$Username/.ssh"
-    wsl -d $Distribution -u root bash -c "grep -q $pubKey /home/$Username/.ssh/authorized_keys || echo '$pubKey' >> /home/$Username/.ssh/authorized_keys"
+    wsl -d $Distribution -u root bash -c "touch /home/$Username/.ssh/authorized_keys; key=`$(printf '%s' '$encodedPubKey' | base64 -d); grep -Fqx -- `"`$key`" /home/$Username/.ssh/authorized_keys || printf '%s\n' `"`$key`" >> /home/$Username/.ssh/authorized_keys"
     wsl -d $Distribution -u root bash -c "chmod 600 /home/$Username/.ssh/authorized_keys"
     wsl -d $Distribution -u root bash -c "chown -R ${Username}:${Username} /home/$Username/.ssh"
 
@@ -311,7 +461,7 @@ function Install-Scoop {
 
     $originalPolicy = Get-ExecutionPolicy -Scope Process
     try {
-        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+        Set-ExecutionPolicy RemoteSigned -Scope Process -Force
         Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
 
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "Machine")
@@ -330,364 +480,96 @@ function Install-Scoop {
 }
 
 function Install-VSCode {
-    if ((Test-CommandExists code)) {
-        Write-Host "Visual Studio Code is already installed." -ForegroundColor Yellow
-        return
-    }
-
-    Write-Host "Installing Visual Studio Code..." -ForegroundColor Cyan
-    Install-WithWinget Microsoft.VisualStudioCode
-    Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
-
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-    if (Test-CommandExists code) {
-        Write-Host "Visual Studio Code installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Visual Studio Code installation completed, but code command not found in PATH." -ForegroundColor Yellow
-        Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
-    }
+    return Winget-Install -PackageId "Microsoft.VisualStudioCode" -Name "Visual Studio Code" -Command "code"
 }
 
 function Install-Git {
-    if ((Test-CommandExists git)) {
-        Write-Host "Git is already installed." -ForegroundColor Yellow
-        return
-    }
-
-    Write-Host "Installing Git..." -ForegroundColor Cyan
-    Install-WithWinget Git.Git
-
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-
-    if (Test-CommandExists git) {
-        Write-Host "Git installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Git installation completed, but git command not found in PATH." -ForegroundColor Yellow
-        Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
-    }
+    return Winget-Install -PackageId "Git.Git" -Name "Git" -Command "git"
 }
 
 function Install-Nushell {
-    if ((Test-CommandExists nu)) {
-        Write-Host "Nushell is already installed." -ForegroundColor Yellow
-        return
-    }
-
-    Write-Host "Installing Nushell via winget..." -ForegroundColor Cyan
-    Install-WithWinget Nushell.Nushell
-
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-    if (Test-CommandExists nu) {
-        Write-Host "Nushell installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Nushell installation completed, but nu command not found in PATH." -ForegroundColor Yellow
-        Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
-    }
+    return Winget-Install -PackageId "Nushell.Nushell" -Name "Nushell" -Command "nu"
 }
 
 function Install-Starship {
-    if ((Test-CommandExists starship)) {
-        Write-Host "Starship is already installed." -ForegroundColor Yellow
-        return
-    }
-
-    Write-Host "Setting up Starship prompt..." -ForegroundColor Cyan
-    Install-WithWinget Starship.Starship
-
-    if ($LastExitCode -ne 0) {
-        Write-Host "Failed to install Starship prompt." -ForegroundColor Red
-    }
-    else {
-        Write-Host "Starship prompt installed successfully!" -ForegroundColor Green
-    }
+    return Winget-Install -PackageId "Starship.Starship" -Name "Starship" -Command "starship"
 }
 
 function Install-Zoxide {
-    if ((Test-CommandExists zoxide)) {
-        Write-Host "zoxide is already installed." -ForegroundColor Yellow
-        return
-    }
-    Write-Host "Installing zoxide..." -ForegroundColor Cyan
-    Install-WithWinget ajeetdsouza.zoxide
-
-    if ($LastExitCode -ne 0) {
-        Write-Host "Failed to install zoxide." -ForegroundColor Red
-    }
-    else {
-        Write-Host "zoxide installed successfully!" -ForegroundColor Green
-    }
+    return Winget-Install -PackageId "ajeetdsouza.zoxide" -Name "zoxide" -Command "zoxide"
 }
 
-
 function Install-Carapace {
-    if ((Test-CommandExists carapace)) {
-        Write-Host "carapace is already installed." -ForegroundColor Yellow
-    }
-
-    Write-Host "Installing carapace..." -ForegroundColor Cyan
-    Install-WithWinget rsteube.Carapace
-    if ($LastExitCode -ne 0) {
-        Write-Host "Failed to install carapace." -ForegroundColor Red
-    }
-    else {
-        Write-Host "carapace installed successfully!" -ForegroundColor Green
-    }
+    return Winget-Install -PackageId "rsteube.Carapace" -Name "Carapace" -Command "carapace"
 }
 
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
-
-    Install-Starship
-    Install-Git
-    Install-Nushell
-    Install-Zoxide
-    Install-Carapace
-
-    if (!(Test-Path "C:\Program Files\7-Zip\7z.exe")) {
-        Write-Host "Installing 7-Zip..." -ForegroundColor Cyan
-        Install-WithWinget 7zip.7zip
-        Write-Host "7-Zip installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "7-Zip is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-Path "C:\Program Files\Mozilla Firefox\firefox.exe") -and
-        !(Test-Path "${env:ProgramFiles(x86)}\Mozilla Firefox\firefox.exe")) {
-        Write-Host "Installing Firefox..." -ForegroundColor Cyan
-        Install-WithWinget Mozilla.Firefox
-        Write-Host "Firefox installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Firefox is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists wezterm)) {
-        Write-Host "Installing WezTerm..." -ForegroundColor Cyan
-        Install-WithWinget wez.wezterm
-        Write-Host "WezTerm installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "WezTerm is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-Path "C:\Program Files\Docker\Docker\Docker Desktop.exe")) {
-        Write-Host "Installing Docker Desktop..." -ForegroundColor Cyan
-        Install-WithWinget Docker.DockerDesktop
-        Write-Host "Docker Desktop installed successfully!" -ForegroundColor Green
-        Write-Host "Make sure to enable the required WSL distro in Docker Desktop settings." -ForegroundColor Yellow
-    }
-    else {
-        Write-Host "Docker Desktop is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists rg)) {
-        Write-Host "Installing ripgrep..." -ForegroundColor Cyan
-        Install-WithWinget BurntSushi.ripgrep
-        Write-Host "ripgrep installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "ripgrep is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists fzf)) {
-        Write-Host "Installing fzf..." -ForegroundColor Cyan
-        Install-WithWinget junegunn.fzf
-        Write-Host "fzf installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "fzf is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists fd)) {
-        Write-Host "Installing fd..." -ForegroundColor Cyan
-        Install-WithWinget sharkdp.fd
-        Write-Host "fd installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "fd is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists bat)) {
-        Write-Host "Installing bat..." -ForegroundColor Cyan
-        Install-WithWinget sharkdp.bat
-        Write-Host "bat installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "bat is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists gh)) {
-        Write-Host "Installing gh..." -ForegroundColor Cyan
-        Install-WithWinget GitHub.cli
-        Write-Host "gh installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "gh is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists delta)) {
-        Write-Host "Installing delta..." -ForegroundColor Cyan
-        Install-WithWinget dandavison.delta
-        Write-Host "delta installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "delta is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists uv)) {
-        Write-Host "Installing uv..." -ForegroundColor Cyan
-        Install-WithWinget astral-sh.uv
-        Write-Host "uv installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "uv is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists lazygit)) {
-        Write-Host "Installing lazygit..." -ForegroundColor Cyan
-        Install-WithWinget jesseduffield.lazygit
-        Write-Host "lazygit installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "lazygit is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists lazydocker)) {
-        Write-Host "Installing lazydocker..." -ForegroundColor Cyan
-        Install-WithWinget jesseduffield.lazydocker
-        Write-Host "lazydocker installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "lazydocker is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists nvim)) {
-        Write-Host "Installing neovim..." -ForegroundColor Cyan
-        Install-WithWinget Neovim.Neovim
-        Write-Host "neovim installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "neovim is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-Path "C:\Program Files\GNU Emacs")) {
-        Write-Host "Installing emacs..." -ForegroundColor Cyan
-        Install-WithWinget GNU.Emacs
-        Write-Host "emacs installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "emacs is already installed." -ForegroundColor Yellow
-    }
-
-    Write-Host "Development tools installed!" -ForegroundColor Green
+    return Install-WingetPackageSet -Packages @(
+        @{ Name = "Starship"; Id = "Starship.Starship"; Command = "starship" }
+        @{ Name = "Git"; Id = "Git.Git"; Command = "git" }
+        @{ Name = "Nushell"; Id = "Nushell.Nushell"; Command = "nu" }
+        @{ Name = "zoxide"; Id = "ajeetdsouza.zoxide"; Command = "zoxide" }
+        @{ Name = "Carapace"; Id = "rsteube.Carapace"; Command = "carapace" }
+        @{ Name = "7-Zip"; Id = "7zip.7zip"; Command = "7z" }
+        @{ Name = "Firefox"; Id = "Mozilla.Firefox" }
+        @{ Name = "WezTerm"; Id = "wez.wezterm"; Command = "wezterm" }
+        @{ Name = "Docker Desktop"; Id = "Docker.DockerDesktop"; Command = "docker" }
+        @{ Name = "ripgrep"; Id = "BurntSushi.ripgrep"; Command = "rg" }
+        @{ Name = "fzf"; Id = "junegunn.fzf"; Command = "fzf" }
+        @{ Name = "fd"; Id = "sharkdp.fd"; Command = "fd" }
+        @{ Name = "bat"; Id = "sharkdp.bat"; Command = "bat" }
+        @{ Name = "GitHub CLI"; Id = "GitHub.cli"; Command = "gh" }
+        @{ Name = "delta"; Id = "dandavison.delta"; Command = "delta" }
+        @{ Name = "uv"; Id = "astral-sh.uv"; Command = "uv" }
+        @{ Name = "lazygit"; Id = "jesseduffield.lazygit"; Command = "lazygit" }
+        @{ Name = "lazydocker"; Id = "jesseduffield.lazydocker"; Command = "lazydocker" }
+        @{ Name = "Neovim"; Id = "Neovim.Neovim"; Command = "nvim" }
+        @{ Name = "Emacs"; Id = "GNU.Emacs"; Command = "emacs" }
+    )
 }
 
 function Install-CppTools {
     Write-Host "Installing C++ development tools..." -ForegroundColor Cyan
-
-    if (!(Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\2022")) {
-        Write-Host "Installing Visual Studio Build Tools..." -ForegroundColor Cyan
-        winget install --id Microsoft.VisualStudio.2022.BuildTools -e --silent --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
-        Write-Host "Visual Studio Build Tools installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Visual Studio Build Tools already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists cmake)) {
-        Write-Host "Installing CMake..." -ForegroundColor Cyan
-        Install-WithWinget Kitware.CMake
-        Write-Host "CMake installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "CMake is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists clang)) {
-        Write-Host "Installing LLVM/Clang..." -ForegroundColor Cyan
-        Install-WithWinget LLVM.LLVM
-        Write-Host "LLVM/Clang installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "LLVM/Clang is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-CommandExists ninja)) {
-        Write-Host "Installing Ninja build system..." -ForegroundColor Cyan
-        Install-WithWinget Ninja-build.Ninja
-        Write-Host "Ninja build system installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Ninja build system is already installed." -ForegroundColor Yellow
-    }
-
-    Write-Host "C++ development tools installed!" -ForegroundColor Green
+    return Install-WingetPackageSet -Packages @(
+        @{
+            Name = "Visual Studio Build Tools"
+            Id = "Microsoft.VisualStudio.2022.BuildTools"
+            Override = "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+        }
+        @{ Name = "CMake"; Id = "Kitware.CMake"; Command = "cmake" }
+        @{ Name = "LLVM/Clang"; Id = "LLVM.LLVM"; Command = "clang" }
+        @{ Name = "Ninja"; Id = "Ninja-build.Ninja"; Command = "ninja" }
+    )
 }
 
 function Install-Apps {
+    return Install-WingetPackageSet -Packages @(
+        @{ Name = "GlazeWM"; Id = "glazewm.glazewm"; Command = "glazewm" }
+        @{ Name = "Telegram"; Id = "Telegram.TelegramDesktop" }
+        @{ Name = "Zoom"; Id = "Zoom.Zoom" }
+        @{ Name = "Signal"; Id = "OpenWhisperSystems.Signal" }
+    )
+}
 
-    if (!(Test-CommandExists glazewm)) {
-        Write-Host "Installing glazewm..." -ForegroundColor Cyan
-        Install-WithWinget glazewm.glazewm
-        Write-Host "glazewm installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "glazewm is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-Path "C:\Users\Pervez Iqbal\AppData\Roaming\Telegram Desktop")) {
-        Write-Host "Installing telegram..." -ForegroundColor Cyan
-        Install-WithWinget Telegram.TelegramDesktop
-        Write-Host "telegram installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "telegram is already installed." -ForegroundColor Yellow
-    }
-
-    if (!(Test-Path "C:\Program Files\Zoom\bin\Zoom.exe")) {
-        Write-Host "Installing zoom..." -ForegroundColor Cyan
-        Install-WithWinget Zoom.Zoom
-        Write-Host "zoom installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "zoom is already installed." -ForegroundColor Yellow
-    }
-
-    if (Test-Path "$env:LOCALAPPDATA\Programs\signal-desktop\Signal.exe") {
-        Write-Host "Signal is already installed." -ForegroundColor Yellow
-    }
-    else {
-        Write-Host "Signal is not installed. Installing..." -ForegroundColor Cyan
-        Install-WithWinget OpenWhisperSystems.Signal
-        Write-Host "Signal installed successfully!" -ForegroundColor Green
-    }
+function Install-AI-Tools {
+    Write-Host "Installing AI tools..." -ForegroundColor Cyan
+    return Install-WingetPackageSet -Packages @(
+        @{ Name = "ChatGPT"; Id = "9PLM9XGG6VKS" }
+        @{ Name = "Codex CLI"; Id = "OpenAI.Codex"; Command = "codex" }
+        @{ Name = "OpenCode"; Id = "SST.opencode"; Command = "opencode" }
+        @{ Name = "Claude"; Id = "Anthropic.Claude" }
+        @{ Name = "Claude Code"; Id = "Anthropic.ClaudeCode"; Command = "claude" }
+        @{ Name = "Ollama"; Id = "Ollama.Ollama"; Command = "ollama" }
+    )
 }
 
 function Install-Multipass {
-    Write-Host "Installing Multipass..." -ForegroundColor Cyan
-
-    if (Test-CommandExists multipass) {
-        Write-Host "Multipass is already installed." -ForegroundColor Yellow
-        return
+    $result = Winget-Install -PackageId "Canonical.Multipass" -Name "Multipass" -Command "multipass" -RestartNeeded
+    if ($result.Success -and $result.Status -eq "Installed") {
+        Restart-PC
     }
-
-    Write-Host "Installing Multipass via winget..." -ForegroundColor Cyan
-    Install-WithWinget Canonical.Multipass
-
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-
-    if (Test-CommandExists multipass) {
-        Write-Host "Multipass installed successfully!" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Failed to install Multipass." -ForegroundColor Red
-    }
-
-    Restart-PC
+    return $result
 }
 
 function Install-MultipassVM {
@@ -696,7 +578,7 @@ function Install-MultipassVM {
         return
     }
 
-    Write-Host "Setting up Ubuntu 25.10 VM in Multipass..." -ForegroundColor Cyan
+    Write-Host "Setting up Ubuntu 26.04 VM in Multipass..." -ForegroundColor Cyan
 
     if (multipass list | Select-String "ubuntu-ilm") {
         Write-Host "Ubuntu VM 'ubuntu-ilm' already exists. Skipping..." -ForegroundColor Yellow
@@ -707,15 +589,15 @@ function Install-MultipassVM {
 
     Start-Sleep -Seconds 5
 
-    Write-Host "Creating Ubuntu 25.10 VM with 8GB RAM and 20GB disk..." -ForegroundColor Cyan
-    multipass launch questing --name ubuntu-ilm --memory 8G --disk 20G
+    Write-Host "Creating Ubuntu 26.04 VM with 8GB RAM and 20GB disk..." -ForegroundColor Cyan
+    multipass launch resolute --name ubuntu-ilm --memory 8G --disk 20G
 
     Start-Sleep -Seconds 5
 
     Write-Host "Running shell installer script..." -ForegroundColor Cyan
     multipass exec ubuntu-ilm -- bash -c "curl -sSL https://is.gd/egitif | bash -s -- min"
 
-    Write-Host "Ubuntu 25.10 VM setup complete!" -ForegroundColor Green
+    Write-Host "Ubuntu 26.04 VM setup complete!" -ForegroundColor Green
     multipass info ubuntu-ilm
 
     Write-Host "To access your VM, use: multipass shell ubuntu-ilm" -ForegroundColor Cyan
@@ -880,6 +762,11 @@ function Install-WSLDistro {
 }
 
 function Initialize-CentOSWSL {
+    param(
+        [Parameter(Mandatory = $true)]
+        [psobject]$Context
+    )
+
     Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
 
     $username = Read-Host "Enter username for CentOS"
@@ -889,7 +776,7 @@ function Initialize-CentOSWSL {
 
     try {
         Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
-        wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL $global:GitHubBaseUrl/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
+        wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL $($Context.GitHubBaseUrl)/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
     }
     finally {
         $passwordText = $null
@@ -901,25 +788,25 @@ function Initialize-CentOSWSL {
 }
 
 
-function Install-Ubuntu2510 {
-    Write-Host "Installing Ubuntu 25.10 on WSL..." -ForegroundColor Cyan
+function Install-Ubuntu2604 {
+    Write-Host "Installing Ubuntu 26.04 on WSL..." -ForegroundColor Cyan
 
     $installedDistros = wsl --list --quiet
-    if ($installedDistros -contains "Ubuntu-25.10") {
-        Write-Host "Ubuntu 25.10 is already installed." -ForegroundColor Yellow
+    if ($installedDistros -contains "Ubuntu-26.04") {
+        Write-Host "Ubuntu 26.04 is already installed." -ForegroundColor Yellow
         return
     }
 
-    Write-Host "Downloading Ubuntu 25.10 WSL image (this may take time)..." -ForegroundColor Cyan
+    Write-Host "Downloading Ubuntu 26.04 WSL image (this may take time)..." -ForegroundColor Cyan
 
     $tempDir = "$env:TEMP"
-    $wslFile = "$tempDir\ubuntu.wsl"
-    $downloadUrl = "https://releases.ubuntu.com/questing/ubuntu-25.10-wsl-amd64.wsl"
+    $wslFile = "$tempDir\ubuntu-26.04.wsl"
+    $downloadUrl = "https://releases.ubuntu.com/26.04/ubuntu-26.04-wsl-amd64.wsl"
 
     $ProgressPreference = 'SilentlyContinue'
     try {
         if (Test-Path $wslFile) {
-            Write-Host "Ubuntu 25.10 WSL image already downloaded." -ForegroundColor Cyan
+            Write-Host "Ubuntu 26.04 WSL image already downloaded." -ForegroundColor Cyan
         }
         else {
             Invoke-WebRequest -Uri $downloadUrl -OutFile $wslFile -UseBasicParsing
@@ -936,7 +823,7 @@ function Install-Ubuntu2510 {
     $ProgressPreference = 'Continue'
 
     Write-Host "Installing Ubuntu from .wsl file..." -ForegroundColor Cyan
-    wsl --install --from-file $wslFile
+    wsl --install --from-file $wslFile --name Ubuntu-26.04
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Ubuntu installation failed." -ForegroundColor Red
@@ -947,7 +834,7 @@ function Install-Ubuntu2510 {
     Remove-Item -Path $wslFile -Force
 
     Write-Host "Ubuntu installed successfully!" -ForegroundColor Green
-    Write-Host "To start Ubuntu, open a terminal and type: wsl -d Ubuntu-25.10" -ForegroundColor Cyan
+    Write-Host "To start Ubuntu, open a terminal and type: wsl -d Ubuntu-26.04" -ForegroundColor Cyan
 }
 
 function Install-NixOSWSL {
@@ -1007,6 +894,11 @@ function Install-NixOSWSL {
 }
 
 function Install-CentOSWSL {
+    param(
+        [Parameter(Mandatory = $true)]
+        [psobject]$Context
+    )
+
     $installedDistros = wsl --list --quiet
     if ($installedDistros -contains "CentOS-Stream-10") {
         Write-Host "CentOS Stream 10 is already installed." -ForegroundColor Cyan
@@ -1060,18 +952,18 @@ function Install-CentOSWSL {
 
     Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Cyan
 
-    Initialize-CentOSWSL
+    Initialize-CentOSWSL -Context $Context
 }
 
 function Set-CapsLockAsControl {
-    if (!(Get-Dotfiles)) {
-        Write-Host "Failed to clone dotfiles. Exiting..." -ForegroundColor Red
-        return
-    }
+    param(
+        [Parameter(Mandatory = $true)]
+        [psobject]$Context
+    )
 
     Write-Host "Remapping Caps Lock to Control key..." -ForegroundColor Cyan
 
-    $regFilePath = "$global:WinDir\caps2ctrl.reg"
+    $regFilePath = Join-Path $Context.DotfilesDirectory "windows\caps2ctrl.reg"
 
     if (!(Test-Path $regFilePath)) {
         Write-Host "Registry file not found at: $regFilePath" -ForegroundColor Red
@@ -1083,14 +975,14 @@ function Set-CapsLockAsControl {
 }
 
 function Install-VSCodeExtensions {
+    param(
+        [Parameter(Mandatory = $true)]
+        [psobject]$Context
+    )
+
     Write-Host "Installing VS Code extensions..." -ForegroundColor Cyan
 
-    $extensionsFile = "$global:DotDir\extras\vscode\extensions\wsl"
-
-    if (!(Get-Dotfiles)) {
-        Write-Host "Failed to clone dotfiles. Skipping vscode extensions..." -ForegroundColor Red
-        return
-    }
+    $extensionsFile = Join-Path $Context.DotfilesDirectory "extras\vscode\extensions\wsl"
 
     if (!(Test-Path $extensionsFile)) {
         Write-Host "Extensions file not found at: $extensionsFile" -ForegroundColor Red
@@ -1147,21 +1039,36 @@ function Install-NerdFonts {
 }
 
 function Get-Dotfiles {
-    Install-Git
+    param(
+        [Parameter(Mandatory = $true)]
+        [psobject]$Context
+    )
 
-    if (!(Test-CommandExists git)) {
+    $gitResult = Install-Git
+
+    if (!$gitResult.Success -or !(Test-CommandExists git)) {
         Write-Host "Git is not installed. Cannot clone dotfiles." -ForegroundColor Red
-        return
+        return $false
     }
 
-    if (Test-Path "$global:DotDir") {
+    if (Test-Path $Context.DotfilesDirectory) {
         Write-Host "Dotfiles already present. Updating..." -ForegroundColor Cyan
 
-        Push-Location "$global:DotDir"
+        Push-Location $Context.DotfilesDirectory
         try {
-            if ($null -eq (git status --porcelain)) {
+            $gitStatus = git status --porcelain
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "Failed to inspect dotfiles status." -ForegroundColor Red
+                return $false
+            }
+
+            if ([string]::IsNullOrWhiteSpace(($gitStatus -join "`n"))) {
                 Write-Host "Pulling latest changes..." -ForegroundColor Cyan
                 git pull --rebase
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Host "Failed to update dotfiles." -ForegroundColor Red
+                    return $false
+                }
                 Write-Host "Dotfiles updated successfully!" -ForegroundColor Green
                 return $true
             }
@@ -1180,9 +1087,9 @@ function Get-Dotfiles {
     }
 
     Write-Host "Cloning dotfiles..." -ForegroundColor Cyan
-    git clone https://github.com/pervezfunctor/dotfiles.git "$global:DotDir"
+    git clone https://github.com/pervezfunctor/dotfiles.git $Context.DotfilesDirectory
 
-    if ($LASTEXITCODE -ne 0 -or !(Test-Path "$global:DotDir")) {
+    if ($LASTEXITCODE -ne 0 -or !(Test-Path $Context.DotfilesDirectory)) {
         Write-Host "Failed to clone dotfiles. Exiting..." -ForegroundColor Red
         return $false
     }
@@ -1224,18 +1131,23 @@ function Install-PowerShellModules {
 }
 
 function Initialize-PowerShell {
-    $ps5ProfilePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
-    $ps7ProfilePath = "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
+    param(
+        [Parameter(Mandatory = $true)]
+        [psobject]$Context
+    )
+
+    $ps5ProfilePath = Join-Path $Context.UserProfile "Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
+    $ps7ProfilePath = Join-Path $Context.UserProfile "Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
 
     Backup-ConfigFile -FilePath $ps5ProfilePath
     Backup-ConfigFile -FilePath $ps7ProfilePath
 
-    $sourceProfilePath = "$global:DotDir\powershell\Microsoft.PowerShell_profile.ps1"
+    $sourceProfilePath = Join-Path $Context.DotfilesDirectory "powershell\Microsoft.PowerShell_profile.ps1"
 
     if (Test-Path $sourceProfilePath) {
         Write-Host "Setting up PowerShell profiles for both Windows PowerShell and PowerShell 7..." -ForegroundColor Cyan
 
-        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+        Set-ExecutionPolicy RemoteSigned -Scope Process -Force
         New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps5ProfilePath
         New-ConfigLink -sourcePath $sourceProfilePath -targetPath $ps7ProfilePath
 
@@ -1249,30 +1161,30 @@ function Initialize-PowerShell {
 }
 
 function Initialize-Dotfiles {
-    if (!(Get-Dotfiles)) {
-        Write-Host "Failed to clone dotfiles. Exiting..." -ForegroundColor Red
-        return
-    }
+    param(
+        [Parameter(Mandatory = $true)]
+        [psobject]$Context
+    )
 
     Write-Host "Setting up WezTerm config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$global:DotDir\wezterm\dot-config\wezterm" -targetPath "$env:USERPROFILE\.config\wezterm"
+    New-ConfigLink -sourcePath (Join-Path $Context.DotfilesDirectory "wezterm\dot-config\wezterm") -targetPath (Join-Path $Context.UserProfile ".config\wezterm")
 
     Write-Host "Setting up Neovim config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$global:DotDir\nvim\dot-config\nvim" -targetPath "$env:LOCALAPPDATA\nvim"
-    New-ConfigLink -sourcePath "$global:DotDir\nvim\dot-config\nvim" -targetPath "$env:USERPROFILE\.config\nvim"
+    New-ConfigLink -sourcePath (Join-Path $Context.DotfilesDirectory "nvim\dot-config\nvim") -targetPath (Join-Path $Context.LocalAppData "nvim")
+    New-ConfigLink -sourcePath (Join-Path $Context.DotfilesDirectory "nvim\dot-config\nvim") -targetPath (Join-Path $Context.UserProfile ".config\nvim")
 
     Write-Host "Setting up Emacs config..." -ForegroundColor Cyan
-    New-ConfigLink -sourcePath "$global:DotDir\emacs-slim\dot-emacs" -targetPath "$env:USERPROFILE\.emacs"
+    New-ConfigLink -sourcePath (Join-Path $Context.DotfilesDirectory "emacs-slim\dot-emacs") -targetPath (Join-Path $Context.UserProfile ".emacs")
 
     Write-Host "Setting up Nushell config..." -ForegroundColor Cyan
     $null = Backup-ConfigFile -FilePath "$env:APPDATA\nushell"
-    New-ConfigLink -sourcePath "$global:DotDir\nushell\dot-config\nushell" -targetPath "$env:APPDATA\nushell"
+    New-ConfigLink -sourcePath (Join-Path $Context.DotfilesDirectory "nushell\dot-config\nushell") -targetPath (Join-Path $Context.RoamingAppData "nushell")
 
-    Initialize-PowerShell
+    Initialize-PowerShell -Context $Context
 
     Write-Host "Setting up VS Code config..." -ForegroundColor Cyan
-    $vscodeSettingsSource = "$global:DotDir\extras\vscode\wsl-settings.json"
-    $vscodeSettingsTarget = "$env:APPDATA\Code\User\settings.json"
+    $vscodeSettingsSource = Join-Path $Context.DotfilesDirectory "extras\vscode\wsl-settings.json"
+    $vscodeSettingsTarget = Join-Path $Context.RoamingAppData "Code\User\settings.json"
 
     if (Test-Path $vscodeSettingsSource) {
         $null = Backup-ConfigFile -FilePath $vscodeSettingsTarget
@@ -1429,31 +1341,160 @@ function Copy-ConfigFromDotfiles {
     return $true
 }
 
-# Define available components with preserved order
-$availableComponents = [ordered]@{
-    "windows-update"   = "Update Windows"
-    "debloat"          = "Debloat Windows"
+function New-ComponentRegistry {
+    return [ordered]@{
+        "windows-update" = @{
+            Description = "Update Windows"
+            Dependencies = @()
+            Handler = { param($Context) Update-Windows }
+        }
+        "debloat" = @{
+            Description = "Debloat Windows"
+            Dependencies = @()
+            Handler = { param($Context) Initialize-Debloat }
+        }
+        "dotfiles-source" = @{
+            Description = "Clone or update dotfiles"
+            Dependencies = @()
+            Visible = $false
+            IncludeInAll = $false
+            Handler = { param($Context) Get-Dotfiles -Context $Context }
+        }
+        "dotfiles" = @{
+            Description = "Initialize Dotfiles"
+            Dependencies = @("dotfiles-source")
+            Handler = { param($Context) Initialize-Dotfiles -Context $Context }
+        }
+        "capslock" = @{
+            Description = "Set CapsLock as Control"
+            Dependencies = @("dotfiles-source")
+            Handler = { param($Context) Set-CapsLockAsControl -Context $Context }
+        }
+        "nerd-fonts" = @{
+            Description = "Install Nerd Fonts"
+            Dependencies = @()
+            Handler = { param($Context) Install-NerdFonts }
+        }
+        "vscode" = @{
+            Description = "Install VS Code"
+            Dependencies = @("dotfiles-source")
+            Handler = {
+                param($Context)
+                Install-VSCode
+                Install-VSCodeExtensions -Context $Context
+            }
+        }
+        "devtools" = @{
+            Description = "Install Development Tools"
+            Dependencies = @()
+            Handler = { param($Context) Install-DevTools; Install-CppTools }
+        }
+        "ai-tools" = @{
+            Description = "Install AI Tools"
+            Dependencies = @()
+            Handler = { param($Context) Install-AI-Tools }
+        }
+        "apps" = @{
+            Description = "Install Applications"
+            Dependencies = @()
+            Handler = { param($Context) Install-Apps }
+        }
+        "wsl" = @{
+            Description = "Install Hyper-V and WSL"
+            Dependencies = @()
+            Handler = { param($Context) Install-HyperV-WSL }
+        }
+        "multipass" = @{
+            Description = "Install Multipass"
+            Dependencies = @()
+            Handler = { param($Context) Install-Multipass }
+        }
+        "multipass-vm" = @{
+            Description = "Install Multipass VM"
+            Dependencies = @("multipass")
+            Handler = { param($Context) Initialize-SSHKey; Install-MultipassVM; Initialize-MultipassVMSSH }
+        }
+        "wsl-ubuntu" = @{
+            Description = "Install Ubuntu WSL"
+            Dependencies = @("wsl")
+            Handler = { param($Context) Install-WSLDistro -DistroName "Ubuntu-26.04" }
+        }
+        "wsl-debian" = @{
+            Description = "Install Debian WSL"
+            Dependencies = @("wsl")
+            Handler = { param($Context) Install-WSLDistro -DistroName "Debian" }
+        }
+        "wsl-opensuse" = @{
+            Description = "Install openSUSE WSL"
+            Dependencies = @("wsl")
+            Handler = { param($Context) Install-WSLDistro -DistroName "openSUSE-Tumbleweed" }
+        }
+        "wsl-fedora" = @{
+            Description = "Install Fedora WSL"
+            Dependencies = @("wsl")
+            Handler = { param($Context) Install-WSLDistro -DistroName "FedoraLinux-44" }
+        }
+        "wsl-centos" = @{
+            Description = "Install CentOS WSL"
+            Dependencies = @("wsl")
+            Handler = { param($Context) Install-CentOSWSL -Context $Context }
+        }
+        "wsl-nixos" = @{
+            Description = "Install NixOS WSL"
+            Dependencies = @("wsl")
+            Handler = { param($Context) Install-NixOSWSL }
+        }
+        "wsl-ubuntu-26.04" = @{
+            Description = "Install Ubuntu 26.04 WSL from image"
+            Dependencies = @("wsl")
+            IncludeInAll = $false
+            Handler = { param($Context) Install-Ubuntu2604 }
+        }
+    }
+}
 
-    "capslock"         = "Set CapsLock as Control"
-    "nerd-fonts"       = "Install Nerd Fonts"
-    "vscode"           = "Install VS Code"
-    "devtools"         = "Install Development Tools"
-    "dotfiles"         = "Initialize Dotfiles"
-    "apps"             = "Install Applications"
+function Resolve-ComponentOrder {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Selected,
 
-    "wsl"              = "Install Hyper-V and WSL"
-    "multipass"        = "Install Multipass"
+        [Parameter(Mandatory = $true)]
+        [System.Collections.IDictionary]$Registry
+    )
 
-    "multipass-vm"     = "Install Multipass VM"
-    "wsl-ubuntu"       = "Install Ubuntu WSL"
-    "wsl-debian"       = "Install Debian WSL"
-    "wsl-opensuse"     = "Install openSUSE WSL"
-    "wsl-fedora"       = "Install Fedora WSL"
-    "wsl-centos"       = "Install CentOS WSL"
-    "wsl-nixos"        = "Install NixOS WSL"
-    "wsl-ubuntu-25.10" = "Install Ubuntu 25.10 WSL"
-    # "scoop"          = "Install Scoop"
-    "all"              = "Install All Components"
+    if ($Selected -contains "all") {
+        $Selected = @($Registry.Keys | Where-Object { $Registry[$_].IncludeInAll -ne $false })
+    }
+
+    $states = @{}
+    $resolved = [System.Collections.Generic.List[string]]::new()
+
+    function Visit-Component {
+        param([string]$Name)
+
+        if (!$Registry.Contains($Name)) {
+            throw "Unknown component: $Name"
+        }
+        if ($states[$Name] -eq 1) {
+            throw "Circular component dependency detected at '$Name'."
+        }
+        if ($states[$Name] -eq 2) {
+            return
+        }
+
+        $states[$Name] = 1
+        foreach ($dependency in @($Registry[$Name].Dependencies)) {
+            Visit-Component -Name $dependency
+        }
+        $states[$Name] = 2
+        $resolved.Add($Name)
+    }
+
+    foreach ($name in $Selected) {
+        Visit-Component -Name $name
+    }
+
+    return $resolved.ToArray()
 }
 
 function Debug-Variable {
@@ -1508,7 +1549,10 @@ function Initialize-Debloat {
 function Show-Menu {
     param (
         [string]$Title = "Select components to install",
-        [string[]]$PreSelected = @()
+        [string[]]$PreSelected = @(),
+
+        [Parameter(Mandatory = $true)]
+        [System.Collections.IDictionary]$Registry
     )
 
     Write-Host "`n$Title" -ForegroundColor Cyan
@@ -1518,7 +1562,7 @@ function Show-Menu {
     $selectedItems = [ordered]@{}
     $index = 1
 
-    foreach ($key in $availableComponents.Keys | Where-Object { $_ -ne "all" }) {
+    foreach ($key in $Registry.Keys | Where-Object { $Registry[$_].Visible -ne $false }) {
         $menuItems[$index.ToString()] = $key
         $isSelected = $false
 
@@ -1541,7 +1585,7 @@ function Show-Menu {
             $key = $menuItems[$i.ToString()]
             $selected = $selectedItems[$i.ToString()]
             $marker = if ($selected) { "[X]" } else { "[ ]" }
-            Write-Host "$marker [$i] $($availableComponents[$key])" -ForegroundColor $(if ($selected) { "Green" } else { "Yellow" })
+            Write-Host "$marker [$i] $($Registry[$key].Description)" -ForegroundColor $(if ($selected) { "Green" } else { "Yellow" })
         }
 
         Write-Host "`nCommands:" -ForegroundColor Cyan
@@ -1615,9 +1659,13 @@ function Initialize-SSHKey {
     }
 
     Write-Host "Generating new SSH key..." -ForegroundColor Cyan
-    ssh-keygen --% -t ed25519 -f "$privateKeyPath" -N ""
-
-    Write-Host "SSH key generated successfully!" -ForegroundColor Green
+    ssh-keygen -t ed25519 -f $privateKeyPath -N ''
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "SSH key generated successfully!" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Failed to generate SSH key." -ForegroundColor Red
+    }
 }
 
 function Copy-PublicKeyToMultipass {
@@ -1652,47 +1700,71 @@ function Add-MultipassToSSHConfig {
 
 function Install-SelectedComponents {
     param (
-        [string[]]$ComponentList
+        [Parameter(Mandatory = $true)]
+        [string[]]$ComponentList,
+
+        [Parameter(Mandatory = $true)]
+        [System.Collections.IDictionary]$Registry,
+
+        [Parameter(Mandatory = $true)]
+        [psobject]$Context
     )
 
-    if ($ComponentList -contains "all") {
-        $ComponentList = $availableComponents.Keys | Where-Object { $_ -ne "all" }
+    try {
+        $orderedComponents = Resolve-ComponentOrder -Selected $ComponentList -Registry $Registry
+    }
+    catch {
+        $result = New-SetupResult -Name "Component selection" -Status Failed -Message $_.Exception.Message -ExitCode 1
+        Write-SetupResult $result
+        return @($result)
     }
 
-    Initialize-SSHKey
+    $allResults = [System.Collections.Generic.List[object]]::new()
+    $componentSucceeded = @{}
 
-    foreach ($component in $ComponentList) {
-        Write-Host "`nProcessing component: $component ($($availableComponents[$component]))" -ForegroundColor Cyan
+    foreach ($component in $orderedComponents) {
+        $definition = $Registry[$component]
+        Write-Host "`nProcessing component: $component ($($definition.Description))" -ForegroundColor Cyan
 
-
-        switch ($component) {
-            "windows-update" { Update-Windows }
-
-            "capslock" { Set-CapsLockAsControl }
-            "nerd-fonts" { Install-Chocolatey; Install-NerdFonts }
-            "vscode" { Install-VSCode; Install-VSCodeExtensions }
-            "devtools" { Install-DevTools; Install-CppTools }
-            "dotfiles" { Initialize-Dotfiles }
-            "apps" { Install-Apps }
-            "debloat" { Initialize-Debloat }
-
-            "wsl" { Install-HyperV-WSL }
-            "multipass" { Install-Multipass }
-
-            "multipass-vm" { Install-MultipassVM; Initialize-MultipassVMSSH }
-            "wsl-ubuntu" { Install-WSLDistro -DistroName "Ubuntu-24.04" }
-            "wsl-debian" { Install-WSLDistro -DistroName "Debian" }
-            "wsl-opensuse" { Install-WSLDistro -DistroName "openSUSE-Tumbleweed" }
-            "wsl-fedora" { Install-WSLDistro -DistroName "FedoraLinux-43" }
-            "wsl-centos" { Install-CentOSWSL }
-            "wsl-nixos" { Install-NixOSWSL }
-            "wsl-ubuntu-25.10" { Install-Ubuntu2510 }
-            # "scoop" { Install-Scoop }
-            default { Write-Host "Unknown component: $component" -ForegroundColor Red }
+        $failedDependencies = @($definition.Dependencies | Where-Object { $componentSucceeded[$_] -eq $false })
+        if ($failedDependencies.Count -gt 0) {
+            $result = New-SetupResult -Name $component -Status Skipped -Message "Skipped $component because dependencies failed: $($failedDependencies -join ', ')."
+            $result | Add-Member -NotePropertyName Component -NotePropertyValue $component
+            Write-SetupResult $result
+            $allResults.Add($result)
+            $componentSucceeded[$component] = $false
+            continue
         }
+
+        try {
+            $output = @(& $definition.Handler $Context)
+            $results = @($output | Where-Object { $_.PSObject.TypeNames -contains "Dotfiles.SetupResult" })
+
+            if ($results.Count -eq 0) {
+                $status = if ($output -contains $false) { "Failed" } else { "Completed" }
+                $results = @(New-SetupResult -Name $component -Status $status)
+            }
+        }
+        catch {
+            $results = @(New-SetupResult -Name $component -Status Failed -Message "${component}: $($_.Exception.Message)" -ExitCode 1)
+        }
+
+        foreach ($result in $results) {
+            if ($null -eq $result.Component) {
+                $result | Add-Member -NotePropertyName Component -NotePropertyValue $component
+            }
+            $allResults.Add($result)
+        }
+
+        $componentSucceeded[$component] = @($results | Where-Object { !$_.Success }).Count -eq 0
     }
 
-    Write-Host "`nSelected components installation complete!" -ForegroundColor Green
+    Write-Host "`nSetup summary" -ForegroundColor Cyan
+    foreach ($group in $allResults | Group-Object Status | Sort-Object Name) {
+        Write-Host "  $($group.Name): $($group.Count)"
+    }
+
+    return $allResults.ToArray()
 }
 
 function Main {
@@ -1701,18 +1773,22 @@ function Main {
         [string[]]$Components = @()
     )
 
+    $context = New-SetupContext
+    $registry = New-ComponentRegistry
+
     if ($ListComponents) {
         Write-Host "Available components:" -ForegroundColor Cyan
-        foreach ($key in $availableComponents.Keys | Sort-Object) {
-            Write-Host "  $key - $($availableComponents[$key])" -ForegroundColor Yellow
+        foreach ($key in $registry.Keys | Where-Object { $registry[$_].Visible -ne $false }) {
+            Write-Host "  $key - $($registry[$key].Description)" -ForegroundColor Yellow
         }
+        Write-Host "  all - Install All Components" -ForegroundColor Yellow
         return
     }
 
     if ($null -eq $Components -or $Components.Count -eq 0) {
         # Pass the Components array as PreSelected to Show-Menu
         Write-Host "Running in interactive mode with preselected components: $($Components -join ', ')" -ForegroundColor Cyan
-        $selectedComponents = Show-Menu -PreSelected @("nerd-fonts", "vscode", "wsl", "wsl-ubuntu-25.10")
+        $selectedComponents = Show-Menu -Registry $registry -PreSelected @("nerd-fonts", "vscode", "wsl", "wsl-ubuntu-26.04")
     }
     else {
         # Non-interactive mode, use provided components
@@ -1726,7 +1802,7 @@ function Main {
     }
 
     Write-Host "Selected components: $($selectedComponents -join ', ')" -ForegroundColor Green
-    Install-SelectedComponents -ComponentList $selectedComponents
+    $null = Install-SelectedComponents -ComponentList $selectedComponents -Registry $registry -Context $context
 }
 
 if ($MyInvocation.InvocationName -ne ".") {
