@@ -1,16 +1,18 @@
-$env.DOT_DIR = ($nu.home-path | path join ".ilm")
+let home = ($env.HOME? | default $env.USERPROFILE?)
+
+$env.DOT_DIR = ($home | path join ".ilm")
 
 if ($env.XDG_CONFIG_HOME? | is-empty) {
-  $env.XDG_CONFIG_HOME = ($nu.home-path | path join ".config")
+  $env.XDG_CONFIG_HOME = ($home | path join ".config")
 }
 if ($env.XDG_DATA_HOME? | is-empty) {
-  $env.XDG_DATA_HOME = ($nu.home-path | path join ".local/share")
+  $env.XDG_DATA_HOME = ($home | path join ".local/share")
 }
 if ($env.XDG_CACHE_HOME? | is-empty) {
-  $env.XDG_CACHE_HOME = ($nu.home-path | path join ".cache")
+  $env.XDG_CACHE_HOME = ($home | path join ".cache")
 }
 if ($env.XDG_STATE_HOME? | is-empty) {
-  $env.XDG_STATE_HOME = ($nu.home-path | path join ".local/state")
+  $env.XDG_STATE_HOME = ($home | path join ".local/state")
 }
 
 
@@ -37,7 +39,7 @@ $env.NU_PLUGIN_DIRS = [
     ($nu.default-config-dir | path join 'plugins') # add <nushell-config-dir>/plugins
 ]
 
-$env.XDG_CONFIG_HOME = ($nu.home-path | path join ".config")
+$env.XDG_CONFIG_HOME = ($home | path join ".config")
 
 $env.config.show_banner = false
 
@@ -53,23 +55,23 @@ use std "path add"
 # $env.PATH = ($env.PATH | uniq)
 # path add /opt/homebrew/bin
 
-$env.GOPATH = ($nu.home-path | path join "go")
-$env."VOLTA_HOME" = ($nu.home-path | path join ".volta")
+$env.GOPATH = ($home | path join "go")
+$env."VOLTA_HOME" = ($home | path join ".volta")
 $env.LIBVIRT_DEFAULT_URI = "qemu:///system"
 
 path add /snap/bin
 path add ($env.GOPATH | path join "bin")
 path add ($env.XDG_CONFIG_HOME | path join "emacs/bin")
-path add ($nu.home-path | path join ".local/bin")
-path add ($nu.home-path | path join "bin")
-path add ($nu.home-path | path join ".bin")
+path add ($home | path join ".local/bin")
+path add ($home | path join "bin")
+path add ($home | path join ".bin")
 path add ($env.DOT_DIR | path join "bin")
 path add ($env.DOT_DIR | path join "bin/vt")
-path add ($nu.home-path | path join ".cargo/env")
-path add ($nu.home-path | path join "Applications")
-path add ($nu.home-path | path join ".local/share/pypoetry")
+path add ($home | path join ".cargo/env")
+path add ($home | path join "Applications")
+path add ($home | path join ".local/share/pypoetry")
 path add ($env.XDG_CONFIG_HOME | path join "Code/User/globalStorage/ms-vscode-remote.remote-containers/cli-bin")
-path add ($nu.home-path | path join ".console-ninja/.bin")
+path add ($home | path join ".console-ninja/.bin")
 
 
 if ('/opt/homebrew/bin/brew' | path exists) {
@@ -214,8 +216,6 @@ alias ndbst = pnpm db:studio
 alias ndbr = pnpm db:repl
 
 $env.CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense' # optional
-mkdir ~/.cache/carapace
-carapace _carapace nushell | save --force ~/.cache/carapace/init.nu
 source ~/.cache/carapace/init.nu
 
 mkdir ($nu.data-dir | path join "vendor/autoload")
