@@ -83,39 +83,6 @@ function New-SetupContext {
     }
 }
 
-function Copy-Safe {
-    param(
-        [Parameter(Mandatory)]
-        [string]$Source,
-        [Parameter(Mandatory)]
-        [string]$Destination
-    )
-
-    if (Test-Path -LiteralPath $Destination) {
-        Write-Error "Destination already exists: $Destination"
-        return
-    }
-
-    Copy-Item -LiteralPath $Source -Destination $Destination
-}
-
-function Copy-WithBackup {
-    param(
-        [Parameter(Mandatory)]
-        [string]$Source,
-        [Parameter(Mandatory)]
-        [string]$Destination
-    )
-
-    if (Test-Path -LiteralPath $Destination) {
-        $timestamp = Get-Date -Format 'yyyyMMdd-HHmmssfff'
-        $backupPath = "$Destination.$timestamp.bak"
-        Move-Item -LiteralPath $Destination -Destination $backupPath
-    }
-
-    Copy-Item -LiteralPath $Source -Destination $Destination
-}
-
 function Test-CommandExists {
     param (
         [Parameter(Mandatory = $true)]
@@ -135,6 +102,29 @@ function Restart-PC {
 
     Write-Host "Please restart your computer manually and run this script again to continue setup." -ForegroundColor Yellow
     exit 0
+}
+
+function Enable-WindowsSudo {
+    $sudoPath = Join-Path $env:SystemRoot "System32\sudo.exe"
+    if (!(Test-Path -LiteralPath $sudoPath)) {
+        $result = New-SetupResult -Name "Sudo for Windows" -Status Skipped -Message "Sudo for Windows requires Windows 11 version 24H2 or newer."
+        Write-SetupResult $result
+        return $result
+    }
+
+    Write-Host "Enabling Sudo for Windows in inline mode..." -ForegroundColor Cyan
+    & $sudoPath config --enable normal
+    $exitCode = $LASTEXITCODE
+
+    if ($exitCode -ne 0) {
+        $result = New-SetupResult -Name "Sudo for Windows" -Status Failed -Message "Failed to enable Sudo for Windows (exit code $exitCode)." -ExitCode $exitCode
+        Write-SetupResult $result
+        return $result
+    }
+
+    $result = New-SetupResult -Name "Sudo for Windows" -Status Completed -Message "Sudo for Windows is enabled in inline mode."
+    Write-SetupResult $result
+    return $result
 }
 
 function New-SetupResult {
@@ -298,22 +288,24 @@ function Backup-ConfigFile {
 
     if (!(Test-Path $FilePath)) {
         Write-Host "$FilePath does not exist. No backup needed." -ForegroundColor Yellow
-        return
+        return $true
     }
 
     $item = Get-Item -Path $FilePath -Force
     if ($item.LinkType -eq "SymbolicLink") {
         Write-Host "$FilePath is a symbolic link. No backup needed." -ForegroundColor Yellow
-        return
+        return $true
     }
 
     $backupPath = "$FilePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
     try {
         Copy-Item -Path $FilePath -Destination $backupPath -Force -Recurse
         Write-Host "Created backup of ${FilePath} at ${backupPath}" -ForegroundColor Green
+        return $true
     }
     catch {
         Write-Host "Failed to backup ${FilePath}: $_" -ForegroundColor Red
+        return $false
     }
 }
 
@@ -349,36 +341,6 @@ function New-ConfigDirectory {
     return New-Directory -Path $configDir
 }
 
-function Copy-ConfigFromGitHub {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$ConfigPath,
-
-        [Parameter(Mandatory = $true)]
-        [ValidatePattern('^https?://.+')]
-        [string]$GitHubUrl
-    )
-
-    Write-Host "Setting up ${ConfigPath} settings..." -ForegroundColor Cyan
-
-    if (!(New-ConfigDirectory -ConfigPath $ConfigPath)) {
-        Write-Host "Failed to create ${ConfigPath} config directory. Skipping..." -ForegroundColor Yellow
-        return $false
-    }
-
-    try {
-        Backup-ConfigFile -FilePath $ConfigPath
-        Write-Host "Downloading ${ConfigPath} from ${GitHubUrl}..." -ForegroundColor Cyan
-        Invoke-WebRequest -Uri $GitHubUrl -OutFile $ConfigPath -UseBasicParsing -ErrorAction Stop
-        Write-Host "Applied ${ConfigPath} configuration successfully" -ForegroundColor Green
-        return $true
-    }
-    catch {
-        Write-Host "Failed to download or apply ${ConfigPath} configuration from ${GitHubUrl}: $_" -ForegroundColor Red
-        return $false
-    }
-}
-
 function New-ConfigLink {
     param (
         [string]$sourcePath,
@@ -387,11 +349,14 @@ function New-ConfigLink {
 
     if (!(Test-Path $sourcePath)) {
         Write-Host "Source path $sourcePath does not exist. Skipping." -ForegroundColor Red
-        return
+        return $false
     }
 
     if (Test-Path $targetPath) {
-        Backup-ConfigFile -FilePath $targetPath
+        if (!(Backup-ConfigFile -FilePath $targetPath)) {
+            Write-Host "Preserving existing target because its backup failed: $targetPath" -ForegroundColor Red
+            return $false
+        }
         Remove-Item -Path $targetPath -Force -Recurse -Confirm:$false
     }
     else {
@@ -402,36 +367,12 @@ function New-ConfigLink {
     try {
         New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -Force | Out-Null
         Write-Host "Created symbolic link: $targetPath -> $sourcePath" -ForegroundColor Green
+        return $true
     }
     catch {
         Write-Host "Failed to create symbolic link. Skipping." -ForegroundColor Red
-    }
-}
-
-function Copy-SSHKeyToWSL {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$Distribution,
-
-        [Parameter(Mandatory = $true)]
-        [string]$Username
-    )
-
-    if (!(Test-Path "$env:USERPROFILE\.ssh\id_ed25519.pub")) {
-        Write-Host "SSH public key not found at $env:USERPROFILE\.ssh\id_ed25519.pub" -ForegroundColor Red
         return $false
     }
-
-    Write-Host "Copying SSH key to $Distribution for user $Username..." -ForegroundColor Cyan
-
-    $pubKey = (Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub" -Raw).Trim()
-    $encodedPubKey = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pubKey))
-    wsl -d $Distribution -u root bash -c "mkdir -p /home/$Username/.ssh && chmod 700 /home/$Username/.ssh"
-    wsl -d $Distribution -u root bash -c "touch /home/$Username/.ssh/authorized_keys; key=`$(printf '%s' '$encodedPubKey' | base64 -d); grep -Fqx -- `"`$key`" /home/$Username/.ssh/authorized_keys || printf '%s\n' `"`$key`" >> /home/$Username/.ssh/authorized_keys"
-    wsl -d $Distribution -u root bash -c "chmod 600 /home/$Username/.ssh/authorized_keys"
-    wsl -d $Distribution -u root bash -c "chown -R ${Username}:${Username} /home/$Username/.ssh"
-
-    Write-Host "SSH key copied successfully to $Distribution" -ForegroundColor Green
 }
 
 function Update-Windows {
@@ -517,58 +458,6 @@ function Install-Chocolatey {
     }
 }
 
-function Install-Scoop {
-    if (Test-CommandExists scoop) {
-        Write-Host "Scoop is already installed." -ForegroundColor Yellow
-        return
-    }
-
-    Write-Host "Installing Scoop..." -ForegroundColor Cyan
-
-    $originalPolicy = Get-ExecutionPolicy -Scope Process
-    try {
-        Set-ExecutionPolicy RemoteSigned -Scope Process -Force
-        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
-
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "Machine")
-
-        if (Test-CommandExists scoop) {
-            Write-Host "Scoop installed successfully!" -ForegroundColor Green
-        }
-        else {
-            Write-Host "Scoop installation may have succeeded, but the command is not available in this session." -ForegroundColor Yellow
-            Write-Host "You may need to restart your PowerShell session." -ForegroundColor Yellow
-        }
-    }
-    finally {
-        Set-ExecutionPolicy -ExecutionPolicy $originalPolicy -Scope Process -Force
-    }
-}
-
-function Install-VSCode {
-    return Winget-Install -PackageId "Microsoft.VisualStudioCode" -Name "Visual Studio Code" -Command "code"
-}
-
-function Install-Git {
-    return Winget-Install -PackageId "Git.Git" -Name "Git" -Command "git"
-}
-
-function Install-Nushell {
-    return Winget-Install -PackageId "Nushell.Nushell" -Name "Nushell" -Command "nu"
-}
-
-function Install-Starship {
-    return Winget-Install -PackageId "Starship.Starship" -Name "Starship" -Command "starship"
-}
-
-function Install-Zoxide {
-    return Winget-Install -PackageId "ajeetdsouza.zoxide" -Name "zoxide" -Command "zoxide"
-}
-
-function Install-Carapace {
-    return Winget-Install -PackageId "rsteube.Carapace" -Name "Carapace" -Command "carapace"
-}
-
 function Install-DevTools {
     Write-Host "Installing development tools..." -ForegroundColor Cyan
     return Install-WingetPackageSet -Packages @(
@@ -578,11 +467,12 @@ function Install-DevTools {
         @{ Name = "Nushell"; Id = "Nushell.Nushell"; Command = "nu" }
         @{ Name = "zoxide"; Id = "ajeetdsouza.zoxide"; Command = "zoxide" }
         @{ Name = "Carapace"; Id = "rsteube.Carapace"; Command = "carapace" }
+        @{ Name = "Coreutils for Windows"; Id = "Microsoft.Coreutils" }
         @{ Name = "7-Zip"; Id = "7zip.7zip"; Command = "7z" }
-        @{ Name = "Firefox"; Id = "Mozilla.Firefox" }
+        @{ Name = "Google Chrome"; Id = "Google.Chrome" }
         @{ Name = "WezTerm"; Id = "wez.wezterm"; Command = "wezterm" }
         @{ Name = "Docker Desktop"; Id = "Docker.DockerDesktop"; Command = "docker" }
-        @{ Name = "ripgrep"; Id = "BurntSushi.ripgrep"; Command = "rg" }
+        @{ Name = "ripgrep"; Id = "BurntSushi.ripgrep.MSVC"; Command = "rg" }
         @{ Name = "fzf"; Id = "junegunn.fzf"; Command = "fzf" }
         @{ Name = "fd"; Id = "sharkdp.fd"; Command = "fd" }
         @{ Name = "bat"; Id = "sharkdp.bat"; Command = "bat" }
@@ -590,8 +480,8 @@ function Install-DevTools {
         @{ Name = "GitHub CLI"; Id = "GitHub.cli"; Command = "gh" }
         @{ Name = "delta"; Id = "dandavison.delta"; Command = "delta" }
         @{ Name = "uv"; Id = "astral-sh.uv"; Command = "uv" }
-        @{ Name = "lazygit"; Id = "jesseduffield.lazygit"; Command = "lazygit" }
-        @{ Name = "lazydocker"; Id = "jesseduffield.lazydocker"; Command = "lazydocker" }
+        @{ Name = "lazygit"; Id = "JesseDuffield.lazygit"; Command = "lazygit" }
+        @{ Name = "lazydocker"; Id = "JesseDuffield.Lazydocker"; Command = "lazydocker" }
         @{ Name = "Neovim"; Id = "Neovim.Neovim"; Command = "nvim" }
         @{ Name = "Emacs"; Id = "GNU.Emacs"; Command = "emacs" }
     )
@@ -614,7 +504,10 @@ function Install-CppTools {
 function Install-Apps {
     return Install-WingetPackageSet -Packages @(
         @{ Name = "GlazeWM"; Id = "glazewm.glazewm"; Command = "glazewm" }
+        @{ Name = "Unity Hub"; Id = "Unity.UnityHub" }
+        @{ Name = "Slack"; Id = "SlackTechnologies.Slack" }
         @{ Name = "Telegram"; Id = "Telegram.TelegramDesktop" }
+        @{ Name = "Zed"; Id = "ZedIndustries.Zed"; Command = "zed" }
         @{ Name = "Zoom"; Id = "Zoom.Zoom" }
         @{ Name = "Signal"; Id = "OpenWhisperSystems.Signal" }
     )
@@ -627,7 +520,7 @@ function Install-AI-Tools {
         @{ Name = "OpenCode"; Id = "SST.opencode"; Command = "opencode" }
         @{ Name = "Claude"; Id = "Anthropic.Claude" }
         @{ Name = "Claude Code"; Id = "Anthropic.ClaudeCode"; Command = "claude" }
-        @{ Name = "Claude"; Id = "ZhipuAI.ZCode"; }
+        @{ Name = "Z Code"; Id = "ZhipuAI.ZCode" }
     )
 }
 
@@ -642,14 +535,14 @@ function Install-Multipass {
 function Install-MultipassVM {
     if (!(Test-CommandExists multipass)) {
         Write-Host "Multipass is not installed. Please install Multipass first." -ForegroundColor Red
-        return
+        return $false
     }
 
     Write-Host "Setting up Ubuntu 26.04 VM in Multipass..." -ForegroundColor Cyan
 
     if (multipass list | Select-String "ubuntu-ilm") {
         Write-Host "Ubuntu VM 'ubuntu-ilm' already exists. Skipping..." -ForegroundColor Yellow
-        return
+        return $true
     }
 
     multipass find | Out-Null
@@ -658,16 +551,25 @@ function Install-MultipassVM {
 
     Write-Host "Creating Ubuntu 26.04 VM with 8GB RAM and 20GB disk..." -ForegroundColor Cyan
     multipass launch resolute --name ubuntu-ilm --memory 8G --disk 20G
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to create the Multipass VM." -ForegroundColor Red
+        return $false
+    }
 
     Start-Sleep -Seconds 5
 
     Write-Host "Running shell installer script..." -ForegroundColor Cyan
     multipass exec ubuntu-ilm -- bash -c "curl -sSL https://is.gd/egitif | bash -s -- min"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "The Multipass VM was created, but its setup script failed." -ForegroundColor Red
+        return $false
+    }
 
     Write-Host "Ubuntu 26.04 VM setup complete!" -ForegroundColor Green
     multipass info ubuntu-ilm
 
     Write-Host "To access your VM, use: multipass shell ubuntu-ilm" -ForegroundColor Cyan
+    return $true
 }
 
 function Install-SSHServerInMutlipassVM {
@@ -686,8 +588,13 @@ function Install-SSHServerInMutlipassVM {
 
     # Restart SSH service to apply changes
     multipass exec $VMName -- bash -c "sudo systemctl restart ssh"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to configure the SSH server in $VMName." -ForegroundColor Red
+        return $false
+    }
 
     Write-Host "SSH server configured successfully on $VMName" -ForegroundColor Green
+    return $true
 }
 
 function Copy-SSHKeyToMultipassVM {
@@ -700,9 +607,13 @@ function Copy-SSHKeyToMultipassVM {
 
     try {
         $pubKey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub" -ErrorAction Stop
+        $encodedPubKey = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($pubKey -join "`n")))
         multipass exec $VMName -- bash -c "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
-        multipass exec $VMName -- bash -c "echo '$pubKey' >> ~/.ssh/authorized_keys"
+        multipass exec $VMName -- bash -c "key=`$(printf '%s' '$encodedPubKey' | base64 -d); touch ~/.ssh/authorized_keys; grep -Fqx -- `"`$key`" ~/.ssh/authorized_keys || printf '%s\n' `"`$key`" >> ~/.ssh/authorized_keys"
         multipass exec $VMName -- bash -c "chmod 600 ~/.ssh/authorized_keys"
+        if ($LASTEXITCODE -ne 0) {
+            throw "multipass failed with exit code $LASTEXITCODE."
+        }
     }
     catch {
         Write-Host "Failed to copy SSH key: $_" -ForegroundColor Red
@@ -710,6 +621,7 @@ function Copy-SSHKeyToMultipassVM {
     }
 
     Write-Host "SSH key copied successfully to $VMName" -ForegroundColor Green
+    return $true
 }
 
 function Initialize-MultipassVMSSH {
@@ -719,7 +631,7 @@ function Initialize-MultipassVMSSH {
 
     if (!(Test-CommandExists multipass)) {
         Write-Host "Multipass is not installed. Please install Multipass first." -ForegroundColor Red
-        return
+        return $false
     }
 
     Write-Host "Setting up SSH access to Multipass VM '$VMName'..." -ForegroundColor Cyan
@@ -727,73 +639,73 @@ function Initialize-MultipassVMSSH {
     multipass info $VMName 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
         Write-Host "VM '$VMName' does not exist. Please create it first." -ForegroundColor Red
-        return
+        return $false
     }
 
-    Install-SSHServerInMutlipassVM -VMName $VMName
-    Copy-SSHKeyToMultipassVM -VMName $VMName
+    if (!(Install-SSHServerInMutlipassVM -VMName $VMName)) {
+        return $false
+    }
+    if (!(Copy-SSHKeyToMultipassVM -VMName $VMName)) {
+        return $false
+    }
 
     Write-Host "SSH access to Multipass VM '$VMName' has been set up." -ForegroundColor Green
     Write-Host "You can now connect using: ssh $VMName" -ForegroundColor Cyan
+    return $true
 }
 
 
 function Install-HyperV-WSL {
-    $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
-
     $restartNeeded = $false
+    try {
+        $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -ErrorAction Stop
+        if ($wslFeature.State -ne "Enabled") {
+            Write-Host "WSL is not installed. Installing now..." -ForegroundColor Cyan
+            foreach ($feature in @("Microsoft-Windows-Subsystem-Linux", "VirtualMachinePlatform")) {
+                $result = Enable-WindowsOptionalFeature -Online -FeatureName $feature -NoRestart -ErrorAction Stop
+                $restartNeeded = $restartNeeded -or [bool]$result.RestartNeeded
+            }
 
-    if ($wslFeature.State -ne "Enabled") {
-        Write-Host "WSL is not installed. Installing now..." -ForegroundColor Cyan
-
-        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction Stop
-
-        Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart -ErrorAction Stop
-
-        wsl --install --no-distribution
-
-        $restartNeeded = $true
-    }
-    else {
-        Write-Host "WSL is already installed." -ForegroundColor Yellow
-        Write-Host "Updating WSL..." -ForegroundColor Cyan
-        $result = wsl --update
-        if ($result -and $result.RestartNeeded) {
-            Write-Host "WSL update requires a restart." -ForegroundColor Red
+            wsl --install --no-distribution
+            if ($LASTEXITCODE -ne 0) {
+                throw "wsl --install failed with exit code $LASTEXITCODE."
+            }
             $restartNeeded = $true
         }
-    }
-
-    $features = @(
-        "Microsoft-Hyper-V-All",
-        "Containers",
-        "HypervisorPlatform"
-    )
-
-    Write-Host "Enabling Hyper-V and WSL features..." -ForegroundColor Cyan
-
-    foreach ($feature in $features) {
-        $featureStatus = Get-WindowsOptionalFeature -Online -FeatureName $feature
-        if ($featureStatus.State -ne "Enabled") {
-            Write-Host "Enabling $feature..." -ForegroundColor Yellow
-            $result = Enable-WindowsOptionalFeature -Online -FeatureName $feature -NoRestart -ErrorAction SilentlyContinue
-
-            if ($result -and $result.RestartNeeded) {
-                Write-Host "$feature requires a restart." -ForegroundColor Red
-                $restartNeeded = $true
+        else {
+            Write-Host "WSL is already installed. Updating WSL..." -ForegroundColor Cyan
+            wsl --update | Out-Host
+            if ($LASTEXITCODE -ne 0) {
+                throw "wsl --update failed with exit code $LASTEXITCODE."
             }
         }
-        else {
-            Write-Host "$feature is already enabled." -ForegroundColor Green
+
+        Write-Host "Enabling Hyper-V and WSL features..." -ForegroundColor Cyan
+        foreach ($feature in @("Microsoft-Hyper-V-All", "Containers", "HypervisorPlatform")) {
+            $featureStatus = Get-WindowsOptionalFeature -Online -FeatureName $feature -ErrorAction Stop
+            if ($featureStatus.State -ne "Enabled") {
+                Write-Host "Enabling $feature..." -ForegroundColor Yellow
+                $result = Enable-WindowsOptionalFeature -Online -FeatureName $feature -NoRestart -ErrorAction Stop
+                $restartNeeded = $restartNeeded -or [bool]$result.RestartNeeded
+            }
+            else {
+                Write-Host "$feature is already enabled." -ForegroundColor Green
+            }
         }
+    }
+    catch {
+        $result = New-SetupResult -Name "Hyper-V and WSL" -Status Failed -Message "Failed to configure Hyper-V or WSL: $($_.Exception.Message)" -ExitCode 1
+        Write-SetupResult $result
+        return $result
     }
 
     if ($restartNeeded) {
         Restart-PC
     }
-    else {
-        Write-Host "All features enabled successfully." -ForegroundColor Green
-    }
+
+    $result = New-SetupResult -Name "Hyper-V and WSL" -Status Completed -Message "Hyper-V and WSL features are enabled."
+    Write-SetupResult $result
+    return $result
 }
 
 function Install-WSLDistro {
@@ -803,29 +715,34 @@ function Install-WSLDistro {
     )
 
     if (!(Test-CommandExists wsl)) {
-        Write-Host "WSL is not installed. Please install WSL first." -ForegroundColor Red
-        return
+        $result = New-SetupResult -Name $DistroName -Status Failed -Message "WSL is not installed; cannot install $DistroName." -ExitCode 1
+        Write-SetupResult $result
+        return $result
     }
 
     $installedDistros = wsl --list --quiet
     if ($installedDistros -contains $DistroName) {
-        Write-Host "$DistroName is already installed." -ForegroundColor Yellow
-        return
+        $result = New-SetupResult -Name $DistroName -Status AlreadyPresent -Message "$DistroName is already installed."
+        Write-SetupResult $result
+        return $result
     }
 
     try {
         Write-Host "Installing $DistroName..." -ForegroundColor Cyan
         wsl --install -d $DistroName
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "$DistroName installed successfully!" -ForegroundColor Green
+            $result = New-SetupResult -Name $DistroName -Status Installed -Message "$DistroName installed successfully."
         }
         else {
-            Write-Host "$DistroName installation failed. It may not be available." -ForegroundColor Red
+            $result = New-SetupResult -Name $DistroName -Status Failed -Message "$DistroName installation failed (exit code $LASTEXITCODE)." -ExitCode $LASTEXITCODE
         }
     }
     catch {
-        Write-Host "$DistroName not found in available distributions. Skipping..." -ForegroundColor Yellow
+        $result = New-SetupResult -Name $DistroName -Status Failed -Message "Failed to install ${DistroName}: $($_.Exception.Message)" -ExitCode 1
     }
+
+    Write-SetupResult $result
+    return $result
 }
 
 function Initialize-CentOSWSL {
@@ -837,16 +754,27 @@ function Initialize-CentOSWSL {
     Write-Host "Setting up CentOS Stream 10..." -ForegroundColor Cyan
 
     $username = Read-Host "Enter username for CentOS"
+    if ($username -notmatch '^[a-z_][a-z0-9_-]*$') {
+        throw "Invalid CentOS username. Use lowercase letters, digits, underscores, or hyphens, beginning with a letter or underscore."
+    }
+
     $password = Read-Host "Enter password for $username" -AsSecureString
-    $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
-        [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
+    $passwordPointer = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)
 
     try {
+        $passwordText = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($passwordPointer)
+        $encodedPassword = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($passwordText))
+        $passwordText = $null
         Write-Host "Running setup script in CentOS Stream 10..." -ForegroundColor Cyan
-        wsl -d CentOS-Stream-10 -u root -- bash -c "curl -sSL $($Context.GitHubBaseUrl)/windows/setup-centos.sh | bash -s -- '$username' '$passwordText'"
+        wsl -d CentOS-Stream-10 -u root -- bash -c "password=`$(printf '%s' '$encodedPassword' | base64 -d); curl -fsSL '$($Context.GitHubBaseUrl)/windows/setup-centos.sh' | bash -s -- '$username' `"`$password`""
+        if ($LASTEXITCODE -ne 0) {
+            throw "CentOS setup failed with exit code $LASTEXITCODE."
+        }
     }
     finally {
+        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
         $passwordText = $null
+        $encodedPassword = $null
         [System.GC]::Collect()
     }
 
@@ -860,8 +788,9 @@ function Install-Ubuntu2604 {
 
     $installedDistros = wsl --list --quiet
     if ($installedDistros -contains "Ubuntu-26.04") {
-        Write-Host "Ubuntu 26.04 is already installed." -ForegroundColor Yellow
-        return
+        $result = New-SetupResult -Name "Ubuntu 26.04" -Status AlreadyPresent -Message "Ubuntu 26.04 is already installed."
+        Write-SetupResult $result
+        return $result
     }
 
     Write-Host "Downloading Ubuntu 26.04 WSL image (this may take time)..." -ForegroundColor Cyan
@@ -870,6 +799,7 @@ function Install-Ubuntu2604 {
     $wslFile = "$tempDir\ubuntu-26.04.wsl"
     $downloadUrl = "https://releases.ubuntu.com/26.04/ubuntu-26.04-wsl-amd64.wsl"
 
+    $previousProgressPreference = $ProgressPreference
     $ProgressPreference = 'SilentlyContinue'
     try {
         if (Test-Path $wslFile) {
@@ -881,20 +811,21 @@ function Install-Ubuntu2604 {
         }
     }
     catch {
-        Write-Host "Download failed: $_" -ForegroundColor Red
-        Write-Host "You can try downloading the file manually from:" -ForegroundColor Yellow
-        Write-Host $downloadUrl -ForegroundColor Yellow
-        Write-Host "Then place it at: $wslFile" -ForegroundColor Yellow
-        return
+        $result = New-SetupResult -Name "Ubuntu 26.04" -Status Failed -Message "Ubuntu download failed: $($_.Exception.Message)" -ExitCode 1
+        Write-SetupResult $result
+        return $result
     }
-    $ProgressPreference = 'Continue'
+    finally {
+        $ProgressPreference = $previousProgressPreference
+    }
 
     Write-Host "Installing Ubuntu from .wsl file..." -ForegroundColor Cyan
     wsl --install --from-file $wslFile --name Ubuntu-26.04
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "Ubuntu installation failed." -ForegroundColor Red
-        return
+        $result = New-SetupResult -Name "Ubuntu 26.04" -Status Failed -Message "Ubuntu installation failed (exit code $LASTEXITCODE)." -ExitCode $LASTEXITCODE
+        Write-SetupResult $result
+        return $result
     }
 
     Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
@@ -902,6 +833,9 @@ function Install-Ubuntu2604 {
 
     Write-Host "Ubuntu installed successfully!" -ForegroundColor Green
     Write-Host "To start Ubuntu, open a terminal and type: wsl -d Ubuntu-26.04" -ForegroundColor Cyan
+    $result = New-SetupResult -Name "Ubuntu 26.04" -Status Installed -Message "Ubuntu 26.04 installed successfully."
+    Write-SetupResult $result
+    return $result
 }
 
 function Install-NixOSWSL {
@@ -909,8 +843,9 @@ function Install-NixOSWSL {
 
     $installedDistros = wsl --list --quiet
     if ($installedDistros -contains "NixOS") {
-        Write-Host "NixOS is already installed." -ForegroundColor Yellow
-        return
+        $result = New-SetupResult -Name "NixOS" -Status AlreadyPresent -Message "NixOS is already installed."
+        Write-SetupResult $result
+        return $result
     }
 
     Write-Host "Downloading NixOS WSL image (this may take time)..." -ForegroundColor Cyan
@@ -919,6 +854,7 @@ function Install-NixOSWSL {
     $wslFile = "$tempDir\nixos.wsl"
     $downloadUrl = "https://github.com/nix-community/NixOS-WSL/releases/download/2411.6.0/nixos.wsl"
 
+    $previousProgressPreference = $ProgressPreference
     $ProgressPreference = 'SilentlyContinue'
     try {
         if (Test-Path $wslFile) {
@@ -930,20 +866,21 @@ function Install-NixOSWSL {
         }
     }
     catch {
-        Write-Host "Download failed: $_" -ForegroundColor Red
-        Write-Host "You can try downloading the file manually from:" -ForegroundColor Yellow
-        Write-Host $downloadUrl -ForegroundColor Yellow
-        Write-Host "Then place it at: $wslFile" -ForegroundColor Yellow
-        return
+        $result = New-SetupResult -Name "NixOS" -Status Failed -Message "NixOS download failed: $($_.Exception.Message)" -ExitCode 1
+        Write-SetupResult $result
+        return $result
     }
-    $ProgressPreference = 'Continue'
+    finally {
+        $ProgressPreference = $previousProgressPreference
+    }
 
     Write-Host "Installing NixOS from .wsl file..." -ForegroundColor Cyan
     wsl --install --from-file $wslFile
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "NixOS installation failed." -ForegroundColor Red
-        return
+        $result = New-SetupResult -Name "NixOS" -Status Failed -Message "NixOS installation failed (exit code $LASTEXITCODE)." -ExitCode $LASTEXITCODE
+        Write-SetupResult $result
+        return $result
     }
 
     Write-Host "Cleaning up temporary files..." -ForegroundColor Cyan
@@ -951,6 +888,11 @@ function Install-NixOSWSL {
 
     Write-Host "Updating NixOS to the latest version..." -ForegroundColor Cyan
     wsl -d NixOS -u root -- bash -c "nix-channel --update && nixos-rebuild switch"
+    if ($LASTEXITCODE -ne 0) {
+        $result = New-SetupResult -Name "NixOS" -Status Failed -Message "NixOS was imported, but its initial update failed (exit code $LASTEXITCODE)." -ExitCode $LASTEXITCODE
+        Write-SetupResult $result
+        return $result
+    }
 
     Write-Host "NixOS installed successfully!" -ForegroundColor Green
     Write-Host "To start NixOS, open a terminal and type: wsl -d NixOS" -ForegroundColor Cyan
@@ -958,6 +900,9 @@ function Install-NixOSWSL {
     # Write-Host "Running shell setup script..." -ForegroundColor Cyan
     # wsl -d NixOS -u nixos -- bash -c "nix-shell -p curl --run 'curl -sSL https://is.gd/egitif | bash -s -- nixos-wslbox'"
     Write-Host "nixos setup completed!" -ForegroundColor Green
+    $result = New-SetupResult -Name "NixOS" -Status Installed -Message "NixOS installed successfully."
+    Write-SetupResult $result
+    return $result
 }
 
 function Install-CentOSWSL {
@@ -968,8 +913,9 @@ function Install-CentOSWSL {
 
     $installedDistros = wsl --list --quiet
     if ($installedDistros -contains "CentOS-Stream-10") {
-        Write-Host "CentOS Stream 10 is already installed." -ForegroundColor Cyan
-        return $false
+        $result = New-SetupResult -Name "CentOS Stream 10" -Status AlreadyPresent -Message "CentOS Stream 10 is already installed."
+        Write-SetupResult $result
+        return $result
     }
 
     Write-Host "Installing CentOS Stream 10 on WSL..." -ForegroundColor Cyan
@@ -984,6 +930,7 @@ function Install-CentOSWSL {
 
     Write-Host "Downloading CentOS Stream 10 WSL image (this may take time)..." -ForegroundColor Cyan
 
+    $previousProgressPreference = $ProgressPreference
     $ProgressPreference = 'SilentlyContinue'
     try {
         if (Test-Path $archivePath) {
@@ -991,7 +938,7 @@ function Install-CentOSWSL {
         }
 
         Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
-        if ($LASTEXITCODE -ne 0 -or !(Test-Path $archivePath)) {
+        if (!(Test-Path $archivePath)) {
             Write-Host "CentOS download failed." -ForegroundColor Red
             return $false
         }
@@ -1004,7 +951,9 @@ function Install-CentOSWSL {
         Write-Host "Then place it at: $archivePath" -ForegroundColor Cyan
         return $false
     }
-    $ProgressPreference = 'Continue'
+    finally {
+        $ProgressPreference = $previousProgressPreference
+    }
 
     Write-Host "Importing CentOS Stream 10 to WSL..." -ForegroundColor Cyan
     wsl --import --version=2 CentOS-Stream-10 $wslDir $archivePath
@@ -1020,6 +969,9 @@ function Install-CentOSWSL {
     Write-Host "CentOS Stream 10 installed successfully!" -ForegroundColor Cyan
 
     Initialize-CentOSWSL -Context $Context
+    $result = New-SetupResult -Name "CentOS Stream 10" -Status Installed -Message "CentOS Stream 10 installed and initialized successfully."
+    Write-SetupResult $result
+    return $result
 }
 
 function Set-CapsLockAsControl {
@@ -1033,12 +985,20 @@ function Set-CapsLockAsControl {
     $regFilePath = Join-Path $Context.DotfilesDirectory "windows\caps2ctrl.reg"
 
     if (!(Test-Path $regFilePath)) {
-        Write-Host "Registry file not found at: $regFilePath" -ForegroundColor Red
-        return
+        $result = New-SetupResult -Name "Caps Lock mapping" -Status Failed -Message "Registry file not found at: $regFilePath" -ExitCode 1
+        Write-SetupResult $result
+        return $result
     }
 
-    Start-Process -FilePath "regedit.exe" -ArgumentList "/s", "`"$regFilePath`"" -Wait
-    Write-Host "Caps Lock remapped to Control key. A system restart is required." -ForegroundColor Green
+    $process = Start-Process -FilePath "regedit.exe" -ArgumentList "/s", "`"$regFilePath`"" -Wait -PassThru
+    if ($process.ExitCode -ne 0) {
+        $result = New-SetupResult -Name "Caps Lock mapping" -Status Failed -Message "Failed to import the Caps Lock registry mapping (exit code $($process.ExitCode))." -ExitCode $process.ExitCode
+    }
+    else {
+        $result = New-SetupResult -Name "Caps Lock mapping" -Status Completed -Message "Caps Lock was remapped to Control; a restart is required." -RestartNeeded $true
+    }
+    Write-SetupResult $result
+    return $result
 }
 
 function Install-VSCodeExtensions {
@@ -1075,34 +1035,26 @@ function Install-VSCodeExtensions {
     Write-Host "VS Code extensions installed successfully!" -ForegroundColor Green
 }
 
-function Install-NerdFontsWithScoop {
-    Write-Host "Installing Nerd Fonts..." -ForegroundColor Cyan
-
-    if (-not (Test-CommandExists scoop)) {
-        Write-Host "Installing Scoop package manager..." -ForegroundColor Cyan
-        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
-    }
-
-    scoop bucket add nerd-fonts
-
-    scoop install nerd-fonts/JetBrainsMono-NF
-    scoop install nerd-fonts/CascadiaCode-NF
-
-    Write-Host "Nerd Fonts installed successfully!" -ForegroundColor Green
-}
-
 function Install-NerdFonts {
     if (-not (Test-CommandExists choco)) {
         Install-Chocolatey
         if (-not (Test-CommandExists choco)) {
-            Write-Host "Failed to install Chocolatey. Cannot install Nerd Fonts." -ForegroundColor Red
-            return
+            $result = New-SetupResult -Name "JetBrains Mono Nerd Font" -Status Failed -Message "Chocolatey is unavailable; cannot install Nerd Fonts." -ExitCode 1
+            Write-SetupResult $result
+            return $result
         }
     }
 
     Write-Host "Installing Nerd Fonts ..." -ForegroundColor Cyan
-    choco install nerd-fonts-JetBrainsMono -y
-    Write-Host "Nerd Fonts installation completed!" -ForegroundColor Green
+    choco install nerd-fonts-JetBrainsMono -y | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        $result = New-SetupResult -Name "JetBrains Mono Nerd Font" -Status Failed -Message "Nerd Font installation failed (exit code $LASTEXITCODE)." -ExitCode $LASTEXITCODE
+    }
+    else {
+        $result = New-SetupResult -Name "JetBrains Mono Nerd Font" -Status Installed -Message "JetBrains Mono Nerd Font is installed."
+    }
+    Write-SetupResult $result
+    return $result
 }
 
 function Get-Dotfiles {
@@ -1111,7 +1063,7 @@ function Get-Dotfiles {
         [psobject]$Context
     )
 
-    $gitResult = Install-Git
+    $gitResult = Install-WingetPackage -PackageId "Git.Git" -Name "Git" -Command "git"
 
     if (!$gitResult.Success -or !(Test-CommandExists git)) {
         Write-Host "Git is not installed. Cannot clone dotfiles." -ForegroundColor Red
@@ -1123,25 +1075,31 @@ function Get-Dotfiles {
 
         Push-Location $Context.DotfilesDirectory
         try {
+            git rev-parse --is-inside-work-tree 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "The existing dotfiles directory is not a Git repository: $($Context.DotfilesDirectory)" -ForegroundColor Red
+                return $false
+            }
+
             $gitStatus = git status --porcelain
             if ($LASTEXITCODE -ne 0) {
-                Write-Host "Failed to inspect dotfiles status." -ForegroundColor Red
-                return $false
+                Write-Host "Could not inspect dotfiles status; using the existing checkout." -ForegroundColor Yellow
+                return $true
             }
 
             if ([string]::IsNullOrWhiteSpace(($gitStatus -join "`n"))) {
                 Write-Host "Pulling latest changes..." -ForegroundColor Cyan
                 git pull --rebase
                 if ($LASTEXITCODE -ne 0) {
-                    Write-Host "Failed to update dotfiles." -ForegroundColor Red
-                    return $false
+                    Write-Host "Could not update dotfiles; using the existing checkout." -ForegroundColor Yellow
+                    return $true
                 }
                 Write-Host "Dotfiles updated successfully!" -ForegroundColor Green
                 return $true
             }
             else {
-                Write-Host "Dotfiles have uncommitted changes. Please commit or stash them before updating." -ForegroundColor Red
-                return $false
+                Write-Host "Dotfiles have uncommitted changes; skipping the update and using the existing checkout." -ForegroundColor Yellow
+                return $true
             }
         }
         catch {
@@ -1170,9 +1128,9 @@ function Install-PowerShellModules {
 
     $modules = @(
         "PSReadLine",
-        "posh-git",
         "Terminal-Icons",
-        "PSFzf"
+        "PSFzf",
+        "PSScriptAnalyzer"
     )
 
     try {
@@ -1215,6 +1173,31 @@ foreach ($module in ($env:DOTFILES_POWERSHELL_MODULES -split ",")) {
 
     Write-Host "PowerShell modules installed successfully!" -ForegroundColor Green
     return $true
+}
+
+function Install-PSScriptAnalyzer {
+    Write-Host "Installing PSScriptAnalyzer..." -ForegroundColor Cyan
+    try {
+        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
+        if (!(Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+            Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop
+        }
+
+        if (Test-CommandExists pwsh) {
+            pwsh -NoLogo -NoProfile -Command "if (!(Get-Module -ListAvailable -Name PSScriptAnalyzer)) { Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop }"
+            if ($LASTEXITCODE -ne 0) {
+                throw "PowerShell 7 module installation failed with exit code $LASTEXITCODE."
+            }
+        }
+
+        $result = New-SetupResult -Name "PSScriptAnalyzer" -Status Installed -Message "PSScriptAnalyzer is installed."
+    }
+    catch {
+        $result = New-SetupResult -Name "PSScriptAnalyzer" -Status Failed -Message "Failed to install PSScriptAnalyzer: $($_.Exception.Message)" -ExitCode 1
+    }
+
+    Write-SetupResult $result
+    return $result
 }
 
 function Initialize-PowerShell {
@@ -1282,10 +1265,10 @@ function Initialize-Dotfiles {
         Write-Host "VS Code settings source file not found at: $vscodeSettingsSource" -ForegroundColor Red
     }
 
-    Install-Starship
-    Install-Nushell
-    Install-Zoxide
-    Install-Carapace
+    Install-WingetPackage -PackageId "Starship.Starship" -Name "Starship" -Command "starship"
+    Install-WingetPackage -PackageId "Nushell.Nushell" -Name "Nushell" -Command "nu"
+    Install-WingetPackage -PackageId "ajeetdsouza.zoxide" -Name "zoxide" -Command "zoxide"
+    Install-WingetPackage -PackageId "rsteube.Carapace" -Name "Carapace" -Command "carapace"
 
     Initialize-NushellProfile
     Set-PowerShellProfileAsDefault
@@ -1462,43 +1445,6 @@ function Set-PowerShellProfileAsDefault {
     }
 }
 
-function Copy-ConfigFromDotfiles {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$SourcePath,
-
-        [Parameter(Mandatory = $true)]
-        [string]$TargetPath
-    )
-
-    Write-Host "Setting up ${TargetPath} from dotfiles..." -ForegroundColor Cyan
-
-    if (!(Test-Path $SourcePath)) {
-        Write-Host "Source path $SourcePath does not exist. Skipping..." -ForegroundColor Yellow
-        return $false
-    }
-
-    if (!(New-ConfigDirectory -ConfigPath $TargetPath)) {
-        Write-Host "Failed to create ${TargetPath} config directory. Skipping..." -ForegroundColor Yellow
-        return $false
-    }
-
-    Backup-ConfigFile -FilePath $TargetPath
-
-    try {
-        Copy-Item -Path $SourcePath -Destination $TargetPath -Force
-        Write-Host "Applied ${TargetPath} configuration successfully from ${SourcePath}" -ForegroundColor Green
-        return $true
-    }
-    catch {
-        Write-Host "Failed to copy or apply ${TargetPath} configuration: $_" -ForegroundColor Red
-        return $false
-    }
-
-    Write-Host "${TargetPath} setup completed" -ForegroundColor Green
-    return $true
-}
-
 function New-ComponentRegistry {
     return [ordered]@{
         "windows-update" = @{
@@ -1510,6 +1456,11 @@ function New-ComponentRegistry {
             Description = "Debloat Windows"
             Dependencies = @()
             Handler = { param($Context) Initialize-Debloat }
+        }
+        "sudo" = @{
+            Description = "Enable Sudo for Windows"
+            Dependencies = @()
+            Handler = { param($Context) Enable-WindowsSudo }
         }
         "dotfiles-source" = @{
             Description = "Clone or update dotfiles"
@@ -1535,17 +1486,23 @@ function New-ComponentRegistry {
         }
         "vscode" = @{
             Description = "Install VS Code"
-            Dependencies = @("dotfiles-source")
+            Dependencies = @()
             Handler = {
                 param($Context)
-                Install-VSCode
-                Install-VSCodeExtensions -Context $Context
+                Install-WingetPackage -PackageId "Microsoft.VisualStudioCode" -Name "Visual Studio Code" -Command "code"
+                $dotfilesAvailable = Get-Dotfiles -Context $Context
+                if ($dotfilesAvailable) {
+                    Install-VSCodeExtensions -Context $Context
+                }
+                else {
+                    Write-Host "Skipping VS Code extensions because the dotfiles source is unavailable." -ForegroundColor Yellow
+                }
             }
         }
         "devtools" = @{
             Description = "Install Development Tools"
             Dependencies = @()
-            Handler = { param($Context) Install-DevTools; Install-CppTools }
+            Handler = { param($Context) Install-DevTools; Install-CppTools; Install-PSScriptAnalyzer }
         }
         "ai-tools" = @{
             Description = "Install AI Tools"
@@ -1655,14 +1612,6 @@ function Resolve-ComponentOrder {
     return $resolved.ToArray()
 }
 
-function Debug-Variable {
-    param(
-        [string]$Name,
-        [object]$Value
-    )
-    Write-Host "DEBUG: $Name = $($Value | ConvertTo-Json -Compress)" -ForegroundColor Magenta
-}
-
 function Initialize-Debloat {
     Write-Host "Initializing Windows debloat process..." -ForegroundColor Cyan
     Write-Host "This will download and execute a debloat script from https://debloat.raphi.re/" -ForegroundColor Yellow
@@ -1670,8 +1619,9 @@ function Initialize-Debloat {
 
     $confirmation = Read-Host "Do you want to continue? (y/n)"
     if ($confirmation -ne 'y' -and $confirmation -ne 'Y') {
-        Write-Host "Debloat process cancelled by user." -ForegroundColor Yellow
-        return
+        $result = New-SetupResult -Name "Windows debloat" -Status Skipped -Message "Windows debloat was cancelled by the user."
+        Write-SetupResult $result
+        return $result
     }
 
     try {
@@ -1679,28 +1629,24 @@ function Initialize-Debloat {
         $debloatScript = Invoke-RestMethod "https://debloat.raphi.re/" -UseBasicParsing -ErrorAction Stop
 
         if ([string]::IsNullOrEmpty($debloatScript)) {
-            Write-Host "Failed to download debloat script: Empty response" -ForegroundColor Red
-            return
+            $result = New-SetupResult -Name "Windows debloat" -Status Failed -Message "Failed to download the debloat script: empty response." -ExitCode 1
+            Write-SetupResult $result
+            return $result
         }
 
         Write-Host "Executing debloat script..." -ForegroundColor Cyan
         $scriptBlock = [scriptblock]::Create($debloatScript)
 
         # Execute the script with error handling
-        # The execution policy is already set at the script level (lines 36-41)
-        # and will be restored at the end of the script (lines 1747-1751)
         & $scriptBlock
-
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "Debloat process completed successfully!" -ForegroundColor Green
-        }
-        else {
-            Write-Host "Debloat process completed with warnings. Exit code: $LASTEXITCODE" -ForegroundColor Yellow
-        }
+        $result = New-SetupResult -Name "Windows debloat" -Status Completed -Message "Windows debloat completed successfully."
+        Write-SetupResult $result
+        return $result
     }
     catch {
-        Write-Host "Failed to execute debloat script: $_" -ForegroundColor Red
-        Write-Host "Please check your internet connection and try again." -ForegroundColor Yellow
+        $result = New-SetupResult -Name "Windows debloat" -Status Failed -Message "Failed to execute the debloat script: $($_.Exception.Message)" -ExitCode 1
+        Write-SetupResult $result
+        return $result
     }
 }
 
@@ -1808,52 +1754,24 @@ function Initialize-SSHKey {
 
     if ((Test-Path $privateKeyPath) -or (Test-Path $publicKeyPath)) {
         Write-Host "SSH key already exists." -ForegroundColor Yellow
-        return
+        return $true
     }
 
     if (!(Test-CommandExists ssh-keygen)) {
         Write-Host "ssh-keygen not found. Please install OpenSSH client." -ForegroundColor Red
-        return
+        return $false
     }
 
     Write-Host "Generating new SSH key..." -ForegroundColor Cyan
     ssh-keygen -t ed25519 -f $privateKeyPath -N ''
     if ($LASTEXITCODE -eq 0) {
         Write-Host "SSH key generated successfully!" -ForegroundColor Green
+        return $true
     }
     else {
         Write-Host "Failed to generate SSH key." -ForegroundColor Red
+        return $false
     }
-}
-
-function Copy-PublicKeyToMultipass {
-    $pubkey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub" -Raw
-    $multipassCommand = @"
-mkdir -p ~/.ssh
-echo '$pubkey' >> ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
-"@
-
-    multipass exec ubuntu-ilm -- bash -c "$multipassCommand"
-}
-
-function Add-MultipassToSSHConfig {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$VMName
-    )
-
-    $ip = multipass info $VMName | Select-String -Pattern "IPv4" | ForEach-Object { $_.Line.Split(":")[1].Trim() }
-
-    $sshConfigEntry = @"
-    Host $VMName
-        HostName $ip
-        User ubuntu
-        IdentityFile ~/.ssh/id_ed25519
-"@
-
-    Add-Content -Path "$env:USERPROFILE\.ssh\config" -Value $sshConfigEntry
-    Write-Host "Added SSH config entry for $VMName ($ip)" -ForegroundColor Green
 }
 
 function Install-SelectedComponents {
@@ -1902,9 +1820,13 @@ function Install-SelectedComponents {
                 $status = if ($output -contains $false) { "Failed" } else { "Completed" }
                 $results = @(New-SetupResult -Name $component -Status $status)
             }
+            elseif (($output -contains $false) -and @($results | Where-Object { !$_.Success }).Count -eq 0) {
+                $results += New-SetupResult -Name $component -Status Failed -Message "$component reported an unsuccessful operation." -ExitCode 1
+            }
         }
         catch {
             $results = @(New-SetupResult -Name $component -Status Failed -Message "${component}: $($_.Exception.Message)" -ExitCode 1)
+            Write-SetupResult $results[0]
         }
 
         foreach ($result in $results) {
