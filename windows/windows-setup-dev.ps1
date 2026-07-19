@@ -234,6 +234,7 @@ function Install-WingetPackage {
         "--accept-package-agreements"
         "--silent"
         "--disable-interactivity"
+        "--source", "winget"
     )
 
     if (![string]::IsNullOrWhiteSpace($Override)) {

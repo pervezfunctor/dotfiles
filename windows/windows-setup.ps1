@@ -32,7 +32,7 @@ function Install-DevTools {
 
     foreach ($packageId in $packages) {
         Write-Host "Processing package: $packageId" -ForegroundColor Cyan
-        winget install --id $packageId -e --accept-source-agreements
+        winget install --id $packageId -e --accept-source-agreements --source winget
 
         if (($LASTEXITCODE -ne 0) -and ($LASTEXITCODE -ne -1978335189)) {
             Write-Host "Failed to install/update package '$packageId'. winget exited with code $LASTEXITCODE." -ForegroundColor Red
